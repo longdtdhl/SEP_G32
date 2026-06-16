@@ -1,0 +1,6 @@
+@OPCBS_API_HostAddress = http://localhost:5152
+
+GET {{OPCBS_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
