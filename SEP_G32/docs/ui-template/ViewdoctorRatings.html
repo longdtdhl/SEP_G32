@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reviews &amp; Ratings | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "tertiary-fixed-dim": "#ffb3b1",
+                  "on-secondary-fixed": "#0f1e19",
+                  "on-primary-fixed-variant": "#0c513a",
+                  "inverse-surface": "#2e312f",
+                  "on-tertiary-fixed-variant": "#6f3535",
+                  "on-surface": "#191c1a",
+                  "surface-container-lowest": "#ffffff",
+                  "outline-variant": "#bfc9c2",
+                  "surface-bright": "#f8faf6",
+                  "primary-fixed-dim": "#95d4b5",
+                  "error-container": "#ffdad6",
+                  "error": "#ba1a1a",
+                  "surface-variant": "#e1e3df",
+                  "on-surface-variant": "#404943",
+                  "on-primary-fixed": "#002115",
+                  "surface": "#f8faf6",
+                  "on-tertiary-fixed": "#390b0d",
+                  "on-error": "#ffffff",
+                  "inverse-on-surface": "#eff1ed",
+                  "tertiary-fixed": "#ffdad8",
+                  "surface-tint": "#2b6950",
+                  "surface-container-low": "#f2f4f0",
+                  "secondary-fixed-dim": "#b9cbc1",
+                  "secondary": "#52625a",
+                  "outline": "#707973",
+                  "on-background": "#191c1a",
+                  "tertiary": "#894a49",
+                  "on-primary-container": "#f5fff7",
+                  "background": "#f8faf6",
+                  "on-secondary-fixed-variant": "#3a4a43",
+                  "on-secondary-container": "#586860",
+                  "tertiary-container": "#a66261",
+                  "secondary-fixed": "#d5e7dd",
+                  "on-tertiary-container": "#fffbff",
+                  "surface-container": "#eceeea",
+                  "on-primary": "#ffffff",
+                  "inverse-primary": "#95d4b5",
+                  "primary-fixed": "#b0f0d0",
+                  "on-tertiary": "#ffffff",
+                  "secondary-container": "#d5e7dd",
+                  "surface-container-highest": "#e1e3df",
+                  "primary-container": "#438066",
+                  "primary": "#29674e",
+                  "surface-dim": "#d8dbd7",
+                  "surface-container-high": "#e7e9e5",
+                  "on-secondary": "#ffffff",
+                  "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "gutter": "24px",
+                  "stack-sm": "8px",
+                  "stack-lg": "32px",
+                  "unit": "4px",
+                  "stack-md": "16px",
+                  "section-gap": "80px",
+                  "container-max-width": "1200px",
+                  "margin-desktop": "40px",
+                  "margin-mobile": "16px"
+          },
+          "fontFamily": {
+                  "headline-xl": ["Inter"],
+                  "headline-md": ["Inter"],
+                  "label-sm": ["Inter"],
+                  "label-md": ["Inter"],
+                  "headline-lg": ["Inter"],
+                  "body-sm": ["Inter"],
+                  "body-md": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "headline-lg-mobile": ["Inter"]
+          },
+          "fontSize": {
+                  "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #FAFBFA;
+      color: #191c1a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+   
+    .active-tab-indicator {
+      position: relative;
+    }
+    .active-tab-indicator::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: #29674e;
+    }
+  </style>
+</head>
+<body class="bg-background">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">
+        MindBridge
+      </div>
+<nav class="hidden md:flex items-center gap-stack-lg">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">Blog</a>
+<a class="font-body-md text-body-md text-primary dark:text-primary-fixed font-bold border-b-2 border-primary dark:border-primary-fixed pb-1" href="#">Specialists</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">My Package</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors" href="#">My Appointments</a>
+</nav>
+<div class="flex items-center gap-stack-md">
+<button class="p-2 hover:bg-secondary-container/50 dark:hover:bg-secondary-fixed-dim/20 rounded-lg transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly user with a warm smile, set against a soft-focus interior background. The lighting is natural and bright, conveying a sense of wellness and approachable professionalism that fits the MindBridge brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKok2PeJdI8-MQVdq7H-An0R66EYtOQh0_Pp_4PGRAHV34APKEWW6x_nZFeuTVldVyrEJ1PfutldoeYElQWHx_lNvsEfCxD2CtW-yATLifKLjrcJ0E873XTWdcMVCZu-nySOzxq7hT7SmFPyVJ3I2jCjt2y39xqIu0TnAo5pnm1J9F50ci-9caYRFyHqzgKTqq8DRDM4n1jErBkc9sP0FNHT2bwZNIwjiJwU7KqosAr9qCER9GBO6YREb-OgaD1CZLCFJgS-Gkeh4"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-container-max-width mx-auto px-margin-desktop py-stack-lg min-h-screen">
+<!-- Profile Header Context (Implied) -->
+<div class="mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Dr. Elena Sterling</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Senior Clinical Psychologist • 12 years experience</p>
+</div>
+<!-- Profile Sub-Navigation -->
+<div class="border-b border-outline-variant mb-stack-lg overflow-x-auto">
+<div class="flex gap-stack-lg min-w-max">
+<button class="pb-stack-md font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">About me</button>
+<button class="pb-stack-md font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">Professional Background</button>
+<button class="pb-stack-md font-label-md text-label-md text-primary font-bold border-b-2 border-primary">Reviews &amp; Ratings</button>
+<button class="pb-stack-md font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">Activity</button>
+</div>
+</div>
+<!-- Rating Summary Card -->
+<section class="bg-surface-container-lowest rounded-[20px] p-gutter shadow-[0px_4px_20px_rgba(0,0,0,0.04)] mb-stack-lg border border-surface-container">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
+<!-- Star Distribution -->
+<div class="md:col-span-7 space-y-3">
+<!-- 5 Star -->
+<div class="flex items-center gap-stack-md">
+<span class="w-4 font-label-md text-label-md text-on-surface-variant">5</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 82%;"></div>
+</div>
+</div>
+<!-- 4 Star -->
+<div class="flex items-center gap-stack-md">
+<span class="w-4 font-label-md text-label-md text-on-surface-variant">4</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 12%;"></div>
+</div>
+</div>
+<!-- 3 Star -->
+<div class="flex items-center gap-stack-md">
+<span class="w-4 font-label-md text-label-md text-on-surface-variant">3</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 4%;"></div>
+</div>
+</div>
+<!-- 2 Star -->
+<div class="flex items-center gap-stack-md">
+<span class="w-4 font-label-md text-label-md text-on-surface-variant">2</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 1%;"></div>
+</div>
+</div>
+<!-- 1 Star -->
+<div class="flex items-center gap-stack-md">
+<span class="w-4 font-label-md text-label-md text-on-surface-variant">1</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 1%;"></div>
+</div>
+</div>
+</div>
+<!-- Overall Score -->
+<div class="md:col-span-5 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-outline-variant pt-stack-lg md:pt-0 md:pl-gutter">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#FFB800] text-[32px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-lg text-headline-lg text-on-surface">4.8 / 5.0</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">123 Reviews</p>
+</div>
+</div>
+</section>
+<!-- Filter Actions -->
+<div class="flex justify-between items-center mb-stack-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface">Patient Feedback</h2>
+<div class="relative group">
+<button class="flex items-center gap-stack-sm bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-2 font-label-md text-label-md text-on-surface hover:bg-surface-container transition-colors">
+          Filter by
+          <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Reviews List -->
+<div class="space-y-stack-md">
+<!-- Review 1 -->
+<article class="bg-surface-container-lowest rounded-[20px] p-gutter shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-surface-container hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="flex items-center gap-stack-md">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-secondary-container">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist avatar showing the silhouette of a person in soft grey and white tones, centered within a circular frame on a light, professional background suited for a healthcare application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzk8ki8mM5ti5oAnHNBP5vIymkYqc2ciFskgTEfKclrJBQYSA-jSs1ZNulNU1p-6__1llqAoTB_d3vhdBP8LRpacEbP6QrcvXvNJByGe3UFqQ_KV3Mx0lB_oHaHbCOvuHT7HCTgITjCM1xo1vy4UttZtDbuIBkwPhb7FjOvD8Z_Em14vkBf_N47CWdNrxAefKDYmQXRHdSodkGNpNry0u6zzPus29ROKnFttx2bgzfhNhBEXK5OeH6MkLgXyWj88SEgunnt47DrDw"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Sarah J.</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#FFB800] text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">4.8</span>
+</div>
+</div>
+</div>
+<time class="font-body-sm text-body-sm text-outline">Jun 14, 2026</time>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+        </p>
+</article>
+<!-- Review 2 -->
+<article class="bg-surface-container-lowest rounded-[20px] p-gutter shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-surface-container hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="flex items-center gap-stack-md">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-secondary-container">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a thoughtful person in a modern clinic setting, blurred greenery in the background. The lighting is diffused and calming, maintaining a high-fidelity minimalist medical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmA7Ns1F6HSKSJsoUGQy5sIr_a9hGRsjkvRxF7bHAUmKi4fJ8reX6S67Bc_rhh3Az1KQe0_bubvJKPRNK5ZDRMQHSONGMjAih3h5bT1LHVA_1s7ZWzqisKaKQWSPo8CcH0saczGXy_MyOy4jZaSTTovdcDHhilAB97eZaVOt7pIEqgeP-E6VHiSycr9e75bBhHSiVDKv8rsObke0Gx-hDelIVDgqsACvNvID-aLetBsuC-0Oktza382DvHQb-cphBjuJa8pYno4I8"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Michael R.</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#FFB800] text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5.0</span>
+</div>
+</div>
+</div>
+<time class="font-body-sm text-body-sm text-outline">May 22, 2026</time>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Dr. Sterling provided exceptional guidance during a very difficult transitional period. The session felt safe and productive.
+        </p>
+</article>
+<!-- Review 3 -->
+<article class="bg-surface-container-lowest rounded-[20px] p-gutter shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-surface-container hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="flex items-center gap-stack-md">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-secondary-container">
+<img class="w-full h-full object-cover" data-alt="A serene portrait of an elderly man with kind eyes, sitting in a bright sunlit room. The overall atmosphere is peaceful and trustworthy, utilizing a palette of soft whites and natural greens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJSWo2q6rnjUGqwS7ZD-W2OQ2p7vpRoEWK3D0WfK-tpGAVdPaJWxzVRM1WbgufLmx9yrM4fhbMmzdJVwW-5KM3_vgxhxENFOkTmj1zA1QnxlG-BZ68dXvRWNacadyOiGnEibz9R2H92KBC0kGw-HHaKn90LHWQfEMBn4uN6BEy4uetvpAvgdHB7HMaaG5sjpUxkoO3SnLKgHTY3STov58P5huKvRZq1iCDkQ92aKU9bdTIllDcXx9u4h1KxJMhqA-heWtlmu31QXA"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">David L.</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#FFB800] text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">4.5</span>
+</div>
+</div>
+</div>
+<time class="font-body-sm text-body-sm text-outline">April 08, 2026</time>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          The approach here is very grounded and human. I've been to several specialists over the years, but the clarity of communication at MindBridge is truly different. Highly recommend.
+        </p>
+</article>
+</div>
+<!-- Load More -->
+<div class="mt-stack-lg text-center">
+<button class="font-label-md text-label-md text-primary border border-primary px-8 py-3 rounded-xl hover:bg-primary/5 transition-colors active:scale-95 duration-200">
+        Load More Reviews
+      </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-container-highest w-full px-margin-desktop py-stack-lg mt-section-gap border-t border-outline-variant dark:border-outline">
+<div class="max-w-container-max-width mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg items-start mb-stack-lg">
+<div>
+<div class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed mb-stack-sm">
+            MindBridge
+          </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+            Providing a sanctuary for mental wellness through compassionate clarity. Our platform connects you with verified specialists in a safe, non-judgmental environment.
+          </p>
+</div>
+<div class="flex flex-wrap gap-x-gutter gap-y-stack-sm md:justify-end">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Contact Us</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Crisis Resources</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">About Our Specialists</a>
+</div>
+</div>
+<div class="pt-stack-lg border-t border-outline-variant">
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-90 text-center md:text-left">
+          © 2024 MindBridge. All rights reserved. Providing a sanctuary for mental wellness through compassionate clarity.
+        </p>
+</div>
+</div>
+</footer>
+<script>
+    // Lightweight atmospheric interaction for cards
+    document.querySelectorAll('article').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-2px)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0px)';
+      });
+    });
+  </script>
+</body></html>
