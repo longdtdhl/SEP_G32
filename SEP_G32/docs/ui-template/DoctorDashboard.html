@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MindBridge - Case Records</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Font: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4e8b70', // Emerald green from design system
+            'surface-bright': '#f8faf6',
+            'surface-container': '#f2f4f0',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'card': '20px', // Specified in requirements
+            'custom': '8px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styling">
+    body {
+      background-color: #f8faf6;
+      font-family: 'Inter', sans-serif;
+    }
+    .shadow-soft {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    /* Custom scrollbar for clinical look */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4e8b70;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+<!-- BEGIN: MainHeader -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+<!-- Logo and Main Nav -->
+<div class="flex items-center space-x-8">
+<div class="flex items-center space-x-2 text-primary font-bold text-xl">
+<div class="bg-primary text-white p-1.5 rounded-lg">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span>MindBridge</span>
+</div>
+<nav class="hidden lg:flex items-center space-x-6 text-sm font-medium text-slate-600">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+<a class="hover:text-primary transition-colors" href="#">Blog</a>
+<a class="hover:text-primary transition-colors" href="#">Specialists</a>
+<a class="hover:text-primary transition-colors" href="#">Schedules</a>
+<a class="text-primary border-b-2 border-primary py-5" href="#">Case Records</a>
+<a class="hover:text-primary transition-colors" href="#">Appointment List</a>
+</nav>
+</div>
+<!-- Header Actions -->
+<div class="flex items-center space-x-4">
+<div class="relative">
+<input class="pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-full text-sm w-48 focus:ring-2 focus:ring-primary/20" placeholder="Search" type="text"/>
+<svg class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<button class="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+</button>
+<div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden cursor-pointer border border-slate-200">
+<img alt="Specialist Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6MIY-6WHc3053ASrgOa8pfAvyYhCO0On7G3WmmIPYWO2JB0MtEzdc0pk8r04oAIjMDA1onsnOI7G_G1GqIY-rq7ewVpAOY0TQ9IWlFoMG6juYPcccTt5Wo3XhFJNBQqJGxEagGSX-khM5h5vF0adkuY-iby4wgDsAB-RBWCqloJEJzfB5tAjwE9swdBhpdSaV89HK7hTpq3Pfu4HGKDQArZvAYqRg8zPLneaOrb8r3IihM_zB_idcYQt0cl2YWg3vXDDF0v1mRrQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="max-w-5xl mx-auto px-4 py-8">
+<!-- Search and Filter Bar -->
+<div class="flex items-center justify-between mb-8">
+<div class="relative flex-1 max-w-sm">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<input class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-full leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm" placeholder="Search case records..." type="text"/>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-slate-500">Filter by</span>
+<button class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 focus:outline-none shadow-sm transition-all">
+          Recent Activity
+          <svg class="ml-2 -mr-0.5 h-4 w-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Case Records List -->
+<div class="space-y-6">
+<!-- Record Card 1 -->
+<article class="bg-white rounded-card shadow-soft border border-slate-100 overflow-hidden" data-purpose="case-record-card">
+<div class="p-6 md:p-8">
+<!-- Card Header -->
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h2 class="text-lg font-semibold text-slate-900">Sarah Montgomery</h2>
+<p class="text-sm text-slate-400 font-medium">May 27, 2026</p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 transition-colors">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Content Section -->
+<div class="mb-6">
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Clinical Content</h3>
+<div class="bg-surface-container rounded-xl p-6 border border-slate-200/50">
+<p class="text-slate-600 leading-relaxed mb-4">
+                Patient reports improved sleep quality following the implementation of CBT-I techniques. Reported anxiety levels on a scale of 1-10 have decreased from an 8 to a 5 over the past two weeks. Discussion focused on workplace triggers and boundary setting.
+              </p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-white text-xs font-medium text-primary rounded-full border border-primary/20">Anxiety</span>
+<span class="px-3 py-1 bg-white text-xs font-medium text-primary rounded-full border border-primary/20">CBT-I</span>
+<span class="px-3 py-1 bg-white text-xs font-medium text-primary rounded-full border border-primary/20">Progress Note</span>
+</div>
+</div>
+</div>
+<!-- Footer/Action Section -->
+<div class="flex items-center pt-4 border-t border-slate-50">
+<button class="flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors font-medium text-sm">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Add clinical comment</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Record Card 2 -->
+<article class="bg-white rounded-card shadow-soft border border-slate-100 overflow-hidden" data-purpose="case-record-card">
+<div class="p-6 md:p-8">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h2 class="text-lg font-semibold text-slate-900">James Wilson</h2>
+<p class="text-sm text-slate-400 font-medium">May 24, 2026</p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 transition-colors">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<div class="mb-6">
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Clinical Content</h3>
+<div class="bg-surface-container rounded-xl p-6 border border-slate-200/50">
+<p class="text-slate-600 leading-relaxed italic">
+                Initial intake session. Patient presents with symptoms consistent with moderate depressive episode. Recommended bi-weekly counseling sessions and referral to a psychiatrist for medication evaluation. Patient expressed willingness to engage in mindfulness-based stress reduction.
+              </p>
+</div>
+</div>
+<div class="flex items-center pt-4 border-t border-slate-50">
+<button class="flex items-center space-x-2 text-slate-500 hover:text-primary transition-colors font-medium text-sm">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Add clinical comment</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+<!-- Pagination or Load More -->
+<div class="mt-12 flex justify-center">
+<button class="px-8 py-2.5 bg-primary text-white font-semibold rounded-full shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all focus:ring-4 focus:ring-primary/10">
+        Load more records
+      </button>
+</div>
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: Footer -->
+<footer class="mt-20 py-12 border-t border-slate-200 bg-white">
+<div class="max-w-7xl mx-auto px-4 text-center">
+<p class="text-slate-400 text-sm">© 2026 MindBridge Specialist Portal. Confidential Patient Data - Internal Use Only.</p>
+</div>
+</footer>
+<!-- END: Footer -->
+</body></html>
