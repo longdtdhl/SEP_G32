@@ -1,6 +1,0 @@
-export const STATUS = {
-  PENDING: 'PENDING',
-  CONFIRMED: 'CONFIRMED',
-  CANCELLED: 'CANCELLED',
-  COMPLETED: 'COMPLETED',
-} as const

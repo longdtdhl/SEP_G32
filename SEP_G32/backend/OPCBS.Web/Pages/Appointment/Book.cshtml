@@ -1,0 +1,23 @@
+@page "{doctorId:guid?}"
+@model OPCBS.Web.Pages.Appointment.BookModel
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<h2>Book Appointment</h2>
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Doctor</label>
+        <input asp-for="Input.DoctorId" class="form-control" readonly />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Start At</label>
+        <input asp-for="Input.StartAt" type="datetime-local" class="form-control" />
+        <span asp-validation-for="Input.StartAt" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Notes</label>
+        <textarea asp-for="Input.Notes" class="form-control"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Book</button>
+</form>

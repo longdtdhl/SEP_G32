@@ -1,0 +1,8 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Doctors.DetailsModel
+@{
+    ViewData["Title"] = "Doctor Details";
+}
+
+<h2>@Model.Doctor?.FullName</h2>
+<p>Specialization: @Model.Doctor?.Specialization</p>

@@ -1,0 +1,13 @@
+@page
+@model OPCBS.Web.Pages.Blog.IndexModel
+@{
+    ViewData["Title"] = "Blogs";
+}
+
+<h2>Blog List</h2>
+<ul>
+@foreach(var b in Model.Blogs)
+{
+    <li><a asp-page="Details" asp-route-id="@b.Id">@b.Title</a> - @b.Summary</li>
+}
+</ul>

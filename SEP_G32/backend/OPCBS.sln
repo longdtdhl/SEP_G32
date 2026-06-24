@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OPCBS", "OPCBS\OPCBS.csproj", "{1F0D3C02-16E8-42D0-B5DE-5B9297D490CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OPCBS.Web", "OPCBS.Web\OPCBS.Web.csproj", "{C92C4E18-E380-4BD3-B02E-5210D0765A68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{1F0D3C02-16E8-42D0-B5DE-5B9297D490CC}.Release|x64.Build.0 = Release|Any CPU
 		{1F0D3C02-16E8-42D0-B5DE-5B9297D490CC}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F0D3C02-16E8-42D0-B5DE-5B9297D490CC}.Release|x86.Build.0 = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|x64.Build.0 = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Debug|x86.Build.0 = Debug|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|x64.ActiveCfg = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|x64.Build.0 = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|x86.ActiveCfg = Release|Any CPU
+		{C92C4E18-E380-4BD3-B02E-5210D0765A68}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

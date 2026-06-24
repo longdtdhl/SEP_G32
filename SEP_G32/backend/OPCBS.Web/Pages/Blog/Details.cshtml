@@ -1,0 +1,9 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Blog.DetailsModel
+@{
+    ViewData["Title"] = "Blog Details";
+}
+
+<h2>@Model.Blog?.Title</h2>
+<p>@Model.Blog?.Summary</p>
+<div>@Model.Blog?.Content</div>

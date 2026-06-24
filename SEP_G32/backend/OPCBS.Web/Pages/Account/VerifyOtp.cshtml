@@ -1,0 +1,20 @@
+@page
+@model OPCBS.Web.Pages.Account.VerifyOtpModel
+@{
+    ViewData["Title"] = "Verify OTP";
+}
+
+<h2>Verify OTP</h2>
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input asp-for="Input.Email" class="form-control" />
+        <span asp-validation-for="Input.Email" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">OTP</label>
+        <input asp-for="Input.Otp" class="form-control" />
+        <span asp-validation-for="Input.Otp" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Verify</button>
+</form>
