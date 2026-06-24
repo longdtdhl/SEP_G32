@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cancel Consultation Slot - MindBridge</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4E8B70',
+            'primary-hover': '#3d6e59',
+            surface: '#FAFBFA',
+            card: '#FFFFFF',
+            text: '#1F2937',
+            'text-muted': '#6B7280',
+            border: '#E5E7EB',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'xl': '12px',
+            '2xl': '20px',
+          },
+          boxShadow: {
+            'soft': '0 4px 20px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles -->
+<style data-purpose="custom-utilities">
+    body {
+      background-color: theme('colors.surface');
+      color: theme('colors.text');
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+<!-- BEGIN: TopNavBar -->
+<header class="bg-white border-b border-border shadow-sm sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+<!-- Logo & Navigation -->
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-2 text-primary" href="#">
+<span class="material-symbols-outlined text-3xl">psychology</span>
+<span class="font-bold text-xl tracking-tight">MindBridge</span>
+</a>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-text-muted hover:text-primary transition-colors text-sm font-medium" href="#">Home</a>
+<a class="text-text-muted hover:text-primary transition-colors text-sm font-medium" href="#">Specialists</a>
+<a class="text-text-muted hover:text-primary transition-colors text-sm font-medium" href="#">Schedules</a>
+<a class="text-text-muted hover:text-primary transition-colors text-sm font-medium" href="#">Case Records</a>
+<a class="text-primary border-b-2 border-primary pb-1 text-sm font-semibold" href="#">Appointment List</a>
+</nav>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center gap-4">
+<!-- Search Bar -->
+<div class="relative hidden lg:block">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-muted text-sm">search</span>
+</div>
+<input class="pl-10 pr-4 py-2 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64 bg-surface placeholder-text-muted" placeholder="Search" type="text"/>
+</div>
+<!-- Actions -->
+<button aria-label="Notifications" class="p-2 text-text-muted hover:text-primary rounded-full hover:bg-surface transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="User profile settings" class="flex items-center gap-2 p-1 rounded-full border border-border hover:border-primary transition-colors">
+<img alt="User Avatar" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBesDIZVE32MYG9Xn-a_FXRb3a1TcIHXZ_Fl6D5ZXZU2Y4w9g6n14jK3g3Tgvjaxm6yML-baajj5l-fxm3ltExVqWCP8AWCktHYrNRqwZrNfknog5OC2OS77vmMgCqSxHUaWDCjEEVo7a8pFO1WamFB8mDXPhpcPluJX_1ZFNeQI9DllsSoRwxts8X6fVw69xWukxVXC0hY9izR-7jcF9oOn49Gk9Pp75CUz-lg-sXWs7-z7YtwtYiDFpHrV9TyKbkBLx0GMPEE2Us"/>
+</button>
+</div>
+</div>
+</header>
+<!-- END: TopNavBar -->
+<!-- BEGIN: Main Content -->
+<main class="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+<!-- Back Button -->
+<a class="inline-flex items-center gap-2 text-text-muted hover:text-primary transition-colors mb-6 group" href="#">
+<span class="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back_ios_new</span>
+<span class="text-sm font-medium">Back to Schedule</span>
+</a>
+<!-- Main Card -->
+<div class="bg-card rounded-2xl shadow-soft p-6 md:p-10 border border-border">
+<!-- Header -->
+<div class="mb-8 border-b border-border pb-6">
+<h1 class="text-2xl md:text-3xl font-bold text-text">Cancel Consultation Slot</h1>
+<p class="text-text-muted mt-2 text-sm">Review the details below before cancelling this slot.</p>
+</div>
+<!-- Information Bar (Dashed in wireframe, using solid/soft background here for better UI) -->
+<div class="bg-surface rounded-xl p-6 mb-8 border border-border border-dashed flex flex-col md:flex-row gap-6 md:gap-12 justify-between items-start md:items-center">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Date</span>
+<span class="text-text font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">calendar_month</span>
+            October 24, 2023
+          </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Time</span>
+<span class="text-text font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">schedule</span>
+            09:00 AM - 10:00 AM
+          </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Current Booking</span>
+<span class="text-text font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">group</span>
+            1 Patient
+          </span>
+</div>
+</div>
+<!-- Cancellation Form -->
+<form action="#" method="POST">
+<div class="mb-8">
+<label class="block text-sm font-semibold text-text mb-2" for="cancellationReason">Cancellation Reason <span class="text-red-500">*</span></label>
+<textarea class="w-full rounded-xl border border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-4 resize-y transition-colors placeholder-text-muted" id="cancellationReason" name="cancellationReason" placeholder="Please provide a brief reason for cancelling this slot. This will be recorded for administrative purposes." required="" rows="5"></textarea>
+</div>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4 border-t border-border">
+<button class="w-full sm:w-auto px-6 py-3 rounded-xl border border-border text-text font-medium hover:bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button">
+            Keep Slot
+          </button>
+<button class="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-50 text-red-700 border border-red-200 font-medium hover:bg-red-100 hover:text-red-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined text-sm">cancel</span>
+            Cancel Slot
+          </button>
+</div>
+</form>
+</div>
+</main>
+<!-- END: Main Content -->
+</body></html>

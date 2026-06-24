@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MindBridge - Edit Consultation Slot</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: '#4e8b70',
+            background: '#fafbfa',
+            surface: '#ffffff',
+            text: {
+              main: '#1f2937',
+              sub: '#6b7280'
+            },
+            border: '#e5e7eb'
+          },
+          borderRadius: {
+            'card': '20px',
+            'input': '12px',
+            'btn': '12px',
+          },
+          boxShadow: {
+            'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    body {
+      background-color: theme('colors.background');
+      color: theme('colors.text.main');
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+<!-- BEGIN: Navigation -->
+<header class="bg-surface border-b border-border sticky top-0 z-10 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-10">
+<!-- Logo -->
+<a class="flex items-center gap-2 text-xl font-bold text-text-main" href="#">
+<svg class="w-8 h-8 text-primary" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+</svg>
+        MindBridge
+      </a>
+<!-- Main Nav -->
+<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-text-sub">
+<a class="hover:text-text-main transition-colors" href="#">Home</a>
+<a class="hover:text-text-main transition-colors" href="#">Specialists</a>
+<a class="text-text-main border-b-2 border-primary pb-1" href="#">Schedules</a>
+<a class="hover:text-text-main transition-colors" href="#">Case Records</a>
+<a class="hover:text-text-main transition-colors" href="#">Appointment List</a>
+</nav>
+</div>
+<!-- Right Actions -->
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative hidden sm:block">
+<svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-sub" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<input class="pl-9 pr-4 py-2 bg-gray-50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64 transition-all" placeholder="Search" type="text"/>
+</div>
+<!-- Notifications -->
+<button class="relative p-2 text-text-sub hover:text-text-main transition-colors rounded-full hover:bg-gray-100">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+</button>
+<!-- Profile -->
+<button class="w-8 h-8 rounded-full overflow-hidden border border-border">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8q57OrtIUnlygbTkR9k2Pj6horcaYXzAcrQD8fw3DiBODPEUx3oFayxCstsx5p4s0VbEgy5Xu-_NNJLq8I08oqkDcPTJwoKP8-ne4p2uBZbTb6K-ZD2pv9PgIxM8GDyVbPN63eIjDkbcVDQv93KfbX52KRxwUwEet4t-L7fyuecPkQCYBPeZds75DwUT8q0Pn8g3dgNVCxqIsGFPBZEx6SLwkI6GAQAW44gLZOIALTdk-gvp9GVe2LGxDT5lALlA62dHcdKnODdo"/>
+</button>
+</div>
+</header>
+<!-- END: Navigation -->
+<!-- BEGIN: Main Content -->
+<main class="flex-1 max-w-5xl w-full mx-auto px-6 py-10">
+<!-- Breadcrumb / Back -->
+<div class="mb-8">
+<a class="inline-flex items-center gap-2 text-sm text-text-main hover:text-primary transition-colors font-medium" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+        Back to Schedules
+      </a>
+</div>
+<!-- Edit Form Card -->
+<section class="bg-surface rounded-card shadow-soft p-8 md:p-10 border border-border">
+<div class="mb-10">
+<h1 class="text-3xl font-bold text-text-main tracking-tight">Edit Consultation Slot</h1>
+<p class="text-text-sub mt-2">Modify the details for this specific time slot.</p>
+</div>
+<form class="space-y-8">
+<!-- Slot Details Row -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Date Picker -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-text-main" for="date">Date</label>
+<div class="relative">
+<input class="w-full border-border rounded-input shadow-sm focus:border-primary focus:ring-primary sm:text-sm pl-4 pr-10 py-3" id="date" name="date" type="date" value="2023-10-24"/>
+</div>
+</div>
+<!-- Start Time -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-text-main" for="startTime">Start Time</label>
+<div class="relative">
+<input class="w-full border-border rounded-input shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3" id="startTime" name="startTime" type="time" value="17:45"/>
+</div>
+</div>
+<!-- End Time -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-text-main" for="endTime">End Time</label>
+<div class="relative">
+<input class="w-full border-border rounded-input shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3" id="endTime" name="endTime" type="time" value="18:45"/>
+</div>
+</div>
+<!-- Capacity -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-text-main" for="capacity">Slot Capacity</label>
+<input class="w-full border-border rounded-input shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3" id="capacity" min="1" name="capacity" type="number" value="3"/>
+</div>
+</div>
+<!-- Notes -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-text-main" for="notes">Notes</label>
+<textarea class="block w-full rounded-input border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-4 resize-y" id="notes" name="notes" placeholder="Add any specific notes for this updated slot..." rows="4"></textarea>
+</div>
+<!-- Actions -->
+<div class="pt-6 flex justify-end gap-4 border-t border-border">
+<button class="px-6 py-3 text-sm font-medium text-text-main bg-white border border-border rounded-btn shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="button">
+            Cancel
+          </button>
+<button class="px-8 py-3 text-sm font-medium text-white bg-primary border border-transparent rounded-btn shadow-soft hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="submit">
+            Save Changes
+          </button>
+</div>
+</form>
+</section>
+</main>
+<!-- END: Main Content -->
+</body></html>
