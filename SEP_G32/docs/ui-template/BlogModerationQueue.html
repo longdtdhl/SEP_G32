@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MindBridge Admin - Blog Moderation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "background": "#f8faf9",
+                        "secondary-container": "#d5e7dd",
+                        "on-tertiary-container": "#f5fff6",
+                        "surface-bright": "#f8faf9",
+                        "surface-dim": "#d9dad9",
+                        "outline-variant": "#bfc9c2",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00855b",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "secondary": "#52625a",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary-container": "#586860",
+                        "outline": "#707973",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-container-high": "#e7e8e7",
+                        "surface-tint": "#2b6950",
+                        "secondary-fixed": "#d5e7dd",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f0f1f0",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#f5fff7",
+                        "surface": "#f8faf9",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-surface": "#191c1c",
+                        "surface-container": "#edeeed",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "primary-container": "#438066",
+                        "primary-fixed-dim": "#95d4b5",
+                        "tertiary": "#006947",
+                        "surface-variant": "#e1e3e2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#002115",
+                        "inverse-primary": "#95d4b5",
+                        "inverse-surface": "#2e3131",
+                        "primary": "#29674e",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#0f1e19",
+                        "on-tertiary-fixed": "#002113",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-surface-variant": "#404943",
+                        "surface-container-low": "#f3f4f3",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#b0f0d0",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c1c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "section-gap": "80px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "button": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .content-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .glass-effect {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- Sidebar Navigation Shell (Predicted) -->
+<aside class="flex flex-col h-full p-4 border-r border-outline-variant h-full w-64 fixed left-0 top-0 bg-surface z-50">
+<div class="mb-10 px-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">MindBridge</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">how_to_reg</span>
+<span class="font-label-md text-label-md">Doctor Applications</span>
+</a>
+<!-- Active Tab: Content Moderation -->
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-secondary-container rounded-xl font-bold scale-[0.98] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-label-md text-label-md">Content Moderation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="font-label-md text-label-md">Manage Blog</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2 pt-4 border-t border-outline-variant">
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs">AS</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md">Admin Sarah</span>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-error transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Top App Bar (Predicted) -->
+<header class="flex justify-between items-center w-full px-6 py-3 ml-64 max-w-[calc(100%-16rem)] bg-surface/80 backdrop-blur-md sticky top-0 z-40 border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<h2 class="text-headline-md font-headline-md font-bold text-primary">Content Moderation</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative flex items-center bg-surface-container rounded-full px-4 py-1.5 w-64 group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<span class="material-symbols-outlined text-outline text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full text-on-surface" placeholder="Search items..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 p-8 min-h-screen bg-background">
+<!-- Dashboard Summary Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<div class="bg-surface p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex items-center justify-between mb-2">
+<span class="text-on-surface-variant font-label-md text-label-md">Pending Review</span>
+<span class="material-symbols-outlined text-primary">pending_actions</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-primary">42</div>
+<div class="text-xs text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+                    12% from yesterday
+                </div>
+</div>
+<div class="bg-surface p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex items-center justify-between mb-2">
+<span class="text-on-surface-variant font-label-md text-label-md">High Priority Flags</span>
+<span class="material-symbols-outlined text-error">priority_high</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-error">07</div>
+<div class="text-xs text-secondary mt-1">Requires immediate attention</div>
+</div>
+<div class="bg-surface p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex items-center justify-between mb-2">
+<span class="text-on-surface-variant font-label-md text-label-md">Approved Today</span>
+<span class="material-symbols-outlined text-tertiary">check_circle</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-tertiary">128</div>
+<div class="text-xs text-secondary mt-1">Daily goal: 150</div>
+</div>
+<div class="bg-surface p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/30 overflow-hidden relative">
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-2">
+<span class="text-on-surface-variant font-label-md text-label-md">Moderation Queue</span>
+<span class="material-symbols-outlined text-secondary">analytics</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">94%</div>
+<div class="text-xs text-secondary mt-1">Accuracy score</div>
+</div>
+<!-- Mini visualization placeholder or abstract shape -->
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-primary-fixed/20 rounded-full blur-xl"></div>
+</div>
+</div>
+<!-- Moderation Interface -->
+<div class="flex gap-8 items-start">
+<!-- Queue List -->
+<div class="flex-1 space-y-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface">Review Queue</h3>
+<div class="flex items-center gap-2">
+<button class="bg-surface-container-high px-3 py-1.5 rounded-full text-label-md font-label-md flex items-center gap-2 hover:bg-surface-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            Filter
+                        </button>
+<button class="bg-surface-container-high px-3 py-1.5 rounded-full text-label-md font-label-md flex items-center gap-2 hover:bg-surface-variant transition-all">
+                            Sort: Newest
+                        </button>
+</div>
+</div>
+<!-- Moderation Item 1 -->
+<div class="content-card bg-surface rounded-[20px] p-6 border border-outline-variant/20 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a young woman in clinical attire, smiling softly against a light mint-green medical background. Soft studio lighting, minimalist aesthetic, warm and approachable vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEvRtEd2VUWLNQYVZ3iH8vds9DUHPyclAgkvxBuM2THh6_Mswvu5MwzllIvuiBlTI9vsRpdA__RZkZB7L6wUriU2BNkbhp0uLiHZ7WLCCiwN6YHpDYe-l79B-Mf8sqTmKxmV_t5jkDkmmffq8mvbUMxxpDuOallHB1IiuQckehF4JbvZcRbkWQmnN9Z3THbOhNJUOCwZSktT0H0uxn-I9k26oBeJdTU4DelFZW6Sl6Wp0CPtf0nEjpcGRnTKq0rXrdYMTBktkLTUA"/>
+</div>
+<div>
+<h4 class="font-bold text-body-lg text-on-surface">Elena Rodriguez</h4>
+<p class="text-xs text-on-surface-variant">Author • Posted 2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-[12px] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">flag</span>
+                                Spam Trigger
+                            </span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[12px] font-bold">
+                                Blog Post
+                            </span>
+</div>
+</div>
+<h5 class="text-headline-md font-bold text-on-surface mb-2">Navigating Postpartum Anxiety: My Story</h5>
+<p class="text-on-surface-variant text-body-md line-clamp-3 mb-6">
+                        I never thought I would be the one to struggle. The first few weeks were a blur of sleepless nights and overwhelming joy, but then the "what-ifs" started crawling in. I wanted to share these resources that helped me find balance again. For more info visit clinicalwellness-now.co/signup...
+                    </p>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-button text-button flex items-center gap-2 hover:bg-[#3F735C] transition-all">
+<span class="material-symbols-outlined">done</span>
+                                Approve
+                            </button>
+<button class="bg-error-container text-on-error-container px-6 py-2.5 rounded-xl font-button text-button flex items-center gap-2 hover:bg-[#fbdad6] transition-all">
+<span class="material-symbols-outlined">block</span>
+                                Reject
+                            </button>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-error hover:bg-error-container transition-all">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Moderation Item 2 -->
+<div class="content-card bg-surface rounded-[20px] p-6 border border-outline-variant/20 shadow-sm opacity-80">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+<div>
+<h4 class="font-bold text-body-lg text-on-surface">Marcus T. (Guest)</h4>
+<p class="text-xs text-on-surface-variant">Comment • Posted 4 hours ago</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-[12px] font-bold">
+                                Comment
+                            </span>
+</div>
+</div>
+<p class="text-on-surface-variant text-body-md italic mb-6">
+                        "Thank you for this advice. It really resonated with my current situation at work. Mental health awareness should be taught in every office!"
+                    </p>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-button text-button flex items-center gap-2 hover:bg-[#3F735C] transition-all">
+<span class="material-symbols-outlined">done</span>
+                                Approve
+                            </button>
+<button class="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-xl font-button text-button flex items-center gap-2 hover:bg-secondary-container/80 transition-all">
+<span class="material-symbols-outlined">block</span>
+                                Reject
+                            </button>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-error hover:bg-error-container transition-all">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Detail / Preview Panel (Asymmetric Bento Element) -->
+<div class="w-[380px] flex flex-col gap-6 sticky top-24">
+<!-- Reference Image Container -->
+<div class="bg-surface rounded-[20px] overflow-hidden border border-outline-variant/20 shadow-lg">
+<div class="p-4 bg-primary-container text-on-primary-container flex items-center justify-between">
+<span class="font-bold text-label-md uppercase tracking-wider">Editor's View</span>
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</div>
+<div class="aspect-[0.87] bg-surface-container">
+<img alt="Blog Content Moderation Interface" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARoPMf6Jzm7yh4owaz16E9-REDLIJ4-PvuvN4sGqHCs4r6DiO9PuhrJ1EDtCGG7lnFurf9cMiJvRCfWkkAyOar6uJ9wc__UAoqEPReOUdIl9kjR9OYDUNdPlUVFM1GzPWIqo124xDA5dIB0ny1KT6EOhJ40J8KvZA1F9siVpPZvv3vMF5W7bpM-pNeQs4sKdOfpfyo1b8xhs-BgsNWcpkrht3o8Z_IxvvLwUmJnk0sQ25UAMULSJuEXtsz70U9TjnWhzrMHkLJgHk"/>
+</div>
+</div>
+<!-- Guidance Card -->
+<div class="bg-secondary-container/40 p-6 rounded-[20px] border border-secondary-container">
+<div class="flex items-center gap-2 text-primary font-bold mb-3">
+<span class="material-symbols-outlined">info</span>
+<h4 class="text-label-md">Moderation Guidelines</h4>
+</div>
+<ul class="space-y-3 text-body-sm text-on-secondary-container">
+<li class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+                            Personal anecdotes are encouraged.
+                        </li>
+<li class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-error">cancel</span>
+                            Prohibit external medical sales links.
+                        </li>
+<li class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+                            Respect anonymous submissions.
+                        </li>
+</ul>
+<button class="mt-6 w-full py-2 bg-white rounded-xl text-primary font-bold text-sm shadow-sm hover:shadow-md transition-all">
+                        Read Full Protocol
+                    </button>
+</div>
+<!-- Quick Actions / Log -->
+<div class="bg-surface p-6 rounded-[20px] border border-outline-variant/20 shadow-sm">
+<h4 class="font-bold text-label-md text-on-surface mb-4 uppercase tracking-wider">Recent Activity</h4>
+<div class="space-y-4">
+<div class="flex gap-3 text-xs">
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+<div>
+<p class="text-on-surface font-semibold">Sarah approved "Healing at Home"</p>
+<p class="text-on-surface-variant">15 mins ago</p>
+</div>
+</div>
+<div class="flex gap-3 text-xs">
+<div class="w-2 h-2 rounded-full bg-error mt-1"></div>
+<div>
+<p class="text-on-surface font-semibold">System rejected "User_8829" comment</p>
+<p class="text-on-surface-variant">42 mins ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (Contextual Support) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:bg-[#3F735C] hover:scale-110 transition-all z-50">
+<span class="material-symbols-outlined">support_agent</span>
+</button>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('.content-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Future implementation: Select and focus detail panel
+                console.log('Item selected for deep review');
+            });
+        });
+
+        // Simple mock for "Approve" action feedback
+        const approveButtons = document.querySelectorAll('button:contains("Approve")');
+        approveButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const card = btn.closest('.content-card');
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+                card.innerHTML = `<div class="p-12 text-center text-tertiary flex flex-col items-center gap-2">
+                    <span class="material-symbols-outlined text-[48px]">check_circle</span>
+                    <span class="font-bold">Content Approved</span>
+                </div>`;
+                setTimeout(() => card.remove(), 1000);
+            });
+        });
+
+        // Helper for selector
+        function findByText(selector, text) {
+            return Array.from(document.querySelectorAll(selector)).find(el => el.textContent.includes(text));
+        }
+    </script>
+</body></html>
