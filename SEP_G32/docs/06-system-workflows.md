@@ -1,16 +1,23 @@
 # 04-system-workflows.md
 
-## 1. Purpose
+# 1. Purpose
 
 This document defines the major business workflows and state transitions within the Online Psychological Counseling Booking System (OPCBS).
 
-The workflows described in this document serve as the primary reference for implementing business logic, status management, notification triggers, and system validations.
+The workflows described in this document serve as the primary reference for:
+
+* Business Logic Implementation
+* Status Management
+* Notification Triggers
+* API Design
+* Validation Rules
+* Backend Workflow Processing
 
 ---
 
 # 2. Authentication Workflow
 
-## 2.1 User Registration
+## 2.1 Registration Workflow
 
 ```text
 Guest
@@ -19,35 +26,51 @@ Register Account
 ↓
 System Generates OTP
 ↓
-Send OTP Email
+Brevo Sends OTP Email
 ↓
 Verify OTP
 ↓
 Account Activated
 ```
 
-### Alternative Flow
+### Failure Flow
 
 ```text
 Guest
 ↓
 Register Account
 ↓
-OTP Verification Failed
+Invalid OTP
 ↓
 Account Remains Inactive
 ```
 
 ---
 
-## 2.2 Forgot Password
+## 2.2 Google Login Workflow
+
+```text
+Guest
+↓
+Login With Google
+↓
+Google OAuth Authentication
+↓
+User Information Retrieved
+↓
+Account Created / Logged In
+```
+
+---
+
+## 2.3 Forgot Password Workflow
 
 ```text
 User
 ↓
 Request Password Reset
 ↓
-System Generates OTP
+Generate OTP
 ↓
 Send OTP Email
 ↓
@@ -62,7 +85,7 @@ Password Updated
 
 # 3. Doctor Verification Workflow
 
-## 3.1 Doctor Registration Process
+## 3.1 Verification Submission
 
 ```text
 Doctor
@@ -78,7 +101,7 @@ Submitted
 
 ---
 
-## 3.2 Verification Review Process
+## 3.2 Verification Review
 
 ```text
 Submitted
@@ -87,7 +110,7 @@ Customer Support Review
 ↓
 Approved
 ↓
-Doctor Account Activated
+Doctor Verified
 ```
 
 ### Rejection Flow
@@ -101,421 +124,69 @@ Rejected
 ↓
 Doctor Updates Information
 ↓
-Resubmitted
+Submit Verification Request
 ↓
-Approved / Rejected
+Submitted
 ```
 
 ---
 
-## 3.3 Doctor Verification Status
+## 3.3 Verification Status
 
-| Status      | Description                        |
-| ----------- | ---------------------------------- |
-| Draft       | Profile is incomplete              |
-| Submitted   | Waiting for review                 |
-| Approved    | Verification successful            |
-| Rejected    | Verification failed                |
-| Resubmitted | Updated and resubmitted for review |
-
----
-
-# 4. Appointment Booking Workflow
-
-## 4.1 Guest Booking
-
-```text
-Guest
-↓
-View Doctor Profile
-↓
-View Doctor Schedule
-↓
-Select Available Slot
-↓
-Enter Booking Information
-↓
-Submit Booking
-↓
-System Generates Booking Code
-↓
-Appointment Status = Pending
-↓
-Booking Confirmation Email Sent
-```
+| Status    |
+| --------- |
+| Draft     |
+| Submitted |
+| Approved  |
+| Rejected  |
 
 ---
 
-## 4.2 Patient Booking
+# 4. Doctor Service Package Workflow
 
-```text
-Patient
-↓
-View Doctor Profile
-↓
-Select Available Slot
-↓
-Submit Booking
-↓
-Appointment Status = Pending
-↓
-Booking Confirmation Email Sent
-```
-
----
-
-## 4.3 Appointment Approval Process
-
-```text
-Pending
-↓
-Doctor Reviews Request
-↓
-Approved
-↓
-Approval Notification Sent
-```
-
-### Rejection Flow
-
-```text
-Pending
-↓
-Doctor Reviews Request
-↓
-Rejected
-↓
-Rejection Notification Sent
-```
-
-### Cancellation Flow
-
-```text
-Pending / Approved
-↓
-Patient Cancels Appointment
-↓
-Cancelled
-```
-
----
-
-# 5. Appointment Lifecycle Workflow
-
-## 5.1 Appointment Status Flow
-
-```text
-Pending
-↓
-Approved
-↓
-InProgress
-↓
-Completed
-```
-
-### Rejection Flow
-
-```text
-Pending
-↓
-Rejected
-```
-
-### Cancellation Flow
-
-```text
-Pending / Approved
-↓
-Cancelled
-```
-
----
-
-## 5.2 Appointment Status Definitions
-
-| Status     | Description               |
-| ---------- | ------------------------- |
-| Pending    | Waiting for doctor review |
-| Approved   | Approved by doctor        |
-| Rejected   | Rejected by doctor        |
-| InProgress | Consultation is ongoing   |
-| Completed  | Consultation finished     |
-| Cancelled  | Appointment cancelled     |
-
----
-
-# 6. Schedule Management Workflow
-
-## 6.1 Schedule Configuration
+## 4.1 Purchase Service Package
 
 ```text
 Doctor
 ↓
-Configure Working Days
+Select Service Package
 ↓
-Configure Working Hours
-↓
-Configure Slot Duration
-↓
-Save Schedule
-↓
-System Generates Appointment Slots
-```
-
----
-
-## 6.2 Slot Generation Process
-
-```text
-Schedule Saved
-↓
-Generate Available Slots
-↓
-Store Slots
-↓
-Display Booking Calendar
-```
-
----
-
-# 7. Appointment Slot Workflow
-
-## 7.1 Slot Status Flow
-
-```text
-Available
-↓
-Booked
-↓
-Completed
-```
-
-### Cancellation Flow
-
-```text
-Booked
-↓
-Cancelled
-```
-
-### Expiration Flow
-
-```text
-Available
-↓
-Expired
-```
-
-### Blocked Flow
-
-```text
-Available
-↓
-Blocked
-```
-
----
-
-## 7.2 Slot Status Definitions
-
-| Status    | Description                             |
-| --------- | --------------------------------------- |
-| Available | Ready for booking                       |
-| Booked    | Reserved by appointment                 |
-| Completed | Consultation completed                  |
-| Cancelled | Released due to cancellation            |
-| Expired   | Slot date/time passed                   |
-| Blocked   | Unavailable due to doctor configuration |
-
----
-
-# 8. Treatment Package Workflow
-
-## 8.1 Package Proposal Process
-
-```text
-Doctor
-↓
-Create Treatment Package
-↓
-Assign To Patient
-↓
-Assigned
-```
-
----
-
-## 8.2 Patient Decision Process
-
-```text
-Assigned
-↓
-Patient Accepts
-↓
-Accepted
-↓
-Active
-```
-
-### Rejection Flow
-
-```text
-Assigned
-↓
-Patient Rejects
-↓
-Rejected
-```
-
----
-
-## 8.3 Package Completion Process
-
-```text
-Active
-↓
-All Sessions Consumed
-↓
-Completed
-```
-
-### Expiration Flow
-
-```text
-Active
-↓
-Validity Period Exceeded
-↓
-Expired
-```
-
-### Cancellation Flow
-
-```text
-Assigned / Active
-↓
-Cancelled
-```
-
----
-
-## 8.4 Package Status Definitions
-
-| Status    | Description                 |
-| --------- | --------------------------- |
-| Created   | Package created             |
-| Assigned  | Assigned to patient         |
-| Accepted  | Accepted by patient         |
-| Active    | Currently usable            |
-| Completed | All sessions used           |
-| Expired   | Validity period ended       |
-| Rejected  | Rejected by patient         |
-| Cancelled | Cancelled before completion |
-
----
-
-# 9. Blog Moderation Workflow
-
-## 9.1 Blog Publishing Process
-
-```text
-Doctor
-↓
-Create Blog
-↓
-Draft
-↓
-Submit For Review
-↓
-PendingReview
-↓
-Customer Support Review
-↓
-Published
-```
-
----
-
-## 9.2 Blog Rejection Process
-
-```text
-PendingReview
-↓
-Rejected
-↓
-Doctor Updates Content
-↓
-PendingReview
-```
-
----
-
-## 9.3 Blog Archiving Process
-
-```text
-Published
-↓
-Archived
-```
-
----
-
-## 9.4 Blog Status Definitions
-
-| Status        | Description             |
-| ------------- | ----------------------- |
-| Draft         | Being edited            |
-| PendingReview | Waiting for moderation  |
-| Published     | Visible to users        |
-| Rejected      | Rejected by moderator   |
-| Archived      | Hidden from public view |
-
----
-
-# 10. Subscription Workflow
-
-## 10.1 Subscription Purchase Process
-
-```text
-Doctor
-↓
-Select Subscription Package
-↓
-Proceed To Payment
+Create Payment Request
 ↓
 PendingPayment
 ```
 
 ---
 
-## 10.2 Successful Payment Flow
+## 4.2 Successful Payment
 
 ```text
 PendingPayment
 ↓
-Payment Successful
+VNPay Success
 ↓
 Active
 ↓
-Doctor Profile Available For Booking
+Doctor Can Receive Bookings
+↓
+Doctor Visible In Search Results
 ```
 
 ---
 
-## 10.3 Failed Payment Flow
+## 4.3 Failed Payment
 
 ```text
 PendingPayment
 ↓
-Payment Failed
+VNPay Failed
 ↓
 Cancelled
 ```
 
 ---
 
-## 10.4 Expiration Flow
+## 4.4 Expiration Flow
 
 ```text
 Active
@@ -529,18 +200,342 @@ Doctor Hidden From Search Results
 
 ---
 
-# 11. Payment Workflow
+## 4.5 Service Package Status
 
-## 11.1 Subscription Payment
+| Status         |
+| -------------- |
+| PendingPayment |
+| Active         |
+| Expired        |
+| Cancelled      |
+
+---
+
+# 5. Appointment Booking Workflow
+
+## Business Rule
+
+Before booking is allowed:
+
+```text
+Doctor Verification Status = Approved
+AND
+Doctor Service Package Status = Active
+```
+
+---
+
+## 5.1 Guest Booking
+
+```text
+Guest
+↓
+View Doctor Profile
+↓
+View Schedule
+↓
+Select Time Slot
+↓
+Enter Booking Information
+↓
+Submit Booking
+↓
+Generate Booking Code
+↓
+Appointment Status = Pending
+↓
+Confirmation Email Sent
+```
+
+---
+
+## 5.2 Patient Booking
+
+```text
+Patient
+↓
+Select Doctor
+↓
+Select Time Slot
+↓
+Submit Booking
+↓
+Appointment Status = Pending
+↓
+Confirmation Email Sent
+```
+
+---
+
+## 5.3 Doctor Review
+
+```text
+Pending
+↓
+Doctor Reviews Request
+↓
+Approved
+```
+
+### Rejection Flow
+
+```text
+Pending
+↓
+Doctor Reviews Request
+↓
+Rejected
+```
+
+---
+
+## 5.4 Cancellation Flow
+
+```text
+Pending / Approved
+↓
+Patient Cancels
+↓
+Cancelled
+```
+
+---
+
+# 6. Appointment Lifecycle Workflow
+
+## Appointment Status Flow
+
+```text
+Pending
+↓
+Approved
+↓
+InProgress
+↓
+Completed
+```
+
+### Alternative Flows
+
+```text
+Pending
+↓
+Rejected
+```
+
+```text
+Pending / Approved
+↓
+Cancelled
+```
+
+---
+
+## Appointment Status Definitions
+
+| Status     |
+| ---------- |
+| Pending    |
+| Approved   |
+| Rejected   |
+| InProgress |
+| Completed  |
+| Cancelled  |
+
+---
+
+# 7. Consultation Workflow
+
+## Consultation Process
+
+```text
+Approved Appointment
+↓
+Consultation Starts
+↓
+InProgress
+↓
+Doctor Creates Consultation Record
+↓
+Consultation Completed
+↓
+Completed
+```
+
+---
+
+## Consultation Record Lifecycle
+
+```text
+Create Consultation Record
+↓
+Save Notes
+↓
+Save Recommendations
+↓
+Update Follow-Up Information
+```
+
+---
+
+# 8. Treatment Package Workflow
+
+## 8.1 Package Assignment
 
 ```text
 Doctor
 ↓
-Select Subscription Package
+Create Treatment Package
+↓
+Assign To Patient
+↓
+Assigned
+```
+
+---
+
+## 8.2 Patient Decision
+
+```text
+Assigned
+↓
+Accept
+↓
+Accepted
+↓
+Active
+```
+
+### Rejection Flow
+
+```text
+Assigned
+↓
+Reject
+↓
+Rejected
+```
+
+---
+
+## 8.3 Completion Flow
+
+```text
+Active
+↓
+All Sessions Used
+↓
+Completed
+```
+
+---
+
+## 8.4 Expiration Flow
+
+```text
+Active
+↓
+Expiration Date Reached
+↓
+Expired
+```
+
+---
+
+## 8.5 Cancellation Flow
+
+```text
+Assigned / Active
+↓
+Cancelled
+```
+
+---
+
+## Treatment Package Status
+
+| Status    |
+| --------- |
+| Created   |
+| Assigned  |
+| Accepted  |
+| Active    |
+| Completed |
+| Expired   |
+| Rejected  |
+| Cancelled |
+
+---
+
+# 9. Blog Workflow
+
+## 9.1 Blog Submission
+
+```text
+Doctor
+↓
+Create Blog
+↓
+Draft
+↓
+Submit Blog
+↓
+Submitted
+```
+
+---
+
+## 9.2 Blog Approval
+
+```text
+Submitted
+↓
+Customer Support Review
+↓
+Approved
+↓
+Published Automatically
+```
+
+---
+
+## 9.3 Blog Rejection
+
+```text
+Submitted
+↓
+Rejected
+↓
+Doctor Updates Content
+↓
+Draft
+```
+
+---
+
+## Blog Status
+
+| Status    |
+| --------- |
+| Draft     |
+| Submitted |
+| Approved  |
+| Rejected  |
+
+---
+
+# 10. Payment Workflow
+
+## Service Package Payment
+
+```text
+Doctor
+↓
+Select Service Package
 ↓
 Create Payment Request
 ↓
-Redirect To VNPAY
+Redirect To VNPay
 ↓
 Payment Processing
 ↓
@@ -550,11 +545,11 @@ Return Payment Result
 ### Success
 
 ```text
-Payment Successful
-↓
-Activate Subscription
+Payment Success
 ↓
 Store Transaction
+↓
+Activate Service Package
 ```
 
 ### Failure
@@ -564,69 +559,82 @@ Payment Failed
 ↓
 Store Transaction
 ↓
-Subscription Remains Inactive
+Service Package Remains Inactive
 ```
 
 ---
 
-# 12. Notification Workflow
+# 11. Notification Workflow
 
-## 12.1 Email Notification Process
+## Notification Process
 
 ```text
 Business Event Triggered
 ↓
 Create Notification
 ↓
-Queue Email
-↓
 Send Email
 ↓
-Success
-```
-
-### Retry Flow
-
-```text
-Send Email
+Brevo Processing
 ↓
-Failed
-↓
-Retry
-↓
-Success / Failed
+Delivered
 ```
 
 ---
 
-## 12.2 Notification Triggers
+## Notification Triggers
 
-| Event                        | Notification                     |
-| ---------------------------- | -------------------------------- |
-| User Registration            | OTP Email                        |
-| Forgot Password              | Reset OTP Email                  |
-| Booking Created              | Booking Confirmation             |
-| Appointment Approved         | Approval Notification            |
-| Appointment Rejected         | Rejection Notification           |
-| Appointment Cancelled        | Cancellation Notification        |
-| Appointment Reminder         | Reminder Email (24 Hours Before) |
-| Doctor Verification Approved | Verification Result              |
-| Doctor Verification Rejected | Verification Result              |
-| Subscription Activated       | Subscription Notification        |
-| Subscription Expiring Soon   | Expiration Reminder              |
-| Package Assigned             | Package Proposal Notification    |
+| Event                      | Notification                 |
+| -------------------------- | ---------------------------- |
+| Register Account           | OTP Email                    |
+| Forgot Password            | Reset OTP                    |
+| Booking Created            | Booking Confirmation         |
+| Appointment Approved       | Appointment Approved         |
+| Appointment Rejected       | Appointment Rejected         |
+| Appointment Cancelled      | Appointment Cancelled        |
+| Appointment Reminder       | Reminder Email               |
+| Verification Approved      | Verification Result          |
+| Verification Rejected      | Verification Result          |
+| Service Package Activated  | Service Package Notification |
+| Service Package Expiring   | Expiration Reminder          |
+| Treatment Package Assigned | Package Proposal             |
+| Treatment Package Accepted | Package Accepted             |
+| Treatment Package Rejected | Package Rejected             |
+
+---
+
+# 12. Workflow Dependencies
+
+| Workflow            | Depends On                                  |
+| ------------------- | ------------------------------------------- |
+| Appointment Booking | Doctor Verification, Active Service Package |
+| Consultation        | Approved Appointment                        |
+| Treatment Package   | Completed Consultation                      |
+| Blog Submission     | Verified Doctor                             |
+| Service Package     | Payment Workflow                            |
+| Notification        | Business Events                             |
 
 ---
 
-# 13. System Workflow Dependencies
+# 13. Key Business Rules
 
-| Workflow             | Depends On                               |
-| -------------------- | ---------------------------------------- |
-| Appointment Booking  | Doctor Verification, Schedule Management |
-| Appointment Approval | Appointment Booking                      |
-| Treatment Package    | Completed Consultations                  |
-| Blog Moderation      | Doctor Verification                      |
-| Subscription         | Payment Workflow                         |
-| Notification         | All Business Events                      |
+BR-01
+Only verified doctors can appear in doctor search results.
 
----
+BR-02
+Only doctors with an active service package can receive bookings.
+
+BR-03
+A doctor cannot have overlapping appointments.
+
+BR-04
+A patient can only review completed appointments.
+
+BR-05
+Treatment packages can only be assigned by doctors.
+
+BR-06
+Blogs must be approved before publication.
+
+BR-07
+All critical actions must generate audit logs.

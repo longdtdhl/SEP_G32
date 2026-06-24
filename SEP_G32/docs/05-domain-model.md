@@ -2,9 +2,15 @@
 
 # 1. Purpose
 
-This document defines the core business entities of the Online Psychological Counseling Booking System (OPCBS), their responsibilities, and relationships.
+This document defines the core business entities of the Online Psychological Counseling Booking System (OPCBS), their responsibilities, relationships, and business boundaries.
 
-The domain model serves as the primary reference for backend entities, database design, API development, and business logic implementation.
+The domain model serves as the primary reference for:
+
+* Database Design
+* Entity Framework Models
+* Business Services
+* API Design
+* Application Workflows
 
 ---
 
@@ -13,41 +19,40 @@ The domain model serves as the primary reference for backend entities, database 
 The OPCBS domain is organized into the following business areas:
 
 1. Identity & Access Management
-2. Doctor Management
+2. Doctor Discovery
 3. Appointment Management
-4. Patient Records
-5. Treatment Packages
+4. Consultation Records
+5. Treatment Package Management
 6. Blog Management
 7. Doctor Verification
-8. Subscription Management
+8. Service Package Management
 9. Payment Management
 10. Notification Management
 
 ---
 
-# 3. Domain Entities
+# 3. Identity & Access Domain
 
 ## 3.1 User
 
 ### Purpose
 
-Represents an authenticated account within the system.
+Represents an authenticated account within the platform.
 
 ### Responsibilities
 
 * Authentication
 * Authorization
-* Account management
-* Password management
+* Profile ownership
+* Account lifecycle management
 
 ### Relationships
 
-| Relationship          | Cardinality |
-| --------------------- | ----------- |
-| User → Role           | Many-to-One |
-| User → DoctorProfile  | One-to-One  |
-| User → PatientProfile | One-to-One  |
-| User → Notifications  | One-to-Many |
+| Relationship          | Cardinality           |
+| --------------------- | --------------------- |
+| User → Role           | Many-to-One           |
+| User → DoctorProfile  | One-to-One (Optional) |
+| User → PatientProfile | One-to-One (Optional) |
 
 ---
 
@@ -55,7 +60,7 @@ Represents an authenticated account within the system.
 
 ### Purpose
 
-Defines access permissions within the platform.
+Defines system permissions and access boundaries.
 
 ### Roles
 
@@ -83,8 +88,8 @@ Stores patient-specific information.
 
 * Personal information
 * Appointment ownership
-* Package ownership
-* Feedback submission
+* Treatment package ownership
+* Review ownership
 
 ### Relationships
 
@@ -92,7 +97,6 @@ Stores patient-specific information.
 | ---------------------------------- | ----------- |
 | PatientProfile → User              | One-to-One  |
 | PatientProfile → Appointments      | One-to-Many |
-| PatientProfile → PatientRecords    | One-to-Many |
 | PatientProfile → Reviews           | One-to-Many |
 | PatientProfile → TreatmentPackages | One-to-Many |
 
@@ -102,27 +106,27 @@ Stores patient-specific information.
 
 ### Purpose
 
-Stores professional information of verified doctors.
+Stores professional information for verified doctors.
 
 ### Responsibilities
 
 * Professional profile
-* Consultation services
-* Working schedules
-* Package management
-* Blog management
+* Schedule management
+* Consultation management
+* Blog ownership
+* Treatment package ownership
 
 ### Relationships
 
-| Relationship                    | Cardinality  |
-| ------------------------------- | ------------ |
-| DoctorProfile → User            | One-to-One   |
-| DoctorProfile → Specializations | Many-to-Many |
-| DoctorProfile → Schedules       | One-to-Many  |
-| DoctorProfile → Appointments    | One-to-Many  |
-| DoctorProfile → Blogs           | One-to-Many  |
-| DoctorProfile → Reviews         | One-to-Many  |
-| DoctorProfile → Subscriptions   | One-to-Many  |
+| Relationship                          | Cardinality  |
+| ------------------------------------- | ------------ |
+| DoctorProfile → User                  | One-to-One   |
+| DoctorProfile → Specializations       | Many-to-Many |
+| DoctorProfile → Appointments          | One-to-Many  |
+| DoctorProfile → ConsultationRecords   | One-to-Many  |
+| DoctorProfile → Blogs                 | One-to-Many  |
+| DoctorProfile → TreatmentPackages     | One-to-Many  |
+| DoctorProfile → DoctorServicePackages | One-to-Many  |
 
 ---
 
@@ -130,7 +134,7 @@ Stores professional information of verified doctors.
 
 ### Purpose
 
-Represents a medical or psychological specialization.
+Represents a psychological specialization.
 
 ### Relationships
 
@@ -146,48 +150,24 @@ Represents a medical or psychological specialization.
 
 ### Purpose
 
-Defines a doctor's availability configuration.
+Defines doctor availability.
 
 ### Responsibilities
 
 * Working days
 * Working hours
+* Consultation duration
 * Slot generation
 
 ### Relationships
 
-| Relationship                | Cardinality |
-| --------------------------- | ----------- |
-| Schedule → DoctorProfile    | Many-to-One |
-| Schedule → AppointmentSlots | One-to-Many |
+| Relationship             | Cardinality |
+| ------------------------ | ----------- |
+| Schedule → DoctorProfile | Many-to-One |
 
 ---
 
-## 4.2 AppointmentSlot
-
-### Purpose
-
-Represents a bookable consultation slot.
-
-### Status
-
-* Available
-* Booked
-* Cancelled
-* Expired
-* Blocked
-* Completed
-
-### Relationships
-
-| Relationship                  | Cardinality |
-| ----------------------------- | ----------- |
-| AppointmentSlot → Schedule    | Many-to-One |
-| AppointmentSlot → Appointment | One-to-One  |
-
----
-
-## 4.3 Appointment
+## 4.2 Appointment
 
 ### Purpose
 
@@ -208,23 +188,23 @@ Represents a consultation booking.
 | -------------------------------- | ----------- |
 | Appointment → PatientProfile     | Many-to-One |
 | Appointment → DoctorProfile      | Many-to-One |
-| Appointment → AppointmentSlot    | One-to-One  |
-| Appointment → Review             | One-to-One  |
 | Appointment → ConsultationRecord | One-to-One  |
+| Appointment → Review             | One-to-One  |
 
 ---
 
-# 5. Patient Record Domain
+# 5. Consultation Domain
 
 ## 5.1 ConsultationRecord
 
 ### Purpose
 
-Stores consultation outcomes.
+Stores consultation outcomes and recommendations.
 
 ### Responsibilities
 
 * Consultation notes
+* Psychological assessment
 * Treatment recommendations
 * Follow-up notes
 
@@ -244,7 +224,7 @@ Stores consultation outcomes.
 
 ### Purpose
 
-Represents a treatment or consultation package proposed by a doctor.
+Represents a counseling package created by a doctor and assigned to a patient.
 
 ### Status
 
@@ -272,15 +252,14 @@ Represents a treatment or consultation package proposed by a doctor.
 
 ### Purpose
 
-Represents educational content created by doctors.
+Represents educational content published by doctors.
 
 ### Status
 
 * Draft
-* PendingReview
-* Published
+* Submitted
+* Approved
 * Rejected
-* Archived
 
 ### Relationships
 
@@ -295,7 +274,7 @@ Represents educational content created by doctors.
 
 ### Purpose
 
-Represents patient comments on blog articles.
+Represents patient comments on blog posts.
 
 ### Relationships
 
@@ -312,7 +291,7 @@ Represents patient comments on blog articles.
 
 ### Purpose
 
-Represents ratings and feedback submitted after completed consultations.
+Represents ratings and feedback after completed consultations.
 
 ### Relationships
 
@@ -330,7 +309,7 @@ Represents ratings and feedback submitted after completed consultations.
 
 ### Purpose
 
-Represents a doctor's verification application.
+Represents a doctor verification application.
 
 ### Status
 
@@ -338,7 +317,6 @@ Represents a doctor's verification application.
 * Submitted
 * Approved
 * Rejected
-* Resubmitted
 
 ### Relationships
 
@@ -363,27 +341,27 @@ Stores uploaded professional certificates.
 
 ---
 
-# 10. Subscription Domain
+# 10. Service Package Domain
 
-## 10.1 SubscriptionPlan
+## 10.1 ServicePackage
 
 ### Purpose
 
-Represents a purchasable service package for doctors.
+Represents a subscription plan offered by OPCBS.
 
 ### Relationships
 
 | Relationship                           | Cardinality |
 | -------------------------------------- | ----------- |
-| SubscriptionPlan → DoctorSubscriptions | One-to-Many |
+| ServicePackage → DoctorServicePackages | One-to-Many |
 
 ---
 
-## 10.2 DoctorSubscription
+## 10.2 DoctorServicePackage
 
 ### Purpose
 
-Represents a doctor's purchased subscription.
+Represents a doctor's purchased service package.
 
 ### Status
 
@@ -394,11 +372,11 @@ Represents a doctor's purchased subscription.
 
 ### Relationships
 
-| Relationship                            | Cardinality |
-| --------------------------------------- | ----------- |
-| DoctorSubscription → DoctorProfile      | Many-to-One |
-| DoctorSubscription → SubscriptionPlan   | Many-to-One |
-| DoctorSubscription → PaymentTransaction | One-to-One  |
+| Relationship                              | Cardinality |
+| ----------------------------------------- | ----------- |
+| DoctorServicePackage → DoctorProfile      | Many-to-One |
+| DoctorServicePackage → ServicePackage     | Many-to-One |
+| DoctorServicePackage → PaymentTransaction | One-to-One  |
 
 ---
 
@@ -408,19 +386,13 @@ Represents a doctor's purchased subscription.
 
 ### Purpose
 
-Stores payment transaction information.
-
-### Responsibilities
-
-* Payment tracking
-* Payment auditing
-* Subscription activation support
+Stores VNPay transaction information.
 
 ### Relationships
 
-| Relationship                            | Cardinality |
-| --------------------------------------- | ----------- |
-| PaymentTransaction → DoctorSubscription | One-to-One  |
+| Relationship                              | Cardinality |
+| ----------------------------------------- | ----------- |
+| PaymentTransaction → DoctorServicePackage | One-to-One  |
 
 ---
 
@@ -432,12 +404,12 @@ Stores payment transaction information.
 
 Represents system-generated notifications.
 
-### Responsibilities
+### Types
 
-* OTP delivery
-* Appointment notifications
-* Verification notifications
-* Subscription notifications
+* OTP
+* Appointment
+* Verification
+* Subscription
 
 ### Relationships
 
@@ -455,11 +427,10 @@ The following entities are considered aggregate roots:
 * DoctorProfile
 * PatientProfile
 * Appointment
+* ConsultationRecord
 * TreatmentPackage
 * BlogPost
 * VerificationRequest
-* DoctorSubscription
+* DoctorServicePackage
 
-These entities act as the primary entry points for business operations and transaction boundaries.
-
----
+These entities define transaction boundaries and business ownership within OPCBS.
