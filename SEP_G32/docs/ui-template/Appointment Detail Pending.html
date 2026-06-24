@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Appointment Details - MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              primary: '#4E8B70',
+              secondary: '#DCEEE4',
+              bg: '#FAFBFA',
+              card: '#FFFFFF',
+              text: '#1F2937',
+              subtext: '#6B7280',
+            }
+          },
+          borderRadius: {
+            'card': '20px',
+            'btn': '12px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styles">
+    body {
+      background-color: #FAFBFA;
+      color: #1F2937;
+    }
+    .dashed-border {
+      background-image: repeating-linear-gradient(to right, #D1D5DB 0, #D1D5DB 8px, transparent 8px, transparent 16px),
+                        repeating-linear-gradient(to right, #D1D5DB 0, #D1D5DB 8px, transparent 8px, transparent 16px),
+                        repeating-linear-gradient(to bottom, #D1D5DB 0, #D1D5DB 8px, transparent 8px, transparent 16px),
+                        repeating-linear-gradient(to bottom, #D1D5DB 0, #D1D5DB 8px, transparent 8px, transparent 16px);
+      background-position: left top, left bottom, left top, right top;
+      background-size: 100% 2px, 100% 2px, 2px 100%, 2px 100%;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-sans">
+<!-- BEGIN: MainHeader -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-20">
+<!-- Logo -->
+<div class="flex-shrink-0 flex items-center">
+<img alt="MindBridge Logo" class="h-10 w-auto" src="https://lh3.googleusercontent.com/aida/AP1WRLvbrimLjhP5Fx4lVjp1P6bi-ZMsmNaZvacOCMRyNaVWMQlKYgESgro1G1D2O7thodSgv7Cwd5RjyqiZSRkn9f6K5vSsOlwVrhw8yFgxTmQwQ9TairsSReTw4czmtGUsgQQ6b-w_OvKRhAjiAeUw8neWybJRVxZfXDjZIAiT2C4P5NrsizPun88qVoPv3Q16Ub_69AH8ql_ncb0Vk3n2jOdAIcIludyuxUmW4fNAeKY8eLUhujzhQ6HzoDE"/>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex space-x-8">
+<a class="text-brand-subtext hover:text-brand-text px-3 py-2 text-sm font-medium" href="#">Home</a>
+<a class="text-brand-subtext hover:text-brand-text px-3 py-2 text-sm font-medium" href="#">Specialists</a>
+<a class="text-brand-subtext hover:text-brand-text px-3 py-2 text-sm font-medium" href="#">Schedules</a>
+<a class="text-brand-subtext hover:text-brand-text px-3 py-2 text-sm font-medium" href="#">Case Records</a>
+<a class="text-brand-text border-b-2 border-brand-primary px-3 py-2 text-sm font-medium" href="#">Appointment List</a>
+</nav>
+<!-- Right Side Header Items -->
+<div class="flex items-center space-x-6">
+<!-- Search -->
+<div class="relative hidden sm:block">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-brand-primary focus:border-brand-primary sm:text-sm transition duration-150 ease-in-out" placeholder="Search" type="text"/>
+</div>
+<!-- Notification -->
+<button class="relative p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none">
+<span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
+<svg class="h-6 w-6 text-brand-text" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<!-- User Profile -->
+<div class="relative">
+<button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition duration-150 ease-in-out">
+<img alt="User Avatar" class="h-9 w-9 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDrJV8kpc-aTxc8HIIFyWrHJ9BP4ei6cKiJiCicvglfb0nD5fg-z04q9vszhIvUayAP7RARoO2kV502h28g2_U62V7vuZ0eNZmRjYv2Xm9d57R6PfbQwhg9mmhCYoM_DZma50Yu8mKlpxs5-S2jdFCUZ653ppTF-cxJ_bTIUUR8owjK05wrTiTGL1idzMfl7WEBY6481RmV0SyXWaOqWNFrPhn6vCmFluP8gX7qB7GgN6FP7Tk88MRu_ilC-bFBoJjsnSfTNYxdK4"/>
+</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+<!-- Back Button -->
+<div class="mb-6">
+<button class="flex items-center text-brand-text hover:text-brand-primary font-medium transition-colors">
+<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+        Back
+      </button>
+</div>
+<!-- Main Card -->
+<div class="bg-brand-card rounded-card shadow-sm border border-gray-100 overflow-hidden">
+<div class="p-8 md:p-10">
+<!-- BEGIN: Appointment Summary Section -->
+<section class="mb-10">
+<h1 class="text-2xl font-bold text-brand-text mb-6">Appointment Summary</h1>
+<div class="dashed-border rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gray-50/50">
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Counselor</span>
+<span class="text-brand-text font-medium text-lg">Dr. Sarah Jenkins</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Date</span>
+<span class="text-brand-text font-medium text-lg">October 24, 2023</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Time</span>
+<span class="text-brand-text font-medium text-lg">10:00 AM - 11:00 AM</span>
+</div>
+</div>
+</section>
+<!-- END: Appointment Summary Section -->
+<!-- BEGIN: Patient Information Section -->
+<section>
+<div class="border-b border-gray-200 pb-4 mb-8">
+<h2 class="text-xl font-bold text-brand-text">Patient Information</h2>
+</div>
+<!-- Basic Info Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Full name</span>
+<span class="text-brand-text font-medium">Nguyen Van A</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Date of Birth</span>
+<span class="text-brand-text font-medium">01/01/2001</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Gender</span>
+<span class="text-brand-text font-medium">Male</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Email</span>
+<span class="text-brand-text font-medium">Email@email.com</span>
+</div>
+<div>
+<span class="text-sm text-brand-subtext block mb-1">Phone number</span>
+<span class="text-brand-text font-medium">+01 000000000</span>
+</div>
+</div>
+<!-- Text Areas -->
+<div class="space-y-8">
+<!-- Reason for Visit -->
+<div>
+<h3 class="text-sm text-brand-subtext mb-2">Reason for Visit</h3>
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+<p class="text-brand-text leading-relaxed">
+                  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+</div>
+</div>
+<!-- Medical History -->
+<div>
+<h3 class="text-sm text-brand-subtext mb-2">Medical History</h3>
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+<p class="text-brand-text leading-relaxed">
+                  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                </p>
+</div>
+</div>
+<!-- Previous Therapy Experience -->
+<div>
+<h3 class="text-sm text-brand-subtext mb-2">Previous Therapy Experience (if any)</h3>
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+<p class="text-brand-text leading-relaxed">
+                  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Patient Information Section -->
+<!-- BEGIN: Action Buttons -->
+<div class="mt-12 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
+<button class="px-8 py-3 rounded-btn border border-gray-300 text-brand-text font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">
+            Reject
+          </button>
+<button class="px-8 py-3 rounded-btn bg-brand-primary text-white font-medium hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">
+            Accept
+          </button>
+</div>
+<!-- END: Action Buttons -->
+</div>
+</div>
+</main>
+<!-- END: MainContent -->
+</body></html>
