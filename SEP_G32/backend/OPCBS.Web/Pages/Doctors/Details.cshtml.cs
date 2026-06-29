@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Doctors;
@@ -7,17 +8,20 @@ namespace OPCBS.Web.Pages.Doctors;
 public class DetailsModel : PageModel
 {
     private readonly IDoctorApiService _doctorService;
-    public OPCBS.Web.DTOs.DoctorDto? Doctor { get; set; }
+    public DoctorDto? Doctor { get; set; }
+    public List<ReviewDto> Reviews { get; set; } = new();
 
-    public DetailsModel(IDoctorApiService doctorService)
-    {
-        _doctorService = doctorService;
-    }
+    public DetailsModel(IDoctorApiService doctorService) { _doctorService = doctorService; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        Doctor = await _doctorService.GetByIdAsync(id);
-        if (Doctor == null) return NotFound();
+        var (doc, error) = await _doctorService.GetByIdAsync(id);
+        if (doc == null) return NotFound();
+        Doctor = doc;
+
+        try { var (reviews, _, _) = await _doctorService.GetReviewsAsync(id); Reviews = reviews; }
+        catch { /* Reviews may fail */ }
+
         return Page();
     }
 }

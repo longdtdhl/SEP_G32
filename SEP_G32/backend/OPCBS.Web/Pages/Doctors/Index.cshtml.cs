@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Doctors;
@@ -6,7 +8,12 @@ namespace OPCBS.Web.Pages.Doctors;
 public class IndexModel : PageModel
 {
     private readonly IDoctorApiService _doctorService;
-    public IEnumerable<OPCBS.Web.DTOs.DoctorDto> Doctors { get; set; } = Enumerable.Empty<OPCBS.Web.DTOs.DoctorDto>();
+
+    public List<DoctorListItemDto> Doctors { get; set; } = new();
+    public PaginationDto? Pagination { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DoctorFilterDto Filter { get; set; } = new();
 
     public IndexModel(IDoctorApiService doctorService)
     {
@@ -15,6 +22,12 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        Doctors = await _doctorService.GetAllAsync();
+        try
+        {
+            var (data, pagination, _) = await _doctorService.GetAllAsync(Filter);
+            Doctors = data;
+            Pagination = pagination;
+        }
+        catch { /* API may not be running */ }
     }
 }

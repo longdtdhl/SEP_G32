@@ -1,0 +1,35 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Subscriptions.StatusModel
+@{ ViewData["Title"] = "Gói đăng ký"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1>Gói đăng ký hiện tại</h1>
+    <a asp-page="/Doctor/Subscriptions/History" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock-history me-1"></i>Lịch sử</a>
+</div>
+
+@if (Model.Subscription != null)
+{
+    var s = Model.Subscription;
+    var isActive = s.Status == "Active";
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-4">
+            <span class="badge @(isActive ? "bg-success" : "bg-secondary") mb-2 fs-6">@(s.Status ?? "N/A")</span>
+            <h2 class="text-primary">@(s.PackageName ?? "N/A")</h2>
+            <p class="text-muted">Đã thanh toán: <strong>@s.AmountPaid.ToString("N0") ₫</strong></p>
+            <hr />
+            <div class="row g-3 text-start">
+                <div class="col-md-4"><div class="text-muted small">Ngày bắt đầu</div><div>@s.StartDate.ToString("dd/MM/yyyy")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Ngày hết hạn</div><div>@s.EndDate.ToString("dd/MM/yyyy")</div></div>
+                <div class="col-md-4"><div class="text-muted small">Ngày đăng ký</div><div>@s.CreatedAt.ToString("dd/MM/yyyy")</div></div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm"><div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-credit-card-2-front d-block" style="font-size:2.5rem"></i>
+        <p class="mt-2">Bạn chưa có gói đăng ký nào</p>
+        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary">Xem gói dịch vụ</a>
+    </div></div>
+}

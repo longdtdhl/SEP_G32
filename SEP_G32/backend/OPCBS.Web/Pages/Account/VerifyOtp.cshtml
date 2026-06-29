@@ -4,17 +4,26 @@
     ViewData["Title"] = "Verify OTP";
 }
 
-<h2>Verify OTP</h2>
-<form method="post">
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input asp-for="Input.Email" class="form-control" />
-        <span asp-validation-for="Input.Email" class="text-danger"></span>
+<div class="mb-auth-container">
+    <div class="mb-auth-card">
+        <h2>Verify Your Email</h2>
+        <p class="auth-subtitle">We sent a verification code to your email. Please enter it below.</p>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+        <form method="post">
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Code" class="form-label">Verification Code</label>
+                <input asp-for="Input.Code" class="form-control" placeholder="Enter 6-digit code" maxlength="6" style="text-align:center;font-size:1.25rem;letter-spacing:0.5em;" />
+                <span asp-validation-for="Input.Code" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Verify</button>
+        </form>
+        <p class="text-center mt-3" style="font-size:0.875rem;">
+            <i class="bi bi-info-circle me-1"></i>Check the backend console for the OTP code (mock email service).
+        </p>
     </div>
-    <div class="mb-3">
-        <label class="form-label">OTP</label>
-        <input asp-for="Input.Otp" class="form-control" />
-        <span asp-validation-for="Input.Otp" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Verify</button>
-</form>
+</div>

@@ -1,19 +1,37 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Web.DTOs;
+using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
+    private readonly IDoctorApiService _doctorService;
+    private readonly IBlogApiService _blogService;
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public List<DoctorListItemDto> FeaturedDoctors { get; set; } = new();
+    public List<BlogListItemDto> LatestBlogs { get; set; } = new();
+
+    public IndexModel(IDoctorApiService doctorService, IBlogApiService blogService)
     {
-        _logger = logger;
+        _doctorService = doctorService;
+        _blogService = blogService;
     }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
+        try
+        {
+            var (doctors, _, _) = await _doctorService.GetAllAsync(new DoctorFilterDto { PageSize = 4 });
+            FeaturedDoctors = doctors;
+        }
+        catch { /* API may not be running */ }
 
+        try
+        {
+            var (blogs, _, _) = await _blogService.GetAllAsync(new BlogFilterDto { PageSize = 3 });
+            LatestBlogs = blogs;
+        }
+        catch { /* API may not be running */ }
     }
 }

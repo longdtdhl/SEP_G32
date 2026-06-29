@@ -1,0 +1,358 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Case Records | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#404943",
+                    "inverse-primary": "#95d4b5",
+                    "surface-container-low": "#f2f4f0",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#52625a",
+                    "on-tertiary-container": "#fffbff",
+                    "on-secondary-fixed-variant": "#3a4a43",
+                    "on-error": "#ffffff",
+                    "on-background": "#191c1a",
+                    "tertiary": "#894a49",
+                    "primary": "#29674e",
+                    "on-tertiary-fixed-variant": "#6f3535",
+                    "surface-container-high": "#e7e9e5",
+                    "surface-tint": "#2b6950",
+                    "on-tertiary-fixed": "#390b0d",
+                    "secondary-fixed-dim": "#b9cbc1",
+                    "tertiary-fixed-dim": "#ffb3b1",
+                    "secondary-container": "#d5e7dd",
+                    "surface-bright": "#f8faf6",
+                    "surface-variant": "#e1e3df",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#2e312f",
+                    "on-secondary-container": "#586860",
+                    "inverse-on-surface": "#eff1ed",
+                    "outline-variant": "#bfc9c2",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#e1e3df",
+                    "on-surface": "#191c1a",
+                    "primary-fixed": "#b0f0d0",
+                    "on-primary-fixed": "#002115",
+                    "surface-dim": "#d8dbd7",
+                    "tertiary-container": "#a66261",
+                    "surface-container": "#eceeea",
+                    "secondary-fixed": "#d5e7dd",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface": "#f8faf6",
+                    "outline": "#707973",
+                    "primary-container": "#438066",
+                    "tertiary-fixed": "#ffdad8",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f8faf6",
+                    "primary-fixed-dim": "#95d4b5",
+                    "on-secondary-fixed": "#0f1e19",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#0c513a",
+                    "on-primary-container": "#f5fff7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "margin-desktop": "40px",
+                    "section-padding": "80px",
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tree-node-active {
+        background-color: #d5e7dd;
+        color: #29674e;
+        border-radius: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #bfc9c2;
+        border-radius: 10px;
+      }
+      .low-elevation {
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04);
+      }
+      .high-elevation {
+        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop py-4 bg-surface dark:bg-surface-container-highest shadow-sm max-w-full">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">MindBridge</span>
+<nav class="hidden md:flex gap-6"><a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary transition-colors duration-200" href="#">Home</a><a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary transition-colors duration-200" href="#">Specialists</a><a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary transition-colors duration-200" href="#">Schedules</a><a class="text-primary dark:text-primary-fixed-dim font-bold border-b-2 border-primary dark:border-primary-fixed-dim pb-1" href="#">Case Records</a><a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary transition-colors duration-200" href="#">Appointment List</a></nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-container-low border border-outline-variant rounded-full py-2 px-10 text-body-sm focus:ring-2 focus:ring-primary/20 outline-none w-64" placeholder="Search records..." type="text">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-sm" data-icon="search">search</span>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a smiling female mental health professional in a modern, brightly lit office environment. She wears a soft teal blazer that matches the brand's primary green palette. The lighting is soft and natural, creating a warm, trustworthy, and expert atmosphere, reflecting the 'Guided Serenity' aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQQVXAz_S58UvfilH8lw_Mvdo8bv2V5y9EMLPcF9dZHgr76lESTorj033U1DuwkMRDWOCRarnvQkG36TWPFFcImSfXVcyhsxyLg5vEjO4sJAah7cZrM4oaOGGb27Minm2OT93DAEkL32MgXvts4Q5-qQgyi3V9X8DDNtzqbR-qotXdazApTl3J8I5OxF5ieBXnHEK0GUGQi7LYjm_NJA0GbqFO9abLJsCXhOcZZvqj2FAPs8DEWa5j8ZvRHROD7VCgRJjQRg_uUpQ">
+</div>
+</div>
+</header>
+<main class="flex flex-1 pt-[72px] h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-80 bg-surface-container-lowest border-r border-outline-variant p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar shrink-0">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-primary-container transition-all high-elevation active:scale-95">
+<span class="material-symbols-outlined" data-icon="add_notes">add_notes</span>
+<span class="font-label-md text-label-md">Create Case records</span>
+</button>
+<div class="space-y-4">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-2">Navigation</h3>
+<div class="space-y-1">
+<!-- Tree View Root -->
+<div class="flex items-center gap-2 p-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="expand_more">expand_more</span>
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+<span class="font-body-md text-body-md">User 1</span>
+</div>
+<!-- Nested Package -->
+<div class="ml-6 space-y-1">
+<div class="flex items-center gap-2 p-2 tree-node-active cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="expand_more">expand_more</span>
+<span class="material-symbols-outlined text-primary" data-icon="package_2">package_2</span>
+<span class="font-body-md text-body-md font-medium">Package 1</span>
+</div>
+<!-- Sessions -->
+<div class="ml-8 space-y-1 border-l-2 border-primary-container">
+<div class="flex items-center gap-2 p-2 pl-4 hover:bg-surface-container-low rounded-r-lg cursor-pointer transition-colors text-primary font-medium">
+<span class="material-symbols-outlined text-[18px]" data-icon="event_note">event_note</span>
+<span class="font-body-sm text-body-sm">Session 1</span>
+</div>
+<div class="flex items-center gap-2 p-2 pl-4 hover:bg-surface-container-low rounded-r-lg cursor-pointer transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="event_note">event_note</span>
+<span class="font-body-sm text-body-sm">Session 2</span>
+</div>
+<div class="flex items-center gap-2 p-2 pl-4 hover:bg-surface-container-low rounded-r-lg cursor-pointer transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="event_note">event_note</span>
+<span class="font-body-sm text-body-sm">Session 3</span>
+</div>
+</div>
+<div class="flex items-center gap-2 p-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="clinical_notes">clinical_notes</span>
+<span class="font-body-md text-body-md">Individual Consultation</span>
+</div>
+<div class="flex items-center gap-2 p-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="package_2">package_2</span>
+<span class="font-body-md text-body-md">Package 2</span>
+</div>
+</div>
+</div>
+<div class="space-y-1 mt-4">
+<div class="flex items-center gap-2 p-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md text-body-md">User 2</span>
+</div>
+<div class="flex items-center gap-2 p-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md text-body-md">User 3</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<section class="flex-1 bg-surface-container-low p-margin-desktop overflow-y-auto custom-scrollbar">
+<div class="max-w-4xl mx-auto space-y-6">
+<!-- User Header Card -->
+<div class="bg-surface-container-lowest p-6 rounded-[20px] low-elevation flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center gap-5">
+<div class="w-16 h-16 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-4xl" data-icon="account_circle">account_circle</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-3">
+<h1 class="font-headline-md text-headline-md text-on-surface">User 1</h1>
+<span class="px-3 py-1 bg-secondary-container text-primary font-label-sm text-label-sm rounded-full">Client</span>
+</div>
+<div class="flex flex-wrap gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+                                    +1 (555) 012-3456
+                                </div>
+<div class="flex items-center gap-1.5 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-lg" data-icon="mail">mail</span>
+                                    user1@email.com
+                                </div>
+</div>
+</div>
+</div>
+<button class="bg-secondary-container text-on-secondary-container py-2.5 px-5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined" data-icon="recommend">recommend</span>
+                        Recommend a Care Package
+                    </button>
+</div>
+<!-- Case Details Card -->
+<div class="bg-surface-container-lowest p-8 rounded-[20px] high-elevation space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-outline-variant">
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Package Name</p>
+<p class="font-body-lg text-body-lg font-semibold text-primary">Mindfulness Mastery</p>
+</div>
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Package Type</p>
+<p class="font-body-lg text-body-lg text-on-surface">Comprehensive Plan</p>
+</div>
+<div class="space-y-1">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Session 1 Date</p>
+<p class="font-body-lg text-body-lg text-on-surface">Oct 24, 2023 • 10:00 AM</p>
+</div>
+</div>
+<!-- Editable Section: Diagnosis -->
+<div class="group space-y-3 relative p-4 hover:bg-surface-bright rounded-xl transition-colors border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="medical_information">medical_information</span>
+                                Diagnosis
+                            </label>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">Mild anxiety disorder with specific triggers related to workplace performance. Exhibits moderate psychosomatic symptoms including tension headaches and sleep disruption.</p>
+</div>
+<!-- Editable Section: Notes -->
+<div class="group space-y-3 relative p-4 hover:bg-surface-bright rounded-xl transition-colors border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="description">description</span>
+                                Notes
+                            </label>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="bg-surface-container-low p-4 rounded-lg font-body-md text-body-md text-on-surface-variant italic">
+                            "Client mentioned feeling 'overwhelmed by the sheer volume of emails' during the session. We explored grounding techniques that can be done at the desk. Response to Box Breathing was positive."
+                        </div>
+</div>
+<!-- Editable Section: Advice/Exercises -->
+<div class="group space-y-3 relative p-4 hover:bg-surface-bright rounded-xl transition-colors border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="fitness_center">fitness_center</span>
+                                Advice/Exercises
+                            </label>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</div>
+<ul class="list-disc ml-5 space-y-2 font-body-md text-body-md text-on-surface">
+<li>Practice 4-7-8 breathing for 5 minutes before beginning the workday.</li>
+<li>Journal three positive interactions daily to counteract negative bias.</li>
+<li>Scheduled 10-minute 'digital detox' walks every 3 hours.</li>
+</ul>
+</div>
+<div class="flex justify-end gap-4 pt-4">
+<button class="border border-outline-variant text-on-surface-variant px-6 py-2.5 rounded-xl hover:bg-surface-variant transition-all font-label-md text-label-md">Save Draft</button>
+<button class="bg-primary text-on-primary px-8 py-2.5 rounded-xl hover:opacity-90 transition-all font-label-md text-label-md flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="check_circle">check_circle</span>
+                            Finalize Record
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-margin-desktop bg-surface-container-low border-t border-outline-variant flex flex-col md:flex-row justify-between items-center shrink-0">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">MindBridge</span>
+<div class="flex gap-8 mt-4 md:mt-0">
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Support</a>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mt-4 md:mt-0">© 2024 MindBridge. All rights reserved.</p>
+</footer>
+<script>
+        // Micro-interaction for tree-view expansion (visual only)
+        document.querySelectorAll('.material-symbols-outlined[data-icon="expand_more"], .material-symbols-outlined[data-icon="chevron_right"]').forEach(icon => {
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (this.innerText === 'expand_more') {
+                    this.innerText = 'chevron_right';
+                    this.setAttribute('data-icon', 'chevron_right');
+                } else {
+                    this.innerText = 'expand_more';
+                    this.setAttribute('data-icon', 'expand_more');
+                }
+            });
+        });
+
+        // Simple highlight logic for tree nodes
+        document.querySelectorAll('.flex.items-center.gap-2.p-2').forEach(node => {
+            node.addEventListener('click', function() {
+                document.querySelectorAll('.tree-node-active').forEach(n => {
+                    n.classList.remove('tree-node-active');
+                    n.classList.add('hover:bg-surface-container-low', 'text-on-surface-variant');
+                });
+                this.classList.add('tree-node-active');
+                this.classList.remove('hover:bg-surface-container-low', 'text-on-surface-variant');
+            });
+        });
+    </script>
+
+
+</body></html>

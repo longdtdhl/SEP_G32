@@ -1,26 +1,47 @@
-using System.Net.Http.Json;
 using OPCBS.Web.Constants;
 using OPCBS.Web.DTOs;
+using OPCBS.Web.Helpers;
 
 namespace OPCBS.Web.Services;
 
-public class DoctorApiService : IDoctorApiService
+public class DoctorApiService : ApiServiceBase, IDoctorApiService
 {
-    private readonly HttpClient _client;
+    public DoctorApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
 
-    public DoctorApiService(HttpClient client)
+    public async Task<(List<DoctorListItemDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(DoctorFilterDto? filter = null)
     {
-        _client = client;
+        var query = ApiRoutes.Doctors;
+        if (filter != null)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
+            if (!string.IsNullOrEmpty(filter.Specialization)) parts.Add($"specialization={Uri.EscapeDataString(filter.Specialization)}");
+            if (filter.MinRating.HasValue) parts.Add($"minRating={filter.MinRating}");
+            if (filter.MaxFee.HasValue) parts.Add($"maxFee={filter.MaxFee}");
+            if (!string.IsNullOrEmpty(filter.Gender)) parts.Add($"gender={filter.Gender}");
+            parts.Add($"page={filter.Page}");
+            parts.Add($"pageSize={filter.PageSize}");
+            if (parts.Count > 0) query += "?" + string.Join("&", parts);
+        }
+        var (data, pagination, error) = await GetAsync<List<DoctorListItemDto>>(query);
+        return (data ?? new List<DoctorListItemDto>(), pagination, error);
     }
 
-    public async Task<IEnumerable<DoctorDto>> GetAllAsync()
+    public async Task<(DoctorDto? Data, string? Error)> GetByIdAsync(Guid id)
     {
-        var res = await _client.GetFromJsonAsync<IEnumerable<DoctorDto>>($"{ApiRoutes.Doctors}");
-        return res ?? Enumerable.Empty<DoctorDto>();
+        var (data, _, error) = await GetAsync<DoctorDto>($"{ApiRoutes.Doctors}/{id}");
+        return (data, error);
     }
 
-    public async Task<DoctorDto?> GetByIdAsync(Guid id)
+    public async Task<(List<ReviewDto> Data, PaginationDto? Pagination, string? Error)> GetReviewsAsync(Guid doctorId, int page = 1)
     {
-        return await _client.GetFromJsonAsync<DoctorDto>($"{ApiRoutes.Doctors}/{id}");
+        var (data, pagination, error) = await GetAsync<List<ReviewDto>>($"{ApiRoutes.Doctors}/{doctorId}/reviews?page={page}");
+        return (data ?? new List<ReviewDto>(), pagination, error);
+    }
+
+    public async Task<(List<TimeSlotDto> Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, DateTime date)
+    {
+        var (data, _, error) = await GetAsync<List<TimeSlotDto>>($"{ApiRoutes.Doctors}/{doctorId}/slots?date={date:yyyy-MM-dd}");
+        return (data ?? new List<TimeSlotDto>(), error);
     }
 }

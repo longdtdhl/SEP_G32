@@ -1,0 +1,59 @@
+@page
+@model OPCBS.Web.Pages.Doctor.VerificationModel
+@{ ViewData["Title"] = "Xác minh bác sĩ"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header"><h1>Xác minh chuyên môn</h1></div>
+
+@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Success != null) { <div class="alert alert-success">@Model.Success</div> }
+
+@if (Model.HasExisting && Model.Verification != null)
+{
+    var v = Model.Verification;
+    var badge = v.Status switch { "Pending" => "bg-warning text-dark", "Approved" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary" };
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between">
+            <h5 class="mb-0">Trạng thái xác minh</h5>
+            <span class="badge @badge fs-6">@(v.Status ?? "N/A")</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6"><div class="text-muted small">Số giấy phép</div><div>@(v.LicenseNumber ?? "-")</div></div>
+                <div class="col-md-6"><div class="text-muted small">Chuyên khoa</div><div>@(v.Specialization ?? "-")</div></div>
+                <div class="col-md-6"><div class="text-muted small">Kinh nghiệm</div><div>@v.ExperienceYears năm</div></div>
+                <div class="col-md-6"><div class="text-muted small">Trình độ</div><div>@(v.Education ?? "-")</div></div>
+                <div class="col-12"><div class="text-muted small">Ghi chú</div><div>@(v.Notes ?? "-")</div></div>
+                @if (!string.IsNullOrEmpty(v.CertificateUrl))
+                {
+                    <div class="col-12"><div class="text-muted small">Chứng chỉ</div><div><a href="@v.CertificateUrl" target="_blank">Xem chứng chỉ <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+                }
+                <div class="col-md-6"><div class="text-muted small">Ngày nộp</div><div>@v.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div></div>
+                @if (v.ReviewedAt.HasValue)
+                {
+                    <div class="col-md-6"><div class="text-muted small">Ngày duyệt</div><div>@v.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div></div>
+                }
+                @if (!string.IsNullOrEmpty(v.RejectionReason))
+                {
+                    <div class="col-12"><div class="alert alert-danger mt-2"><strong>Lý do từ chối:</strong> @v.RejectionReason</div></div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="alert alert-info mb-3"><i class="bi bi-info-circle me-1"></i>Nộp hồ sơ xác minh để được phê duyệt hoạt động trên hệ thống.</div>
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">Số giấy phép hành nghề <span class="text-danger">*</span></label><input asp-for="Input.LicenseNumber" class="form-control" /></div>
+                <div class="col-md-6"><label class="form-label">Chuyên khoa <span class="text-danger">*</span></label><input asp-for="Input.Specialization" class="form-control" /></div>
+                <div class="col-md-6"><label class="form-label">Số năm kinh nghiệm</label><input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" /></div>
+                <div class="col-md-6"><label class="form-label">Trình độ học vấn</label><input asp-for="Input.Education" class="form-control" placeholder="VD: Tiến sĩ, Thạc sĩ..." /></div>
+                <div class="col-12"><label class="form-label">URL chứng chỉ</label><input asp-for="Input.CertificateUrl" class="form-control" placeholder="https://..." /></div>
+                <div class="col-12"><label class="form-label">Ghi chú bổ sung</label><textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea></div>
+            </div>
+            <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Nộp hồ sơ</button></div>
+        </form>
+    </div></div>
+}

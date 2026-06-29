@@ -1,9 +1,41 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Blog.DetailsModel
 @{
-    ViewData["Title"] = "Blog Details";
+    ViewData["Title"] = "Article";
 }
 
-<h2>@Model.Blog?.Title</h2>
-<p>@Model.Blog?.Summary</p>
-<div>@Model.Blog?.Content</div>
+@if (Model.Blog == null)
+{
+    <partial name="_ErrorState" view-data='@(new ViewDataDictionary(ViewData) { { "ErrorMessage", "Article not found." } })' />
+    return;
+}
+<article class="mb-section" style="max-width:800px;margin:0 auto;">
+    @if (!string.IsNullOrEmpty(Model.Blog.Category))
+    {
+        <span class="mb-chip mb-3 d-inline-block">@Model.Blog.Category</span>
+    }
+    <h1 class="mb-3">@Model.Blog.Title</h1>
+    <div class="d-flex gap-3 text-muted mb-4" style="font-size:0.875rem;">
+        <span><i class="bi bi-person me-1"></i>@Model.Blog.AuthorName</span>
+        <span><i class="bi bi-calendar me-1"></i>@Model.Blog.CreatedAt.ToString("MMMM dd, yyyy")</span>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Blog.ImageUrl))
+    {
+        <img src="@Model.Blog.ImageUrl" alt="@Model.Blog.Title" class="w-100 mb-4" style="border-radius:var(--mb-radius-lg);max-height:400px;object-fit:cover;" />
+    }
+    @if (!string.IsNullOrEmpty(Model.Blog.Summary))
+    {
+        <p class="lead text-muted mb-4">@Model.Blog.Summary</p>
+    }
+    <div class="blog-content" style="line-height:1.8;">
+        @Html.Raw(Model.Blog.Content)
+    </div>
+    @if (Model.Blog.Tags.Any())
+    {
+        <div class="mt-4 pt-4 border-top">
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var tag in Model.Blog.Tags) { <span class="mb-chip">@tag</span> }
+            </div>
+        </div>
+    }
+</article>

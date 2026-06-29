@@ -1,26 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Web.DTOs;
+using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Account;
 
 public class ForgotPasswordModel : PageModel
 {
-    [BindProperty]
-    public string Email { get; set; } = string.Empty;
+    private readonly IAuthApiService _authService;
+    [BindProperty] public string Email { get; set; } = "";
+    public bool Sent { get; set; }
 
-    public void OnGet()
+    public ForgotPasswordModel(IAuthApiService authService) { _authService = authService; }
+    public void OnGet() { }
+
+    public async Task<IActionResult> OnPostAsync()
     {
-    }
-
-    public IActionResult OnPost()
-    {
-        if (string.IsNullOrWhiteSpace(Email))
-        {
-            ModelState.AddModelError(nameof(Email), "Email is required.");
-            return Page();
-        }
-
-        // Placeholder: trigger password reset flow via API
-        return RedirectToPage("/Account/Login");
+        if (string.IsNullOrWhiteSpace(Email)) { ModelState.AddModelError(nameof(Email), "Email is required."); return Page(); }
+        await _authService.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = Email });
+        Sent = true;
+        return Page();
     }
 }
