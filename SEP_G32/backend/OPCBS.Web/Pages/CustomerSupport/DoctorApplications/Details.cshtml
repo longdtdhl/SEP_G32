@@ -1,20 +1,149 @@
-﻿@page "{id:guid}"
+@page "{id:guid}"
 @model OPCBS.Web.Pages.CustomerSupport.DoctorApplications.DetailsModel
 @{
-    ViewData["Title"] = "Application Details";
+    ViewData["Title"] = "Application Review";
     ViewData["UseDashboardLayout"] = true;
 }
 
-<div class="mb-page-header">
-    <h1>Application Details</h1>
+@{ var suc = TempData["Success"] as string; }
+@if (suc != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+@if (Model.Application == null)
+{
+    <div class="mb-page-header"><h1>Application Not Found</h1></div>
+    <div class="text-center py-5 text-muted"><i class="bi bi-person-x d-block mb-2" style="font-size:3rem;"></i><p>This application could not be found.</p><a asp-page="Index" class="btn btn-primary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+    return;
+}
+
+@{ var app = Model.Application; var isPending = app.Status?.Equals("Pending", StringComparison.OrdinalIgnoreCase) == true; }
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="mb-0"><i class="bi bi-person-check me-2" style="color:var(--mb-primary);"></i>Application Review</h1>
+    </div>
+    @{
+        var badgeClass = app.Status?.ToLower() switch { "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
+    }
+    <span class="badge @badgeClass fs-6">@(app.Status ?? "Pending")</span>
 </div>
-<div class="card">
-    <div class="card-body">
-        <!-- TODO: Implement Application Details page content -->
-        <div class="mb-empty-state">
-            <i class="bi bi-gear d-block"></i>
-            <h5>Application Details</h5>
-            <p>This page is under construction. Content will be populated from the API.</p>
+
+<div class="row g-4">
+    <!-- Doctor Info -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-person me-1"></i>Doctor Information</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Full Name</label>
+                        <p class="fw-semibold mb-2">@(app.DoctorName ?? "—")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Specialization</label>
+                        <p class="fw-semibold mb-2">@(app.Specialization ?? "—")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">License Number</label>
+                        <p class="fw-semibold mb-2"><code>@(app.LicenseNumber ?? "—")</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Experience</label>
+                        <p class="fw-semibold mb-2">@app.ExperienceYears years</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Education</label>
+                        <p class="fw-semibold mb-2">@(app.Education ?? "—")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Submitted</label>
+                        <p class="fw-semibold mb-2">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(app.Notes))
+                {
+                    <hr />
+                    <label class="form-label text-muted small mb-1">Notes</label>
+                    <p class="mb-0">@app.Notes</p>
+                }
+
+                @if (!string.IsNullOrEmpty(app.CertificateUrl))
+                {
+                    <hr />
+                    <label class="form-label text-muted small mb-1">Certificate / Documents</label>
+                    <div><a href="@app.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>View Document</a></div>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(app.RejectionReason))
+        {
+            <div class="card border-0 shadow-sm mt-3 border-start border-danger border-3">
+                <div class="card-body">
+                    <label class="form-label text-danger small mb-1"><i class="bi bi-x-circle me-1"></i>Rejection Reason</label>
+                    <p class="mb-0">@app.RejectionReason</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Review Actions -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clipboard-check me-1"></i>Review Actions</h6></div>
+            <div class="card-body">
+                @if (isPending)
+                {
+                    <!-- Approve -->
+                    <form method="post" asp-page-handler="Approve" asp-route-id="@app.Id" class="mb-3">
+                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this doctor application?')">
+                            <i class="bi bi-check-circle me-1"></i>Approve Application
+                        </button>
+                    </form>
+
+                    <!-- Reject -->
+                    <form method="post" asp-page-handler="Reject" asp-route-id="@app.Id">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                            <textarea asp-for="RejectionReason" class="form-control" rows="3" placeholder="Provide a reason for rejection..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this application?')">
+                            <i class="bi bi-x-circle me-1"></i>Reject Application
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="text-center py-3 text-muted">
+                        <i class="bi bi-check-all d-block mb-2" style="font-size:2rem;"></i>
+                        <p class="mb-1">This application has been <strong>@app.Status?.ToLower()</strong>.</p>
+                        @if (app.ReviewedAt.HasValue)
+                        {
+                            <small class="text-muted">Reviewed on @app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Timeline</h6></div>
+            <div class="card-body">
+                <div class="d-flex gap-2 mb-3">
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi bi-send text-white" style="font-size:0.7rem;"></i></div>
+                    <div><small class="fw-semibold">Submitted</small><small class="text-muted d-block">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</small></div>
+                </div>
+                @if (app.ReviewedAt.HasValue)
+                {
+                    <div class="d-flex gap-2">
+                        <div class="rounded-circle @(app.Status == "Approved" ? "bg-success" : "bg-danger") d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi @(app.Status == "Approved" ? "bi-check" : "bi-x") text-white" style="font-size:0.7rem;"></i></div>
+                        <div><small class="fw-semibold">@(app.Status ?? "Reviewed")</small><small class="text-muted d-block">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small></div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
