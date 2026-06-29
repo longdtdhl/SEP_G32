@@ -71,9 +71,10 @@ public interface IAdminApiService
     Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync();
     Task<(List<UserListItemDto> Data, PaginationDto? Pagination, string? Error)> GetUsersAsync(UserFilterDto? filter = null);
     Task<(UserListItemDto? Data, string? Error)> GetUserByIdAsync(Guid id);
-    Task<(bool Success, string? Error)> ToggleUserActiveAsync(Guid id);
+    Task<(bool Success, string? Error)> LockUserAsync(Guid id);
+    Task<(bool Success, string? Error)> UnlockUserAsync(Guid id);
     Task<(List<RoleDto> Data, string? Error)> GetRolesAsync();
-    Task<(List<AuditLogDto> Data, PaginationDto? Pagination, string? Error)> GetAuditLogsAsync(int page = 1, int pageSize = 20);
+    Task<(List<AuditLogDto> Data, PaginationDto? Pagination, string? Error)> GetAuditLogsAsync(string? entityName = null, int page = 1, int pageSize = 20);
 }
 
 public interface ICustomerSupportApiService
@@ -91,6 +92,13 @@ public interface ICustomerSupportApiService
 public interface IBusinessManagerApiService
 {
     Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync();
+    // Service Packages
+    Task<(List<ServicePackageDto> Data, string? Error)> GetServicePackagesAsync();
+    Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id);
+    Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto);
+    Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto);
+    Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id);
+    // Specializations
     Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync();
     Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto);
     Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto);

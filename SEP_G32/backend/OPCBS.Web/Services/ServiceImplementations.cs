@@ -164,7 +164,7 @@ public class AdminApiService : ApiServiceBase, IAdminApiService
 
     public async Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync()
     {
-        var (data, _, error) = await GetAsync<DashboardStatsDto>($"{ApiRoutes.AdminReports}/dashboard");
+        var (data, _, error) = await GetAsync<DashboardStatsDto>("api/v1/admin/dashboard");
         return (data, error);
     }
     public async Task<(List<UserListItemDto> Data, PaginationDto? Pagination, string? Error)> GetUsersAsync(UserFilterDto? filter = null)
@@ -188,15 +188,18 @@ public class AdminApiService : ApiServiceBase, IAdminApiService
         var (data, _, error) = await GetAsync<UserListItemDto>($"{ApiRoutes.AdminUsers}/{id}");
         return (data, error);
     }
-    public async Task<(bool Success, string? Error)> ToggleUserActiveAsync(Guid id) => await PutAsync($"{ApiRoutes.AdminUsers}/{id}/toggle-active");
+    public async Task<(bool Success, string? Error)> LockUserAsync(Guid id) => await PutAsync($"{ApiRoutes.AdminUsers}/{id}/lock");
+    public async Task<(bool Success, string? Error)> UnlockUserAsync(Guid id) => await PutAsync($"{ApiRoutes.AdminUsers}/{id}/unlock");
     public async Task<(List<RoleDto> Data, string? Error)> GetRolesAsync()
     {
         var (data, _, error) = await GetAsync<List<RoleDto>>(ApiRoutes.AdminRoles);
         return (data ?? new(), error);
     }
-    public async Task<(List<AuditLogDto> Data, PaginationDto? Pagination, string? Error)> GetAuditLogsAsync(int page = 1, int pageSize = 20)
+    public async Task<(List<AuditLogDto> Data, PaginationDto? Pagination, string? Error)> GetAuditLogsAsync(string? entityName = null, int page = 1, int pageSize = 20)
     {
-        var (data, pagination, error) = await GetAsync<List<AuditLogDto>>($"{ApiRoutes.AdminAuditLogs}?page={page}&pageSize={pageSize}");
+        var url = $"{ApiRoutes.AdminAuditLogs}?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(entityName)) url += $"&entityName={Uri.EscapeDataString(entityName)}";
+        var (data, pagination, error) = await GetAsync<List<AuditLogDto>>(url);
         return (data ?? new(), pagination, error);
     }
 }
@@ -245,9 +248,24 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
 
     public async Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync()
     {
-        var (data, _, error) = await GetAsync<DashboardStatsDto>(ApiRoutes.BMAnalytics);
+        var (data, _, error) = await GetAsync<DashboardStatsDto>("api/v1/business-manager/dashboard");
         return (data, error);
     }
+    // Service Packages
+    public async Task<(List<ServicePackageDto> Data, string? Error)> GetServicePackagesAsync()
+    {
+        var (data, _, error) = await GetAsync<List<ServicePackageDto>>(ApiRoutes.ServicePackages);
+        return (data ?? new(), error);
+    }
+    public async Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<ServicePackageDto>($"{ApiRoutes.ServicePackages}/{id}");
+        return (data, error);
+    }
+    public async Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto) => await PostAsync(ApiRoutes.ServicePackages, dto);
+    public async Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto) => await PutAsync($"{ApiRoutes.ServicePackages}/{id}", dto);
+    public async Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.ServicePackages}/{id}");
+    // Specializations
     public async Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync()
     {
         var (data, _, error) = await GetAsync<List<SpecializationDto>>(ApiRoutes.Specializations);

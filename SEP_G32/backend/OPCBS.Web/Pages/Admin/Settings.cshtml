@@ -1,20 +1,113 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Admin.SettingsModel
 @{
-    ViewData["Title"] = "Settings";
+    ViewData["Title"] = "System Settings";
     ViewData["UseDashboardLayout"] = true;
 }
 
 <div class="mb-page-header">
-    <h1>Settings</h1>
+    <h1><i class="bi bi-gear me-2" style="color:var(--mb-primary);"></i>System Settings</h1>
 </div>
-<div class="card">
-    <div class="card-body">
-        <!-- TODO: Implement Settings page content -->
-        <div class="mb-empty-state">
-            <i class="bi bi-gear d-block"></i>
-            <h5>Settings</h5>
-            <p>This page is under construction. Content will be populated from the API.</p>
+
+<div class="row g-4">
+    <!-- Security Settings -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Security</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Session Timeout (minutes)</label>
+                    <input type="number" class="form-control" value="30" disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Max Login Attempts</label>
+                    <input type="number" class="form-control" value="5" disabled />
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" checked disabled />
+                    <label class="form-check-label small">Require email verification</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" checked disabled />
+                    <label class="form-check-label small">Enable audit logging</label>
+                </div>
+                <button class="btn btn-primary btn-sm" disabled><i class="bi bi-save me-1"></i>Save Changes</button>
+                <!-- TODO: Connect to settings API when available -->
+            </div>
         </div>
     </div>
+
+    <!-- System Configuration -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-sliders me-2"></i>System Configuration</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Default Page Size</label>
+                    <input type="number" class="form-control" value="20" disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Max Appointment Slots Per Day</label>
+                    <input type="number" class="form-control" value="20" disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Consultation Duration (minutes)</label>
+                    <input type="number" class="form-control" value="60" disabled />
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" checked disabled />
+                    <label class="form-check-label small">Allow guest bookings</label>
+                </div>
+                <button class="btn btn-primary btn-sm" disabled><i class="bi bi-save me-1"></i>Save Changes</button>
+                <!-- TODO: Connect to settings API when available -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Email / Notifications -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-envelope me-2"></i>Email & Notifications</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">SMTP Server</label>
+                    <input type="text" class="form-control" value="smtp.gmail.com" disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Sender Email</label>
+                    <input type="email" class="form-control" value="noreply@mindbridge.com" disabled />
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" checked disabled />
+                    <label class="form-check-label small">Send appointment reminders</label>
+                </div>
+                <button class="btn btn-primary btn-sm" disabled><i class="bi bi-save me-1"></i>Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-tools me-2"></i>Maintenance</h6></div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" disabled />
+                    <label class="form-check-label small">Maintenance Mode</label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Maintenance Message</label>
+                    <textarea class="form-control" rows="2" disabled>The system is currently undergoing scheduled maintenance.</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-danger btn-sm" disabled><i class="bi bi-arrow-counterclockwise me-1"></i>Clear Cache</button>
+                    <button class="btn btn-outline-warning btn-sm" disabled><i class="bi bi-database me-1"></i>Backup DB</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 text-muted small">
+    <i class="bi bi-info-circle me-1"></i>Settings management is currently read-only. Backend settings API is under development.
 </div>

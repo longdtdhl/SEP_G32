@@ -1,20 +1,98 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.BusinessManager.DashboardModel
 @{
     ViewData["Title"] = "Business Manager Dashboard";
     ViewData["UseDashboardLayout"] = true;
 }
 
-<div class="mb-page-header">
-    <h1>Business Manager Dashboard</h1>
+<div class="mb-page-header"><h1><i class="bi bi-speedometer2 me-2" style="color:var(--mb-primary);"></i>Business Dashboard</h1></div>
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(16,185,129,0.1);"><i class="bi bi-currency-dollar fs-4 text-success"></i></div>
+            <div><small class="text-muted">Total Revenue</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalRevenue.ToString("N0") <small class="fs-6 fw-normal">VND</small></h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(78,139,112,0.1);"><i class="bi bi-gem fs-4" style="color:var(--mb-primary);"></i></div>
+            <div><small class="text-muted">Service Packages</small><h3 class="mb-0 fw-bold">@Model.Packages.Count</h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(99,102,241,0.1);"><i class="bi bi-credit-card fs-4" style="color:#6366f1;"></i></div>
+            <div><small class="text-muted">Active Subscriptions</small><h3 class="mb-0 fw-bold">@Model.Stats.ActiveSubscriptions</h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(59,130,246,0.1);"><i class="bi bi-person-badge fs-4" style="color:#3b82f6;"></i></div>
+            <div><small class="text-muted">Active Doctors</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalDoctors</h3></div>
+        </div></div>
+    </div>
 </div>
-<div class="card">
-    <div class="card-body">
-        <!-- TODO: Implement Business Manager Dashboard page content -->
-        <div class="mb-empty-state">
-            <i class="bi bi-gear d-block"></i>
-            <h5>Business Manager Dashboard</h5>
-            <p>This page is under construction. Content will be populated from the API.</p>
+
+<div class="row g-4">
+    <!-- Service Packages Overview -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-gem me-1"></i>Service Packages</h6>
+                <a asp-page="ServicePackages/Index" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive"><table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light"><tr><th class="ps-3">Name</th><th>Price</th><th>Duration</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var pkg in Model.Packages.Take(5))
+                        {
+                            <tr>
+                                <td class="ps-3 fw-semibold">@pkg.Name</td>
+                                <td>@pkg.Price.ToString("N0") VND</td>
+                                <td>@pkg.DurationDays days</td>
+                                <td><span class="badge @(pkg.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(pkg.IsActive ? "Active" : "Inactive")</span></td>
+                            </tr>
+                        }
+                        @if (!Model.Packages.Any()) { <tr><td colspan="4" class="text-center py-3 text-muted">No packages</td></tr> }
+                    </tbody>
+                </table></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Specializations + Quick Actions -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-1"></i>Specializations</h6>
+                <a asp-page="Specializations/Index" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @foreach (var spec in Model.Specializations.Take(6))
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                            <span class="small fw-medium">@spec.Name</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary">@spec.DoctorCount doctors</span>
+                        </li>
+                    }
+                    @if (!Model.Specializations.Any()) { <li class="list-group-item text-center text-muted py-3">No specializations</li> }
+                </ul>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-lightning me-1"></i>Quick Actions</h6></div>
+            <div class="card-body d-grid gap-2">
+                <a asp-page="ServicePackages/Create" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-plus-lg me-2"></i>Create Package</a>
+                <a asp-page="Specializations/Create" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-plus-lg me-2"></i>Add Specialization</a>
+                <a asp-page="Analytics" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-graph-up me-2"></i>View Analytics</a>
+                <a asp-page="Reports" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a>
+            </div>
         </div>
     </div>
 </div>

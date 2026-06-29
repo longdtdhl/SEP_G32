@@ -6,10 +6,18 @@ public class UserListItemDto
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string? Role { get; set; }
     public bool IsActive { get; set; }
     public bool EmailConfirmed { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public string? AvatarUrl { get; set; }
+
+    // Computed helpers
+    public string StatusText => IsActive ? "Active" : "Locked";
+    public string StatusBadgeClass => IsActive ? "bg-success" : "bg-danger";
+    public string Initials => string.Join("", (FullName ?? "U").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpper();
 }
 
 public class RoleDto
@@ -19,6 +27,13 @@ public class RoleDto
     public string? Description { get; set; }
     public int UserCount { get; set; }
     public List<string> Permissions { get; set; } = new();
+}
+
+public class PermissionDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Module { get; set; }
 }
 
 public class AuditLogDto
@@ -44,6 +59,10 @@ public class DashboardStatsDto
     public int PendingBlogApprovals { get; set; }
     public decimal TotalRevenue { get; set; }
     public int ActiveSubscriptions { get; set; }
+
+    // Computed
+    public int ActiveUsers => TotalUsers; // Placeholder
+    public int LockedUsers => 0; // TODO: backend doesn't return this yet
 }
 
 public class UserFilterDto
@@ -54,3 +73,4 @@ public class UserFilterDto
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }
+

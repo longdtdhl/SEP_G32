@@ -122,6 +122,9 @@
             <a class="nav-link @(currentPath.StartsWith("/admin/roles") ? "active" : "")" asp-page="/Admin/Roles/Index">
                 <i class="bi bi-shield-check"></i> Roles
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/admin/permissions") ? "active" : "")" asp-page="/Admin/Permissions/Index">
+                <i class="bi bi-key"></i> Permissions
+            </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
                 <i class="bi bi-journal-text"></i> Audit Logs
             </a>
