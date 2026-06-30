@@ -1,0 +1,165 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Connect with the Right Mental Health Professional";
+}
+
+<!-- Hero Section -->
+<section class="mb-hero">
+    <h1>Connect with the Right<br />Mental Health Professional</h1>
+    <p>
+        MindBridge helps individuals access trusted mental health support through
+        professional counseling, personalized care, and meaningful human connection.
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg px-4">
+            <i class="bi bi-search-heart me-2"></i>Find a Therapist
+        </a>
+        <a asp-page="/Account/Register" class="btn btn-outline-primary btn-lg px-4">Get Started</a>
+    </div>
+</section>
+
+<!-- Featured Doctors -->
+<section class="mb-section">
+    <div class="mb-page-header">
+        <h2>Featured Specialists</h2>
+        <a asp-page="/Doctors/Index" class="text-decoration-none" style="font-weight:500;font-size:0.9375rem;">
+            View all <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    @if (Model.FeaturedDoctors.Any())
+    {
+        <div class="row g-4">
+            @foreach (var doc in Model.FeaturedDoctors)
+            {
+                <div class="col-6 col-md-3">
+                    <a asp-page="/Doctors/Details" asp-route-id="@doc.Id" class="text-decoration-none">
+                        <div class="text-center">
+                            <div class="mx-auto mb-3" style="width:96px;height:96px;">
+                                @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                                {
+                                    <img src="@doc.AvatarUrl" alt="@doc.FullName" class="rounded-circle w-100 h-100" style="object-fit:cover;border:3px solid var(--mb-secondary);" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle w-100 h-100 d-flex align-items-center justify-content-center" style="background-color:var(--mb-secondary);">
+                                        <i class="bi bi-person-fill" style="font-size:2rem;color:var(--mb-primary);"></i>
+                                    </div>
+                                }
+                            </div>
+                            <h5 class="mb-1" style="font-size:0.9375rem;">@doc.FullName</h5>
+                            <p class="mb-0" style="font-size:0.8125rem;color:var(--mb-primary);font-weight:500;">@doc.Specialization</p>
+                            @if (doc.Rating > 0)
+                            {
+                                <div class="mt-1">
+                                    <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", doc.Rating }, { "ReviewCount", doc.ReviewCount } })' />
+                                </div>
+                            }
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-people d-block mb-2" style="font-size:2rem;"></i>
+            <p>Specialists coming soon.</p>
+        </div>
+    }
+</section>
+
+<!-- Specialization Categories -->
+<section class="mb-section">
+    <h2 class="mb-4">Specialization Categories</h2>
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var cat in new[] { "Anxiety & Stress", "Depression", "Relationships", "Family Issues", "Emotional Support", "Self-esteem", "Academic Pressure", "Sleep Problems", "Burnout", "Trauma", "Parenting", "Addiction", "Career Counseling" })
+        {
+            <a asp-page="/Doctors/Index" asp-route-specialization="@cat" class="mb-chip text-decoration-none">@cat</a>
+        }
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="mb-section">
+    <h2 class="text-center mb-5">How MindBridge Works</h2>
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="p-4">
+                <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                     style="width:64px;height:64px;background-color:var(--mb-primary-light);">
+                    <i class="bi bi-search" style="font-size:1.5rem;color:var(--mb-primary);"></i>
+                </div>
+                <h5>Find Your Therapist</h5>
+                <p class="text-muted">Browse verified mental health professionals by specialization, rating, and availability.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4">
+                <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                     style="width:64px;height:64px;background-color:var(--mb-primary-light);">
+                    <i class="bi bi-calendar-check" style="font-size:1.5rem;color:var(--mb-primary);"></i>
+                </div>
+                <h5>Book a Session</h5>
+                <p class="text-muted">Choose a convenient time slot and book your appointment online in just a few clicks.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4">
+                <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                     style="width:64px;height:64px;background-color:var(--mb-primary-light);">
+                    <i class="bi bi-heart-pulse" style="font-size:1.5rem;color:var(--mb-primary);"></i>
+                </div>
+                <h5>Start Your Journey</h5>
+                <p class="text-muted">Begin your path to wellness with personalized care and professional support.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Latest Articles -->
+<section class="mb-section">
+    <div class="mb-page-header">
+        <h2>Latest Resources</h2>
+        <a asp-page="/Blog/Index" class="text-decoration-none" style="font-weight:500;font-size:0.9375rem;">
+            View all <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    @if (Model.LatestBlogs.Any())
+    {
+        <div class="row g-4">
+            @foreach (var blog in Model.LatestBlogs)
+            {
+                <div class="col-md-4">
+                    <a asp-page="/Blog/Details" asp-route-id="@blog.Id" class="text-decoration-none">
+                        <div class="mb-blog-card h-100">
+                            <div class="blog-image d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg, var(--mb-secondary) 0%, var(--mb-primary-light) 100%);">
+                                @if (!string.IsNullOrEmpty(blog.ImageUrl))
+                                {
+                                    <img src="@blog.ImageUrl" alt="@blog.Title" class="w-100 h-100" style="object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-journal-text" style="font-size:2.5rem;color:var(--mb-primary);"></i>
+                                }
+                            </div>
+                            <div class="blog-body">
+                                @if (!string.IsNullOrEmpty(blog.Category))
+                                {
+                                    <span class="blog-category">@blog.Category</span>
+                                }
+                                <h5 class="blog-title">@blog.Title</h5>
+                                <p class="blog-excerpt">@blog.Summary</p>
+                                <div class="blog-meta d-flex justify-content-between">
+                                    <span>@blog.AuthorName</span>
+                                    <span>@blog.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</section>

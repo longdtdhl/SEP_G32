@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Care Package | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#95d4b5",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "on-primary-fixed": "#002115",
+                        "surface-container": "#edeeed",
+                        "on-primary-container": "#f5fff7",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#b0f0d0",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#95d4b5",
+                        "surface-dim": "#d9dad9",
+                        "primary": "#29674e",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "tertiary-fixed": "#d9e3f6",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-container-low": "#f3f4f3",
+                        "secondary": "#52625a",
+                        "on-surface": "#191c1c",
+                        "on-secondary-fixed": "#0f1e19",
+                        "inverse-surface": "#2e3131",
+                        "surface-variant": "#e1e3e2",
+                        "on-tertiary-fixed-variant": "#3d4756",
+                        "on-background": "#191c1c",
+                        "surface-bright": "#f8faf9",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#6b7586",
+                        "surface-tint": "#2b6950",
+                        "secondary-container": "#d5e7dd",
+                        "primary-container": "#438066",
+                        "tertiary-fixed-dim": "#bdc7d9",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#404943",
+                        "on-error-container": "#93000a",
+                        "outline": "#707973",
+                        "secondary-fixed": "#d5e7dd",
+                        "outline-variant": "#bfc9c2",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8faf9",
+                        "on-tertiary-fixed": "#121c2a",
+                        "inverse-on-surface": "#f0f1f0",
+                        "surface-container-high": "#e7e8e7",
+                        "on-secondary-container": "#586860",
+                        "tertiary": "#525d6c",
+                        "surface-container-highest": "#e1e3e2",
+                        "background": "#f8faf9",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "2xl": "48px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f8faf9;
+            color: #191c1c;
+        }
+        .form-card {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E5E7EB;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-lg py-sm max-w-container-max mx-auto fixed top-0 left-0 right-0 z-50">
+<div class="flex items-center gap-xl">
+<span class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim tracking-tight">MindBridge</span>
+<div class="hidden md:flex gap-md items-center">
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant pb-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Home</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant pb-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Blog</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant pb-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Specialists</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant pb-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">My Package</a>
+<a class="font-label-md text-label-md text-primary dark:text-primary-fixed-dim font-bold border-b-2 border-primary dark:border-primary-fixed-dim pb-1" href="#">Case Records</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-xl pr-md py-xs bg-surface-container-low border-none rounded-full text-label-md focus:ring-2 focus:ring-primary w-48" placeholder="Search" type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female clinical specialist with a kind smile, wearing professional clinical attire against a soft neutral background. The lighting is warm and inviting, echoing the serene and clinical excellence of the MindBridge brand. High-resolution photography with a shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5TE-kT4Dv1vFGHHNQ0P-bt_oovwvNuIxf6TUCi6suuNnSyIjx1-yJwF-ke50xCljFj7DX9r54JfmRzApeKuQvRFi-FQxfQjbzL6RxBdhUIGvVh9aLz4Myst2d5NGJAw26fOftBzXtwvzwgDi2hpgV_ZfS8r3cu3U9Y3ukJUTnEb9lRPA8-GuwSnx1lZlU_pWLa2LQfn1UGbeWmjgQtdqS8p4KjB9D4igAocVvC7BlzaYQBaXXBrVoiyKvr7cdlV0uRrCv7Fk6lwM"/>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-2xl mt-xl max-w-4xl mx-auto w-full px-margin-mobile">
+<!-- Header Actions -->
+<div class="flex items-center gap-md mb-lg">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined text-on-surface" style="font-size: 28px;">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-on-surface">Information care package</h1>
+</div>
+<!-- Form Container -->
+<div class="form-card bg-surface-container-lowest rounded-[20px] p-lg md:p-xl mb-2xl">
+<form class="space-y-lg">
+<!-- Package Name -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="package-name">Package Name:</label>
+<input class="w-full h-12 px-md py-xs border border-outline-variant rounded-[12px] bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="package-name" name="package-name" type="text" value="Comprehensive Wellness Foundation"/>
+</div>
+<!-- Package Type -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="package-type">Package Type:</label>
+<div class="relative">
+<select class="w-full h-12 px-md py-xs border border-outline-variant rounded-[12px] bg-white appearance-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="package-type" name="package-type">
+<option value="Specialty">Specialty</option>
+<option value="Trauma">Trauma</option>
+<option value="Clinical Psychology">Clinical Psychology</option>
+<option value="Anxiety Management">Anxiety Management</option>
+<option value="General Wellness">General Wellness</option>
+</select>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Description -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="description">Description:</label>
+<textarea class="w-full px-md py-sm border border-outline-variant rounded-[12px] bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none resize-none" id="description" name="description" rows="4">A multi-disciplinary approach to mental wellbeing, combining evidence-based cognitive behavioral techniques with personalized emotional support strategies for long-term resilience.</textarea>
+</div>
+<!-- Target Condition -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="target-condition">Target Condition:</label>
+<textarea class="w-full px-md py-sm border border-outline-variant rounded-[12px] bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none resize-none" id="target-condition" name="target-condition" rows="3">Generalized Anxiety Disorder (GAD), mild-to-moderate depression, and chronic stress management.</textarea>
+</div>
+<!-- Two-Column Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Total Sessions -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="total-sessions">Total Sessions:</label>
+<input class="w-full h-12 px-md py-xs border border-outline-variant rounded-[12px] bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="total-sessions" name="total-sessions" type="number" value="12"/>
+</div>
+<!-- Price -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="price">Price ($):</label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-semibold">$</span>
+<input class="w-full h-12 pl-xl pr-md py-xs border border-outline-variant rounded-[12px] bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="price" name="price" type="text" value="1,200.00"/>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-lg flex justify-end">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-xl py-md rounded-[12px] shadow-sm hover:brightness-110 active:scale-95 transition-all duration-200 flex items-center gap-sm" type="submit">
+<span>Save changes</span>
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+</button>
+</div>
+</form>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant mt-auto">
+<div class="max-w-container-max mx-auto px-lg py-xl flex flex-col md:flex-row justify-between items-center gap-lg">
+<div class="flex flex-col gap-xs text-center md:text-left">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">MindBridge</span>
+<p class="text-on-surface-variant text-body-sm">Empowering mental wellness through clinical excellence.</p>
+</div>
+<div class="flex gap-xl text-on-surface-variant">
+<a class="text-label-md hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-label-md hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-label-md hover:text-primary transition-colors" href="#">Contact Support</a>
+</div>
+<div class="text-on-surface-variant text-label-sm">
+                © 2024 MindBridge. All rights reserved.
+            </div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for the back button
+        document.querySelector('button[aria-label="Go back"]').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // Form submission prevention for demo
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span>Saved!</span><span class="material-symbols-outlined text-[18px]">done</span>';
+            btn.classList.replace('bg-primary', 'bg-tertiary-container');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('bg-tertiary-container', 'bg-primary');
+            }, 2000);
+        });
+    </script>
+</body></html>

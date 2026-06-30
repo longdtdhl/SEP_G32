@@ -1,116 +1,269 @@
-# 06-code-rules.md
+# 10-code-rules.md
 
-# 1. General Principles
+# 1. Purpose
 
-## GR-001 Single Responsibility Principle
+This document defines coding standards, project structure, naming conventions, architecture rules, and AI generation constraints for OPCBS.
 
-Each class must have only one responsibility.
-
-### Good
-
-```text
-AppointmentService
-BlogService
-DoctorService
-```
-
-### Bad
-
-```text
-SystemService
-CommonService
-UtilityService
-```
+All generated code must comply with this document.
 
 ---
 
-## GR-002 Avoid God Classes
+# 2. Architecture Rules
 
-No class should exceed:
+## AR-001 Clean Architecture
 
-```text
-500 lines
-```
-
-If exceeded, split responsibilities.
-
----
-
-## GR-003 Avoid Duplicate Logic
-
-Business logic must exist in only one place.
-
----
-
-## GR-004 Explicit Naming
-
-Names must clearly describe purpose.
-
-### Good
-
-```text
-ApproveAppointment
-
-CreateDoctorVerificationRequest
-
-GetPatientConsultationHistory
-```
-
-### Bad
-
-```text
-Process()
-
-Handle()
-
-Execute()
-```
-
----
-
-# 2. Backend Folder Structure
+The system must follow Clean Architecture.
 
 ```text
 src/
 
-├── Controllers/
-│
-├── DTOs/
-│
-├── Models/
-│
-├── Services/
-│
-├── Repositories/
-│
-├── Validators/
-│
-├── Data/
-│
-├── Mappings/
-│
-├── Middlewares/
-│
-├── Configurations/
-│
-├── Helpers/
-│
-└── Program.cs
+├── OPCBS.API
+├── OPCBS.Application
+├── OPCBS.Domain
+├── OPCBS.Infrastructure
+└── OPCBS.Shared
+```
+
+Dependencies:
+
+```text
+API
+ ↓
+Application
+ ↓
+Domain
+
+Infrastructure
+ ↓
+Application
+ ↓
+Domain
+```
+
+Domain must never depend on any other layer.
+
+---
+
+## AR-002 Layer Responsibilities
+
+### OPCBS.API
+
+Responsible for:
+
+* Controllers
+* Authentication
+* Middleware
+* Swagger
+* API Configuration
+
+Must NOT contain:
+
+* Business Logic
+* Database Logic
+
+---
+
+### OPCBS.Application
+
+Responsible for:
+
+* Services
+* DTOs
+* Validators
+* Interfaces
+* Business Workflows
+
+Must NOT contain:
+
+* EF Core DbContext
+* Database Queries
+
+---
+
+### OPCBS.Domain
+
+Responsible for:
+
+* Entities
+* Enums
+* Constants
+* Domain Rules
+
+Must NOT contain:
+
+* Service Logic
+* Repository Logic
+
+---
+
+### OPCBS.Infrastructure
+
+Responsible for:
+
+* EF Core
+* Repository Implementations
+* External Services
+* Database Access
+* Cloudinary
+* Brevo
+* VNPay
+
+---
+
+# 3. General Coding Rules
+
+## CR-001 Single Responsibility Principle
+
+Each class must have only one responsibility.
+
+---
+
+## CR-002 Keep Classes Small
+
+Maximum:
+
+```text
+500 lines per class
 ```
 
 ---
 
-# 3. Backend Naming Rules
+## CR-003 Keep Methods Small
 
-## Entities
-
-Pattern
+Maximum:
 
 ```text
-Noun
+50 lines per method
 ```
 
-Examples
+---
+
+## CR-004 Explicit Naming
+
+Names must clearly describe business purpose.
+
+Good:
+
+```text
+ApproveAppointment
+
+CreateVerificationRequest
+
+GetDoctorProfile
+```
+
+Bad:
+
+```text
+Process
+
+Execute
+
+Handle
+```
+
+---
+
+## CR-005 No Duplicate Logic
+
+Business logic must exist only once.
+
+---
+
+## CR-006 No Magic Strings
+
+Bad:
+
+```csharp
+if(status == "Approved")
+```
+
+Good:
+
+```csharp
+AppointmentStatus.Approved
+```
+
+---
+
+# 4. Backend Folder Structure
+
+## OPCBS.API
+
+```text
+Controllers/
+
+Middlewares/
+
+Configurations/
+
+Extensions/
+
+Program.cs
+```
+
+---
+
+## OPCBS.Application
+
+```text
+DTOs/
+
+Interfaces/
+
+Services/
+
+Validators/
+
+Mappings/
+
+Features/
+```
+
+---
+
+## OPCBS.Domain
+
+```text
+Entities/
+
+Enums/
+
+Constants/
+
+Common/
+```
+
+---
+
+## OPCBS.Infrastructure
+
+```text
+Persistence/
+
+Repositories/
+
+ExternalServices/
+
+Identity/
+
+Configurations/
+```
+
+---
+
+# 5. Entity Rules
+
+## Naming
+
+Pattern:
+
+```text
+PascalCase
+Singular
+```
+
+Examples:
 
 ```text
 User
@@ -119,18 +272,42 @@ DoctorProfile
 
 Appointment
 
-PatientRecord
+ConsultationRecord
 
-Blog
-
-Subscription
+TreatmentPackage
 ```
 
 ---
 
-## DTOs
+## Entity Requirements
 
-### Request
+Every Entity must contain:
+
+```csharp
+Id
+
+CreatedAt
+
+UpdatedAt
+
+CreatedBy
+
+UpdatedBy
+```
+
+Soft Delete Entities:
+
+```csharp
+IsDeleted
+```
+
+---
+
+# 6. DTO Rules
+
+## Request DTO
+
+Pattern
 
 ```text
 <Action><Entity>Request
@@ -146,7 +323,11 @@ UpdateDoctorProfileRequest
 LoginRequest
 ```
 
-### Response
+---
+
+## Response DTO
+
+Pattern
 
 ```text
 <Entity>Response
@@ -155,122 +336,104 @@ LoginRequest
 Examples
 
 ```text
-AppointmentResponse
-
 DoctorResponse
+
+AppointmentResponse
 
 BlogResponse
 ```
 
 ---
 
-## Services
+# 7. Service Rules
 
-### Interface
+## Interface
+
+Pattern
 
 ```text
 I<Entity>Service
 ```
 
-Examples
+Example
 
 ```text
 IAppointmentService
-
-IBlogService
 ```
 
-### Implementation
+---
+
+## Implementation
+
+Pattern
 
 ```text
 <Entity>Service
 ```
 
-Examples
+Example
 
 ```text
 AppointmentService
-
-BlogService
 ```
 
 ---
 
-## Repositories
+## Service Responsibilities
 
-### Interface
+Services may:
+
+* Validate business rules
+* Coordinate repositories
+* Trigger notifications
+* Execute workflows
+
+Services must NOT:
+
+* Return Entity directly
+* Access HTTP Context directly
+* Contain SQL
+
+---
+
+# 8. Repository Rules
+
+## Interface
+
+Pattern
 
 ```text
 I<Entity>Repository
 ```
 
-### Implementation
+---
+
+## Implementation
+
+Pattern
 
 ```text
 <Entity>Repository
 ```
 
-Examples
+---
 
-```text
-IAppointmentRepository
+## Responsibilities
 
-AppointmentRepository
-```
+Repositories may:
+
+* Execute EF Core queries
+* Save data
+
+Repositories must NOT:
+
+* Contain business logic
 
 ---
 
-## Validators
+# 9. Controller Rules
 
-```text
-<Action>Validator
-```
-
-Examples
-
-```text
-RegisterValidator
-
-CreateAppointmentValidator
-```
-
----
-
-## Controllers
-
-```text
-<Entity>Controller
-```
-
-Examples
-
-```text
-AuthController
-
-DoctorController
-
-AppointmentController
-```
-
----
-
-# 4. Backend Code Rules
-
-## BR-001
-
-Controllers must never access DbContext directly.
-
-### Forbidden
-
-```csharp
-_context.Appointments.Add(...)
-```
-
-inside Controller.
-
----
-
-## BR-002
+## Responsibilities
 
 Controllers only:
 
@@ -284,267 +447,107 @@ Return Response
 
 ---
 
-## BR-003
-
-Business rules belong only in Services.
-
----
-
-## BR-004
-
-Database access belongs only in Repositories.
-
----
-
-## BR-005
-
-Entity must never be returned directly.
-
-Always use DTO.
-
----
-
-## BR-006
-
-Every Create/Update Request must have Validator.
-
----
-
-## BR-007
-
-Every endpoint must have authorization rule.
-
----
-
-## BR-008
-
-No magic strings.
-
-### Bad
+## Forbidden
 
 ```csharp
-if(status == "Approved")
+DbContext
+
+Business Logic
+
+Repository Access
 ```
 
-### Good
-
-```csharp
-AppointmentStatus.Approved
-```
+inside Controller.
 
 ---
 
-# 5. Frontend Folder Structure
+# 10. Validation Rules
+
+## FluentValidation Required
+
+Every Create / Update Request must have Validator.
+
+Examples:
 
 ```text
-src/
+RegisterValidator
 
-├── api/
-│
-├── pages/
-│
-├── components/
-│
-├── layouts/
-│
-├── routes/
-│
-├── hooks/
-│
-├── services/
-│
-├── types/
-│
-├── constants/
-│
-├── validations/
-│
-├── utils/
-│
-├── assets/
-│
-└── App.tsx
+CreateAppointmentValidator
+
+CreateTreatmentPackageValidator
 ```
 
 ---
 
-# 6. Frontend Naming Rules
+## Validation Location
 
-## Pages
+```text
+Application/Validators
+```
+
+---
+
+# 11. Razor Pages Rules
+
+## Folder Structure
+
+```text
+Pages/
+
+Shared/
+
+Components/
+
+wwwroot/
+
+wwwroot/css
+
+wwwroot/js
+
+wwwroot/images
+```
+
+---
+
+## Page Naming
 
 Pattern
 
 ```text
-<Entity>Page.tsx
+FeatureName.cshtml
+
+FeatureName.cshtml.cs
 ```
 
 Examples
 
 ```text
-DoctorListPage.tsx
+Login.cshtml
 
-DoctorProfilePage.tsx
+DoctorProfile.cshtml
 
-AppointmentPage.tsx
+AppointmentDetails.cshtml
 ```
 
 ---
 
-## Components
+## Razor Rules
+
+Business logic must NOT exist inside:
+
+```html
+.cshtml
+```
+
+Only display logic is allowed.
+
+---
+
+# 12. Database Rules
+
+## Table Naming
 
 Pattern
-
-```text
-<ComponentName>.tsx
-```
-
-Examples
-
-```text
-DoctorCard.tsx
-
-AppointmentTable.tsx
-
-PackageCard.tsx
-```
-
----
-
-## Hooks
-
-Pattern
-
-```text
-use<Entity>.ts
-```
-
-Examples
-
-```text
-useAuth.ts
-
-useAppointment.ts
-
-useDoctor.ts
-```
-
----
-
-## Services
-
-Pattern
-
-```text
-entityService.ts
-```
-
-Examples
-
-```text
-doctorService.ts
-
-appointmentService.ts
-```
-
----
-
-## Types
-
-Pattern
-
-```text
-entity.types.ts
-```
-
-Examples
-
-```text
-doctor.types.ts
-
-appointment.types.ts
-```
-
----
-
-# 7. Frontend Component Rules
-
-## FE-001
-
-One component = one responsibility.
-
----
-
-## FE-002
-
-If component > 300 lines
-
-Split component.
-
----
-
-## FE-003
-
-Move API calls into service layer.
-
-### Forbidden
-
-```tsx
-axios.get(...)
-```
-
-inside page.
-
----
-
-## FE-004
-
-Use React Hook Form.
-
----
-
-## FE-005
-
-Use Zod validation.
-
----
-
-## FE-006
-
-Use TanStack Query.
-
-Do not manually manage loading state.
-
----
-
-## FE-007
-
-Avoid prop drilling deeper than 2 levels.
-
----
-
-# 8. API Naming Rules
-
-Pattern
-
-```text
-/api/v1/resource
-```
-
-Examples
-
-```text
-/api/v1/doctors
-
-/api/v1/appointments
-
-/api/v1/blogs
-```
-
----
-
-# 9. Database Naming Rules
-
-## Tables
 
 ```text
 Plural
@@ -558,12 +561,14 @@ Users
 
 Appointments
 
-DoctorProfiles
+TreatmentPackages
 ```
 
 ---
 
-## Columns
+## Column Naming
+
+Pattern
 
 ```text
 PascalCase
@@ -576,7 +581,7 @@ DoctorId
 
 CreatedAt
 
-UpdatedAt
+VerificationStatus
 ```
 
 ---
@@ -601,29 +606,19 @@ AppointmentId
 
 ---
 
-# 10. Logging Rules
+# 13. Security Rules
 
-Log only:
+## Authentication
 
 ```text
-Authentication
-
-Payments
-
-Verification
-
-Appointment Workflow
-
-Errors
+JWT Authentication
 ```
 
-Do not log sensitive data.
+Required.
 
 ---
 
-# 11. Security Rules
-
-Passwords:
+## Password
 
 ```text
 BCrypt
@@ -639,22 +634,117 @@ Plain Text Password
 
 ---
 
-# 12. AI Generation Rules
+## Authorization
 
-When generating code:
+Every protected endpoint must use:
 
-1. Follow Business Rules first.
-2. Follow Database Design second.
-3. Follow API Design third.
-4. Follow Screen Specifications fourth.
-5. Never create entities outside Domain Model.
-6. Never create endpoints outside API Design.
-7. Always generate DTOs.
-8. Always generate Validators.
-9. Always generate Interfaces.
-10. Always generate Unit Tests skeletons.
-11. Prefer readability over optimization.
-12. Keep methods under 50 lines whenever possible.
-13. Keep Controllers thin.
-14. Keep Services focused.
-15. Never bypass Repository layer.
+```text
+Role-Based Access Control (RBAC)
+```
+
+---
+
+# 14. Logging Rules
+
+Log:
+
+* Authentication Events
+* Verification Events
+* Appointment Workflow
+* Payment Workflow
+* Errors
+
+Do NOT log:
+
+* Passwords
+* OTP Codes
+* Sensitive Medical Notes
+
+---
+
+# 15. External Service Rules
+
+## Brevo
+
+Only through:
+
+```text
+IEmailService
+```
+
+---
+
+## Cloudinary
+
+Only through:
+
+```text
+IFileStorageService
+```
+
+---
+
+## VNPay
+
+Only through:
+
+```text
+IPaymentService
+```
+
+---
+
+# 16. Testing Rules
+
+Minimum:
+
+```text
+Unit Test Skeleton
+```
+
+for every Service.
+
+Test Naming:
+
+```text
+MethodName_ShouldExpectedResult_WhenCondition
+```
+
+Example:
+
+```text
+ApproveAppointment_ShouldSetApproved_WhenAppointmentExists
+```
+
+---
+
+# 17. AI Generation Rules
+
+AI must follow:
+
+1. Scope.md
+2. Business Rules.md
+3. Domain Model.md
+4. Database Design.md
+5. System Workflows.md
+6. API Design.md
+7. Screen Specifications.md
+8. Code Rules.md
+
+AI must:
+
+* Generate Interfaces
+* Generate DTOs
+* Generate Validators
+* Generate Repository Layer
+* Generate Service Layer
+* Generate Unit Test Skeletons
+
+AI must NOT:
+
+* Create entities outside Domain Model
+* Create endpoints outside API Design
+* Bypass Repository Layer
+* Put business logic inside Controllers
+* Put business logic inside Razor Pages
+* Generate unused code
