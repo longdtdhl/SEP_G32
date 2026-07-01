@@ -175,6 +175,29 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task Login_EmailNotVerified_SendsOtpToEmail()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("CorrectPass1"),
+            FullName = "Test", PhoneNumber = "0901111111",
+            IsEmailVerified = false, Status = UserStatus.Inactive,
+            Role = _patientRole, RoleId = _patientRole.Id
+        };
+        _userRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<User> { user });
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        _emailMock.Setup(e => e.SendOtpEmailAsync(user.Email, It.IsAny<string>(), default)).Returns(Task.CompletedTask);
+
+        var result = await _sut.LoginAsync(new LoginDto { Email = "test@test.com", Password = "CorrectPass1" });
+
+        Assert.False(result.Success);
+        _otpRepoMock.Verify(r => r.AddAsync(It.Is<OtpVerification>(otp => otp.UserId == user.Id), default), Times.Once);
+        _emailMock.Verify(e => e.SendOtpEmailAsync(user.Email, It.IsAny<string>(), default), Times.Once);
+    }
+
+    [Fact]
     public async Task Login_LockedAccount_ReturnsError()
     {
         var user = new User

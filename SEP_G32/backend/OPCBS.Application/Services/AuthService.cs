@@ -209,7 +209,21 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Invalid email or password");
 
         if (!user.IsEmailVerified)
-            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. Please verify your email first.");
+        {
+            var otpCode = GenerateOtp();
+            var otp = new OtpVerification
+            {
+                UserId = user.Id,
+                Code = otpCode,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                User = user
+            };
+            await _otpRepo.AddAsync(otp, ct);
+            await _uow.SaveChangesAsync(ct);
+            _ = _emailService.SendOtpEmailAsync(user.Email, otpCode, ct);
+
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. A new verification code has been sent to your email.");
+        }
 
         if (user.Status == UserStatus.Locked)
             return ApiResponse<AuthResponseDto>.ErrorResponse("Account is locked. Contact support.");

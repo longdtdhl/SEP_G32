@@ -113,7 +113,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("TreatmentPackageId");
 
-                    b.ToTable("Appointments");
+                    b.ToTable("Appointments", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.AppointmentHistory", b =>
@@ -145,7 +145,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("AppointmentId");
 
-                    b.ToTable("AppointmentHistories");
+                    b.ToTable("AppointmentHistories", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.AppointmentSlot", b =>
@@ -192,7 +192,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("DoctorProfileId", "SlotDate", "StartTime")
                         .IsUnique();
 
-                    b.ToTable("AppointmentSlots");
+                    b.ToTable("AppointmentSlots", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.AuditLog", b =>
@@ -245,7 +245,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("EntityName", "EntityId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.BlogComment", b =>
@@ -297,7 +297,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("BlogComments");
+                    b.ToTable("BlogComments", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.BlogPost", b =>
@@ -371,7 +371,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("BlogPosts");
+                    b.ToTable("BlogPosts", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Certificate", b =>
@@ -424,7 +424,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("DoctorProfileId");
 
-                    b.ToTable("Certificates");
+                    b.ToTable("Certificates", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.ConsultationRecord", b =>
@@ -490,7 +490,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("ConsultationRecords");
+                    b.ToTable("ConsultationRecords", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorDayOff", b =>
@@ -531,7 +531,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("DoctorProfileId");
 
-                    b.ToTable("DoctorDayOffs");
+                    b.ToTable("DoctorDayOffs", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorProfile", b =>
@@ -598,7 +598,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("DoctorProfiles");
+                    b.ToTable("DoctorProfiles", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorSpecialization", b =>
@@ -638,7 +638,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("DoctorProfileId", "SpecializationId")
                         .IsUnique();
 
-                    b.ToTable("DoctorSpecializations");
+                    b.ToTable("DoctorSpecializations", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorSubscription", b =>
@@ -696,7 +696,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("ServicePackageId");
 
-                    b.ToTable("DoctorSubscriptions");
+                    b.ToTable("DoctorSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Notification", b =>
@@ -753,7 +753,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.OtpVerification", b =>
@@ -789,7 +789,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("OtpVerifications");
+                    b.ToTable("OtpVerifications", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.PatientProfile", b =>
@@ -842,7 +842,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PatientProfiles");
+                    b.ToTable("PatientProfiles", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.PaymentTransaction", b =>
@@ -905,7 +905,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("TransactionCode")
                         .IsUnique();
 
-                    b.ToTable("PaymentTransactions");
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Permission", b =>
@@ -943,7 +943,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Review", b =>
@@ -995,7 +995,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Role", b =>
@@ -1033,7 +1033,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.RolePermission", b =>
@@ -1070,7 +1070,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("RoleId", "PermissionId")
                         .IsUnique();
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Schedule", b =>
@@ -1119,7 +1119,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("DoctorProfileId");
 
-                    b.ToTable("Schedules");
+                    b.ToTable("Schedules", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.ServicePackage", b =>
@@ -1179,7 +1179,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("ServicePackages");
+                    b.ToTable("ServicePackages", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Specialization", b =>
@@ -1220,7 +1220,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Specializations");
+                    b.ToTable("Specializations", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.SystemConfig", b =>
@@ -1270,7 +1270,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("SystemConfigs");
+                    b.ToTable("SystemConfigs", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentPackage", b =>
@@ -1347,7 +1347,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("TreatmentPackages");
+                    b.ToTable("TreatmentPackages", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.User", b =>
@@ -1406,7 +1406,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasDefaultValue(1);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1424,7 +1424,7 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.VerificationRequest", b =>
@@ -1469,7 +1469,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("DoctorProfileId")
                         .IsUnique();
 
-                    b.ToTable("VerificationRequests");
+                    b.ToTable("VerificationRequests", (string)null);
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Appointment", b =>

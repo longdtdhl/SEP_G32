@@ -164,6 +164,10 @@ public static class SeedData
         var patient1User = CreateUser(context, "patient@opcbs.com", "Patient@123", "Nguyễn Văn An", "0912345678", roles[RoleConstants.Patient]);
         var patient2User = CreateUser(context, "patient2@opcbs.com", "Patient@123", "Trần Thị Bình", "0912345679", roles[RoleConstants.Patient]);
         var patient3User = CreateUser(context, "patient3@opcbs.com", "Patient@123", "Phạm Hoàng Cường", "0912345680", roles[RoleConstants.Patient]);
+
+        // Extra auth test accounts for login/OTP flows
+        CreateUser(context, "unverified@opcbs.com", "Unverified@123", "Người chưa xác thực", "0900000004", roles[RoleConstants.Patient], isEmailVerified: false, status: UserStatus.Inactive);
+        CreateUser(context, "locked@opcbs.com", "Locked@123", "Tài khoản bị khóa", "0900000005", roles[RoleConstants.Patient], isEmailVerified: true, status: UserStatus.Locked);
         await context.SaveChangesAsync();
 
         var patient1 = new PatientProfile { UserId = patient1User.Id, User = patient1User, DateOfBirth = new DateTime(1995, 5, 15), Gender = Gender.Male, Address = "123 Nguyễn Trãi, Q.1, TP.HCM" };
@@ -502,7 +506,15 @@ public static class SeedData
         await context.SaveChangesAsync();
     }
 
-    private static User CreateUser(OpcbsDbContext context, string email, string password, string fullName, string phone, Role role)
+    private static User CreateUser(
+        OpcbsDbContext context,
+        string email,
+        string password,
+        string fullName,
+        string phone,
+        Role role,
+        bool isEmailVerified = true,
+        UserStatus status = UserStatus.Active)
     {
         var user = new User
         {
@@ -512,8 +524,8 @@ public static class SeedData
             PhoneNumber = phone,
             RoleId = role.Id,
             Role = role,
-            Status = UserStatus.Active,
-            IsEmailVerified = true
+            Status = status,
+            IsEmailVerified = isEmailVerified
         };
         context.Users.Add(user);
         return user;
