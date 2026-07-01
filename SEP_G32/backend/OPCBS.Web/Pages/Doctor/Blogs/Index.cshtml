@@ -1,0 +1,68 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Blogs.IndexModel
+@{ ViewData["Title"] = "Bài viết của tôi"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1>Bài viết của tôi</h1>
+    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Viết bài mới</a>
+</div>
+
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-3"><div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <select asp-for="Status" class="form-select form-select-sm">
+                <option value="">Tất cả</option>
+                <option value="Draft">Bản nháp</option>
+                <option value="Pending">Chờ duyệt</option>
+                <option value="Published">Đã xuất bản</option>
+                <option value="Rejected">Bị từ chối</option>
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter"></i> Lọc</button></div>
+    </form>
+</div></div>
+
+<div class="card border-0 shadow-sm"><div class="card-body p-0">
+    <div class="table-responsive"><table class="table table-hover mb-0">
+        <thead class="table-light"><tr><th>Tiêu đề</th><th>Danh mục</th><th>Trạng thái</th><th>Ngày tạo</th><th class="text-end">Hành động</th></tr></thead>
+        <tbody>
+            @if (Model.Blogs.Any())
+            {
+                @foreach (var b in Model.Blogs)
+                {
+                    var badge = b.Status switch {
+                        "Draft" => "bg-secondary", "Pending" => "bg-warning text-dark",
+                        "Published" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary"
+                    };
+                    <tr>
+                        <td><strong>@b.Title</strong><br /><small class="text-muted">@(b.Summary?.Length > 60 ? b.Summary[..60] + "..." : b.Summary)</small></td>
+                        <td>@(b.Category ?? "-")</td>
+                        <td><span class="badge @badge">@(b.Status ?? "Draft")</span></td>
+                        <td>@b.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <a asp-page="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            @if (b.Status is "Draft" or null)
+                            {
+                                <form method="post" asp-page-handler="Submit" class="d-inline">
+                                    <input type="hidden" name="id" value="@b.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Gửi duyệt"><i class="bi bi-send"></i></button>
+                                </form>
+                            }
+                            <form method="post" asp-page-handler="Delete" class="d-inline">
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa bài viết này?')"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có bài viết nào</td></tr>
+            }
+        </tbody>
+    </table></div>
+</div></div>

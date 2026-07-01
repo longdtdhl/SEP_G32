@@ -1,0 +1,50 @@
+@page
+@model OPCBS.Web.Pages.Blog.IndexModel
+@{
+    ViewData["Title"] = "Mental Health Resources";
+}
+
+<section class="mb-section">
+    <div class="mb-page-header">
+        <h1>Mental Health Resources</h1>
+    </div>
+    <div class="mb-4">
+        <form method="get" class="mb-search-bar" style="max-width:500px;">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Search articles..." />
+        </form>
+    </div>
+    @if (Model.Blogs.Any())
+    {
+        <div class="row g-4">
+            @foreach (var blog in Model.Blogs)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <a asp-page="Details" asp-route-id="@blog.Id" class="text-decoration-none">
+                        <div class="mb-blog-card h-100">
+                            <div class="blog-image d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg, var(--mb-secondary), var(--mb-primary-light));">
+                                @if (!string.IsNullOrEmpty(blog.ImageUrl))
+                                { <img src="@blog.ImageUrl" alt="@blog.Title" class="w-100 h-100" style="object-fit:cover;" /> }
+                                else
+                                { <i class="bi bi-journal-text" style="font-size:2.5rem;color:var(--mb-primary);"></i> }
+                            </div>
+                            <div class="blog-body">
+                                @if (!string.IsNullOrEmpty(blog.Category)) { <span class="blog-category">@blog.Category</span> }
+                                <h5 class="blog-title">@blog.Title</h5>
+                                <p class="blog-excerpt">@blog.Summary</p>
+                                <div class="blog-meta d-flex justify-content-between">
+                                    <span>@blog.AuthorName</span>
+                                    <span>@blog.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <partial name="_EmptyState" view-data='@(new ViewDataDictionary(ViewData) { { "EmptyIcon", "bi-journal-text" }, { "EmptyTitle", "No articles found" }, { "EmptyMessage", "Check back soon for new resources." } })' />
+    }
+</section>

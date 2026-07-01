@@ -1,0 +1,25 @@
+@page
+@model OPCBS.Web.Pages.Doctor.VerificationStatusModel
+@{ ViewData["Title"] = "Trạng thái xác minh"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header"><h1>Trạng thái xác minh</h1></div>
+
+@if (Model.Verification != null)
+{
+    var v = Model.Verification;
+    var badge = v.Status switch { "Pending" => "bg-warning text-dark", "Approved" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary" };
+    <div class="card border-0 shadow-sm"><div class="card-body text-center py-4">
+        <span class="badge @badge fs-5 mb-3">@(v.Status ?? "N/A")</span>
+        <h4>@(v.DoctorName ?? "N/A")</h4>
+        <p class="text-muted">Nộp ngày @v.SubmittedAt.ToString("dd/MM/yyyy")</p>
+        @if (!string.IsNullOrEmpty(v.RejectionReason)) { <div class="alert alert-danger">@v.RejectionReason</div> }
+        <a asp-page="Verification" class="btn btn-outline-primary mt-2">Xem chi tiết</a>
+    </div></div>
+}
+else
+{
+    <div class="card border-0 shadow-sm"><div class="card-body text-center py-5 text-muted">
+        <p>Chưa nộp hồ sơ xác minh</p>
+        <a asp-page="Verification" class="btn btn-primary">Nộp hồ sơ</a>
+    </div></div>
+}

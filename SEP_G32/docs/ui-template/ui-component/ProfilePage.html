@@ -1,0 +1,389 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Account Settings | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#bfc9c2",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#438066",
+                        "on-tertiary-fixed": "#390b0d",
+                        "on-surface": "#191c1a",
+                        "secondary": "#52625a",
+                        "primary": "#29674e",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#b0f0d0",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#d5e7dd",
+                        "primary-fixed-dim": "#95d4b5",
+                        "on-secondary-fixed": "#0f1e19",
+                        "surface-tint": "#2b6950",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "on-primary-fixed": "#002115",
+                        "surface-variant": "#e1e3df",
+                        "surface-container-low": "#f2f4f0",
+                        "on-primary-container": "#f5fff7",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eff1ed",
+                        "secondary-fixed": "#d5e7dd",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8faf6",
+                        "tertiary": "#894a49",
+                        "on-surface-variant": "#404943",
+                        "surface-container": "#eceeea",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "inverse-primary": "#95d4b5",
+                        "surface": "#f8faf6",
+                        "surface-container-high": "#e7e9e5",
+                        "tertiary-fixed": "#ffdad8",
+                        "tertiary-fixed-dim": "#ffb3b1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-highest": "#e1e3df",
+                        "outline": "#707973",
+                        "background": "#f8faf6",
+                        "tertiary-container": "#a66261",
+                        "on-background": "#191c1a",
+                        "on-tertiary-fixed-variant": "#6f3535",
+                        "on-secondary-container": "#586860",
+                        "surface-dim": "#d8dbd7",
+                        "inverse-surface": "#2e312f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "4px",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "2xl": "20px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "sm": "12px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "lg": "48px",
+                        "xl": "80px",
+                        "md": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FAFBFA;
+            font-family: 'Inter', sans-serif;
+            color: #191c1a;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .soft-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04);
+        }
+        .premium-input {
+            border: 1px solid rgba(112, 121, 115, 0.1);
+            transition: all 0.2s ease;
+        }
+        .premium-input:focus {
+            outline: none;
+            border-color: #29674e;
+            box-shadow: 0 0 0 3px rgba(213, 231, 221, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant/10 shadow-sm">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-[1280px] mx-auto h-20">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-2">
+<img alt="MindBridge Logo" class="w-8 h-8" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<span class="font-headline-md text-headline-md font-bold text-primary">MindBridge</span>
+</div>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Find a Therapist</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Business</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">FAQ</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all active:scale-95">Log In</button>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-body-sm text-body-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-sm">Get Started</button>
+</div>
+</div>
+</header>
+<main class="flex-grow">
+<!-- Profile Header Section -->
+<section class="w-full bg-surface-container-low pt-xl pb-lg">
+<div class="max-w-[1280px] mx-auto px-margin-desktop">
+<div class="flex flex-col md:flex-row items-center md:items-end gap-md">
+<div class="relative">
+<div class="w-32 h-32 rounded-full border-4 border-surface bg-surface-container shadow-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A warm, professional headshot of a person with a gentle smile, neutral background, soft natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxHLFaL7CtX2ZhyWKZnNHtVTCCwOokVOmvULLQ8pdQbvD8UqPsJyfcDsa1CyuseEoBdXPPu-aDM_twCPvg5axACBR6Xh-sEjBtG-HHK_YZwy-hqSih4t70l8A96YYjLpHigN71ll5EVPTuoxwVm-gwmbuMoy0CV_hqg1ThqMfQ03Cdb41Skn0ER_bRu7ZTYwyQ5bTJU2vFGtJ2t70iHnfl7owLCSqwYTZ2aMVFO-ufWw8vScofDKiFwkceMPWXRxFVSFcszdTXtRVu">
+</div>
+<button class="absolute bottom-1 right-1 bg-primary text-on-primary p-2 rounded-full shadow-lg hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+</div>
+<div class="flex-grow text-center md:text-left mb-2">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Alex Rivera</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Member since October 2023</p>
+</div>
+<div class="flex gap-sm mb-2">
+<button class="flex items-center gap-2 bg-secondary-container text-on-secondary-container px-6 py-3 rounded-xl font-body-sm text-body-sm font-semibold hover:bg-secondary-container/80 transition-all">
+<span class="material-symbols-outlined">description</span>
+                            View Medical Records
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Content Grid -->
+<section class="max-w-[1280px] mx-auto px-margin-desktop py-xl">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Sidebar Navigation -->
+<aside class="md:col-span-3 space-y-2">
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container/10 text-primary font-bold rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+                            Personal Info
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">security</span>
+                            Security
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                            Notifications
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">credit_card</span>
+                            Billing &amp; Plans
+                        </a>
+<div class="pt-4 border-t border-outline-variant/20 mt-xl">
+<a class="flex items-center gap-3 px-4 py-3 text-error hover:bg-error-container/20 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+                                Log Out
+                            </a>
+</div>
+</nav>
+</aside>
+<!-- Settings Canvas -->
+<div class="md:col-span-9 space-y-lg">
+<!-- Basic Information Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-xl soft-shadow shadow-md">
+<div class="flex justify-between items-center mb-xl">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Account Details</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Update your profile and contact information</p>
+</div>
+</div>
+<form class="space-y-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Full Name</label>
+<input class="w-full premium-input rounded-xl px-4 py-3 font-body-md text-body-md" placeholder="Enter your full name" type="text" value="Alex Rivera">
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Email Address</label>
+<input class="w-full premium-input rounded-xl px-4 py-3 font-body-md text-body-md" placeholder="Enter your email" type="email" value="alex.rivera@example.com">
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Phone Number</label>
+<input class="w-full premium-input rounded-xl px-4 py-3 font-body-md text-body-md" placeholder="+1 (000) 000-0000" type="tel" value="+1 (555) 123-4567">
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Preferred Language</label>
+<select class="w-full premium-input rounded-xl px-4 py-3 font-body-md text-body-md appearance-none bg-no-repeat bg-[right_1rem_center]">
+<option>English (US)</option>
+<option>Spanish</option>
+<option>French</option>
+</select>
+</div>
+</div>
+<div class="pt-xl flex justify-end gap-md">
+<button class="px-6 py-3 font-body-sm text-body-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors" type="button">Discard Changes</button>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-body-sm text-body-sm font-semibold hover:opacity-95 transition-all shadow-md active:scale-[0.98]" type="submit">Update Profile</button>
+</div>
+</form>
+</div>
+<!-- Security Section -->
+<div class="bg-surface-container-lowest rounded-2xl p-xl soft-shadow shadow-md">
+<div class="flex flex-col md:flex-row justify-between md:items-center gap-md mb-xl">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Security &amp; Privacy</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your password and authentication</p>
+</div>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-on-surface">Password</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last changed 3 months ago</p>
+</div>
+</div>
+<button class="bg-surface text-primary border border-primary/20 px-6 py-2 rounded-lg font-body-sm text-body-sm font-semibold hover:bg-primary/5 transition-all active:scale-95">Change Password</button>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-on-surface">Two-Factor Authentication</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enabled via SMS</p>
+</div>
+</div>
+<div class="relative inline-block w-12 h-6 rounded-full bg-primary transition-colors cursor-pointer">
+<div class="absolute right-1 top-1 bg-white w-4 h-4 rounded-full shadow-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Session Management -->
+<div class="bg-surface-container-lowest rounded-2xl p-xl soft-shadow shadow-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xl">Recent Sessions</h3>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="border-b border-outline-variant/10">
+<th class="pb-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Device</th>
+<th class="pb-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Location</th>
+<th class="pb-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="pb-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">laptop_mac</span>
+<span class="font-body-md text-body-md text-on-surface">MacBook Pro - Chrome</span>
+</div>
+</td>
+<td class="py-4 font-body-md text-body-md text-on-surface-variant">San Francisco, CA</td>
+<td class="py-4">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-[12px] font-bold">ACTIVE</span>
+</td>
+<td class="py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">smartphone</span>
+<span class="font-body-md text-body-md text-on-surface">iPhone 14 - App</span>
+</div>
+</td>
+<td class="py-4 font-body-md text-body-md text-on-surface-variant">San Francisco, CA</td>
+<td class="py-4 font-body-sm text-body-sm text-on-surface-variant">2 hours ago</td>
+<td class="py-4 text-right">
+<button class="font-body-sm text-body-sm font-semibold hover:underline text-on-surface-variant hover:text-error">Revoke</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container w-full py-xl px-margin-desktop max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-start gap-lg mt-xl">
+<div class="space-y-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">MindBridge</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Building bridges to better mental health through technology, empathy, and evidence-based care.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 MindBridge. All rights reserved.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-xl">
+<div class="space-y-4">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Support</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Contact Us</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">FAQ</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Privacy Policy</a>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Company</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">About</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Resources</a>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Connect</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">LinkedIn</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Instagram</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-all" href="#">Twitter</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple toggle for 2FA switch micro-interaction
+        document.querySelector('.relative.inline-block.w-12.h-6').addEventListener('click', function() {
+            const toggle = this;
+            const handle = toggle.querySelector('div');
+            const isEnabled = toggle.classList.contains('bg-primary');
+            
+            if (isEnabled) {
+                toggle.classList.remove('bg-primary');
+                toggle.classList.add('bg-surface-variant');
+                handle.classList.remove('right-1');
+                handle.classList.add('left-1');
+            } else {
+                toggle.classList.add('bg-primary');
+                toggle.classList.remove('bg-surface-variant');
+                handle.classList.add('right-1');
+                handle.classList.remove('left-1');
+            }
+        });
+
+        // Add press effect to primary buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => button.classList.add('scale-[0.98]'));
+            button.addEventListener('mouseup', () => button.classList.remove('scale-[0.98]'));
+            button.addEventListener('mouseleave', () => button.classList.remove('scale-[0.98]'));
+        });
+    </script>
+
+
+</body></html>

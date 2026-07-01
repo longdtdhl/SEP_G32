@@ -1,0 +1,121 @@
+@page
+@model OPCBS.Web.Pages.CustomerSupport.DashboardModel
+@{
+    ViewData["Title"] = "Customer Support Dashboard";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header"><h1><i class="bi bi-headset me-2" style="color:var(--mb-primary);"></i>Customer Support Dashboard</h1></div>
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(245,158,11,0.1);"><i class="bi bi-hourglass-split fs-4 text-warning"></i></div>
+            <div><small class="text-muted">Pending Verifications</small><h3 class="mb-0 fw-bold">@Model.Stats.PendingVerifications</h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(236,72,153,0.1);"><i class="bi bi-journal-check fs-4" style="color:#ec4899;"></i></div>
+            <div><small class="text-muted">Pending Blogs</small><h3 class="mb-0 fw-bold">@Model.Stats.PendingBlogApprovals</h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(78,139,112,0.1);"><i class="bi bi-person-badge fs-4" style="color:var(--mb-primary);"></i></div>
+            <div><small class="text-muted">Total Doctors</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalDoctors</h3></div>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3" style="background:rgba(16,185,129,0.1);"><i class="bi bi-people fs-4 text-success"></i></div>
+            <div><small class="text-muted">Total Users</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalUsers</h3></div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Doctor Applications -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-person-check me-1"></i>Pending Doctor Applications</h6>
+                <a asp-page="DoctorApplications/Index" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentApplications.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var app in Model.RecentApplications.Take(5))
+                        {
+                            var statusClass = app.Status?.ToLower() switch { "pending" => "text-warning", "approved" => "text-success", "rejected" => "text-danger", _ => "text-secondary" };
+                            <a asp-page="DoctorApplications/Details" asp-route-id="@app.Id" class="list-group-item list-group-item-action py-3 px-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="fw-semibold">@(app.DoctorName ?? "Unknown Doctor")</span>
+                                        <small class="text-muted d-block">@(app.Specialization ?? "—") • @app.ExperienceYears years exp</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning" style="font-size:0.65rem;">@(app.Status ?? "Pending")</span>
+                                        <small class="text-muted d-block mt-1">@app.SubmittedAt.ToString("dd/MM")</small>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted"><i class="bi bi-check-circle d-block mb-1" style="font-size:1.5rem;"></i><small>No pending applications</small></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Blog Moderation -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-1"></i>Blog Moderation Queue</h6>
+                <a asp-page="BlogModeration/Index" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentBlogs.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var blog in Model.RecentBlogs.Take(5))
+                        {
+                            <a asp-page="BlogModeration/Details" asp-route-id="@blog.Id" class="list-group-item list-group-item-action py-3 px-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="fw-semibold small">@(blog.Title.Length > 50 ? blog.Title[..50] + "…" : blog.Title)</span>
+                                        <small class="text-muted d-block">@(blog.AuthorName ?? "Unknown") • @(blog.Category ?? "General")</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning" style="font-size:0.65rem;">@(blog.Status ?? "Pending")</span>
+                                        <small class="text-muted d-block mt-1">@blog.CreatedAt.ToString("dd/MM")</small>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted"><i class="bi bi-check-circle d-block mb-1" style="font-size:1.5rem;"></i><small>No pending blogs</small></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-lightning me-1"></i>Quick Actions</h6></div>
+    <div class="card-body d-flex gap-2 flex-wrap">
+        <a asp-page="DoctorApplications/Index" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-check me-1"></i>Review Applications</a>
+        <a asp-page="BlogModeration/Index" class="btn btn-outline-primary btn-sm"><i class="bi bi-journal-text me-1"></i>Moderate Blogs</a>
+    </div>
+</div>

@@ -1,0 +1,29 @@
+@* Pagination partial — pass ViewData["Pagination"] as PaginationDto and ViewData["PageUrl"] as base URL *@
+@using OPCBS.Web.DTOs
+@{
+    var pagination = ViewData["Pagination"] as PaginationDto;
+    var baseUrl = ViewData["PageUrl"] as string ?? "";
+}
+@if (pagination != null && pagination.TotalPages > 1)
+{
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination mb-pagination justify-content-center">
+            <li class="page-item @(!pagination.HasPreviousPage ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl?page=@(pagination.Page - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            @for (int i = 1; i <= pagination.TotalPages; i++)
+            {
+                <li class="page-item @(i == pagination.Page ? "active" : "")">
+                    <a class="page-link" href="@baseUrl?page=@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(!pagination.HasNextPage ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl?page=@(pagination.Page + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}

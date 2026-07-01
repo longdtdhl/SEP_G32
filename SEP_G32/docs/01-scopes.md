@@ -12,11 +12,25 @@ Online Psychological Counseling Booking System (OPCBS)
 
 The Online Psychological Counseling Booking System (OPCBS) is a web-based platform that connects Patients with verified Doctors specializing in psychological counseling and mental health services.
 
-The system allows Patients to discover Doctors, book appointments, manage consultation records, receive treatment package recommendations, and provide feedback after consultations.
+The system enables Patients to discover Doctors, book appointments, manage consultation records, receive treatment package recommendations, and provide feedback after consultations.
 
-Doctors can manage schedules, appointments, patient records, treatment packages, blogs, and subscriptions.
+Doctors can manage schedules, appointments, consultation records, treatment packages, blogs, and service package subscriptions.
 
 Administrative users manage platform operations, content moderation, business configurations, and system security.
+
+---
+
+## 2.1 Package Types
+
+OPCBS supports two distinct package types:
+
+### Service Package
+
+A subscription plan purchased by Doctors to access OPCBS platform features and receive appointment bookings.
+
+### Treatment Package
+
+A counseling package created by Doctors and assigned to Patients as part of a treatment plan.
 
 ---
 
@@ -40,7 +54,6 @@ Administrative users manage platform operations, content moderation, business co
 
 * View Home Page
 * Search Doctors
-* Filter Doctors
 * View Doctor Profile
 * View Doctor Schedule
 * View Doctor Ratings
@@ -75,10 +88,11 @@ Administrative users manage platform operations, content moderation, business co
 
 ---
 
-## Patient Record Management
+## Consultation Record Management
 
-* View Patient Records
-* Manage Patient Records
+* View Consultation Records
+* Create Consultation Records
+* Update Consultation Records
 * View Consultation History
 
 ---
@@ -129,19 +143,18 @@ Administrative users manage platform operations, content moderation, business co
 
 ---
 
-## Subscription Management
+## Service Package Management
 
 * View Service Packages
-* Purchase Subscription Package
-* View Subscription Status
+* Purchase Service Package
+* View Service Package Status
 
 ---
 
 ## Payment Integration
 
-* VNPay Payment Processing
-* Payment Confirmation
-* Subscription Activation
+* Process Subscription Payment
+* Activate Subscription After Successful Payment
 
 ---
 
@@ -158,7 +171,9 @@ Administrative users manage platform operations, content moderation, business co
 ## Customer Support Operations
 
 * View Staff Dashboard
+* View Pending Doctor Applications
 * Review Doctor Applications
+* View Pending Blogs
 * Review Blog Content
 
 ---
@@ -248,9 +263,10 @@ The system supports only a single organization.
 ## External Actors
 
 * Guest
-* Email Service
-* Payment Gateway
-* Google Authentication Service
+* Brevo Email Service
+* VNPay Payment Gateway
+* Google OAuth Service
+* Cloudinary File Storage
 
 ---
 
@@ -258,20 +274,22 @@ The system supports only a single organization.
 
 OPCBS is responsible for:
 
-* User authentication
-* Doctor discovery
-* Appointment management
-* Consultation tracking
-* Package management
-* Blog management
-* Doctor verification
-* Subscription management
+* User Authentication & Authorization
+* Doctor Discovery
+* Appointment Management
+* Consultation Record Management
+* Treatment Package Management
+* Blog Management
+* Doctor Verification
+* Service Package Management
+* Notification Management
 
 External systems are responsible for:
 
-* Email delivery
-* Payment processing
-* Google authentication
+* Email Delivery
+* Payment Processing
+* Google Authentication
+* File and Image Storage
 
 ---
 
@@ -279,10 +297,15 @@ External systems are responsible for:
 
 The system shall:
 
-* Allow Patients to successfully book appointments.
-* Allow Doctors to manage consultations and schedules.
+* Allow Guests to book and track appointments.
+* Allow Patients to successfully book and manage appointments.
+* Allow Doctors to manage schedules, consultations, and treatment packages.
+* Allow Doctors to receive appointments only when verified and subscribed.
 * Allow Customer Support to verify Doctors and moderate Blogs.
-* Allow Business Managers to manage business configurations.
+* Allow Business Managers to manage business configurations and subscription plans.
 * Allow System Administrators to manage platform operations.
-* Provide secure and scalable access control.
+* Prevent double-booking and overlapping schedules.
+* Maintain secure Role-Based Access Control (RBAC).
+* Support audit logging for administrative activities.
+* Provide secure and scalable platform access.
 * Support subscription-based Doctor services.

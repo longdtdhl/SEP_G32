@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Find a Therapist | SerenityPath</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f2f4f0",
+                        "primary-fixed": "#b0f0d0",
+                        "surface-tint": "#2b6950",
+                        "tertiary-fixed": "#ffdad8",
+                        "surface-dim": "#d8dbd7",
+                        "primary": "#29674e",
+                        "inverse-primary": "#95d4b5",
+                        "surface-variant": "#e1e3df",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#894a49",
+                        "surface-container-highest": "#e1e3df",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "surface-container-high": "#e7e9e5",
+                        "on-secondary-container": "#586860",
+                        "on-primary-container": "#f5fff7",
+                        "on-surface": "#191c1a",
+                        "background": "#f8faf6",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#438066",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "surface": "#f8faf6",
+                        "on-surface-variant": "#404943",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#95d4b5",
+                        "on-background": "#191c1a",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eff1ed",
+                        "on-primary-fixed": "#002115",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#d5e7dd",
+                        "on-secondary-fixed": "#0f1e19",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "secondary": "#52625a",
+                        "surface-bright": "#f8faf6",
+                        "on-tertiary-fixed": "#390b0d",
+                        "secondary-container": "#d5e7dd",
+                        "surface-container": "#eceeea",
+                        "tertiary-fixed-dim": "#ffb3b1",
+                        "outline-variant": "#bfc9c2",
+                        "tertiary-container": "#a66261",
+                        "outline": "#707973",
+                        "on-tertiary-fixed-variant": "#6f3535",
+                        "inverse-surface": "#2e312f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "card": "20px",
+                        "input": "12px"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "margin-desktop": "64px",
+                        "lg": "48px",
+                        "sm": "12px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8faf6; /* Mist background from design system */
+            color: #191c1a;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .soft-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04);
+        }
+        .elevation-2 {
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+        }
+        .time-row {
+            height: 64px;
+            border-bottom: 1px solid rgba(191, 201, 194, 0.2);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-[1280px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary">SerenityPath</span>
+<nav class="hidden md:flex items-center space-x-6">
+<!-- Specialists active based on prompt -->
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Find a Therapist</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Business</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">FAQ</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/20">
+<span class="material-symbols-outlined text-outline text-[20px] mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-48" placeholder="Search specialists..." type="text"/>
+</div>
+<button class="text-on-surface-variant font-semibold px-4">Log in</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-semibold hover:opacity-90 transition-opacity">Get Started</button>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<div class="flex flex-col lg:flex-row gap-gutter">
+<!-- Sidebar: Specialist Info & Mini Calendar -->
+<aside class="w-full lg:w-[320px] space-y-md">
+<!-- Mini Month Calendar -->
+<div class="bg-surface-container-lowest p-md rounded-card soft-shadow border border-outline-variant/10">
+<div class="flex justify-between items-center mb-4">
+<button class="p-1 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-outline">chevron_left</span>
+</button>
+<span class="font-semibold text-on-surface">JUNE 2026</span>
+<button class="p-1 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-7 text-center text-label-md text-outline mb-2">
+<div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+</div>
+<div class="grid grid-cols-7 text-center gap-y-1">
+<div class="py-1 text-outline opacity-30 text-body-sm">31</div>
+<div class="py-1 text-on-surface text-body-sm">1</div>
+<div class="py-1 text-on-surface text-body-sm">2</div>
+<div class="py-1 text-on-surface text-body-sm font-bold bg-primary-fixed rounded-full">3</div>
+<div class="py-1 text-on-surface text-body-sm">4</div>
+<div class="py-1 text-on-surface text-body-sm">5</div>
+<div class="py-1 text-on-surface text-body-sm">6</div>
+<!-- ... more days ... -->
+<div class="py-1 text-on-surface text-body-sm">7</div>
+<div class="py-1 text-on-surface text-body-sm">8</div>
+<div class="py-1 text-on-surface text-body-sm">9</div>
+<div class="py-1 text-on-surface text-body-sm">10</div>
+<div class="py-1 text-on-surface text-body-sm">11</div>
+<div class="py-1 text-on-surface text-body-sm">12</div>
+<div class="py-1 text-on-surface text-body-sm">13</div>
+<div class="py-1 text-on-surface text-body-sm">14</div>
+<div class="py-1 text-on-surface text-body-sm">15</div>
+<div class="py-1 text-on-surface text-body-sm">16</div>
+<div class="py-1 text-on-surface text-body-sm">17</div>
+<div class="py-1 text-on-surface text-body-sm">18</div>
+<div class="py-1 text-on-surface text-body-sm">19</div>
+<div class="py-1 text-on-surface text-body-sm">20</div>
+<div class="py-1 text-on-surface text-body-sm">21</div>
+<div class="py-1 text-on-surface text-body-sm">22</div>
+<div class="py-1 text-on-surface text-body-sm bg-primary text-on-primary rounded-full">23</div>
+<div class="py-1 text-on-surface text-body-sm">24</div>
+<div class="py-1 text-on-surface text-body-sm">25</div>
+<div class="py-1 text-on-surface text-body-sm">26</div>
+<div class="py-1 text-on-surface text-body-sm">27</div>
+<div class="py-1 text-on-surface text-body-sm">28</div>
+<div class="py-1 text-on-surface text-body-sm">29</div>
+<div class="py-1 text-on-surface text-body-sm">30</div>
+<div class="py-1 text-outline opacity-30 text-body-sm">1</div>
+</div>
+</div>
+<!-- Specialist Profile Card -->
+<div class="bg-surface-container-lowest p-md rounded-card soft-shadow border border-outline-variant/10">
+<div class="flex items-center gap-4 mb-6">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-surface-container-low shadow-sm" data-alt="A professional portrait of a female therapist in her 40s, wearing a soft cream sweater. She has a warm, empathetic smile and is sitting in a bright, modern office with soft-focus plants in the background. The lighting is high-key and natural, emphasizing a calm and trustworthy professional atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBp_98l6C2RFkDP6BY0pds03DPyPo4c64NKja3zGSfRRabJz7DiX4l-i3002ULNronbh9_s8l2MAOM6wMK0-EtywwmTWL6Lp5UmcFmGSd91nhc7Br_paLy5OQaBH4Ck8UkwYTaBwGwJ5sAuMiA593WNbyLI4uw8Y7FlRprNHbOUhAitPFTPmh1QvyYkVYPNvA3UCSdasbyJpN2Vs_jozxP3I4AFwM3kRC8u7ByGNYedT5RfpjFmqt_vr0zaQ99eBI0aTG0gZH-JmJpV"/>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-2 border-white rounded-full"></div>
+</div>
+<div>
+<h3 class="font-headline-md text-[18px] leading-tight text-on-surface">Dr. Sarah Jenkins</h3>
+<p class="text-body-sm text-outline">Clinical Psychologist</p>
+<p class="text-label-md text-primary mt-1">Specialization: Trauma &amp; Anxiety</p>
+</div>
+</div>
+<div class="space-y-4 py-4 border-t border-outline-variant/10">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<span class="text-body-sm font-medium">Thu, 28/5</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<span class="text-body-sm font-medium">9:00 - 12:00</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">groups</span>
+<span class="text-body-sm font-medium">0 / 2 slots available</span>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-semibold mt-4 hover:opacity-95 active:scale-[0.98] transition-all elevation-2">
+                        Confirm Booking
+                    </button>
+</div>
+<!-- Legend -->
+<div class="px-md space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-6 bg-primary-fixed border border-primary/20 rounded-lg"></div>
+<span class="text-body-sm text-on-surface-variant">Slot Available</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-12 h-6 bg-surface-dim border border-outline-variant rounded-lg"></div>
+<span class="text-body-sm text-on-surface-variant">Slot Full</span>
+</div>
+</div>
+</aside>
+<!-- Main Schedule Area -->
+<section class="flex-grow bg-surface-container-lowest rounded-card soft-shadow border border-outline-variant/10 overflow-hidden flex flex-col">
+<!-- Schedule Header -->
+<div class="p-md border-b border-outline-variant/10 flex flex-wrap justify-between items-center gap-4">
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container-low rounded-lg p-1">
+<button class="p-1 hover:bg-white rounded-md transition-all">
+<span class="material-symbols-outlined text-on-surface">chevron_left</span>
+</button>
+<button class="p-1 hover:bg-white rounded-md transition-all">
+<span class="material-symbols-outlined text-on-surface">chevron_right</span>
+</button>
+</div>
+<h2 class="font-headline-md text-on-surface">May 24 - 30, 2025</h2>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-secondary-container text-on-secondary-container px-4 py-1.5 rounded-full text-body-sm font-semibold">Week 13</span>
+<div class="flex bg-surface-container-low rounded-lg p-1">
+<button class="px-4 py-1.5 text-body-sm font-medium hover:bg-white rounded-md transition-all">Day</button>
+<button class="px-4 py-1.5 text-body-sm font-semibold bg-white rounded-md shadow-sm">Week</button>
+<button class="px-4 py-1.5 text-body-sm font-medium hover:bg-white rounded-md transition-all">Month</button>
+</div>
+</div>
+</div>
+<!-- Grid Header -->
+<div class="calendar-grid bg-surface-container-low/30 border-b border-outline-variant/20">
+<div class="p-4"></div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">SUN</div>
+<div class="text-headline-md text-on-surface">24</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10 bg-primary/5">
+<div class="text-label-md text-primary">MON</div>
+<div class="text-headline-md text-primary font-bold">25</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">TUE</div>
+<div class="text-headline-md text-on-surface">26</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">WED</div>
+<div class="text-headline-md text-on-surface">27</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">THU</div>
+<div class="text-headline-md text-on-surface">28</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">FRI</div>
+<div class="text-headline-md text-on-surface">29</div>
+</div>
+<div class="p-4 text-center border-l border-outline-variant/10">
+<div class="text-label-md text-outline">SAT</div>
+<div class="text-headline-md text-on-surface">30</div>
+</div>
+</div>
+<!-- Grid Body -->
+<div class="relative overflow-y-auto max-h-[600px]">
+<!-- Time Rows -->
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">9:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">10:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 relative">
+<!-- Available Slot (Green) -->
+<div class="absolute inset-x-2 top-2 h-32 bg-primary-fixed border border-primary/20 rounded-lg p-2 flex flex-col justify-center items-center cursor-pointer hover:shadow-md transition-all z-10">
+<span class="text-label-md text-on-primary-fixed-variant font-bold">AVAILABLE</span>
+<span class="text-body-sm text-primary font-semibold">0 / 2</span>
+</div>
+</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">11:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">12:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">13:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 relative">
+<!-- Full Slot (Gray) -->
+<div class="absolute inset-x-2 top-2 h-32 bg-surface-dim border border-outline-variant rounded-lg p-2 flex flex-col justify-center items-center opacity-70 z-10 cursor-not-allowed">
+<span class="text-label-md text-outline font-bold">FULL</span>
+<span class="text-body-sm text-outline font-semibold">2 / 2</span>
+</div>
+</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">14:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+<div class="calendar-grid">
+<div class="time-row pr-3 text-right text-label-md text-outline pt-2">15:00</div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10 bg-primary/5"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+<div class="time-row border-l border-outline-variant/10"></div>
+</div>
+</div>
+<!-- Scroll Shadow Indicator -->
+<div class="h-8 bg-gradient-to-t from-surface-container-lowest to-transparent pointer-events-none sticky bottom-0"></div>
+</section>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-xl max-w-[1280px] mx-auto space-y-md md:space-y-0">
+<div class="flex flex-col items-center md:items-start space-y-2">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">SerenityPath</span>
+<p class="text-body-sm text-on-surface-variant text-center md:text-left">© 2024 SerenityPath. All rights reserved. Your privacy is our priority.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for slots
+        document.querySelectorAll('.calendar-grid div[class*="bg-primary-fixed"]').forEach(slot => {
+            slot.addEventListener('mousedown', function() {
+                this.classList.add('scale-[0.98]');
+            });
+            slot.addEventListener('mouseup', function() {
+                this.classList.remove('scale-[0.98]');
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,44 @@
+@page
+@model OPCBS.Web.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="mb-auth-container">
+    <div class="mb-auth-card">
+        <h2>Create Your Account</h2>
+        <p class="auth-subtitle">Join MindBridge and start your wellness journey</p>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+        <form method="post">
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label">Full Name</label>
+                <input asp-for="Input.FullName" class="form-control" placeholder="Enter your full name" />
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" type="email" class="form-control" placeholder="your@email.com" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.PhoneNumber" class="form-label">Phone Number</label>
+                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="0912345678" />
+                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">Password</label>
+                <input asp-for="Input.Password" type="password" class="form-control" placeholder="Create a password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password</label>
+                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Create Account</button>
+        </form>
+        <div class="auth-footer">
+            Already have an account? <a asp-page="/Account/Login">Log in</a>
+        </div>
+    </div>
+</div>

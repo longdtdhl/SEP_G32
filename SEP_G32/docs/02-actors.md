@@ -1,26 +1,29 @@
+# 02-actors.md
+
 # Actors
 
 ## Purpose
 
-This document defines all actors interacting with the Online Psychological Counseling Booking System (OPCBS), including internal users, external users, and third-party systems.
+This document defines all actors interacting with the Online Psychological Counseling Booking System (OPCBS), including human users, internal staff, and external integrated systems.
 
-The actor definitions serve as the foundation for use cases, business rules, authorization rules, and system workflows.
+Actor definitions provide the foundation for use cases, workflows, authorization rules, and system interactions.
 
 ---
 
 # Actor Overview
 
-| ID     | Actor                         | Type            |
-| ------ | ----------------------------- | --------------- |
-| ACT-01 | Guest                         | Human Actor     |
-| ACT-02 | Patient                       | Human Actor     |
-| ACT-03 | Doctor                        | Human Actor     |
-| ACT-04 | Customer Support              | Internal Staff  |
-| ACT-05 | Business Manager              | Internal Staff  |
-| ACT-06 | System Admin                  | Internal Staff  |
-| ACT-07 | Email Service                 | External System |
-| ACT-08 | Payment Gateway               | External System |
-| ACT-09 | Google Authentication Service | External System |
+| ID     | Actor                   | Type            |
+| ------ | ----------------------- | --------------- |
+| ACT-01 | Guest                   | Human Actor     |
+| ACT-02 | Patient                 | Human Actor     |
+| ACT-03 | Doctor                  | Human Actor     |
+| ACT-04 | Customer Support        | Internal Staff  |
+| ACT-05 | Business Manager        | Internal Staff  |
+| ACT-06 | System Administrator    | Internal Staff  |
+| ACT-07 | Brevo Email Service     | External System |
+| ACT-08 | VNPay Payment Gateway   | External System |
+| ACT-09 | Google OAuth Service    | External System |
+| ACT-10 | Cloudinary File Storage | External System |
 
 ---
 
@@ -28,28 +31,28 @@ The actor definitions serve as the foundation for use cases, business rules, aut
 
 ## Description
 
-A Guest is an unregistered visitor who accesses the platform without creating an account.
+A Guest is an unauthenticated visitor who accesses public information on the platform without registering an account.
 
-Guests can explore public information and create appointments without registration.
+Guests may search for doctors, read blog content, create appointment bookings, and track appointments using booking codes.
 
 ## Responsibilities
 
-* Browse homepage
+* View homepage
 * Search doctors
-* Filter doctors
 * View doctor profiles
 * View doctor schedules
+* View doctor ratings
 * Read blog articles
 * Book appointments
-* Track bookings using booking code
+* Track appointments using booking code and email
 
 ## Restrictions
 
 Guests cannot:
 
-* View patient records
-* Submit ratings
-* Submit feedback
+* Access patient information
+* Submit ratings or reviews
+* Submit blog comments
 * Access dashboards
 * Manage appointments after authentication-required actions
 
@@ -61,25 +64,43 @@ Guests cannot:
 
 A Patient is a registered user seeking psychological counseling services.
 
-Patients can manage appointments, profiles, consultation history, and package subscriptions.
+Patients can manage appointments, consultation history, treatment packages, ratings, and personal profiles.
 
 ## Responsibilities
 
-* Manage profile information
+### Profile Management
+
+* Update profile information
+* Change password
+
+### Appointment Management
+
 * Book appointments
 * Cancel appointments
 * Reschedule appointments
 * View appointment history
+
+### Consultation Management
+
+* View consultation records
 * View consultation history
-* Purchase consultation packages
-* Accept package proposals
-* Reject package proposals
-* Submit ratings and reviews
+
+### Treatment Package Management
+
+* View package proposals
+* Accept treatment packages
+* Reject treatment packages
+* View active packages
+
+### Feedback
+
+* Submit ratings
+* Submit reviews
 * Submit blog comments
 
 ## Restrictions
 
-Patients can only access their own information and records.
+Patients may only access their own information and consultation records.
 
 ---
 
@@ -87,15 +108,15 @@ Patients can only access their own information and records.
 
 ## Description
 
-A Doctor is a certified psychologist providing professional counseling services through the platform.
+A Doctor is a verified mental health professional providing counseling services through the platform.
 
-Doctors manage schedules, consultations, patient records, blogs, and service packages.
+Doctors manage appointments, schedules, consultation records, treatment packages, blogs, and service package subscriptions.
 
 ## Responsibilities
 
 ### Appointment Management
 
-* Review booking requests
+* View appointment requests
 * Approve appointments
 * Reject appointments
 * Update appointment status
@@ -109,26 +130,28 @@ Doctors manage schedules, consultations, patient records, blogs, and service pac
 
 ### Consultation Management
 
-* Access assigned patient records
-* Add consultation notes
+* View assigned consultation records
+* Create consultation records
+* Update consultation records
 * Add treatment recommendations
 * Add follow-up notes
+
+### Treatment Package Management
+
+* Create treatment packages
+* Update treatment packages
+* Delete treatment packages
+* Assign treatment packages to patients
 
 ### Blog Management
 
 * Create blogs
-* Edit blogs
-* Manage blogs
+* Update blogs
+* Submit blogs for review
 
-### Package Management
+### Service Package Management
 
-* Create consultation packages
-* Update consultation packages
-* Assign packages to patients
-
-### Subscription Management
-
-* Purchase subscriptions
+* Purchase service packages
 * View subscription status
 
 ## Restrictions
@@ -136,9 +159,10 @@ Doctors manage schedules, consultations, patient records, blogs, and service pac
 Doctors cannot:
 
 * Access administrative functions
-* Access other doctors' patients
-* Manage platform users
-* Manage system configurations
+* Access other doctors' consultation records
+* Manage users
+* Manage permissions
+* Manage system settings
 
 ---
 
@@ -146,37 +170,33 @@ Doctors cannot:
 
 ## Description
 
-Customer Support is an internal operational staff role responsible for content moderation and doctor verification processes.
+Customer Support is responsible for operational moderation and doctor verification activities.
 
 ## Responsibilities
 
 ### Doctor Verification
 
-* View doctor applications
+* View pending doctor applications
 * Review certificates
 * Approve doctor applications
 * Reject doctor applications
 
 ### Blog Moderation
 
+* View pending blogs
 * Review blog submissions
-* Approve blog content
-* Reject blog content
-
-### Customer Assistance
-
-* Review booking requests
-* Support appointment issues
-* Assist customers with booking inquiries
+* Approve blogs
+* Reject blogs
 
 ## Restrictions
 
 Customer Support cannot:
 
-* Manage system configurations
-* Manage subscriptions
+* Manage service packages
 * Manage permissions
+* Manage users
 * Access audit logs
+* Configure system settings
 
 ---
 
@@ -184,70 +204,68 @@ Customer Support cannot:
 
 ## Description
 
-Business Managers are responsible for platform business operations, package management, and performance monitoring.
+Business Managers are responsible for business operations and service package management.
 
 ## Responsibilities
 
-### Subscription Management
+### Service Package Management
 
-* Create subscription packages
-* Update subscription packages
-* Activate subscriptions
-* Deactivate subscriptions
+* Create service packages
+* Update service packages
+* Activate service packages
+* Deactivate service packages
 
-### Business Management
+### Business Configuration
 
 * Manage specializations
 * Manage treatment categories
-* Monitor doctor subscriptions
 
 ### Analytics
 
-* View business reports
+* View operational reports
 * View revenue reports
-* View operational analytics
+* View business analytics
 
 ## Restrictions
 
 Business Managers cannot:
 
-* Manage user permissions
+* Manage permissions
 * Configure authentication settings
 * Access infrastructure settings
 
 ---
 
-# ACT-06 System Admin
+# ACT-06 System Administrator
 
 ## Description
 
-System Administrators are responsible for platform governance, security, and system configuration.
+System Administrators are responsible for system governance, security, and platform administration.
 
 ## Responsibilities
 
 ### User Management
 
-* Create accounts
+* Manage users
 * Lock accounts
 * Unlock accounts
 * Disable accounts
 
-### Role Management
+### Authorization Management
 
 * Manage roles
 * Manage permissions
 
-### System Configuration
+### System Management
 
-* Configure platform settings
-* Configure operational settings
-* Manage security policies
+* Configure system settings
+* Configure security policies
 
 ### Monitoring
 
 * View audit logs
 * View system reports
-* Monitor system activities
+* Monitor platform activities
 
 ## Restrictions
 
@@ -255,130 +273,102 @@ System Administrators do not participate in doctor verification or blog moderati
 
 ---
 
-# ACT-07 Email Service
+# ACT-07 Brevo Email Service
 
 ## Type
 
 External System
-
-## Description
-
-An external email delivery service integrated with OPCBS.
 
 ## Responsibilities
 
 * Send OTP emails
 * Send appointment notifications
 * Send appointment reminders
-* Send package notifications
+* Send verification notifications
 * Send subscription notifications
-
-## Inputs
-
-* Email content
-* Recipient information
-* Notification requests
-
-## Outputs
-
-* Delivery status
-* Delivery response
 
 ---
 
-# ACT-08 Payment Gateway
+# ACT-08 VNPay Payment Gateway
 
 ## Type
 
 External System
 
-## Description
-
-A third-party payment processor responsible for handling subscription transactions.
-
 ## Responsibilities
 
-* Process payments
-* Generate payment QR codes
+* Process subscription payments
+* Generate payment transactions
 * Verify payment status
 * Return payment results
 
-## Inputs
-
-* Payment requests
-* Transaction information
-
-## Outputs
-
-* Payment status
-* Transaction result
-
 ---
 
-# ACT-09 Google Authentication Service
+# ACT-09 Google OAuth Service
 
 ## Type
 
 External System
 
-## Description
+## Responsibilities
 
-A third-party identity provider integrated through OAuth 2.0 authentication.
+* Authenticate users
+* Validate identity tokens
+* Return basic user profile information
+
+---
+
+# ACT-10 Cloudinary File Storage
+
+## Type
+
+External System
 
 ## Responsibilities
 
-* Validate identity tokens
-* Authenticate users
-* Provide user profile information
-
-## Inputs
-
-* Authentication requests
-* Identity tokens
-
-## Outputs
-
-* Authentication result
-* User profile information
+* Store uploaded images
+* Store certificates
+* Store profile avatars
+* Store blog images
+* Return file URLs
 
 ---
 
-# Actor Relationship Summary
+# Authentication Summary
 
-| Actor                         | Authentication Required |
-| ----------------------------- | ----------------------- |
-| Guest                         | No                      |
-| Patient                       | Yes                     |
-| Doctor                        | Yes                     |
-| Customer Support              | Yes                     |
-| Business Manager              | Yes                     |
-| System Admin                  | Yes                     |
-| Email Service                 | System Integration      |
-| Payment Gateway               | System Integration      |
-| Google Authentication Service | System Integration      |
+| Actor                   | Authentication Required |
+| ----------------------- | ----------------------- |
+| Guest                   | No                      |
+| Patient                 | Yes                     |
+| Doctor                  | Yes                     |
+| Customer Support        | Yes                     |
+| Business Manager        | Yes                     |
+| System Administrator    | Yes                     |
+| Brevo Email Service     | System Integration      |
+| VNPay Payment Gateway   | System Integration      |
+| Google OAuth Service    | System Integration      |
+| Cloudinary File Storage | System Integration      |
 
 ---
 
-# Role Hierarchy
+# Role Model
 
+The OPCBS platform uses Role-Based Access Control (RBAC).
+
+Human roles are independent and assigned directly to users.
+
+```text
 Guest
-
-↓
 
 Patient
 
 Doctor
 
-↓
-
 Customer Support
-
-↓
 
 Business Manager
 
-↓
+System Administrator
+```
 
-System Admin
-
-The hierarchy represents increasing levels of system authority and access permissions.
+No role automatically inherits permissions from another role.

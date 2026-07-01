@@ -1,0 +1,74 @@
+@page
+@model OPCBS.Web.Pages.Admin.Roles.IndexModel
+@{
+    ViewData["Title"] = "Role Management";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header">
+    <h1><i class="bi bi-shield-check me-2" style="color:var(--mb-primary);"></i>Role Management</h1>
+</div>
+
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold">System Roles</h6>
+        <!-- TODO: Add role creation when backend supports it -->
+        <button class="btn btn-sm btn-primary" disabled title="Backend does not support role creation yet"><i class="bi bi-plus-lg me-1"></i>Add Role</button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th class="ps-4">Role Name</th><th>Description</th><th>Users</th><th>Permissions</th></tr>
+                </thead>
+                <tbody>
+                    @if (Model.Roles.Any())
+                    {
+                        @foreach (var role in Model.Roles)
+                        {
+                            var icon = role.Name switch
+                            {
+                                "SystemAdmin" => "bi-shield-lock-fill text-danger",
+                                "Doctor" => "bi-person-badge text-info",
+                                "Patient" => "bi-heart-pulse text-success",
+                                "CustomerSupport" => "bi-headset text-warning",
+                                "BusinessManager" => "bi-briefcase text-primary",
+                                _ => "bi-person text-secondary"
+                            };
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi @icon fs-5"></i>
+                                        <span class="fw-semibold">@role.Name</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted">@(role.Description ?? "—")</td>
+                                <td><span class="badge bg-secondary bg-opacity-10 text-secondary">@role.UserCount users</span></td>
+                                <td>
+                                    @if (role.Permissions.Any())
+                                    {
+                                        @foreach (var p in role.Permissions.Take(3))
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary me-1" style="font-size:0.65rem;">@p</span>
+                                        }
+                                        @if (role.Permissions.Count > 3) { <span class="text-muted small">+@(role.Permissions.Count - 3) more</span> }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-shield d-block mb-2" style="font-size:2rem;"></i><p>No roles data available. The backend roles endpoint may need expansion.</p></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

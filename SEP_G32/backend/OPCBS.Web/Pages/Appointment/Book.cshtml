@@ -1,0 +1,241 @@
+@page "{doctorId:guid?}"
+@model OPCBS.Web.Pages.Appointment.BookModel
+@{
+    ViewData["Title"] = "Đặt lịch hẹn";
+    var today = DateTime.Today;
+    var dayNames = new[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" };
+    var dayNamesEn = new[] { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
+    var prevWeek = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd");
+    var nextWeek = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd");
+    var weekNumber = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(Model.WeekStart, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+
+    // Month calendar data
+    var calMonth = Model.WeekStart;
+    var firstOfMonth = new DateTime(calMonth.Year, calMonth.Month, 1);
+    var daysInMonth = DateTime.DaysInMonth(calMonth.Year, calMonth.Month);
+    var startDay = (int)firstOfMonth.DayOfWeek; // 0=Sun
+}
+
+<div style="max-width:1200px;margin:0 auto;" class="py-3">
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error</div>
+    }
+
+    @if (!Model.DoctorId.HasValue)
+    {
+        <!-- No doctor selected -->
+        <div class="text-center py-5">
+            <i class="bi bi-search-heart d-block mb-3" style="font-size:3rem;color:var(--mb-primary);"></i>
+            <h3>Chọn chuyên gia tâm lý</h3>
+            <p class="text-muted">Vui lòng chọn bác sĩ trước khi đặt lịch</p>
+            <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>Tìm chuyên gia</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column flex-lg-row gap-4">
+            <!-- SIDEBAR -->
+            <aside style="width:320px;min-width:300px;" class="d-flex flex-column gap-3">
+                <!-- Mini Month Calendar -->
+                <div class="mini-calendar">
+                    <div class="mc-header">
+                        <button class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-left"></i></button>
+                        <span class="mc-title">@firstOfMonth.ToString("MMMM yyyy").ToUpper()</span>
+                        <button class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                    <div class="mc-grid">
+                        <div class="mc-day-header">S</div><div class="mc-day-header">M</div><div class="mc-day-header">T</div>
+                        <div class="mc-day-header">W</div><div class="mc-day-header">T</div><div class="mc-day-header">F</div><div class="mc-day-header">S</div>
+
+                        @* Fill empty cells before month start *@
+                        @for (int i = 0; i < startDay; i++)
+                        {
+                            var prevDay = firstOfMonth.AddDays(-(startDay - i));
+                            <div class="mc-day other-month">@prevDay.Day</div>
+                        }
+                        @for (int d = 1; d <= daysInMonth; d++)
+                        {
+                            var thisDay = new DateTime(calMonth.Year, calMonth.Month, d);
+                            var isToday = thisDay.Date == today;
+                            var isSelected = thisDay.Date >= Model.WeekStart && thisDay.Date <= Model.WeekEnd;
+                            <div class="mc-day @(isToday ? "today" : "") @(isSelected ? "selected" : "")">@d</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Doctor Profile Card -->
+                @if (Model.Doctor != null)
+                {
+                    <div class="booking-doctor-card">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="position-relative">
+                                @if (!string.IsNullOrEmpty(Model.Doctor.AvatarUrl))
+                                {
+                                    <img src="@Model.Doctor.AvatarUrl" class="doctor-avatar" alt="@Model.Doctor.FullName" />
+                                }
+                                else
+                                {
+                                    <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background:var(--mb-primary-light);color:var(--mb-primary);font-weight:700;font-size:1.2rem;">
+                                        @Model.Doctor.FullName?.Substring(0, 1)
+                                    </div>
+                                }
+                                <div class="online-dot"></div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">@Model.Doctor.FullName</h6>
+                                <small class="text-muted">@(Model.Doctor.Specialization ?? "Chuyên gia tâm lý")</small>
+                                @if (Model.Doctor.Specializations?.Any() == true)
+                                {
+                                    <div class="mt-1"><small style="color:var(--mb-primary);">Chuyên khoa: @string.Join(", ", Model.Doctor.Specializations)</small></div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Selected slot info (updated by JS) -->
+                        <div id="selectedSlotInfo" class="border-top pt-3 mt-2" style="display:none;">
+                            <div class="d-flex align-items-center gap-2 mb-2 text-muted">
+                                <i class="bi bi-calendar-event" style="color:var(--mb-primary);"></i>
+                                <span id="selectedDate" class="small fw-medium">—</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2 text-muted">
+                                <i class="bi bi-clock" style="color:var(--mb-primary);"></i>
+                                <span id="selectedTime" class="small fw-medium">—</span>
+                            </div>
+                        </div>
+
+                        <form method="post" id="bookingForm">
+                            <input type="hidden" asp-for="Input.DoctorId" />
+                            <input type="hidden" asp-for="Input.AppointmentSlotId" id="slotIdInput" />
+
+                            @if (Model.IsGuest)
+                            {
+                                <div class="border-top pt-3 mt-3">
+                                    <h6 class="mb-2"><i class="bi bi-person-plus me-1"></i>Thông tin</h6>
+                                    <div class="mb-2">
+                                        <input asp-for="Input.GuestName" class="form-control form-control-sm" placeholder="Họ tên *" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <input asp-for="Input.GuestEmail" type="email" class="form-control form-control-sm" placeholder="Email *" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control form-control-sm" placeholder="Số điện thoại" />
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="mb-3 mt-3">
+                                <textarea asp-for="Input.Notes" class="form-control form-control-sm" rows="2" placeholder="Ghi chú (tùy chọn)..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="confirmBtn" disabled>
+                                <i class="bi bi-calendar-check me-1"></i>Xác nhận đặt lịch
+                            </button>
+                        </form>
+                    </div>
+                }
+
+                <!-- Legend -->
+                <div class="px-2">
+                    <div class="wc-legend flex-column">
+                        <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Slot trống</div>
+                        <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Slot đầy</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN CALENDAR -->
+            <section class="flex-grow-1">
+                <div class="week-calendar shadow-sm">
+                    <!-- Week nav -->
+                    <div class="wc-nav">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@prevWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@nextWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                            </div>
+                        </div>
+                        <span class="wc-title">@Model.WeekStart.ToString("MMM dd") — @Model.WeekEnd.ToString("MMM dd, yyyy")</span>
+                        <span class="wc-badge">Tuần @weekNumber</span>
+                        <div class="ms-auto wc-view-toggle">
+                            <button class="btn active">Week</button>
+                        </div>
+                    </div>
+
+                    <!-- Day headers -->
+                    <div class="week-calendar-header">
+                        <div class="wc-time-col"></div>
+                        @foreach (var day in Model.WeekDays)
+                        {
+                            var isToday = day.Date == today;
+                            <div class="wc-day-col @(isToday ? "today" : "")">
+                                <div class="wc-day-name">@dayNamesEn[(int)day.DayOfWeek]</div>
+                                <div class="wc-day-num">@day.Day</div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Time grid -->
+                    <div class="week-calendar-body">
+                        @for (int hour = Model.CalStartHour; hour <= Model.CalEndHour; hour++)
+                        {
+                            <div class="wc-time-row">
+                                <div class="wc-time-label">@hour.ToString("00"):00</div>
+                                @foreach (var day in Model.WeekDays)
+                                {
+                                    var isToday = day.Date == today;
+                                    var dayKey = day.ToString("yyyy-MM-dd");
+                                    var slots = Model.SlotGrid.GetValueOrDefault(dayKey)?.GetValueOrDefault(hour);
+
+                                    <div class="wc-time-cell @(isToday ? "today-col" : "")">
+                                        @if (slots != null)
+                                        {
+                                            foreach (var slot in slots)
+                                            {
+                                                var isAvailable = slot.Status == "Available" || slot.Status == "0";
+                                                var cssClass = isAvailable ? "available" : "full";
+                                                var dateDisplay = day.ToString("ddd, dd/M");
+                                                <div class="wc-slot @cssClass"
+                                                     style="top:2px;height:56px;"
+                                                     @(isAvailable ? $"onclick=\"selectSlot('{slot.Id}','{dateDisplay}','{slot.StartTime} - {slot.EndTime}')\"" : "")
+                                                     data-slot-id="@slot.Id"
+                                                     title="@slot.StartTime - @slot.EndTime">
+                                                    <span class="slot-label">@(isAvailable ? "AVAILABLE" : "FULL")</span>
+                                                    <span class="slot-time">@slot.StartTime - @slot.EndTime</span>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (!Model.SlotGrid.Any())
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;"></i>
+                                <p>Không có slot trống trong tuần này</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+        </div>
+    }
+</div>
+
+<script>
+    function selectSlot(slotId, dateText, timeText) {
+        // Update hidden input
+        document.getElementById('slotIdInput').value = slotId;
+        // Show info
+        document.getElementById('selectedSlotInfo').style.display = '';
+        document.getElementById('selectedDate').textContent = dateText;
+        document.getElementById('selectedTime').textContent = timeText;
+        // Enable button
+        document.getElementById('confirmBtn').disabled = false;
+        // Highlight selected slot
+        document.querySelectorAll('.wc-slot').forEach(s => s.classList.remove('selected'));
+        document.querySelector('[data-slot-id="' + slotId + '"]')?.classList.add('selected');
+    }
+</script>
