@@ -50,4 +50,19 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
         var (data, _, _) = await GetAsync<List<SpecializationDto>>($"{ApiRoutes.Doctors}/specializations");
         return data?.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList() ?? new List<string>();
     }
+
+    public async Task<List<SpecializationDto>> GetSpecializationDtosAsync()
+    {
+        var (data, _, _) = await GetAsync<List<SpecializationDto>>($"{ApiRoutes.Doctors}/specializations");
+        return data ?? new List<SpecializationDto>();
+    }
+
+    public async Task<(DoctorDto? Data, string? Error)> GetMyProfileAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorDto>("api/v1/doctor-profile");
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateMyProfileAsync(UpdateDoctorProfileDto dto) =>
+        await PutAsync("api/v1/doctor-profile", dto);
 }

@@ -8,11 +8,13 @@ public class DashboardModel : PageModel
 {
     private readonly IAppointmentApiService _appointments;
     private readonly ISubscriptionApiService _subscriptions;
+    private readonly IVerificationApiService _verification;
 
-    public DashboardModel(IAppointmentApiService appointments, ISubscriptionApiService subscriptions)
+    public DashboardModel(IAppointmentApiService appointments, ISubscriptionApiService subscriptions, IVerificationApiService verification)
     {
         _appointments = appointments;
         _subscriptions = subscriptions;
+        _verification = verification;
     }
 
     public List<AppointmentListItemDto> UpcomingAppointments { get; set; } = new();
@@ -24,23 +26,48 @@ public class DashboardModel : PageModel
     public int CompletedCount { get; set; }
     public string? Error { get; set; }
 
+    // Verification state
+    public bool IsVerified { get; set; }
+    public string? VerificationStatus { get; set; }
+    public string? RejectionReason { get; set; }
+
     public async Task OnGetAsync()
     {
-        var (all, _, error) = await _appointments.GetDoctorAppointmentsAsync(new AppointmentFilterDto { PageSize = 100 });
-        if (error != null) { Error = error; return; }
+        // Check verification status first
+        try
+        {
+            var (vData, _) = await _verification.GetMyVerificationAsync();
+            if (vData != null)
+            {
+                VerificationStatus = vData.Status;
+                IsVerified = string.Equals(vData.Status, "Approved", StringComparison.OrdinalIgnoreCase);
+                RejectionReason = vData.RejectionReason;
+            }
+        }
+        catch { }
 
-        AllAppointments = all;
-        TotalAppointments = all.Count;
-        PendingCount = all.Count(a => a.Status == 0);
-        ApprovedCount = all.Count(a => a.Status == 1);
-        CompletedCount = all.Count(a => a.Status == 4);
-        UpcomingAppointments = all
-            .Where(a => a.Status is 0 or 1)
-            .OrderBy(a => a.StartAt)
-            .Take(5)
-            .ToList();
+        // Pass verification state to layout/sidebar via ViewData
+        ViewData["DoctorVerified"] = IsVerified;
 
-        var (sub, _) = await _subscriptions.GetCurrentAsync();
-        CurrentSubscription = sub;
+        // Only load appointments data if verified
+        if (IsVerified)
+        {
+            var (all, _, error) = await _appointments.GetDoctorAppointmentsAsync(new AppointmentFilterDto { PageSize = 100 });
+            if (error != null) { Error = error; return; }
+
+            AllAppointments = all;
+            TotalAppointments = all.Count;
+            PendingCount = all.Count(a => a.Status == 0);
+            ApprovedCount = all.Count(a => a.Status == 1);
+            CompletedCount = all.Count(a => a.Status == 4);
+            UpcomingAppointments = all
+                .Where(a => a.Status is 0 or 1)
+                .OrderBy(a => a.StartAt)
+                .Take(5)
+                .ToList();
+
+            var (sub, _) = await _subscriptions.GetCurrentAsync();
+            CurrentSubscription = sub;
+        }
     }
 }

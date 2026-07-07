@@ -141,7 +141,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.RefreshToken)
                 .HasMaxLength(500);
             entity.Property(e => e.Status)
-                .HasDefaultValue(UserStatus.Active);
+                .HasDefaultValue(UserStatus.Active)
+                .HasSentinel((UserStatus)(-1));
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => e.PhoneNumber).IsUnique();
             entity.HasOne(e => e.Role)

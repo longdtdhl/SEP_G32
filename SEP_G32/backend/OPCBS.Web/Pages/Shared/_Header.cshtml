@@ -1,9 +1,19 @@
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
 
 @{
-    var isLoggedIn = !string.IsNullOrEmpty(JwtService.GetToken());
-    // TODO: Parse JWT claims to get role. For now use safe defaults.
+    var isLoggedIn = JwtService.IsLoggedIn;
+    var role = JwtService.GetRole();
+    var fullName = JwtService.GetFullName() ?? "User";
     var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+
+    var isDoctor = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase);
+    var isPatient = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase);
+    var isCS = string.Equals(role, "CustomerSupport", StringComparison.OrdinalIgnoreCase);
+    var isBM = string.Equals(role, "BusinessManager", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = string.Equals(role, "SystemAdmin", StringComparison.OrdinalIgnoreCase);
+
+    var initials = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "U";
+    var roleBadge = isDoctor ? "Doctor" : isPatient ? "Patient" : isCS ? "CS" : isBM ? "BM" : isAdmin ? "Admin" : "";
 }
 
 <nav class="navbar navbar-expand-lg mb-navbar">
@@ -39,23 +49,65 @@
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")" asp-page="/Blog/Index">Resources</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")" asp-page="/Appointment/Track">Track Appointment</a>
-                </li>
+                @if (!isLoggedIn || isPatient)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")" asp-page="/Appointment/Track">Track Appointment</a>
+                    </li>
+                }
             </ul>
 
             <ul class="navbar-nav align-items-lg-center gap-2">
                 @if (isLoggedIn)
                 {
-                    <!-- Logged-in user dropdown -->
+                    <!-- Logged-in user dropdown with role context -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:32px;height:32px;">
-                                <i class="bi bi-person-fill text-white" style="font-size:0.875rem;"></i>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:34px;height:34px;background:var(--mb-primary);color:#fff;font-weight:600;font-size:0.8rem;">
+                                @initials
                             </div>
-                            <span class="d-lg-none">My Account</span>
+                            <span class="d-none d-lg-inline" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@fullName</span>
+                            @if (!string.IsNullOrEmpty(roleBadge))
+                            {
+                                <span class="badge bg-light text-dark" style="font-size:0.65rem;">@roleBadge</span>
+                            }
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:220px;border-radius:12px;border:1px solid #e5e7eb;">
+                            <!-- Role-specific portal links -->
+                            @if (isPatient)
+                            {
+                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-person-heart me-1"></i>Patient Portal</h6></li>
+                                <li><a class="dropdown-item" asp-page="/Patient/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-page="/Patient/Appointments/Index"><i class="bi bi-calendar-check me-2"></i>My Appointments</a></li>
+                                <li><a class="dropdown-item" asp-page="/Patient/ConsultationRecords/Index"><i class="bi bi-file-medical me-2"></i>Records</a></li>
+                            }
+                            else if (isDoctor)
+                            {
+                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-heart-pulse me-1"></i>Doctor Portal</h6></li>
+                                <li><a class="dropdown-item" asp-page="/Doctor/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-page="/Doctor/Appointments/Index"><i class="bi bi-calendar-check me-2"></i>Appointments</a></li>
+                                <li><a class="dropdown-item" asp-page="/Doctor/Verification"><i class="bi bi-patch-check me-2"></i>Verification</a></li>
+                            }
+                            else if (isCS)
+                            {
+                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-headset me-1"></i>CS Portal</h6></li>
+                                <li><a class="dropdown-item" asp-page="/CustomerSupport/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-page="/CustomerSupport/DoctorApplications/Index"><i class="bi bi-person-check me-2"></i>Doctor Apps</a></li>
+                            }
+                            else if (isBM)
+                            {
+                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-briefcase me-1"></i>Business Portal</h6></li>
+                                <li><a class="dropdown-item" asp-page="/BusinessManager/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-page="/BusinessManager/ServicePackages/Index"><i class="bi bi-gem me-2"></i>Packages</a></li>
+                            }
+                            else if (isAdmin)
+                            {
+                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-shield-lock me-1"></i>Admin Portal</h6></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/Users/Index"><i class="bi bi-people me-2"></i>Users</a></li>
+                            }
+
+                            <li><hr class="dropdown-divider" /></li>
                             <li><a class="dropdown-item" asp-page="/Account/Profile"><i class="bi bi-person me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" asp-page="/Account/ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
                             <li><hr class="dropdown-divider" /></li>

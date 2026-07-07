@@ -12,6 +12,7 @@ public class IndexModel : PageModel
 
     public List<ScheduleDto> Schedules { get; set; } = new();
     public List<DayOffDto> DaysOff { get; set; } = new();
+    public List<AppointmentSlotDto> ActualSlots { get; set; } = new();
     public string? Error { get; set; }
     public string? Success { get; set; }
 
@@ -46,9 +47,12 @@ public class IndexModel : PageModel
         // Load schedules
         var (schedules, err1) = await _api.GetMySchedulesAsync();
         var (daysOff, err2) = await _api.GetDaysOffAsync();
+        var (slotsData, err3) = await _api.GetMySlotsAsync();
+        
         Schedules = schedules;
         DaysOff = daysOff;
-        Error = Error ?? err1 ?? err2;
+        ActualSlots = slotsData?.Slots ?? new();
+        Error = Error ?? err1 ?? err2 ?? err3;
 
         // Build day-to-schedule mapping using bitmask
         // Bit: Mon=1, Tue=2, Wed=4, Thu=8, Fri=16, Sat=32, Sun=64
@@ -65,13 +69,21 @@ public class IndexModel : PageModel
             DayScheduleMap[day.DayOfWeek] = Schedules.Where(s => (s.WorkingDays & bit) != 0 && s.IsActive).ToList();
         }
 
-        // Adjust calendar range based on schedules
+        // Adjust calendar range based on schedules and slots
         if (Schedules.Any())
         {
             foreach (var s in Schedules)
             {
                 if (TimeOnly.TryParse(s.StartTime, out var st)) CalStartHour = Math.Min(CalStartHour, st.Hour);
                 if (TimeOnly.TryParse(s.EndTime, out var et)) CalEndHour = Math.Max(CalEndHour, et.Hour + 1);
+            }
+        }
+        if (ActualSlots.Any())
+        {
+            foreach (var s in ActualSlots)
+            {
+                if (DateTimeOffset.TryParse(s.Date + "T" + s.StartTime, out var st)) CalStartHour = Math.Min(CalStartHour, st.Hour);
+                if (DateTimeOffset.TryParse(s.Date + "T" + s.EndTime, out var et)) CalEndHour = Math.Max(CalEndHour, et.Hour + 1);
             }
         }
     }
@@ -81,7 +93,7 @@ public class IndexModel : PageModel
         var (success, error) = await _api.DeleteAsync(id);
         if (!success) TempData["Error"] = error;
         else TempData["Success"] = "Đã xóa lịch làm việc.";
-        return RedirectToPage();
+        return RedirectToPage(new { week = Week });
     }
 
     public async Task<IActionResult> OnPostDeleteDayOffAsync(Guid id)
@@ -89,7 +101,15 @@ public class IndexModel : PageModel
         var (success, error) = await _api.DeleteDayOffAsync(id);
         if (!success) TempData["Error"] = error;
         else TempData["Success"] = "Đã xóa ngày nghỉ.";
-        return RedirectToPage();
+        return RedirectToPage(new { week = Week });
+    }
+
+    public async Task<IActionResult> OnPostToggleBlockAsync(Guid slotId)
+    {
+        var (success, error) = await _api.ToggleBlockSlotAsync(slotId);
+        if (!success) TempData["Error"] = error;
+        else TempData["Success"] = "Đã cập nhật trạng thái slot thành công.";
+        return RedirectToPage(new { week = Week });
     }
 
     // Helper: check if a day is a day-off

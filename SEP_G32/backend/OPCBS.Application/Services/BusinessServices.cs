@@ -433,7 +433,20 @@ public class VerificationService : IVerificationService
         _verRepo.Update(request);
 
         var doctor = await _doctorRepo.GetByIdAsync(request.DoctorProfileId, ct);
-        if (doctor != null) { doctor.VerificationStatus = VerificationStatus.Approved; _doctorRepo.Update(doctor); }
+        if (doctor != null)
+        {
+            doctor.VerificationStatus = VerificationStatus.Approved;
+            doctor.IsVisible = true;
+            _doctorRepo.Update(doctor);
+
+            // Activate the doctor's user account
+            var user = await _userRepo.GetByIdAsync(doctor.UserId, ct);
+            if (user != null && user.Status != UserStatus.Active)
+            {
+                user.Status = UserStatus.Active;
+                _userRepo.Update(user);
+            }
+        }
 
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Verification approved");
@@ -914,6 +927,62 @@ public class SubscriptionService : ISubscriptionService
             ExpirationDate = subscription.ExpirationDate,
             CreatedAt = subscription.CreatedAt
         }, "Subscription created. Redirect to VNPay for payment.");
+    }
+
+    public async Task<ApiResponse<SubscriptionDto>> CreateSubscriptionDirectAsync(Guid doctorUserId, Guid servicePackageId, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null) return ApiResponse<SubscriptionDto>.ErrorResponse("Doctor not found");
+
+        var package = await _pkgRepo.GetByIdAsync(servicePackageId, ct);
+        if (package == null || !package.IsActive)
+            return ApiResponse<SubscriptionDto>.ErrorResponse("Service package not found or inactive");
+
+        // Deactivate any existing active subscriptions for this doctor
+        var allSubs = await _subRepo.GetAllAsync(ct);
+        var activeSubs = allSubs.Where(s => s.DoctorProfileId == doctor.Id && s.Status == SubscriptionStatus.Active).ToList();
+        foreach (var activeSub in activeSubs)
+        {
+            activeSub.Status = SubscriptionStatus.Expired;
+            _subRepo.Update(activeSub);
+        }
+
+        var subscription = new DoctorSubscription
+        {
+            DoctorProfileId = doctor.Id,
+            ServicePackageId = servicePackageId,
+            Status = SubscriptionStatus.Active, // Active immediately
+            StartDate = DateTime.UtcNow,
+            ExpirationDate = DateTime.UtcNow.AddDays(package.DurationDays),
+            DoctorProfile = doctor,
+            ServicePackage = package
+        };
+
+        await _subRepo.AddAsync(subscription, ct);
+
+        // Create payment transaction record as Paid
+        var payment = new PaymentTransaction
+        {
+            DoctorSubscriptionId = subscription.Id,
+            TransactionCode = $"TXN-{Guid.NewGuid():N}",
+            Amount = package.Price,
+            PaymentMethod = "VNPay (Direct Active)",
+            PaymentStatus = Domain.Enums.PaymentStatus.Success,
+            DoctorSubscription = subscription
+        };
+        await _paymentRepo.AddAsync(payment, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
+        {
+            Id = subscription.Id,
+            PackageName = package.Name,
+            Status = subscription.Status.ToString(),
+            StartDate = subscription.StartDate,
+            ExpirationDate = subscription.ExpirationDate,
+            CreatedAt = subscription.CreatedAt
+        }, "Subscription created and activated successfully.");
     }
 
     public async Task<ApiResponse<SubscriptionDto>> GetActiveSubscriptionAsync(Guid doctorUserId, CancellationToken ct)

@@ -81,6 +81,26 @@ public class SchedulesController : ControllerBase
         return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Day off removed")));
     }
 
+    /// <summary>GET /api/v1/schedules/slots — Get doctor's own generated slots</summary>
+    [HttpGet("slots")]
+    public async Task<IActionResult> GetMySlots([FromQuery] DateOnly? date)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.GetDoctorAllSlotsAsync(userId.Value, date);
+        return Ok(result);
+    }
+
+    /// <summary>PUT /api/v1/schedules/slots/{slotId}/toggle-block — Toggle block slot</summary>
+    [HttpPut("slots/{slotId}/toggle-block")]
+    public async Task<IActionResult> ToggleBlockSlot(Guid slotId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.ToggleBlockSlotAsync(slotId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

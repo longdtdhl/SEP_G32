@@ -201,7 +201,8 @@ public class RegisterDoctorDtoValidator : AbstractValidator<RegisterDoctorDto>
             .LessThanOrEqualTo(60).WithMessage("Experience years cannot exceed 60");
 
         RuleFor(x => x.SpecializationIds)
-            .NotEmpty().WithMessage("At least one specialization is required");
+            .Must(ids => ids == null || ids.Count <= 10)
+            .WithMessage("Cannot select more than 10 specializations");
     }
 
     private static bool BeValidPassword(string password)

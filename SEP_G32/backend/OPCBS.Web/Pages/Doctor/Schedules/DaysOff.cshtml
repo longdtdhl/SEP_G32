@@ -13,8 +13,8 @@
     <div class="col-md-5">
         <div class="card border-0 shadow-sm"><div class="card-header bg-white"><h5 class="mb-0">Thêm ngày nghỉ</h5></div><div class="card-body">
             <form method="post">
-                <div class="mb-3"><label class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label><input type="date" asp-for="Input.StartDate" class="form-control" /></div>
-                <div class="mb-3"><label class="form-label">Ngày kết thúc</label><input type="date" asp-for="Input.EndDate" class="form-control" /></div>
+                <div class="mb-3"><label class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label><input type="date" asp-for="Input.StartDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                <div class="mb-3"><label class="form-label">Ngày kết thúc</label><input type="date" asp-for="Input.EndDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
                 <div class="mb-3"><label class="form-label">Lý do</label><input asp-for="Input.Reason" class="form-control" /></div>
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Thêm</button>
             </form>

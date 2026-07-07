@@ -93,17 +93,41 @@
                     {
                         <form method="post" asp-page-handler="Complete">
                             <input type="hidden" name="id" value="@apt.Id" />
-                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-all me-1"></i>Hoàn thành</button>
+                            <button type="submit" class="btn btn-primary w-100 mb-2"><i class="bi bi-check-all me-1"></i>Hoàn thành</button>
                         </form>
-                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
-                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
-                        </a>
+                        @if (Model.AssociatedRecord != null)
+                        {
+                            <a asp-page="/Doctor/ConsultationRecords/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-medical me-1"></i>Xem/Sửa hồ sơ tư vấn
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
+                            </a>
+                        }
                     }
                     @if (apt.Status == 4)
                     {
-                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
-                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
-                        </a>
+                        @if (Model.AssociatedRecord != null)
+                        {
+                            <a asp-page="/Doctor/ConsultationRecords/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-medical me-1"></i>Xem/Sửa hồ sơ tư vấn
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
+                            </a>
+                        }
+                        @if (apt.PatientId.HasValue)
+                        {
+                            <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@apt.PatientId" class="btn btn-outline-info mt-2">
+                                <i class="bi bi-box-seam me-1"></i>Tạo gói điều trị
+                            </a>
+                        }
                     }
                     @if (apt.Status is 0 or 1)
                     {

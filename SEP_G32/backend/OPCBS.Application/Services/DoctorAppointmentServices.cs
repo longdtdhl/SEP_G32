@@ -14,13 +14,23 @@ public class DoctorService : IDoctorService
 {
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<DoctorSpecialization> _doctorSpecRepo;
+    private readonly IRepository<Specialization> _specRepo;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
 
-    public DoctorService(IRepository<DoctorProfile> doctorRepo, IRepository<User> userRepo, IMapper mapper, IUnitOfWork uow)
+    public DoctorService(
+        IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
+        IRepository<DoctorSpecialization> doctorSpecRepo,
+        IRepository<Specialization> specRepo,
+        IMapper mapper,
+        IUnitOfWork uow)
     {
         _doctorRepo = doctorRepo;
         _userRepo = userRepo;
+        _doctorSpecRepo = doctorSpecRepo;
+        _specRepo = specRepo;
         _mapper = mapper;
         _uow = uow;
     }
@@ -35,6 +45,11 @@ public class DoctorService : IDoctorService
         // Manually populate User data since repository doesn't eager-load
         var allUsers = await _userRepo.GetAllAsync(ct);
         var userMap = allUsers.ToDictionary(u => u.Id);
+
+        // Load specialization mapping
+        var allDoctorSpecs = (await _doctorSpecRepo.GetAllAsync(ct)).ToList();
+        var allSpecs = (await _specRepo.GetAllAsync(ct)).ToList();
+        var specMap = allSpecs.ToDictionary(s => s.Id, s => s.Name);
 
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(search))
@@ -55,6 +70,12 @@ public class DoctorService : IDoctorService
         var dtos = items.Select(d =>
         {
             var user = userMap.GetValueOrDefault(d.UserId);
+            var specNames = allDoctorSpecs
+                .Where(ds => ds.DoctorProfileId == d.Id)
+                .Select(ds => specMap.GetValueOrDefault(ds.SpecializationId))
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Select(n => n!)
+                .ToList();
             return new DoctorProfileDto
             {
                 Id = d.Id,
@@ -67,7 +88,7 @@ public class DoctorService : IDoctorService
                 IsVisible = d.IsVisible,
                 AverageRating = d.AverageRating,
                 ReviewCount = d.ReviewCount,
-                Specializations = new List<string>()
+                Specializations = specNames
             };
         }).ToList();
 
@@ -85,7 +106,8 @@ public class DoctorService : IDoctorService
 
         var allUsers = await _userRepo.GetAllAsync(ct);
         var user = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
-        var dto = BuildDoctorDto(doctor, user);
+        var specNames = await GetSpecNamesForDoctor(doctor.Id, ct);
+        var dto = BuildDoctorDto(doctor, user, specNames);
         return ApiResponse<DoctorProfileDto>.SuccessResponse(dto);
     }
 
@@ -98,11 +120,25 @@ public class DoctorService : IDoctorService
 
         var allUsers = await _userRepo.GetAllAsync(ct);
         var user = allUsers.FirstOrDefault(u => u.Id == userId);
-        var dto = BuildDoctorDto(doctor, user);
+        var specNames = await GetSpecNamesForDoctor(doctor.Id, ct);
+        var dto = BuildDoctorDto(doctor, user, specNames);
         return ApiResponse<DoctorProfileDto>.SuccessResponse(dto);
     }
 
-    private static DoctorProfileDto BuildDoctorDto(DoctorProfile d, User? user)
+    private async Task<List<string>> GetSpecNamesForDoctor(Guid doctorProfileId, CancellationToken ct)
+    {
+        var allDoctorSpecs = (await _doctorSpecRepo.GetAllAsync(ct)).ToList();
+        var allSpecs = (await _specRepo.GetAllAsync(ct)).ToList();
+        var specMap = allSpecs.ToDictionary(s => s.Id, s => s.Name);
+        return allDoctorSpecs
+            .Where(ds => ds.DoctorProfileId == doctorProfileId)
+            .Select(ds => specMap.GetValueOrDefault(ds.SpecializationId))
+            .Where(n => !string.IsNullOrEmpty(n))
+            .Select(n => n!)
+            .ToList();
+    }
+
+    private static DoctorProfileDto BuildDoctorDto(DoctorProfile d, User? user, List<string>? specializations = null)
     {
         return new DoctorProfileDto
         {
@@ -116,7 +152,7 @@ public class DoctorService : IDoctorService
             IsVisible = d.IsVisible,
             AverageRating = d.AverageRating,
             ReviewCount = d.ReviewCount,
-            Specializations = new List<string>()
+            Specializations = specializations ?? new List<string>()
         };
     }
 
@@ -599,6 +635,99 @@ public class ScheduleService : IScheduleService
         _mapper = mapper;
     }
 
+    /// <summary>
+    /// Maps DayOfWeekEnum flags to System.DayOfWeek for date iteration
+    /// </summary>
+    private static DayOfWeekEnum ToDayFlag(DayOfWeek dow) => dow switch
+    {
+        DayOfWeek.Monday => DayOfWeekEnum.Monday,
+        DayOfWeek.Tuesday => DayOfWeekEnum.Tuesday,
+        DayOfWeek.Wednesday => DayOfWeekEnum.Wednesday,
+        DayOfWeek.Thursday => DayOfWeekEnum.Thursday,
+        DayOfWeek.Friday => DayOfWeekEnum.Friday,
+        DayOfWeek.Saturday => DayOfWeekEnum.Saturday,
+        DayOfWeek.Sunday => DayOfWeekEnum.Sunday,
+        _ => 0
+    };
+
+    /// <summary>
+    /// Auto-generate AppointmentSlot records from a Schedule config for the next N weeks.
+    /// Skips past dates, skips days-off, skips slots that already exist.
+    /// </summary>
+    private async Task GenerateSlotsFromScheduleAsync(Schedule schedule, DoctorProfile doctor, int weeksAhead = 4, CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var endDate = today.AddDays(weeksAhead * 7);
+
+        // Load existing slots to avoid duplicates, and delete future available slots to sync with new schedule
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        
+        // Remove existing available slots from today onwards to regenerate them
+        var futureAvailableSlots = allSlots
+            .Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate >= today && s.Status == AppointmentSlotStatus.Available)
+            .ToList();
+            
+        if (futureAvailableSlots.Count > 0)
+        {
+            _slotRepo.DeleteRange(futureAvailableSlots);
+        }
+
+        // Only booked/blocked slots remain as existing
+        var remainingSlots = allSlots
+            .Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate >= today && s.Status != AppointmentSlotStatus.Available)
+            .ToHashSet();
+        var existingKeys = new HashSet<string>(remainingSlots.Select(s => $"{s.SlotDate}|{s.StartTime}"));
+
+        // Load days off
+        var allDaysOff = await _dayOffRepo.GetAllAsync(ct);
+        var daysOff = allDaysOff.Where(d => d.DoctorProfileId == doctor.Id).ToList();
+
+        var newSlots = new List<AppointmentSlot>();
+        var slotDurationMinutes = (int)schedule.SlotDuration;
+
+        for (var date = today; date <= endDate; date = date.AddDays(1))
+        {
+            // Check if this day of week is in the schedule's working days
+            var dayFlag = ToDayFlag(date.DayOfWeek);
+            if (!schedule.WorkingDays.HasFlag(dayFlag))
+                continue;
+
+            // Check if this date is a day off
+            var dateTime = date.ToDateTime(TimeOnly.MinValue);
+            if (daysOff.Any(d => dateTime >= d.StartDate && dateTime <= d.EndDate))
+                continue;
+
+            // Generate slots for this day
+            var currentTime = schedule.StartTime;
+            while (currentTime.AddMinutes(slotDurationMinutes) <= schedule.EndTime)
+            {
+                var slotEnd = currentTime.AddMinutes(slotDurationMinutes);
+                var key = $"{date}|{currentTime}";
+
+                if (!existingKeys.Contains(key))
+                {
+                    newSlots.Add(new AppointmentSlot
+                    {
+                        DoctorProfileId = doctor.Id,
+                        SlotDate = date,
+                        StartTime = currentTime,
+                        EndTime = slotEnd,
+                        Status = AppointmentSlotStatus.Available,
+                        DoctorProfile = doctor
+                    });
+                    existingKeys.Add(key);
+                }
+                currentTime = slotEnd;
+            }
+        }
+
+        if (newSlots.Count > 0)
+        {
+            await _slotRepo.AddRangeAsync(newSlots, ct);
+            await _uow.SaveChangesAsync(ct);
+        }
+    }
+
     public async Task<ApiResponse<ScheduleDto>> CreateScheduleAsync(Guid doctorUserId, CreateScheduleDto dto, CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
@@ -628,6 +757,10 @@ public class ScheduleService : IScheduleService
         await _scheduleRepo.AddAsync(schedule, ct);
         await _uow.SaveChangesAsync(ct);
 
+        // Auto-generate appointment slots for the next N weeks
+        var weeks = dto.WeeksAhead ?? 4;
+        await GenerateSlotsFromScheduleAsync(schedule, doctor, weeks, ct);
+
         var result = _mapper.Map<ScheduleDto>(schedule);
         return ApiResponse<ScheduleDto>.SuccessResponse(result, "Schedule created successfully");
     }
@@ -656,6 +789,10 @@ public class ScheduleService : IScheduleService
         schedule.UpdatedAt = DateTime.UtcNow;
         _scheduleRepo.Update(schedule);
         await _uow.SaveChangesAsync(ct);
+
+        // Re-generate slots for the updated schedule
+        var weeks = dto.WeeksAhead ?? 4;
+        await GenerateSlotsFromScheduleAsync(schedule, doctor, weeks, ct);
 
         var result = _mapper.Map<ScheduleDto>(schedule);
         return ApiResponse<ScheduleDto>.SuccessResponse(result, "Schedule updated successfully");
@@ -733,12 +870,88 @@ public class ScheduleService : IScheduleService
         return ApiResponse<AvailableSlotsDto>.SuccessResponse(result);
     }
 
+    public async Task<ApiResponse<AvailableSlotsDto>> GetDoctorAllSlotsAsync(Guid doctorUserId, DateOnly? date, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<AvailableSlotsDto>.ErrorResponse("Doctor not found");
+
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
+
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        // Include all slot statuses (Available, Booked, Blocked, etc.)
+        var doctorSlots = allSlots
+            .Where(s => s.DoctorProfileId == doctor.Id)
+            .ToList();
+
+        if (date.HasValue)
+            doctorSlots = doctorSlots.Where(s => s.SlotDate == date.Value).ToList();
+
+        var slotDtos = doctorSlots.Select(s => new AppointmentSlotDto
+        {
+            Id = s.Id,
+            Date = s.SlotDate.ToString("yyyy-MM-dd"),
+            StartTime = s.StartTime.ToString("HH:mm"),
+            EndTime = s.EndTime.ToString("HH:mm"),
+            Status = s.Status,
+            Price = s.Price
+        }).ToList();
+
+        var result = new AvailableSlotsDto
+        {
+            DoctorId = doctor.Id,
+            DoctorName = user?.FullName ?? "Unknown",
+            Slots = slotDtos
+        };
+
+        return ApiResponse<AvailableSlotsDto>.SuccessResponse(result);
+    }
+
+    public async Task<ApiResponse> ToggleBlockSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default)
+    {
+        var slot = await _slotRepo.GetByIdAsync(slotId, ct);
+        if (slot == null)
+            return ApiResponse.ErrorResponse("Slot không tồn tại");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || slot.DoctorProfileId != doctor.Id)
+            return ApiResponse.ErrorResponse("Không có quyền thực hiện hành động này");
+
+        if (slot.Status == AppointmentSlotStatus.Booked)
+            return ApiResponse.ErrorResponse("Không thể khóa slot đã được bệnh nhân đặt lịch");
+
+        if (slot.Status == AppointmentSlotStatus.Available)
+        {
+            slot.Status = AppointmentSlotStatus.Blocked;
+        }
+        else if (slot.Status == AppointmentSlotStatus.Blocked)
+        {
+            slot.Status = AppointmentSlotStatus.Available;
+        }
+        else
+        {
+            return ApiResponse.ErrorResponse("Trạng thái slot hiện tại không cho phép thay đổi");
+        }
+
+        slot.UpdatedAt = DateTime.UtcNow;
+        _slotRepo.Update(slot);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse.SuccessResponse("Cập nhật trạng thái slot thành công");
+    }
+
     public async Task<ApiResponse> AddDayOffAsync(Guid doctorUserId, CreateDayOffDto dto, CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null)
             return ApiResponse.ErrorResponse("Doctor not found");
+
+        if (dto.StartDate.Date < DateTime.Today)
+            return ApiResponse.ErrorResponse("Không thể chọn ngày nghỉ trong quá khứ");
 
         var dayOff = new DoctorDayOff
         {

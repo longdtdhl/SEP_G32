@@ -1,87 +1,167 @@
 @page
 @model OPCBS.Web.Pages.Doctor.VerificationModel
-@{ ViewData["Title"] = "Practitioner Verification"; ViewData["UseDashboardLayout"] = true; }
+@{
+    ViewData["Title"] = "Xác thực tài khoản bác sĩ";
+    ViewData["UseDashboardLayout"] = true;
+}
 
-<div class="mb-page-header text-center">
-    <div class="d-flex justify-content-center mb-3">
-        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border border-3 border-white shadow-sm" style="width:96px;height:96px;">
-            <i class="bi bi-person" style="font-size:2.5rem;color:#94A3B8;"></i>
-        </div>
-    </div>
-    <h1>Practitioner Verification</h1>
-    <p class="text-muted">Complete your profile to join the network</p>
+<div class="mb-page-header">
+    <h1><i class="bi bi-shield-check me-2 text-primary"></i>Xác thực chuyên môn</h1>
+    <p class="text-muted">Hoàn thiện hồ sơ hành nghề để bắt đầu tư vấn trên hệ thống</p>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Success != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@Model.Success<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.Success != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill me-1"></i>@Model.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (Model.HasExisting && Model.Verification != null)
 {
     var v = Model.Verification;
-    var badge = v.Status?.ToLower() switch { "submitted" or "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
-    var displayStatus = v.Status?.ToLower() == "submitted" ? "Pending Review" : (v.Status ?? "N/A");
+    var statusLower = v.Status?.ToLower();
+    
+    var badgeClass = statusLower switch
+    {
+        "submitted" or "pending" => "bg-warning text-dark",
+        "approved" => "bg-success",
+        "rejected" => "bg-danger",
+        _ => "bg-secondary"
+    };
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-shield-check me-2" style="color:var(--mb-primary);"></i>Verification Status</h5>
-            <span class="badge @badge fs-6">@displayStatus</span>
+    var displayStatus = statusLower switch
+    {
+        "submitted" or "pending" => "Đang chờ duyệt",
+        "approved" => "Đã phê duyệt",
+        "rejected" => "Đã từ chối",
+        _ => v.Status ?? "N/A"
+    };
+
+    <!-- Verification Timeline / Steps -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-activity me-1 text-primary"></i>Tiến trình xác thực tài khoản</h5>
+            
+            <div class="d-flex justify-content-between align-items-center position-relative flex-wrap gap-4" style="z-index: 1;">
+                <!-- Line -->
+                <div class="position-absolute top-50 start-0 end-0 translate-middle-y bg-light d-none d-md-block" style="height: 4px; z-index: -1;"></div>
+                
+                <!-- Step 1 -->
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
+                        <i class="bi bi-send-check"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold small text-dark">Gửi hồ sơ</div>
+                        <small class="text-muted">@v.SubmittedAt.ToString("dd/MM/yyyy")</small>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="d-flex align-items-center gap-3">
+                    @{
+                        var step2Bg = statusLower == "submitted" || statusLower == "pending" || statusLower == "approved" || statusLower == "rejected" ? "bg-warning text-dark" : "bg-light text-muted";
+                        var step2Icon = statusLower == "approved" || statusLower == "rejected" ? "bi-check-lg" : "bi-hourglass-split";
+                    }
+                    <div class="rounded-circle @step2Bg d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
+                        <i class="bi @step2Icon"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold small text-dark">Thẩm định hồ sơ</div>
+                        <small class="text-muted">Bộ phận hỗ trợ đang kiểm tra</small>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="d-flex align-items-center gap-3">
+                    @{
+                        var step3Bg = statusLower == "approved" ? "bg-success text-white" : statusLower == "rejected" ? "bg-danger text-white" : "bg-light text-muted";
+                        var step3Icon = statusLower == "approved" ? "bi-patch-check" : statusLower == "rejected" ? "bi-patch-exclamation" : "bi-shield";
+                    }
+                    <div class="rounded-circle @step3Bg d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
+                        <i class="bi @step3Icon"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold small text-dark">Kết quả</div>
+                        <small class="text-muted">@displayStatus</small>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
+    </div>
+
+    <!-- Details Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-shaded me-2 text-primary"></i>Hồ sơ xác minh hiện tại</h5>
+            <span class="badge @badgeClass px-3 py-2 rounded-pill fw-semibold">@displayStatus</span>
+        </div>
+        <div class="card-body p-4">
             <div class="row g-4">
-                <!-- Personal Info -->
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Full Name</div>
-                    <div class="fw-semibold">@(v.DoctorName ?? "-")</div>
+                    <div class="text-muted small mb-1">Họ và tên bác sĩ</div>
+                    <div class="fw-bold text-dark">@(v.DoctorName ?? "-")</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Job Title / Position</div>
-                    <div class="fw-semibold">@(v.Specialization ?? "-")</div>
+                    <div class="text-muted small mb-1">Chức danh / Vị trí chuyên môn</div>
+                    <div class="fw-bold text-dark">@(v.Specialization ?? "-")</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">License Number</div>
-                    <div><code class="bg-light px-2 py-1 rounded" style="color:var(--mb-primary);">@(v.LicenseNumber ?? "-")</code></div>
+                    <div class="text-muted small mb-1">Số giấy phép hành nghề</div>
+                    <div><code class="bg-light px-2 py-1 rounded text-primary fw-bold">@(v.LicenseNumber ?? "-")</code></div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Years of Experience</div>
-                    <div class="fw-semibold">@v.ExperienceYears years</div>
+                    <div class="text-muted small mb-1">Số năm kinh nghiệm hành nghề</div>
+                    <div class="fw-bold text-dark">@v.ExperienceYears năm</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Education</div>
-                    <div class="fw-semibold">@(v.Education ?? "-")</div>
+                    <div class="text-muted small mb-1">Học vị / Học hàm cao nhất</div>
+                    <div class="fw-bold text-dark">@(v.Education ?? "-")</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Submitted</div>
-                    <div class="fw-semibold">@v.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="text-muted small mb-1">Thời gian gửi yêu cầu</div>
+                    <div class="fw-bold text-dark">@v.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
                 </div>
             </div>
 
             @if (!string.IsNullOrEmpty(v.Notes))
             {
-                <hr />
-                <div class="text-muted small mb-1">Professional Summary</div>
-                <p class="mb-0">@v.Notes</p>
+                <hr class="my-4" />
+                <div class="text-muted small mb-1">Tóm tắt chuyên môn (Mô tả hành nghề)</div>
+                <p class="mb-0 text-dark small" style="line-height: 1.6;">@v.Notes</p>
             }
 
             @if (!string.IsNullOrEmpty(v.CertificateUrl))
             {
-                <hr />
-                <div class="text-muted small mb-1">Certificate / Documents</div>
-                <div><a href="@v.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>View Document</a></div>
+                <hr class="my-4" />
+                <div class="text-muted small mb-2">Chứng chỉ & Tài liệu kèm theo</div>
+                <div>
+                    <a href="@v.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary px-3"><i class="bi bi-file-earmark-pdf-fill me-1"></i>Xem tài liệu đính kèm (PDF/Link)</a>
+                </div>
             }
 
             @if (v.ReviewedAt.HasValue)
             {
-                <hr />
-                <div class="row g-3">
+                <hr class="my-4" />
+                <div class="row g-3 bg-light p-3 rounded-3 m-0">
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Reviewed On</div>
-                        <div class="fw-semibold">@v.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="text-muted small mb-1">Ngày xét duyệt</div>
+                        <div class="fw-semibold text-dark">@v.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
                     </div>
                     @if (!string.IsNullOrEmpty(v.ReviewedByName))
                     {
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Reviewed By</div>
-                            <div class="fw-semibold">@v.ReviewedByName</div>
+                            <div class="text-muted small mb-1">Người xét duyệt</div>
+                            <div class="fw-semibold text-dark">@v.ReviewedByName</div>
                         </div>
                     }
                 </div>
@@ -89,79 +169,84 @@
 
             @if (!string.IsNullOrEmpty(v.RejectionReason))
             {
-                <div class="alert alert-danger mt-3 mb-0">
-                    <i class="bi bi-x-circle me-1"></i><strong>Rejection Reason:</strong> @v.RejectionReason
+                <div class="alert alert-danger mt-4 mb-0 d-flex gap-2">
+                    <i class="bi bi-x-circle-fill fs-5"></i>
+                    <div>
+                        <strong>Lý do từ chối:</strong>
+                        <p class="mb-0 small mt-1">@v.RejectionReason</p>
+                    </div>
                 </div>
             }
         </div>
     </div>
 
-    @if (v.Status?.ToLower() == "rejected")
+    @if (statusLower == "rejected")
     {
         <div class="text-center mt-4">
-            <p class="text-muted">Your application was rejected. You may re-submit with updated information.</p>
-            <a asp-page="Verification" asp-route-resubmit="true" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Re-submit Application</a>
+            <p class="text-muted small">Hồ sơ xác thực của bạn không được phê duyệt. Bạn có thể cập nhật thông tin và gửi lại yêu cầu xác thực mới.</p>
+            <a asp-page="Verification" asp-route-resubmit="true" class="btn btn-primary px-4"><i class="bi bi-arrow-repeat me-1"></i>Gửi lại hồ sơ xác thực</a>
         </div>
     }
 }
 else
 {
+    <!-- Submit Verification Form -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-4 p-md-5">
-            <div class="alert alert-info mb-4">
-                <i class="bi bi-info-circle me-1"></i>Submit your credentials for verification to start practicing on the platform.
+            <div class="alert alert-info d-flex gap-2 mb-4">
+                <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+                <div>
+                    Hồ sơ bác sĩ của bạn cần được bộ phận hỗ trợ khách hàng (Customer Support) thẩm định trước khi bắt đầu hoạt động trên nền tảng.
+                    Vui lòng cung cấp chính xác giấy phép và bằng cấp hành nghề.
+                </div>
             </div>
+            
             <form method="post">
-                <!-- Row 1: Name & Title -->
+                <h5 class="fw-bold mb-4 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Thông tin hành nghề xác thực</h5>
+                
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">Job Title / Position <span class="text-danger">*</span></label>
-                        <input asp-for="Input.Specialization" class="form-control" placeholder="e.g. Clinical Psychologist" />
+                        <label class="form-label fw-medium small">Vị trí chuyên môn / Học hàm <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Specialization" class="form-control" placeholder="Ví dụ: Bác sĩ Tâm lý lâm sàng, Chuyên gia Trị liệu" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Education / Qualification</label>
-                        <input asp-for="Input.Education" class="form-control" placeholder="e.g. PhD, Master's, MD..." />
+                        <label class="form-label fw-medium small">Học vị cao nhất <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Education" class="form-control" placeholder="Ví dụ: Tiến sĩ, Thạc sĩ, MD..." required />
                     </div>
                 </div>
 
-                <!-- Row 2: License & Experience -->
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">Practitioner License Number <span class="text-danger">*</span></label>
-                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="e.g. LIC-12345678" />
+                        <label class="form-label fw-medium small">Số giấy phép hành nghề (License Number) <span class="text-danger">*</span></label>
+                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="Ví dụ: CCHN-123456" required />
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Years of Exp.</label>
-                        <input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" value="0" />
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">Số năm kinh nghiệm thực tế <span class="text-danger">*</span></label>
+                        <input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" required />
                     </div>
                 </div>
 
-                <!-- Professional Summary -->
                 <div class="mb-3">
-                    <label class="form-label">Professional Summary (Bio)</label>
-                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Briefly describe your approach and professional background..."></textarea>
+                    <label class="form-label fw-medium small">Tóm tắt chuyên môn và phương pháp tiếp cận</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Mô tả tóm tắt kinh nghiệm hành nghề, phương pháp trị liệu chính, các trường phái tâm lý áp dụng..." required></textarea>
                 </div>
 
-                <!-- Certificate URL -->
                 <div class="mb-3">
-                    <label class="form-label">Certificate / Document URL</label>
-                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="https://..." />
-                    <div class="form-text">Upload your documents to a cloud storage and paste the link here.</div>
+                    <label class="form-label fw-medium small">Đường dẫn tài liệu chứng chỉ đính kèm</label>
+                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="Ví dụ: Đường dẫn PDF lưu trên Drive, Dropbox, Cloud..." required />
+                    <div class="form-text small text-muted"><i class="bi bi-lightbulb me-1"></i>Mẹo: Bạn có thể tải chứng chỉ / CV lên Google Drive (mở quyền xem công khai) rồi dán liên kết vào đây.</div>
                 </div>
 
-                <!-- Certification Checkbox -->
-                <div class="form-check mb-4">
+                <div class="form-check mb-4 mt-3">
                     <input class="form-check-input" type="checkbox" id="certifyCheck" required>
-                    <label class="form-check-label small" for="certifyCheck">
-                        I certify that all provided documents and information are accurate. I have read and agreed to the
-                        <a href="#" style="color:var(--mb-primary);">Terms of Service</a> and
-                        <a href="#" style="color:var(--mb-primary);">Practitioner Ethics Policy</a>.
+                    <label class="form-check-label small text-muted" for="certifyCheck">
+                        Tôi cam đoan mọi thông tin và bằng cấp, chứng chỉ hành nghề cung cấp trên đây là hoàn toàn đúng sự thật. Tôi đồng ý chịu trách nhiệm trước pháp luật về tính xác thực của các thông tin này và tuân thủ các quy tắc đạo đức nghề nghiệp của nền tảng.
                     </label>
                 </div>
 
-                <div class="d-flex justify-content-end">
+                <div class="d-flex justify-content-end border-top pt-3">
                     <button type="submit" class="btn btn-primary px-4 py-2">
-                        <i class="bi bi-send me-1"></i>Submit for Verification
+                        <i class="bi bi-send-fill me-1"></i>Gửi hồ sơ thẩm định
                     </button>
                 </div>
             </form>

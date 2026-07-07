@@ -8,12 +8,20 @@ namespace OPCBS.Web.Pages.Doctor.ConsultationRecords;
 public class EditModel : PageModel
 {
     private readonly IConsultationRecordApiService _api;
-    public EditModel(IConsultationRecordApiService api) => _api = api;
+    private readonly ITreatmentPackageApiService _packageApi;
+    public EditModel(IConsultationRecordApiService api, ITreatmentPackageApiService packageApi)
+    {
+        _api = api;
+        _packageApi = packageApi;
+    }
 
     [BindProperty] public UpdateConsultationRecordDto Input { get; set; } = new();
     public ConsultationRecordDto? Record { get; set; }
     public Guid RecordId { get; set; }
     public string? Error { get; set; }
+
+    // Treatment packages for this patient
+    public List<TreatmentPackageDto> PatientPackages { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -22,6 +30,11 @@ public class EditModel : PageModel
         if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
         Record = data;
         Input = new UpdateConsultationRecordDto { Diagnosis = data.Diagnosis, Notes = data.Notes, Prescription = data.Prescription, Recommendations = data.Recommendations };
+
+        // Load treatment packages for the patient (filter doctor's packages by patient name)
+        var (packages, _, _) = await _packageApi.GetAllAsync(1, 50);
+        PatientPackages = packages.Where(p => p.PatientName == data.PatientName).ToList();
+
         return Page();
     }
 

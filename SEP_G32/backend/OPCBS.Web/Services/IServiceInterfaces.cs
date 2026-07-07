@@ -12,6 +12,8 @@ public interface IScheduleApiService
     Task<(List<DayOffDto> Data, string? Error)> GetDaysOffAsync();
     Task<(bool Success, string? Error)> CreateDayOffAsync(CreateDayOffDto dto);
     Task<(bool Success, string? Error)> DeleteDayOffAsync(Guid id);
+    Task<(AvailableSlotsDto? Data, string? Error)> GetMySlotsAsync(DateOnly? date = null);
+    Task<(bool Success, string? Error)> ToggleBlockSlotAsync(Guid slotId);
 }
 
 public interface IConsultationRecordApiService
@@ -19,6 +21,7 @@ public interface IConsultationRecordApiService
     Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(int page = 1, int pageSize = 10);
     Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetMyRecordsAsync(int page = 1, int pageSize = 10);
     Task<(ConsultationRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
+    Task<(ConsultationRecordDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId);
     Task<(bool Success, string? Error)> CreateAsync(CreateConsultationRecordDto dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationRecordDto dto);
 }

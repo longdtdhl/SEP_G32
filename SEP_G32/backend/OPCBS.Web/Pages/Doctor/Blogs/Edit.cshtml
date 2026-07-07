@@ -2,26 +2,179 @@
 @model OPCBS.Web.Pages.Doctor.Blogs.EditModel
 @{ ViewData["Title"] = "Chỉnh sửa bài viết"; ViewData["UseDashboardLayout"] = true; }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Chỉnh sửa bài viết</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+<style>
+    .edit-header { margin-bottom: 1.5rem; }
+    .edit-header h1 { font-size: 1.4rem; font-weight: 700; }
+    .editor-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
+    .editor-card .card-section { padding: 1.5rem; }
+    .editor-card .card-section + .card-section { border-top: 1px solid #f1f5f9; }
+    .editor-card .section-title { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .editor-card .form-label { font-size: 0.82rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem; }
+    .editor-card .form-control, .editor-card .form-select { border-radius: 10px; border: 1.5px solid #e2e8f0; font-size: 0.85rem; transition: border-color 0.2s; }
+    .editor-card .form-control:focus { border-color: var(--mb-primary); box-shadow: 0 0 0 3px rgba(78,139,112,0.1); }
+    .editor-card textarea.form-control { resize: vertical; }
+    .meta-sidebar .meta-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); padding: 1.25rem; margin-bottom: 1rem; }
+    .meta-sidebar .meta-title { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .img-preview { width: 100%; height: 120px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 0.5rem; border: 2px dashed #e2e8f0; }
+    .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .img-preview .placeholder { color: #94a3b8; font-size: 0.8rem; }
+    .btn-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .btn-actions .btn { border-radius: 10px; padding: 0.6rem 1.5rem; font-size: 0.85rem; font-weight: 500; }
+    .tag-input-hint { font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem; }
+    .status-info { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.82rem; }
+    .status-draft { background: #f1f5f9; color: #64748b; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-published { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .rejection-alert { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fecaca; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .rejection-alert .alert-title { font-size: 0.82rem; font-weight: 600; color: #dc2626; margin-bottom: 0.35rem; }
+    .rejection-alert .alert-body { font-size: 0.8rem; color: #7f1d1d; }
+    .stat-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .label { color: #94a3b8; }
+    .stat-row .value { font-weight: 500; color: #334155; }
+</style>
+
+<div class="edit-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1><i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Chỉnh sửa bài viết</h1>
+        <p class="text-muted mb-0" style="font-size:0.82rem;">Cập nhật nội dung bài viết của bạn</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
-@if (Model.CurrentStatus != null)
+
+@if (Model.Error != null)
 {
-    var badge = Model.CurrentStatus switch { "Draft" => "bg-secondary", "Pending" => "bg-warning text-dark", "Published" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary" };
-    <div class="mb-3"><span class="badge @badge">@Model.CurrentStatus</span></div>
+    <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 }
-<div class="card border-0 shadow-sm"><div class="card-body">
-    <form method="post" asp-route-id="@Model.BlogId">
-        <div class="row g-3">
-            <div class="col-md-8"><label class="form-label">Tiêu đề</label><input asp-for="Input.Title" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Danh mục</label><input asp-for="Input.Category" class="form-control" /></div>
-            <div class="col-12"><label class="form-label">Tóm tắt</label><textarea asp-for="Input.Summary" class="form-control" rows="2"></textarea></div>
-            <div class="col-12"><label class="form-label">Nội dung</label><textarea asp-for="Input.Content" class="form-control" rows="10"></textarea></div>
-            <div class="col-md-8"><label class="form-label">URL ảnh bìa</label><input asp-for="Input.ImageUrl" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Tags</label><input asp-for="TagsInput" class="form-control" /></div>
+
+@if (Model.CurrentStatus == "Rejected" && !string.IsNullOrEmpty(Model.RejectionReason))
+{
+    <div class="rejection-alert">
+        <div class="alert-title"><i class="bi bi-exclamation-circle me-1"></i>Bài viết bị từ chối</div>
+        <div class="alert-body">@Model.RejectionReason</div>
+    </div>
+}
+
+<form method="post" asp-route-id="@Model.BlogId">
+    <div class="row g-4">
+        <!-- Main Editor -->
+        <div class="col-lg-8">
+            <div class="editor-card">
+                <div class="card-section">
+                    <div class="section-title"><i class="bi bi-type-h1"></i>Nội dung chính</div>
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề bài viết <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Title" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tóm tắt nội dung</label>
+                        <textarea asp-for="Input.Summary" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="card-section">
+                    <div class="section-title"><i class="bi bi-text-paragraph"></i>Nội dung bài viết</div>
+                    <div class="mb-0">
+                        <label class="form-label">Nội dung <span class="text-danger">*</span></label>
+                        <textarea asp-for="Input.Content" class="form-control" rows="14"></textarea>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Cập nhật</button> <a asp-page="Index" class="btn btn-outline-secondary ms-2">Hủy</a></div>
-    </form>
-</div></div>
+
+        <!-- Metadata Sidebar -->
+        <div class="col-lg-4 meta-sidebar">
+            @{
+                var statusClass = Model.CurrentStatus switch { "Draft" => "status-draft", "Pending" or "PendingApproval" => "status-pending", "Published" => "status-published", "Rejected" => "status-rejected", _ => "status-draft" };
+                var statusVi = Model.CurrentStatus switch { "Draft" => "Bản nháp", "Pending" or "PendingApproval" => "Chờ duyệt", "Published" => "Đã xuất bản", "Rejected" => "Bị từ chối", _ => "Bản nháp" };
+                var statusIcon = Model.CurrentStatus switch { "Draft" => "bi-file-earmark", "Pending" or "PendingApproval" => "bi-hourglass-split", "Published" => "bi-check-circle", "Rejected" => "bi-x-circle", _ => "bi-file-earmark" };
+            }
+
+            <!-- Status -->
+            <div class="meta-card">
+                <div class="meta-title"><i class="bi bi-info-circle"></i>Trạng thái</div>
+                <div class="status-info @statusClass">
+                    <i class="bi @statusIcon"></i>
+                    <strong>@statusVi</strong>
+                </div>
+                <div class="stat-row"><span class="label">Lượt xem</span><span class="value">@Model.ViewCount</span></div>
+                @if (Model.PublishedAt.HasValue)
+                {
+                    <div class="stat-row"><span class="label">Ngày xuất bản</span><span class="value">@Model.PublishedAt.Value.ToString("dd/MM/yyyy")</span></div>
+                }
+            </div>
+
+            <div class="meta-card">
+                <div class="meta-title"><i class="bi bi-gear"></i>Cài đặt</div>
+                <div class="mb-3">
+                    <label class="form-label">Danh mục</label>
+                    <select asp-for="Input.Category" class="form-select">
+                        <option value="">— Chọn danh mục —</option>
+                        <option value="Sức khỏe tâm thần">Sức khỏe tâm thần</option>
+                        <option value="Trầm cảm">Trầm cảm</option>
+                        <option value="Lo âu">Lo âu</option>
+                        <option value="Stress">Stress & Áp lực</option>
+                        <option value="Mối quan hệ">Mối quan hệ</option>
+                        <option value="Trẻ em & Thanh thiếu niên">Trẻ em & Thanh thiếu niên</option>
+                        <option value="Tự chăm sóc">Tự chăm sóc bản thân</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Tags</label>
+                    <input asp-for="TagsInput" class="form-control" placeholder="stress, lo âu" />
+                    <div class="tag-input-hint" style="font-size:0.7rem;color:#94a3b8;margin-top:0.25rem;">Phân cách bằng dấu phẩy</div>
+                </div>
+            </div>
+
+            <div class="meta-card">
+                <div class="meta-title"><i class="bi bi-image"></i>Ảnh bìa</div>
+                <div class="mb-0">
+                    <label class="form-label">URL ảnh bìa</label>
+                    <input asp-for="Input.ImageUrl" class="form-control" id="imageUrlInput" />
+                    <div class="img-preview" id="imgPreview">
+                        @if (!string.IsNullOrEmpty(Model.Input.ImageUrl))
+                        {
+                            <img src="@Model.Input.ImageUrl" alt="Preview" />
+                        }
+                        else
+                        {
+                            <span class="placeholder"><i class="bi bi-image me-1"></i>Xem trước ảnh bìa</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="meta-card" style="background:linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: rgba(34,197,94,0.15);">
+                <div class="meta-title" style="color:#16a34a;"><i class="bi bi-rocket-takeoff"></i>Hành động</div>
+                <div class="btn-actions flex-column">
+                    <button type="submit" asp-page-handler="" class="btn btn-primary w-100">
+                        <i class="bi bi-save me-1"></i>Cập nhật
+                    </button>
+                    @if (Model.CurrentStatus is "Draft" or "Rejected" or null)
+                    {
+                        <button type="submit" asp-page-handler="Submit" class="btn btn-success w-100">
+                            <i class="bi bi-send me-1"></i>Cập nhật & Gửi duyệt
+                        </button>
+                    }
+                    <a asp-page="Index" class="btn btn-outline-secondary w-100"><i class="bi bi-x me-1"></i>Hủy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    const imgInput = document.getElementById('imageUrlInput');
+    const preview = document.getElementById('imgPreview');
+    if (imgInput && preview) {
+        imgInput.addEventListener('input', () => {
+            const url = imgInput.value.trim();
+            if (url) {
+                preview.innerHTML = `<img src="${url}" alt="Preview" onerror="this.parentElement.innerHTML='<span class=\\'placeholder\\'><i class=\\'bi bi-exclamation-triangle me-1\\'></i>Không tải được ảnh</span>'" />`;
+            } else {
+                preview.innerHTML = '<span class="placeholder"><i class="bi bi-image me-1"></i>Xem trước ảnh bìa</span>';
+            }
+        });
+    }
+</script>

@@ -15,6 +15,47 @@
     <div class="alert alert-warning">@Model.Error</div>
 }
 
+<!-- Verification Banner -->
+@if (!Model.IsVerified)
+{
+    var statusLower = Model.VerificationStatus?.ToLower();
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;overflow:hidden;">
+        <div class="card-body p-4" style="background:linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);">
+            <div class="d-flex align-items-start gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#ffc107;">
+                    <i class="bi bi-shield-exclamation text-white" style="font-size:1.5rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    @if (statusLower == "submitted" || statusLower == "pending")
+                    {
+                        <h5 class="fw-bold mb-1" style="color:#856404;">Hồ sơ đang chờ duyệt</h5>
+                        <p class="mb-2 text-muted">Hồ sơ xác minh của bạn đã được gửi và đang được xem xét. Bạn sẽ được thông báo khi có kết quả.</p>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Đang chờ duyệt</span>
+                    }
+                    else if (statusLower == "rejected")
+                    {
+                        <h5 class="fw-bold mb-1" style="color:#721c24;">Hồ sơ bị từ chối</h5>
+                        <p class="mb-2 text-muted">Hồ sơ xác minh của bạn đã bị từ chối. Vui lòng chỉnh sửa và nộp lại.</p>
+                        @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                        {
+                            <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.875rem;">
+                                <i class="bi bi-x-circle me-1"></i><strong>Lý do:</strong> @Model.RejectionReason
+                            </div>
+                        }
+                        <a asp-page="/Doctor/Verification" class="btn btn-danger btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Nộp lại hồ sơ</a>
+                    }
+                    else
+                    {
+                        <h5 class="fw-bold mb-1" style="color:#856404;">Chưa xác minh hồ sơ</h5>
+                        <p class="mb-2 text-muted">Bạn cần nộp hồ sơ xác minh để bắt đầu sử dụng các chức năng trên nền tảng (đặt lịch, tư vấn, viết blog...).</p>
+                        <a asp-page="/Doctor/Verification" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i>Nộp hồ sơ xác minh</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">

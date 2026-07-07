@@ -32,6 +32,7 @@ public class CreateScheduleDto
     public string StartTime { get; set; } = "08:00";
     public string EndTime { get; set; } = "17:00";
     public int SlotDuration { get; set; } = 60;
+    public int WeeksAhead { get; set; } = 4;
 }
 
 public class UpdateScheduleDto
@@ -41,6 +42,7 @@ public class UpdateScheduleDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public int? SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 public class DayOffDto

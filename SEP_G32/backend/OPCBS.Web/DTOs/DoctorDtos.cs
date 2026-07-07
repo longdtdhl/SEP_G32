@@ -78,3 +78,21 @@ public class DoctorFilterDto
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 12;
 }
+
+public class UpdateDoctorProfileDto
+{
+    [JsonPropertyName("professionalTitle")]
+    public string? ProfessionalTitle { get; set; }
+
+    [JsonPropertyName("biography")]
+    public string? Biography { get; set; }
+
+    [JsonPropertyName("experienceYears")]
+    public int? ExperienceYears { get; set; }
+
+    [JsonPropertyName("specializationIds")]
+    public List<Guid>? SpecializationIds { get; set; }
+
+    [JsonPropertyName("isVisible")]
+    public bool? IsVisible { get; set; }
+}

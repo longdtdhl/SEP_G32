@@ -18,8 +18,18 @@
     </div>
 </div>
 
-@if (Model.Success != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@Model.Success<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+@if (Model.Success != null) { 
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i>@Model.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div> 
+}
+@if (Model.Error != null) { 
+    <div class="alert alert-warning alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div> 
+}
 
 <!-- Weekly Calendar -->
 <div class="week-calendar shadow-sm">
@@ -66,21 +76,55 @@
                 {
                     var isToday = day.Date == today;
                     var isDayOff = Model.IsDayOff(day);
-                    var schedules = Model.DayScheduleMap.GetValueOrDefault(day.DayOfWeek, new());
 
                     <div class="wc-time-cell @(isToday ? "today-col" : "") @(isDayOff ? "opacity-25" : "")">
-                        @foreach (var s in schedules)
+                        @{
+                            var dayStr = day.ToString("yyyy-MM-dd");
+                            var slots = Model.ActualSlots.Where(s => s.Date == dayStr).ToList();
+                        }
+                        @foreach (var s in slots)
                         {
                             if (TimeOnly.TryParse(s.StartTime, out var st) && st.Hour == hour)
                             {
                                 TimeOnly.TryParse(s.EndTime, out var et);
                                 var durationHours = (et.ToTimeSpan() - st.ToTimeSpan()).TotalHours;
                                 var heightPx = (int)(durationHours * 64);
-                                <div class="wc-slot available" style="top:2px;height:@(heightPx - 4)px;" title="@s.StartTime - @s.EndTime (@(s.SlotDuration)min slots)">
-                                    <span class="slot-time">@s.StartTime - @s.EndTime</span>
-                                    <span class="slot-label">@(s.SlotDuration) phút/slot</span>
-                                    <span class="slot-count">@s.SlotsPerDay slots</span>
-                                </div>
+                                
+                                var cssClass = s.Status switch
+                                {
+                                    0 => "available",
+                                    1 => "booked",
+                                    2 => "full",
+                                    _ => "full opacity-50"
+                                };
+                                
+                                var statusText = s.Status switch
+                                {
+                                    0 => "Trống (Khóa)",
+                                    1 => "Đã đặt",
+                                    2 => "Đã khóa (Mở)",
+                                    _ => "Không khả dụng"
+                                };
+
+                                var isClickable = s.Status == 0 || s.Status == 2;
+                                
+                                if (isClickable)
+                                {
+                                    <form method="post" asp-page-handler="ToggleBlock" style="margin:0; padding:0;">
+                                        <input type="hidden" name="slotId" value="@s.Id" />
+                                        <button type="submit" class="wc-slot @cssClass border-0 text-start" style="top:2px; height:@(heightPx - 4)px; width: calc(100% - 8px);" title="Click để thay đổi trạng thái slot">
+                                            <span class="slot-time">@s.StartTime - @s.EndTime</span>
+                                            <span class="slot-label"><i class="bi @(s.Status == 0 ? "bi-unlock" : "bi-lock-fill") me-1"></i>@statusText</span>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <div class="wc-slot @cssClass" style="top:2px; height:@(heightPx - 4)px; cursor: not-allowed; width: calc(100% - 8px);" title="Slot đã được bệnh nhân đặt lịch">
+                                        <span class="slot-time">@s.StartTime - @s.EndTime</span>
+                                        <span class="slot-label"><i class="bi bi-calendar-check-fill me-1"></i>@statusText</span>
+                                    </div>
+                                }
                             }
                         }
                     </div>
@@ -90,43 +134,47 @@
     </div>
 </div>
 
-<!-- Legend & Schedule table -->
-<div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div class="wc-legend">
-        <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Lịch làm việc</div>
-        <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Ngày nghỉ</div>
+<!-- Legend & Tips -->
+<div class="mt-4 p-3 rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-3 shadow-sm border border-light">
+    <div class="wc-legend d-flex gap-3 align-items-center flex-wrap">
+        <span class="fw-semibold text-muted small me-2"><i class="bi bi-info-circle me-1"></i>Chú thích:</span>
+        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Trống (Nhấp để Khóa)</div>
+        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#f0f0f0;border:1px solid #ddd;"></div>Bị khóa (Nhấp để Mở)</div>
+        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#fff3cd;border:1px solid #ffc107;"></div>Đã được đặt</div>
     </div>
+    <div class="text-muted small"><i class="bi bi-hand-index-thumb me-1"></i>Bấm trực tiếp vào slot trống/khóa để đóng/mở nhận tư vấn.</div>
 </div>
 
 <!-- Schedule list (compact) -->
 <div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-list-ul me-1"></i>Danh sách lịch</h6>
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-semibold text-dark"><i class="bi bi-list-ul me-1" style="color:var(--mb-primary);"></i>Cấu hình khung giờ tuần định kỳ</h6>
+        <span class="text-muted small">Cấu hình này dùng để tự động sinh slots theo chu kỳ</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
-                    <tr><th>Ngày</th><th>Giờ</th><th>Slot</th><th>Trạng thái</th><th class="text-end"></th></tr>
+                    <tr><th class="ps-4">Thứ trong tuần</th><th>Khung giờ làm việc</th><th>Thời lượng</th><th>Trạng thái tự động</th><th class="text-end pe-4">Thao tác</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var s in Model.Schedules)
                     {
                         <tr>
-                            <td><strong>@s.DayOfWeek</strong></td>
-                            <td>@s.StartTime — @s.EndTime</td>
+                            <td class="ps-4"><strong>@s.DayOfWeek</strong></td>
+                            <td><span class="badge bg-light text-dark border p-2"><i class="bi bi-clock me-1 text-primary"></i>@s.StartTime — @s.EndTime</span></td>
                             <td>@(s.SlotDuration) phút</td>
-                            <td><span class="badge @(s.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(s.IsActive ? "Hoạt động" : "Tắt")</span></td>
-                            <td class="text-end">
-                                <a asp-page="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                <form method="post" asp-page-handler="Delete" class="d-inline">
+                            <td><span class="badge @(s.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(s.IsActive ? "Đang áp dụng" : "Đã tắt")</span></td>
+                            <td class="text-end pe-4">
+                                <a asp-page="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-fill me-1"></i>Sửa</a>
+                                <form method="post" asp-page-handler="Delete" class="d-inline ms-1">
                                     <input type="hidden" name="id" value="@s.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa lịch này?')"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa cấu hình khung giờ tuần này không? Các slots trống tương ứng trong tương lai cũng sẽ bị xóa.')"><i class="bi bi-trash-fill"></i></button>
                                 </form>
                             </td>
                         </tr>
                     }
-                    @if (!Model.Schedules.Any()) { <tr><td colspan="5" class="text-center py-3 text-muted">Chưa có lịch</td></tr> }
+                    @if (!Model.Schedules.Any()) { <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-calendar-minus d-block mb-2" style="font-size:2rem;"></i>Chưa cấu hình lịch định kỳ</td></tr> }
                 </tbody>
             </table>
         </div>

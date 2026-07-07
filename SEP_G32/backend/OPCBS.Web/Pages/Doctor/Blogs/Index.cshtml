@@ -2,67 +2,161 @@
 @model OPCBS.Web.Pages.Doctor.Blogs.IndexModel
 @{ ViewData["Title"] = "Bài viết của tôi"; ViewData["UseDashboardLayout"] = true; }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Bài viết của tôi</h1>
-    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Viết bài mới</a>
+<style>
+    .blog-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .blog-stat-card { background: white; border-radius: 12px; padding: 1rem 1.25rem; border: 1px solid rgba(78,139,112,0.1); text-align: center; }
+    .blog-stat-card .stat-num { font-size: 1.75rem; font-weight: 700; color: var(--mb-primary); }
+    .blog-stat-card .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .blog-filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .blog-filter-tabs .tab-btn { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; border: 1.5px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .blog-filter-tabs .tab-btn:hover { border-color: var(--mb-primary); color: var(--mb-primary); }
+    .blog-filter-tabs .tab-btn.active { background: var(--mb-primary); color: white; border-color: var(--mb-primary); }
+    .blog-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
+    .blog-card { background: white; border-radius: 14px; overflow: hidden; border: 1px solid rgba(78,139,112,0.08); transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; }
+    .blog-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(78,139,112,0.12); }
+    .blog-card .card-thumb { height: 160px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    .blog-card .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .blog-card .card-thumb .thumb-placeholder { font-size: 2.5rem; color: var(--mb-primary); opacity: 0.5; }
+    .blog-card .status-badge { position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; backdrop-filter: blur(8px); }
+    .badge-draft { background: rgba(100,116,139,0.9); color: white; }
+    .badge-pending { background: rgba(245,158,11,0.9); color: white; }
+    .badge-published { background: rgba(34,197,94,0.9); color: white; }
+    .badge-rejected { background: rgba(239,68,68,0.9); color: white; }
+    .blog-card .card-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; }
+    .blog-card .card-title { font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .blog-card .card-excerpt { font-size: 0.8rem; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+    .blog-card .card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9; font-size: 0.7rem; color: #94a3b8; }
+    .blog-card .card-actions { display: flex; gap: 0.5rem; padding: 0 1.25rem 1.25rem; }
+    .blog-card .card-actions .btn { flex: 1; font-size: 0.75rem; border-radius: 8px; padding: 0.4rem 0.5rem; }
+    .rejection-banner { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fecaca; border-radius: 10px; padding: 0.75rem 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: #dc2626; }
+    .rejection-banner i { margin-right: 0.35rem; }
+    .empty-state { text-align: center; padding: 4rem 2rem; }
+    .empty-state i { font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem; display: block; }
+    .empty-state h5 { color: #64748b; font-weight: 600; }
+    .empty-state p { color: #94a3b8; font-size: 0.875rem; }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 style="font-size:1.5rem;"><i class="bi bi-journal-richtext me-2" style="color:var(--mb-primary);"></i>Bài viết của tôi</h1>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Quản lý & theo dõi bài viết chuyên môn</p>
+    </div>
+    <a asp-page="Create" class="btn btn-primary btn-sm" style="border-radius:10px;padding:0.5rem 1.25rem;">
+        <i class="bi bi-plus-lg me-1"></i>Viết bài mới
+    </a>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Success"] is string suc)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
 
-<!-- Filter -->
-<div class="card border-0 shadow-sm mb-3"><div class="card-body py-2">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-auto">
-            <select asp-for="Status" class="form-select form-select-sm">
-                <option value="">Tất cả</option>
-                <option value="Draft">Bản nháp</option>
-                <option value="Pending">Chờ duyệt</option>
-                <option value="Published">Đã xuất bản</option>
-                <option value="Rejected">Bị từ chối</option>
-            </select>
-        </div>
-        <div class="col-auto"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter"></i> Lọc</button></div>
-    </form>
-</div></div>
+@{
+    var allBlogs = Model.Blogs;
+    var draftCount = allBlogs.Count(b => b.Status is "Draft" or null);
+    var pendingCount = allBlogs.Count(b => b.Status is "Pending" or "PendingApproval");
+    var publishedCount = allBlogs.Count(b => b.Status is "Published");
+    var rejectedCount = allBlogs.Count(b => b.Status is "Rejected");
+}
 
-<div class="card border-0 shadow-sm"><div class="card-body p-0">
-    <div class="table-responsive"><table class="table table-hover mb-0">
-        <thead class="table-light"><tr><th>Tiêu đề</th><th>Danh mục</th><th>Trạng thái</th><th>Ngày tạo</th><th class="text-end">Hành động</th></tr></thead>
-        <tbody>
-            @if (Model.Blogs.Any())
+<!-- Stats -->
+<div class="blog-stats-grid">
+    <div class="blog-stat-card">
+        <div class="stat-num">@allBlogs.Count</div>
+        <div class="stat-label">Tổng bài viết</div>
+    </div>
+    <div class="blog-stat-card">
+        <div class="stat-num" style="color:#f59e0b;">@pendingCount</div>
+        <div class="stat-label">Chờ duyệt</div>
+    </div>
+    <div class="blog-stat-card">
+        <div class="stat-num" style="color:#22c55e;">@publishedCount</div>
+        <div class="stat-label">Đã xuất bản</div>
+    </div>
+    <div class="blog-stat-card">
+        <div class="stat-num" style="color:#ef4444;">@rejectedCount</div>
+        <div class="stat-label">Bị từ chối</div>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="blog-filter-tabs">
+    <a asp-page="Index" class="tab-btn @(string.IsNullOrEmpty(Model.Status) ? "active" : "")">Tất cả (@allBlogs.Count)</a>
+    <a asp-page="Index" asp-route-status="Draft" class="tab-btn @(Model.Status == "Draft" ? "active" : "")">Bản nháp (@draftCount)</a>
+    <a asp-page="Index" asp-route-status="Pending" class="tab-btn @(Model.Status == "Pending" ? "active" : "")">Chờ duyệt (@pendingCount)</a>
+    <a asp-page="Index" asp-route-status="Published" class="tab-btn @(Model.Status == "Published" ? "active" : "")">Đã xuất bản (@publishedCount)</a>
+    <a asp-page="Index" asp-route-status="Rejected" class="tab-btn @(Model.Status == "Rejected" ? "active" : "")">Bị từ chối (@rejectedCount)</a>
+</div>
+
+@if (allBlogs.Any())
+{
+    <div class="blog-card-grid">
+        @foreach (var b in allBlogs)
+        {
+            var badgeClass = b.Status switch
             {
-                @foreach (var b in Model.Blogs)
-                {
-                    var badge = b.Status switch {
-                        "Draft" => "bg-secondary", "Pending" => "bg-warning text-dark",
-                        "Published" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary"
-                    };
-                    <tr>
-                        <td><strong>@b.Title</strong><br /><small class="text-muted">@(b.Summary?.Length > 60 ? b.Summary[..60] + "..." : b.Summary)</small></td>
-                        <td>@(b.Category ?? "-")</td>
-                        <td><span class="badge @badge">@(b.Status ?? "Draft")</span></td>
-                        <td>@b.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td class="text-end">
-                            <a asp-page="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                            @if (b.Status is "Draft" or null)
-                            {
-                                <form method="post" asp-page-handler="Submit" class="d-inline">
-                                    <input type="hidden" name="id" value="@b.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Gửi duyệt"><i class="bi bi-send"></i></button>
-                                </form>
-                            }
-                            <form method="post" asp-page-handler="Delete" class="d-inline">
-                                <input type="hidden" name="id" value="@b.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa bài viết này?')"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            }
-            else
+                "Draft" => "badge-draft", "Pending" or "PendingApproval" => "badge-pending",
+                "Published" => "badge-published", "Rejected" => "badge-rejected", _ => "badge-draft"
+            };
+            var statusVi = b.Status switch
             {
-                <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có bài viết nào</td></tr>
-            }
-        </tbody>
-    </table></div>
-</div></div>
+                "Draft" => "Bản nháp", "Pending" or "PendingApproval" => "Chờ duyệt",
+                "Published" => "Đã xuất bản", "Rejected" => "Bị từ chối", _ => "Bản nháp"
+            };
+            <div class="blog-card">
+                <div class="card-thumb">
+                    @if (!string.IsNullOrEmpty(b.DisplayImage))
+                    {
+                        <img src="@b.DisplayImage" alt="@b.Title" />
+                    }
+                    else
+                    {
+                        <i class="bi bi-journal-richtext thumb-placeholder"></i>
+                    }
+                    <span class="status-badge @badgeClass">@statusVi</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-title">@b.Title</div>
+                    <div class="card-excerpt">@(b.DisplaySummary ?? "Chưa có tóm tắt...")</div>
+                    <div class="card-meta">
+                        <span><i class="bi bi-calendar3 me-1"></i>@b.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        <span><i class="bi bi-eye me-1"></i>@b.ViewCount lượt xem</span>
+                    </div>
+                    @if (b.Status == "Rejected" && !string.IsNullOrEmpty(b.RejectionReason))
+                    {
+                        <div class="rejection-banner">
+                            <i class="bi bi-exclamation-circle"></i><strong>Lý do từ chối:</strong> @b.RejectionReason
+                        </div>
+                    }
+                </div>
+                <div class="card-actions">
+                    <a asp-page="Edit" asp-route-id="@b.Id" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Sửa</a>
+                    @if (b.Status is "Draft" or "Rejected" or null)
+                    {
+                        <form method="post" asp-page-handler="Submit" class="flex-fill">
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <button type="submit" class="btn btn-outline-success w-100"><i class="bi bi-send me-1"></i>Gửi duyệt</button>
+                        </form>
+                    }
+                    <form method="post" asp-page-handler="Delete">
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Xóa bài viết này?')"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">
+        <i class="bi bi-journal-plus"></i>
+        <h5>Chưa có bài viết nào</h5>
+        <p>Bắt đầu viết bài để chia sẻ kiến thức chuyên môn với bệnh nhân.</p>
+        <a asp-page="Create" class="btn btn-primary mt-2" style="border-radius:10px;"><i class="bi bi-plus-lg me-1"></i>Viết bài đầu tiên</a>
+    </div>
+}

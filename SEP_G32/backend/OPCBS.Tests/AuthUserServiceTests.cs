@@ -19,6 +19,7 @@ public class AuthServiceTests
     private readonly Mock<IRepository<PatientProfile>> _patientRepoMock;
     private readonly Mock<IRepository<DoctorProfile>> _doctorRepoMock;
     private readonly Mock<IRepository<DoctorSpecialization>> _doctorSpecRepoMock;
+    private readonly Mock<IRepository<VerificationRequest>> _verRepoMock;
     private readonly Mock<IJwtTokenService> _jwtMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<IMapper> _mapperMock;
@@ -36,6 +37,7 @@ public class AuthServiceTests
         _patientRepoMock = new Mock<IRepository<PatientProfile>>();
         _doctorRepoMock = new Mock<IRepository<DoctorProfile>>();
         _doctorSpecRepoMock = new Mock<IRepository<DoctorSpecialization>>();
+        _verRepoMock = new Mock<IRepository<VerificationRequest>>();
         _jwtMock = new Mock<IJwtTokenService>();
         _emailMock = new Mock<IEmailService>();
         _mapperMock = new Mock<IMapper>();
@@ -51,6 +53,7 @@ public class AuthServiceTests
             _patientRepoMock.Object,
             _doctorRepoMock.Object,
             _doctorSpecRepoMock.Object,
+            _verRepoMock.Object,
             _jwtMock.Object,
             _emailMock.Object,
             _mapperMock.Object);

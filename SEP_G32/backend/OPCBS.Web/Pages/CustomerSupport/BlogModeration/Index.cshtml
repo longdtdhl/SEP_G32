@@ -1,77 +1,111 @@
 @page
 @model OPCBS.Web.Pages.CustomerSupport.BlogModeration.IndexModel
 @{
-    ViewData["Title"] = "Blog Moderation";
+    ViewData["Title"] = "Duyệt bài viết";
     ViewData["UseDashboardLayout"] = true;
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Blog Moderation Queue</h1>
+<style>
+    .mod-header h1 { font-size: 1.4rem; font-weight: 700; }
+    .mod-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .mod-stat { background: white; border-radius: 12px; padding: 1rem 1.25rem; border: 1px solid rgba(78,139,112,0.08); display: flex; align-items: center; gap: 1rem; }
+    .mod-stat .icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .mod-stat .stat-info .num { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    .mod-stat .stat-info .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .blog-queue { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .queue-item { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); padding: 1.25rem; display: flex; gap: 1.25rem; align-items: flex-start; transition: all 0.25s ease; }
+    .queue-item:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(78,139,112,0.08); }
+    .queue-item .item-thumb { width: 80px; height: 80px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); display: flex; align-items: center; justify-content: center; }
+    .queue-item .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .queue-item .item-thumb .placeholder { color: var(--mb-primary); font-size: 1.5rem; opacity: 0.5; }
+    .queue-item .item-body { flex: 1; min-width: 0; }
+    .queue-item .item-title { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-item .item-excerpt { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.5rem; }
+    .queue-item .item-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.72rem; color: #94a3b8; }
+    .queue-item .item-meta span { display: flex; align-items: center; gap: 0.3rem; }
+    .queue-item .item-actions { flex-shrink: 0; display: flex; align-items: center; }
+    .queue-item .item-actions .btn { border-radius: 10px; padding: 0.5rem 1.25rem; font-size: 0.8rem; font-weight: 500; }
+    .empty-queue { text-align: center; padding: 4rem 2rem; background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); }
+    .empty-queue i { font-size: 3.5rem; color: #22c55e; opacity: 0.4; display: block; margin-bottom: 1rem; }
+    .empty-queue h5 { color: #64748b; font-weight: 600; }
+    .empty-queue p { color: #94a3b8; font-size: 0.85rem; }
+</style>
+
+<div class="mod-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Duyệt bài viết</h1>
+        <p class="text-muted mb-0" style="font-size:0.82rem;">Xem xét và phê duyệt bài viết từ bác sĩ</p>
+    </div>
 </div>
 
 @if (ViewData["Success"] is string suc) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
 @if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
 
-<!-- Blog Queue -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white">
-        <h6 class="mb-0 fw-semibold">Pending Blog Articles</h6>
+<!-- Stats -->
+<div class="mod-stats">
+    <div class="mod-stat">
+        <div class="icon-wrap" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="bi bi-hourglass-split"></i></div>
+        <div class="stat-info"><div class="num" style="color:#f59e0b;">@Model.Blogs.Count</div><div class="label">Chờ duyệt</div></div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr>
-                <th class="ps-4" style="min-width:250px;">Article</th><th>Author</th><th>Category</th><th>Status</th><th>Submitted</th><th class="text-end pe-4">Action</th>
-            </tr></thead>
-            <tbody>
-                @if (Model.Blogs.Any())
-                {
-                    @foreach (var blog in Model.Blogs)
-                    {
-                        var badgeClass = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "bg-warning text-dark", "approved" or "published" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    @if (!string.IsNullOrEmpty(blog.ImageUrl))
-                                    {
-                                        <img src="@blog.ImageUrl" alt="" class="rounded" style="width:48px;height:48px;object-fit:cover;" />
-                                    }
-                                    else
-                                    {
-                                        <div class="rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;background:rgba(78,139,112,0.1);"><i class="bi bi-journal" style="color:var(--mb-primary);"></i></div>
-                                    }
-                                    <div>
-                                        <span class="fw-semibold small">@(blog.Title.Length > 45 ? blog.Title[..45] + "…" : blog.Title)</span>
-                                        <small class="text-muted d-block">@(blog.Summary?.Length > 60 ? blog.Summary[..60] + "…" : blog.Summary ?? "—")</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="small">@(blog.AuthorName ?? "Unknown")</td>
-                            <td><span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.6rem;">@(blog.Category ?? "General")</span></td>
-                            <td><span class="badge @badgeClass" style="font-size:0.65rem;">@(blog.Status ?? "Pending")</span></td>
-                            <td class="small text-muted">@blog.CreatedAt.ToString("dd/MM/yyyy")</td>
-                            <td class="text-end pe-4">
-                                <a asp-page="Details" asp-route-id="@blog.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Review</a>
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-journal-check d-block mb-2" style="font-size:2.5rem;"></i><p>No blogs pending moderation.</p></td></tr>
-                }
-            </tbody>
-        </table></div>
+    <div class="mod-stat">
+        <div class="icon-wrap" style="background:rgba(78,139,112,0.1); color:var(--mb-primary);"><i class="bi bi-journal-text"></i></div>
+        <div class="stat-info"><div class="num">@(Model.Pagination?.TotalItems ?? Model.Blogs.Count)</div><div class="label">Tổng bài gửi</div></div>
     </div>
-    @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
-    {
-        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-            <small class="text-muted">Page @Model.Pagination.Page of @Model.Pagination.TotalPages</small>
-            <nav><ul class="pagination pagination-sm mb-0">
-                @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)
-                {
-                    <li class="page-item @(i == Model.Pagination.Page ? "active" : "")"><a class="page-link" asp-page="Index" asp-route-page="@i">@i</a></li>
-                }
-            </ul></nav>
-        </div>
-    }
 </div>
+
+<!-- Queue -->
+@if (Model.Blogs.Any())
+{
+    <div class="blog-queue">
+        @foreach (var blog in Model.Blogs)
+        {
+            <div class="queue-item">
+                <div class="item-thumb">
+                    @if (!string.IsNullOrEmpty(blog.DisplayImage))
+                    {
+                        <img src="@blog.DisplayImage" alt="" />
+                    }
+                    else
+                    {
+                        <i class="bi bi-journal-richtext placeholder"></i>
+                    }
+                </div>
+                <div class="item-body">
+                    <div class="item-title">@blog.Title</div>
+                    <div class="item-excerpt">@(blog.DisplaySummary ?? "Không có tóm tắt")</div>
+                    <div class="item-meta">
+                        <span><i class="bi bi-person"></i>@(blog.AuthorName ?? "Ẩn danh")</span>
+                        <span><i class="bi bi-tag"></i>@(blog.Category ?? "Chung")</span>
+                        <span><i class="bi bi-calendar3"></i>@(blog.SubmittedAt?.ToString("dd/MM/yyyy HH:mm") ?? blog.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <a asp-page="Details" asp-route-id="@blog.Id" class="btn btn-primary">
+                        <i class="bi bi-eye me-1"></i>Xem xét
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-queue">
+        <i class="bi bi-journal-check"></i>
+        <h5>Không có bài viết nào chờ duyệt</h5>
+        <p>Tất cả bài viết đã được xử lý. Kiểm tra lại sau nhé!</p>
+    </div>
+}
+
+@if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
+{
+    <div class="d-flex justify-content-between align-items-center mt-3 p-3" style="background:white;border-radius:12px;border:1px solid rgba(78,139,112,0.08);">
+        <small class="text-muted">Trang @Model.Pagination.Page / @Model.Pagination.TotalPages</small>
+        <nav><ul class="pagination pagination-sm mb-0">
+            @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)
+            {
+                <li class="page-item @(i == Model.Pagination.Page ? "active" : "")"><a class="page-link" asp-page="Index" asp-route-page="@i">@i</a></li>
+            }
+        </ul></nav>
+    </div>
+}

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -16,7 +16,7 @@ builder.Services.AddControllers();
 // Infrastructure services (DbContext, repositories, external services)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddInfrastructureServices(connectionString);
+builder.Services.AddInfrastructureServices(connectionString, builder.Configuration);
 
 // Application services (business services, validators, AutoMapper)
 builder.Services.AddApplicationServices();

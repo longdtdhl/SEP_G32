@@ -29,6 +29,15 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
     }
     public async Task<(bool Success, string? Error)> CreateDayOffAsync(CreateDayOffDto dto) => await PostAsync($"{ApiRoutes.Schedules}/unavailable-date", dto);
     public async Task<(bool Success, string? Error)> DeleteDayOffAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.ScheduleDaysOff}/{id}");
+    
+    public async Task<(AvailableSlotsDto? Data, string? Error)> GetMySlotsAsync(DateOnly? date = null)
+    {
+        var url = $"{ApiRoutes.Schedules}/slots";
+        if (date.HasValue) url += $"?date={date.Value:yyyy-MM-dd}";
+        var (data, _, error) = await GetAsync<AvailableSlotsDto>(url);
+        return (data, error);
+    }
+    public async Task<(bool Success, string? Error)> ToggleBlockSlotAsync(Guid slotId) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/toggle-block");
 }
 
 // --- Consultation Record ---
@@ -50,6 +59,11 @@ public class ConsultationRecordApiService : ApiServiceBase, IConsultationRecordA
     {
         var (data, _, error) = await GetAsync<ConsultationRecordDto>($"{ApiRoutes.ConsultationRecords}/{id}");
         return (data, error);
+    }
+    public async Task<(ConsultationRecordDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId)
+    {
+        var (data, _, error) = await GetAsync<List<ConsultationRecordDto>>($"{ApiRoutes.ConsultationRecords}/appointment/{appointmentId}");
+        return (data != null && data.Any() ? data.First() : null, error);
     }
     public async Task<(bool Success, string? Error)> CreateAsync(CreateConsultationRecordDto dto) => await PostAsync(ApiRoutes.ConsultationRecords, dto);
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationRecordDto dto) => await PutAsync($"{ApiRoutes.ConsultationRecords}/{id}", dto);

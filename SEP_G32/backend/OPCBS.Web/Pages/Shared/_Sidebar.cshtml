@@ -1,13 +1,30 @@
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
+@inject OPCBS.Web.Services.IVerificationApiService VerificationService
 
 @{
-    // TODO: Parse JWT to determine actual role. Using path-based detection as fallback.
+    var role = JwtService.GetRole();
     var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
-    var isPatient = currentPath.StartsWith("/patient");
-    var isDoctor = currentPath.StartsWith("/doctor");
-    var isCS = currentPath.StartsWith("/customersupport");
-    var isBM = currentPath.StartsWith("/businessmanager");
-    var isAdmin = currentPath.StartsWith("/admin");
+
+    var isPatient = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase);
+    var isDoctor = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase);
+    var isCS = string.Equals(role, "CustomerSupport", StringComparison.OrdinalIgnoreCase);
+    var isBM = string.Equals(role, "BusinessManager", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = string.Equals(role, "SystemAdmin", StringComparison.OrdinalIgnoreCase);
+
+    // For doctor verification gate - check via API
+    var isVerified = ViewData["DoctorVerified"] as bool? ?? false;
+    if (isDoctor && !isVerified)
+    {
+        try
+        {
+            var (vData, _) = await VerificationService.GetMyVerificationAsync();
+            if (vData != null && string.Equals(vData.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                isVerified = true;
+            }
+        }
+        catch { }
+    }
 }
 
 <aside class="mb-sidebar" id="mb-sidebar">
@@ -43,34 +60,66 @@
             <a class="nav-link @(currentPath == "/doctor/dashboard" ? "active" : "")" asp-page="/Doctor/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/appointments") ? "active" : "")" asp-page="/Doctor/Appointments/Index">
-                <i class="bi bi-calendar-check"></i> Appointments
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
-                <i class="bi bi-clock"></i> Schedules
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/consultationrecords") ? "active" : "")" asp-page="/Doctor/ConsultationRecords/Index">
-                <i class="bi bi-file-medical"></i> Records
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
-                <i class="bi bi-box-seam"></i> Treatment Packages
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
-                <i class="bi bi-journal-text"></i> Blog Posts
-            </a>
+
+            @if (isVerified)
+            {
+                <a class="nav-link @(currentPath.StartsWith("/doctor/appointments") ? "active" : "")" asp-page="/Doctor/Appointments/Index">
+                    <i class="bi bi-calendar-check"></i> Appointments
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
+                    <i class="bi bi-clock"></i> Schedules
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/consultationrecords") ? "active" : "")" asp-page="/Doctor/ConsultationRecords/Index">
+                    <i class="bi bi-file-medical"></i> Records
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
+                    <i class="bi bi-box-seam"></i> Treatment Packages
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
+                    <i class="bi bi-journal-text"></i> Blog Posts
+                </a>
+            }
+            else
+            {
+                <!-- Disabled items for unverified doctors -->
+                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
+                    <i class="bi bi-calendar-check"></i> Appointments <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
+                    <i class="bi bi-clock"></i> Schedules <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
+                    <i class="bi bi-file-medical"></i> Records <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
+                    <i class="bi bi-box-seam"></i> Packages <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
+                    <i class="bi bi-journal-text"></i> Blog Posts <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+            }
+
             <div class="sidebar-header mt-3">Account</div>
             <a class="nav-link @(currentPath == "/doctor/profile" ? "active" : "")" asp-page="/Doctor/Profile">
                 <i class="bi bi-person"></i> Profile
             </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/VerificationStatus">
+            <a class="nav-link @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/Verification">
                 <i class="bi bi-patch-check"></i> Verification
+                @if (!isVerified)
+                {
+                    <span class="badge bg-warning text-dark ms-auto" style="font-size:0.6rem;">Chưa duyệt</span>
+                }
             </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
-                <i class="bi bi-gem"></i> Service Package
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
-                <i class="bi bi-credit-card"></i> Subscription
-            </a>
+
+            @if (isVerified)
+            {
+                <a class="nav-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
+                    <i class="bi bi-gem"></i> Service Package
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
+                    <i class="bi bi-credit-card"></i> Subscription
+                </a>
+            }
         </nav>
     }
     else if (isCS)

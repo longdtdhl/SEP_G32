@@ -22,6 +22,11 @@ public class DaysOffModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (Input.StartDate.Date < DateTime.Today)
+        {
+            TempData["Error"] = "Không thể chọn ngày nghỉ trong quá khứ.";
+            return RedirectToPage();
+        }
         if (Input.EndDate == default) Input.EndDate = Input.StartDate;
         var (success, error) = await _api.CreateDayOffAsync(Input);
         if (!success) TempData["Error"] = error;

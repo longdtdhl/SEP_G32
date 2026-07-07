@@ -27,6 +27,9 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(bool Success, string? Error)> RegisterAsync(RegisterRequestDto model)
         => await PostAsync(ApiRoutes.Register, model);
 
+    public async Task<(bool Success, string? Error)> RegisterDoctorAsync(RegisterDoctorRequestDto model)
+        => await PostAsync(ApiRoutes.RegisterDoctor, model);
+
     public async Task<(bool Success, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto model)
         => await PostAsync(ApiRoutes.VerifyOtp, model);
 

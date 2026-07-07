@@ -11,7 +11,15 @@ public class CreateModel : PageModel
     public CreateModel(ITreatmentPackageApiService api) => _api = api;
     [BindProperty] public CreateTreatmentPackageDto Input { get; set; } = new();
     public string? Error { get; set; }
-    public void OnGet() { }
+    public Guid? PrefilledPatientId { get; set; }
+    public void OnGet([FromQuery] Guid? patientId)
+    {
+        if (patientId.HasValue)
+        {
+            Input.PatientId = patientId.Value;
+            PrefilledPatientId = patientId.Value;
+        }
+    }
     public async Task<IActionResult> OnPostAsync()
     {
         var (success, error) = await _api.CreateAsync(Input);

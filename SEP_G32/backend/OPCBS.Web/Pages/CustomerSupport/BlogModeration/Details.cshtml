@@ -1,9 +1,42 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.CustomerSupport.BlogModeration.DetailsModel
 @{
-    ViewData["Title"] = "Blog Review";
+    ViewData["Title"] = "Xem xét bài viết";
     ViewData["UseDashboardLayout"] = true;
 }
+
+<style>
+    .review-header h1 { font-size: 1.3rem; font-weight: 700; }
+    .content-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
+    .content-card .card-img { width: 100%; max-height: 320px; object-fit: cover; }
+    .content-card .card-inner { padding: 2rem; }
+    .content-card .blog-category { display: inline-block; background: rgba(78,139,112,0.1); color: var(--mb-primary); padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px; margin-bottom: 0.75rem; }
+    .content-card .blog-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem; line-height: 1.3; }
+    .content-card .blog-meta { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #64748b; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .content-card .blog-meta span { display: flex; align-items: center; gap: 0.35rem; }
+    .content-card .blog-summary { background: #f8fafc; border-radius: 10px; padding: 1rem 1.25rem; font-size: 0.85rem; color: #475569; margin-bottom: 1.25rem; border-left: 3px solid var(--mb-primary); }
+    .content-card .blog-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.25rem; }
+    .content-card .blog-tags .tag { background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 500; }
+    .content-card .blog-content { line-height: 1.9; font-size: 0.92rem; color: #334155; }
+    .content-card .blog-content p { margin-bottom: 1rem; }
+    .sidebar-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); padding: 1.25rem; margin-bottom: 1rem; }
+    .sidebar-title { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .label { color: #94a3b8; }
+    .info-row .value { font-weight: 500; color: #334155; }
+    .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-published { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .action-card { border: 2px solid rgba(78,139,112,0.12); }
+    .action-card .btn { border-radius: 10px; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 500; }
+    .reject-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; }
+    .reject-section textarea { border-radius: 10px; border: 1.5px solid #e2e8f0; font-size: 0.82rem; }
+    .reject-section textarea:focus { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .done-badge { text-align: center; padding: 1.5rem; }
+    .done-badge i { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+</style>
 
 @{ var suc = TempData["Success"] as string; }
 @if (suc != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
@@ -11,54 +44,58 @@
 
 @if (Model.Blog == null)
 {
-    <div class="mb-page-header"><h1>Blog Not Found</h1></div>
-    <div class="text-center py-5 text-muted"><i class="bi bi-journal-x d-block mb-2" style="font-size:3rem;"></i><p>This blog could not be found.</p><a asp-page="Index" class="btn btn-primary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+    <div class="review-header"><h1>Không tìm thấy bài viết</h1></div>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-journal-x d-block mb-2" style="font-size:3rem;"></i>
+        <p>Bài viết này không tồn tại hoặc đã bị xóa.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    </div>
     return;
 }
 
 @{ var blog = Model.Blog; var isPending = blog.Status?.Equals("PendingApproval", StringComparison.OrdinalIgnoreCase) == true || blog.Status?.Equals("Pending", StringComparison.OrdinalIgnoreCase) == true; }
 
-<div class="mb-page-header d-flex align-items-center gap-3">
-    <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
-    <h1 class="mb-0"><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Blog Review</h1>
+<div class="review-header d-flex align-items-center gap-3 mb-4">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;"><i class="bi bi-arrow-left"></i></a>
+    <div>
+        <h1><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Xem xét bài viết</h1>
+        <p class="text-muted mb-0" style="font-size:0.8rem;">Đọc kỹ nội dung và quyết định phê duyệt</p>
+    </div>
 </div>
 
 <div class="row g-4">
     <!-- Blog Content -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                @if (!string.IsNullOrEmpty(blog.ImageUrl))
-                {
-                    <img src="@blog.ImageUrl" alt="@blog.Title" class="w-100 mb-3 rounded" style="max-height:300px;object-fit:cover;" />
-                }
-
+        <div class="content-card">
+            @if (!string.IsNullOrEmpty(blog.DisplayImage))
+            {
+                <img src="@blog.DisplayImage" alt="@blog.Title" class="card-img" />
+            }
+            <div class="card-inner">
                 @if (!string.IsNullOrEmpty(blog.Category))
                 {
-                    <span class="badge bg-primary bg-opacity-10 text-primary mb-2">@blog.Category</span>
+                    <span class="blog-category">@blog.Category</span>
                 }
-
-                <h3 class="fw-bold mb-2">@blog.Title</h3>
-
-                <div class="d-flex gap-3 text-muted small mb-3">
-                    <span><i class="bi bi-person me-1"></i>@(blog.AuthorName ?? "Unknown")</span>
-                    <span><i class="bi bi-calendar me-1"></i>@blog.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                <h2 class="blog-title">@blog.Title</h2>
+                <div class="blog-meta">
+                    <span><i class="bi bi-person-circle"></i>@(blog.AuthorName ?? "Ẩn danh")</span>
+                    <span><i class="bi bi-calendar3"></i>@blog.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    <span><i class="bi bi-eye"></i>@blog.ViewCount lượt xem</span>
                 </div>
-
-                @if (!string.IsNullOrEmpty(blog.Summary))
+                @if (!string.IsNullOrEmpty(blog.DisplaySummary))
                 {
-                    <div class="alert alert-light mb-3"><strong>Summary:</strong> @blog.Summary</div>
-                }
-
-                @if (blog.Tags.Any())
-                {
-                    <div class="mb-3">
-                        @foreach (var tag in blog.Tags) { <span class="badge bg-secondary bg-opacity-10 text-secondary me-1">@tag</span> }
+                    <div class="blog-summary">
+                        <strong>Tóm tắt:</strong> @blog.DisplaySummary
                     </div>
                 }
-
-                <hr />
-                <div class="blog-content" style="line-height:1.8;">
+                @if (blog.Tags.Any())
+                {
+                    <div class="blog-tags">
+                        @foreach (var tag in blog.Tags) { <span class="tag">@tag</span> }
+                    </div>
+                }
+                <hr style="border-color:#f1f5f9;" />
+                <div class="blog-content">
                     @Html.Raw(blog.Content)
                 </div>
             </div>
@@ -67,54 +104,66 @@
 
     <!-- Moderation Sidebar -->
     <div class="col-lg-4">
-        <!-- Status -->
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-info-circle me-1"></i>Moderation Status</h6></div>
-            <div class="card-body">
-                @{
-                    var badgeClass = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "bg-warning text-dark", "approved" or "published" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
-                }
-                <div class="d-flex justify-content-between mb-2"><span class="text-muted small">Status</span><span class="badge @badgeClass">@(blog.Status ?? "Pending")</span></div>
-                <div class="d-flex justify-content-between mb-2"><span class="text-muted small">Author</span><span class="small fw-medium">@(blog.AuthorName ?? "—")</span></div>
-                <div class="d-flex justify-content-between mb-2"><span class="text-muted small">Category</span><span class="small fw-medium">@(blog.Category ?? "—")</span></div>
-                <div class="d-flex justify-content-between mb-2"><span class="text-muted small">Created</span><span class="small">@blog.CreatedAt.ToString("dd/MM/yyyy")</span></div>
-                @if (blog.UpdatedAt.HasValue)
-                {
-                    <div class="d-flex justify-content-between"><span class="text-muted small">Updated</span><span class="small">@blog.UpdatedAt.Value.ToString("dd/MM/yyyy")</span></div>
-                }
-            </div>
+        <!-- Info -->
+        <div class="sidebar-card">
+            <div class="sidebar-title"><i class="bi bi-info-circle"></i>Thông tin bài viết</div>
+            @{
+                var statusVi = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "Chờ duyệt", "approved" or "published" => "Đã xuất bản", "rejected" => "Bị từ chối", _ => "Bản nháp" };
+                var statusClass = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "status-pending", "approved" or "published" => "status-published", "rejected" => "status-rejected", _ => "status-pending" };
+            }
+            <div class="info-row"><span class="label">Trạng thái</span><span class="status-pill @statusClass">@statusVi</span></div>
+            <div class="info-row"><span class="label">Tác giả</span><span class="value">@(blog.AuthorName ?? "—")</span></div>
+            <div class="info-row"><span class="label">Danh mục</span><span class="value">@(blog.Category ?? "—")</span></div>
+            <div class="info-row"><span class="label">Ngày tạo</span><span class="value">@blog.CreatedAt.ToString("dd/MM/yyyy")</span></div>
+            @if (blog.UpdatedAt.HasValue)
+            {
+                <div class="info-row"><span class="label">Cập nhật</span><span class="value">@blog.UpdatedAt.Value.ToString("dd/MM/yyyy")</span></div>
+            }
         </div>
 
         <!-- Actions -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clipboard-check me-1"></i>Review Actions</h6></div>
-            <div class="card-body">
-                @if (isPending)
-                {
-                    <form method="post" asp-page-handler="Approve" asp-route-id="@blog.Id" class="mb-3">
-                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve and publish this blog?')">
-                            <i class="bi bi-check-circle me-1"></i>Approve & Publish
-                        </button>
-                    </form>
+        <div class="sidebar-card action-card">
+            <div class="sidebar-title"><i class="bi bi-clipboard-check"></i>Hành động phê duyệt</div>
+            @if (isPending)
+            {
+                <form method="post" asp-page-handler="Approve" asp-route-id="@blog.Id" class="mb-2">
+                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Xác nhận duyệt và xuất bản bài viết này?')">
+                        <i class="bi bi-check-circle me-1"></i>Duyệt & Xuất bản
+                    </button>
+                </form>
 
+                <div class="reject-section">
                     <form method="post" asp-page-handler="Reject" asp-route-id="@blog.Id">
                         <div class="mb-2">
-                            <label class="form-label small fw-semibold">Rejection Reason</label>
-                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Optional reason for rejection..."></textarea>
+                            <label class="form-label" style="font-size:0.8rem;font-weight:500;color:#334155;">Lý do từ chối</label>
+                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Mô tả lý do từ chối (tùy chọn)..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this blog?')">
-                            <i class="bi bi-x-circle me-1"></i>Reject Blog
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Xác nhận từ chối bài viết này?')">
+                            <i class="bi bi-x-circle me-1"></i>Từ chối bài viết
                         </button>
                     </form>
-                }
-                else
-                {
-                    <div class="text-center py-3 text-muted">
-                        <i class="bi bi-check-all d-block mb-2" style="font-size:2rem;"></i>
-                        <p class="mb-0">This blog has been <strong>@blog.Status?.ToLower()</strong>.</p>
-                    </div>
-                }
-            </div>
+                </div>
+            }
+            else
+            {
+                <div class="done-badge">
+                    @if (blog.Status?.ToLower() is "approved" or "published")
+                    {
+                        <i class="bi bi-check-circle-fill" style="color:#22c55e;"></i>
+                        <p class="mb-0" style="font-size:0.85rem;color:#065f46;">Bài viết đã được <strong>duyệt</strong>.</p>
+                    }
+                    else if (blog.Status?.ToLower() == "rejected")
+                    {
+                        <i class="bi bi-x-circle-fill" style="color:#ef4444;"></i>
+                        <p class="mb-0" style="font-size:0.85rem;color:#991b1b;">Bài viết đã bị <strong>từ chối</strong>.</p>
+                    }
+                    else
+                    {
+                        <i class="bi bi-file-earmark" style="color:#64748b;"></i>
+                        <p class="mb-0" style="font-size:0.85rem;color:#64748b;">Bài viết ở trạng thái <strong>@blog.Status</strong>.</p>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>

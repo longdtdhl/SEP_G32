@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<DoctorSpecialization> _doctorSpecRepo;
+    private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IJwtTokenService _jwtService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
@@ -30,6 +31,7 @@ public class AuthService : IAuthService
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<DoctorSpecialization> doctorSpecRepo,
+        IRepository<VerificationRequest> verRepo,
         IJwtTokenService jwtService,
         IEmailService emailService,
         IMapper mapper)
@@ -41,6 +43,7 @@ public class AuthService : IAuthService
         _patientRepo = patientRepo;
         _doctorRepo = doctorRepo;
         _doctorSpecRepo = doctorSpecRepo;
+        _verRepo = verRepo;
         _jwtService = jwtService;
         _emailService = emailService;
         _mapper = mapper;
@@ -132,9 +135,18 @@ public class AuthService : IAuthService
                 ProfessionalTitle = dto.ProfessionalTitle,
                 Biography = dto.Biography,
                 ExperienceYears = dto.ExperienceYears,
+                VerificationStatus = VerificationStatus.Submitted,
                 User = user
             };
             await _doctorRepo.AddAsync(doctorProfile, ct);
+
+            // Auto-create verification request for CS review
+            await _verRepo.AddAsync(new VerificationRequest
+            {
+                DoctorProfileId = doctorProfile.Id,
+                Status = VerificationStatus.Submitted,
+                DoctorProfile = doctorProfile
+            }, ct);
 
             if (dto.SpecializationIds?.Any() == true)
             {

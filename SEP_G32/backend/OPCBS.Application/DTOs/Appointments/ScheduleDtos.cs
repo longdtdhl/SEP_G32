@@ -25,6 +25,7 @@ public class CreateScheduleDto
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
     public SlotDuration SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 /// <summary>
@@ -37,6 +38,7 @@ public class UpdateScheduleDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public SlotDuration? SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 /// <summary>

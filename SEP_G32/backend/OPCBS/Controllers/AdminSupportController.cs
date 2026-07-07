@@ -218,12 +218,23 @@ public class SubscriptionsController : ControllerBase
 
     /// <summary>GET /api/v1/subscriptions/my-subscription — Get active subscription</summary>
     [HttpGet("my-subscription")]
+    [HttpGet("current")]
     public async Task<IActionResult> GetMySubscription()
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _subService.GetActiveSubscriptionAsync(userId.Value);
         return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>POST /api/v1/subscriptions — Subscribe package directly (activated immediately)</summary>
+    [HttpPost]
+    public async Task<IActionResult> Subscribe([FromBody] CreateSubscriptionRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _subService.CreateSubscriptionDirectAsync(userId.Value, request.ServicePackageId);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>POST /api/v1/subscriptions/purchase — Purchase subscription</summary>
@@ -251,6 +262,11 @@ public class SubscriptionsController : ControllerBase
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
+}
+
+public class CreateSubscriptionRequest
+{
+    public Guid ServicePackageId { get; set; }
 }
 
 public class PurchaseSubscriptionRequest
@@ -387,11 +403,54 @@ public class CustomerSupportController : ControllerBase
         return Ok(result);
     }
 
+    // ── Blog Moderation Routes (matched to Web client CSBlogModeration) ──
+
+    /// <summary>GET /api/v1/customer-support/blog-moderation — Alias for pending-blogs</summary>
+    [HttpGet("blog-moderation")]
+    public async Task<IActionResult> GetBlogModerationQueue([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _blogService.GetPendingBlogsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/customer-support/blog-moderation/{id} — Get blog detail for moderation</summary>
+    [HttpGet("blog-moderation/{id}")]
+    public async Task<IActionResult> GetBlogForModeration(Guid id)
+    {
+        var result = await _blogService.GetBlogByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/blog-moderation/{id}/approve — Approve blog</summary>
+    [HttpPut("blog-moderation/{id}/approve")]
+    public async Task<IActionResult> ApproveBlogModeration(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _blogService.ApproveBlogAsync(id, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/blog-moderation/{id}/reject — Reject blog</summary>
+    [HttpPut("blog-moderation/{id}/reject")]
+    public async Task<IActionResult> RejectBlogModeration(Guid id, [FromBody] RejectBlogBody? body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _blogService.RejectBlogAsync(id, userId.Value, body?.Reason);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
+}
+
+public class RejectBlogBody
+{
+    public string? Reason { get; set; }
 }
 
 public class ReviewApplicationBody
