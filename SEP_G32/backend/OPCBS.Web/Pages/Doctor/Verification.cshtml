@@ -1,59 +1,170 @@
 @page
 @model OPCBS.Web.Pages.Doctor.VerificationModel
-@{ ViewData["Title"] = "Xác minh bác sĩ"; ViewData["UseDashboardLayout"] = true; }
+@{ ViewData["Title"] = "Practitioner Verification"; ViewData["UseDashboardLayout"] = true; }
 
-<div class="mb-page-header"><h1>Xác minh chuyên môn</h1></div>
+<div class="mb-page-header text-center">
+    <div class="d-flex justify-content-center mb-3">
+        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border border-3 border-white shadow-sm" style="width:96px;height:96px;">
+            <i class="bi bi-person" style="font-size:2.5rem;color:#94A3B8;"></i>
+        </div>
+    </div>
+    <h1>Practitioner Verification</h1>
+    <p class="text-muted">Complete your profile to join the network</p>
+</div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
-@if (Model.Success != null) { <div class="alert alert-success">@Model.Success</div> }
+@if (Model.Error != null) { <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (Model.Success != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@Model.Success<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
 
 @if (Model.HasExisting && Model.Verification != null)
 {
     var v = Model.Verification;
-    var badge = v.Status switch { "Pending" => "bg-warning text-dark", "Approved" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary" };
+    var badge = v.Status?.ToLower() switch { "submitted" or "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
+    var displayStatus = v.Status?.ToLower() == "submitted" ? "Pending Review" : (v.Status ?? "N/A");
+
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between">
-            <h5 class="mb-0">Trạng thái xác minh</h5>
-            <span class="badge @badge fs-6">@(v.Status ?? "N/A")</span>
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-shield-check me-2" style="color:var(--mb-primary);"></i>Verification Status</h5>
+            <span class="badge @badge fs-6">@displayStatus</span>
         </div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6"><div class="text-muted small">Số giấy phép</div><div>@(v.LicenseNumber ?? "-")</div></div>
-                <div class="col-md-6"><div class="text-muted small">Chuyên khoa</div><div>@(v.Specialization ?? "-")</div></div>
-                <div class="col-md-6"><div class="text-muted small">Kinh nghiệm</div><div>@v.ExperienceYears năm</div></div>
-                <div class="col-md-6"><div class="text-muted small">Trình độ</div><div>@(v.Education ?? "-")</div></div>
-                <div class="col-12"><div class="text-muted small">Ghi chú</div><div>@(v.Notes ?? "-")</div></div>
-                @if (!string.IsNullOrEmpty(v.CertificateUrl))
-                {
-                    <div class="col-12"><div class="text-muted small">Chứng chỉ</div><div><a href="@v.CertificateUrl" target="_blank">Xem chứng chỉ <i class="bi bi-box-arrow-up-right"></i></a></div></div>
-                }
-                <div class="col-md-6"><div class="text-muted small">Ngày nộp</div><div>@v.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div></div>
-                @if (v.ReviewedAt.HasValue)
-                {
-                    <div class="col-md-6"><div class="text-muted small">Ngày duyệt</div><div>@v.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div></div>
-                }
-                @if (!string.IsNullOrEmpty(v.RejectionReason))
-                {
-                    <div class="col-12"><div class="alert alert-danger mt-2"><strong>Lý do từ chối:</strong> @v.RejectionReason</div></div>
-                }
+            <div class="row g-4">
+                <!-- Personal Info -->
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">Full Name</div>
+                    <div class="fw-semibold">@(v.DoctorName ?? "-")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">Job Title / Position</div>
+                    <div class="fw-semibold">@(v.Specialization ?? "-")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">License Number</div>
+                    <div><code class="bg-light px-2 py-1 rounded" style="color:var(--mb-primary);">@(v.LicenseNumber ?? "-")</code></div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">Years of Experience</div>
+                    <div class="fw-semibold">@v.ExperienceYears years</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">Education</div>
+                    <div class="fw-semibold">@(v.Education ?? "-")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small mb-1">Submitted</div>
+                    <div class="fw-semibold">@v.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
             </div>
+
+            @if (!string.IsNullOrEmpty(v.Notes))
+            {
+                <hr />
+                <div class="text-muted small mb-1">Professional Summary</div>
+                <p class="mb-0">@v.Notes</p>
+            }
+
+            @if (!string.IsNullOrEmpty(v.CertificateUrl))
+            {
+                <hr />
+                <div class="text-muted small mb-1">Certificate / Documents</div>
+                <div><a href="@v.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>View Document</a></div>
+            }
+
+            @if (v.ReviewedAt.HasValue)
+            {
+                <hr />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small mb-1">Reviewed On</div>
+                        <div class="fw-semibold">@v.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(v.ReviewedByName))
+                    {
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Reviewed By</div>
+                            <div class="fw-semibold">@v.ReviewedByName</div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(v.RejectionReason))
+            {
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="bi bi-x-circle me-1"></i><strong>Rejection Reason:</strong> @v.RejectionReason
+                </div>
+            }
         </div>
     </div>
+
+    @if (v.Status?.ToLower() == "rejected")
+    {
+        <div class="text-center mt-4">
+            <p class="text-muted">Your application was rejected. You may re-submit with updated information.</p>
+            <a asp-page="Verification" asp-route-resubmit="true" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Re-submit Application</a>
+        </div>
+    }
 }
 else
 {
-    <div class="card border-0 shadow-sm"><div class="card-body">
-        <div class="alert alert-info mb-3"><i class="bi bi-info-circle me-1"></i>Nộp hồ sơ xác minh để được phê duyệt hoạt động trên hệ thống.</div>
-        <form method="post">
-            <div class="row g-3">
-                <div class="col-md-6"><label class="form-label">Số giấy phép hành nghề <span class="text-danger">*</span></label><input asp-for="Input.LicenseNumber" class="form-control" /></div>
-                <div class="col-md-6"><label class="form-label">Chuyên khoa <span class="text-danger">*</span></label><input asp-for="Input.Specialization" class="form-control" /></div>
-                <div class="col-md-6"><label class="form-label">Số năm kinh nghiệm</label><input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" /></div>
-                <div class="col-md-6"><label class="form-label">Trình độ học vấn</label><input asp-for="Input.Education" class="form-control" placeholder="VD: Tiến sĩ, Thạc sĩ..." /></div>
-                <div class="col-12"><label class="form-label">URL chứng chỉ</label><input asp-for="Input.CertificateUrl" class="form-control" placeholder="https://..." /></div>
-                <div class="col-12"><label class="form-label">Ghi chú bổ sung</label><textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea></div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle me-1"></i>Submit your credentials for verification to start practicing on the platform.
             </div>
-            <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Nộp hồ sơ</button></div>
-        </form>
-    </div></div>
+            <form method="post">
+                <!-- Row 1: Name & Title -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Job Title / Position <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Specialization" class="form-control" placeholder="e.g. Clinical Psychologist" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Education / Qualification</label>
+                        <input asp-for="Input.Education" class="form-control" placeholder="e.g. PhD, Master's, MD..." />
+                    </div>
+                </div>
+
+                <!-- Row 2: License & Experience -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Practitioner License Number <span class="text-danger">*</span></label>
+                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="e.g. LIC-12345678" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Years of Exp.</label>
+                        <input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" value="0" />
+                    </div>
+                </div>
+
+                <!-- Professional Summary -->
+                <div class="mb-3">
+                    <label class="form-label">Professional Summary (Bio)</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Briefly describe your approach and professional background..."></textarea>
+                </div>
+
+                <!-- Certificate URL -->
+                <div class="mb-3">
+                    <label class="form-label">Certificate / Document URL</label>
+                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="https://..." />
+                    <div class="form-text">Upload your documents to a cloud storage and paste the link here.</div>
+                </div>
+
+                <!-- Certification Checkbox -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="certifyCheck" required>
+                    <label class="form-check-label small" for="certifyCheck">
+                        I certify that all provided documents and information are accurate. I have read and agreed to the
+                        <a href="#" style="color:var(--mb-primary);">Terms of Service</a> and
+                        <a href="#" style="color:var(--mb-primary);">Practitioner Ethics Policy</a>.
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary px-4 py-2">
+                        <i class="bi bi-send me-1"></i>Submit for Verification
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 }

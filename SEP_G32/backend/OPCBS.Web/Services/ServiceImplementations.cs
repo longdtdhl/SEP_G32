@@ -102,13 +102,13 @@ public class VerificationApiService : ApiServiceBase, IVerificationApiService
 
     public async Task<(VerificationDto? Data, string? Error)> GetMyVerificationAsync()
     {
-        var (data, _, error) = await GetAsync<VerificationDto>($"{ApiRoutes.Verification}/my");
+        var (data, _, error) = await GetAsync<VerificationDto>($"{ApiRoutes.Verification}/status");
         return (data, error);
     }
-    public async Task<(bool Success, string? Error)> SubmitAsync(SubmitVerificationDto dto) => await PostAsync(ApiRoutes.Verification, dto);
+    public async Task<(bool Success, string? Error)> SubmitAsync(SubmitVerificationDto dto) => await PostAsync($"{ApiRoutes.Verification}/submit", dto);
     public async Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetPendingAsync(int page = 1, int pageSize = 10)
     {
-        var (data, pagination, error) = await GetAsync<List<VerificationDto>>($"{ApiRoutes.Verification}?status=Pending&page={page}&pageSize={pageSize}");
+        var (data, pagination, error) = await GetAsync<List<VerificationDto>>($"{ApiRoutes.Verification}/pending?page={page}&pageSize={pageSize}");
         return (data ?? new(), pagination, error);
     }
     public async Task<(VerificationDto? Data, string? Error)> GetByIdAsync(Guid id)

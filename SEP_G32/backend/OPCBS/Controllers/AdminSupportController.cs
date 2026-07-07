@@ -21,11 +21,20 @@ public class VerificationsController : ControllerBase
     /// <summary>POST /api/v1/verifications/submit — Submit verification (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPost("submit")]
-    public async Task<IActionResult> SubmitVerification()
+    public async Task<IActionResult> SubmitVerification([FromBody] SubmitVerificationBody? body)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _verService.SubmitVerificationAsync(userId.Value);
+        var dto = body == null ? null : new OPCBS.Application.Interfaces.Services.SubmitVerificationDto
+        {
+            LicenseNumber = body.LicenseNumber,
+            Specialization = body.Specialization,
+            ExperienceYears = body.ExperienceYears,
+            Education = body.Education,
+            CertificateUrl = body.CertificateUrl,
+            Notes = body.Notes
+        };
+        var result = await _verService.SubmitVerificationAsync(userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -89,6 +98,15 @@ public class VerificationsController : ControllerBase
 
 public class ApproveVerificationRequest { public Guid RequestId { get; set; } }
 public class RejectVerificationRequest { public Guid RequestId { get; set; } public string Reason { get; set; } = string.Empty; }
+public class SubmitVerificationBody
+{
+    public string? LicenseNumber { get; set; }
+    public string? Specialization { get; set; }
+    public int ExperienceYears { get; set; }
+    public string? Education { get; set; }
+    public string? CertificateUrl { get; set; }
+    public string? Notes { get; set; }
+}
 
 /// <summary>
 /// Notification APIs — /api/v1/notifications (spec §18)
@@ -326,6 +344,41 @@ public class CustomerSupportController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/customer-support/doctor-applications — List verification requests with optional status filter</summary>
+    [HttpGet("doctor-applications")]
+    public async Task<IActionResult> GetDoctorApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null)
+    {
+        var result = await _verService.GetAllVerificationsAsync(status, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/customer-support/doctor-applications/{id} — Get verification detail</summary>
+    [HttpGet("doctor-applications/{id}")]
+    public async Task<IActionResult> GetDoctorApplicationById(Guid id)
+    {
+        var result = await _verService.GetVerificationByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/doctor-applications/{id}/review — Approve or reject</summary>
+    [HttpPut("doctor-applications/{id}/review")]
+    public async Task<IActionResult> ReviewDoctorApplication(Guid id, [FromBody] ReviewApplicationBody body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (body.Approved)
+        {
+            var result = await _verService.ApproveVerificationAsync(id, userId.Value);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        else
+        {
+            var result = await _verService.RejectVerificationAsync(id, userId.Value, body.RejectionReason ?? "No reason provided");
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+    }
+
     /// <summary>GET /api/v1/customer-support/pending-blogs — Pending blog reviews</summary>
     [HttpGet("pending-blogs")]
     public async Task<IActionResult> GetPendingBlogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -333,6 +386,18 @@ public class CustomerSupportController : ControllerBase
         var result = await _blogService.GetPendingBlogsAsync(page, pageSize);
         return Ok(result);
     }
+
+    private Guid? GetUserId()
+    {
+        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return claim != null && Guid.TryParse(claim, out var id) ? id : null;
+    }
+}
+
+public class ReviewApplicationBody
+{
+    public bool Approved { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 /// <summary>

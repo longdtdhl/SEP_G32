@@ -1,5 +1,6 @@
 namespace OPCBS.Web.DTOs;
 
+// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=Cancelled, 4=Completed, 5=NoShow
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -14,10 +15,21 @@ public class AppointmentDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public string? Notes { get; set; }
-    public string Status { get; set; } = "Pending";
+    public int Status { get; set; }
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    public string StatusText => Status switch
+    {
+        0 => "Pending",
+        1 => "Approved",
+        2 => "Rejected",
+        3 => "Cancelled",
+        4 => "Completed",
+        5 => "No Show",
+        _ => "Unknown"
+    };
 
     // Aliases for views
     public DateTimeOffset StartAt => ParseDateTime();
@@ -43,8 +55,19 @@ public class AppointmentListItemDto
     public string? Specialization { get; set; }
     public string? AppointmentDate { get; set; }
     public string? StartTime { get; set; }
-    public string Status { get; set; } = "Pending";
+    public int Status { get; set; }
     public decimal? Fee { get; set; }
+
+    public string StatusText => Status switch
+    {
+        0 => "Pending",
+        1 => "Approved",
+        2 => "Rejected",
+        3 => "Cancelled",
+        4 => "Completed",
+        5 => "No Show",
+        _ => "Unknown"
+    };
 
     // Alias
     public DateTimeOffset StartAt
@@ -105,7 +128,8 @@ public class AppointmentSlotDto
     public string Date { get; set; } = string.Empty;
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
+    // Backend returns AppointmentSlotStatus as int (0=Available, 1=Booked, 2=Unavailable)
+    public int Status { get; set; }
     public decimal? Price { get; set; }
 }
 

@@ -1,7 +1,7 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.CustomerSupport.DoctorApplications.DetailsModel
 @{
-    ViewData["Title"] = "Application Review";
+    ViewData["Title"] = "Practitioner Review";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -16,101 +16,156 @@
     return;
 }
 
-@{ var app = Model.Application; var isPending = app.Status?.Equals("Pending", StringComparison.OrdinalIgnoreCase) == true; }
+@{
+    var app = Model.Application;
+    var isPending = app.Status?.Equals("Submitted", StringComparison.OrdinalIgnoreCase) == true || app.Status?.Equals("Pending", StringComparison.OrdinalIgnoreCase) == true;
+    var badgeClass = app.Status?.ToLower() switch { "submitted" or "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
+    var displayStatus = app.Status?.ToLower() == "submitted" ? "Pending Review" : (app.Status ?? "Unknown");
+    var initials = app.DoctorName?.Split(' ').Where(w => w.Length > 0).Select(w => w[0]).Take(2).Aggregate("", (a, c) => a + c).ToUpper() ?? "?";
+}
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div class="d-flex align-items-center gap-3">
-        <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
-        <h1 class="mb-0"><i class="bi bi-person-check me-2" style="color:var(--mb-primary);"></i>Application Review</h1>
+<!-- Back Button -->
+<div class="mb-4">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Back to application list
+    </a>
+</div>
+
+<!-- Profile Header -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body text-center py-4">
+        <div class="d-flex justify-content-center mb-3">
+            @if (!string.IsNullOrEmpty(app.AvatarUrl))
+            {
+                <img src="@app.AvatarUrl" class="rounded-circle border border-3 border-white shadow-sm" style="width:96px;height:96px;object-fit:cover;" alt="@app.DoctorName" />
+            }
+            else
+            {
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" style="width:96px;height:96px;background:var(--mb-primary);font-size:1.8rem;">
+                    @initials
+                </div>
+            }
+        </div>
+        <h2 class="fw-bold mb-1">@(app.DoctorName ?? "Unknown")</h2>
+        <p class="text-muted mb-2">@(app.Specialization ?? "Practitioner") • @app.ExperienceYears years experience</p>
+        <span class="badge @badgeClass fs-6">@displayStatus</span>
     </div>
-    @{
-        var badgeClass = app.Status?.ToLower() switch { "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
-    }
-    <span class="badge @badgeClass fs-6">@(app.Status ?? "Pending")</span>
 </div>
 
 <div class="row g-4">
-    <!-- Doctor Info -->
+    <!-- Left Column: Info Cards -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-person me-1"></i>Doctor Information</h6></div>
+        <!-- Personal Information Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Personal Information</h6>
+            </div>
             <div class="card-body">
-                <div class="row g-3">
+                <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Full Name</label>
-                        <p class="fw-semibold mb-2">@(app.DoctorName ?? "—")</p>
+                        <div class="text-muted small mb-1">Full Name</div>
+                        <div class="fw-semibold">@(app.DoctorName ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Specialization</label>
-                        <p class="fw-semibold mb-2">@(app.Specialization ?? "—")</p>
+                        <div class="text-muted small mb-1">Job Title / Position</div>
+                        <div class="fw-semibold">@(app.Specialization ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">License Number</label>
-                        <p class="fw-semibold mb-2"><code>@(app.LicenseNumber ?? "—")</code></p>
+                        <div class="text-muted small mb-1">License Number</div>
+                        <div><code class="bg-light px-2 py-1 rounded" style="color:var(--mb-primary);">@(app.LicenseNumber ?? "—")</code></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Experience</label>
-                        <p class="fw-semibold mb-2">@app.ExperienceYears years</p>
+                        <div class="text-muted small mb-1">Experience</div>
+                        <div class="fw-semibold">@app.ExperienceYears Years</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Education</label>
-                        <p class="fw-semibold mb-2">@(app.Education ?? "—")</p>
+                        <div class="text-muted small mb-1">Education</div>
+                        <div class="fw-semibold">@(app.Education ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Submitted</label>
-                        <p class="fw-semibold mb-2">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        <div class="text-muted small mb-1">Submitted</div>
+                        <div class="fw-semibold">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
                     </div>
                 </div>
-
-                @if (!string.IsNullOrEmpty(app.Notes))
-                {
-                    <hr />
-                    <label class="form-label text-muted small mb-1">Notes</label>
-                    <p class="mb-0">@app.Notes</p>
-                }
-
-                @if (!string.IsNullOrEmpty(app.CertificateUrl))
-                {
-                    <hr />
-                    <label class="form-label text-muted small mb-1">Certificate / Documents</label>
-                    <div><a href="@app.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>View Document</a></div>
-                }
             </div>
         </div>
 
+        <!-- Professional Summary Card -->
+        @if (!string.IsNullOrEmpty(app.Education))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Professional Summary</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0" style="line-height:1.7;">@app.Education</p>
+                </div>
+            </div>
+        }
+
+        <!-- Verification Documents Card -->
+        @if (!string.IsNullOrEmpty(app.CertificateUrl))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Verification Documents</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="border rounded p-3 d-flex align-items-center gap-3 hover-shadow">
+                                <div class="bg-light rounded p-2"><i class="bi bi-file-earmark-pdf text-danger" style="font-size:1.5rem;"></i></div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">Practitioner License</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">Uploaded document</div>
+                                </div>
+                                <a href="@app.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Rejection Reason -->
         @if (!string.IsNullOrEmpty(app.RejectionReason))
         {
-            <div class="card border-0 shadow-sm mt-3 border-start border-danger border-3">
+            <div class="card border-0 shadow-sm mb-4 border-start border-danger border-3">
                 <div class="card-body">
-                    <label class="form-label text-danger small mb-1"><i class="bi bi-x-circle me-1"></i>Rejection Reason</label>
+                    <div class="text-danger small fw-semibold mb-1"><i class="bi bi-x-circle me-1"></i>Rejection Reason</div>
                     <p class="mb-0">@app.RejectionReason</p>
                 </div>
             </div>
         }
     </div>
 
-    <!-- Review Actions -->
+    <!-- Right Column: Actions & Timeline -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clipboard-check me-1"></i>Review Actions</h6></div>
+        <!-- Review Actions -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0"><i class="bi bi-clipboard-check me-1"></i>Review Actions</h6>
+            </div>
             <div class="card-body">
                 @if (isPending)
                 {
                     <!-- Approve -->
                     <form method="post" asp-page-handler="Approve" asp-route-id="@app.Id" class="mb-3">
-                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this doctor application?')">
-                            <i class="bi bi-check-circle me-1"></i>Approve Application
+                        <button type="submit" class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Approve this practitioner?')">
+                            <i class="bi bi-check-circle-fill"></i> Accept Practitioner
                         </button>
                     </form>
 
+                    <hr />
+
                     <!-- Reject -->
                     <form method="post" asp-page-handler="Reject" asp-route-id="@app.Id">
-                        <div class="mb-2">
+                        <div class="mb-3">
                             <label class="form-label small fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
                             <textarea asp-for="RejectionReason" class="form-control" rows="3" placeholder="Provide a reason for rejection..." required></textarea>
                         </div>
-                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this application?')">
-                            <i class="bi bi-x-circle me-1"></i>Reject Application
+                        <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Reject this application?')">
+                            <i class="bi bi-x-circle"></i> Reject Application
                         </button>
                     </form>
                 }
@@ -118,10 +173,14 @@
                 {
                     <div class="text-center py-3 text-muted">
                         <i class="bi bi-check-all d-block mb-2" style="font-size:2rem;"></i>
-                        <p class="mb-1">This application has been <strong>@app.Status?.ToLower()</strong>.</p>
+                        <p class="mb-1">This application has been <strong>@displayStatus.ToLower()</strong>.</p>
                         @if (app.ReviewedAt.HasValue)
                         {
                             <small class="text-muted">Reviewed on @app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                        }
+                        @if (!string.IsNullOrEmpty(app.ReviewedByName))
+                        {
+                            <small class="text-muted d-block">by @app.ReviewedByName</small>
                         }
                     </div>
                 }
@@ -129,18 +188,34 @@
         </div>
 
         <!-- Timeline -->
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Timeline</h6></div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Timeline</h6>
+            </div>
             <div class="card-body">
                 <div class="d-flex gap-2 mb-3">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi bi-send text-white" style="font-size:0.7rem;"></i></div>
-                    <div><small class="fw-semibold">Submitted</small><small class="text-muted d-block">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</small></div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;background:var(--mb-primary);">
+                        <i class="bi bi-send text-white" style="font-size:0.7rem;"></i>
+                    </div>
+                    <div>
+                        <small class="fw-semibold">Submitted</small>
+                        <small class="text-muted d-block">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
                 </div>
                 @if (app.ReviewedAt.HasValue)
                 {
                     <div class="d-flex gap-2">
-                        <div class="rounded-circle @(app.Status == "Approved" ? "bg-success" : "bg-danger") d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi @(app.Status == "Approved" ? "bi-check" : "bi-x") text-white" style="font-size:0.7rem;"></i></div>
-                        <div><small class="fw-semibold">@(app.Status ?? "Reviewed")</small><small class="text-muted d-block">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small></div>
+                        <div class="rounded-circle @(app.Status == "Approved" ? "bg-success" : "bg-danger") d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;">
+                            <i class="bi @(app.Status == "Approved" ? "bi-check" : "bi-x") text-white" style="font-size:0.7rem;"></i>
+                        </div>
+                        <div>
+                            <small class="fw-semibold">@displayStatus</small>
+                            <small class="text-muted d-block">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                            @if (!string.IsNullOrEmpty(app.ReviewedByName))
+                            {
+                                <small class="text-muted d-block">by @app.ReviewedByName</small>
+                            }
+                        </div>
                     </div>
                 }
             </div>

@@ -91,16 +91,36 @@ public class BookModel : PageModel
         }
     }
 
+    [BindProperty(SupportsGet = true)] public string? SelectedDate { get; set; }
+    [BindProperty(SupportsGet = true)] public string? SelectedTime { get; set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
         if (Input.DoctorId == Guid.Empty) { Error = "Vui lòng chọn bác sĩ."; await OnGetAsync(); return Page(); }
         if (Input.AppointmentSlotId == Guid.Empty) { Error = "Vui lòng chọn slot thời gian."; await OnGetAsync(); return Page(); }
 
-        var (success, error) = await _appointmentService.BookAsync(Input);
-        if (!success) { Error = error ?? "Không thể đặt lịch. Vui lòng thử lại."; await OnGetAsync(); return Page(); }
-        TempData["SuccessMessage"] = "Đặt lịch hẹn thành công!";
-        if (User.Identity?.IsAuthenticated == true)
-            return RedirectToPage("/Patient/Appointments/Index");
-        return RedirectToPage("/Appointment/Track");
+        // Guest validation
+        if (IsGuest)
+        {
+            if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Vui lòng nhập họ tên."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Vui lòng nhập email."; await OnGetAsync(); return Page(); }
+        }
+
+        var (bookedAppointment, error) = await _appointmentService.BookAsync(Input);
+        if (bookedAppointment == null)
+        {
+            Error = error ?? "Không thể đặt lịch. Vui lòng thử lại.";
+            await OnGetAsync();
+            return Page();
+        }
+
+        return RedirectToPage("/Appointment/Success", new
+        {
+            BookingCode = bookedAppointment.BookingCode ?? "",
+            DoctorName = bookedAppointment.DoctorName ?? Doctor?.FullName ?? "",
+            AppointmentDate = bookedAppointment.AppointmentDate ?? SelectedDate ?? "",
+            StartTime = bookedAppointment.StartTime ?? SelectedTime ?? "",
+            EndTime = bookedAppointment.EndTime ?? ""
+        });
     }
 }

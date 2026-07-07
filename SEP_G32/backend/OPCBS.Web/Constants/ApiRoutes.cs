@@ -42,7 +42,7 @@ public static class ApiRoutes
     public const string Reviews = $"{Base}/reviews";
 
     // Verification
-    public const string Verification = $"{Base}/verification";
+    public const string Verification = $"{Base}/verifications";
 
     // Service Packages
     public const string ServicePackages = $"{Base}/service-packages";

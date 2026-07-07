@@ -36,6 +36,7 @@ public class AppointmentsController : ControllerBase
     }
 
     /// <summary>POST /api/v1/appointments - Create appointment (Guest or Patient)</summary>
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto dto)
     {
@@ -50,10 +51,21 @@ public class AppointmentsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/appointments/{id} - Get appointment by ID</summary>
+    [Authorize]
+    [HttpGet("{appointmentId:guid}")]
+    public async Task<IActionResult> GetAppointmentById(Guid appointmentId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.GetAppointmentByIdAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
     /// <summary>GET /api/v1/appointments/my-appointments - Patient own appointments</summary>
     [Authorize(Roles = RoleConstants.Patient)]
     [HttpGet("my-appointments")]
-    public async Task<IActionResult> GetMyAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetMyAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -102,7 +114,7 @@ public class AppointmentsController : ControllerBase
     /// <summary>GET /api/v1/appointments/doctor - Doctor own appointments</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("doctor")]
-    public async Task<IActionResult> GetDoctorAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetDoctorAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();

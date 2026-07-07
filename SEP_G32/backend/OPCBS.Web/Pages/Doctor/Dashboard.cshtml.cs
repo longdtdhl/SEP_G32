@@ -31,11 +31,11 @@ public class DashboardModel : PageModel
 
         AllAppointments = all;
         TotalAppointments = all.Count;
-        PendingCount = all.Count(a => a.Status == "Pending");
-        ApprovedCount = all.Count(a => a.Status == "Approved");
-        CompletedCount = all.Count(a => a.Status == "Completed");
+        PendingCount = all.Count(a => a.Status == 0);
+        ApprovedCount = all.Count(a => a.Status == 1);
+        CompletedCount = all.Count(a => a.Status == 4);
         UpcomingAppointments = all
-            .Where(a => a.Status is "Pending" or "Approved")
+            .Where(a => a.Status is 0 or 1)
             .OrderBy(a => a.StartAt)
             .Take(5)
             .ToList();

@@ -969,3 +969,761 @@ a:hover {
 .wc-legend { display: flex; gap: 16px; align-items: center; padding: 8px 0; }
 .wc-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--mb-text-secondary); }
 .wc-legend-item .legend-dot { width: 32px; height: 16px; border-radius: 4px; }
+
+/* ============================================================
+   Booking Success Page
+   ============================================================ */
+.booking-success-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 40px 16px;
+}
+
+.booking-success-card {
+    background: var(--mb-card-bg);
+    border-radius: 24px;
+    padding: 48px 40px;
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.success-icon-wrapper {
+    margin-bottom: 24px;
+    position: relative;
+    display: inline-block;
+}
+
+.success-icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--mb-primary), #6BBF9B);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    animation: scaleIn 0.4s 0.2s ease both;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+.success-icon-circle i {
+    font-size: 2rem;
+    color: white;
+}
+
+.success-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--mb-text);
+    margin-bottom: 8px;
+}
+
+.success-subtitle {
+    color: var(--mb-text-secondary);
+    font-size: 0.9375rem;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.success-details {
+    background: var(--mb-bg);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.success-details .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.success-details .detail-item:not(:last-child) {
+    border-bottom: 1px solid var(--mb-border-light);
+}
+
+.success-details .detail-item.highlight {
+    background: var(--mb-primary-light);
+    margin: -10px -12px 0;
+    padding: 14px 12px;
+    border-radius: 12px 12px 0 0;
+}
+
+.success-details .detail-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--mb-primary);
+    box-shadow: var(--mb-shadow-sm);
+}
+
+.success-details .detail-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--mb-text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.success-details .detail-value {
+    display: block;
+    font-weight: 600;
+    color: var(--mb-text);
+    font-size: 0.9375rem;
+}
+
+.success-details .booking-code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--mb-primary);
+    font-size: 1.125rem;
+    letter-spacing: 0.05em;
+}
+
+.success-status-info {
+    background: var(--mb-info-bg);
+    color: #1e40af;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.success-guest-note {
+    background: var(--mb-warning-bg);
+    color: #92400e;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.success-btn {
+    border-radius: 12px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+}
+
+/* ============================================================
+   Patient Appointment List
+   ============================================================ */
+.appointment-stat-card {
+    background: var(--mb-card-bg);
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: var(--mb-shadow-sm);
+    border: 1px solid var(--mb-border-light);
+    transition: var(--mb-transition);
+}
+
+.appointment-stat-card:hover {
+    box-shadow: var(--mb-shadow);
+}
+
+.appointment-stat-card .stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.appointment-stat-card .stat-label {
+    font-size: 0.75rem;
+    color: var(--mb-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.stat-pending .stat-number { color: var(--mb-warning); }
+.stat-approved .stat-number { color: var(--mb-primary); }
+.stat-completed .stat-number { color: var(--mb-success); }
+
+.appointment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.appointment-card {
+    background: var(--mb-card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--mb-border-light);
+    box-shadow: var(--mb-shadow-sm);
+    transition: var(--mb-transition);
+    overflow: hidden;
+}
+
+.appointment-card:hover {
+    box-shadow: var(--mb-shadow);
+    transform: translateY(-1px);
+}
+
+.appointment-card.border-start-warning { border-left: 4px solid var(--mb-warning) !important; }
+.appointment-card.border-start-primary { border-left: 4px solid var(--mb-primary) !important; }
+.appointment-card.border-start-success { border-left: 4px solid var(--mb-success) !important; }
+.appointment-card.border-start-danger  { border-left: 4px solid var(--mb-error)   !important; }
+
+.appointment-card-body {
+    padding: 16px 20px;
+}
+
+.appointment-date-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--mb-primary-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.appointment-date-badge .date-day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--mb-primary);
+    line-height: 1;
+}
+
+.appointment-date-badge .date-month {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--mb-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.empty-appointments-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--mb-card-bg);
+    border-radius: 20px;
+    border: 2px dashed var(--mb-border);
+}
+
+.empty-appointments-state .empty-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--mb-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.empty-appointments-state .empty-icon-wrapper i {
+    font-size: 2rem;
+    color: var(--mb-primary);
+}
+
+/* ============================================================
+   Appointment Detail
+   ============================================================ */
+.detail-info-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--mb-bg);
+    transition: var(--mb-transition);
+}
+
+.detail-info-box:hover {
+    background: var(--mb-primary-light);
+}
+
+.detail-info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--mb-primary);
+    font-size: 1.1rem;
+    box-shadow: var(--mb-shadow-sm);
+}
+
+/* Appointment Status Banners */
+.appointment-status-banner {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.appointment-status-banner.status-pending {
+    background: var(--mb-warning-bg);
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.appointment-status-banner.status-approved {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.appointment-status-banner.status-completed {
+    background: var(--mb-success-bg);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.appointment-status-banner.status-cancelled {
+    background: var(--mb-error-bg);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.appointment-status-banner.status-rejected {
+    background: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fda4af;
+}
+
+/* ============================================================
+   Responsive adjustments for booking flow
+   ============================================================ */
+@media (max-width: 991.98px) {
+    .booking-success-card {
+        padding: 32px 24px;
+    }
+    .appointment-stat-card .stat-number {
+        font-size: 1.25rem;
+    }
+    .appointment-date-badge {
+        width: 44px;
+        height: 44px;
+    }
+    .appointment-date-badge .date-day {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .booking-success-card {
+        padding: 24px 16px;
+        border-radius: 16px;
+    }
+    .success-title {
+        font-size: 1.375rem;
+    }
+    .success-details {
+        padding: 12px;
+    }
+    .appointment-card-body {
+        padding: 12px 14px;
+    }
+}
+
+/* ============================================================
+   Doctor Pages — List & Details
+   ============================================================ */
+
+/* --- Section wrapper --- */
+.mb-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+}
+
+/* --- Page header --- */
+.mb-page-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--mb-border-light);
+}
+.mb-page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--mb-text);
+    margin: 0;
+}
+
+/* --- Search bar --- */
+.mb-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.mb-search-bar i {
+    position: absolute;
+    left: 14px;
+    color: var(--mb-text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+}
+.mb-search-bar input {
+    padding-left: 40px;
+    border-radius: var(--mb-radius) !important;
+    border: 1px solid var(--mb-border);
+    background: var(--mb-card-bg);
+    transition: var(--mb-transition);
+    height: 44px;
+}
+.mb-search-bar input:focus {
+    border-color: var(--mb-primary);
+    box-shadow: 0 0 0 3px rgba(78, 139, 112, 0.08);
+}
+
+/* --- Doctor card (list) --- */
+.mb-doctor-card {
+    background: var(--mb-card-bg);
+    border-radius: var(--mb-radius-lg);
+    padding: 24px;
+    box-shadow: var(--mb-shadow);
+    transition: var(--mb-transition);
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.mb-doctor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--mb-shadow-hover);
+    border-color: var(--mb-primary-light);
+}
+
+/* Doctor avatar */
+.doctor-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--mb-secondary);
+    flex-shrink: 0;
+}
+
+/* Doctor name */
+.doctor-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mb-text);
+}
+
+/* Doctor specialization */
+.doctor-specialization {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--mb-primary);
+}
+
+/* --- Chip / Tag --- */
+.mb-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    background-color: var(--mb-primary-light);
+    color: var(--mb-primary);
+    border-radius: var(--mb-radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* --- Doctor profile detail header --- */
+.mb-doctor-profile-header {
+    background: var(--mb-card-bg);
+    border-radius: var(--mb-radius-lg);
+    padding: 32px;
+    box-shadow: var(--mb-shadow);
+    margin-bottom: 32px;
+}
+.mb-doctor-profile-header .doctor-avatar-lg {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--mb-secondary);
+    flex-shrink: 0;
+}
+.mb-doctor-profile-header .avatar-placeholder-lg {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: var(--mb-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Verified badge */
+.mb-verified-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: var(--mb-primary);
+    color: #fff;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    border: 2px solid var(--mb-card-bg);
+}
+
+/* Stats row */
+.mb-stat-item {
+    text-align: center;
+}
+.mb-stat-item .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--mb-text);
+}
+.mb-stat-item .stat-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mb-text-secondary);
+    font-weight: 500;
+}
+
+/* --- Tab system --- */
+.mb-tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--mb-border-light);
+    margin-bottom: 24px;
+    gap: 0;
+    overflow-x: auto;
+}
+.mb-tab-nav .mb-tab-btn {
+    background: none;
+    border: none;
+    padding: 14px 24px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--mb-text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: var(--mb-transition);
+    white-space: nowrap;
+}
+.mb-tab-nav .mb-tab-btn:hover {
+    color: var(--mb-primary);
+}
+.mb-tab-nav .mb-tab-btn.active {
+    color: var(--mb-primary);
+    font-weight: 600;
+    border-bottom-color: var(--mb-primary);
+}
+.mb-tab-content {
+    display: none;
+    animation: mbFadeIn 0.35s ease-out;
+}
+.mb-tab-content.active {
+    display: block;
+}
+@keyframes mbFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Info cards in About tab --- */
+.mb-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--mb-bg);
+    border-radius: var(--mb-radius);
+    transition: var(--mb-transition);
+}
+.mb-info-card:hover {
+    box-shadow: var(--mb-shadow-sm);
+}
+.mb-info-card .info-icon {
+    font-size: 1.5rem;
+    color: var(--mb-primary);
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+}
+.mb-info-card .info-title {
+    font-weight: 600;
+    color: var(--mb-text);
+    margin-bottom: 2px;
+}
+.mb-info-card .info-desc {
+    font-size: 0.8125rem;
+    color: var(--mb-text-secondary);
+    margin: 0;
+}
+
+/* --- Certificate display --- */
+.mb-cert-display {
+    padding: 32px;
+    border: 2px dashed var(--mb-border);
+    border-radius: var(--mb-radius);
+    background: var(--mb-bg);
+    text-align: center;
+}
+.mb-cert-display .cert-icon {
+    font-size: 2.5rem;
+    color: var(--mb-text-muted);
+    margin-bottom: 12px;
+}
+.mb-cert-display .cert-title {
+    font-weight: 600;
+    color: var(--mb-text);
+    margin-bottom: 4px;
+}
+.mb-cert-display .cert-meta {
+    font-size: 0.8125rem;
+    color: var(--mb-text-secondary);
+}
+
+/* --- Rating bars --- */
+.mb-rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.mb-rating-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.mb-rating-bar .bar-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    width: 50px;
+    flex-shrink: 0;
+}
+.mb-rating-bar .bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--mb-border-light);
+    border-radius: var(--mb-radius-full);
+    overflow: hidden;
+}
+.mb-rating-bar .bar-fill {
+    height: 100%;
+    background: var(--mb-primary);
+    border-radius: var(--mb-radius-full);
+    transition: width 0.5s ease;
+}
+.mb-rating-bar .bar-pct {
+    font-size: 0.8125rem;
+    color: var(--mb-text-secondary);
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* --- Review card --- */
+.mb-review-card {
+    padding: 20px;
+    background: var(--mb-bg);
+    border-radius: var(--mb-radius);
+    border: 1px solid var(--mb-border-light);
+    margin-bottom: 16px;
+}
+.mb-review-card .reviewer-initials {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--mb-primary-light);
+    color: var(--mb-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+/* --- Blog / activity card --- */
+.mb-activity-card {
+    background: var(--mb-card-bg);
+    border-radius: var(--mb-radius-lg);
+    box-shadow: var(--mb-shadow);
+    overflow: hidden;
+    border: 1px solid var(--mb-border-light);
+}
+.mb-activity-card .activity-img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+}
+.mb-activity-card .activity-body {
+    padding: 24px;
+}
+.mb-activity-card .activity-tag {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mb-primary);
+}
+
+/* --- CTA Sidebar --- */
+.mb-cta-sidebar {
+    background: var(--mb-card-bg);
+    border-radius: var(--mb-radius-lg);
+    padding: 32px 24px;
+    box-shadow: var(--mb-shadow);
+    position: sticky;
+    top: 90px;
+    text-align: center;
+}
+
+/* Stars color */
+.star-filled { color: #F59E0B; }
+.star-empty { color: var(--mb-border); }
+
+@media (max-width: 767.98px) {
+    .mb-doctor-profile-header {
+        padding: 20px;
+    }
+    .mb-doctor-profile-header .doctor-avatar-lg {
+        width: 100px;
+        height: 100px;
+    }
+    .mb-doctor-profile-header .avatar-placeholder-lg {
+        width: 100px;
+        height: 100px;
+    }
+    .mb-tab-nav .mb-tab-btn {
+        padding: 12px 16px;
+        font-size: 0.875rem;
+    }
+}

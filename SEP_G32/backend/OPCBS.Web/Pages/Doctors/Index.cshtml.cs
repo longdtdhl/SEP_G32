@@ -11,6 +11,7 @@ public class IndexModel : PageModel
 
     public List<DoctorListItemDto> Doctors { get; set; } = new();
     public PaginationDto? Pagination { get; set; }
+    public List<string> Specializations { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public DoctorFilterDto Filter { get; set; } = new();
@@ -29,5 +30,19 @@ public class IndexModel : PageModel
             Pagination = pagination;
         }
         catch { /* API may not be running */ }
+
+        try
+        {
+            Specializations = await _doctorService.GetSpecializationsAsync();
+        }
+        catch
+        {
+            // Fallback if API unavailable
+            Specializations = new List<string>
+            {
+                "Anxiety & Stress", "Depression", "Relationships", "Family Issues",
+                "Trauma", "Burnout", "Addiction", "Career Counseling"
+            };
+        }
     }
 }

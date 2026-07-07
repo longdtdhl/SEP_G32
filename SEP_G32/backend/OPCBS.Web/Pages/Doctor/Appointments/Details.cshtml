@@ -20,10 +20,10 @@
     var apt = Model.Appointment;
     var badgeClass = apt.Status switch
     {
-        "Pending" => "bg-warning text-dark",
-        "Approved" => "bg-info text-white",
-        "Completed" => "bg-success",
-        "Cancelled" => "bg-danger",
+        0 => "bg-warning text-dark",
+        1 => "bg-info text-white",
+        4 => "bg-success",
+        3 => "bg-danger",
         _ => "bg-secondary"
     };
 
@@ -32,7 +32,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between">
                     <h5 class="mb-0">Thông tin lịch hẹn</h5>
-                    <span class="badge @badgeClass fs-6">@apt.Status</span>
+                    <span class="badge @badgeClass fs-6">@apt.StatusText</span>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
@@ -82,14 +82,14 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white"><h5 class="mb-0">Hành động</h5></div>
                 <div class="card-body d-grid gap-2">
-                    @if (apt.Status == "Pending")
+                    @if (apt.Status == 0)
                     {
                         <form method="post" asp-page-handler="Confirm">
                             <input type="hidden" name="id" value="@apt.Id" />
                             <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg me-1"></i>Duyệt lịch hẹn</button>
                         </form>
                     }
-                    @if (apt.Status == "Approved")
+                    @if (apt.Status == 1)
                     {
                         <form method="post" asp-page-handler="Complete">
                             <input type="hidden" name="id" value="@apt.Id" />
@@ -99,13 +99,13 @@
                             <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
                         </a>
                     }
-                    @if (apt.Status == "Completed")
+                    @if (apt.Status == 4)
                     {
                         <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
                             <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
                         </a>
                     }
-                    @if (apt.Status is "Pending" or "Approved")
+                    @if (apt.Status is 0 or 1)
                     {
                         <hr />
                         <form method="post" asp-page-handler="Cancel">
@@ -118,7 +118,7 @@
                             </button>
                         </form>
                     }
-                    @if (apt.Status is "Completed" or "Cancelled")
+                    @if (apt.Status is 4 or 3)
                     {
                         <div class="text-center text-muted py-2">
                             <i class="bi bi-info-circle"></i> Lịch hẹn đã kết thúc

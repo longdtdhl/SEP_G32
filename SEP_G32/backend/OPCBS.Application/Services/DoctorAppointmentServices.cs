@@ -30,11 +30,46 @@ public class DoctorService : IDoctorService
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var query = allDoctors.Where(d => d.VerificationStatus == VerificationStatus.Approved && d.IsVisible);
 
-        // Note: For production, filtering should use IQueryable. This works for MVP.
         var list = query.ToList();
+
+        // Manually populate User data since repository doesn't eager-load
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var userMap = allUsers.ToDictionary(u => u.Id);
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var kw = search.ToLower();
+            list = list.Where(d =>
+            {
+                var userName = userMap.GetValueOrDefault(d.UserId)?.FullName?.ToLower();
+                return (userName != null && userName.Contains(kw))
+                    || (d.ProfessionalTitle?.ToLower().Contains(kw) == true)
+                    || (d.Biography?.ToLower().Contains(kw) == true);
+            }).ToList();
+        }
+
         var total = list.Count;
         var items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var dtos = _mapper.Map<List<DoctorProfileDto>>(items);
+
+        var dtos = items.Select(d =>
+        {
+            var user = userMap.GetValueOrDefault(d.UserId);
+            return new DoctorProfileDto
+            {
+                Id = d.Id,
+                FullName = user?.FullName ?? "Unknown",
+                AvatarUrl = user?.AvatarUrl,
+                ProfessionalTitle = d.ProfessionalTitle,
+                Biography = d.Biography,
+                ExperienceYears = d.ExperienceYears,
+                VerificationStatus = d.VerificationStatus,
+                IsVisible = d.IsVisible,
+                AverageRating = d.AverageRating,
+                ReviewCount = d.ReviewCount,
+                Specializations = new List<string>()
+            };
+        }).ToList();
 
         return ApiResponse<List<DoctorProfileDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
         {
@@ -48,7 +83,9 @@ public class DoctorService : IDoctorService
         if (doctor == null)
             return ApiResponse<DoctorProfileDto>.ErrorResponse("Doctor not found");
 
-        var dto = _mapper.Map<DoctorProfileDto>(doctor);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
+        var dto = BuildDoctorDto(doctor, user);
         return ApiResponse<DoctorProfileDto>.SuccessResponse(dto);
     }
 
@@ -59,8 +96,28 @@ public class DoctorService : IDoctorService
         if (doctor == null)
             return ApiResponse<DoctorProfileDto>.ErrorResponse("Doctor profile not found");
 
-        var dto = _mapper.Map<DoctorProfileDto>(doctor);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == userId);
+        var dto = BuildDoctorDto(doctor, user);
         return ApiResponse<DoctorProfileDto>.SuccessResponse(dto);
+    }
+
+    private static DoctorProfileDto BuildDoctorDto(DoctorProfile d, User? user)
+    {
+        return new DoctorProfileDto
+        {
+            Id = d.Id,
+            FullName = user?.FullName ?? "Unknown",
+            AvatarUrl = user?.AvatarUrl,
+            ProfessionalTitle = d.ProfessionalTitle,
+            Biography = d.Biography,
+            ExperienceYears = d.ExperienceYears,
+            VerificationStatus = d.VerificationStatus,
+            IsVisible = d.IsVisible,
+            AverageRating = d.AverageRating,
+            ReviewCount = d.ReviewCount,
+            Specializations = new List<string>()
+        };
     }
 
     public async Task<ApiResponse<DoctorProfileDto>> UpdateDoctorProfileAsync(Guid userId, UpdateDoctorProfileDto dto, CancellationToken ct = default)
@@ -94,6 +151,7 @@ public class AppointmentService : IAppointmentService
     private readonly IRepository<AppointmentSlot> _slotRepo;
     private readonly IRepository<AppointmentHistory> _historyRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorSubscription> _subscriptionRepo;
     private readonly IUnitOfWork _uow;
@@ -104,6 +162,7 @@ public class AppointmentService : IAppointmentService
         IRepository<AppointmentSlot> slotRepo,
         IRepository<AppointmentHistory> historyRepo,
         IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorSubscription> subscriptionRepo,
         IUnitOfWork uow,
@@ -113,6 +172,7 @@ public class AppointmentService : IAppointmentService
         _slotRepo = slotRepo;
         _historyRepo = historyRepo;
         _doctorRepo = doctorRepo;
+        _userRepo = userRepo;
         _patientRepo = patientRepo;
         _subscriptionRepo = subscriptionRepo;
         _uow = uow;
@@ -203,7 +263,21 @@ public class AppointmentService : IAppointmentService
 
             await _uow.CommitTransactionAsync(ct);
 
-            var result = _mapper.Map<AppointmentDto>(appointment);
+            // Manually build DTO to avoid null navigation properties
+            var allUsers = await _userRepo.GetAllAsync(ct);
+            var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
+            var result = new AppointmentDto
+            {
+                Id = appointment.Id,
+                BookingCode = appointment.BookingCode,
+                DoctorName = doctorUser?.FullName ?? "Unknown",
+                PatientName = appointment.GuestName ?? "Patient",
+                AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd"),
+                StartTime = slot.StartTime.ToString("HH:mm"),
+                EndTime = slot.EndTime.ToString("HH:mm"),
+                Status = appointment.Status,
+                Notes = appointment.Notes
+            };
             return ApiResponse<AppointmentDto>.SuccessResponse(result, "Appointment booked successfully");
         }
         catch
@@ -502,6 +576,7 @@ public class ScheduleService : IScheduleService
     private readonly IRepository<Schedule> _scheduleRepo;
     private readonly IRepository<AppointmentSlot> _slotRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IRepository<DoctorDayOff> _dayOffRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
@@ -510,6 +585,7 @@ public class ScheduleService : IScheduleService
         IRepository<Schedule> scheduleRepo,
         IRepository<AppointmentSlot> slotRepo,
         IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
         IRepository<DoctorDayOff> dayOffRepo,
         IUnitOfWork uow,
         IMapper mapper)
@@ -517,6 +593,7 @@ public class ScheduleService : IScheduleService
         _scheduleRepo = scheduleRepo;
         _slotRepo = slotRepo;
         _doctorRepo = doctorRepo;
+        _userRepo = userRepo;
         _dayOffRepo = dayOffRepo;
         _uow = uow;
         _mapper = mapper;
@@ -623,19 +700,33 @@ public class ScheduleService : IScheduleService
         if (doctor == null)
             return ApiResponse<AvailableSlotsDto>.ErrorResponse("Doctor not found");
 
+        // Get user name
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
+
         var allSlots = await _slotRepo.GetAllAsync(ct);
-        var availableSlots = allSlots
-            .Where(s => s.DoctorProfileId == doctorProfileId && s.Status == AppointmentSlotStatus.Available)
+        // Return Available + Booked slots so calendar shows booked as locked; exclude Blocked
+        var doctorSlots = allSlots
+            .Where(s => s.DoctorProfileId == doctorProfileId && s.Status != AppointmentSlotStatus.Blocked)
             .ToList();
 
         if (date.HasValue)
-            availableSlots = availableSlots.Where(s => s.SlotDate == date.Value).ToList();
+            doctorSlots = doctorSlots.Where(s => s.SlotDate == date.Value).ToList();
 
-        var slotDtos = _mapper.Map<List<AppointmentSlotDto>>(availableSlots);
+        var slotDtos = doctorSlots.Select(s => new AppointmentSlotDto
+        {
+            Id = s.Id,
+            Date = s.SlotDate.ToString("yyyy-MM-dd"),
+            StartTime = s.StartTime.ToString("HH:mm"),
+            EndTime = s.EndTime.ToString("HH:mm"),
+            Status = s.Status,
+            Price = s.Price
+        }).ToList();
+
         var result = new AvailableSlotsDto
         {
             DoctorId = doctorProfileId,
-            DoctorName = doctor.User?.FullName ?? "Unknown",
+            DoctorName = user?.FullName ?? "Unknown",
             Slots = slotDtos
         };
 

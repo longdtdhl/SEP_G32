@@ -378,6 +378,17 @@ public class TreatmentPackagesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/treatment-packages/doctor/{doctorId}/patient/{patientId} — Get packages for a specific doctor-patient pair</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpGet("doctor/{doctorId}/patient/{patientId}")]
+    public async Task<IActionResult> GetByDoctorAndPatient(Guid doctorId, Guid patientId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.GetByDoctorAndPatientAsync(userId.Value, patientId, page, pageSize);
+        return Ok(result);
+    }
+
     /// <summary>PUT /api/v1/treatment-packages/accept/{id} — Accept package (Patient)</summary>
     [Authorize(Roles = RoleConstants.Patient)]
     [HttpPut("accept/{packageId}")]

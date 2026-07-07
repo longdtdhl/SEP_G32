@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
@@ -16,14 +16,19 @@ public class TrackModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrWhiteSpace(Input.Email) && string.IsNullOrWhiteSpace(Input.TrackingCode))
+        if (string.IsNullOrWhiteSpace(Input.Email) && string.IsNullOrWhiteSpace(Input.BookingCode))
         {
-            ModelState.AddModelError("", "Please enter your email or tracking code.");
+            ModelState.AddModelError("", "Vui lòng nhập email hoặc mã đặt lịch.");
             return Page();
         }
         var (data, error) = await _service.TrackAsync(Input);
-        if (error != null) { ModelState.AddModelError("", error); return Page(); }
-        Results = data;
+        if (error != null)
+        {
+            ModelState.AddModelError("", error);
+            return Page();
+        }
+
+        Results = data ?? new List<AppointmentListItemDto>();
         return Page();
     }
 }

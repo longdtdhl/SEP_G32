@@ -29,10 +29,10 @@ public class DashboardModel : PageModel
             var (apts, _, _) = await _appointments.GetMyAppointmentsAsync();
             Appointments = apts;
             TotalAppointments = apts.Count;
-            CompletedCount = apts.Count(a => a.Status == "Completed" || a.Status == "4");
-            PendingCount = apts.Count(a => a.Status == "Pending" || a.Status == "0" || a.Status == "Approved" || a.Status == "1");
+            CompletedCount = apts.Count(a => a.Status == 4);
+            PendingCount = apts.Count(a => a.Status == 0 || a.Status == 1);
             UpcomingAppointments = apts
-                .Where(a => a.Status != "Completed" && a.Status != "Cancelled" && a.Status != "4" && a.Status != "5")
+                .Where(a => a.Status != 4 && a.Status != 3)
                 .Take(5).ToList();
         }
         catch { }

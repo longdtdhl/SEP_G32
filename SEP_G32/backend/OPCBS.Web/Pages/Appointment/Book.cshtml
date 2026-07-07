@@ -107,6 +107,8 @@
                         <form method="post" id="bookingForm">
                             <input type="hidden" asp-for="Input.DoctorId" />
                             <input type="hidden" asp-for="Input.AppointmentSlotId" id="slotIdInput" />
+                            <input type="hidden" asp-for="SelectedDate" id="selectedDateInput" />
+                            <input type="hidden" asp-for="SelectedTime" id="selectedTimeInput" />
 
                             @if (Model.IsGuest)
                             {
@@ -192,15 +194,23 @@
                                         {
                                             foreach (var slot in slots)
                                             {
-                                                var isAvailable = slot.Status == "Available" || slot.Status == "0";
+                                                var isAvailable = slot.Status == 0; // 0 = Available
+                                                var isBooked = slot.Status == 1;    // 1 = Booked
                                                 var cssClass = isAvailable ? "available" : "full";
                                                 var dateDisplay = day.ToString("ddd, dd/M");
                                                 <div class="wc-slot @cssClass"
-                                                     style="top:2px;height:56px;"
+                                                     style="top:2px;height:56px;@(isBooked ? "opacity:0.6;cursor:not-allowed;" : "")"
                                                      @(isAvailable ? $"onclick=\"selectSlot('{slot.Id}','{dateDisplay}','{slot.StartTime} - {slot.EndTime}')\"" : "")
                                                      data-slot-id="@slot.Id"
-                                                     title="@slot.StartTime - @slot.EndTime">
-                                                    <span class="slot-label">@(isAvailable ? "AVAILABLE" : "FULL")</span>
+                                                     title="@(isAvailable ? $"Trống - {slot.StartTime} - {slot.EndTime}" : $"Đã đặt - {slot.StartTime} - {slot.EndTime}")">
+                                                    @if (isBooked)
+                                                    {
+                                                        <span class="slot-label"><i class="bi bi-lock-fill me-1"></i>ĐÃ ĐẶT</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="slot-label">TRỐNG</span>
+                                                    }
                                                     <span class="slot-time">@slot.StartTime - @slot.EndTime</span>
                                                 </div>
                                             }
@@ -226,8 +236,10 @@
 
 <script>
     function selectSlot(slotId, dateText, timeText) {
-        // Update hidden input
+        // Update hidden inputs
         document.getElementById('slotIdInput').value = slotId;
+        document.getElementById('selectedDateInput').value = dateText;
+        document.getElementById('selectedTimeInput').value = timeText;
         // Show info
         document.getElementById('selectedSlotInfo').style.display = '';
         document.getElementById('selectedDate').textContent = dateText;

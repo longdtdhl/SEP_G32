@@ -77,10 +77,27 @@ public class VerificationRequestDto
     public Guid Id { get; set; }
     public Guid DoctorProfileId { get; set; }
     public required string DoctorName { get; set; }
+    public string? AvatarUrl { get; set; }
+    public string? LicenseNumber { get; set; }
+    public string? Specialization { get; set; }
+    public int ExperienceYears { get; set; }
+    public string? Biography { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? RejectionReason { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class SubmitVerificationDto
+{
+    public string? LicenseNumber { get; set; }
+    public string? Specialization { get; set; }
+    public int ExperienceYears { get; set; }
+    public string? Education { get; set; }
+    public string? CertificateUrl { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class NotificationDto
@@ -232,10 +249,11 @@ public interface IReviewService
 /// </summary>
 public interface IVerificationService
 {
-    Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, SubmitVerificationDto? dto = null, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationStatusAsync(Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationByIdAsync(Guid requestId, CancellationToken ct = default);
     Task<ApiResponse<List<VerificationRequestDto>>> GetPendingVerificationsAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse> ApproveVerificationAsync(Guid requestId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectVerificationAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct = default);
 }
@@ -248,6 +266,7 @@ public interface ITreatmentPackageService
     Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAndPatientAsync(Guid doctorUserId, Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<TreatmentPackageDto>> GetByIdAsync(Guid packageId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> AcceptPackageAsync(Guid packageId, Guid patientUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct = default);

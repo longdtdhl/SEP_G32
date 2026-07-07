@@ -1,20 +1,37 @@
+using System.Text.Json.Serialization;
+
 namespace OPCBS.Web.DTOs;
 
 public class VerificationDto
 {
     public Guid Id { get; set; }
+
+    [JsonPropertyName("doctorProfileId")]
     public Guid DoctorId { get; set; }
+
     public string? DoctorName { get; set; }
+    public string? AvatarUrl { get; set; }
     public string? LicenseNumber { get; set; }
+
+    [JsonPropertyName("specialization")]
     public string? Specialization { get; set; }
+
     public int ExperienceYears { get; set; }
+
+    [JsonPropertyName("biography")]
     public string? Education { get; set; }
+
     public string? CertificateUrl { get; set; }
     public string? Status { get; set; }
     public string? Notes { get; set; }
     public string? RejectionReason { get; set; }
+
+    [JsonPropertyName("createdAt")]
     public DateTime SubmittedAt { get; set; }
+
     public DateTime? ReviewedAt { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
 }
 
 public class SubmitVerificationDto

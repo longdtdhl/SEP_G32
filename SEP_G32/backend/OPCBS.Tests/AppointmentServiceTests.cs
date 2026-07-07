@@ -19,6 +19,7 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<AppointmentSlot>> _slotRepo;
     private readonly Mock<IRepository<AppointmentHistory>> _historyRepo;
     private readonly Mock<IRepository<DoctorProfile>> _doctorRepo;
+    private readonly Mock<IRepository<User>> _userRepo;
     private readonly Mock<IRepository<PatientProfile>> _patientRepo;
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
     private readonly Mock<IUnitOfWork> _uow;
@@ -39,6 +40,11 @@ public class AppointmentServiceTests
         _slotRepo = new Mock<IRepository<AppointmentSlot>>();
         _historyRepo = new Mock<IRepository<AppointmentHistory>>();
         _doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        _userRepo = new Mock<IRepository<User>>();
+        _userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User>
+        {
+            new User { Id = _doctorUserId, FullName = "Dr. Test", Email = "doc@test.com", PhoneNumber = "0123456789", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        });
         _patientRepo = new Mock<IRepository<PatientProfile>>();
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
         _uow = new Mock<IUnitOfWork>();
@@ -63,6 +69,7 @@ public class AppointmentServiceTests
             _slotRepo.Object,
             _historyRepo.Object,
             _doctorRepo.Object,
+            _userRepo.Object,
             _patientRepo.Object,
             _subscriptionRepo.Object,
             _uow.Object,

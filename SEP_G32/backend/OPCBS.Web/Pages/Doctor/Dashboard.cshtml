@@ -95,14 +95,14 @@
                                             @{
                                                 var badgeClass = apt.Status switch
                                                 {
-                                                    "Pending" => "bg-warning text-dark",
-                                                    "Approved" => "bg-info text-white",
-                                                    "Completed" => "bg-success",
-                                                    "Cancelled" => "bg-danger",
+                                                    0 => "bg-warning text-dark",
+                                                    1 => "bg-info text-white",
+                                                    4 => "bg-success",
+                                                    3 => "bg-danger",
                                                     _ => "bg-secondary"
                                                 };
                                             }
-                                            <span class="badge @badgeClass">@apt.Status</span>
+                                            <span class="badge @badgeClass">@apt.StatusText</span>
                                         </td>
                                         <td>
                                             <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary">

@@ -45,8 +45,10 @@ public class AppointmentListItemDto
     public Guid Id { get; set; }
     public required string BookingCode { get; set; }
     public required string DoctorName { get; set; }
+    public string? PatientName { get; set; }
     public required string AppointmentDate { get; set; }
     public required string StartTime { get; set; }
+    public string? EndTime { get; set; }
     public AppointmentStatus Status { get; set; }
 }
 

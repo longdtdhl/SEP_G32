@@ -60,10 +60,10 @@
                         {
                             var badgeClass = apt.Status switch
                             {
-                                "Pending" => "bg-warning text-dark",
-                                "Approved" => "bg-info text-white",
-                                "Completed" => "bg-success",
-                                "Cancelled" => "bg-danger",
+                                0 => "bg-warning text-dark",
+                                1 => "bg-info text-white",
+                                4 => "bg-success",
+                                3 => "bg-danger",
                                 _ => "bg-secondary"
                             };
                             <tr>
@@ -77,27 +77,27 @@
                                 <td>
                                     @apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
                                 </td>
-                                <td><span class="badge @badgeClass">@apt.Status</span></td>
+                                <td><span class="badge @badgeClass">@apt.StatusText</span></td>
                                 <td>@(apt.Fee?.ToString("N0") ?? "-") ₫</td>
                                 <td class="text-end">
                                     <a asp-page="Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary" title="Chi tiết">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if (apt.Status == "Pending")
+                                    @if (apt.Status == 0)
                                     {
                                         <form method="post" asp-page-handler="Confirm" class="d-inline">
                                             <input type="hidden" name="id" value="@apt.Id" />
                                             <button type="submit" class="btn btn-sm btn-outline-success" title="Duyệt"><i class="bi bi-check-lg"></i></button>
                                         </form>
                                     }
-                                    @if (apt.Status == "Approved")
+                                    @if (apt.Status == 1)
                                     {
                                         <form method="post" asp-page-handler="Complete" class="d-inline">
                                             <input type="hidden" name="id" value="@apt.Id" />
                                             <button type="submit" class="btn btn-sm btn-outline-info" title="Hoàn thành"><i class="bi bi-check-all"></i></button>
                                         </form>
                                     }
-                                    @if (apt.Status is "Pending" or "Approved")
+                                    @if (apt.Status is 0 or 1)
                                     {
                                         <form method="post" asp-page-handler="Cancel" class="d-inline">
                                             <input type="hidden" name="id" value="@apt.Id" />

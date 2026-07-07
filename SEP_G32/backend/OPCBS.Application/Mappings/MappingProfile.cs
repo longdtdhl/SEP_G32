@@ -39,8 +39,11 @@ public class MappingProfile : Profile
         // Appointment → AppointmentListItemDto
         CreateMap<Appointment, AppointmentListItemDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
+            .ForMember(d => d.PatientName, opt => opt.MapFrom(s =>
+                s.Patient != null ? s.Patient.User.FullName : s.GuestName))
             .ForMember(d => d.AppointmentDate, opt => opt.MapFrom(s => s.AppointmentSlot.SlotDate.ToString("yyyy-MM-dd")))
-            .ForMember(d => d.StartTime, opt => opt.MapFrom(s => s.AppointmentSlot.StartTime.ToString("HH:mm")));
+            .ForMember(d => d.StartTime, opt => opt.MapFrom(s => s.AppointmentSlot.StartTime.ToString("HH:mm")))
+            .ForMember(d => d.EndTime, opt => opt.MapFrom(s => s.AppointmentSlot.EndTime.ToString("HH:mm")));
 
         // AppointmentSlot → AppointmentSlotDto
         CreateMap<AppointmentSlot, AppointmentSlotDto>()
@@ -71,7 +74,13 @@ public class MappingProfile : Profile
         // VerificationRequest → VerificationRequestDto
         CreateMap<VerificationRequest, VerificationRequestDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.DoctorProfile.User.FullName))
-            .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
+            .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.DoctorProfile.User.AvatarUrl))
+            .ForMember(d => d.LicenseNumber, opt => opt.MapFrom(s => s.DoctorProfile.LicenseNumber))
+            .ForMember(d => d.Specialization, opt => opt.MapFrom(s => s.DoctorProfile.ProfessionalTitle))
+            .ForMember(d => d.ExperienceYears, opt => opt.MapFrom(s => s.DoctorProfile.ExperienceYears))
+            .ForMember(d => d.Biography, opt => opt.MapFrom(s => s.DoctorProfile.Biography))
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.ReviewedByName, opt => opt.Ignore()); // Set manually in service
 
         // Notification → NotificationDto
         CreateMap<Notification, NotificationDto>()

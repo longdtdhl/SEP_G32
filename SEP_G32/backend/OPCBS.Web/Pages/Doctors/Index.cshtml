@@ -8,20 +8,22 @@
     </div>
 
     <!-- Search & Filter -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <div class="col-lg-8">
             <form method="get" class="mb-search-bar">
                 <i class="bi bi-search"></i>
-                <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Search by name or specialization..." />
+                <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
+                       placeholder="Search by name or specialization..." />
                 <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
             </form>
         </div>
         <div class="col-lg-4">
             <form method="get">
                 <input type="hidden" name="search" value="@Model.Filter.Search" />
-                <select name="specialization" class="form-select" onchange="this.form.submit()">
+                <select name="specialization" class="form-select" style="height:44px;border-radius:var(--mb-radius);"
+                        onchange="this.form.submit()">
                     <option value="">All Specializations</option>
-                    @foreach (var s in new[] { "Anxiety & Stress", "Depression", "Relationships", "Family Issues", "Trauma", "Burnout", "Addiction", "Career Counseling" })
+                    @foreach (var s in Model.Specializations)
                     {
                         <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
                     }
@@ -36,41 +38,69 @@
         <div class="row g-4">
             @foreach (var doc in Model.Doctors)
             {
+                var initials = string.Join("", (doc.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
                 <div class="col-sm-6 col-lg-4 col-xl-3">
                     <a asp-page="Details" asp-route-id="@doc.Id" class="text-decoration-none">
-                        <div class="mb-doctor-card h-100">
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div>
-                                    @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                        <div class="mb-doctor-card h-100 d-flex flex-column align-items-center text-center">
+                            <!-- Avatar -->
+                            <div class="position-relative mb-3">
+                                @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                                {
+                                    <img src="@doc.AvatarUrl" alt="@doc.FullName"
+                                         style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--mb-secondary);" />
+                                }
+                                else
+                                {
+                                    <div style="width:96px;height:96px;border-radius:50%;background:var(--mb-secondary);display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:700;color:var(--mb-primary);">
+                                        @initials
+                                    </div>
+                                }
+                                @if (doc.IsVerified)
+                                {
+                                    <div class="mb-verified-badge" style="bottom:2px;right:2px;width:24px;height:24px;font-size:0.75rem;">
+                                        <i class="bi bi-patch-check-fill"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Name & Specialization -->
+                            <h5 class="doctor-name mb-1">@doc.FullName</h5>
+                            <p class="doctor-specialization mb-2">@(doc.Specialization ?? "Psychologist")</p>
+
+                            <!-- Rating -->
+                            <div class="d-flex align-items-center gap-1 mb-2">
+                                @{
+                                    var rating = doc.Rating;
+                                    var stars = (int)Math.Floor(rating);
+                                    var half = (rating - stars) >= 0.25;
+                                }
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= stars)
                                     {
-                                        <img src="@doc.AvatarUrl" alt="@doc.FullName" class="doctor-avatar" />
+                                        <i class="bi bi-star-fill star-filled" style="font-size:0.875rem;"></i>
+                                    }
+                                    else if (i == stars + 1 && half)
+                                    {
+                                        <i class="bi bi-star-half star-filled" style="font-size:0.875rem;"></i>
                                     }
                                     else
                                     {
-                                        <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background-color:var(--mb-secondary);">
-                                            <i class="bi bi-person-fill" style="font-size:1.5rem;color:var(--mb-primary);"></i>
-                                        </div>
+                                        <i class="bi bi-star star-empty" style="font-size:0.875rem;"></i>
                                     }
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="doctor-name mb-0">@doc.FullName</h5>
-                                    <p class="doctor-specialization mb-0">@doc.Specialization</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", doc.Rating }, { "ReviewCount", doc.ReviewCount } })' />
-                                @if (doc.IsVerified)
+                                }
+                                @if (doc.ReviewCount > 0)
                                 {
-                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">
-                                        <i class="bi bi-patch-check-fill me-1"></i>Verified
-                                    </span>
+                                    <span style="font-size:0.75rem;color:var(--mb-text-muted);margin-left:4px;">(@doc.ReviewCount)</span>
                                 }
                             </div>
-                            <div class="d-flex justify-content-between" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
-                                <span><i class="bi bi-briefcase me-1"></i>@doc.ExperienceYears yrs exp.</span>
+
+                            <!-- Meta -->
+                            <div class="mt-auto d-flex justify-content-between w-100" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
+                                <span><i class="bi bi-briefcase me-1"></i>@doc.ExperienceYears yrs</span>
                                 @if (doc.ConsultationFee > 0)
                                 {
-                                    <span class="fw-semibold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0") VND</span>
+                                    <span class="fw-semibold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
                                 }
                             </div>
                         </div>
