@@ -51,3 +51,13 @@ public class CreateDayOffDto
     public string? Reason { get; set; }
 }
 
+/// <summary>
+/// Create individual slot request DTO
+/// </summary>
+public class CreateSlotDto
+{
+    public string Date { get; set; } = string.Empty; // Format: yyyy-MM-dd
+    public string StartTime { get; set; } = string.Empty; // Format: HH:mm
+    public string EndTime { get; set; } = string.Empty; // Format: HH:mm
+}
+

@@ -10,7 +10,6 @@ public class IndexModel : PageModel
     private readonly IScheduleApiService _api;
     public IndexModel(IScheduleApiService api) => _api = api;
 
-    public List<ScheduleDto> Schedules { get; set; } = new();
     public List<DayOffDto> DaysOff { get; set; } = new();
     public List<AppointmentSlotDto> ActualSlots { get; set; } = new();
     public string? Error { get; set; }
@@ -25,9 +24,6 @@ public class IndexModel : PageModel
     // Calendar time range
     public int CalStartHour { get; set; } = 7;
     public int CalEndHour { get; set; } = 18;
-
-    // Mapping: dayOfWeek -> list of schedules active on that day
-    public Dictionary<DayOfWeek, List<ScheduleDto>> DayScheduleMap { get; set; } = new();
 
     public async Task OnGetAsync()
     {
@@ -44,40 +40,15 @@ public class IndexModel : PageModel
         WeekEnd = WeekStart.AddDays(6);
         WeekDays = Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).ToList();
 
-        // Load schedules
-        var (schedules, err1) = await _api.GetMySchedulesAsync();
+        // Load slots and days off
         var (daysOff, err2) = await _api.GetDaysOffAsync();
         var (slotsData, err3) = await _api.GetMySlotsAsync();
         
-        Schedules = schedules;
         DaysOff = daysOff;
         ActualSlots = slotsData?.Slots ?? new();
-        Error = Error ?? err1 ?? err2 ?? err3;
+        Error = Error ?? err2 ?? err3;
 
-        // Build day-to-schedule mapping using bitmask
-        // Bit: Mon=1, Tue=2, Wed=4, Thu=8, Fri=16, Sat=32, Sun=64
-        var bitMap = new Dictionary<DayOfWeek, int>
-        {
-            { DayOfWeek.Monday, 1 }, { DayOfWeek.Tuesday, 2 }, { DayOfWeek.Wednesday, 4 },
-            { DayOfWeek.Thursday, 8 }, { DayOfWeek.Friday, 16 }, { DayOfWeek.Saturday, 32 },
-            { DayOfWeek.Sunday, 64 }
-        };
-
-        foreach (var day in WeekDays)
-        {
-            var bit = bitMap[day.DayOfWeek];
-            DayScheduleMap[day.DayOfWeek] = Schedules.Where(s => (s.WorkingDays & bit) != 0 && s.IsActive).ToList();
-        }
-
-        // Adjust calendar range based on schedules and slots
-        if (Schedules.Any())
-        {
-            foreach (var s in Schedules)
-            {
-                if (TimeOnly.TryParse(s.StartTime, out var st)) CalStartHour = Math.Min(CalStartHour, st.Hour);
-                if (TimeOnly.TryParse(s.EndTime, out var et)) CalEndHour = Math.Max(CalEndHour, et.Hour + 1);
-            }
-        }
+        // Adjust calendar range based on slots
         if (ActualSlots.Any())
         {
             foreach (var s in ActualSlots)
@@ -86,14 +57,6 @@ public class IndexModel : PageModel
                 if (DateTimeOffset.TryParse(s.Date + "T" + s.EndTime, out var et)) CalEndHour = Math.Max(CalEndHour, et.Hour + 1);
             }
         }
-    }
-
-    public async Task<IActionResult> OnPostDeleteAsync(Guid id)
-    {
-        var (success, error) = await _api.DeleteAsync(id);
-        if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đã xóa lịch làm việc.";
-        return RedirectToPage(new { week = Week });
     }
 
     public async Task<IActionResult> OnPostDeleteDayOffAsync(Guid id)
@@ -109,6 +72,49 @@ public class IndexModel : PageModel
         var (success, error) = await _api.ToggleBlockSlotAsync(slotId);
         if (!success) TempData["Error"] = error;
         else TempData["Success"] = "Đã cập nhật trạng thái slot thành công.";
+        return RedirectToPage(new { week = Week });
+    }
+
+    public async Task<IActionResult> OnPostCreateSlotAsync(string date, string startTime, string endTime)
+    {
+        var dto = new CreateSlotDto
+        {
+            Date = date,
+            StartTime = startTime,
+            EndTime = endTime
+        };
+        var (data, error) = await _api.CreateSlotAsync(dto);
+        if (error != null) TempData["Error"] = error;
+        else TempData["Success"] = "Đã tạo slot khám thành công.";
+        return RedirectToPage(new { week = Week });
+    }
+
+    public async Task<IActionResult> OnPostDeleteSlotAsync(Guid slotId)
+    {
+        var (success, error) = await _api.DeleteSlotAsync(slotId);
+        if (!success) TempData["Error"] = error;
+        else TempData["Success"] = "Đã xóa slot thành công.";
+        return RedirectToPage(new { week = Week });
+    }
+
+    public async Task<IActionResult> OnPostResetScheduleAsync()
+    {
+        var (slotsData, error) = await _api.GetMySlotsAsync();
+        if (slotsData?.Slots != null)
+        {
+            var slotsToDelete = slotsData.Slots.Where(s => s.Status == 0 || s.Status == 2).ToList();
+            int deletedCount = 0;
+            foreach (var slot in slotsToDelete)
+            {
+                var (success, _) = await _api.DeleteSlotAsync(slot.Id);
+                if (success) deletedCount++;
+            }
+            TempData["Success"] = $"Đã reset (xóa) {deletedCount} slot chưa có người đặt.";
+        }
+        else
+        {
+            TempData["Error"] = error ?? "Không thể lấy danh sách slot để reset.";
+        }
         return RedirectToPage(new { week = Week });
     }
 

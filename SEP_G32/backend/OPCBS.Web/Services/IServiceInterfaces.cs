@@ -14,6 +14,8 @@ public interface IScheduleApiService
     Task<(bool Success, string? Error)> DeleteDayOffAsync(Guid id);
     Task<(AvailableSlotsDto? Data, string? Error)> GetMySlotsAsync(DateOnly? date = null);
     Task<(bool Success, string? Error)> ToggleBlockSlotAsync(Guid slotId);
+    Task<(AppointmentSlotDto? Data, string? Error)> CreateSlotAsync(CreateSlotDto dto);
+    Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
 }
 
 public interface IConsultationRecordApiService

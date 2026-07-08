@@ -101,6 +101,26 @@ public class SchedulesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>POST /api/v1/schedules/slots — Create individual slot</summary>
+    [HttpPost("slots")]
+    public async Task<IActionResult> CreateSlot([FromBody] CreateSlotDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.CreateSlotAsync(userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>DELETE /api/v1/schedules/slots/{slotId} — Delete individual slot</summary>
+    [HttpDelete("slots/{slotId}")]
+    public async Task<IActionResult> DeleteSlot(Guid slotId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.DeleteSlotAsync(slotId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

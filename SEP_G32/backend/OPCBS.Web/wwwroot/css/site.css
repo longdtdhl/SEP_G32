@@ -9,23 +9,24 @@
 /* ---------- CSS Custom Properties (Design Tokens) ---------- */
 :root {
     /* Brand Colors */
-    --mb-primary: #4E8B70;
-    --mb-primary-hover: #3F735C;
-    --mb-primary-light: #DCEEE4;
-    --mb-secondary: #DCEEE4;
+    --mb-primary: #3E8E7E;
+    --mb-primary-hover: #2a6659;
+    --mb-primary-light: #5FAF9E;
+    --mb-secondary: #9ED7C2;
+    --mb-secondary-light: #E8F5F0;
 
     /* Backgrounds */
-    --mb-bg: #FAFBFA;
+    --mb-bg: #F6FBF8;
     --mb-card-bg: #FFFFFF;
-    --mb-sidebar-bg: #F8FAF8;
+    --mb-sidebar-bg: #E8F5F0;
 
     /* Borders */
-    --mb-border: #E5E7EB;
+    --mb-border: #9ED7C2;
     --mb-border-light: #F3F4F6;
 
     /* Text */
-    --mb-text: #1F2937;
-    --mb-text-secondary: #6B7280;
+    --mb-text: #23333A;
+    --mb-text-secondary: #64748b;
     --mb-text-muted: #9CA3AF;
 
     /* Status */
@@ -131,11 +132,11 @@ a:hover {
 .btn-primary {
     background-color: var(--mb-primary);
     color: #FFFFFF;
-    box-shadow: 0 2px 8px rgba(78, 139, 112, 0.2);
+    box-shadow: 0 2px 8px rgba(21, 61, 54, 0.2);
 }
 .btn-primary:hover, .btn-primary:focus {
     background-color: var(--mb-primary-hover);
-    box-shadow: 0 4px 12px rgba(78, 139, 112, 0.3);
+    box-shadow: 0 4px 12px rgba(21, 61, 54, 0.3);
     color: #FFFFFF;
 }
 .btn-primary:active {
@@ -175,7 +176,7 @@ a:hover {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus {
-    box-shadow: 0 0 0 0.15rem rgba(78, 139, 112, 0.25);
+    box-shadow: 0 0 0 0.15rem rgba(21, 61, 54, 0.25);
 }
 
 /* ---------- Cards ---------- */
@@ -210,7 +211,7 @@ a:hover {
 }
 .form-control:focus, .form-select:focus {
     border-color: var(--mb-primary);
-    box-shadow: 0 0 0 0.15rem rgba(78, 139, 112, 0.15);
+    box-shadow: 0 0 0 0.15rem rgba(21, 61, 54, 0.15);
 }
 .form-control.is-invalid, .form-select.is-invalid {
     border-color: var(--mb-error);
@@ -226,7 +227,7 @@ a:hover {
     border-color: var(--mb-primary);
 }
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.15rem rgba(78, 139, 112, 0.25);
+    box-shadow: 0 0 0 0.15rem rgba(21, 61, 54, 0.25);
 }
 
 /* ---------- Navbar ---------- */
@@ -261,7 +262,7 @@ a:hover {
 .mb-navbar .nav-link:hover,
 .mb-navbar .nav-link.active {
     color: var(--mb-primary);
-    background-color: rgba(78, 139, 112, 0.05);
+    background-color: rgba(21, 61, 54, 0.05);
 }
 .mb-navbar .btn-get-started {
     background-color: var(--mb-primary);
@@ -309,13 +310,17 @@ a:hover {
     border-right: 1px solid var(--mb-border-light);
     min-height: calc(100vh - 70px);
     padding: 1.5rem 0;
-    width: 260px;
+    width: 250px;
     position: fixed;
     top: 70px;
     left: 0;
     overflow-y: auto;
     z-index: 1020;
     transition: transform 0.3s ease;
+}
+/* Slimmer scrollbar specifically for sidebar */
+.mb-sidebar::-webkit-scrollbar {
+    width: 4px;
 }
 .mb-sidebar .sidebar-header {
     padding: 0 1.25rem 1rem;
@@ -337,7 +342,7 @@ a:hover {
     transition: var(--mb-transition);
 }
 .mb-sidebar .nav-link:hover {
-    background-color: rgba(78, 139, 112, 0.05);
+    background-color: rgba(21, 61, 54, 0.05);
     color: var(--mb-primary);
 }
 .mb-sidebar .nav-link.active {
@@ -354,7 +359,7 @@ a:hover {
 
 /* Dashboard content area with sidebar */
 .mb-dashboard-content {
-    margin-left: 260px;
+    margin-left: 250px;
     padding: 2rem;
     min-height: calc(100vh - 70px);
 }
@@ -470,7 +475,23 @@ a:hover {
     font-size: 0.875rem;
 }
 
-/* ---------- Blog Card ---------- */
+/* ---------- Custom Scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--mb-scrollbar-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--mb-scrollbar-thumb);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mb-scrollbar-thumb-hover);
+}
+
+/* ---------- Base & Typography ---------- */
 .mb-blog-card {
     border: 1px solid var(--mb-border-light);
     border-radius: var(--mb-radius-lg);
@@ -577,7 +598,7 @@ a:hover {
     border-bottom: 1px solid var(--mb-border-light);
 }
 .table-hover tbody tr:hover {
-    background-color: rgba(78, 139, 112, 0.02);
+    background-color: rgba(21, 61, 54, 0.02);
 }
 
 /* ---------- Pagination ---------- */
@@ -1034,7 +1055,7 @@ a:hover {
     padding: 0.5rem 0.75rem;
 }
 .dropdown-item:hover {
-    background-color: rgba(78, 139, 112, 0.05);
+    background-color: rgba(21, 61, 54, 0.05);
     color: var(--mb-primary);
 }
 
@@ -1554,7 +1575,7 @@ a:hover {
 }
 .mb-search-bar input:focus {
     border-color: var(--mb-primary);
-    box-shadow: 0 0 0 3px rgba(78, 139, 112, 0.08);
+    box-shadow: 0 0 0 3px rgba(21, 61, 54, 0.08);
 }
 
 /* --- Doctor card (list) --- */

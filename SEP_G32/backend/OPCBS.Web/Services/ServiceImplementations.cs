@@ -38,6 +38,13 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
         return (data, error);
     }
     public async Task<(bool Success, string? Error)> ToggleBlockSlotAsync(Guid slotId) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/toggle-block");
+
+    public async Task<(AppointmentSlotDto? Data, string? Error)> CreateSlotAsync(CreateSlotDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentSlotDto>($"{ApiRoutes.Schedules}/slots", dto);
+        return (data, error);
+    }
+    public async Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId) => await base.DeleteAsync($"{ApiRoutes.Schedules}/slots/{slotId}");
 }
 
 // --- Consultation Record ---

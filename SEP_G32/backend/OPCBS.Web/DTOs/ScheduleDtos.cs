@@ -68,3 +68,10 @@ public class TimeSlotDto
     public DateTimeOffset EndTime { get; set; }
     public bool IsAvailable { get; set; }
 }
+
+public class CreateSlotDto
+{
+    public required string Date { get; set; }
+    public required string StartTime { get; set; }
+    public required string EndTime { get; set; }
+}

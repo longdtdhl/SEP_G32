@@ -3,17 +3,37 @@
 @{
     ViewData["Title"] = "Quản lý lịch làm việc";
     ViewData["UseDashboardLayout"] = true;
+    
     var today = DateTime.Today;
-    var dayNames = new[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" };
-    var prevWeek = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd");
-    var nextWeek = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd");
-    var weekNumber = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(Model.WeekStart, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+    var currentMonth = new DateTime(today.Year, today.Month, 1);
+    
+    var eventsJson = System.Text.Json.JsonSerializer.Serialize(Model.ActualSlots.Select(s => new {
+        id = s.Id,
+        title = s.Status == 0 ? "Trống" : s.Status == 1 ? "Đã đặt" : "Đã khóa",
+        start = $"{s.Date}T{s.StartTime}",
+        end = $"{s.Date}T{s.EndTime}",
+        backgroundColor = s.Status == 0 ? "var(--mb-primary-light)" : s.Status == 1 ? "#fff3cd" : "#f0f0f0",
+        borderColor = s.Status == 0 ? "var(--mb-primary)" : s.Status == 1 ? "#ffc107" : "#ddd",
+        textColor = "#000",
+        extendedProps = new { status = s.Status }
+    }));
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h1><i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Quản lý lịch làm việc</h1>
-    <div class="d-flex gap-2">
-        <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tạo slot tư vấn</a>
+    <div class="d-flex gap-2 align-items-center">
+        <select id="monthSelector" class="form-select form-select-sm" style="width: auto;">
+            @for (int i = 0; i < 12; i++)
+            {
+                var d = currentMonth.AddMonths(i);
+                <option value="@d.ToString("yyyy-MM-01")">Tháng @d.ToString("MM/yyyy")</option>
+            }
+        </select>
+        <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Bạn có chắc muốn reset (xóa) toàn bộ lịch trống và lịch đã khóa (trừ những lịch đã có người đặt)?');">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+        </form>
         <a asp-page="DaysOff" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-x me-1"></i>Ngày nghỉ</a>
     </div>
 </div>
@@ -31,152 +51,191 @@
     </div> 
 }
 
-<!-- Weekly Calendar -->
-<div class="week-calendar shadow-sm">
-    <!-- Navigation bar -->
-    <div class="wc-nav">
-        <div class="d-flex align-items-center gap-2">
-            <div class="btn-group btn-group-sm">
-                <a asp-page="Index" asp-route-week="@prevWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
-                <a asp-page="Index" asp-route-week="@nextWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
-            </div>
-        </div>
-        <span class="wc-title">@Model.WeekStart.ToString("MMM dd") — @Model.WeekEnd.ToString("MMM dd, yyyy")</span>
-        <span class="wc-badge">Tuần @weekNumber</span>
-        <div class="ms-auto">
-            <a asp-page="Index" class="btn btn-sm btn-outline-primary">Hôm nay</a>
-        </div>
-    </div>
-
-    <!-- Day headers -->
-    <div class="week-calendar-header">
-        <div class="wc-time-col"></div>
-        @foreach (var day in Model.WeekDays)
-        {
-            var isToday = day.Date == today;
-            var isDayOff = Model.IsDayOff(day);
-            <div class="wc-day-col @(isToday ? "today" : "")">
-                <div class="wc-day-name">@dayNames[(int)day.DayOfWeek]</div>
-                <div class="wc-day-num">@day.Day</div>
-                @if (isDayOff)
-                {
-                    <small class="text-danger" style="font-size:0.6rem;"><i class="bi bi-x-circle"></i> Nghỉ</small>
-                }
-            </div>
-        }
-    </div>
-
-    <!-- Time grid -->
-    <div class="week-calendar-body">
-        @for (int hour = Model.CalStartHour; hour <= Model.CalEndHour; hour++)
-        {
-            <div class="wc-time-row">
-                <div class="wc-time-label">@hour.ToString("00"):00</div>
-                @foreach (var day in Model.WeekDays)
-                {
-                    var isToday = day.Date == today;
-                    var isDayOff = Model.IsDayOff(day);
-
-                    <div class="wc-time-cell @(isToday ? "today-col" : "") @(isDayOff ? "opacity-25" : "")">
-                        @{
-                            var dayStr = day.ToString("yyyy-MM-dd");
-                            var slots = Model.ActualSlots.Where(s => s.Date == dayStr).ToList();
-                        }
-                        @foreach (var s in slots)
-                        {
-                            if (TimeOnly.TryParse(s.StartTime, out var st) && st.Hour == hour)
-                            {
-                                TimeOnly.TryParse(s.EndTime, out var et);
-                                var durationHours = (et.ToTimeSpan() - st.ToTimeSpan()).TotalHours;
-                                var heightPx = (int)(durationHours * 64);
-                                
-                                var cssClass = s.Status switch
-                                {
-                                    0 => "available",
-                                    1 => "booked",
-                                    2 => "full",
-                                    _ => "full opacity-50"
-                                };
-                                
-                                var statusText = s.Status switch
-                                {
-                                    0 => "Trống (Khóa)",
-                                    1 => "Đã đặt",
-                                    2 => "Đã khóa (Mở)",
-                                    _ => "Không khả dụng"
-                                };
-
-                                var isClickable = s.Status == 0 || s.Status == 2;
-                                
-                                if (isClickable)
-                                {
-                                    <form method="post" asp-page-handler="ToggleBlock" style="margin:0; padding:0;">
-                                        <input type="hidden" name="slotId" value="@s.Id" />
-                                        <button type="submit" class="wc-slot @cssClass border-0 text-start" style="top:2px; height:@(heightPx - 4)px; width: calc(100% - 8px);" title="Click để thay đổi trạng thái slot">
-                                            <span class="slot-time">@s.StartTime - @s.EndTime</span>
-                                            <span class="slot-label"><i class="bi @(s.Status == 0 ? "bi-unlock" : "bi-lock-fill") me-1"></i>@statusText</span>
-                                        </button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <div class="wc-slot @cssClass" style="top:2px; height:@(heightPx - 4)px; cursor: not-allowed; width: calc(100% - 8px);" title="Slot đã được bệnh nhân đặt lịch">
-                                        <span class="slot-time">@s.StartTime - @s.EndTime</span>
-                                        <span class="slot-label"><i class="bi bi-calendar-check-fill me-1"></i>@statusText</span>
-                                    </div>
-                                }
-                            }
-                        }
-                    </div>
-                }
-            </div>
-        }
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div id="calendar"></div>
     </div>
 </div>
 
 <!-- Legend & Tips -->
-<div class="mt-4 p-3 rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-3 shadow-sm border border-light">
+<div class="p-3 rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-3 shadow-sm border border-light">
     <div class="wc-legend d-flex gap-3 align-items-center flex-wrap">
         <span class="fw-semibold text-muted small me-2"><i class="bi bi-info-circle me-1"></i>Chú thích:</span>
-        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Trống (Nhấp để Khóa)</div>
-        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#f0f0f0;border:1px solid #ddd;"></div>Bị khóa (Nhấp để Mở)</div>
+        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:var(--mb-primary-light);border:1px solid rgba(21,61,54,0.25);"></div>Trống</div>
+        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#f0f0f0;border:1px solid #ddd;"></div>Bị khóa</div>
         <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#fff3cd;border:1px solid #ffc107;"></div>Đã được đặt</div>
     </div>
-    <div class="text-muted small"><i class="bi bi-hand-index-thumb me-1"></i>Bấm trực tiếp vào slot trống/khóa để đóng/mở nhận tư vấn.</div>
+    <div class="text-muted small"><i class="bi bi-hand-index-thumb me-1"></i>Kéo thả trên lịch để tạo một hoặc nhiều slot làm việc.</div>
 </div>
 
-<!-- Schedule list (compact) -->
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h6 class="mb-0 fw-semibold text-dark"><i class="bi bi-list-ul me-1" style="color:var(--mb-primary);"></i>Cấu hình khung giờ tuần định kỳ</h6>
-        <span class="text-muted small">Cấu hình này dùng để tự động sinh slots theo chu kỳ</span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr><th class="ps-4">Thứ trong tuần</th><th>Khung giờ làm việc</th><th>Thời lượng</th><th>Trạng thái tự động</th><th class="text-end pe-4">Thao tác</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var s in Model.Schedules)
-                    {
-                        <tr>
-                            <td class="ps-4"><strong>@s.DayOfWeek</strong></td>
-                            <td><span class="badge bg-light text-dark border p-2"><i class="bi bi-clock me-1 text-primary"></i>@s.StartTime — @s.EndTime</span></td>
-                            <td>@(s.SlotDuration) phút</td>
-                            <td><span class="badge @(s.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(s.IsActive ? "Đang áp dụng" : "Đã tắt")</span></td>
-                            <td class="text-end pe-4">
-                                <a asp-page="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-fill me-1"></i>Sửa</a>
-                                <form method="post" asp-page-handler="Delete" class="d-inline ms-1">
-                                    <input type="hidden" name="id" value="@s.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa cấu hình khung giờ tuần này không? Các slots trống tương ứng trong tương lai cũng sẽ bị xóa.')"><i class="bi bi-trash-fill"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Schedules.Any()) { <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-calendar-minus d-block mb-2" style="font-size:2rem;"></i>Chưa cấu hình lịch định kỳ</td></tr> }
-                </tbody>
-            </table>
+<!-- Create Slot Modal -->
+<div class="modal fade" id="createSlotModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CreateSlot">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6"><i class="bi bi-calendar-plus me-2 text-primary"></i>Thêm Slot Khám</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="date" id="modalDate" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Ngày</label>
+                        <input type="text" class="form-control form-control-sm bg-light" id="modalDateDisplay" readonly />
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Giờ bắt đầu</label>
+                            <input type="time" name="startTime" id="modalStartTime" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Giờ kết thúc</label>
+                            <input type="time" name="endTime" id="modalEndTime" class="form-control form-control-sm" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-2 border-0">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Lưu Slot</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<!-- Hidden form for actions -->
+<form id="actionForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="slotId" id="actionSlotId" />
+</form>
+
+@section Scripts {
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <script>
+        function submitAction(handler, slotId) {
+            var form = document.getElementById('actionForm');
+            form.action = "?handler=" + handler;
+            document.getElementById('actionSlotId').value = slotId;
+            form.submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var events = @Html.Raw(eventsJson);
+            
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '06:00:00',
+                slotMaxTime: '22:00:00',
+                allDaySlot: false,
+                selectable: true,
+                selectMirror: true,
+                events: events,
+                validRange: {
+                    start: '@today.ToString("yyyy-MM-dd")'
+                },
+                
+                select: function(info) {
+                    // info.start, info.end
+                    let startDate = info.start;
+                    let endDate = info.end;
+                    
+                    let dateStr = startDate.getFullYear() + "-" + 
+                                  String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                                  String(startDate.getDate()).padStart(2, '0');
+                                  
+                    let startTimeStr = String(startDate.getHours()).padStart(2, '0') + ":" + String(startDate.getMinutes()).padStart(2, '0');
+                    let endTimeStr = String(endDate.getHours()).padStart(2, '0') + ":" + String(endDate.getMinutes()).padStart(2, '0');
+                    
+                    document.getElementById('modalDate').value = dateStr;
+                    document.getElementById('modalDateDisplay').value = dateStr;
+                    document.getElementById('modalStartTime').value = startTimeStr;
+                    document.getElementById('modalEndTime').value = endTimeStr;
+                    
+                    var modal = new bootstrap.Modal(document.getElementById('createSlotModal'));
+                    modal.show();
+                    
+                    calendar.unselect();
+                },
+                
+                eventClick: function(info) {
+                    let target = info.jsEvent.target.closest('button');
+                    if (target) {
+                        info.jsEvent.preventDefault();
+                        if (target.classList.contains('btn-delete')) {
+                            if (confirm('Xóa slot này?')) {
+                                submitAction('DeleteSlot', info.event.id);
+                            }
+                        } else if (target.classList.contains('btn-toggle')) {
+                            submitAction('ToggleBlock', info.event.id);
+                        }
+                    }
+                },
+                
+                eventContent: function(arg) {
+                    let status = arg.event.extendedProps.status;
+                    let icon = status === 0 ? 'bi-unlock' : (status === 1 ? 'bi-calendar-check-fill' : 'bi-lock-fill');
+                    let btnHtml = '';
+                    
+                    if (status === 0 || status === 2) {
+                        let toggleIcon = status === 0 ? 'bi-lock' : 'bi-unlock';
+                        let toggleTitle = status === 0 ? 'Khóa' : 'Mở khóa';
+                        
+                        btnHtml = `
+                        <div class="d-flex gap-1 mt-1">
+                            <button type="button" class="btn btn-sm btn-light border p-0 px-1 btn-toggle" title="${toggleTitle}">
+                                <i class="bi ${toggleIcon}"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger border p-0 px-1 btn-delete" title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>`;
+                    }
+                    
+                    return {
+                        html: `
+                        <div class="fc-event-main-frame p-1 d-flex flex-column h-100" style="font-size: 0.8rem; overflow: hidden;">
+                            <div class="fc-event-time fw-bold">${arg.timeText}</div>
+                            <div class="fc-event-title text-truncate"><i class="bi ${icon} me-1"></i>${arg.event.title}</div>
+                            ${btnHtml}
+                        </div>`
+                    };
+                }
+            });
+            
+            calendar.render();
+            window.calendarObj = calendar;
+            
+            // Link month selector to calendar
+            document.getElementById('monthSelector').addEventListener('change', function() {
+                if (window.calendarObj) {
+                    window.calendarObj.gotoDate(this.value);
+                }
+            });
+        });
+    </script>
+    <style>
+        .fc-event {
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .fc-v-event .fc-event-main-frame {
+            padding: 2px;
+        }
+        .fc-theme-standard th {
+            padding: 8px 0;
+            background-color: var(--mb-bg);
+        }
+        .fc-toolbar-title {
+            font-size: 1.25rem !important;
+            font-weight: 600;
+        }
+    </style>
+}

@@ -967,4 +967,78 @@ public class ScheduleService : IScheduleService
 
         return ApiResponse.SuccessResponse("Day off added");
     }
+
+    public async Task<ApiResponse<AppointmentSlotDto>> CreateSlotAsync(Guid doctorUserId, CreateSlotDto dto, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Doctor not found");
+
+        if (!DateOnly.TryParse(dto.Date, out var slotDate))
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Invalid date format");
+            
+        if (!TimeOnly.TryParse(dto.StartTime, out var startTime) || !TimeOnly.TryParse(dto.EndTime, out var endTime))
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Invalid time format");
+
+        if (startTime >= endTime)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Start time must be before end time");
+
+        // Check for existing slot overlap
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var existingSlots = allSlots.Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate == slotDate).ToList();
+        
+        foreach (var existing in existingSlots)
+        {
+            if (startTime < existing.EndTime && endTime > existing.StartTime)
+            {
+                return ApiResponse<AppointmentSlotDto>.ErrorResponse("Time slot overlaps with existing slot");
+            }
+        }
+
+        var slot = new AppointmentSlot
+        {
+            DoctorProfileId = doctor.Id,
+            SlotDate = slotDate,
+            StartTime = startTime,
+            EndTime = endTime,
+            Status = AppointmentSlotStatus.Available,
+            DoctorProfile = doctor
+        };
+
+        await _slotRepo.AddAsync(slot, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        var returnDto = new AppointmentSlotDto
+        {
+            Id = slot.Id,
+            Date = slot.SlotDate.ToString("yyyy-MM-dd"),
+            StartTime = slot.StartTime.ToString("HH:mm"),
+            EndTime = slot.EndTime.ToString("HH:mm"),
+            Status = slot.Status,
+            Price = slot.Price
+        };
+
+        return ApiResponse<AppointmentSlotDto>.SuccessResponse(returnDto, "Slot created successfully");
+    }
+
+    public async Task<ApiResponse> DeleteSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default)
+    {
+        var slot = await _slotRepo.GetByIdAsync(slotId, ct);
+        if (slot == null)
+            return ApiResponse.ErrorResponse("Slot not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || slot.DoctorProfileId != doctor.Id)
+            return ApiResponse.ErrorResponse("Not authorized");
+
+        if (slot.Status == AppointmentSlotStatus.Booked || slot.Status == AppointmentSlotStatus.Completed)
+            return ApiResponse.ErrorResponse("Cannot delete a booked or completed slot");
+
+        _slotRepo.Delete(slot);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse.SuccessResponse("Slot deleted successfully");
+    }
 }
