@@ -6,10 +6,10 @@
     <title>@ViewData["Title"] - MindBridge</title>
     <meta name="description" content="MindBridge — Connecting Minds, Supporting Wellbeing. Professional mental health counseling platform." />
 
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
 
     <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -49,11 +49,20 @@
     else
     {
         <!-- Standard Content Layout -->
-        <div class="container py-4">
+        @if (ViewData["FullWidthLayout"] as bool? == true)
+        {
             <main role="main">
                 @RenderBody()
             </main>
-        </div>
+        }
+        else
+        {
+            <div class="container py-4">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+        }
 
         <!-- Footer (only for non-dashboard pages) -->
         <footer>

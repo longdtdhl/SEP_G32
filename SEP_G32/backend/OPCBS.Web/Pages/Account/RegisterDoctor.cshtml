@@ -2,10 +2,10 @@
 @model OPCBS.Web.Pages.Account.RegisterDoctorModel
 @{
     ViewData["Title"] = "Become a Doctor";
+    Layout = "_AuthLayout";
 }
 
-<div class="mb-auth-container">
-    <div class="mb-auth-card" style="max-width:600px;">
+<div class="mb-auth-card" style="max-width:600px;">
         <div class="text-center mb-3">
             <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:linear-gradient(135deg, var(--mb-primary), #6366f1);">
                 <i class="bi bi-heart-pulse-fill text-white" style="font-size:1.5rem;"></i>
@@ -105,4 +105,3 @@
             <small>Muốn đăng ký tài khoản bệnh nhân? <a asp-page="/Account/Register">Đăng ký tại đây</a></small>
         </div>
     </div>
-</div>

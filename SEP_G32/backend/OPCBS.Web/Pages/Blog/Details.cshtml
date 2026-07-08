@@ -1,41 +1,144 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Blog.DetailsModel
 @{
-    ViewData["Title"] = "Article";
+    ViewData["Title"] = Model.Blog?.Title ?? "Bài viết";
+    ViewData["UseDashboardLayout"] = false;
 }
+
+<style>
+    .article-header { padding: 4rem 0 3rem; text-align: center; max-width: 800px; margin: 0 auto; }
+    .article-category { display: inline-block; background: rgba(78,139,112,0.1); color: var(--mb-primary); padding: 0.5rem 1.25rem; border-radius: 30px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 1.5rem; }
+    .article-title { font-size: 2.75rem; font-weight: 800; color: #1e293b; line-height: 1.25; margin-bottom: 1.5rem; letter-spacing: -0.5px; }
+    .article-meta { display: flex; justify-content: center; align-items: center; gap: 2rem; color: #64748b; font-size: 0.95rem; flex-wrap: wrap; }
+    .article-meta .meta-item { display: flex; align-items: center; gap: 0.5rem; }
+    .article-meta .author-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--mb-primary-light); color: var(--mb-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
+    .article-meta .author-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .article-hero-img { width: 100%; max-width: 1000px; height: auto; max-height: 500px; object-fit: cover; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); margin: 0 auto 3rem; display: block; }
+    
+    .article-layout { display: grid; grid-template-columns: 1fr 300px; gap: 4rem; max-width: 1100px; margin: 0 auto 5rem; }
+    @@media (max-width: 991px) { .article-layout { grid-template-columns: 1fr; gap: 3rem; } }
+    
+    .article-body { font-size: 1.1rem; line-height: 1.9; color: #334155; }
+    .article-body p { margin-bottom: 1.5rem; }
+    .article-body h2 { font-size: 1.75rem; font-weight: 700; color: #1e293b; margin: 2.5rem 0 1rem; }
+    .article-body h3 { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 2rem 0 1rem; }
+    .article-body ul, .article-body ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+    .article-body li { margin-bottom: 0.5rem; }
+    .article-body blockquote { font-style: italic; font-size: 1.25rem; color: var(--mb-primary); border-left: 4px solid var(--mb-primary); padding: 1rem 1.5rem; background: #f8fafc; border-radius: 0 12px 12px 0; margin: 2rem 0; }
+    .article-body img { max-width: 100%; height: auto; border-radius: 12px; margin: 2rem 0; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+    
+    .article-summary { font-size: 1.2rem; line-height: 1.7; color: #475569; font-weight: 500; margin-bottom: 2.5rem; padding-bottom: 2.5rem; border-bottom: 1px solid #e2e8f0; }
+    
+    .article-sidebar .sidebar-card { background: white; border-radius: 20px; border: 1px solid rgba(78,139,112,0.1); padding: 1.75rem; margin-bottom: 2rem; position: sticky; top: 2rem; }
+    .sidebar-author { text-align: center; }
+    .sidebar-author .author-img { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 1rem; background: var(--mb-primary-light); color: var(--mb-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; }
+    .sidebar-author .author-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .sidebar-author h4 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+    .sidebar-author p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; }
+    
+    .sidebar-tags h5 { font-size: 0.9rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; }
+    .sidebar-tags .tags-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .sidebar-tags .tag { display: inline-block; background: #f1f5f9; color: #475569; padding: 0.4rem 1rem; border-radius: 30px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; text-decoration: none; }
+    .sidebar-tags .tag:hover { background: var(--mb-primary); color: white; }
+    
+    .error-state { text-align: center; padding: 6rem 2rem; max-width: 600px; margin: 0 auto; }
+</style>
 
 @if (Model.Blog == null)
 {
-    <partial name="_ErrorState" view-data='@(new ViewDataDictionary(ViewData) { { "ErrorMessage", "Article not found." } })' />
+    <div class="container error-state">
+        <div style="width:100px; height:100px; background:#fef2f2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+            <i class="bi bi-exclamation-triangle" style="font-size:2.5rem; color:#ef4444;"></i>
+        </div>
+        <h1 style="font-size:2rem; font-weight:800; color:#1e293b; margin-bottom:1rem;">Không tìm thấy bài viết</h1>
+        <p style="color:#64748b; font-size:1.1rem; margin-bottom:2rem;">Bài viết này không tồn tại, đã bị xóa hoặc bạn không có quyền truy cập.</p>
+        <a asp-page="Index" class="btn btn-primary" style="padding:0.75rem 2rem; border-radius:30px; font-weight:600;"><i class="bi bi-arrow-left me-2"></i>Về trang Blog</a>
+    </div>
     return;
 }
-<article class="mb-section" style="max-width:800px;margin:0 auto;">
-    @if (!string.IsNullOrEmpty(Model.Blog.Category))
-    {
-        <span class="mb-chip mb-3 d-inline-block">@Model.Blog.Category</span>
-    }
-    <h1 class="mb-3">@Model.Blog.Title</h1>
-    <div class="d-flex gap-3 text-muted mb-4" style="font-size:0.875rem;">
-        <span><i class="bi bi-person me-1"></i>@Model.Blog.AuthorName</span>
-        <span><i class="bi bi-calendar me-1"></i>@Model.Blog.CreatedAt.ToString("MMMM dd, yyyy")</span>
-    </div>
-    @if (!string.IsNullOrEmpty(Model.Blog.ImageUrl))
-    {
-        <img src="@Model.Blog.ImageUrl" alt="@Model.Blog.Title" class="w-100 mb-4" style="border-radius:var(--mb-radius-lg);max-height:400px;object-fit:cover;" />
-    }
-    @if (!string.IsNullOrEmpty(Model.Blog.Summary))
-    {
-        <p class="lead text-muted mb-4">@Model.Blog.Summary</p>
-    }
-    <div class="blog-content" style="line-height:1.8;">
-        @Html.Raw(Model.Blog.Content)
-    </div>
-    @if (Model.Blog.Tags.Any())
-    {
-        <div class="mt-4 pt-4 border-top">
-            <div class="d-flex flex-wrap gap-2">
-                @foreach (var tag in Model.Blog.Tags) { <span class="mb-chip">@tag</span> }
+
+@{ var blog = Model.Blog; }
+
+<div class="container">
+    <header class="article-header">
+        @if (!string.IsNullOrEmpty(blog.Category))
+        {
+            <span class="article-category">@blog.Category</span>
+        }
+        <h1 class="article-title">@blog.Title</h1>
+        <div class="article-meta">
+            <div class="meta-item">
+                <div class="author-avatar">
+                    @if (!string.IsNullOrEmpty(blog.AuthorAvatarUrl))
+                    {
+                        <img src="@blog.AuthorAvatarUrl" alt="" />
+                    }
+                    else
+                    {
+                        @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
+                    }
+                </div>
+                <span style="font-weight:600; color:#334155;">@(blog.AuthorName ?? "Ẩn danh")</span>
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-calendar3"></i>
+                <span>@(blog.PublishedAt?.ToString("dd MMMM, yyyy") ?? blog.CreatedAt.ToString("dd MMMM, yyyy"))</span>
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-eye"></i>
+                <span>@blog.ViewCount lượt xem</span>
             </div>
         </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(blog.DisplayImage))
+    {
+        <img src="@blog.DisplayImage" alt="@blog.Title" class="article-hero-img" />
     }
-</article>
+
+    <div class="article-layout">
+        <main class="article-main">
+            @if (!string.IsNullOrEmpty(blog.DisplaySummary))
+            {
+                <div class="article-summary">
+                    @blog.DisplaySummary
+                </div>
+            }
+            
+            <div class="article-body">
+                @Html.Raw(blog.Content)
+            </div>
+        </main>
+        
+        <aside class="article-sidebar">
+            <div class="sidebar-card sidebar-author">
+                <div class="author-img">
+                    @if (!string.IsNullOrEmpty(blog.AuthorAvatarUrl))
+                    {
+                        <img src="@blog.AuthorAvatarUrl" alt="" />
+                    }
+                    else
+                    {
+                        @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
+                    }
+                </div>
+                <h4>@(blog.AuthorName ?? "Tác giả ẩn danh")</h4>
+                <p>Bác sĩ / Chuyên gia Tâm lý</p>
+                <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-sm w-100" style="border-radius:20px; font-weight:600;">Xem hồ sơ</a>
+            </div>
+            
+            @if (blog.Tags.Any())
+            {
+                <div class="sidebar-card sidebar-tags">
+                    <h5>Thẻ (Tags)</h5>
+                    <div class="tags-wrap">
+                        @foreach (var tag in blog.Tags)
+                        {
+                            <a asp-page="Index" asp-route-search="@tag" class="tag">@tag</a>
+                        }
+                    </div>
+                </div>
+            }
+        </aside>
+    </div>
+</div>

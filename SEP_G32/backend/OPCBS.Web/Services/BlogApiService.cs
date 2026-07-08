@@ -56,4 +56,17 @@ public class BlogApiService : ApiServiceBase, IBlogApiService
 
     public async Task<(bool Success, string? Error)> SubmitForReviewAsync(Guid id)
         => await PostAsync($"{ApiRoutes.Blogs}/submit-review/{id}");
+
+    public async Task<(List<BlogListItemDto> Data, PaginationDto? Pagination, string? Error)> GetPendingBlogsAsync(int page = 1, int pageSize = 10)
+    {
+        var url = $"{ApiRoutes.Blogs}/pending?page={page}&pageSize={pageSize}";
+        var (data, pagination, error) = await GetAsync<List<BlogListItemDto>>(url);
+        return (data ?? new(), pagination, error);
+    }
+
+    public async Task<(bool Success, string? Error)> ApproveBlogAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Blogs}/approve/{id}", new { });
+
+    public async Task<(bool Success, string? Error)> RejectBlogAsync(Guid id, string reason)
+        => await PutAsync($"{ApiRoutes.Blogs}/reject/{id}", reason); // Note: Assuming the backend accepts [FromBody] string reason.
 }
