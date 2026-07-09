@@ -3,20 +3,20 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
-namespace OPCBS.Web.Pages.Doctor.ConsultationRecords;
+namespace OPCBS.Web.Pages.Doctor.ConsultationNotes;
 
 public class EditModel : PageModel
 {
-    private readonly IConsultationRecordApiService _api;
+    private readonly IConsultationNoteApiService _api;
     private readonly ITreatmentPackageApiService _packageApi;
-    public EditModel(IConsultationRecordApiService api, ITreatmentPackageApiService packageApi)
+    public EditModel(IConsultationNoteApiService api, ITreatmentPackageApiService packageApi)
     {
         _api = api;
         _packageApi = packageApi;
     }
 
-    [BindProperty] public UpdateConsultationRecordDto Input { get; set; } = new();
-    public ConsultationRecordDto? Record { get; set; }
+    [BindProperty] public UpdateConsultationNoteDto Input { get; set; } = new();
+    public ConsultationNoteDto? Record { get; set; }
     public Guid RecordId { get; set; }
     public string? Error { get; set; }
 
@@ -29,7 +29,7 @@ public class EditModel : PageModel
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
         Record = data;
-        Input = new UpdateConsultationRecordDto { Diagnosis = data.Diagnosis, Notes = data.Notes, Prescription = data.Prescription, Recommendations = data.Recommendations };
+        Input = new UpdateConsultationNoteDto { Diagnosis = data.Diagnosis, Notes = data.Notes, TherapyPlan = data.TherapyPlan, Recommendations = data.Recommendations };
 
         // Load treatment packages for the patient (filter doctor's packages by patient name)
         var (packages, _, _) = await _packageApi.GetAllAsync(1, 50);
@@ -43,7 +43,7 @@ public class EditModel : PageModel
         RecordId = id;
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Đã cập nhật hồ sơ.";
-        return RedirectToPage("Index");
+        TempData["Success"] = "Đã cập nhật hồ sơ tư vấn.";
+        return RedirectToPage("./Details", new { id });
     }
 }

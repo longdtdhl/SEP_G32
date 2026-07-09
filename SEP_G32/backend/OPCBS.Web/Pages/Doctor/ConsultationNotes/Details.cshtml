@@ -1,0 +1,144 @@
+@page "{id:Guid}"
+@model OPCBS.Web.Pages.Doctor.ConsultationNotes.DetailsModel
+@{
+    ViewData["Title"] = "Chi tiết Ghi chú Tư vấn";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<style>
+    .detail-banner {
+        background: linear-gradient(135deg, #f0fdf8 0%, #ecfdf5 50%, #d1fae5 100%);
+        border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;
+        border: 1px solid rgba(16,185,129,0.12);
+    }
+    .detail-banner .avatar {
+        width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-weight: 700; flex-shrink: 0;
+    }
+    .detail-meta { font-size: 0.85rem; color: #64748b; display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+    
+    .form-section-title {
+        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title i { color: var(--mb-primary); }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Chi tiết Hồ sơ tư vấn
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Xem thông tin chẩn đoán và kế hoạch trị liệu</p>
+    </div>
+    <div>
+        @if (Model.Record != null)
+        {
+            <a asp-page="./Edit" asp-route-id="@Model.Record.Id" class="btn btn-warning me-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-pencil-square me-1"></i>Sửa ghi chú</a>
+            <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.Record.PatientRecordId" class="btn btn-outline-secondary px-3 py-2 fw-semibold" style="border-radius:10px;">
+                <i class="bi bi-arrow-left me-1"></i>Hồ sơ Bệnh nhân
+            </a>
+        }
+        else
+        {
+            <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+        }
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3" style="border-radius:12px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Record != null)
+{
+    var displayName = Model.Record.DisplayPatientName ?? "Bệnh nhân";
+    var initial = displayName.Substring(0, 1).ToUpper();
+
+    <div class="detail-banner d-flex align-items-center gap-3 shadow-sm">
+        <div class="avatar" style="background:rgba(16,185,129,0.15); color:var(--mb-primary);">@initial</div>
+        <div>
+            <h4 style="margin:0; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                @displayName
+                @if (Model.Record.IsWalkIn)
+                {
+                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px;">Khách vãng lai</span>
+                }
+                else
+                {
+                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px;">Hệ thống</span>
+                }
+            </h4>
+            <div class="detail-meta">
+                <span><i class="bi bi-person-badge"></i> Bác sĩ: @Model.Record.DoctorName</span>
+                <span>•</span>
+                <span><i class="bi bi-calendar3"></i> Ngày tạo: @Model.Record.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section-title">
+                        <i class="bi bi-journal-medical"></i>Thông tin tư vấn lâm sàng
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold" style="color:#334155;">Chẩn đoán sơ bộ (Diagnosis)</h6>
+                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem;">@(string.IsNullOrEmpty(Model.Record.Diagnosis) ? "Chưa có chẩn đoán" : Model.Record.Diagnosis)</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold" style="color:#334155;">Đánh giá / Tóm tắt tư vấn (Summary)</h6>
+                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.ConsultationSummary) ? "Không có đánh giá" : Model.Record.ConsultationSummary)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold" style="color:#334155;"><i class="bi bi-capsule me-2 text-success"></i>Kế hoạch trị liệu (Therapy Plan)</h6>
+                            <p class="p-3 rounded" style="background:#f0fdf4; border: 1px solid #bbf7d0; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.TherapyPlan) ? "Chưa ghi nhận kế hoạch trị liệu" : Model.Record.TherapyPlan)</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold" style="color:#334155;">Lời khuyên / Đề xuất (Recommendations)</h6>
+                            <p class="p-3 rounded" style="background:#fffbeb; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.Recommendations) ? "Không có" : Model.Record.Recommendations)</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold" style="color:#334155;">Ghi chú theo dõi (Follow-up Notes)</h6>
+                            <p class="p-3 rounded" style="background:#fef2f2; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.FollowUpNotes) ? "Không có" : Model.Record.FollowUpNotes)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold" style="color:#334155;">Ngày tái khám dự kiến (Next Appointment Recommended)</h6>
+                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem;">
+                                @if (Model.Record.NextAppointmentRecommendedDate.HasValue)
+                                {
+                                    <i class="bi bi-calendar-check me-2 text-primary"></i>@Model.Record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span>Chưa có lịch hẹn</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

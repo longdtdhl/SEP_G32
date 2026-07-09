@@ -152,6 +152,51 @@
                         }
                     </div>
 
+                    <!-- Psychometric Test Section -->
+                    <div class="mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">
+                        <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Đánh giá sức khỏe tinh thần trước buổi hẹn</h6>
+                        @if (Model.PsychometricSubmission != null)
+                        {
+                            <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
+                                        <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
+                                    </div>
+                                    <small class="text-muted d-block">Hoàn thành lúc: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm dd/MM/yyyy")</small>
+                                    <span class="text-secondary d-block mt-1">Kết quả: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Tổng điểm: @Model.PsychometricSubmission.TotalScore)</span>
+                                </div>
+                                <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-bar-chart-fill me-1"></i>Xem biểu đồ chi tiết
+                                </a>
+                            </div>
+                        }
+                        else if (isApproved || isPending)
+                        {
+                            <div class="p-3 border border-warning-subtle bg-warning-subtle bg-opacity-10 rounded-3">
+                                <div class="d-flex align-items-start gap-2 mb-2">
+                                    <i class="bi bi-info-circle-fill text-warning mt-1"></i>
+                                    <div>
+                                        <strong>Khuyến nghị làm bài kiểm tra tâm lý trước buổi hẹn</strong>
+                                        <p class="mb-0 text-muted" style="font-size: 0.875rem;">Để bác sĩ hiểu rõ hơn về tình trạng tâm lý tinh thần của bạn trước buổi tư vấn, bạn hãy làm bài đánh giá nhanh dưới đây.</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap mt-2">
+                                    @foreach (var test in Model.AvailableTests)
+                                    {
+                                        <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil-square me-1"></i>Làm bài test: @test.Title
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted small">Không có bài test tâm lý nào được làm cho lịch hẹn này.</p>
+                        }
+                    </div>
+
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
                         <div class="mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">

@@ -13,6 +13,7 @@ public class DetailsModel : PageModel
     public TreatmentPackageDto? Package { get; set; }
     public string? Error { get; set; }
     [BindProperty] public string? RejectReason { get; set; }
+    [BindProperty] public string? CancelReason { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -35,6 +36,14 @@ public class DetailsModel : PageModel
         var (success, error) = await _service.RejectAsync(id, RejectReason);
         if (!success) { Error = error; return await OnGetAsync(id); }
         TempData["SuccessMessage"] = "Đã từ chối gói điều trị.";
+        return RedirectToPage("Index");
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id)
+    {
+        var (success, error) = await _service.CancelAsync(id, CancelReason);
+        if (!success) { Error = error; return await OnGetAsync(id); }
+        TempData["SuccessMessage"] = "Đã hủy gói điều trị thành công.";
         return RedirectToPage("Index");
     }
 }

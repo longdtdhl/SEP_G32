@@ -25,7 +25,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IDoctorService, DoctorService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IScheduleService, ScheduleService>();
-        services.AddScoped<IConsultationRecordService, ConsultationRecordService>();
+        services.AddScoped<IConsultationNoteService, ConsultationNoteService>();
+        services.AddScoped<IPatientRecordService, PatientRecordService>();
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IVerificationService, VerificationService>();

@@ -12,9 +12,9 @@ namespace OPCBS.Tests;
 public class BusinessServicesTests
 {
     [Fact]
-    public async Task ConsultationRecordService_GetByPatientAsync_WithPatientProfileId_ReturnsRecords()
+    public async Task ConsultationNoteservice_GetByPatientAsync_WithPatientProfileId_ReturnsRecords()
     {
-        var recordRepo = new Mock<IRepository<ConsultationRecord>>();
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
         var apptRepo = new Mock<IRepository<Appointment>>();
         var doctorRepo = new Mock<IRepository<DoctorProfile>>();
         var patientRepo = new Mock<IRepository<PatientProfile>>();
@@ -23,26 +23,29 @@ public class BusinessServicesTests
 
         var patientId = Guid.NewGuid();
         var patientUserId = Guid.NewGuid();
-        var record = new ConsultationRecord
+        var record = new ConsultationNote
         {
             Id = Guid.NewGuid(),
             AppointmentId = Guid.NewGuid(),
             DoctorId = Guid.NewGuid(),
-            PatientId = patientId,
+            PatientRecordId = Guid.NewGuid(),
             ConsultationSummary = "summary",
             Appointment = new Appointment { Id = Guid.NewGuid(), BookingCode = "BK-1", AppointmentSlot = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = Guid.NewGuid(), SlotDate = DateOnly.FromDateTime(DateTime.UtcNow), StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Available, DoctorProfile = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doctor", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } } }, Doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doctor", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } }, Patient = new PatientProfile { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } } },
             Doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doctor", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } },
-            Patient = new PatientProfile { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } }
+            PatientRecord = new PatientRecord { Id = Guid.NewGuid(), Doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doctor", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } } }
         };
 
         patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PatientProfile> { new() { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } } });
         recordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<ConsultationRecord> { record });
-        mapper.Setup(m => m.Map<List<ConsultationRecordDto>>(It.IsAny<List<ConsultationRecord>>()))
-            .Returns(new List<ConsultationRecordDto> { new() { Id = record.Id, AppointmentId = record.AppointmentId, DoctorId = record.DoctorId, DoctorName = "Doctor", PatientId = patientId, PatientName = "Patient", ConsultationSummary = record.ConsultationSummary } });
+            .ReturnsAsync(new List<ConsultationNote> { record });
+        mapper.Setup(m => m.Map<List<ConsultationNoteDto>>(It.IsAny<List<ConsultationNote>>()))
+            .Returns(new List<ConsultationNoteDto> { new() { Id = record.Id, AppointmentId = record.AppointmentId, DoctorId = record.DoctorId, DoctorName = "Doctor", PatientRecordId = record.PatientRecordId, PatientName = "Patient", ConsultationSummary = record.ConsultationSummary } });
 
-        var service = new ConsultationRecordService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, uow.Object, mapper.Object);
+        var userRepo = new Mock<IRepository<User>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var result = await service.GetByPatientAsync(patientId, 1, 10, default);
 
@@ -57,6 +60,7 @@ public class BusinessServicesTests
         var packageRepo = new Mock<IRepository<TreatmentPackage>>();
         var doctorRepo = new Mock<IRepository<DoctorProfile>>();
         var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
         var uow = new Mock<IUnitOfWork>();
         var mapper = new Mock<IMapper>();
 
@@ -76,10 +80,13 @@ public class BusinessServicesTests
             .ReturnsAsync(new List<PatientProfile> { new() { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } } });
         packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TreatmentPackage> { package });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User> { package.Doctor.User, package.Patient.User });
         mapper.Setup(m => m.Map<List<TreatmentPackageDto>>(It.IsAny<List<TreatmentPackage>>()))
             .Returns(new List<TreatmentPackageDto> { new() { Id = package.Id, Name = package.Name, DoctorName = "Doctor", PatientName = "Patient", Status = "Assigned" } });
 
-        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object, uow.Object, mapper.Object);
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var result = await service.GetByPatientAsync(patientId, 1, 10, default);
 

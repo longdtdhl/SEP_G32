@@ -10,7 +10,7 @@ public class DaysOffModel : PageModel
     private readonly IScheduleApiService _api;
     public DaysOffModel(IScheduleApiService api) => _api = api;
     public List<DayOffDto> DaysOff { get; set; } = new();
-    [BindProperty] public CreateDayOffDto Input { get; set; } = new();
+    [BindProperty] public CreateDayOffDto Input { get; set; } = new() { StartDate = DateTime.Today, EndDate = DateTime.Today };
     public string? Error { get; set; }
 
     public async Task OnGetAsync()

@@ -13,7 +13,7 @@ public static class PermissionConstants
     public const string ManageDoctorProfile = "MANAGE_DOCTOR_PROFILE";
     public const string ManageSchedule = "MANAGE_SCHEDULE";
     public const string ManageDoctorAppointments = "MANAGE_DOCTOR_APPOINTMENTS";
-    public const string ManageConsultationRecords = "MANAGE_CONSULTATION_RECORDS";
+    public const string ManageConsultationNotes = "MANAGE_CONSULTATION_RECORDS";
     public const string ManageTreatmentPackages = "MANAGE_TREATMENT_PACKAGES";
     public const string ManageDoctorBlogs = "MANAGE_DOCTOR_BLOGS";
     public const string PurchaseSubscription = "PURCHASE_SUBSCRIPTION";

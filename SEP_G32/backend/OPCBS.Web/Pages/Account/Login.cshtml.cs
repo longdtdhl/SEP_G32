@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
@@ -19,8 +22,17 @@ public class LoginModel : PageModel
         var (data, error) = await _authService.LoginAsync(Input);
         if (error != null) { ModelState.AddModelError("", error); return Page(); }
 
+        var role = data?.Role ?? "User";
+        
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, Input.Email),
+            new Claim(ClaimTypes.Role, role)
+        };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
         // Redirect based on role
-        var role = data?.Role;
         return role switch
         {
             "Doctor" => RedirectToPage("/Doctor/Dashboard"),

@@ -140,6 +140,15 @@ public class BlogCommentsController : ControllerBase
 
     public BlogCommentsController(IBlogService blogService) => _blogService = blogService;
 
+    /// <summary>GET /api/v1/blog-comments/{blogPostId} — Get comments for a blog</summary>
+    [AllowAnonymous]
+    [HttpGet("{blogPostId}")]
+    public async Task<IActionResult> GetComments(Guid blogPostId)
+    {
+        var result = await _blogService.GetCommentsForBlogAsync(blogPostId);
+        return Ok(result);
+    }
+
     /// <summary>POST /api/v1/blog-comments — Add comment</summary>
     [HttpPost]
     public async Task<IActionResult> AddComment([FromBody] CreateBlogCommentDto dto)
@@ -215,20 +224,20 @@ public class ReviewsController : ControllerBase
 }
 
 /// <summary>
-/// Consultation Record APIs — /api/v1/consultation-records (spec §10)
+/// Consultation Record APIs — /api/v1/consultation-notes (spec §10)
 /// </summary>
 [ApiController]
-[Route("api/v1/consultation-records")]
-public class ConsultationRecordsController : ControllerBase
+[Route("api/v1/consultation-notes")]
+public class ConsultationNotesController : ControllerBase
 {
-    private readonly IConsultationRecordService _service;
+    private readonly IConsultationNoteService _service;
 
-    public ConsultationRecordsController(IConsultationRecordService service) => _service = service;
+    public ConsultationNotesController(IConsultationNoteService service) => _service = service;
 
-    /// <summary>POST /api/v1/consultation-records — Create record (Doctor)</summary>
+    /// <summary>POST /api/v1/consultation-notes — Create record (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateConsultationRecordDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateConsultationNoteDto dto)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -236,10 +245,10 @@ public class ConsultationRecordsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>PUT /api/v1/consultation-records/{id} — Update record (Doctor)</summary>
+    /// <summary>PUT /api/v1/consultation-notes/{id} — Update record (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPut("{recordId}")]
-    public async Task<IActionResult> Update(Guid recordId, [FromBody] UpdateConsultationRecordDto dto)
+    public async Task<IActionResult> Update(Guid recordId, [FromBody] UpdateConsultationNoteDto dto)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -247,7 +256,7 @@ public class ConsultationRecordsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>GET /api/v1/consultation-records/patient/{patientId} — Get records for patient (Doctor)</summary>
+    /// <summary>GET /api/v1/consultation-notes/patient/{patientId} — Get records for patient (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("patient/{patientId}")]
     public async Task<IActionResult> GetByPatient(Guid patientId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -256,7 +265,16 @@ public class ConsultationRecordsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>GET /api/v1/consultation-records/appointment/{appointmentId} — Get record by appointment (Doctor)</summary>
+    /// <summary>GET /api/v1/consultation-notes/patient-record/{patientRecordId} — Get records for a specific patient record</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpGet("patient-record/{patientRecordId}")]
+    public async Task<IActionResult> GetByPatientRecord(Guid patientRecordId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _service.GetByPatientRecordAsync(patientRecordId, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/consultation-notes/appointment/{appointmentId} — Get record by appointment (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("appointment/{appointmentId}")]
     public async Task<IActionResult> GetByAppointment(Guid appointmentId)
@@ -267,7 +285,7 @@ public class ConsultationRecordsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>GET /api/v1/consultation-records/my-records — Get own records (Patient)</summary>
+    /// <summary>GET /api/v1/consultation-notes/my-records — Get own records (Patient)</summary>
     [Authorize(Roles = RoleConstants.Patient)]
     [HttpGet("my-records")]
     public async Task<IActionResult> GetMyRecords([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -278,16 +296,18 @@ public class ConsultationRecordsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>GET /api/v1/consultation-records/doctor — Get doctor's records by appointment list</summary>
+    /// <summary>GET /api/v1/consultation-notes/doctor — Get doctor's records</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("doctor")]
     public async Task<IActionResult> GetDoctorRecords([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        // Return empty success for now - service doesn't have GetByDoctor
-        return Ok(ApiResponse<List<ConsultationRecordDto>>.SuccessResponse(new List<ConsultationRecordDto>()));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.GetByDoctorAsync(userId.Value, page, pageSize);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>GET /api/v1/consultation-records/{id} — Get record by ID</summary>
+    /// <summary>GET /api/v1/consultation-notes/{id} — Get record by ID</summary>
     [Authorize]
     [HttpGet("{recordId}")]
     public async Task<IActionResult> GetById(Guid recordId)
@@ -348,12 +368,22 @@ public class TreatmentPackagesController : ControllerBase
         return Task.FromResult<IActionResult>(BadRequest(ApiResponse.ErrorResponse("Treatment packages cannot be modified after creation")));
     }
 
+    /// <summary>PUT /api/v1/treatment-packages/cancel/{id} — Cancel package (Doctor or Patient)</summary>
+    [HttpPut("cancel/{packageId}")]
+    public async Task<IActionResult> Cancel(Guid packageId, [FromBody] string? reason)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.CancelPackageAsync(packageId, userId.Value, reason);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>DELETE /api/v1/treatment-packages/{id} — Soft-delete package (Doctor) — stub</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpDelete("{packageId}")]
     public Task<IActionResult> Delete(Guid packageId)
     {
-        return Task.FromResult<IActionResult>(BadRequest(ApiResponse.ErrorResponse("Treatment packages cannot be deleted")));
+        return Task.FromResult<IActionResult>(BadRequest(ApiResponse.ErrorResponse("Treatment packages cannot be deleted. Use cancel instead.")));
     }
 
     /// <summary>POST /api/v1/treatment-packages/assign — Alias for create (Doctor)</summary>

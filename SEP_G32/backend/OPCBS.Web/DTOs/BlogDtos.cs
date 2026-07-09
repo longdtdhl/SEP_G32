@@ -82,3 +82,18 @@ public class BlogFilterDto
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 12;
 }
+
+public class BlogCommentWebDto
+{
+    public Guid Id { get; set; }
+    public Guid BlogPostId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class CreateBlogCommentWebDto
+{
+    public Guid BlogPostId { get; set; }
+    public string Content { get; set; } = string.Empty;
+}

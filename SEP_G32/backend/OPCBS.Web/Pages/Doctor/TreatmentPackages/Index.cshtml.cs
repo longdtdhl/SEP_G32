@@ -18,7 +18,8 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         Error = TempData["Error"] as string;
-        var (data, pagination, error) = await _api.GetAllAsync(CurrentPage);
+        var success = TempData["Success"] as string;
+        var (data, pagination, error) = await _api.GetAllAsync(CurrentPage, 50);
         Packages = data; Pagination = pagination; Error ??= error;
     }
 
@@ -26,6 +27,16 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.DeleteAsync(id);
         if (!success) TempData["Error"] = error;
+        return RedirectToPage();
+    }
+
+    [BindProperty] public string? CancelReason { get; set; }
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id)
+    {
+        var (success, error) = await _api.CancelAsync(id, CancelReason);
+        if (!success) TempData["Error"] = error;
+        else TempData["Success"] = "Đã hủy gói điều trị thành công.";
         return RedirectToPage();
     }
 }

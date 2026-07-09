@@ -9,15 +9,19 @@ public class BookModel : PageModel
 {
     private readonly IAppointmentApiService _appointmentService;
     private readonly IDoctorApiService _doctorService;
+    private readonly ITreatmentPackageApiService _treatmentService;
+    private readonly IAuthApiService _authService;
 
     [BindProperty] public CreateAppointmentDto Input { get; set; } = new();
     [BindProperty(SupportsGet = true)] public Guid? DoctorId { get; set; }
     [BindProperty(SupportsGet = true)] public string? Week { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? TreatmentPackageId { get; set; }
 
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public DoctorDto? Doctor { get; set; }
     public bool IsGuest => !User.Identity?.IsAuthenticated ?? true;
     public string? Error { get; set; }
+    public TreatmentPackageDto? TreatmentPackage { get; set; }
 
     // Week data
     public DateTime WeekStart { get; set; }
@@ -29,14 +33,36 @@ public class BookModel : PageModel
     public int CalStartHour { get; set; } = 8;
     public int CalEndHour { get; set; } = 18;
 
-    public BookModel(IAppointmentApiService appointmentService, IDoctorApiService doctorService)
+    public BookModel(
+        IAppointmentApiService appointmentService,
+        IDoctorApiService doctorService,
+        ITreatmentPackageApiService treatmentService,
+        IAuthApiService authService)
     {
         _appointmentService = appointmentService;
         _doctorService = doctorService;
+        _treatmentService = treatmentService;
+        _authService = authService;
     }
 
     public async Task OnGetAsync()
     {
+        // Auto fill patient info if logged in
+        if (!IsGuest)
+        {
+            try
+            {
+                var (profile, _) = await _authService.GetProfileAsync();
+                if (profile != null)
+                {
+                    Input.GuestName = profile.FullName;
+                    Input.GuestEmail = profile.Email;
+                    Input.GuestPhoneNumber = profile.PhoneNumber;
+                }
+            }
+            catch { }
+        }
+
         // Calculate week
         var today = DateTime.Today;
         if (!string.IsNullOrEmpty(Week) && DateTime.TryParse(Week, out var parsed))
@@ -49,6 +75,18 @@ public class BookModel : PageModel
         if (DoctorId.HasValue)
         {
             Input.DoctorId = DoctorId.Value;
+
+            // Load treatment package if specified
+            if (TreatmentPackageId.HasValue)
+            {
+                Input.TreatmentPackageId = TreatmentPackageId.Value;
+                try
+                {
+                    var (pkgData, _) = await _treatmentService.GetByIdAsync(TreatmentPackageId.Value);
+                    TreatmentPackage = pkgData;
+                }
+                catch { }
+            }
 
             // Load doctor info
             try

@@ -186,7 +186,13 @@ public enum NotificationType
     Package = 4,
     
     /// <summary>System notifications</summary>
-    System = 5
+    System = 5,
+
+    /// <summary>Appointment reminder (1 hour before)</summary>
+    Reminder = 6,
+
+    /// <summary>Consultation record notification</summary>
+    ConsultationNote = 7
 }
 
 /// <summary>

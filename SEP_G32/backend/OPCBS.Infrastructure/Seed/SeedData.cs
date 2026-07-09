@@ -34,7 +34,7 @@ public static class SeedData
             PermissionConstants.ManageDoctorProfile,
             PermissionConstants.ManageSchedule,
             PermissionConstants.ManageDoctorAppointments,
-            PermissionConstants.ManageConsultationRecords,
+            PermissionConstants.ManageConsultationNotes,
             PermissionConstants.ManageTreatmentPackages,
             PermissionConstants.ManageDoctorBlogs,
             PermissionConstants.PurchaseSubscription,
@@ -90,7 +90,7 @@ public static class SeedData
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorProfile);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageSchedule);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorAppointments);
-        MapPermission(RoleConstants.Doctor, PermissionConstants.ManageConsultationRecords);
+        MapPermission(RoleConstants.Doctor, PermissionConstants.ManageConsultationNotes);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageTreatmentPackages);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorBlogs);
         MapPermission(RoleConstants.Doctor, PermissionConstants.PurchaseSubscription);
@@ -535,39 +535,58 @@ public static class SeedData
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 16. CONSULTATION RECORDS (for completed appointments)
+        // 16. CONSULTATION NOTES & PATIENT RECORDS (for completed appointments)
         // ═══════════════════════════════════════════════
         if (completedApts.Count > 0)
         {
-            context.ConsultationRecords.Add(new ConsultationRecord
+            var pRecord1 = new PatientRecord
+            {
+                DoctorId = completedApts[0].DoctorId,
+                PatientId = completedApts[0].PatientId,
+                Doctor = completedApts[0].Doctor,
+                Patient = completedApts[0].Patient,
+                GeneralNotes = "Created from Seed data"
+            };
+            context.PatientRecords.Add(pRecord1);
+
+            context.ConsultationNotes.Add(new ConsultationNote
             {
                 AppointmentId = completedApts[0].Id,
                 DoctorId = completedApts[0].DoctorId,
-                PatientId = completedApts[0].PatientId!.Value,
+                PatientRecord = pRecord1,
                 ConsultationSummary = "Bệnh nhân có biểu hiện lo lắng quá mức, mất ngủ, khó tập trung. Đã tiến hành CBT phiên 1. Hướng dẫn kỹ thuật thở sâu và ghi nhật ký lo âu.",
                 Diagnosis = "Rối loạn lo âu lan tỏa (GAD)",
                 Recommendation = "Tiếp tục CBT trong 6-8 phiên. Tập thở sâu 10 phút/ngày. Ghi nhật ký lo âu hàng ngày. Tái khám sau 2 tuần.",
                 Appointment = completedApts[0],
-                Doctor = completedApts[0].Doctor,
-                Patient = completedApts[0].Patient!
+                Doctor = completedApts[0].Doctor
             });
         }
         if (completedApts.Count > 2)
         {
-            context.ConsultationRecords.Add(new ConsultationRecord
+            var pRecord2 = new PatientRecord
+            {
+                DoctorId = completedApts[2].DoctorId,
+                PatientId = completedApts[2].PatientId,
+                Doctor = completedApts[2].Doctor,
+                Patient = completedApts[2].Patient,
+                GeneralNotes = "Created from Seed data"
+            };
+            context.PatientRecords.Add(pRecord2);
+
+            context.ConsultationNotes.Add(new ConsultationNote
             {
                 AppointmentId = completedApts[2].Id,
                 DoctorId = completedApts[2].DoctorId,
-                PatientId = completedApts[2].PatientId!.Value,
+                PatientRecord = pRecord2,
                 ConsultationSummary = "Gia đình có xung đột giữa vợ chồng liên quan đến cách nuôi dạy con. Đã tiến hành phiên tham vấn gia đình. Xác định các mẫu giao tiếp tiêu cực.",
                 Diagnosis = "Xung đột gia đình - vấn đề giao tiếp",
                 Recommendation = "Lên lịch 4 phiên trị liệu gia đình. Tập luyện kỹ năng giao tiếp bất bạo lực. Cả hai vợ chồng cùng tham gia.",
                 Appointment = completedApts[2],
-                Doctor = completedApts[2].Doctor,
-                Patient = completedApts[2].Patient!
+                Doctor = completedApts[2].Doctor
             });
         }
         await context.SaveChangesAsync();
+        await SeedPsychometricsAsync(context);
     }
 
     private static User CreateUser(
@@ -593,5 +612,91 @@ public static class SeedData
         };
         context.Users.Add(user);
         return user;
+    }
+
+    private static async Task SeedPsychometricsAsync(OpcbsDbContext context)
+    {
+        if (context.PsychometricTests.Any())
+            return;
+
+        // 1. Seed PHQ-9
+        var phq9 = new PsychometricTest
+        {
+            Title = "Bảng đánh giá sức khỏe bệnh nhân (PHQ-9)",
+            Description = "Thang đo 9 câu hỏi giúp đánh giá mức độ trầm cảm của bạn trong 2 tuần gần nhất.",
+            TestType = "PHQ9"
+        };
+        context.PsychometricTests.Add(phq9);
+
+        var phq9Questions = new[]
+        {
+            "Ít hứng thú hoặc không có niềm vui trong các hoạt động.",
+            "Cảm thấy chán nản, u uất hoặc thất vọng.",
+            "Gặp khó khăn về giấc ngủ (khó vào giấc, ngủ không sâu hoặc ngủ quá nhiều).",
+            "Cảm thấy mệt mỏi hoặc thiếu năng lượng.",
+            "Ăn mất ngon hoặc ăn quá nhiều.",
+            "Cảm thấy tồi tệ về bản thân – nghĩ mình thất bại, hoặc làm cho bản thân và gia đình thất vọng.",
+            "Gặp khó khăn trong tập trung (khi đọc báo, xem tivi, v.v.).",
+            "Nói năng hoặc đi lại chậm chạp đến mức người khác nhận thấy, hoặc ngược lại, bồn chồn đến mức không thể ngồi yên.",
+            "Có suy nghĩ muốn tự hại hoặc nghĩ rằng mình chết đi sẽ tốt hơn."
+        };
+
+        for (int i = 0; i < phq9Questions.Length; i++)
+        {
+            context.PsychometricQuestions.Add(new PsychometricQuestion
+            {
+                Test = phq9,
+                QuestionText = phq9Questions[i],
+                QuestionNumber = i + 1,
+                Category = "Depression"
+            });
+        }
+
+        // 2. Seed DASS-21
+        var dass21 = new PsychometricTest
+        {
+            Title = "Thang đo Trầm cảm, Lo âu, Căng thẳng (DASS-21)",
+            Description = "Bộ trắc nghiệm gồm 21 câu hỏi giúp đánh giá trạng thái cảm xúc của bạn trong tuần qua.",
+            TestType = "DASS21"
+        };
+        context.PsychometricTests.Add(dass21);
+
+        var dass21Questions = new[]
+        {
+            new { Text = "Tôi cảm thấy khó khăn để thư giãn.", Cat = "Stress" },
+            new { Text = "Tôi bị khô miệng.", Cat = "Anxiety" },
+            new { Text = "Tôi dường như không có chút cảm xúc tích cực nào.", Cat = "Depression" },
+            new { Text = "Tôi bị khó thở (ví dụ: thở nhanh, hụt hơi mặc dù không làm việc nặng).", Cat = "Anxiety" },
+            new { Text = "Tôi cảm thấy khó khăn để bắt đầu làm một việc gì đó.", Cat = "Depression" },
+            new { Text = "Tôi có xu hướng phản ứng thái quá với các tình huống.", Cat = "Stress" },
+            new { Text = "Tôi bị run rẩy (ví dụ: chân tay run).", Cat = "Anxiety" },
+            new { Text = "Tôi cảm thấy mình đang tiêu phí nhiều năng lượng thần kinh.", Cat = "Stress" },
+            new { Text = "Tôi lo lắng về những tình huống có thể làm tôi hoảng loạn hoặc làm trò cười.", Cat = "Anxiety" },
+            new { Text = "Tôi cảm thấy mình không có gì để mong đợi phía trước.", Cat = "Depression" },
+            new { Text = "Tôi thấy mình dễ bị kích động.", Cat = "Stress" },
+            new { Text = "Tôi cảm thấy khó thư giãn hoàn toàn.", Cat = "Stress" },
+            new { Text = "Tôi cảm thấy buồn chán và u uất.", Cat = "Depression" },
+            new { Text = "Tôi không khoan dung với bất kỳ điều gì cản trở tôi làm việc.", Cat = "Stress" },
+            new { Text = "Tôi cảm thấy mình gần như hoảng loạn.", Cat = "Anxiety" },
+            new { Text = "Tôi không thể cảm thấy hào hứng với bất kỳ điều gì.", Cat = "Depression" },
+            new { Text = "Tôi cảm thấy mình không có giá trị.", Cat = "Depression" },
+            new { Text = "Tôi thấy mình khá nhạy cảm và dễ xúc động.", Cat = "Stress" },
+            new { Text = "Tôi nghe thấy tiếng nhịp tim dù không vận động nặng (tim đập thình thịch).", Cat = "Anxiety" },
+            new { Text = "Tôi cảm thấy sợ hãi vô cớ.", Cat = "Anxiety" },
+            new { Text = "Tôi cảm thấy cuộc sống vô nghĩa.", Cat = "Depression" }
+        };
+
+        for (int i = 0; i < dass21Questions.Length; i++)
+        {
+            context.PsychometricQuestions.Add(new PsychometricQuestion
+            {
+                Test = dass21,
+                QuestionText = dass21Questions[i].Text,
+                QuestionNumber = i + 1,
+                Category = dass21Questions[i].Cat
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 }

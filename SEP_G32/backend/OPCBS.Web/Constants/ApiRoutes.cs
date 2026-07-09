@@ -30,8 +30,11 @@ public static class ApiRoutes
     public const string Schedules = $"{Base}/schedules";
     public const string ScheduleDaysOff = $"{Schedules}/days-off";
 
+    // Patient Records
+    public const string PatientRecords = $"{Base}/patient-records";
+
     // Consultation Records
-    public const string ConsultationRecords = $"{Base}/consultation-records";
+    public const string ConsultationNotes = $"{Base}/consultation-notes";
 
     // Treatment Packages
     public const string TreatmentPackages = $"{Base}/treatment-packages";
@@ -71,4 +74,7 @@ public static class ApiRoutes
     // Business Manager
     public const string BMAnalytics = $"{Base}/business-manager/analytics";
     public const string BMReports = $"{Base}/business-manager/reports";
+
+    // Psychometrics
+    public const string Psychometrics = $"{Base}/psychometrics";
 }

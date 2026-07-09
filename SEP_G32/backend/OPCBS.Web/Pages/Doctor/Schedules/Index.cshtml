@@ -7,29 +7,143 @@
     var today = DateTime.Today;
     var currentMonth = new DateTime(today.Year, today.Month, 1);
     
+    // Stats
+    int totalSlots = Model.ActualSlots.Count;
+    int availableSlots = Model.ActualSlots.Count(s => s.Status == 0);
+    int bookedSlots = Model.ActualSlots.Count(s => s.Status == 1);
+    int blockedSlots = Model.ActualSlots.Count(s => s.Status == 2);
+    
+    // Days off as background events for calendar
+    var daysOffJson = System.Text.Json.JsonSerializer.Serialize(Model.DaysOff.SelectMany(d => {
+        var dates = new List<object>();
+        for (var dt = d.StartDate.Date; dt <= d.EndDate.Date; dt = dt.AddDays(1))
+        {
+            dates.Add(new {
+                start = dt.ToString("yyyy-MM-dd"),
+                end = dt.AddDays(1).ToString("yyyy-MM-dd"),
+                display = "background",
+                backgroundColor = "rgba(239,68,68,0.08)",
+                borderColor = "transparent",
+                title = "Ngày nghỉ",
+                extendedProps = new { isDayOff = true, reason = d.Reason ?? "" }
+            });
+        }
+        return dates;
+    }));
+    
     var eventsJson = System.Text.Json.JsonSerializer.Serialize(Model.ActualSlots.Select(s => new {
         id = s.Id,
         title = s.Status == 0 ? "Trống" : s.Status == 1 ? "Đã đặt" : "Đã khóa",
         start = $"{s.Date}T{s.StartTime}",
         end = $"{s.Date}T{s.EndTime}",
-        backgroundColor = s.Status == 0 ? "var(--mb-primary-light)" : s.Status == 1 ? "#fff3cd" : "#f0f0f0",
-        borderColor = s.Status == 0 ? "var(--mb-primary)" : s.Status == 1 ? "#ffc107" : "#ddd",
-        textColor = "#000",
+        backgroundColor = s.Status == 0 ? "#ecfdf5" : s.Status == 1 ? "#fef3c7" : "#f1f5f9",
+        borderColor = s.Status == 0 ? "#10b981" : s.Status == 1 ? "#f59e0b" : "#94a3b8",
+        textColor = s.Status == 0 ? "#065f46" : s.Status == 1 ? "#92400e" : "#475569",
         extendedProps = new { status = s.Status }
     }));
 }
 
+<style>
+    /* === Schedule Page Premium Styles === */
+    .schedule-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+        background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid rgba(78,139,112,0.08);
+        display: flex; align-items: center; gap: 1rem; transition: all 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+    .stat-icon {
+        width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0;
+    }
+    .stat-icon.total { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .stat-icon.available { background: rgba(16,185,129,0.1); color: #10b981; }
+    .stat-icon.booked { background: rgba(245,158,11,0.1); color: #f59e0b; }
+    .stat-icon.blocked { background: rgba(148,163,184,0.15); color: #64748b; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #1e293b; line-height: 1; }
+    .stat-label { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+    .calendar-card {
+        background: white; border-radius: 16px; border: 1px solid rgba(78,139,112,0.08);
+        overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .calendar-card .card-body { padding: 1.5rem; }
+
+    /* FullCalendar Customization */
+    .fc { font-family: 'Segoe UI', sans-serif; }
+    .fc-event { cursor: pointer; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.15s; }
+    .fc-event:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.12); transform: scale(1.01); }
+    .fc-v-event .fc-event-main-frame { padding: 4px 6px; }
+    .fc-theme-standard th { padding: 10px 0; background: linear-gradient(135deg, #f8fffe, #f0fdf8); font-weight: 600; color: #1e293b; }
+    .fc-toolbar-title { font-size: 1.2rem !important; font-weight: 700 !important; color: #1e293b; }
+    .fc-button { border-radius: 8px !important; font-weight: 500 !important; font-size: 0.85rem !important; padding: 6px 14px !important; }
+    .fc-button-primary { background-color: var(--mb-primary) !important; border-color: var(--mb-primary) !important; }
+    .fc-button-primary:not(.fc-button-active):hover { background-color: var(--mb-primary-dark) !important; }
+    .fc-button-primary:not(.fc-button-active) { background-color: white !important; color: var(--mb-primary) !important; border-color: #e2e8f0 !important; }
+    .fc-button-active { background-color: var(--mb-primary) !important; color: white !important; }
+    .fc-today-button { background-color: var(--mb-primary) !important; border-color: var(--mb-primary) !important; color: white !important; }
+    .fc-day-today { background-color: rgba(16,185,129,0.04) !important; }
+    .fc-timegrid-slot { height: 3em; }
+    .fc-col-header-cell { border-bottom: 2px solid rgba(78,139,112,0.15) !important; }
+
+    /* Day off background */
+    .fc-bg-event { opacity: 1 !important; }
+
+    /* Legend */
+    .schedule-legend {
+        background: white; border-radius: 14px; padding: 1rem 1.5rem; border: 1px solid rgba(78,139,112,0.08);
+        display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+    .legend-items { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 500; color: #475569; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+
+    /* Days off badge list */
+    .days-off-bar {
+        background: white; border-radius: 14px; padding: 1rem 1.5rem; border: 1px solid rgba(78,139,112,0.08);
+        margin-bottom: 1.5rem;
+    }
+    .days-off-bar .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .days-off-bar .bar-header h6 { margin: 0; font-size: 0.85rem; font-weight: 600; color: #1e293b; }
+    .day-off-chip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: #fef2f2;
+        border: 1px solid #fecaca; border-radius: 20px; font-size: 0.78rem; color: #991b1b; font-weight: 500;
+    }
+    .day-off-chip .bi { font-size: 0.7rem; }
+    .day-off-chip form { display: inline; }
+    .day-off-chip .btn-remove { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 0 0 4px; font-size: 0.8rem; }
+    .day-off-chip .btn-remove:hover { color: #b91c1c; }
+
+    /* Modal */
+    .modal-content { border-radius: 16px !important; border: none !important; box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important; }
+    .modal-header { border-bottom: 1px solid #f1f5f9; padding: 1.25rem 1.5rem; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { border-top: none; padding: 1rem 1.5rem; background: #f8fafc; }
+
+    /* Header actions */
+    .header-actions .btn { border-radius: 10px; font-weight: 500; font-size: 0.8rem; padding: 6px 14px; }
+
+    @@media (max-width: 768px) {
+        .schedule-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<!-- Page Header -->
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Quản lý lịch làm việc</h1>
-    <div class="d-flex gap-2 align-items-center">
-        <select id="monthSelector" class="form-select form-select-sm" style="width: auto;">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Quản lý lịch làm việc
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Tạo, quản lý và theo dõi lịch khám bệnh của bạn</p>
+    </div>
+    <div class="header-actions d-flex gap-2 align-items-center">
+        <select id="monthSelector" class="form-select form-select-sm" style="width:auto; border-radius:10px; font-size:0.8rem;">
             @for (int i = 0; i < 12; i++)
             {
                 var d = currentMonth.AddMonths(i);
                 <option value="@d.ToString("yyyy-MM-01")">Tháng @d.ToString("MM/yyyy")</option>
             }
         </select>
-        <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Bạn có chắc muốn reset (xóa) toàn bộ lịch trống và lịch đã khóa (trừ những lịch đã có người đặt)?');">
+        <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ slot trống? (Slot đã khóa và đã đặt sẽ được giữ lại)');">
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>
@@ -38,34 +152,94 @@
     </div>
 </div>
 
+<!-- Alerts -->
 @if (Model.Success != null) { 
-    <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle me-1"></i>@Model.Success
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none; background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
+        <i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i>@Model.Success
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div> 
 }
 @if (Model.Error != null) { 
-    <div class="alert alert-warning alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div> 
 }
 
-<div class="card shadow-sm border-0 mb-4">
+<!-- Stats Cards -->
+<div class="schedule-stats">
+    <div class="stat-card">
+        <div class="stat-icon total"><i class="bi bi-calendar3"></i></div>
+        <div>
+            <div class="stat-value">@totalSlots</div>
+            <div class="stat-label">Tổng slot</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon available"><i class="bi bi-check-circle"></i></div>
+        <div>
+            <div class="stat-value" style="color:#10b981;">@availableSlots</div>
+            <div class="stat-label">Slot trống</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon booked"><i class="bi bi-person-check"></i></div>
+        <div>
+            <div class="stat-value" style="color:#f59e0b;">@bookedSlots</div>
+            <div class="stat-label">Đã đặt</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blocked"><i class="bi bi-lock"></i></div>
+        <div>
+            <div class="stat-value" style="color:#64748b;">@blockedSlots</div>
+            <div class="stat-label">Đã khóa</div>
+        </div>
+    </div>
+</div>
+
+<!-- Days Off Bar (inline) -->
+@if (Model.DaysOff.Any())
+{
+    <div class="days-off-bar">
+        <div class="bar-header">
+            <h6><i class="bi bi-calendar-x me-1 text-danger"></i>Ngày nghỉ đã đăng ký</h6>
+            <a asp-page="DaysOff" style="font-size:0.78rem; color:var(--mb-primary); text-decoration:none; font-weight:500;">Quản lý →</a>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var d in Model.DaysOff)
+            {
+                <div class="day-off-chip">
+                    <i class="bi bi-x-circle-fill"></i>
+                    @d.StartDate.ToString("dd/MM") @(d.EndDate != d.StartDate ? $"- {d.EndDate:dd/MM}" : "")
+                    @if (!string.IsNullOrEmpty(d.Reason)) { <span style="opacity:0.7;">(@d.Reason)</span> }
+                    <form method="post" asp-page-handler="DeleteDayOff" onsubmit="return confirm('Xóa ngày nghỉ này?');">
+                        <input type="hidden" name="id" value="@d.Id" />
+                        <button type="submit" class="btn-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Calendar -->
+<div class="calendar-card">
     <div class="card-body">
         <div id="calendar"></div>
     </div>
 </div>
 
-<!-- Legend & Tips -->
-<div class="p-3 rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-3 shadow-sm border border-light">
-    <div class="wc-legend d-flex gap-3 align-items-center flex-wrap">
-        <span class="fw-semibold text-muted small me-2"><i class="bi bi-info-circle me-1"></i>Chú thích:</span>
-        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:var(--mb-primary-light);border:1px solid rgba(21,61,54,0.25);"></div>Trống</div>
-        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#f0f0f0;border:1px solid #ddd;"></div>Bị khóa</div>
-        <div class="wc-legend-item d-flex align-items-center gap-1 small fw-medium text-dark"><div class="legend-dot rounded-circle" style="width:12px;height:12px;background:#fff3cd;border:1px solid #ffc107;"></div>Đã được đặt</div>
+<!-- Legend -->
+<div class="schedule-legend">
+    <div class="legend-items">
+        <span style="font-weight:600; color:#1e293b; font-size:0.8rem;"><i class="bi bi-info-circle me-1"></i>Chú thích:</span>
+        <div class="legend-item"><div class="legend-dot" style="background:#ecfdf5; border:1.5px solid #10b981;"></div>Trống</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fef3c7; border:1.5px solid #f59e0b;"></div>Đã đặt</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f1f5f9; border:1.5px solid #94a3b8;"></div>Đã khóa</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.08); border:1.5px solid #fca5a5;"></div>Ngày nghỉ</div>
     </div>
-    <div class="text-muted small"><i class="bi bi-hand-index-thumb me-1"></i>Kéo thả trên lịch để tạo một hoặc nhiều slot làm việc.</div>
+    <div style="font-size:0.78rem; color:#94a3b8;"><i class="bi bi-hand-index-thumb me-1"></i>Kéo thả trên lịch để tạo slot làm việc</div>
 </div>
 
 <!-- Create Slot Modal -->
@@ -74,7 +248,9 @@
         <div class="modal-content">
             <form method="post" asp-page-handler="CreateSlot">
                 <div class="modal-header">
-                    <h5 class="modal-title fs-6"><i class="bi bi-calendar-plus me-2 text-primary"></i>Thêm Slot Khám</h5>
+                    <h5 class="modal-title" style="font-size:1rem; font-weight:600;">
+                        <i class="bi bi-calendar-plus me-2" style="color:var(--mb-primary);"></i>Thêm Slot Khám
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -82,77 +258,177 @@
                     
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Ngày</label>
-                        <input type="text" class="form-control form-control-sm bg-light" id="modalDateDisplay" readonly />
+                        <input type="text" class="form-control form-control-sm" id="modalDateDisplay" readonly style="background:#f8fafc; border-radius:10px;" />
                     </div>
                     
                     <div class="row g-2">
                         <div class="col-6">
                             <label class="form-label small fw-medium">Giờ bắt đầu</label>
-                            <input type="time" name="startTime" id="modalStartTime" class="form-control form-control-sm" required />
+                            <input type="time" name="startTime" id="modalStartTime" class="form-control form-control-sm" required style="border-radius:10px;" />
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-medium">Giờ kết thúc</label>
-                            <input type="time" name="endTime" id="modalEndTime" class="form-control form-control-sm" required />
+                            <input type="time" name="endTime" id="modalEndTime" class="form-control form-control-sm" required style="border-radius:10px;" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light p-2 border-0">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-sm btn-primary">Lưu Slot</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                        <i class="bi bi-check-lg me-1"></i>Lưu Slot
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Hidden form for actions -->
-<form id="actionForm" method="post" style="display:none;">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="slotId" id="actionSlotId" />
-</form>
+<!-- Slot Detail Modal -->
+<div class="modal fade" id="slotDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:1rem; font-weight:600;">
+                    <i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Chi tiết Slot
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div id="detailStatusBadge" class="px-2 py-1 rounded-pill fw-semibold" style="font-size:0.8rem;"></div>
+                    </div>
+                    <div style="background:#f8fafc; border-radius:12px; padding:1rem;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="font-size:0.8rem; color:#64748b;">Ngày</span>
+                            <span id="detailDate" style="font-size:0.85rem; font-weight:600; color:#1e293b;"></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span style="font-size:0.8rem; color:#64748b;">Thời gian</span>
+                            <span id="detailTime" style="font-size:0.85rem; font-weight:600; color:#1e293b;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="detailActions" style="flex-wrap:nowrap; gap:8px;">
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
+                
+                <!-- Toggle form with proper Razor tag helpers -->
+                <form id="toggleForm" method="post" asp-page-handler="ToggleBlock" class="flex-fill m-0" style="display:none;">
+                    <input type="hidden" name="slotId" id="toggleSlotId" />
+                    <button type="submit" id="btnToggleSlot" class="btn btn-sm btn-outline-secondary w-100" style="border-radius:10px;"></button>
+                </form>
+                
+                <!-- Delete form with proper Razor tag helpers -->
+                <form id="deleteForm" method="post" asp-page-handler="DeleteSlot" class="flex-fill m-0" style="display:none;" onsubmit="return confirm('Bạn có chắc muốn xóa slot này?');">
+                    <input type="hidden" name="slotId" id="deleteSlotId" />
+                    <button type="submit" class="btn btn-sm btn-danger w-100" style="border-radius:10px;">
+                        <i class="bi bi-trash3 me-1"></i>Xóa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
     <script>
-        function submitAction(handler, slotId) {
-            var form = document.getElementById('actionForm');
-            form.action = "?handler=" + handler;
-            document.getElementById('actionSlotId').value = slotId;
-            form.submit();
+        var currentSlotId = null;
+        var currentSlotStatus = null;
+
+        function showSlotDetail(event) {
+            currentSlotId = event.id;
+            currentSlotStatus = event.extendedProps.status;
+
+            var badge = document.getElementById('detailStatusBadge');
+            var detailDate = document.getElementById('detailDate');
+            var detailTime = document.getElementById('detailTime');
+            var toggleForm = document.getElementById('toggleForm');
+            var deleteForm = document.getElementById('deleteForm');
+            var btnToggle = document.getElementById('btnToggleSlot');
+
+            // Set slotId on both forms
+            document.getElementById('toggleSlotId').value = currentSlotId;
+            document.getElementById('deleteSlotId').value = currentSlotId;
+
+            // Date & time
+            var start = event.start;
+            var end = event.end;
+            detailDate.textContent = String(start.getDate()).padStart(2,'0') + '/' + String(start.getMonth()+1).padStart(2,'0') + '/' + start.getFullYear();
+            detailTime.textContent = String(start.getHours()).padStart(2,'0') + ':' + String(start.getMinutes()).padStart(2,'0') + ' - ' + String(end.getHours()).padStart(2,'0') + ':' + String(end.getMinutes()).padStart(2,'0');
+
+            // Status badge & show/hide action forms
+            if (currentSlotStatus === 0) {
+                badge.textContent = '\u2705 Trống';
+                badge.style.cssText = 'background:#ecfdf5; color:#065f46; font-size:0.8rem; padding:4px 12px;';
+                btnToggle.innerHTML = '<i class="bi bi-lock me-1"></i>Khóa';
+                btnToggle.className = 'btn btn-sm btn-outline-secondary w-100';
+                btnToggle.style.borderRadius = '10px';
+                toggleForm.style.display = '';
+                deleteForm.style.display = '';
+            } else if (currentSlotStatus === 1) {
+                badge.textContent = '\uD83D\uDCC5 Đã đặt';
+                badge.style.cssText = 'background:#fef3c7; color:#92400e; font-size:0.8rem; padding:4px 12px;';
+                toggleForm.style.display = 'none';
+                deleteForm.style.display = 'none';
+            } else {
+                badge.textContent = '\uD83D\uDD12 Đã khóa';
+                badge.style.cssText = 'background:#f1f5f9; color:#475569; font-size:0.8rem; padding:4px 12px;';
+                btnToggle.innerHTML = '<i class="bi bi-unlock me-1"></i>Mở khóa';
+                btnToggle.className = 'btn btn-sm btn-outline-primary w-100';
+                btnToggle.style.borderRadius = '10px';
+                toggleForm.style.display = '';
+                deleteForm.style.display = '';
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('slotDetailModal'));
+            modal.show();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var events = @Html.Raw(eventsJson);
+            var daysOffEvents = @Html.Raw(daysOffJson);
+            var allEvents = events.concat(daysOffEvents);
             
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
+                locale: 'vi',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Hôm nay',
+                    week: 'Tuần',
+                    day: 'Ngày'
                 },
                 slotMinTime: '06:00:00',
                 slotMaxTime: '22:00:00',
                 allDaySlot: false,
                 selectable: true,
                 selectMirror: true,
-                events: events,
+                events: allEvents,
+                height: 'auto',
+                expandRows: true,
+                slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                 validRange: {
                     start: '@today.ToString("yyyy-MM-dd")'
                 },
                 
                 select: function(info) {
-                    // info.start, info.end
-                    let startDate = info.start;
-                    let endDate = info.end;
+                    var startDate = info.start;
+                    var endDate = info.end;
                     
-                    let dateStr = startDate.getFullYear() + "-" + 
-                                  String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                    var dateStr = startDate.getFullYear() + '-' + 
+                                  String(startDate.getMonth() + 1).padStart(2, '0') + '-' + 
                                   String(startDate.getDate()).padStart(2, '0');
                                   
-                    let startTimeStr = String(startDate.getHours()).padStart(2, '0') + ":" + String(startDate.getMinutes()).padStart(2, '0');
-                    let endTimeStr = String(endDate.getHours()).padStart(2, '0') + ":" + String(endDate.getMinutes()).padStart(2, '0');
+                    var startTimeStr = String(startDate.getHours()).padStart(2, '0') + ':' + String(startDate.getMinutes()).padStart(2, '0');
+                    var endTimeStr = String(endDate.getHours()).padStart(2, '0') + ':' + String(endDate.getMinutes()).padStart(2, '0');
                     
                     document.getElementById('modalDate').value = dateStr;
                     document.getElementById('modalDateDisplay').value = dateStr;
@@ -166,46 +442,37 @@
                 },
                 
                 eventClick: function(info) {
-                    let target = info.jsEvent.target.closest('button');
-                    if (target) {
-                        info.jsEvent.preventDefault();
-                        if (target.classList.contains('btn-delete')) {
-                            if (confirm('Xóa slot này?')) {
-                                submitAction('DeleteSlot', info.event.id);
-                            }
-                        } else if (target.classList.contains('btn-toggle')) {
-                            submitAction('ToggleBlock', info.event.id);
-                        }
-                    }
+                    // Ignore day-off background events
+                    if (info.event.extendedProps.isDayOff) return;
+                    
+                    // Open slot detail modal
+                    showSlotDetail(info.event);
                 },
                 
                 eventContent: function(arg) {
-                    let status = arg.event.extendedProps.status;
-                    let icon = status === 0 ? 'bi-unlock' : (status === 1 ? 'bi-calendar-check-fill' : 'bi-lock-fill');
-                    let btnHtml = '';
+                    // Don't customize day-off background events
+                    if (arg.event.extendedProps.isDayOff) return;
                     
-                    if (status === 0 || status === 2) {
-                        let toggleIcon = status === 0 ? 'bi-lock' : 'bi-unlock';
-                        let toggleTitle = status === 0 ? 'Khóa' : 'Mở khóa';
-                        
-                        btnHtml = `
-                        <div class="d-flex gap-1 mt-1">
-                            <button type="button" class="btn btn-sm btn-light border p-0 px-1 btn-toggle" title="${toggleTitle}">
-                                <i class="bi ${toggleIcon}"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-danger border p-0 px-1 btn-delete" title="Xóa">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>`;
+                    var status = arg.event.extendedProps.status;
+                    var icon, statusLabel;
+                    
+                    if (status === 0) {
+                        icon = 'bi-check-circle'; statusLabel = 'Trống';
+                    } else if (status === 1) {
+                        icon = 'bi-person-check-fill'; statusLabel = 'Đã đặt';
+                    } else {
+                        icon = 'bi-lock-fill'; statusLabel = 'Đã khóa';
                     }
                     
                     return {
-                        html: `
-                        <div class="fc-event-main-frame p-1 d-flex flex-column h-100" style="font-size: 0.8rem; overflow: hidden;">
-                            <div class="fc-event-time fw-bold">${arg.timeText}</div>
-                            <div class="fc-event-title text-truncate"><i class="bi ${icon} me-1"></i>${arg.event.title}</div>
-                            ${btnHtml}
-                        </div>`
+                        html: '<div style="padding:3px 6px; display:flex; flex-direction:column; height:100%; font-size:0.78rem; overflow:hidden; cursor:pointer;">' +
+                              '<div style="font-weight:600; font-size:0.75rem;">' + arg.timeText + '</div>' +
+                              '<div style="display:flex; align-items:center; gap:4px; margin-top:2px;">' +
+                              '<i class="bi ' + icon + '" style="font-size:0.7rem;"></i>' +
+                              '<span>' + statusLabel + '</span>' +
+                              '</div>' +
+                              '<div style="font-size:0.65rem; color:rgba(0,0,0,0.4); margin-top:auto;">Click để xem</div>' +
+                              '</div>'
                     };
                 }
             });
@@ -213,7 +480,7 @@
             calendar.render();
             window.calendarObj = calendar;
             
-            // Link month selector to calendar
+            // Link month selector
             document.getElementById('monthSelector').addEventListener('change', function() {
                 if (window.calendarObj) {
                     window.calendarObj.gotoDate(this.value);
@@ -221,21 +488,4 @@
             });
         });
     </script>
-    <style>
-        .fc-event {
-            cursor: pointer;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        .fc-v-event .fc-event-main-frame {
-            padding: 2px;
-        }
-        .fc-theme-standard th {
-            padding: 8px 0;
-            background-color: var(--mb-bg);
-        }
-        .fc-toolbar-title {
-            font-size: 1.25rem !important;
-            font-weight: 600;
-        }
-    </style>
 }

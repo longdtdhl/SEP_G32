@@ -1,0 +1,136 @@
+@page
+@model OPCBS.Web.Pages.Notifications.IndexModel
+@{
+    ViewData["Title"] = "Thông báo";
+}
+
+<div class="container py-4" style="max-width: 800px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1 fw-bold" style="color: var(--mb-primary);">
+                <i class="bi bi-bell me-2"></i>Thông báo
+            </h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                @if (Model.UnreadCount > 0)
+                {
+                    <span class="badge bg-primary rounded-pill me-1">@Model.UnreadCount</span>
+                    <span>thông báo chưa đọc</span>
+                }
+                else
+                {
+                    <span>Tất cả thông báo đã được đọc</span>
+                }
+            </p>
+        </div>
+        @if (Model.UnreadCount > 0)
+        {
+            <form method="post" asp-page-handler="MarkAllRead">
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-check2-all me-1"></i>Đánh dấu tất cả đã đọc
+                </button>
+            </form>
+        }
+    </div>
+
+    <!-- Notification List -->
+    @if (!Model.Notifications.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-bell-slash" style="font-size: 4rem; color: #ddd;"></i>
+            <h5 class="text-muted mt-3">Không có thông báo</h5>
+            <p class="text-muted">Bạn sẽ nhận thông báo khi có sự kiện quan trọng.</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group shadow-sm" style="border-radius: 14px; overflow: hidden;">
+            @foreach (var notif in Model.Notifications)
+            {
+                var isUnread = !notif.IsRead;
+                var bgClass = isUnread ? "background: #f0f7ff;" : "";
+                var icon = notif.Type switch
+                {
+                    "Appointment" => "📅",
+                    "Verification" => "✅",
+                    "Subscription" => "💳",
+                    "Package" => "📦",
+                    "System" => "🔔",
+                    "Reminder" => "⏰",
+                    "ConsultationNote" => "📋",
+                    _ => "🔔"
+                };
+                var redirectUrl = notif.RelatedEntityType switch
+                {
+                    "Appointment" => "/Patient/Appointments/Index",
+                    "AppointmentReminder" => "/Patient/Appointments/Index",
+                    "ConsultationNote" => "/Patient/ConsultationRecords/Index",
+                    "TreatmentPackage" => "/Patient/TreatmentPackages/Index",
+                    _ => "#"
+                };
+
+                <div class="list-group-item border-0 d-flex align-items-start gap-3 py-3" style="@bgClass border-bottom: 1px solid #f0f0f0 !important;">
+                    <div style="font-size: 1.6rem; min-width: 36px; text-align: center;">@icon</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 fw-bold" style="font-size: 0.9rem;">
+                                    @notif.Title
+                                    @if (isUnread)
+                                    {
+                                        <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.6rem;">Mới</span>
+                                    }
+                                </h6>
+                                <p class="mb-1 text-muted" style="font-size: 0.85rem;">@notif.Message</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    @{
+                                        var diff = DateTime.UtcNow - notif.CreatedAt;
+                                        if (diff.TotalMinutes < 1) { <text>Vừa xong</text> }
+                                        else if (diff.TotalHours < 1) { <text>@((int)diff.TotalMinutes) phút trước</text> }
+                                        else if (diff.TotalDays < 1) { <text>@((int)diff.TotalHours) giờ trước</text> }
+                                        else if (diff.TotalDays < 7) { <text>@((int)diff.TotalDays) ngày trước</text> }
+                                        else { <text>@notif.CreatedAt.ToString("dd/MM/yyyy HH:mm")</text> }
+                                    }
+                                </small>
+                            </div>
+                            <div class="d-flex gap-1 ms-2">
+                                @if (redirectUrl != "#")
+                                {
+                                    <a href="@redirectUrl" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 2px 8px;">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                }
+                                @if (isUnread)
+                                {
+                                    <form method="post" asp-page-handler="MarkRead" class="d-inline">
+                                        <input type="hidden" name="id" value="@notif.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem; padding: 2px 8px;" title="Đánh dấu đã đọc">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.Pagination != null && Model.Pagination.TotalItems > 15)
+        {
+            var totalPages = (int)Math.Ceiling((double)Model.Pagination.TotalItems / 15);
+            <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    @for (var i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="?CurrentPage=@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

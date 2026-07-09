@@ -5,147 +5,358 @@
     ViewData["UseDashboardLayout"] = true;
 }
 
+<style>
+    .pkg-detail-sidebar { border-radius: 16px; border: 1px solid #f1f5f9; overflow: hidden; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .pkg-sidebar-header {
+        padding: 1.25rem; border-bottom: 1px solid #f1f5f9;
+        font-weight: 700; font-size: 0.85rem; color: #1e293b;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .pkg-sidebar-header i { color: var(--mb-primary); }
+    .pkg-sidebar-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 0; font-size: 0.82rem;
+    }
+    .pkg-sidebar-row .label { color: #64748b; }
+    .pkg-sidebar-row .value { font-weight: 600; color: #1e293b; }
+    .pkg-status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .pkg-status-badge.active { background: #dcfce7; color: #15803d; }
+    .pkg-status-badge.created { background: #fef3c7; color: #92400e; }
+    .pkg-status-badge.pending { background: #fff7ed; color: #c2410c; }
+    .pkg-status-badge.completed { background: #e0e7ff; color: #3730a3; }
+    .pkg-status-badge.expired { background: #fee2e2; color: #991b1b; }
+    .form-section { margin-bottom: 1.25rem; }
+    .form-section-title {
+        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title i { color: var(--mb-primary); }
+</style>
+
+<!-- Page Header -->
 <div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Chi tiết gói điều trị</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Chi tiết gói điều trị
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Xem thông tin và tiến trình gói điều trị của bạn</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại
+    </a>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (Model.Package != null)
 {
     var pkg = Model.Package;
-    var isPending = pkg.Status == "Pending" || pkg.Status == "0";
+    var isPending = pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned" || pkg.Status == "0" || pkg.Status == "1";
     var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+    var statusClass = pkg.Status switch { "Active" => "active", "Accepted" => "active", "Created" => "created", "Pending" => "pending", "Assigned" => "pending", "Completed" => "completed", _ => "created" };
+    var statusLabel = pkg.Status switch { "Active" => "Hoạt động", "Accepted" => "Đã chấp nhận", "Created" => "Đã tạo", "Pending" => "Chờ xác nhận", "Assigned" => "Chờ xác nhận", "Completed" => "Hoàn thành", "Cancelled" => "Đã hủy", "Rejected" => "Đã từ chối", _ => pkg.Status };
+    if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Hết hạn"; }
+    var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
 
     <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h3 class="mb-1">@pkg.Title</h3>
-                            <span class="text-muted">Bác sĩ: @(pkg.DoctorName ?? "N/A")</span>
+        <!-- Sidebar -->
+        <div class="col-lg-4" style="position: sticky; top: 100px; align-self: flex-start;">
+            <!-- Doctor Info -->
+            <div class="pkg-detail-sidebar mb-3">
+                <div class="pkg-sidebar-header"><i class="bi bi-person-badge-fill"></i>Bác sĩ phụ trách</div>
+                <div style="padding:1.25rem; text-align:center;">
+                    @{
+                        var docName = pkg.DoctorName ?? "N/A";
+                        var docInitial = docName.Length > 0 ? docName.Substring(0, 1).ToUpper() : "?";
+                        var dcolors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
+                        var dcolor = dcolors[Math.Abs(docName.GetHashCode()) % dcolors.Length];
+                    }
+                    <div style="width:56px; height:56px; border-radius:14px; background:@(dcolor)18; color:@dcolor; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; margin:0 auto 8px;">@docInitial</div>
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">BS. @docName</div>
+                    <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">Bác sĩ phụ trách gói điều trị</div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="pkg-detail-sidebar mb-3">
+                <div class="pkg-sidebar-header"><i class="bi bi-graph-up"></i>Tiến trình điều trị</div>
+                <div style="padding:1.25rem; text-align:center;">
+                    <div style="position:relative; width:90px; height:90px; margin:0 auto 12px;">
+                        <svg width="90" height="90" style="transform:rotate(-90deg);">
+                            <circle cx="45" cy="45" r="38" fill="none" stroke="#e2e8f0" stroke-width="6" />
+                            <circle cx="45" cy="45" r="38" fill="none" stroke="@progressColor" stroke-width="6"
+                                    stroke-dasharray="@(Math.Round(2 * Math.PI * 38))" stroke-dashoffset="@(Math.Round(2 * Math.PI * 38 * (1 - progress / 100.0)))"
+                                    stroke-linecap="round" />
+                        </svg>
+                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.2rem; font-weight:800; color:@progressColor;">@(progress)%</div>
+                    </div>
+                    <div style="font-size:0.82rem; color:#64748b;">
+                        <strong style="color:#1e293b;">@pkg.CompletedSessions</strong> / @pkg.TotalSessions phiên hoàn thành
+                    </div>
+                </div>
+            </div>
+
+            <!-- Package Details -->
+            <div class="pkg-detail-sidebar mb-3">
+                <div class="pkg-sidebar-header"><i class="bi bi-info-circle"></i>Thông tin gói</div>
+                <div style="padding:1rem 1.25rem;">
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Trạng thái</span>
+                        <span class="pkg-status-badge @statusClass">@statusLabel</span>
+                    </div>
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Giá</span>
+                        <span class="value" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</span>
+                    </div>
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Hiệu lực</span>
+                        <span class="value">@pkg.ValidityDays ngày</span>
+                    </div>
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Hết hạn</span>
+                        <span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Ngày tạo</span>
+                        <span class="value">@pkg.CreatedAt.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    @if (pkg.AcceptedDate.HasValue)
+                    {
+                        <div class="pkg-sidebar-row">
+                            <span class="label">Ngày chấp nhận</span>
+                            <span class="value">@pkg.AcceptedDate.Value.ToString("dd/MM/yyyy")</span>
                         </div>
-                        @{
-                            var badgeClass = pkg.Status switch { "Active" => "bg-success", "Pending" => "bg-warning text-dark", "Completed" => "bg-info", _ => "bg-secondary" };
-                        }
-                        <span class="badge @badgeClass fs-6">@pkg.Status</span>
+                    }
+                    @if (pkg.ActiveDate.HasValue)
+                    {
+                        <div class="pkg-sidebar-row">
+                            <span class="label">Ngày kích hoạt</span>
+                            <span class="value">@pkg.ActiveDate.Value.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    }
+                    <div class="pkg-sidebar-row">
+                        <span class="label">Còn lại</span>
+                        <span class="value">@pkg.RemainingSessions phiên</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pkg-detail-sidebar">
+                <div class="pkg-sidebar-header"><i class="bi bi-lightning-charge"></i>Thao tác</div>
+                <div style="padding:1rem 1.25rem;" class="d-grid gap-2">
+                    @if (isPending)
+                    {
+                        <div class="alert alert-info mb-2" style="border-radius:10px; font-size:0.82rem;">
+                            <i class="bi bi-info-circle me-1"></i>Bác sĩ đã chỉ định gói điều trị này cho bạn. Vui lòng xác nhận hoặc từ chối.
+                        </div>
+                        <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id">
+                            <button type="submit" class="btn btn-success w-100 mb-2" style="border-radius:10px;">
+                                <i class="bi bi-check-circle me-1"></i>Chấp nhận gói điều trị
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal" style="border-radius:10px;">
+                            <i class="bi bi-x-circle me-1"></i>Từ chối
+                        </button>
+                    }
+                    else if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
+                    {
+                        <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
+                           class="btn btn-primary w-100 mb-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                            <i class="bi bi-calendar-plus me-1"></i>Đặt lịch tư vấn với BS. @(pkg.DoctorName ?? "N/A")
+                        </a>
+                        <button type="button" class="btn btn-outline-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px;">
+                            <i class="bi bi-x-circle me-1"></i>Hủy gói điều trị
+                        </button>
+                        <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                        </a>
+                    }
+                    else if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
+                    {
+                        <button type="button" class="btn btn-outline-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px;">
+                            <i class="bi bi-x-circle me-1"></i>Hủy gói điều trị
+                        </button>
+                        <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-tag-fill"></i>Tên gói điều trị</div>
+                        <h4 style="color:#1e293b; font-weight:700;">@pkg.Title</h4>
                     </div>
 
                     @if (!string.IsNullOrEmpty(pkg.Description))
                     {
-                        <div class="mb-4">
-                            <h6>Mô tả</h6>
-                            <p class="text-muted">@pkg.Description</p>
+                        <div class="form-section">
+                            <div class="form-section-title"><i class="bi bi-card-text"></i>Mô tả chi tiết</div>
+                            <p style="color:#475569; line-height:1.7; white-space:pre-line;">@pkg.Description</p>
                         </div>
                     }
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold" style="color:var(--mb-primary);">@pkg.TotalSessions</div>
-                                <small class="text-muted">Tổng buổi</small>
+                    <!-- Session Stats -->
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-bar-chart"></i>Tổng quan phiên điều trị</div>
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-3 text-center" style="background:#eff6ff; border:1px solid #dbeafe;">
+                                    <div style="font-size:1.5rem; font-weight:800; color:#3b82f6;">@pkg.TotalSessions</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Tổng số phiên</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold text-success">@pkg.CompletedSessions</div>
-                                <small class="text-muted">Đã hoàn thành</small>
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-3 text-center" style="background:#dcfce7; border:1px solid #bbf7d0;">
+                                    <div style="font-size:1.5rem; font-weight:800; color:#16a34a;">@pkg.CompletedSessions</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Đã hoàn thành</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold text-info">@pkg.RemainingSessions</div>
-                                <small class="text-muted">Còn lại</small>
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-3 text-center" style="background:#fef3c7; border:1px solid #fde68a;">
+                                    <div style="font-size:1.5rem; font-weight:800; color:#f59e0b;">@pkg.RemainingSessions</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Còn lại</div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Progress bar -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="fw-semibold">Tiến độ</small>
-                            <small>@progress%</small>
+                    <!-- Progress Bar -->
+                    <div class="form-section">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-size:0.82rem; color:#64748b; font-weight:600;">Tiến trình tổng thể</span>
+                            <span style="font-size:0.82rem; color:@progressColor; font-weight:700;">@(progress)%</span>
                         </div>
-                        <div class="progress" style="height:8px;">
-                            <div class="progress-bar" style="width:@(progress)%;background:var(--mb-primary);"></div>
+                        <div class="progress" style="height:10px; border-radius:8px;">
+                            <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:8px;"></div>
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <small class="text-muted d-block"><i class="bi bi-wallet2 me-1"></i>Phí</small>
-                            <strong>@pkg.Price.ToString("N0") VND</strong>
-                        </div>
-                        <div class="col-sm-6">
-                            <small class="text-muted d-block"><i class="bi bi-calendar-x me-1"></i>Hạn sử dụng</small>
-                            <strong>@pkg.ExpirationDate.ToString("dd/MM/yyyy")</strong>
+                    <!-- Timeline -->
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-clock-history"></i>Dòng thời gian</div>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex align-items-center gap-3 px-0 py-2 border-0">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; background:#eff6ff; color:#3b82f6; flex-shrink:0;">
+                                    <i class="bi bi-plus-circle" style="font-size:0.85rem;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Gói được tạo</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">@pkg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                </div>
+                            </div>
+                            @if (pkg.AcceptedDate.HasValue)
+                            {
+                                <div class="list-group-item d-flex align-items-center gap-3 px-0 py-2 border-0">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; background:#dcfce7; color:#16a34a; flex-shrink:0;">
+                                        <i class="bi bi-check-circle" style="font-size:0.85rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Bệnh nhân chấp nhận</div>
+                                        <div style="font-size:0.72rem; color:#94a3b8;">@pkg.AcceptedDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (pkg.ActiveDate.HasValue)
+                            {
+                                <div class="list-group-item d-flex align-items-center gap-3 px-0 py-2 border-0">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; background:#fef3c7; color:#f59e0b; flex-shrink:0;">
+                                        <i class="bi bi-lightning-charge" style="font-size:0.85rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Gói kích hoạt</div>
+                                        <div style="font-size:0.72rem; color:#94a3b8;">@pkg.ActiveDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-4">
-            @if (isPending)
-            {
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white"><h6 class="mb-0">Phản hồi</h6></div>
-                    <div class="card-body d-grid gap-2">
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle me-1"></i>Bác sĩ đã chỉ định gói điều trị này cho bạn. Vui lòng xác nhận.
-                        </div>
-                        <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id">
-                            <button type="submit" class="btn btn-success w-100 mb-2">
-                                <i class="bi bi-check-circle me-1"></i>Chấp nhận
-                            </button>
-                        </form>
-                        <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                            <i class="bi bi-x-circle me-1"></i>Từ chối
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Reject Modal -->
-                <div class="modal fade" id="rejectModal" tabindex="-1">
-                    <div class="modal-dialog"><div class="modal-content">
-                        <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Từ chối gói điều trị</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Lý do từ chối</label>
-                                    <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Nhập lý do..."></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
-                            </div>
-                        </form>
-                    </div></div>
-                </div>
-            }
-            else
-            {
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white"><h6 class="mb-0">Thao tác</h6></div>
-                    <div class="card-body d-grid gap-2">
-                        <a asp-page="/Doctors/Index" class="btn btn-primary"><i class="bi bi-calendar-plus me-1"></i>Đặt lịch tư vấn</a>
-                        <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
-                    </div>
-                </div>
-            }
-        </div>
     </div>
+
+    <!-- Reject Modal -->
+    @if (isPending)
+    {
+        <div class="modal fade" id="rejectModal" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content" style="border-radius:16px;">
+                <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Từ chối gói điều trị</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted" style="font-size:0.85rem;">Vui lòng cho biết lý do bạn muốn từ chối gói điều trị này.</p>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lý do từ chối</label>
+                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Nhập lý do..." style="border-radius:10px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
+                        <button type="submit" class="btn btn-danger" style="border-radius:10px;">Xác nhận từ chối</button>
+                    </div>
+                </form>
+            </div></div>
+        </div>
+    }
+
+    <!-- Cancel Modal -->
+    @if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
+    {
+        <div class="modal fade" id="cancelModal" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content" style="border-radius:16px;">
+                <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Hủy gói điều trị</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">
+                            <i class="bi bi-info-circle me-1"></i>Bạn đang hủy gói <strong>@pkg.Title</strong>. Thao tác này không thể hoàn tác.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lý do hủy (tùy chọn)</label>
+                            <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy gói..." style="border-radius:10px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
+                        <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Xác nhận hủy</button>
+                    </div>
+                </form>
+            </div></div>
+        </div>
+    }
 }
 else
 {
     <div class="text-center py-5">
-        <i class="bi bi-box d-block mb-2" style="font-size:3rem;color:var(--mb-text-muted);"></i>
-        <h5>Không tìm thấy gói điều trị</h5>
+        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
+            <i class="bi bi-box text-muted" style="font-size:2.5rem;"></i>
+        </div>
+        <h5 class="fw-bold">Không tìm thấy gói điều trị</h5>
+        <p class="text-muted">Gói điều trị này không tồn tại hoặc bạn không có quyền truy cập.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Quay lại danh sách</a>
     </div>
 }

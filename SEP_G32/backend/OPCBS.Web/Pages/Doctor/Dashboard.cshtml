@@ -56,98 +56,121 @@
     </div>
 }
 
-<!-- Stats Cards -->
+<!-- Premium Stats Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div style="font-size:2rem;color:var(--mb-primary)"><i class="bi bi-calendar-check"></i></div>
-                <h3 class="mb-0 mt-1">@Model.TotalAppointments</h3>
-                <small class="text-muted">Tổng lịch hẹn</small>
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: linear-gradient(135deg, #4e8b70 0%, #3a6854 100%); color: white;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="mb-0 fw-bold">@Model.TotalAppointments</h3>
+                    <small class="text-white-50">Tổng lịch hẹn</small>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(255,255,255,0.2);">
+                    <i class="bi bi-calendar-check" style="font-size: 1.5rem;"></i>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div style="font-size:2rem;color:#e6a817"><i class="bi bi-clock-history"></i></div>
-                <h3 class="mb-0 mt-1">@Model.PendingCount</h3>
-                <small class="text-muted">Chờ duyệt</small>
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="mb-0 fw-bold" style="color: #f59e0b;">@Model.PendingCount</h3>
+                    <small class="text-muted">Chờ duyệt</small>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #fffbeb; color: #f59e0b;">
+                    <i class="bi bi-clock-history" style="font-size: 1.5rem;"></i>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div style="font-size:2rem;color:#3498db"><i class="bi bi-check-circle"></i></div>
-                <h3 class="mb-0 mt-1">@Model.ApprovedCount</h3>
-                <small class="text-muted">Đã duyệt</small>
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="mb-0 fw-bold" style="color: #3b82f6;">@Model.TotalConsultations</h3>
+                    <small class="text-muted">Hồ sơ tư vấn</small>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6;">
+                    <i class="bi bi-file-earmark-medical" style="font-size: 1.5rem;"></i>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div style="font-size:2rem;color:#27ae60"><i class="bi bi-check-all"></i></div>
-                <h3 class="mb-0 mt-1">@Model.CompletedCount</h3>
-                <small class="text-muted">Hoàn thành</small>
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h3 class="mb-0 fw-bold" style="color: #10b981;">@Model.TotalActivePackages</h3>
+                    <small class="text-muted">Gói ĐT đang HĐ</small>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #ecfdf5; color: #10b981;">
+                    <i class="bi bi-box-seam" style="font-size: 1.5rem;"></i>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 mb-4">
     <!-- Upcoming Appointments -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Lịch hẹn sắp tới</h5>
-                <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Lịch hẹn sắp tới</h5>
+                <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3">Xem tất cả</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.UpcomingAppointments.Any())
                 {
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
+                        <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Bệnh nhân</th>
-                                    <th>Thời gian</th>
-                                    <th>Trạng thái</th>
-                                    <th></th>
+                                    <th class="ps-4 text-muted font-weight-normal small">Bệnh nhân</th>
+                                    <th class="text-muted font-weight-normal small">Thời gian</th>
+                                    <th class="text-muted font-weight-normal small">Trạng thái</th>
+                                    <th class="pe-4 text-end text-muted font-weight-normal small">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var apt in Model.UpcomingAppointments)
                                 {
                                     <tr>
-                                        <td>
-                                            <strong>@(apt.PatientName ?? "N/A")</strong>
-                                            @if (!string.IsNullOrEmpty(apt.Specialization))
-                                            {
-                                                <br /><small class="text-muted">@apt.Specialization</small>
-                                            }
+                                        <td class="ps-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">
+                                                    @(string.IsNullOrEmpty(apt.PatientName) ? "?" : apt.PatientName.Substring(0, 1).ToUpper())
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark">@(apt.PatientName ?? "N/A")</div>
+                                                    @if (!string.IsNullOrEmpty(apt.Specialization))
+                                                    {
+                                                        <small class="text-muted">@apt.Specialization</small>
+                                                    }
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td>
-                                            <span>@apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy")</span><br />
-                                            <small class="text-muted">@apt.StartAt.LocalDateTime.ToString("HH:mm")</small>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy")</div>
+                                            <small class="text-muted"><i class="bi bi-clock me-1"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm")</small>
                                         </td>
-                                        <td>
+                                        <td class="py-3">
                                             @{
                                                 var badgeClass = apt.Status switch
                                                 {
-                                                    0 => "bg-warning text-dark",
-                                                    1 => "bg-info text-white",
-                                                    4 => "bg-success",
-                                                    3 => "bg-danger",
-                                                    _ => "bg-secondary"
+                                                    0 => "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25",
+                                                    1 => "bg-info bg-opacity-10 text-info border border-info border-opacity-25",
+                                                    4 => "bg-success bg-opacity-10 text-success border border-success border-opacity-25",
+                                                    3 => "bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25",
+                                                    _ => "bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25"
                                                 };
                                             }
-                                            <span class="badge @badgeClass">@apt.StatusText</span>
+                                            <span class="badge rounded-pill @badgeClass px-3 py-2 fw-semibold">@apt.StatusText</span>
                                         </td>
-                                        <td>
-                                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
+                                        <td class="pe-4 text-end py-3">
+                                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="Xem chi tiết">
+                                                <i class="bi bi-chevron-right"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -158,41 +181,152 @@
                 }
                 else
                 {
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-calendar-x d-block" style="font-size:2rem"></i>
-                        <p class="mt-2">Không có lịch hẹn sắp tới</p>
+                    <div class="text-center py-5 text-muted">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-calendar-x text-muted" style="font-size:2.5rem"></i>
+                        </div>
+                        <h6 class="fw-bold">Không có lịch hẹn sắp tới</h6>
+                        <p class="small">Lịch trình của bạn hiện đang trống.</p>
                     </div>
                 }
             </div>
         </div>
     </div>
 
-    <!-- Subscription Info -->
+    <!-- Right Column (Subscription & Packages) -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white">
-                <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Gói dịch vụ</h5>
+        <!-- Subscription Info -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; overflow: hidden;">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-credit-card me-2 text-primary"></i>Gói dịch vụ</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body px-4 pb-4">
                 @if (Model.CurrentSubscription != null)
                 {
-                    <div class="text-center">
-                        <span class="badge bg-success mb-2">@Model.CurrentSubscription.Status</span>
-                        <h4 class="text-primary">@(Model.CurrentSubscription.PackageName ?? "N/A")</h4>
-                        <p class="text-muted mb-1">
-                            <i class="bi bi-calendar3"></i>
+                    <div class="bg-light p-3 text-center" style="border-radius: 12px;">
+                        <span class="badge bg-success mb-2 rounded-pill px-3 py-2">@Model.CurrentSubscription.Status</span>
+                        <h4 class="text-primary fw-bold mb-1">@(Model.CurrentSubscription.PackageName ?? "N/A")</h4>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-calendar3 me-1"></i>
                             @Model.CurrentSubscription.StartDate.ToString("dd/MM/yyyy") - @Model.CurrentSubscription.EndDate.ToString("dd/MM/yyyy")
                         </p>
-                        <hr />
-                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-outline-primary btn-sm">Chi tiết</a>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-outline-primary rounded-pill w-100">Quản lý dịch vụ</a>
                     </div>
                 }
                 else
                 {
                     <div class="text-center py-3 text-muted">
-                        <i class="bi bi-credit-card-2-front d-block" style="font-size:2rem"></i>
-                        <p class="mt-2">Chưa đăng ký gói dịch vụ</p>
-                        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary btn-sm">Xem gói dịch vụ</a>
+                        <i class="bi bi-credit-card-2-front d-block mb-3" style="font-size:2.5rem; color: #cbd5e1;"></i>
+                        <p class="mb-3">Bạn chưa đăng ký gói dịch vụ nào trên hệ thống.</p>
+                        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary rounded-pill w-100">Xem các gói dịch vụ</a>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Active Treatment Packages -->
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Gói ĐT đang hoạt động</h6>
+                <a asp-page="/Doctor/TreatmentPackages/Index" class="text-primary small text-decoration-none">Tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.ActivePackages.Any())
+                {
+                    <div class="list-group list-group-flush border-top-0">
+                        @foreach (var pkg in Model.ActivePackages)
+                        {
+                            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
+                            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+                            
+                            <a asp-page="/Doctor/TreatmentPackages/Edit" asp-route-id="@pkg.Id" class="list-group-item list-group-item-action px-4 py-3 border-bottom-0 border-top">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold text-dark text-truncate" style="max-width: 70%;">@pkg.Name</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Đang HĐ</span>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-person me-1"></i> @pkg.DisplayPatientName
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar" role="progressbar" style="width: @progress%; background-color: @progressColor;" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted" style="min-width: 35px; text-align: right;">@progress%</small>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <p class="small mb-0">Không có gói điều trị nào đang hoạt động.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Consultation Records -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-medical me-2 text-primary"></i>Hồ sơ tư vấn gần đây</h5>
+                <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-sm btn-light rounded-pill px-3">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentConsultations.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 text-muted font-weight-normal small">Bệnh nhân</th>
+                                    <th class="text-muted font-weight-normal small">Ngày tạo</th>
+                                    <th class="text-muted font-weight-normal small">Chẩn đoán</th>
+                                    <th class="pe-4 text-end text-muted font-weight-normal small">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rec in Model.RecentConsultations)
+                                {
+                                    <tr>
+                                        <td class="ps-4 py-3">
+                                            <div class="fw-bold text-dark">@(rec.PatientName ?? rec.WalkInPatientName ?? "Khách vãng lai")</div>
+                                            @if (rec.PatientRecordId == Guid.Empty)
+                                            {
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill mt-1" style="font-size: 0.65rem;">Vãng lai</span>
+                                            }
+                                        </td>
+                                        <td class="py-3 text-muted">
+                                            @rec.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </td>
+                                        <td class="py-3 text-truncate" style="max-width: 250px;">
+                                            @(string.IsNullOrEmpty(rec.Diagnosis) ? "-" : rec.Diagnosis)
+                                        </td>
+                                        <td class="pe-4 text-end py-3">
+                                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="btn btn-sm btn-light rounded-circle text-primary" title="Chỉnh sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-journal-x text-muted" style="font-size:2.5rem"></i>
+                        </div>
+                        <h6 class="fw-bold">Chưa có hồ sơ tư vấn</h6>
+                        <p class="small">Bạn chưa tạo hồ sơ tư vấn nào cho bệnh nhân.</p>
                     </div>
                 }
             </div>

@@ -146,8 +146,8 @@ public class Appointment : BaseEntity
     /// <summary>Navigation property to TreatmentPackage (if applicable)</summary>
     public virtual TreatmentPackage? TreatmentPackage { get; set; }
 
-    /// <summary>Navigation property: consultation record for this appointment</summary>
-    public virtual ConsultationRecord? ConsultationRecord { get; set; }
+    /// <summary>Navigation property: consultation note for this appointment</summary>
+    public virtual ConsultationNote? ConsultationNote { get; set; }
 
     /// <summary>Navigation property: review for this appointment (one per appointment)</summary>
     public virtual Review? Review { get; set; }

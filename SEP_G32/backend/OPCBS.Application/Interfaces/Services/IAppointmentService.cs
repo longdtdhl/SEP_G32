@@ -9,7 +9,7 @@ namespace OPCBS.Application.Interfaces.Services;
 public interface IAppointmentService
 {
     Task<ApiResponse<AppointmentDto>> CreateAppointmentAsync(CreateAppointmentDto dto, Guid? patientUserId, CancellationToken ct = default);
-    Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default);
     Task<ApiResponse<AppointmentDto>> GetAppointmentByIdAsync(Guid appointmentId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse<AppointmentDto>> TrackAppointmentAsync(TrackAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> CancelAppointmentAsync(Guid appointmentId, Guid userId, CancelAppointmentDto dto, CancellationToken ct = default);
@@ -38,13 +38,15 @@ public interface IScheduleService
 }
 
 /// <summary>
-/// Consultation record service
+/// Consultation note service
 /// </summary>
-public interface IConsultationRecordService
+public interface IConsultationNoteService
 {
-    Task<ApiResponse<ConsultationRecordDto>> CreateAsync(Guid doctorUserId, CreateConsultationRecordDto dto, CancellationToken ct = default);
-    Task<ApiResponse<ConsultationRecordDto>> UpdateAsync(Guid recordId, Guid doctorUserId, UpdateConsultationRecordDto dto, CancellationToken ct = default);
-    Task<ApiResponse<List<ConsultationRecordDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
-    Task<ApiResponse<List<ConsultationRecordDto>>> GetByAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
-    Task<ApiResponse<ConsultationRecordDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<ConsultationNoteDto>> CreateAsync(Guid doctorUserId, CreateConsultationNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse<ConsultationNoteDto>> UpdateAsync(Guid recordId, Guid doctorUserId, UpdateConsultationNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<ConsultationNoteDto>>> GetByAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<List<ConsultationNoteDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
 }

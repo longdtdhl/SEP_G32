@@ -201,7 +201,7 @@ else
                 </div>
             </div>
             
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <h5 class="fw-bold mb-4 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Thông tin hành nghề xác thực</h5>
                 
                 <div class="row g-3 mb-3">
@@ -218,13 +218,20 @@ else
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">Số giấy phép hành nghề (License Number) <span class="text-danger">*</span></label>
-                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="Ví dụ: CCHN-123456" required />
+                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="Nhập số giấy phép do bộ Y tế cấp" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Số năm kinh nghiệm thực tế <span class="text-danger">*</span></label>
-                        <input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" required />
+                        <label class="form-label fw-medium small">Năm kinh nghiệm <span class="text-danger">*</span></label>
+                        <input asp-for="Input.ExperienceYears" type="number" min="0" class="form-control" required />
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Chứng chỉ hành nghề / Giấy tờ liên quan (Upload) <span class="text-danger">*</span></label>
+                    <input type="file" asp-for="UploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required />
+                    <div class="form-text">Hỗ trợ file PDF, JPG, PNG (tối đa 5MB)</div>
+                </div>
+
 
                 <div class="mb-3">
                     <label class="form-label fw-medium small">Tóm tắt chuyên môn và phương pháp tiếp cận</label>

@@ -18,14 +18,26 @@ public interface IScheduleApiService
     Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
 }
 
-public interface IConsultationRecordApiService
+public interface IPatientRecordApiService
 {
-    Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(int page = 1, int pageSize = 10);
-    Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetMyRecordsAsync(int page = 1, int pageSize = 10);
-    Task<(ConsultationRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
-    Task<(ConsultationRecordDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId);
-    Task<(bool Success, string? Error)> CreateAsync(CreateConsultationRecordDto dto);
-    Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationRecordDto dto);
+    Task<(List<PatientRecordDto> Data, string? Error)> GetAllAsync();
+    Task<(List<PatientRecordDto> Data, string? Error)> GetSystemPatientsAsync();
+    Task<(List<PatientRecordDto> Data, string? Error)> GetGuestPatientsAsync();
+    Task<(PatientRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
+    Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId);
+    Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto);
+}
+
+public interface IConsultationNoteApiService
+{
+    Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(int page = 1, int pageSize = 10);
+    Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetMyRecordsAsync(int page = 1, int pageSize = 10);
+    Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetByPatientRecordIdAsync(Guid patientRecordId, int page = 1, int pageSize = 10);
+    Task<(ConsultationNoteDto? Data, string? Error)> GetByIdAsync(Guid id);
+    Task<(ConsultationNoteDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId);
+    Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto);
+    Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto);
 }
 
 public interface ITreatmentPackageApiService
@@ -38,6 +50,7 @@ public interface ITreatmentPackageApiService
     Task<(bool Success, string? Error)> DeleteAsync(Guid id);
     Task<(bool Success, string? Error)> AcceptAsync(Guid id);
     Task<(bool Success, string? Error)> RejectAsync(Guid id, string? reason = null);
+    Task<(bool Success, string? Error)> CancelAsync(Guid id, string? reason = null);
 }
 
 public interface IReviewApiService
@@ -108,4 +121,22 @@ public interface IBusinessManagerApiService
     Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto);
     Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto);
     Task<(bool Success, string? Error)> DeleteSpecializationAsync(Guid id);
+}
+
+public interface IPsychometricApiService
+{
+    Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync();
+    Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> SubmitTestAsync(SubmitTestDto dto);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByAppointmentAsync(Guid appointmentId);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId);
+    Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync();
+}
+
+public interface INotificationApiService
+{
+    Task<(List<NotificationDto> Data, PaginationDto? Pagination, string? Error)> GetNotificationsAsync(int page = 1, int pageSize = 20);
+    Task<(int Count, string? Error)> GetUnreadCountAsync();
+    Task<(bool Success, string? Error)> MarkAsReadAsync(Guid notificationId);
+    Task<(bool Success, string? Error)> MarkAllAsReadAsync();
 }

@@ -171,7 +171,7 @@ public class PatientProfile : BaseEntity
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
 
     /// <summary>Navigation property: consultation records for this patient</summary>
-    public virtual ICollection<ConsultationRecord>? ConsultationRecords { get; set; }
+    public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
 
     /// <summary>Navigation property: reviews submitted by this patient</summary>
     public virtual ICollection<Review>? Reviews { get; set; }
@@ -282,7 +282,7 @@ public class DoctorProfile : BaseEntity
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
 
     /// <summary>Navigation property: consultation records created by doctor</summary>
-    public virtual ICollection<ConsultationRecord>? ConsultationRecords { get; set; }
+    public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
 
     /// <summary>Navigation property: blog posts by this doctor</summary>
     public virtual ICollection<BlogPost>? BlogPosts { get; set; }
@@ -343,6 +343,9 @@ public class VerificationRequest : BaseEntity
 
     /// <summary>Customer support person who reviewed this request</summary>
     public Guid? ReviewedBy { get; set; }
+
+    /// <summary>URL of the uploaded practice certificate or related documents</summary>
+    public string? CertificateUrl { get; set; }
 
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }

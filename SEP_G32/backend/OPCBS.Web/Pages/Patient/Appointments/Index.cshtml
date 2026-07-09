@@ -9,6 +9,46 @@
     var completed = Model.Appointments.Count(a => a.Status == 4);
 }
 
+<style>
+    .search-filter-bar {
+        display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .filter-chip {
+        padding: 8px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+        border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; transition: all 0.2s;
+        text-decoration: none;
+    }
+    .filter-chip:hover {
+        background: #f8fafc; color: #1e293b;
+    }
+    .filter-chip.active {
+        background: var(--mb-primary); color: white; border-color: var(--mb-primary);
+    }
+    .appointment-stat-card {
+        background: white; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; text-align: center;
+    }
+    .stat-number { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+    .stat-label { font-size: 0.75rem; color: #64748b; }
+    .border-start-warning { border-left: 4px solid #f59e0b !important; }
+    .border-start-primary { border-left: 4px solid #3b82f6 !important; }
+    .border-start-success { border-left: 4px solid #10b981 !important; }
+    .border-start-danger { border-left: 4px solid #ef4444 !important; }
+    .appointment-card {
+        background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .appointment-card-body { padding: 1.25rem; }
+    .appointment-date-badge {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: #f1f5f9; border-radius: 8px; width: 50px; height: 50px; text-align: center;
+    }
+    .date-day { font-size: 1.1rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+    .date-month { font-size: 0.65rem; font-weight: 600; color: #64748b; }
+    .mb-chip {
+        display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 600;
+    }
+</style>
+
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
         <h1><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>Lịch hẹn của tôi</h1>
@@ -27,30 +67,18 @@
     </div>
 }
 
+<!-- Search & Filter Bar -->
+<div class="search-filter-bar">
+    <span class="filter-chip active" onclick="filterAppointments(event, 'all')">Tất cả</span>
+    <span class="filter-chip" onclick="filterAppointments(event, '0')">Chờ xác nhận (@pending)</span>
+    <span class="filter-chip" onclick="filterAppointments(event, '1')">Đã xác nhận (@approved)</span>
+    <span class="filter-chip" onclick="filterAppointments(event, '4')">Hoàn thành (@completed)</span>
+    <span class="filter-chip" onclick="filterAppointments(event, '2')">Từ chối</span>
+    <span class="filter-chip" onclick="filterAppointments(event, '3')">Đã hủy</span>
+</div>
+
 @if (Model.Appointments.Any())
 {
-    <!-- Summary Stats -->
-    <div class="row g-3 mb-4">
-        <div class="col-4">
-            <div class="appointment-stat-card stat-pending">
-                <div class="stat-number">@pending</div>
-                <div class="stat-label">Chờ xác nhận</div>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="appointment-stat-card stat-approved">
-                <div class="stat-number">@approved</div>
-                <div class="stat-label">Đã xác nhận</div>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="appointment-stat-card stat-completed">
-                <div class="stat-number">@completed</div>
-                <div class="stat-label">Hoàn thành</div>
-            </div>
-        </div>
-    </div>
-
     <!-- Appointment Cards -->
     <div class="appointment-list">
         @foreach (var apt in Model.Appointments.OrderByDescending(a => a.StartAt))
@@ -66,7 +94,7 @@
                               isCompleted ? "border-start-success" :
                               isCancelled || isRejected ? "border-start-danger" : "";
 
-            <div class="appointment-card @borderClass">
+            <div class="appointment-card @borderClass appointment-card-item" data-status="@apt.Status">
                 <div class="appointment-card-body">
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div class="d-flex align-items-center gap-3">
@@ -143,3 +171,20 @@ else
         </a>
     </div>
 }
+
+<script>
+function filterAppointments(event, statusVal) {
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+
+    document.querySelectorAll('.appointment-card-item').forEach(item => {
+        if (statusVal === 'all' || item.dataset.status === statusVal) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>

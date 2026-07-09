@@ -6,7 +6,7 @@ namespace OPCBS.Web.Helpers;
 public class JwtCookieService
 {
     private readonly IHttpContextAccessor _contextAccessor;
-    private const string JwtCookieName = "OPCBS.Auth";
+    private const string JwtCookieName = "OPCBS.JwtToken";
 
     public JwtCookieService(IHttpContextAccessor contextAccessor)
     {

@@ -48,32 +48,83 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
 }
 
 // --- Consultation Record ---
-public class ConsultationRecordApiService : ApiServiceBase, IConsultationRecordApiService
+public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
 {
-    public ConsultationRecordApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+    public PatientRecordApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
 
-    public async Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(int page = 1, int pageSize = 10)
+    public async Task<(List<PatientRecordDto> Data, string? Error)> GetAllAsync()
     {
-        var (data, pagination, error) = await GetAsync<List<ConsultationRecordDto>>($"{ApiRoutes.ConsultationRecords}/doctor?page={page}&pageSize={pageSize}");
-        return (data ?? new(), pagination, error);
+        var (data, _, error) = await GetAsync<List<PatientRecordDto>>(ApiRoutes.PatientRecords);
+        return (data ?? new(), error);
     }
-    public async Task<(List<ConsultationRecordDto> Data, PaginationDto? Pagination, string? Error)> GetMyRecordsAsync(int page = 1, int pageSize = 10)
+
+    public async Task<(List<PatientRecordDto> Data, string? Error)> GetSystemPatientsAsync()
     {
-        var (data, pagination, error) = await GetAsync<List<ConsultationRecordDto>>($"{ApiRoutes.ConsultationRecords}/my-records?page={page}&pageSize={pageSize}");
-        return (data ?? new(), pagination, error);
+        var (data, _, error) = await GetAsync<List<PatientRecordDto>>($"{ApiRoutes.PatientRecords}/system");
+        return (data ?? new(), error);
     }
-    public async Task<(ConsultationRecordDto? Data, string? Error)> GetByIdAsync(Guid id)
+
+    public async Task<(List<PatientRecordDto> Data, string? Error)> GetGuestPatientsAsync()
     {
-        var (data, _, error) = await GetAsync<ConsultationRecordDto>($"{ApiRoutes.ConsultationRecords}/{id}");
+        var (data, _, error) = await GetAsync<List<PatientRecordDto>>($"{ApiRoutes.PatientRecords}/guest");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(PatientRecordDto? Data, string? Error)> GetByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<PatientRecordDto>($"{ApiRoutes.PatientRecords}/{id}");
         return (data, error);
     }
-    public async Task<(ConsultationRecordDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId)
+
+    public async Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId)
     {
-        var (data, _, error) = await GetAsync<List<ConsultationRecordDto>>($"{ApiRoutes.ConsultationRecords}/appointment/{appointmentId}");
+        var (data, _, error) = await GetAsync<PatientRecordDto>($"{ApiRoutes.PatientRecords}/user/{userId}");
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto)
+    {
+        return await PostAsync(ApiRoutes.PatientRecords, dto);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto)
+    {
+        return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
+    }
+}
+
+public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiService
+{
+    public ConsultationNoteApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(int page = 1, int pageSize = 10)
+    {
+        var (data, pagination, error) = await GetAsync<List<ConsultationNoteDto>>($"{ApiRoutes.ConsultationNotes}/doctor?page={page}&pageSize={pageSize}");
+        return (data ?? new(), pagination, error);
+    }
+    public async Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetMyRecordsAsync(int page = 1, int pageSize = 10)
+    {
+        var (data, pagination, error) = await GetAsync<List<ConsultationNoteDto>>($"{ApiRoutes.ConsultationNotes}/my-records?page={page}&pageSize={pageSize}");
+        return (data ?? new(), pagination, error);
+    }
+    public async Task<(List<ConsultationNoteDto> Data, PaginationDto? Pagination, string? Error)> GetByPatientRecordIdAsync(Guid patientRecordId, int page = 1, int pageSize = 10)
+    {
+        var (data, pagination, error) = await GetAsync<List<ConsultationNoteDto>>($"{ApiRoutes.ConsultationNotes}/patient-record/{patientRecordId}?page={page}&pageSize={pageSize}");
+        return (data ?? new(), pagination, error);
+    }
+
+    public async Task<(ConsultationNoteDto? Data, string? Error)> GetByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<ConsultationNoteDto>($"{ApiRoutes.ConsultationNotes}/{id}");
+        return (data, error);
+    }
+    public async Task<(ConsultationNoteDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId)
+    {
+        var (data, _, error) = await GetAsync<List<ConsultationNoteDto>>($"{ApiRoutes.ConsultationNotes}/appointment/{appointmentId}");
         return (data != null && data.Any() ? data.First() : null, error);
     }
-    public async Task<(bool Success, string? Error)> CreateAsync(CreateConsultationRecordDto dto) => await PostAsync(ApiRoutes.ConsultationRecords, dto);
-    public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationRecordDto dto) => await PutAsync($"{ApiRoutes.ConsultationRecords}/{id}", dto);
+    public async Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto) => await PostAsync(ApiRoutes.ConsultationNotes, dto);
+    public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto) => await PutAsync($"{ApiRoutes.ConsultationNotes}/{id}", dto);
 }
 
 // --- Treatment Package ---
@@ -101,6 +152,7 @@ public class TreatmentPackageApiService : ApiServiceBase, ITreatmentPackageApiSe
     public async Task<(bool Success, string? Error)> DeleteAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.TreatmentPackages}/{id}");
     public async Task<(bool Success, string? Error)> AcceptAsync(Guid id) => await PutAsync($"{ApiRoutes.TreatmentPackages}/accept/{id}");
     public async Task<(bool Success, string? Error)> RejectAsync(Guid id, string? reason = null) => await PutAsync($"{ApiRoutes.TreatmentPackages}/reject/{id}", reason);
+    public async Task<(bool Success, string? Error)> CancelAsync(Guid id, string? reason = null) => await PutAsync($"{ApiRoutes.TreatmentPackages}/cancel/{id}", reason);
 }
 
 // --- Review ---
@@ -295,4 +347,69 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     public async Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto) => await PostAsync(ApiRoutes.Specializations, dto);
     public async Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto) => await PutAsync($"{ApiRoutes.Specializations}/{id}", dto);
     public async Task<(bool Success, string? Error)> DeleteSpecializationAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.Specializations}/{id}");
+}
+
+public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
+{
+    public PsychometricApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<PsychometricTestDto>>($"{ApiRoutes.Psychometrics}/tests");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId)
+    {
+        var (data, _, error) = await GetAsync<List<PsychometricQuestionDto>>($"{ApiRoutes.Psychometrics}/tests/{testId}/questions");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> SubmitTestAsync(SubmitTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/submissions", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByAppointmentAsync(Guid appointmentId)
+    {
+        var (data, _, error) = await GetAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/submissions/appointment/{appointmentId}");
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId)
+    {
+        var (data, _, error) = await GetAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/submissions/{submissionId}");
+        return (data, error);
+    }
+
+    public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/my");
+        return (data ?? new(), error);
+    }
+}
+
+// --- Notification ---
+public class NotificationApiService : ApiServiceBase, INotificationApiService
+{
+    public NotificationApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<NotificationDto> Data, PaginationDto? Pagination, string? Error)> GetNotificationsAsync(int page = 1, int pageSize = 20)
+    {
+        var (data, pagination, error) = await GetAsync<List<NotificationDto>>($"{ApiRoutes.Notifications}?page={page}&pageSize={pageSize}");
+        return (data ?? new(), pagination, error);
+    }
+
+    public async Task<(int Count, string? Error)> GetUnreadCountAsync()
+    {
+        var (data, _, error) = await GetAsync<int>($"{ApiRoutes.Notifications}/unread-count");
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> MarkAsReadAsync(Guid notificationId) =>
+        await PutAsync($"{ApiRoutes.Notifications}/mark-read/{notificationId}");
+
+    public async Task<(bool Success, string? Error)> MarkAllAsReadAsync() =>
+        await PutAsync($"{ApiRoutes.Notifications}/mark-read-all");
 }

@@ -22,8 +22,10 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<User>> _userRepo;
     private readonly Mock<IRepository<PatientProfile>> _patientRepo;
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
+    private readonly Mock<IRepository<TreatmentPackage>> _packageRepoMock;
     private readonly Mock<IUnitOfWork> _uow;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<OPCBS.Application.Interfaces.Services.INotificationService> _notificationServiceMock;
     private readonly AppointmentService _sut;
 
     // Shared test data
@@ -47,8 +49,10 @@ public class AppointmentServiceTests
         });
         _patientRepo = new Mock<IRepository<PatientProfile>>();
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
+        _packageRepoMock = new Mock<IRepository<TreatmentPackage>>();
         _uow = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
+        _notificationServiceMock = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
 
         // Mock mapper to return a basic AppointmentDto for any Appointment
         _mapperMock.Setup(m => m.Map<AppointmentDto>(It.IsAny<Appointment>()))
@@ -72,6 +76,8 @@ public class AppointmentServiceTests
             _userRepo.Object,
             _patientRepo.Object,
             _subscriptionRepo.Object,
+            _packageRepoMock.Object,
+            _notificationServiceMock.Object,
             _uow.Object,
             _mapperMock.Object);
     }
@@ -356,7 +362,7 @@ public class AppointmentServiceTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("already has an appointment", result.Message);
+        Assert.Contains("Khung giờ này đã được đặt trước.", result.Message);
     }
 
     // ──────────────────────────────────────────────

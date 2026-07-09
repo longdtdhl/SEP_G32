@@ -1,0 +1,215 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Patients.IndexModel
+@{
+    ViewData["Title"] = "Hồ sơ bệnh nhân";
+    ViewData["UseDashboardLayout"] = true;
+    var totalSystem = Model.SystemPatients.Count;
+    var totalGuest = Model.GuestPatients.Count;
+    var totalAll = totalSystem + totalGuest;
+}
+
+<style>
+    .pr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .pr-stat {
+        background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid rgba(78,139,112,0.08);
+        display: flex; align-items: center; gap: 1rem; transition: all 0.2s;
+    }
+    .pr-stat:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+    .pr-stat .icon {
+        width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+    }
+    .pr-stat .value { font-size: 1.5rem; font-weight: 700; color: #1e293b; line-height: 1; }
+    .pr-stat .label { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+    .pr-card { background: white; border-radius: 16px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
+    .pr-card-header {
+        padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;
+        display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;
+    }
+    .pr-card-header h5 { margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b; }
+
+    .tab-pills { display: flex; gap: 4px; background: #f1f5f9; border-radius: 10px; padding: 4px; }
+    .tab-pill {
+        padding: 6px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; color: #64748b; text-decoration: none;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .tab-pill.active { background: white; color: var(--mb-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .tab-pill:hover:not(.active) { color: #1e293b; }
+    .tab-pill .badge-count {
+        font-size: 0.65rem; background: rgba(78,139,112,0.1); color: var(--mb-primary); padding: 1px 6px;
+        border-radius: 10px; font-weight: 700;
+    }
+
+    .patient-row {
+        display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;
+        transition: background 0.15s; gap: 1rem; cursor: pointer; text-decoration: none; color: inherit;
+    }
+    .patient-row:last-child { border-bottom: none; }
+    .patient-row:hover { background: #f8fffe; }
+    .patient-avatar {
+        width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .patient-info { flex: 1; min-width: 0; }
+    .patient-info .name { font-weight: 600; color: #1e293b; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+    .patient-info .meta { font-size: 0.8rem; color: #64748b; display: flex; gap: 12px; align-items: center; margin-top: 3px; }
+    .patient-date { font-size: 0.78rem; color: #94a3b8; text-align: right; white-space: nowrap; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+    .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem; }
+
+    @@media (max-width: 768px) {
+        .pr-stats { grid-template-columns: 1fr; }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Hồ sơ bệnh nhân
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Quản lý thông tin bệnh nhân hệ thống và khách vãng lai</p>
+    </div>
+    <a asp-page="./Create" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm" style="border-radius:12px; background:var(--mb-primary); border-color:var(--mb-primary);">
+        <i class="bi bi-plus-lg"></i>Thêm hồ sơ mới
+    </a>
+</div>
+
+<!-- Alerts -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none; background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
+        <i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats Cards -->
+<div class="pr-stats">
+    <div class="pr-stat">
+        <div class="icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="bi bi-people-fill"></i></div>
+        <div>
+            <div class="value">@totalAll</div>
+            <div class="label">Tổng hồ sơ</div>
+        </div>
+    </div>
+    <div class="pr-stat">
+        <div class="icon" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="bi bi-person-check-fill"></i></div>
+        <div>
+            <div class="value" style="color:#10b981;">@totalSystem</div>
+            <div class="label">Bệnh nhân hệ thống</div>
+        </div>
+    </div>
+    <div class="pr-stat">
+        <div class="icon" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="bi bi-person-plus-fill"></i></div>
+        <div>
+            <div class="value" style="color:#f59e0b;">@totalGuest</div>
+            <div class="label">Khách vãng lai</div>
+        </div>
+    </div>
+</div>
+
+<!-- Records List -->
+<div class="pr-card">
+    <div class="pr-card-header">
+        <h5><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Danh sách hồ sơ</h5>
+        <div class="tab-pills">
+            <a class="tab-pill active" onclick="showTab('all', this)" href="javascript:void(0)">
+                <i class="bi bi-grid-fill"></i>Tất cả <span class="badge-count">@totalAll</span>
+            </a>
+            <a class="tab-pill" onclick="showTab('system', this)" href="javascript:void(0)">
+                <i class="bi bi-person-check"></i>Hệ thống <span class="badge-count">@totalSystem</span>
+            </a>
+            <a class="tab-pill" onclick="showTab('guest', this)" href="javascript:void(0)">
+                <i class="bi bi-person-plus"></i>Vãng lai <span class="badge-count">@totalGuest</span>
+            </a>
+        </div>
+    </div>
+
+    <div id="patients-list">
+        @{
+            var allPatients = Model.SystemPatients.Select(p => new { Record = p, IsSystem = true })
+                .Concat(Model.GuestPatients.Select(p => new { Record = p, IsSystem = false }))
+                .OrderByDescending(x => x.Record.CreatedAt).ToList();
+        }
+
+        @if (allPatients.Any())
+        {
+            @foreach (var item in allPatients)
+            {
+                var p = item.Record;
+                var displayName = p.DisplayName ?? p.GuestName ?? "Không tên";
+                var initial = displayName.Length > 0 ? displayName.Substring(0, 1).ToUpper() : "?";
+                var colors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
+                var color = colors[Math.Abs(displayName.GetHashCode()) % colors.Length];
+
+                <a asp-page="./Details" asp-route-id="@p.Id" class="patient-row" data-type="@(item.IsSystem ? "system" : "guest")">
+                    <div class="patient-avatar" style="background:@(color)12; color:@color;">@initial</div>
+                    <div class="patient-info">
+                        <div class="name">
+                            @displayName
+                            @if (item.IsSystem)
+                            {
+                                <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:1px 6px; border-radius:6px;">Hệ thống</span>
+                            }
+                            else
+                            {
+                                <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 6px; border-radius:6px;">Khách vãng lai</span>
+                            }
+                        </div>
+                        <div class="meta">
+                            <span><i class="bi bi-telephone me-1"></i>@(p.DisplayPhone ?? p.GuestPhone ?? "—")</span>
+                            <span><i class="bi bi-envelope me-1"></i>@(p.DisplayEmail ?? p.GuestEmail ?? "—")</span>
+                        </div>
+                    </div>
+                    <div class="patient-date">
+                        <div><i class="bi bi-calendar3 me-1"></i>@p.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                    </div>
+                    <div>
+                        <span class="btn btn-sm btn-outline-primary px-3" style="border-radius:8px; font-size:0.78rem;">
+                            <i class="bi bi-eye me-1"></i>Chi tiết
+                        </span>
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-person-lines-fill"></i>
+                <h6 style="font-weight:600; color:#1e293b;">Chưa có hồ sơ bệnh nhân nào</h6>
+                <p style="font-size:0.85rem; margin:4px 0 16px;">Tất cả hồ sơ bệnh nhân của bạn sẽ xuất hiện ở đây</p>
+                <a asp-page="./Create" class="btn btn-sm btn-primary px-4" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                    <i class="bi bi-plus-lg me-1"></i>Thêm hồ sơ đầu tiên
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showTab(type, el) {
+        document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        document.querySelectorAll('.patient-row').forEach(row => {
+            if (type === 'all') {
+                row.style.display = '';
+            } else {
+                row.style.display = row.dataset.type === type ? '' : 'none';
+            }
+        });
+    }
+</script>
+}

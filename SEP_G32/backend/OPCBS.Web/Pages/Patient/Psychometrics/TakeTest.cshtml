@@ -1,0 +1,215 @@
+@page
+@model OPCBS.Web.Pages.Patient.Psychometrics.TakeTestModel
+@{
+    ViewData["Title"] = Model.Test?.Title ?? "Làm bài test tâm lý";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>@Model.Test?.Title</h1>
+        <p class="text-muted mb-0">@Model.Test?.Description</p>
+    </div>
+    @if (Model.AppointmentId.HasValue)
+    {
+        <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.AppointmentId.Value" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại lịch hẹn</a>
+    }
+    else
+    {
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+    }
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger mt-3">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+    </div>
+}
+else if (Model.Test != null)
+{
+    var isPhq9 = Model.Test.TestType == "PHQ9";
+    
+    <form method="post" asp-page-handler="Submit" asp-route-testId="@Model.Test.Id" asp-route-appointmentId="@Model.AppointmentId" id="testForm" class="mt-4">
+        <div class="d-flex flex-column gap-3 mb-4">
+            @foreach (var q in Model.Questions)
+            {
+                <div class="card border-0 shadow-sm question-card" id="q-card-@q.Id">
+                    <div class="card-body p-4">
+                        <h5 class="card-title d-flex align-items-start gap-2 fs-6">
+                            <span class="badge bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width:24px;height:24px;flex-shrink:0;">@q.QuestionNumber</span>
+                            <span class="lh-sm">@q.QuestionText</span>
+                        </h5>
+                        <div class="row g-2 mt-3 option-group">
+                            @if (isPhq9)
+                            {
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="0" required class="d-none" />
+                                        <strong>0</strong>
+                                        <span class="d-block small text-muted mt-1">Không bao giờ</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="1" class="d-none" />
+                                        <strong>1</strong>
+                                        <span class="d-block small text-muted mt-1">Vài ngày</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="2" class="d-none" />
+                                        <strong>2</strong>
+                                        <span class="d-block small text-muted mt-1">Hơn nửa số ngày</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="3" class="d-none" />
+                                        <strong>3</strong>
+                                        <span class="d-block small text-muted mt-1">Hầu như cả ngày</span>
+                                    </label>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="0" required class="d-none" />
+                                        <strong>0</strong>
+                                        <span class="d-block small text-muted mt-1">Không bao giờ</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="1" class="d-none" />
+                                        <strong>1</strong>
+                                        <span class="d-block small text-muted mt-1">Thỉnh thoảng</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="2" class="d-none" />
+                                        <strong>2</strong>
+                                        <span class="d-block small text-muted mt-1">Thường xuyên</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block">
+                                        <input type="radio" name="answers[@q.Id]" value="3" class="d-none" />
+                                        <strong>3</strong>
+                                        <span class="d-block small text-muted mt-1">Hầu như luôn luôn</span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="card border-0 shadow-sm mb-5">
+            <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <span class="text-muted" id="progressText">Đã trả lời: 0/@Model.Questions.Count câu hỏi</span>
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn"><i class="bi bi-send-check me-2"></i>Nộp kết quả</button>
+            </div>
+        </div>
+    </form>
+}
+
+<style>
+    .option-label {
+        transition: all 0.2s ease;
+        background: var(--mb-bg-light, #f8f9fa);
+        border-color: #dee2e6;
+    }
+    .option-label:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+    .option-label.selected {
+        background: var(--mb-primary-light, #e3f2fd) !important;
+        border-color: var(--mb-primary, #0d6efd) !important;
+        color: var(--mb-primary, #0d6efd) !important;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+    .question-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent !important;
+    }
+    .question-card.answered {
+        border-left-color: var(--mb-success, #198754) !important;
+    }
+    .question-card.error {
+        border-left-color: var(--mb-danger, #dc3545) !important;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("testForm");
+            if (!form) return;
+
+            const totalQuestions = @Model.Questions.Count;
+            const progressText = document.getElementById("progressText");
+
+            // Attach event listener to all radio options
+            form.querySelectorAll("input[type='radio']").forEach(radio => {
+                radio.addEventListener("change", function () {
+                    const group = this.closest(".option-group");
+                    const card = this.closest(".question-card");
+
+                    // Clear previous selection in this group
+                    group.querySelectorAll(".option-label").forEach(label => {
+                        label.classList.remove("selected");
+                    });
+
+                    // Highlight selected option
+                    this.closest(".option-label").classList.add("selected");
+                    card.classList.add("answered");
+                    card.classList.remove("error");
+
+                    // Update progress
+                    const answeredCount = form.querySelectorAll(".question-card.answered").length;
+                    progressText.textContent = `Đã trả lời: ${answeredCount}/${totalQuestions} câu hỏi`;
+                });
+            });
+
+            // Prevent form submit if not all questions are answered
+            form.addEventListener("submit", function (e) {
+                let hasError = false;
+                form.querySelectorAll(".question-card").forEach(card => {
+                    const radioChecked = card.querySelector("input[type='radio']:checked");
+                    if (!radioChecked) {
+                        card.classList.add("error");
+                        hasError = true;
+                    }
+                });
+
+                if (hasError) {
+                    e.preventDefault();
+                    // Scroll to first unanswered question
+                    const firstError = form.querySelector(".question-card.error");
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    alert("Vui lòng trả lời đầy đủ tất cả câu hỏi trước khi nộp bài.");
+                }
+            });
+        });
+    </script>
+}

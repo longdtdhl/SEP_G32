@@ -42,8 +42,9 @@ public class OpcbsDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentHistory> AppointmentHistories => Set<AppointmentHistory>();
 
-    // Consultations
-    public DbSet<ConsultationRecord> ConsultationRecords => Set<ConsultationRecord>();
+    // Consultations & Patient Records
+    public DbSet<PatientRecord> PatientRecords => Set<PatientRecord>();
+    public DbSet<ConsultationNote> ConsultationNotes => Set<ConsultationNote>();
 
     // Packages
     public DbSet<TreatmentPackage> TreatmentPackages => Set<TreatmentPackage>();
@@ -63,6 +64,12 @@ public class OpcbsDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemConfig> SystemConfigs => Set<SystemConfig>();
 
+    // Psychometrics
+    public DbSet<PsychometricTest> PsychometricTests => Set<PsychometricTest>();
+    public DbSet<PsychometricQuestion> PsychometricQuestions => Set<PsychometricQuestion>();
+    public DbSet<PsychometricSubmission> PsychometricSubmissions => Set<PsychometricSubmission>();
+    public DbSet<PsychometricAnswer> PsychometricAnswers => Set<PsychometricAnswer>();
+
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,6 +83,7 @@ public class OpcbsDbContext : DbContext
         ConfigurePackageEntities(modelBuilder);
         ConfigureBlogAndNotificationEntities(modelBuilder);
         ConfigureSystemEntities(modelBuilder);
+        ConfigurePsychometricEntities(modelBuilder);
     }
 
     private static void ConfigureIdentityEntities(ModelBuilder modelBuilder)
@@ -360,22 +368,23 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(500);
         });
 
-        // ConsultationRecord
-        modelBuilder.Entity<ConsultationRecord>(entity =>
+        // ConsultationNote
+        modelBuilder.Entity<ConsultationNote>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Appointment)
-                .WithOne(a => a.ConsultationRecord)
-                .HasForeignKey<ConsultationRecord>(e => e.AppointmentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(a => a.ConsultationNote)
+                .HasForeignKey<ConsultationNote>(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
             entity.HasOne(e => e.Doctor)
-                .WithMany(d => d.ConsultationRecords)
+                .WithMany() // Or add a collection to DoctorProfile
                 .HasForeignKey(e => e.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.Patient)
-                .WithMany(p => p.ConsultationRecords)
-                .HasForeignKey(e => e.PatientId)
-                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.PatientRecord)
+                .WithMany(p => p.ConsultationNotes)
+                .HasForeignKey(e => e.PatientRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.ConsultationSummary)
                 .IsRequired()
                 .HasMaxLength(5000);
@@ -385,8 +394,30 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(5000);
             entity.Property(e => e.FollowUpNotes)
                 .HasMaxLength(5000);
-            entity.Property(e => e.Prescription)
+            entity.Property(e => e.TherapyPlan)
                 .HasMaxLength(2000);
+        });
+
+        // PatientRecord
+        modelBuilder.Entity<PatientRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Doctor)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+            entity.Property(e => e.GuestName).HasMaxLength(200);
+            entity.Property(e => e.GuestPhone).HasMaxLength(20);
+            entity.Property(e => e.GuestEmail).HasMaxLength(200);
+            entity.Property(e => e.PsychologicalHistory).HasMaxLength(5000);
+            entity.Property(e => e.CurrentSymptoms).HasMaxLength(2000);
+            entity.Property(e => e.StressFactors).HasMaxLength(2000);
+            entity.Property(e => e.GeneralNotes).HasMaxLength(5000);
         });
     }
 
@@ -591,6 +622,65 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.DataType)
                 .HasMaxLength(50);
             entity.HasIndex(e => e.Key).IsUnique();
+        });
+    }
+
+    private static void ConfigurePsychometricEntities(ModelBuilder modelBuilder)
+    {
+        // PsychometricTest
+        modelBuilder.Entity<PsychometricTest>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.TestType).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.TestType).IsUnique();
+        });
+
+        // PsychometricQuestion
+        modelBuilder.Entity<PsychometricQuestion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QuestionText).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.HasOne(e => e.Test)
+                .WithMany(t => t.Questions)
+                .HasForeignKey(e => e.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PsychometricSubmission
+        modelBuilder.Entity<PsychometricSubmission>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ScoreDataJson).IsRequired();
+            entity.Property(e => e.Interpretation).IsRequired().HasMaxLength(1000);
+            entity.HasOne(e => e.Test)
+                .WithMany(t => t.Submissions)
+                .HasForeignKey(e => e.TestId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Appointment)
+                .WithMany()
+                .HasForeignKey(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // PsychometricAnswer
+        modelBuilder.Entity<PsychometricAnswer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Submission)
+                .WithMany(s => s.Answers)
+                .HasForeignKey(e => e.SubmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(e => e.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

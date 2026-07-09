@@ -42,6 +42,51 @@
     .sidebar-tags .tag:hover { background: var(--mb-primary); color: white; }
     
     .error-state { text-align: center; padding: 6rem 2rem; max-width: 600px; margin: 0 auto; }
+
+    /* Comment Section */
+    .comment-section { max-width: 1100px; margin: 0 auto 5rem; }
+    .comment-section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 2px solid #f1f5f9; }
+    .comment-section-header h3 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .comment-section-header .count-badge { background: var(--mb-primary); color: white; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.7rem; border-radius: 20px; }
+
+    .comment-form { background: white; border-radius: 16px; border: 1px solid rgba(78,139,112,0.1); padding: 1.5rem; margin-bottom: 2rem; }
+    .comment-form .form-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .comment-form .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--mb-primary-light); color: var(--mb-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1rem; }
+    .comment-form .form-header span { font-weight: 600; color: #334155; font-size: 0.9rem; }
+    .comment-form textarea { border-radius: 12px; border: 1.5px solid #e2e8f0; font-size: 0.9rem; resize: vertical; transition: border-color 0.2s; }
+    .comment-form textarea:focus { border-color: var(--mb-primary); box-shadow: 0 0 0 3px rgba(78,139,112,0.1); outline: none; }
+    .comment-form .btn-submit-comment { background: var(--mb-primary); color: white; border: none; border-radius: 10px; padding: 0.6rem 1.5rem; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
+    .comment-form .btn-submit-comment:hover { background: #3c7a61; transform: translateY(-1px); }
+
+    .login-to-comment { background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 16px; border: 1px dashed #cbd5e1; padding: 2rem; text-align: center; margin-bottom: 2rem; }
+    .login-to-comment i { font-size: 2rem; color: #94a3b8; margin-bottom: 0.75rem; display: block; }
+    .login-to-comment p { color: #64748b; font-size: 0.9rem; margin-bottom: 1rem; }
+    .login-to-comment .btn { border-radius: 30px; padding: 0.5rem 1.5rem; font-weight: 600; font-size: 0.85rem; }
+
+    /* Related Posts */
+    .related-posts { max-width: 1100px; margin: 0 auto 4rem; }
+    .related-posts-header { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+    .related-posts-header i { color: var(--mb-primary); }
+    .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .related-card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid rgba(78,139,112,0.08); text-decoration: none; transition: all 0.3s ease; display: flex; flex-direction: column; }
+    .related-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(78,139,112,0.12); }
+    .related-card .rc-thumb { height: 160px; overflow: hidden; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); display: flex; align-items: center; justify-content: center; }
+    .related-card .rc-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .related-card:hover .rc-thumb img { transform: scale(1.05); }
+    .related-card .rc-thumb .placeholder { font-size: 2rem; color: var(--mb-primary); opacity: 0.4; }
+    .related-card .rc-body { padding: 1.25rem; flex: 1; }
+    .related-card .rc-title { font-size: 1rem; font-weight: 600; color: #1e293b; line-height: 1.4; margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .related-card:hover .rc-title { color: var(--mb-primary); }
+    .related-card .rc-meta { font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 0.75rem; }
+
+    /* Share buttons */
+    .share-bar { display: flex; align-items: center; gap: 0.75rem; margin: 2rem 0; padding: 1.25rem; background: #f8fafc; border-radius: 12px; }
+    .share-bar span { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .share-btn { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: white; transition: all 0.2s; cursor: pointer; }
+    .share-btn:hover { transform: scale(1.1); }
+    .share-btn.fb { background: #1877f2; }
+    .share-btn.tw { background: #1da1f2; }
+    .share-btn.link { background: #64748b; }
 </style>
 
 @if (Model.Blog == null)
@@ -108,6 +153,20 @@
             <div class="article-body">
                 @Html.Raw(blog.Content)
             </div>
+
+            <!-- Share Bar -->
+            <div class="share-bar">
+                <span><i class="bi bi-share me-1"></i>Chia sẻ:</span>
+                <button class="share-btn fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href),'_blank','width=600,height=400')" title="Chia sẻ Facebook">
+                    <i class="bi bi-facebook"></i>
+                </button>
+                <button class="share-btn tw" onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href)+'&text='+encodeURIComponent('@blog.Title'),'_blank','width=600,height=400')" title="Chia sẻ Twitter">
+                    <i class="bi bi-twitter-x"></i>
+                </button>
+                <button class="share-btn link" onclick="navigator.clipboard.writeText(window.location.href);this.innerHTML='<i class=\'bi bi-check-lg\'></i>';setTimeout(()=>this.innerHTML='<i class=\'bi bi-link-45deg\'></i>',2000)" title="Sao chép liên kết">
+                    <i class="bi bi-link-45deg"></i>
+                </button>
+            </div>
         </main>
         
         <aside class="article-sidebar">
@@ -142,3 +201,126 @@
         </aside>
     </div>
 </div>
+
+<!-- Comment Section -->
+<div class="container">
+    <div class="comment-section">
+        <div class="comment-section-header">
+            <i class="bi bi-chat-dots" style="font-size:1.5rem; color:var(--mb-primary);"></i>
+            <h3>Bình luận</h3>
+            @if (Model.Comments.Any())
+            {
+                <span class="count-badge">@Model.Comments.Count</span>
+            }
+        </div>
+
+        @if (TempData["CommentSuccess"] is string cSuc)
+        {
+            <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px;">
+                <i class="bi bi-check-circle me-1"></i>@cSuc
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (Model.CommentError != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px;">
+                <i class="bi bi-exclamation-triangle me-1"></i>@Model.CommentError
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (Model.IsLoggedIn)
+        {
+            <div class="comment-form">
+                <div class="form-header">
+                    <div class="user-avatar"><i class="bi bi-person-fill"></i></div>
+                    <span>Viết bình luận của bạn</span>
+                </div>
+                <form method="post" asp-page-handler="Comment" asp-route-id="@blog.Id">
+                    <textarea name="NewComment" class="form-control mb-3" rows="3" placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..." required>@Model.NewComment</textarea>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn-submit-comment">
+                            <i class="bi bi-send me-1"></i>Gửi bình luận
+                        </button>
+                    </div>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="login-to-comment">
+                <i class="bi bi-chat-square-text"></i>
+                <p>Đăng nhập để tham gia thảo luận và chia sẻ ý kiến của bạn.</p>
+                <a asp-page="/Account/Login" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                </a>
+            </div>
+        }
+
+        <!-- Comments List -->
+        @if (Model.Comments.Any())
+        {
+            <div class="comments-list">
+                @foreach (var comment in Model.Comments)
+                {
+                    <div class="comment-item" style="display:flex; gap:1rem; padding:1.25rem; background:white; border-radius:14px; border:1px solid rgba(78,139,112,0.08); margin-bottom:1rem;">
+                        <div style="width:40px; height:40px; border-radius:50%; background:var(--mb-primary-light); color:var(--mb-primary); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1rem; flex-shrink:0;">
+                            @(string.IsNullOrEmpty(comment.UserName) ? "A" : comment.UserName[..1].ToUpper())
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+                                <span style="font-weight:600; color:#1e293b; font-size:0.9rem;">@comment.UserName</span>
+                                <span style="font-size:0.75rem; color:#94a3b8;">@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <p style="color:#475569; font-size:0.9rem; line-height:1.6; margin:0;">@comment.Content</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="text-align:center; padding:2rem; color:#94a3b8; font-size:0.9rem;">
+                <i class="bi bi-chat-left-text d-block mb-2" style="font-size:2rem; opacity:0.4;"></i>
+                Hãy là người đầu tiên bình luận về bài viết này!
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Related Posts -->
+@if (Model.RelatedPosts.Any())
+{
+    <div class="container">
+        <div class="related-posts">
+            <div class="related-posts-header">
+                <i class="bi bi-journal-richtext"></i>
+                Bài viết liên quan
+            </div>
+            <div class="related-grid">
+                @foreach (var rp in Model.RelatedPosts)
+                {
+                    <a asp-page="Details" asp-route-id="@rp.Id" class="related-card">
+                        <div class="rc-thumb">
+                            @if (!string.IsNullOrEmpty(rp.DisplayImage))
+                            {
+                                <img src="@rp.DisplayImage" alt="@rp.Title" loading="lazy" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-journal-richtext placeholder"></i>
+                            }
+                        </div>
+                        <div class="rc-body">
+                            <div class="rc-title">@rp.Title</div>
+                            <div class="rc-meta">
+                                <span><i class="bi bi-person me-1"></i>@(rp.AuthorName ?? "Ẩn danh")</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>@(rp.PublishedAt?.ToString("dd/MM/yyyy") ?? rp.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}

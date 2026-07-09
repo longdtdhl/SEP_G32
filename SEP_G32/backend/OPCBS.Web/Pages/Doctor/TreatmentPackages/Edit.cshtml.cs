@@ -11,6 +11,7 @@ public class EditModel : PageModel
     public EditModel(ITreatmentPackageApiService api) => _api = api;
     [BindProperty] public UpdateTreatmentPackageDto Input { get; set; } = new();
     public Guid PackageId { get; set; }
+    public TreatmentPackageDto? Package { get; set; }
     public string? Error { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
@@ -18,6 +19,7 @@ public class EditModel : PageModel
         PackageId = id;
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
+        Package = data;
         Input = new UpdateTreatmentPackageDto { Title = data.Title, Description = data.Description, TotalSessions = data.TotalSessions, Price = data.Price };
         return Page();
     }
@@ -27,6 +29,7 @@ public class EditModel : PageModel
         PackageId = id;
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
+        TempData["Success"] = "Cập nhật gói điều trị thành công!";
         return RedirectToPage("Index");
     }
 }

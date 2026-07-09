@@ -87,6 +87,7 @@ public class VerificationRequestDto
     public DateTime? ReviewedAt { get; set; }
     public Guid? ReviewedBy { get; set; }
     public string? ReviewedByName { get; set; }
+    public string? CertificateUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -108,6 +109,9 @@ public class NotificationDto
     public string Type { get; set; } = string.Empty;
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? ReadAt { get; set; }
+    public Guid? RelatedEntityId { get; set; }
+    public string? RelatedEntityType { get; set; }
 }
 
 public class ServicePackageDto
@@ -139,14 +143,20 @@ public class TreatmentPackageDto
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
+    public Guid DoctorId { get; set; }
     public required string DoctorName { get; set; }
+    public Guid PatientId { get; set; }
     public required string PatientName { get; set; }
     public int SessionQuantity { get; set; }
     public int RemainingSessions { get; set; }
+    public int ValidityDays { get; set; }
     public decimal Price { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime ExpirationDate { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? AssignedDate { get; set; }
+    public DateTime? AcceptedDate { get; set; }
+    public DateTime? ActiveDate { get; set; }
 }
 
 public class CreateTreatmentPackageDto
@@ -230,6 +240,7 @@ public interface IBlogService
     Task<ApiResponse> ApproveBlogAsync(Guid blogId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectBlogAsync(Guid blogId, Guid supportUserId, string? reason, CancellationToken ct = default);
     // Blog comments
+    Task<ApiResponse<List<BlogCommentDto>>> GetCommentsForBlogAsync(Guid blogPostId, CancellationToken ct = default);
     Task<ApiResponse<BlogCommentDto>> AddCommentAsync(Guid userId, CreateBlogCommentDto dto, CancellationToken ct = default);
     Task<ApiResponse<BlogCommentDto>> UpdateCommentAsync(Guid commentId, Guid userId, UpdateBlogCommentDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteCommentAsync(Guid commentId, Guid userId, CancellationToken ct = default);
@@ -270,6 +281,7 @@ public interface ITreatmentPackageService
     Task<ApiResponse<TreatmentPackageDto>> GetByIdAsync(Guid packageId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> AcceptPackageAsync(Guid packageId, Guid patientUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct = default);
+    Task<ApiResponse> CancelPackageAsync(Guid packageId, Guid userId, string? reason, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -302,6 +314,7 @@ public interface ISubscriptionService
 public interface INotificationService
 {
     Task<ApiResponse<List<NotificationDto>>> GetUserNotificationsAsync(Guid userId, int page = 1, int pageSize = 20, CancellationToken ct = default);
+    Task<ApiResponse<int>> GetUnreadCountAsync(Guid userId, CancellationToken ct = default);
     Task<ApiResponse> MarkAsReadAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> MarkAllAsReadAsync(Guid userId, CancellationToken ct = default);
     Task CreateNotificationAsync(Guid userId, string title, string message, Domain.Enums.NotificationType type, Guid? relatedEntityId = null, string? relatedEntityType = null, CancellationToken ct = default);

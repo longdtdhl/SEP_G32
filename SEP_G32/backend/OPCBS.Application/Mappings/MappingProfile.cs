@@ -56,10 +56,16 @@ public class MappingProfile : Profile
             .ForMember(d => d.StartTime, opt => opt.MapFrom(s => s.StartTime.ToString("HH:mm")))
             .ForMember(d => d.EndTime, opt => opt.MapFrom(s => s.EndTime.ToString("HH:mm")));
 
-        // ConsultationRecord → ConsultationRecordDto
-        CreateMap<ConsultationRecord, ConsultationRecordDto>()
+        // ConsultationNote → ConsultationNoteDto
+        CreateMap<ConsultationNote, ConsultationNoteDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
-            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.Patient.User.FullName));
+            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.PatientRecord.Patient != null ? s.PatientRecord.Patient.User.FullName : s.PatientRecord.GuestName));
+
+        // PatientRecord → PatientRecordDto
+        CreateMap<PatientRecord, PatientRecordDto>()
+            .ForMember(d => d.DisplayName, opt => opt.MapFrom(s => s.Patient != null ? s.Patient.User.FullName : s.GuestName))
+            .ForMember(d => d.DisplayPhone, opt => opt.MapFrom(s => s.Patient != null ? s.Patient.User.PhoneNumber : s.GuestPhone))
+            .ForMember(d => d.DisplayEmail, opt => opt.MapFrom(s => s.Patient != null ? s.Patient.User.Email : s.GuestEmail));
 
         // BlogPost → BlogPostDto
         CreateMap<BlogPost, BlogPostDto>()

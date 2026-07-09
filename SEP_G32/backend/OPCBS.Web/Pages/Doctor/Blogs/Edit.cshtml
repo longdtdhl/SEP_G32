@@ -3,6 +3,11 @@
 @{ ViewData["Title"] = "Chỉnh sửa bài viết"; ViewData["UseDashboardLayout"] = true; }
 
 <style>
+    /* Quill Editor */
+    .ql-toolbar.ql-snow { border-radius: 10px 10px 0 0 !important; border: 1.5px solid #e2e8f0 !important; border-bottom: none !important; }
+    .ql-container.ql-snow { border-radius: 0 0 10px 10px !important; border: 1.5px solid #e2e8f0 !important; font-size: 0.9rem; min-height: 300px; }
+    .ql-editor { min-height: 300px; line-height: 1.8; }
+    .ql-editor.ql-blank::before { font-style: normal; color: #94a3b8; }
     .edit-header { margin-bottom: 1.5rem; }
     .edit-header h1 { font-size: 1.4rem; font-weight: 700; }
     .editor-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
@@ -76,7 +81,8 @@
                     <div class="section-title"><i class="bi bi-text-paragraph"></i>Nội dung bài viết</div>
                     <div class="mb-0">
                         <label class="form-label">Nội dung <span class="text-danger">*</span></label>
-                        <textarea asp-for="Input.Content" class="form-control" rows="14"></textarea>
+                        <div id="quill-editor"></div>
+                        <textarea asp-for="Input.Content" id="hiddenContent" style="display:none;"></textarea>
                     </div>
                 </div>
             </div>
@@ -164,14 +170,48 @@
     </div>
 </form>
 
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-    const imgInput = document.getElementById('imageUrlInput');
-    const preview = document.getElementById('imgPreview');
+    // Initialize Quill
+    var quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        placeholder: 'Viết nội dung bài viết của bạn tại đây...',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image'],
+                [{ 'align': [] }],
+                ['clean']
+            ]
+        }
+    });
+
+    // Load existing content
+    var existingContent = document.getElementById('hiddenContent').value;
+    if (existingContent) {
+        quill.root.innerHTML = existingContent;
+    }
+
+    // Sync Quill content to hidden textarea on form submit
+    document.querySelectorAll('form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            document.getElementById('hiddenContent').value = quill.root.innerHTML;
+        });
+    });
+
+    // Image preview
+    var imgInput = document.getElementById('imageUrlInput');
+    var preview = document.getElementById('imgPreview');
     if (imgInput && preview) {
-        imgInput.addEventListener('input', () => {
-            const url = imgInput.value.trim();
+        imgInput.addEventListener('input', function() {
+            var url = imgInput.value.trim();
             if (url) {
-                preview.innerHTML = `<img src="${url}" alt="Preview" onerror="this.parentElement.innerHTML='<span class=\\'placeholder\\'><i class=\\'bi bi-exclamation-triangle me-1\\'></i>Không tải được ảnh</span>'" />`;
+                preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentElement.innerHTML=\'<span class=placeholder><i class=bi bi-exclamation-triangle me-1></i>Không tải được ảnh</span>\'" />';
             } else {
                 preview.innerHTML = '<span class="placeholder"><i class="bi bi-image me-1"></i>Xem trước ảnh bìa</span>';
             }

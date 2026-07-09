@@ -69,7 +69,7 @@ public class AppointmentsController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _apptService.GetMyAppointmentsAsync(userId.Value, page, pageSize);
+        var result = await _apptService.GetMyAppointmentsAsync(userId.Value, page, pageSize, status, search);
         return Ok(result);
     }
 

@@ -1,0 +1,212 @@
+@page
+@model OPCBS.Web.Pages.Patient.Psychometrics.ResultModel
+@{
+    ViewData["Title"] = "Kết quả đánh giá tâm lý";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1><i class="bi bi-bar-chart-line-fill me-2" style="color:var(--mb-primary);"></i>Kết quả đánh giá tâm lý</h1>
+        <p class="text-muted mb-0">Xem kết quả chi tiết của bạn và các khuyến nghị hữu ích.</p>
+    </div>
+    @if (Model.Submission?.AppointmentId != null)
+    {
+        <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.Submission.AppointmentId.Value" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại lịch hẹn</a>
+    }
+    else
+    {
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger mt-3">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+    </div>
+}
+else if (Model.Submission != null)
+{
+    var sub = Model.Submission;
+    var isDass21 = sub.TestType == "DASS21";
+    
+    <div class="row g-4 mt-2">
+        <!-- Chart & Score Card -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">@sub.TestTitle</h5>
+                    
+                    @if (isDass21)
+                    {
+                        <!-- Depression Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Trầm cảm (Depression)</strong>
+                                <span class="badge @GetDassBadgeClass(Model.DepressionScore, "Depression")">@Model.DepressionScore / 42 — @GetDassInterpretationText(Model.DepressionScore, "Depression")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.DepressionScore, "Depression")" role="progressbar" style="width: @(Model.DepressionScore * 100 / 42)%;" aria-valuenow="@Model.DepressionScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Đo lường các trạng thái giảm hứng thú, chán nản, u uất và mất động lực cuộc sống.</small>
+                        </div>
+
+                        <!-- Anxiety Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Lo âu (Anxiety)</strong>
+                                <span class="badge @GetDassBadgeClass(Model.AnxietyScore, "Anxiety")">@Model.AnxietyScore / 42 — @GetDassInterpretationText(Model.AnxietyScore, "Anxiety")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.AnxietyScore, "Anxiety")" role="progressbar" style="width: @(Model.AnxietyScore * 100 / 42)%;" aria-valuenow="@Model.AnxietyScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Đo lường các phản ứng lo sợ vô cớ, run rẩy, khó thở, lo lắng về các tình huống hoảng loạn.</small>
+                        </div>
+
+                        <!-- Stress Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Căng thẳng (Stress)</strong>
+                                <span class="badge @GetDassBadgeClass(Model.StressScore, "Stress")">@Model.StressScore / 42 — @GetDassInterpretationText(Model.StressScore, "Stress")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.StressScore, "Stress")" role="progressbar" style="width: @(Model.StressScore * 100 / 42)%;" aria-valuenow="@Model.StressScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Đo lường mức độ khó thư giãn, dễ kích động, thiếu kiên nhẫn và phản ứng thái quá.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- PHQ-9 Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Điểm trầm cảm PHQ-9</strong>
+                                <span class="badge @GetPhq9BadgeClass(sub.TotalScore)">@sub.TotalScore / 27 — @sub.Interpretation</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetPhq9ProgressBarClass(sub.TotalScore)" role="progressbar" style="width: @(sub.TotalScore * 100 / 27)%;" aria-valuenow="@sub.TotalScore" aria-valuemin="0" aria-valuemax="27"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Thang đánh giá sức khỏe bệnh nhân đo lường mức độ các triệu chứng trầm cảm trong 2 tuần qua.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Interpretation & Next Steps -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="mb-0"><i class="bi bi-shield-heart text-danger me-2"></i>Diễn giải kết quả</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-3">Dựa trên câu trả lời của bạn, hệ thống ghi nhận tình trạng cảm xúc hiện tại:</p>
+                    <div class="alert alert-secondary border-0 p-3 mb-4 text-center fs-5 fw-bold" style="border-radius:12px; background:#f0f2f5;">
+                        @sub.Interpretation
+                    </div>
+
+                    <h6>Khuyến nghị của MindBridge:</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2 text-muted small mt-2">
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Kết quả này được đo lường dựa trên các câu trả lời mang tính tự báo cáo (self-report) và không thay thế cho chẩn đoán y tế chuyên sâu.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Hãy chia sẻ kết quả này với bác sĩ tâm lý trong buổi hẹn sắp tới để giúp định hướng trị liệu chính xác hơn.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Nếu các điểm số ở mức <strong>Nặng hoặc Rất nặng</strong>, bạn nên ưu tiên đặt lịch tư vấn sớm để được hỗ trợ chuyên nghiệp kịp thời.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                @if (sub.AppointmentId != null)
+                {
+                    <a asp-page="/Patient/Appointments/Details" asp-route-id="@sub.AppointmentId.Value" class="btn btn-primary btn-lg"><i class="bi bi-calendar-check me-2"></i>Quay lại chi tiết lịch hẹn</a>
+                }
+                else
+                {
+                    <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-lg"><i class="bi bi-list-check me-2"></i>Xem danh sách lịch hẹn</a>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    private string GetDassInterpretationText(int score, string category)
+    {
+        if (category == "Depression")
+        {
+            if (score <= 9) return "Bình thường";
+            if (score <= 13) return "Nhẹ";
+            if (score <= 20) return "Vừa";
+            if (score <= 27) return "Nặng";
+            return "Rất nặng";
+        }
+        else if (category == "Anxiety")
+        {
+            if (score <= 7) return "Bình thường";
+            if (score <= 9) return "Nhẹ";
+            if (score <= 14) return "Vừa";
+            if (score <= 19) return "Nặng";
+            return "Rất nặng";
+        }
+        else // Stress
+        {
+            if (score <= 14) return "Bình thường";
+            if (score <= 18) return "Nhẹ";
+            if (score <= 25) return "Vừa";
+            if (score <= 33) return "Nặng";
+            return "Rất nặng";
+        }
+    }
+
+    private string GetDassBadgeClass(int score, string category)
+    {
+        var interpretation = GetDassInterpretationText(score, category);
+        return interpretation switch
+        {
+            "Bình thường" => "bg-success-subtle text-success",
+            "Nhẹ" => "bg-info-subtle text-info",
+            "Vừa" => "bg-warning-subtle text-warning",
+            "Nặng" => "bg-danger-subtle text-danger",
+            "Rất nặng" => "bg-danger text-white",
+            _ => "bg-secondary-subtle text-secondary"
+        };
+    }
+
+    private string GetDassProgressBarClass(int score, string category)
+    {
+        var interpretation = GetDassInterpretationText(score, category);
+        return interpretation switch
+        {
+            "Bình thường" => "bg-success",
+            "Nhẹ" => "bg-info",
+            "Vừa" => "bg-warning",
+            "Nặng" => "bg-danger",
+            "Rất nặng" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetPhq9BadgeClass(int score)
+    {
+        if (score <= 4) return "bg-success-subtle text-success";
+        if (score <= 9) return "bg-info-subtle text-info";
+        if (score <= 14) return "bg-warning-subtle text-warning";
+        return "bg-danger-subtle text-danger";
+    }
+
+    private string GetPhq9ProgressBarClass(int score)
+    {
+        if (score <= 4) return "bg-success";
+        if (score <= 9) return "bg-info";
+        if (score <= 14) return "bg-warning";
+        return "bg-danger";
+    }
+}

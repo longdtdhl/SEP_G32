@@ -190,6 +190,8 @@ public class AppointmentService : IAppointmentService
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorSubscription> _subscriptionRepo;
+    private readonly IRepository<TreatmentPackage> _packageRepo;
+    private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -201,6 +203,8 @@ public class AppointmentService : IAppointmentService
         IRepository<User> userRepo,
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorSubscription> subscriptionRepo,
+        IRepository<TreatmentPackage> packageRepo,
+        INotificationService notificationService,
         IUnitOfWork uow,
         IMapper mapper)
     {
@@ -211,6 +215,8 @@ public class AppointmentService : IAppointmentService
         _userRepo = userRepo;
         _patientRepo = patientRepo;
         _subscriptionRepo = subscriptionRepo;
+        _packageRepo = packageRepo;
+        _notificationService = notificationService;
         _uow = uow;
         _mapper = mapper;
     }
@@ -250,22 +256,56 @@ public class AppointmentService : IAppointmentService
             patientProfileId = patient?.Id;
         }
 
-        // BOOK-06 / BOOK-07 / BOOK-09: No double booking for the same patient on the same slot
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+
+        // 1. Ensure the slot is not already booked by an active appointment
+        var isSlotBooked = allAppts.Any(a =>
+            a.AppointmentSlotId == dto.AppointmentSlotId &&
+            a.Status != AppointmentStatus.Cancelled &&
+            a.Status != AppointmentStatus.Rejected);
+        if (isSlotBooked)
+            return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã được đặt trước.");
+
+        // 2. Ensure patient does not have another appointment in the same time slot
         if (patientProfileId.HasValue)
         {
-            var allAppts = await _apptRepo.GetAllAsync(ct);
-            var hasOverlap = allAppts.Any(a =>
+            var hasOverlapTime = allAppts.Any(a =>
                 a.PatientId == patientProfileId.Value &&
-                a.AppointmentSlotId == dto.AppointmentSlotId &&
                 a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Rejected);
-            if (hasOverlap)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Patient already has an appointment for this slot");
+                a.Status != AppointmentStatus.Rejected &&
+                slotDict.TryGetValue(a.AppointmentSlotId, out var s) &&
+                s.SlotDate == slot.SlotDate &&
+                s.StartTime == slot.StartTime);
+            
+            if (hasOverlapTime)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Bạn đã có một lịch hẹn khác trong khung giờ này.");
+        }
+
+        TreatmentPackage? treatmentPackage = null;
+        if (dto.TreatmentPackageId.HasValue && dto.TreatmentPackageId.Value != Guid.Empty)
+        {
+            treatmentPackage = await _packageRepo.GetByIdAsync(dto.TreatmentPackageId.Value, ct);
+            if (treatmentPackage == null)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Không tìm thấy gói điều trị.");
+            if (treatmentPackage.RemainingSessions <= 0)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị đã hết phiên tư vấn.");
+            if (treatmentPackage.Status != TreatmentPackageStatus.Active && treatmentPackage.Status != TreatmentPackageStatus.Accepted)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị chưa được kích hoạt hoặc đã bị hủy.");
+            if (treatmentPackage.ExpirationDate < DateTime.UtcNow)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị đã hết hạn sử dụng.");
         }
 
         await _uow.BeginTransactionAsync(ct);
         try
         {
+            if (treatmentPackage != null)
+            {
+                treatmentPackage.RemainingSessions--;
+                _packageRepo.Update(treatmentPackage);
+            }
+
             slot.Status = AppointmentSlotStatus.Booked;
             _slotRepo.Update(slot);
 
@@ -302,18 +342,45 @@ public class AppointmentService : IAppointmentService
             // Manually build DTO to avoid null navigation properties
             var allUsers = await _userRepo.GetAllAsync(ct);
             var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctor.UserId);
+            var patientName = appointment.GuestName ?? "Bệnh nhân";
+            if (patientProfileId.HasValue)
+            {
+                var allPatients2 = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients2.FirstOrDefault(p => p.Id == patientProfileId.Value);
+                if (pat != null)
+                {
+                    var patUser = allUsers.FirstOrDefault(u => u.Id == pat.UserId);
+                    patientName = patUser?.FullName ?? patientName;
+                }
+            }
+
             var result = new AppointmentDto
             {
                 Id = appointment.Id,
                 BookingCode = appointment.BookingCode,
                 DoctorName = doctorUser?.FullName ?? "Unknown",
-                PatientName = appointment.GuestName ?? "Patient",
+                PatientName = patientName,
                 AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd"),
                 StartTime = slot.StartTime.ToString("HH:mm"),
                 EndTime = slot.EndTime.ToString("HH:mm"),
                 Status = appointment.Status,
                 Notes = appointment.Notes
             };
+
+            // Notify doctor about new booking
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    doctor.UserId,
+                    "📅 Lịch hẹn mới",
+                    $"Bạn có lịch hẹn mới từ {patientName} vào ngày {slot.SlotDate:dd/MM/yyyy} lúc {slot.StartTime.ToString("HH':'mm")}.",
+                    NotificationType.Appointment,
+                    appointment.Id,
+                    "Appointment",
+                    ct);
+            }
+            catch { /* Non-critical — don't fail the booking */ }
+
             return ApiResponse<AppointmentDto>.SuccessResponse(result, "Appointment booked successfully");
         }
         catch
@@ -323,7 +390,84 @@ public class AppointmentService : IAppointmentService
         }
     }
 
-    public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    private async Task EnrichAppointmentListDtosAsync(List<AppointmentListItemDto> dtos, List<Appointment> appointments, CancellationToken ct)
+    {
+        if (!dtos.Any()) return;
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
+        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
+        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+
+        foreach (var dto in dtos)
+        {
+            var appt = appointments.FirstOrDefault(a => a.Id == dto.Id);
+            if (appt == null) continue;
+
+            if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
+                dto.DoctorName = docName;
+            else
+                dto.DoctorName = "Chuyên gia";
+
+            if (appt.PatientId.HasValue)
+            {
+                if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
+                    dto.PatientName = patName;
+            }
+            else
+            {
+                dto.PatientName = appt.GuestName ?? "Khách";
+            }
+
+            if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
+            {
+                dto.AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd");
+                dto.StartTime = slot.StartTime.ToString("HH:mm");
+                dto.EndTime = slot.EndTime.ToString("HH:mm");
+            }
+        }
+    }
+
+    private async Task EnrichAppointmentDtoAsync(AppointmentDto dto, Appointment appt, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
+        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
+        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+
+        if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
+            dto.DoctorName = docName;
+        else
+            dto.DoctorName = "Chuyên gia";
+
+        if (appt.PatientId.HasValue)
+        {
+            if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
+                dto.PatientName = patName;
+        }
+        else
+        {
+            dto.PatientName = appt.GuestName ?? "Khách";
+        }
+
+        if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
+        {
+            dto.AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd");
+            dto.StartTime = slot.StartTime.ToString("HH:mm");
+            dto.EndTime = slot.EndTime.ToString("HH:mm");
+        }
+    }
+
+    public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default)
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == userId);
@@ -332,9 +476,37 @@ public class AppointmentService : IAppointmentService
 
         var allAppts = await _apptRepo.GetAllAsync(ct);
         var myAppts = allAppts.Where(a => a.PatientId == patient.Id && !a.IsDeleted).ToList();
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (Enum.TryParse<AppointmentStatus>(status, true, out var statusEnum))
+            {
+                myAppts = myAppts.Where(a => a.Status == statusEnum).ToList();
+            }
+            else if (int.TryParse(status, out var statusVal) && Enum.IsDefined(typeof(AppointmentStatus), statusVal))
+            {
+                myAppts = myAppts.Where(a => a.Status == (AppointmentStatus)statusVal).ToList();
+            }
+        }
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var allUsers = await _userRepo.GetAllAsync(ct);
+            var docUsers = allDoctors.Join(allUsers, d => d.UserId, u => u.Id, (d, u) => new { DoctorId = d.Id, FullName = u.FullName }).ToList();
+            
+            myAppts = myAppts.Where(a => 
+                (a.BookingCode != null && a.BookingCode.ToLower().Contains(searchLower)) ||
+                (a.Notes != null && a.Notes.ToLower().Contains(searchLower)) ||
+                docUsers.Any(d => d.DoctorId == a.DoctorId && d.FullName.ToLower().Contains(searchLower))
+            ).ToList();
+        }
+
         var total = myAppts.Count;
-        var items = myAppts.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var items = myAppts.OrderByDescending(a => a.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var dtos = _mapper.Map<List<AppointmentListItemDto>>(items);
+        await EnrichAppointmentListDtosAsync(dtos, items, ct);
 
         return ApiResponse<List<AppointmentListItemDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
         {
@@ -351,6 +523,7 @@ public class AppointmentService : IAppointmentService
             return ApiResponse<AppointmentDto>.ErrorResponse("Appointment not found");
 
         var dto = _mapper.Map<AppointmentDto>(appointment);
+        await EnrichAppointmentDtoAsync(dto, appointment, ct);
         return ApiResponse<AppointmentDto>.SuccessResponse(dto);
     }
 
@@ -365,6 +538,7 @@ public class AppointmentService : IAppointmentService
             return ApiResponse<AppointmentDto>.ErrorResponse("Appointment not found");
 
         var result = _mapper.Map<AppointmentDto>(appointment);
+        await EnrichAppointmentDtoAsync(result, appointment, ct);
         return ApiResponse<AppointmentDto>.SuccessResponse(result);
     }
 
@@ -402,6 +576,18 @@ public class AppointmentService : IAppointmentService
             _slotRepo.Update(slot);
         }
 
+        if (appointment.TreatmentPackageId.HasValue && appointment.TreatmentPackageId.Value != Guid.Empty)
+        {
+            var package = await _packageRepo.GetByIdAsync(appointment.TreatmentPackageId.Value, ct);
+            if (package != null)
+            {
+                package.RemainingSessions++;
+                if (package.RemainingSessions > package.SessionQuantity)
+                    package.RemainingSessions = package.SessionQuantity;
+                _packageRepo.Update(package);
+            }
+        }
+
         _apptRepo.Update(appointment);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
@@ -413,8 +599,45 @@ public class AppointmentService : IAppointmentService
         }, ct);
 
         await _uow.SaveChangesAsync(ct);
+
+        // Notify the other party about cancellation
+        try
+        {
+            var allUsers = await _userRepo.GetAllAsync(ct);
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var cancelDoctor = allDoctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+            var cancelPatient = appointment.PatientId.HasValue ? allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value) : null;
+            var cancelSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+            var cancelDateStr = cancelSlot?.SlotDate.ToString("dd/MM/yyyy") ?? "";
+            var cancelTimeStr = cancelSlot?.StartTime.ToString("HH:mm") ?? "";
+
+            // Check if canceller is the patient → notify doctor; else notify patient
+            var isPatientCancel = cancelPatient != null && cancelPatient.UserId == userId;
+            if (isPatientCancel && cancelDoctor != null)
+            {
+                var patUser = allUsers.FirstOrDefault(u => u.Id == userId);
+                await _notificationService.CreateNotificationAsync(
+                    cancelDoctor.UserId,
+                    "🚫 Lịch hẹn đã bị hủy",
+                    $"{patUser?.FullName ?? "Bệnh nhân"} đã hủy lịch hẹn ngày {cancelDateStr} lúc {cancelTimeStr}.",
+                    NotificationType.Appointment, appointmentId, "Appointment", ct);
+            }
+            else if (!isPatientCancel && cancelPatient != null)
+            {
+                var docUser = cancelDoctor != null ? allUsers.FirstOrDefault(u => u.Id == cancelDoctor.UserId) : null;
+                await _notificationService.CreateNotificationAsync(
+                    cancelPatient.UserId,
+                    "🚫 Lịch hẹn đã bị hủy",
+                    $"BS {docUser?.FullName ?? "bác sĩ"} đã hủy lịch hẹn ngày {cancelDateStr} lúc {cancelTimeStr}.",
+                    NotificationType.Appointment, appointmentId, "Appointment", ct);
+            }
+        }
+        catch { }
+
         return ApiResponse.SuccessResponse("Appointment cancelled successfully");
     }
+
 
     public async Task<ApiResponse<List<AppointmentListItemDto>>> GetDoctorAppointmentsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
@@ -428,6 +651,7 @@ public class AppointmentService : IAppointmentService
         var total = doctorAppts.Count;
         var items = doctorAppts.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var dtos = _mapper.Map<List<AppointmentListItemDto>>(items);
+        await EnrichAppointmentListDtosAsync(dtos, items, ct);
 
         return ApiResponse<List<AppointmentListItemDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
         {
@@ -466,6 +690,32 @@ public class AppointmentService : IAppointmentService
         }, ct);
 
         await _uow.SaveChangesAsync(ct);
+
+        // Notify patient about approval
+        try
+        {
+            if (appointment.PatientId.HasValue)
+            {
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+                if (pat != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        pat.UserId,
+                        "✅ Lịch hẹn đã được xác nhận",
+                        $"Lịch hẹn của bạn vào ngày {slot?.SlotDate:dd/MM/yyyy} lúc {slot?.StartTime.ToString("HH':'mm")} đã được BS {doctorUser?.FullName ?? "bác sĩ"} xác nhận.",
+                        NotificationType.Appointment,
+                        appointmentId,
+                        "Appointment",
+                        ct);
+                }
+            }
+        }
+        catch { }
+
         return ApiResponse.SuccessResponse("Appointment approved");
     }
 
@@ -482,6 +732,18 @@ public class AppointmentService : IAppointmentService
 
         if (appointment.Status != AppointmentStatus.Pending)
             return ApiResponse.ErrorResponse("Only pending appointments can be rejected");
+
+        if (appointment.TreatmentPackageId.HasValue && appointment.TreatmentPackageId.Value != Guid.Empty)
+        {
+            var package = await _packageRepo.GetByIdAsync(appointment.TreatmentPackageId.Value, ct);
+            if (package != null)
+            {
+                package.RemainingSessions++;
+                if (package.RemainingSessions > package.SessionQuantity)
+                    package.RemainingSessions = package.SessionQuantity;
+                _packageRepo.Update(package);
+            }
+        }
 
         appointment.Status = AppointmentStatus.Rejected;
         appointment.RejectionReason = dto.Reason;
@@ -506,6 +768,32 @@ public class AppointmentService : IAppointmentService
         }, ct);
 
         await _uow.SaveChangesAsync(ct);
+
+        // Notify patient about rejection
+        try
+        {
+            if (appointment.PatientId.HasValue)
+            {
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                var slot2 = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+                if (pat != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        pat.UserId,
+                        "❌ Lịch hẹn bị từ chối",
+                        $"Lịch hẹn của bạn vào ngày {slot2?.SlotDate:dd/MM/yyyy} đã bị BS {doctorUser?.FullName ?? "bác sĩ"} từ chối. Lý do: {dto.Reason ?? "Không nêu lý do"}.",
+                        NotificationType.Appointment,
+                        appointmentId,
+                        "Appointment",
+                        ct);
+                }
+            }
+        }
+        catch { }
+
         return ApiResponse.SuccessResponse("Appointment rejected");
     }
 
@@ -546,6 +834,31 @@ public class AppointmentService : IAppointmentService
         }, ct);
 
         await _uow.SaveChangesAsync(ct);
+
+        // Notify patient about completion
+        try
+        {
+            if (appointment.PatientId.HasValue)
+            {
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                if (pat != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        pat.UserId,
+                        "🎉 Buổi tư vấn đã hoàn thành",
+                        $"Buổi tư vấn với BS {doctorUser?.FullName ?? "bác sĩ"} đã hoàn thành. Vui lòng kiểm tra hồ sơ tư vấn.",
+                        NotificationType.Appointment,
+                        appointmentId,
+                        "Appointment",
+                        ct);
+                }
+            }
+        }
+        catch { }
+
         return ApiResponse.SuccessResponse("Appointment completed");
     }
 

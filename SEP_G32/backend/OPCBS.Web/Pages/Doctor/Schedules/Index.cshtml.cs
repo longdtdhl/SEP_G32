@@ -102,14 +102,14 @@ public class IndexModel : PageModel
         var (slotsData, error) = await _api.GetMySlotsAsync();
         if (slotsData?.Slots != null)
         {
-            var slotsToDelete = slotsData.Slots.Where(s => s.Status == 0 || s.Status == 2).ToList();
+            var slotsToDelete = slotsData.Slots.Where(s => s.Status == 0).ToList(); // Only delete Available slots, keep Blocked & Booked
             int deletedCount = 0;
             foreach (var slot in slotsToDelete)
             {
                 var (success, _) = await _api.DeleteSlotAsync(slot.Id);
                 if (success) deletedCount++;
             }
-            TempData["Success"] = $"Đã reset (xóa) {deletedCount} slot chưa có người đặt.";
+            TempData["Success"] = $"Đã xóa {deletedCount} slot trống. Slot đã khóa và đã đặt được giữ lại.";
         }
         else
         {

@@ -91,6 +91,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Background Services
+builder.Services.AddHostedService<OPCBS.Services.AppointmentReminderService>();
+
 var app = builder.Build();
 
 // Seed database on startup

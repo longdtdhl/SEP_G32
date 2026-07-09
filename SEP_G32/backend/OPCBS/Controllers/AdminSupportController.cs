@@ -150,6 +150,16 @@ public class NotificationsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/notifications/unread-count — Get unread count</summary>
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _notifService.GetUnreadCountAsync(userId.Value);
+        return Ok(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

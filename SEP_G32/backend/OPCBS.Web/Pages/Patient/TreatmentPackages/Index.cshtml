@@ -1,79 +1,216 @@
 @page
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.IndexModel
 @{
-    ViewData["Title"] = "Gói điều trị";
+    ViewData["Title"] = "Gói điều trị của tôi";
     ViewData["UseDashboardLayout"] = true;
+    var activePkgs = Model.Packages.Count(p => p.Status == "Active");
+    var totalSessions = Model.Packages.Sum(p => p.TotalSessions);
+    var completedSessions = Model.Packages.Sum(p => p.CompletedSessions);
 }
 
+<style>
+    .pt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+    .pt-stat-card {
+        background: white; border-radius: 14px; padding: 1rem 1.25rem; border: 1px solid #f1f5f9;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .pt-stat-card .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .pt-stat-card .stat-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .pt-stat-card .stat-label { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+
+    .pt-card {
+        background: white; border-radius: 16px; border: 1px solid #f1f5f9; overflow: hidden;
+        transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .pt-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .pt-card-header { padding: 1.25rem; border-bottom: 1px solid #f8fafc; }
+    .pt-card-body { padding: 1rem 1.25rem; }
+    .pt-card-footer { padding: 0.75rem 1.25rem; border-top: 1px solid #f8fafc; background: #fafbfc; }
+
+    .pt-status { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.3px; }
+    .pt-status.active { background: #dcfce7; color: #15803d; }
+    .pt-status.created { background: #fef3c7; color: #92400e; }
+    .pt-status.completed { background: #e0e7ff; color: #3730a3; }
+    .pt-status.expired { background: #fee2e2; color: #991b1b; }
+    .pt-status.cancelled { background: #f1f5f9; color: #64748b; }
+    .pt-status.pending { background: #fff7ed; color: #c2410c; }
+
+    .pt-meta-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #64748b; margin-bottom: 6px; }
+    .pt-meta-row i { color: var(--mb-primary); font-size: 0.85rem; width: 16px; text-align: center; }
+
+    .pt-progress-track { background: #e2e8f0; border-radius: 6px; height: 6px; overflow: hidden; }
+    .pt-progress-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+
+    .pt-doctor-badge {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px;
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #166534; font-size: 0.78rem; font-weight: 600;
+    }
+
+    .pt-empty { text-align: center; padding: 4rem 2rem; background: white; border-radius: 16px; border: 2px dashed #e2e8f0; }
+</style>
+
+<!-- Page Header -->
 <div class="mb-page-header">
-    <h1><i class="bi bi-box-seam me-2" style="color:var(--mb-primary);"></i>Gói điều trị của tôi</h1>
-    <p class="text-muted mb-0">Theo dõi các gói điều trị được bác sĩ chỉ định</p>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+        <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Gói điều trị của tôi
+    </h1>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Theo dõi các gói điều trị được bác sĩ chỉ định cho bạn</p>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
-
-@if (Model.Packages.Any())
+@if (Model.Error != null)
 {
-    <div class="row g-4">
-        @foreach (var pkg in Model.Packages)
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="pt-stats">
+    <div class="pt-stat-card">
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-box-seam"></i></div>
+            <div>
+                <div class="stat-value">@Model.Packages.Count</div>
+                <div class="stat-label">Tổng gói</div>
+            </div>
+        </div>
+    </div>
+    <div class="pt-stat-card">
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="bi bi-lightning-charge"></i></div>
+            <div>
+                <div class="stat-value">@activePkgs</div>
+                <div class="stat-label">Đang hoạt động</div>
+            </div>
+        </div>
+    </div>
+    <div class="pt-stat-card">
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:#fef3c7; color:#f59e0b;"><i class="bi bi-calendar2-check"></i></div>
+            <div>
+                <div class="stat-value">@completedSessions / @totalSessions</div>
+                <div class="stat-label">Phiên hoàn thành</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Package Cards -->
+<div class="row g-3">
+    @if (Model.Packages.Any())
+    {
+        @foreach (var pkg in Model.Packages.OrderByDescending(p => p.CreatedAt))
         {
+            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
+            var statusClass = pkg.Status switch {
+                "Active" => "active",
+                "Accepted" => "active",
+                "Created" => "created",
+                "Pending" => "pending",
+                "Assigned" => "pending",
+                "Completed" => "completed",
+                "Cancelled" => "cancelled",
+                _ => pkg.IsExpired ? "expired" : "created"
+            };
+            var statusLabel = pkg.Status switch {
+                "Active" => "Hoạt động",
+                "Accepted" => "Đã chấp nhận",
+                "Created" => "Đã tạo",
+                "Pending" => "Chờ xác nhận",
+                "Assigned" => "Chờ xác nhận",
+                "Completed" => "Hoàn thành",
+                "Cancelled" => "Đã hủy",
+                "Rejected" => "Đã từ chối",
+                _ => pkg.Status
+            };
+            if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Hết hạn"; }
+            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+            var isPending = pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned" || pkg.Status == "0" || pkg.Status == "1";
+
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="mb-0">@pkg.Title</h5>
-                            @{
-                                var badgeClass = pkg.Status switch
-                                {
-                                    "Active" => "bg-success",
-                                    "Pending" => "bg-warning text-dark",
-                                    "Completed" => "bg-info",
-                                    "Expired" => "bg-secondary",
-                                    "Rejected" => "bg-danger",
-                                    _ => "bg-secondary"
-                                };
-                            }
-                            <span class="badge @badgeClass">@pkg.Status</span>
+                <div class="pt-card h-100">
+                    <!-- Header -->
+                    <div class="pt-card-header">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 style="font-weight:700; font-size:0.95rem; color:#1e293b; margin:0; max-width:70%;" class="text-truncate" title="@pkg.Title">@pkg.Title</h6>
+                            <span class="pt-status @statusClass">@statusLabel</span>
                         </div>
-                        @if (!string.IsNullOrEmpty(pkg.Description))
-                        {
-                            <p class="text-muted small mb-3">@pkg.Description</p>
-                        }
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
-                                    <div class="fw-bold" style="color:var(--mb-primary);">@pkg.TotalSessions</div>
-                                    <small class="text-muted">Tổng buổi</small>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
-                                    <div class="fw-bold text-success">@pkg.RemainingSessions</div>
-                                    <small class="text-muted">Còn lại</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted"><i class="bi bi-wallet2 me-1"></i>@pkg.Price.ToString("N0") VND</small>
-                            <small class="text-muted"><i class="bi bi-calendar-x me-1"></i>HSD: @pkg.ExpirationDate.ToString("dd/MM/yyyy")</small>
+                        <div class="pt-doctor-badge">
+                            <i class="bi bi-person-badge"></i>
+                            BS. @(pkg.DoctorName ?? "N/A")
                         </div>
                     </div>
-                    <div class="card-footer bg-transparent border-0 pb-3 px-3">
-                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-eye me-1"></i>Chi tiết
+
+                    <!-- Body -->
+                    <div class="pt-card-body">
+                        @if (!string.IsNullOrEmpty(pkg.Description))
+                        {
+                            <p style="font-size:0.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
+                        }
+
+                        <div class="pt-meta-row"><i class="bi bi-calendar2-check"></i><span>Phiên: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-hourglass-split"></i><span>Còn lại: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-calendar-x"></i><span>Hết hạn: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-currency-dollar"></i><span>Phí: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
+
+                        <!-- Progress bar -->
+                        <div style="margin-top:10px;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Tiến trình</span>
+                                <span style="font-size:0.72rem; color:@progressColor; font-weight:700;">@(progress)%</span>
+                            </div>
+                            <div class="pt-progress-track">
+                                <div class="pt-progress-fill" style="width:@(progress)%; background:@progressColor;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="pt-card-footer d-flex gap-2">
+                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
+                            <i class="bi bi-eye"></i>Chi tiết
                         </a>
+                        @if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
+                        {
+                            <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
+                               class="btn btn-sm btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                               style="border-radius:8px; font-size:0.78rem; font-weight:600; background:var(--mb-primary); border-color:var(--mb-primary);">
+                                <i class="bi bi-calendar-plus"></i>Đặt lịch
+                            </a>
+                        }
+                        @if (isPending)
+                        {
+                            <a asp-page="Details" asp-route-id="@pkg.Id"
+                               class="btn btn-sm btn-success flex-fill d-flex align-items-center justify-content-center gap-1"
+                               style="border-radius:8px; font-size:0.78rem; font-weight:600;">
+                                <i class="bi bi-check-circle"></i>Phản hồi
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
         }
-    </div>
-}
-else
-{
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-box d-block mb-2" style="font-size:2.5rem;color:var(--mb-text-muted);"></i>
-            <p class="text-muted mb-0">Chưa có gói điều trị nào</p>
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="pt-empty">
+                <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
+                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">Chưa có gói điều trị nào</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Bác sĩ sẽ tạo gói điều trị dành riêng cho bạn sau khi tư vấn</p>
+                <a asp-page="/Doctors/Index" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                    <i class="bi bi-search me-1"></i>Tìm bác sĩ
+                </a>
+            </div>
         </div>
-    </div>
-}
+    }
+</div>

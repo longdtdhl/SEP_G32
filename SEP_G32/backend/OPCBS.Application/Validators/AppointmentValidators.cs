@@ -38,12 +38,12 @@ public class CreateAppointmentDtoValidator : AbstractValidator<CreateAppointment
 /// <summary>
 /// Validator for creating consultation records
 /// </summary>
-public class CreateConsultationRecordDtoValidator : AbstractValidator<CreateConsultationRecordDto>
+public class CreateConsultationNoteDtoValidator : AbstractValidator<CreateConsultationNoteDto>
 {
-    public CreateConsultationRecordDtoValidator()
+    public CreateConsultationNoteDtoValidator()
     {
-        RuleFor(x => x.AppointmentId)
-            .NotEmpty().WithMessage("Appointment ID is required");
+        RuleFor(x => x.PatientRecordId)
+            .NotEmpty().WithMessage("Patient record ID is required");
 
         RuleFor(x => x.ConsultationSummary)
             .NotEmpty().WithMessage("Consultation summary is required")
@@ -61,18 +61,18 @@ public class CreateConsultationRecordDtoValidator : AbstractValidator<CreateCons
             .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
             .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
 
-        RuleFor(x => x.Prescription)
-            .MaximumLength(2000).WithMessage("Prescription cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Prescription));
+        RuleFor(x => x.TherapyPlan)
+            .MaximumLength(2000).WithMessage("Kế hoạch trị liệu không được vượt quá 2000 ký tự.")
+            .When(x => !string.IsNullOrEmpty(x.TherapyPlan));
     }
 }
 
 /// <summary>
 /// Validator for updating consultation records
 /// </summary>
-public class UpdateConsultationRecordDtoValidator : AbstractValidator<UpdateConsultationRecordDto>
+public class UpdateConsultationNoteDtoValidator : AbstractValidator<UpdateConsultationNoteDto>
 {
-    public UpdateConsultationRecordDtoValidator()
+    public UpdateConsultationNoteDtoValidator()
     {
         RuleFor(x => x.ConsultationSummary)
             .NotEmpty().WithMessage("Consultation summary is required")
@@ -90,9 +90,9 @@ public class UpdateConsultationRecordDtoValidator : AbstractValidator<UpdateCons
             .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
             .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
 
-        RuleFor(x => x.Prescription)
-            .MaximumLength(2000).WithMessage("Prescription cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Prescription));
+        RuleFor(x => x.TherapyPlan)
+            .MaximumLength(2000).WithMessage("Kế hoạch trị liệu không được vượt quá 2000 ký tự.")
+            .When(x => !string.IsNullOrEmpty(x.TherapyPlan));
     }
 }
 

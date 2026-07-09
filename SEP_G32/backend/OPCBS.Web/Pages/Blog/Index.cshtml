@@ -17,7 +17,14 @@
     .blog-search .bi-search { position: absolute; left: 1.5rem; top: 50%; transform: translateY(-50%); font-size: 1.2rem; color: #94a3b8; }
     .blog-search button { position: absolute; right: 8px; top: 8px; bottom: 8px; border-radius: 40px; padding: 0 1.5rem; background: var(--mb-primary); color: white; border: none; font-weight: 600; transition: background 0.3s; }
     .blog-search button:hover { background: #3c7a61; }
-    
+
+    /* Category Filter Tabs */
+    .category-tabs { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; padding: 0.75rem; background: white; border-radius: 16px; border: 1px solid rgba(78,139,112,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .category-tabs .cat-btn { padding: 0.5rem 1.25rem; border-radius: 30px; font-size: 0.82rem; font-weight: 500; border: 1.5px solid transparent; background: transparent; color: #64748b; cursor: pointer; transition: all 0.25s ease; text-decoration: none; white-space: nowrap; }
+    .category-tabs .cat-btn:hover { background: rgba(78,139,112,0.08); color: var(--mb-primary); }
+    .category-tabs .cat-btn.active { background: var(--mb-primary); color: white; border-color: var(--mb-primary); font-weight: 600; box-shadow: 0 4px 12px rgba(78,139,112,0.25); }
+    .category-tabs .cat-icon { margin-right: 0.3rem; }
+
     .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 2rem; margin-bottom: 4rem; }
     .blog-card { background: white; border-radius: 20px; overflow: hidden; border: 1px solid rgba(78,139,112,0.08); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; text-decoration: none; position: relative; }
     .blog-card:hover { transform: translateY(-8px); box-shadow: 0 24px 48px rgba(78,139,112,0.12); }
@@ -36,6 +43,10 @@
     .blog-card .author-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .blog-card .author-name { font-size: 0.85rem; font-weight: 600; color: #334155; }
     .blog-card .date { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 0.35rem; }
+
+    .result-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .result-info .result-count { font-size: 0.9rem; color: #64748b; }
+    .result-info .result-count strong { color: #1e293b; }
 </style>
 
 <div class="blog-hero">
@@ -46,12 +57,62 @@
         <form method="get" class="blog-search">
             <i class="bi bi-search"></i>
             <input type="text" name="search" value="@Model.Filter.Search" placeholder="Tìm kiếm bài viết, chủ đề..." />
+            @if (!string.IsNullOrEmpty(Model.Filter.Category))
+            {
+                <input type="hidden" name="category" value="@Model.Filter.Category" />
+            }
             <button type="submit">Tìm kiếm</button>
         </form>
     </div>
 </div>
 
 <div class="container">
+    <!-- Category Filter Tabs -->
+    @{
+        var categories = new[] {
+            ("", "Tất cả", "bi-grid"),
+            ("Sức khỏe tâm thần", "Sức khỏe tâm thần", "bi-heart-pulse"),
+            ("Trầm cảm", "Trầm cảm", "bi-cloud-rain"),
+            ("Lo âu", "Lo âu", "bi-emoji-frown"),
+            ("Stress", "Stress & Áp lực", "bi-lightning"),
+            ("Mối quan hệ", "Mối quan hệ", "bi-people"),
+            ("Trẻ em & Thanh thiếu niên", "Trẻ em", "bi-balloon"),
+            ("Tự chăm sóc", "Tự chăm sóc", "bi-flower1")
+        };
+        var currentCat = Model.Filter.Category ?? "";
+    }
+    <div class="category-tabs">
+        @foreach (var (val, label, icon) in categories)
+        {
+            <a asp-page="Index"
+               asp-route-category="@(string.IsNullOrEmpty(val) ? null : val)"
+               asp-route-search="@Model.Filter.Search"
+               class="cat-btn @(currentCat == val ? "active" : "")">
+                <i class="bi @icon cat-icon"></i>@label
+            </a>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Filter.Search) || !string.IsNullOrEmpty(Model.Filter.Category))
+    {
+        <div class="result-info">
+            <div class="result-count">
+                Tìm thấy <strong>@Model.Blogs.Count</strong> bài viết
+                @if (!string.IsNullOrEmpty(Model.Filter.Search))
+                {
+                    <span>cho "<strong>@Model.Filter.Search</strong>"</span>
+                }
+                @if (!string.IsNullOrEmpty(Model.Filter.Category))
+                {
+                    <span>trong danh mục <strong>@Model.Filter.Category</strong></span>
+                }
+            </div>
+            <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:20px; font-size:0.8rem;">
+                <i class="bi bi-x-lg me-1"></i>Xóa bộ lọc
+            </a>
+        </div>
+    }
+
     @if (Model.Blogs.Any())
     {
         <div class="blog-grid">
@@ -106,7 +167,7 @@
                         @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)
                         {
                             <li class="page-item @(i == Model.Pagination.Page ? "active" : "")">
-                                <a class="page-link" asp-page="Index" asp-route-page="@i" asp-route-search="@Model.Filter.Search">@i</a>
+                                <a class="page-link" asp-page="Index" asp-route-page="@i" asp-route-search="@Model.Filter.Search" asp-route-category="@Model.Filter.Category">@i</a>
                             </li>
                         }
                     </ul>
@@ -121,8 +182,8 @@
                 <i class="bi bi-search" style="font-size:2rem; color:#94a3b8;"></i>
             </div>
             <h3 style="color:#334155; font-weight:700; margin-bottom:0.5rem;">Không tìm thấy bài viết</h3>
-            <p style="color:#64748b;">Rất tiếc, chúng tôi không tìm thấy bài viết nào phù hợp với từ khóa "@Model.Filter.Search".<br/>Vui lòng thử lại với từ khóa khác.</p>
-            <a asp-page="Index" class="btn btn-outline-primary mt-3" style="border-radius:30px; padding:0.6rem 1.5rem;">Xóa tìm kiếm</a>
+            <p style="color:#64748b;">Rất tiếc, chúng tôi không tìm thấy bài viết nào phù hợp.<br/>Vui lòng thử lại với từ khóa hoặc danh mục khác.</p>
+            <a asp-page="Index" class="btn btn-outline-primary mt-3" style="border-radius:30px; padding:0.6rem 1.5rem;">Xóa bộ lọc</a>
         </div>
     }
 </div>
