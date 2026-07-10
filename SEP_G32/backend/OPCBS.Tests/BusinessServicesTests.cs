@@ -44,6 +44,27 @@ public class BusinessServicesTests
 
         var userRepo = new Mock<IRepository<User>>();
         var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PatientRecord 
+            { 
+                Id = record.PatientRecordId, 
+                PatientId = patientId,
+                Doctor = new DoctorProfile 
+                { 
+                    Id = Guid.NewGuid(), 
+                    UserId = Guid.NewGuid(), 
+                    User = new User 
+                    { 
+                        Id = Guid.NewGuid(), 
+                        Email = "d@test.com", 
+                        FullName = "Doctor", 
+                        PhoneNumber = "123", 
+                        PasswordHash = "hash", 
+                        RoleId = Guid.NewGuid(), 
+                        Role = new Role { Name = "Doctor" } 
+                    } 
+                }
+            });
         var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
         var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
 

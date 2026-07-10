@@ -23,26 +23,51 @@ public class TakeTestModel : PageModel
     public Guid? AppointmentId { get; set; }
     public string? Error { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(Guid testId, Guid? appointmentId)
+    // Multi-test list mode
+    public List<PsychometricTestDto> AvailableTests { get; set; } = new();
+    public List<PsychometricSubmissionDto> Submissions { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(Guid? testId, Guid? appointmentId)
     {
         AppointmentId = appointmentId;
 
-        var (tests, _) = await _psychService.GetTestsAsync();
-        Test = tests?.FirstOrDefault(t => t.Id == testId);
-        if (Test == null)
+        var (tests, testsError) = await _psychService.GetTestsAsync();
+        if (tests == null)
         {
-            Error = "Không tìm thấy bài trắc nghiệm này.";
+            Error = testsError ?? "Không thể tải danh sách bài trắc nghiệm.";
             return Page();
         }
 
-        var (questions, error) = await _psychService.GetQuestionsAsync(testId);
-        if (questions == null || questions.Count == 0)
+        AvailableTests = tests;
+
+        if (testId.HasValue && testId.Value != Guid.Empty)
         {
-            Error = error ?? "Không thể tải câu hỏi của bài trắc nghiệm.";
-            return Page();
+            Test = tests.FirstOrDefault(t => t.Id == testId.Value);
+            if (Test == null)
+            {
+                Error = "Không tìm thấy bài trắc nghiệm này.";
+                return Page();
+            }
+
+            var (questions, error) = await _psychService.GetQuestionsAsync(testId.Value);
+            if (questions == null || questions.Count == 0)
+            {
+                Error = error ?? "Không thể tải câu hỏi của bài trắc nghiệm.";
+                return Page();
+            }
+
+            Questions = questions;
+        }
+        else
+        {
+            // Landing page mode: Load submission history
+            var (subs, _) = await _psychService.GetMySubmissionsAsync();
+            if (subs != null)
+            {
+                Submissions = subs.OrderByDescending(s => s.SubmittedAt).ToList();
+            }
         }
 
-        Questions = questions;
         return Page();
     }
 

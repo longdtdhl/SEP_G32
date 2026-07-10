@@ -70,6 +70,10 @@ public class OpcbsDbContext : DbContext
     public DbSet<PsychometricSubmission> PsychometricSubmissions => Set<PsychometricSubmission>();
     public DbSet<PsychometricAnswer> PsychometricAnswers => Set<PsychometricAnswer>();
 
+    // Therapy Features
+    public DbSet<TherapyAssignment> TherapyAssignments => Set<TherapyAssignment>();
+    public DbSet<EmotionJournal> EmotionJournals => Set<EmotionJournal>();
+
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

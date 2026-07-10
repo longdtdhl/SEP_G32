@@ -221,8 +221,11 @@
 
                     <!-- Footer -->
                     <div class="pkg-card-footer d-flex gap-2">
+                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
+                            <i class="bi bi-journal-check"></i>Bài tập
+                        </a>
                         <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-pencil-square"></i>Chi tiết
+                            <i class="bi bi-pencil-square"></i>Chỉnh sửa
                         </a>
                         @if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
                         {

@@ -296,6 +296,22 @@ public class AppointmentService : IAppointmentService
             if (treatmentPackage.ExpirationDate < DateTime.UtcNow)
                 return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị đã hết hạn sử dụng.");
         }
+        else if (patientProfileId.HasValue)
+        {
+            var allPackages = await _packageRepo.GetAllAsync(ct);
+            treatmentPackage = allPackages.FirstOrDefault(p =>
+                p.PatientId == patientProfileId.Value &&
+                p.DoctorId == dto.DoctorId &&
+                !p.IsDeleted &&
+                (p.Status == TreatmentPackageStatus.Active || p.Status == TreatmentPackageStatus.Accepted) &&
+                p.ExpirationDate > DateTime.UtcNow &&
+                p.RemainingSessions > 0);
+            
+            if (treatmentPackage != null)
+            {
+                dto.TreatmentPackageId = treatmentPackage.Id;
+            }
+        }
 
         await _uow.BeginTransactionAsync(ct);
         try

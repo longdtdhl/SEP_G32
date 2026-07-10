@@ -289,7 +289,7 @@ public interface ITreatmentPackageService
 /// </summary>
 public interface IServicePackageService
 {
-    Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(CancellationToken ct = default);
+    Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(bool includeInactive = false, CancellationToken ct = default);
     Task<ApiResponse<ServicePackageDto>> GetByIdAsync(Guid packageId, CancellationToken ct = default);
     Task<ApiResponse<ServicePackageDto>> CreateAsync(CreateServicePackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<ServicePackageDto>> UpdateAsync(Guid packageId, CreateServicePackageDto dto, CancellationToken ct = default);
@@ -332,4 +332,8 @@ public interface IAdminService
     Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page = 1, int pageSize = 20, CancellationToken ct = default);
     Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default);
     Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, CancellationToken ct = default);
+    Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, CancellationToken ct = default);
+    Task<ApiResponse> DeleteSpecializationAsync(Guid id, CancellationToken ct = default);
+    Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct = default);
+    Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, CancellationToken ct = default);
 }

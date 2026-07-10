@@ -178,11 +178,11 @@ public class ServicePackagesController : ControllerBase
 
     public ServicePackagesController(IServicePackageService pkgService) => _pkgService = pkgService;
 
-    /// <summary>GET /api/v1/service-packages — Get active packages (Public)</summary>
+    /// <summary>GET /api/v1/service-packages — Get packages</summary>
     [HttpGet]
-    public async Task<IActionResult> GetActivePackages()
+    public async Task<IActionResult> GetActivePackages([FromQuery] bool includeInactive = false)
     {
-        var result = await _pkgService.GetActivePackagesAsync();
+        var result = await _pkgService.GetActivePackagesAsync(includeInactive);
         return Ok(result);
     }
 
@@ -511,18 +511,20 @@ public class BusinessManagerController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>PUT /api/v1/business-manager/specializations/{id} — Update specialization (stub)</summary>
+    /// <summary>PUT /api/v1/business-manager/specializations/{id} — Update specialization</summary>
     [HttpPut("specializations/{id}")]
-    public Task<IActionResult> UpdateSpecialization(Guid id)
+    public async Task<IActionResult> UpdateSpecialization(Guid id, [FromBody] CreateSpecializationRequest request)
     {
-        return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Update specialization — to be implemented")));
+        var result = await _adminService.UpdateSpecializationAsync(id, request.Name, request.Description);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>DELETE /api/v1/business-manager/specializations/{id} — Delete specialization (stub)</summary>
+    /// <summary>DELETE /api/v1/business-manager/specializations/{id} — Delete specialization</summary>
     [HttpDelete("specializations/{id}")]
-    public Task<IActionResult> DeleteSpecialization(Guid id)
+    public async Task<IActionResult> DeleteSpecialization(Guid id)
     {
-        return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Delete specialization — to be implemented")));
+        var result = await _adminService.DeleteSpecializationAsync(id);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }
 
@@ -598,6 +600,22 @@ public class AdminController : ControllerBase
     public Task<IActionResult> GetReports()
     {
         return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Admin reports — to be expanded")));
+    }
+
+    /// <summary>GET /api/v1/admin/settings</summary>
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        var result = await _adminService.GetSystemSettingsAsync();
+        return Ok(result);
+    }
+
+    /// <summary>PUT /api/v1/admin/settings</summary>
+    [HttpPut("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] Dictionary<string, string> settings)
+    {
+        var result = await _adminService.UpdateSystemSettingsAsync(settings);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }
 

@@ -87,6 +87,26 @@ public class BookModel : PageModel
                 }
                 catch { }
             }
+            else if (!IsGuest)
+            {
+                try
+                {
+                    var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
+                    var activePkg = pkgs.FirstOrDefault(p =>
+                        p.DoctorId == DoctorId.Value &&
+                        (p.Status == "Active" || p.Status == "Accepted") &&
+                        !p.IsExpired &&
+                        p.RemainingSessions > 0);
+                    
+                    if (activePkg != null)
+                    {
+                        TreatmentPackageId = activePkg.Id;
+                        Input.TreatmentPackageId = activePkg.Id;
+                        TreatmentPackage = activePkg;
+                    }
+                }
+                catch { }
+            }
 
             // Load doctor info
             try

@@ -38,6 +38,7 @@ RegisterApi<ICustomerSupportApiService, CustomerSupportApiService>(builder.Servi
 RegisterApi<IBusinessManagerApiService, BusinessManagerApiService>(builder.Services);
 RegisterApi<IPsychometricApiService, PsychometricApiService>(builder.Services);
 RegisterApi<INotificationApiService, NotificationApiService>(builder.Services);
+RegisterApi<ITherapyApiService, TherapyApiService>(builder.Services);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

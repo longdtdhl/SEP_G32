@@ -44,6 +44,12 @@
             <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
                 <i class="bi bi-box-seam"></i> Gói điều trị
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
+                <i class="bi bi-journal-heart"></i> Nhật ký cảm xúc
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
+                <i class="bi bi-clipboard2-pulse"></i> Bài test sàng lọc
+            </a>
             <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
                 <i class="bi bi-bell"></i> Thông báo <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge"></span>
             </a>

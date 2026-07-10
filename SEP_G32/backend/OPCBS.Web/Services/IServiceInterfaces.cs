@@ -93,6 +93,8 @@ public interface IAdminApiService
     Task<(bool Success, string? Error)> UnlockUserAsync(Guid id);
     Task<(List<RoleDto> Data, string? Error)> GetRolesAsync();
     Task<(List<AuditLogDto> Data, PaginationDto? Pagination, string? Error)> GetAuditLogsAsync(string? entityName = null, int page = 1, int pageSize = 20);
+    Task<(Dictionary<string, string> Data, string? Error)> GetSystemSettingsAsync();
+    Task<(bool Success, string? Error)> UpdateSystemSettingsAsync(Dictionary<string, string> settings);
 }
 
 public interface ICustomerSupportApiService
@@ -139,4 +141,20 @@ public interface INotificationApiService
     Task<(int Count, string? Error)> GetUnreadCountAsync();
     Task<(bool Success, string? Error)> MarkAsReadAsync(Guid notificationId);
     Task<(bool Success, string? Error)> MarkAllAsReadAsync();
+}
+
+public interface ITherapyApiService
+{
+    // Assignments
+    Task<(List<TherapyAssignmentDto> Data, string? Error)> GetAssignmentsByPackageAsync(Guid packageId);
+    Task<(TherapyAssignmentDto? Data, string? Error)> GetAssignmentByIdAsync(Guid id);
+    Task<(TherapyAssignmentDto? Data, string? Error)> CreateAssignmentAsync(CreateAssignmentDto dto);
+    Task<(bool Success, string? Error)> SubmitAssignmentAsync(Guid id, SubmitAssignmentDto dto);
+    Task<(bool Success, string? Error)> FeedbackAssignmentAsync(Guid id, FeedbackAssignmentDto dto);
+    Task<(bool Success, string? Error)> DeleteAssignmentAsync(Guid id);
+    // Journals
+    Task<(List<EmotionJournalDto> Data, string? Error)> GetMyJournalsAsync();
+    Task<(List<EmotionJournalDto> Data, string? Error)> GetPatientSharedJournalsAsync(Guid patientId);
+    Task<(EmotionJournalDto? Data, string? Error)> CreateJournalAsync(CreateJournalDto dto);
+    Task<(bool Success, string? Error)> DeleteJournalAsync(Guid id);
 }

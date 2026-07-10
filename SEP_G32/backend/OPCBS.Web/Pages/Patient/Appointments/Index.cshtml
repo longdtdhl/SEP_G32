@@ -3,10 +3,6 @@
 @{
     ViewData["Title"] = "Lịch hẹn của tôi";
     ViewData["UseDashboardLayout"] = true;
-
-    var pending = Model.Appointments.Count(a => a.Status == 0);
-    var approved = Model.Appointments.Count(a => a.Status == 1);
-    var completed = Model.Appointments.Count(a => a.Status == 4);
 }
 
 <style>
@@ -68,13 +64,30 @@
 }
 
 <!-- Search & Filter Bar -->
-<div class="search-filter-bar">
-    <span class="filter-chip active" onclick="filterAppointments(event, 'all')">Tất cả</span>
-    <span class="filter-chip" onclick="filterAppointments(event, '0')">Chờ xác nhận (@pending)</span>
-    <span class="filter-chip" onclick="filterAppointments(event, '1')">Đã xác nhận (@approved)</span>
-    <span class="filter-chip" onclick="filterAppointments(event, '4')">Hoàn thành (@completed)</span>
-    <span class="filter-chip" onclick="filterAppointments(event, '2')">Từ chối</span>
-    <span class="filter-chip" onclick="filterAppointments(event, '3')">Đã hủy</span>
+<div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+    <div class="card-body p-3">
+        <form method="get" id="filterForm">
+            <input type="hidden" name="page" id="pageInput" value="1" />
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-5 col-lg-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1.5" style="letter-spacing:0.04em; font-size:0.75rem;">Lọc theo trạng thái</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0" style="border-radius:12px 0 0 12px; padding-left:14px; padding-right:8px; color:var(--mb-primary);">
+                            <i class="bi bi-funnel-fill"></i>
+                        </span>
+                        <select name="Status" onchange="document.getElementById('pageInput').value='1'; this.form.submit();" class="form-select bg-light border-0" style="border-radius:0 12px 12px 0; padding:10px 14px; font-size:0.875rem; color:#1e293b; font-weight:600;">
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">Tất cả lịch hẹn</option>
+                            <option value="0" selected="@(Model.Status == "0" ? "selected" : null)">Chờ xác nhận</option>
+                            <option value="1" selected="@(Model.Status == "1" ? "selected" : null)">Đã xác nhận</option>
+                            <option value="4" selected="@(Model.Status == "4" ? "selected" : null)">Hoàn thành</option>
+                            <option value="2" selected="@(Model.Status == "2" ? "selected" : null)">Từ chối</option>
+                            <option value="3" selected="@(Model.Status == "3" ? "selected" : null)">Đã hủy</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 @if (Model.Appointments.Any())
@@ -94,7 +107,7 @@
                               isCompleted ? "border-start-success" :
                               isCancelled || isRejected ? "border-start-danger" : "";
 
-            <div class="appointment-card @borderClass appointment-card-item" data-status="@apt.Status">
+            <div class="appointment-card @borderClass">
                 <div class="appointment-card-body">
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div class="d-flex align-items-center gap-3">
@@ -172,19 +185,4 @@ else
     </div>
 }
 
-<script>
-function filterAppointments(event, statusVal) {
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
 
-    document.querySelectorAll('.appointment-card-item').forEach(item => {
-        if (statusVal === 'all' || item.dataset.status === statusVal) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-</script>

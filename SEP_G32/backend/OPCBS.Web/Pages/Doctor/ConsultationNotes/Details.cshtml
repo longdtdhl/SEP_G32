@@ -83,7 +83,8 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-12">
+        <!-- Main Note Content -->
+        <div class="col-lg-8">
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
@@ -139,6 +140,80 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Sidebar Package Content -->
+        <div class="col-lg-4">
+            <!-- Treatment Package linked directly to this consultation note's appointment -->
+            @if (Model.TreatmentPackage != null)
+            {
+                var pkg = Model.TreatmentPackage;
+                var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+                var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+
+                <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
+                            <i class="bi bi-box-seam-fill text-success me-2"></i>Gói điều trị của phiên này
+                        </h5>
+                        <div class="p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+                            <h6 class="fw-bold text-dark mb-2" style="font-size:0.88rem; line-height:1.4;">@pkg.Title</h6>
+                            
+                            <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
+                                <span>Tiến độ: @pkg.CompletedSessions/@pkg.TotalSessions phiên</span>
+                                <span style="color:@progressColor; font-weight:700;">@progress%</span>
+                            </div>
+                            <div class="progress mb-3" style="height:6px; border-radius:4px;">
+                                <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
+                            </div>
+
+                            <div class="d-flex flex-column gap-2" style="font-size:0.8rem; color:#475569;">
+                                <div><i class="bi bi-calendar-event me-1"></i>Hạn dùng: @pkg.ExpirationDate.ToString("dd/MM/yyyy")</div>
+                                <div><i class="bi bi-hourglass-split me-1"></i>Còn lại: @pkg.RemainingSessions phiên</div>
+                            </div>
+                        </div>
+                        <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-primary w-100 fw-bold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
+                            <i class="bi bi-journal-check me-1"></i>Bài tập & Nhận xét
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- All other patient treatment packages -->
+            @if (Model.PatientPackages.Any() && (Model.TreatmentPackage == null || Model.PatientPackages.Count > 1))
+            {
+                <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
+                            <i class="bi bi-boxes text-primary me-2"></i>Gói điều trị của bệnh nhân
+                        </h5>
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var pkg in Model.PatientPackages)
+                            {
+                                @if (Model.TreatmentPackage == null || pkg.Id != Model.TreatmentPackage.Id)
+                                {
+                                    var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+                                    var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+                                    
+                                    <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size:0.85rem; line-height:1.4;">@pkg.Title</h6>
+                                        <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
+                                            <span>Phiên: @pkg.CompletedSessions/@pkg.TotalSessions</span>
+                                            <span style="color:@progressColor; font-weight:700;">@progress%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height:6px; border-radius:4px;">
+                                            <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
+                                        </div>
+                                        <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
+                                            <i class="bi bi-journal-check me-1"></i>Bài tập & Nhận xét
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 }

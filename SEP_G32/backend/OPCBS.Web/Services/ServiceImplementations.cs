@@ -275,6 +275,15 @@ public class AdminApiService : ApiServiceBase, IAdminApiService
         var (data, pagination, error) = await GetAsync<List<AuditLogDto>>(url);
         return (data ?? new(), pagination, error);
     }
+    public async Task<(Dictionary<string, string> Data, string? Error)> GetSystemSettingsAsync()
+    {
+        var (data, _, error) = await GetAsync<Dictionary<string, string>>("api/v1/admin/settings");
+        return (data ?? new(), error);
+    }
+    public async Task<(bool Success, string? Error)> UpdateSystemSettingsAsync(Dictionary<string, string> settings)
+    {
+        return await PutAsync("api/v1/admin/settings", settings);
+    }
 }
 
 // --- Customer Support ---
@@ -327,7 +336,7 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     // Service Packages
     public async Task<(List<ServicePackageDto> Data, string? Error)> GetServicePackagesAsync()
     {
-        var (data, _, error) = await GetAsync<List<ServicePackageDto>>(ApiRoutes.ServicePackages);
+        var (data, _, error) = await GetAsync<List<ServicePackageDto>>($"{ApiRoutes.ServicePackages}?includeInactive=true");
         return (data ?? new(), error);
     }
     public async Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id)
@@ -341,12 +350,12 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     // Specializations
     public async Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync()
     {
-        var (data, _, error) = await GetAsync<List<SpecializationDto>>(ApiRoutes.Specializations);
+        var (data, _, error) = await GetAsync<List<SpecializationDto>>("api/v1/doctors/specializations");
         return (data ?? new(), error);
     }
-    public async Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto) => await PostAsync(ApiRoutes.Specializations, dto);
-    public async Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto) => await PutAsync($"{ApiRoutes.Specializations}/{id}", dto);
-    public async Task<(bool Success, string? Error)> DeleteSpecializationAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.Specializations}/{id}");
+    public async Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto) => await PostAsync("api/v1/business-manager/specializations", dto);
+    public async Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto) => await PutAsync($"api/v1/business-manager/specializations/{id}", dto);
+    public async Task<(bool Success, string? Error)> DeleteSpecializationAsync(Guid id) => await base.DeleteAsync($"api/v1/business-manager/specializations/{id}");
 }
 
 public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
@@ -412,4 +421,60 @@ public class NotificationApiService : ApiServiceBase, INotificationApiService
 
     public async Task<(bool Success, string? Error)> MarkAllAsReadAsync() =>
         await PutAsync($"{ApiRoutes.Notifications}/mark-read-all");
+}
+
+// --- Therapy (Assignments & Journals) ---
+public class TherapyApiService : ApiServiceBase, ITherapyApiService
+{
+    public TherapyApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    // Assignments
+    public async Task<(List<TherapyAssignmentDto> Data, string? Error)> GetAssignmentsByPackageAsync(Guid packageId)
+    {
+        var (data, _, error) = await GetAsync<List<TherapyAssignmentDto>>($"{ApiRoutes.Therapy}/assignments/package/{packageId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(TherapyAssignmentDto? Data, string? Error)> GetAssignmentByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<TherapyAssignmentDto>($"{ApiRoutes.Therapy}/assignments/{id}");
+        return (data, error);
+    }
+
+    public async Task<(TherapyAssignmentDto? Data, string? Error)> CreateAssignmentAsync(CreateAssignmentDto dto)
+    {
+        var (data, error) = await PostAsync<TherapyAssignmentDto>($"{ApiRoutes.Therapy}/assignments", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> SubmitAssignmentAsync(Guid id, SubmitAssignmentDto dto) =>
+        await PutAsync($"{ApiRoutes.Therapy}/assignments/{id}/submit", dto);
+
+    public async Task<(bool Success, string? Error)> FeedbackAssignmentAsync(Guid id, FeedbackAssignmentDto dto) =>
+        await PutAsync($"{ApiRoutes.Therapy}/assignments/{id}/feedback", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteAssignmentAsync(Guid id) =>
+        await DeleteAsync($"{ApiRoutes.Therapy}/assignments/{id}");
+
+    // Journals
+    public async Task<(List<EmotionJournalDto> Data, string? Error)> GetMyJournalsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<EmotionJournalDto>>($"{ApiRoutes.Therapy}/journals/my");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<EmotionJournalDto> Data, string? Error)> GetPatientSharedJournalsAsync(Guid patientId)
+    {
+        var (data, _, error) = await GetAsync<List<EmotionJournalDto>>($"{ApiRoutes.Therapy}/journals/patient/{patientId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(EmotionJournalDto? Data, string? Error)> CreateJournalAsync(CreateJournalDto dto)
+    {
+        var (data, error) = await PostAsync<EmotionJournalDto>($"{ApiRoutes.Therapy}/journals", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteJournalAsync(Guid id) =>
+        await DeleteAsync($"{ApiRoutes.Therapy}/journals/{id}");
 }

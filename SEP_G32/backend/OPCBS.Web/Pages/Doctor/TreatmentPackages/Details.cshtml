@@ -1,0 +1,262 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Doctor.TreatmentPackages.DetailsModel
+@{
+    ViewData["Title"] = "Chi tiết gói điều trị";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<style>
+    .dt-sidebar { border-radius:16px; border:1px solid #f1f5f9; overflow:hidden; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+    .dt-sidebar-header { padding:1.25rem; border-bottom:1px solid #f1f5f9; font-weight:700; font-size:0.85rem; color:#1e293b; display:flex; align-items:center; gap:8px; }
+    .dt-sidebar-header i { color:var(--mb-primary); }
+    .dt-sidebar-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:0.82rem; }
+    .dt-sidebar-row .label { color:#64748b; }
+    .dt-sidebar-row .value { font-weight:600; color:#1e293b; }
+    .form-section { margin-bottom:1.25rem; }
+    .form-section-title { font-size:0.85rem; font-weight:700; color:#1e293b; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid rgba(78,139,112,0.1); display:flex; align-items:center; gap:8px; }
+    .form-section-title i { color:var(--mb-primary); }
+</style>
+
+<!-- Page Header -->
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Chi tiết gói điều trị
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Quản lý bài tập, xem nhật ký bệnh nhân</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Package != null)
+{
+    var pkg = Model.Package;
+    var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+    var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+
+    <div class="row g-4">
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="dt-sidebar mb-3">
+                <div class="dt-sidebar-header"><i class="bi bi-person-fill"></i>Bệnh nhân</div>
+                <div style="padding:1.25rem; text-align:center;">
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">@(pkg.PatientName ?? "N/A")</div>
+                    <div style="font-size:0.78rem; color:#94a3b8;">Bệnh nhân được chỉ định gói này</div>
+                </div>
+            </div>
+
+            <div class="dt-sidebar mb-3">
+                <div class="dt-sidebar-header"><i class="bi bi-info-circle"></i>Thông tin gói</div>
+                <div style="padding:1rem 1.25rem;">
+                    <div class="dt-sidebar-row"><span class="label">Tên gói</span><span class="value">@pkg.Title</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Tổng phiên</span><span class="value">@pkg.TotalSessions</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Đã hoàn thành</span><span class="value" style="color:#16a34a;">@pkg.CompletedSessions</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Còn lại</span><span class="value" style="color:#f59e0b;">@pkg.RemainingSessions</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Hết hạn</span><span class="value">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</span></div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="dt-sidebar mb-3">
+                <div class="dt-sidebar-header"><i class="bi bi-graph-up"></i>Tiến trình</div>
+                <div style="padding:1rem 1.25rem;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-size:0.82rem; color:#64748b;">Hoàn thành</span>
+                        <span style="font-size:0.82rem; color:@progressColor; font-weight:700;">@(progress)%</span>
+                    </div>
+                    <div class="progress" style="height:8px; border-radius:8px;">
+                        <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:8px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Assignment Form -->
+            <div class="dt-sidebar">
+                <div class="dt-sidebar-header"><i class="bi bi-plus-circle-fill"></i>Giao bài tập mới</div>
+                <div style="padding:1rem 1.25rem;">
+                    <form method="post" asp-page-handler="CreateAssignment" asp-route-id="@pkg.Id">
+                        <div class="mb-2">
+                            <input asp-for="AssignmentTitle" class="form-control form-control-sm" placeholder="Tiêu đề bài tập *" style="border-radius:8px;" />
+                        </div>
+                        <div class="mb-2">
+                            <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="3" placeholder="Mô tả / yêu cầu chi tiết..." style="border-radius:8px;"></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label style="font-size:0.75rem; color:#64748b;">Hạn nộp (tùy chọn)</label>
+                            <input asp-for="AssignmentDueDate" type="date" class="form-control form-control-sm" style="border-radius:8px;" />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                            <i class="bi bi-send me-1"></i>Giao bài tập
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4" role="tablist" style="border-bottom:2px solid #e2e8f0;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-hw" type="button" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0;">
+                        <i class="bi bi-journal-check me-1"></i>Bài tập (@Model.Assignments.Count)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-journal" type="button" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0;">
+                        <i class="bi bi-journal-heart me-1"></i>Nhật ký BN (@Model.PatientJournals.Count)
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Assignments Tab -->
+                <div class="tab-pane fade show active" id="tab-hw" role="tabpanel">
+                    @if (Model.Assignments.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var hw in Model.Assignments)
+                            {
+                                <div class="card border-0 shadow-sm" style="border-radius:14px; border-left: 4px solid @(hw.Status == 2 ? "#10b981" : hw.Status == 1 ? "#3b82f6" : "#f59e0b") !important;">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <span class="@hw.StatusBadgeClass">@hw.StatusText</span>
+                                                <h6 class="fw-bold mb-0 mt-1" style="color:#1e293b;">@hw.Title</h6>
+                                            </div>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                @if (hw.DueDate.HasValue)
+                                                {
+                                                    <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>@hw.DueDate.Value.ToString("dd/MM/yyyy")</small>
+                                                }
+                                                <form method="post" asp-page-handler="DeleteAssignment" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" onsubmit="return confirm('Xóa bài tập này?');">
+                                                    <button class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash"></i></button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(hw.Description))
+                                        {
+                                            <div class="p-2 rounded-3 mb-2" style="background:#f8fafc; font-size:0.82rem; color:#475569; white-space:pre-line;">@hw.Description</div>
+                                        }
+
+                                        @if (hw.Status >= 1 && !string.IsNullOrEmpty(hw.PatientSubmission))
+                                        {
+                                            <div class="p-2 rounded-3 mb-2" style="background:#eff6ff; border:1px solid #dbeafe;">
+                                                <div style="font-size:0.72rem; color:#3b82f6; font-weight:700; margin-bottom:4px;">
+                                                    <i class="bi bi-send-check me-1"></i>Bài làm của BN (Nộp lúc @hw.SubmittedAt?.ToString("dd/MM HH:mm"))
+                                                </div>
+                                                <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.PatientSubmission</div>
+                                            </div>
+                                        }
+
+                                        @if (hw.Status == 2 && !string.IsNullOrEmpty(hw.DoctorFeedback))
+                                        {
+                                            <div class="p-2 rounded-3 mb-2" style="background:#dcfce7; border:1px solid #bbf7d0;">
+                                                <div style="font-size:0.72rem; color:#16a34a; font-weight:700; margin-bottom:4px;">
+                                                    <i class="bi bi-chat-heart me-1"></i>Nhận xét của bạn (@hw.FeedbackAt?.ToString("dd/MM HH:mm"))
+                                                </div>
+                                                <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.DoctorFeedback</div>
+                                            </div>
+                                        }
+
+                                        @if (hw.Status == 1)
+                                        {
+                                            <form method="post" asp-page-handler="Feedback" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" class="mt-2">
+                                                <div class="mb-2">
+                                                    <textarea name="FeedbackText" class="form-control form-control-sm" rows="2" placeholder="Nhập nhận xét cho bệnh nhân..." style="border-radius:8px;"></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-success btn-sm px-3" style="border-radius:8px;">
+                                                    <i class="bi bi-chat-heart me-1"></i>Gửi nhận xét
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
+                            <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
+                            <span class="small">Chưa có bài tập nào. Dùng form bên trái để giao bài tập cho bệnh nhân.</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Patient Journals Tab -->
+                <div class="tab-pane fade" id="tab-journal" role="tabpanel">
+                    @if (Model.PatientJournals.Any())
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var j in Model.PatientJournals)
+                            {
+                                <div class="card border-0 shadow-sm" style="border-radius:14px;">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <div style="font-size:1.8rem; line-height:1;">@j.MoodEmoji</div>
+                                            <div>
+                                                <h6 class="fw-bold mb-0" style="font-size:0.92rem; color:#1e293b;">@j.Title</h6>
+                                                <div style="font-size:0.72rem; color:#94a3b8;">
+                                                    <i class="bi bi-calendar3 me-1"></i>@j.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-3 mb-2">
+                                            <div class="px-2 py-1 rounded-3" style="background:#eff6ff; font-size:0.75rem;">
+                                                <strong style="color:#3b82f6;">Tâm trạng:</strong> @j.MoodText
+                                            </div>
+                                            <div class="px-2 py-1 rounded-3" style="background:#fef3c7; font-size:0.75rem;">
+                                                <strong style="color:#f59e0b;">Căng thẳng:</strong> @j.StressText
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(j.Content))
+                                        {
+                                            <p class="mb-0 small text-secondary" style="line-height:1.7; white-space:pre-line;">@j.Content</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
+                            <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
+                            <span class="small">Bệnh nhân chưa chia sẻ nhật ký cảm xúc nào.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
+            <i class="bi bi-box text-muted" style="font-size:2.5rem;"></i>
+        </div>
+        <h5 class="fw-bold">Không tìm thấy gói điều trị</h5>
+        <p class="text-muted">Gói điều trị này không tồn tại hoặc bạn không có quyền truy cập.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Quay lại danh sách</a>
+    </div>
+}

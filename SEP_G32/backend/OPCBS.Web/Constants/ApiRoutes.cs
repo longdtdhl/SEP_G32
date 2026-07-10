@@ -77,4 +77,7 @@ public static class ApiRoutes
 
     // Psychometrics
     public const string Psychometrics = $"{Base}/psychometrics";
+
+    // Therapy (Assignments & Journals)
+    public const string Therapy = $"{Base}/therapy";
 }

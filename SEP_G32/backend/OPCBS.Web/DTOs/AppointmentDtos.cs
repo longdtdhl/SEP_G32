@@ -19,6 +19,7 @@ public class AppointmentDto
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
 
     public string StatusText => Status switch
     {
@@ -57,6 +58,7 @@ public class AppointmentListItemDto
     public string? StartTime { get; set; }
     public int Status { get; set; }
     public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
 
     public string StatusText => Status switch
     {

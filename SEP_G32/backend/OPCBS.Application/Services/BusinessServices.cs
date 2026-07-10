@@ -790,11 +790,16 @@ public class ServicePackageService : IServicePackageService
     public ServicePackageService(IRepository<ServicePackage> pkgRepo, IUnitOfWork uow, IMapper mapper)
     { _pkgRepo = pkgRepo; _uow = uow; _mapper = mapper; }
 
-    public async Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(CancellationToken ct)
+    public async Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(bool includeInactive, CancellationToken ct)
     {
         var all = await _pkgRepo.GetAllAsync(ct);
-        var active = all.Where(p => p.IsActive && !p.IsDeleted).OrderBy(p => p.DisplayOrder).ToList();
-        return ApiResponse<List<ServicePackageDto>>.SuccessResponse(_mapper.Map<List<ServicePackageDto>>(active));
+        var query = all.Where(p => !p.IsDeleted);
+        if (!includeInactive)
+        {
+            query = query.Where(p => p.IsActive);
+        }
+        var list = query.OrderBy(p => p.DisplayOrder).ToList();
+        return ApiResponse<List<ServicePackageDto>>.SuccessResponse(_mapper.Map<List<ServicePackageDto>>(list));
     }
 
     public async Task<ApiResponse<ServicePackageDto>> GetByIdAsync(Guid packageId, CancellationToken ct)
@@ -846,11 +851,12 @@ public class AdminService : IAdminService
     private readonly IRepository<Specialization> _specRepo;
     private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IRepository<BlogPost> _blogRepo;
+    private readonly IRepository<SystemConfig> _configRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public AdminService(IRepository<User> userRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IUnitOfWork uow, IMapper mapper)
-    { _userRepo = userRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _uow = uow; _mapper = mapper; }
+    public AdminService(IRepository<User> userRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper)
+    { _userRepo = userRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; }
 
     public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct)
     {
@@ -926,6 +932,56 @@ public class AdminService : IAdminService
         await _specRepo.AddAsync(spec, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization created");
+    }
+
+    public async Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, CancellationToken ct)
+    {
+        var spec = await _specRepo.GetByIdAsync(id, ct);
+        if (spec == null) return ApiResponse<SpecializationDto>.ErrorResponse("Specialization not found");
+        spec.Name = name;
+        spec.Description = description;
+        spec.UpdatedAt = DateTime.UtcNow;
+        _specRepo.Update(spec);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization updated");
+    }
+
+    public async Task<ApiResponse> DeleteSpecializationAsync(Guid id, CancellationToken ct)
+    {
+        var spec = await _specRepo.GetByIdAsync(id, ct);
+        if (spec == null) return ApiResponse.ErrorResponse("Specialization not found");
+        spec.IsDeleted = true;
+        _specRepo.Update(spec);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Specialization deleted successfully");
+    }
+
+    public async Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct)
+    {
+        var configs = await _configRepo.GetAllAsync(ct);
+        var dict = configs.ToDictionary(c => c.Key, c => c.Value);
+        return ApiResponse<Dictionary<string, string>>.SuccessResponse(dict);
+    }
+
+    public async Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, CancellationToken ct)
+    {
+        var configs = await _configRepo.GetAllAsync(ct);
+        var configDict = configs.ToDictionary(c => c.Key, c => c);
+
+        foreach (var (key, value) in settings)
+        {
+            if (configDict.TryGetValue(key, out var config))
+            {
+                config.Value = value ?? string.Empty;
+                _configRepo.Update(config);
+            }
+            else
+            {
+                await _configRepo.AddAsync(new SystemConfig { Key = key, Value = value ?? string.Empty }, ct);
+            }
+        }
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Settings updated successfully");
     }
 }
 
