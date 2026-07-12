@@ -96,7 +96,7 @@
                                 <td>@pkg.DurationDays days</td>
                                 <td>@pkg.MaxAppointments</td>
                                 <td><span class="badge @(pkg.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(pkg.IsActive ? "Active" : "Inactive")</span></td>
-                                <td class="text-muted small">@pkg.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td class="text-muted small">@pkg.CreatedAt.ToString("MM/dd/yyyy")</td>
                                 <td class="text-end pe-4">
                                     <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit"><i class="bi bi-pencil"></i></a>
                                     <form method="post" asp-page-handler="Delete" class="d-inline">
