@@ -49,7 +49,7 @@ public class VerificationModel : PageModel
 
         var (success, error) = await _api.SubmitAsync(Input);
         if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Đã gửi hồ sơ xác minh thành công!";
+        TempData["Success"] = "Verification profile submitted successfully!";
         return RedirectToPage();
     }
 }

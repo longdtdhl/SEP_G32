@@ -28,7 +28,7 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var (data, error) = await _service.GetByIdAsync(id);
-        if (data == null) { Error = error ?? "Không tìm thấy lịch hẹn."; return Page(); }
+        if (data == null) { Error = error ?? "Not found lịch hẹn."; return Page(); }
         Appointment = data;
 
         var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(id);
@@ -44,7 +44,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _service.CancelAsync(id, new CancelAppointmentDto { Reason = CancelReason });
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã hủy lịch hẹn thành công.";
+        TempData["SuccessMessage"] = "Appointment cancelled successfully.";
         return RedirectToPage("Index");
     }
 }

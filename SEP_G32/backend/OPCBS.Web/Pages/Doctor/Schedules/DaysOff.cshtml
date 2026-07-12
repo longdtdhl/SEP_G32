@@ -1,6 +1,6 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Schedules.DaysOffModel
-@{ ViewData["Title"] = "Quản lý ngày nghỉ"; ViewData["UseDashboardLayout"] = true; }
+@{ ViewData["Title"] = "Day Off Management"; ViewData["UseDashboardLayout"] = true; }
 
 <style>
     .daysoff-header { margin-bottom: 1.5rem; }
@@ -58,11 +58,11 @@
 
 <div class="daysoff-header d-flex justify-content-between align-items-center">
     <div>
-        <h1><i class="bi bi-calendar-x me-2" style="color:#ef4444;"></i>Quản lý ngày nghỉ</h1>
-        <p>Đăng ký ngày nghỉ để tự động ẩn lịch khám trong những ngày đó</p>
+        <h1><i class="bi bi-calendar-x me-2" style="color:#ef4444;"></i>Day Off Management</h1>
+        <p>Register ngày nghỉ to tự động ẩn lịch consultations trong những ngày đó</p>
     </div>
     <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px; font-weight:500;">
-        <i class="bi bi-arrow-left me-1"></i>Quay lại lịch
+        <i class="bi bi-arrow-left me-1"></i>Back lịch
     </a>
 </div>
 
@@ -85,21 +85,21 @@
                 <div class="icon-wrap" style="background:rgba(239,68,68,0.1); color:#ef4444;">
                     <i class="bi bi-plus-circle"></i>
                 </div>
-                <h5>Thêm ngày nghỉ mới</h5>
+                <h5>Add New Day Off</h5>
             </div>
             <div class="card-body-custom">
                 <form method="post">
                     <div class="mb-3">
-                        <label class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                        <label class="form-label">Start Date <span class="text-danger">*</span></label>
                         <input type="date" asp-for="Input.StartDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Ngày kết thúc</label>
+                        <label class="form-label">End Date</label>
                         <input type="date" asp-for="Input.EndDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
                         <div class="form-text" style="font-size:0.75rem;">Để trống nếu chỉ nghỉ 1 ngày</div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label">Lý do</label>
+                        <label class="form-label">Reason</label>
                         <input asp-for="Input.Reason" class="form-control" placeholder="VD: Nghỉ phép, Hội thảo..." />
                     </div>
                     <button type="submit" class="btn-add">
@@ -117,7 +117,7 @@
                 <div class="icon-wrap" style="background:rgba(99,102,241,0.1); color:#6366f1;">
                     <i class="bi bi-list-check"></i>
                 </div>
-                <h5>Danh sách ngày nghỉ</h5>
+                <h5>List ngày nghỉ</h5>
                 @if (Model.DaysOff.Any())
                 {
                     <span style="margin-left:auto; background:#f1f5f9; padding:2px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; color:#475569;">
@@ -134,17 +134,17 @@
                             <div>
                                 <div class="date-badge">
                                     <i class="bi bi-calendar-x"></i>
-                                    @d.StartDate.ToString("dd/MM/yyyy")
-                                    @if (d.EndDate.Date != d.StartDate.Date) { <span>→ @d.EndDate.ToString("dd/MM/yyyy")</span> }
+                                    @d.StartDate.ToString("MM/dd/yyyy")
+                                    @if (d.EndDate.Date != d.StartDate.Date) { <span>→ @d.EndDate.ToString("MM/dd/yyyy")</span> }
                                 </div>
                                 @if (!string.IsNullOrEmpty(d.Reason))
                                 {
                                     <div class="reason"><i class="bi bi-chat-left-text me-1"></i>@d.Reason</div>
                                 }
                             </div>
-                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa ngày nghỉ này?');">
+                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete ngày nghỉ this?');">
                                 <input type="hidden" name="id" value="@d.Id" />
-                                <button type="submit" class="btn-delete-dayoff" title="Xóa">
+                                <button type="submit" class="btn-delete-dayoff" title="Delete">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -155,8 +155,8 @@
                 {
                     <div class="empty-state">
                         <i class="bi bi-calendar-check"></i>
-                        <p style="font-size:0.9rem; margin:0;">Chưa có ngày nghỉ nào được đăng ký</p>
-                        <p style="font-size:0.8rem; margin:4px 0 0;">Thêm ngày nghỉ để tự động ẩn lịch khám</p>
+                        <p style="font-size:0.9rem; margin:0;">None yet ngày nghỉ nào được registration</p>
+                        <p style="font-size:0.8rem; margin:4px 0 0;">Thêm ngày nghỉ to tự động ẩn lịch consultations</p>
                     </div>
                 }
             </div>

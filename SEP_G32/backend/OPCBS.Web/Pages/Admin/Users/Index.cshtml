@@ -122,7 +122,7 @@
                                         <i class="bi bi-x-circle text-muted"></i>
                                     }
                                 </td>
-                                <td class="text-muted" style="font-size:0.85rem;">@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td class="text-muted" style="font-size:0.85rem;">@user.CreatedAt.ToString("MM/dd/yyyy")</td>
                                 <td class="text-end pe-4">
                                     <a asp-page="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary me-1" title="View"><i class="bi bi-eye"></i></a>
                                     @if (user.IsActive)

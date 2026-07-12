@@ -38,14 +38,14 @@ public class CreateModel : PageModel
     {
         if (PatientRecordId == Guid.Empty)
         {
-            TempData["ErrorMessage"] = "Vui lòng chọn hồ sơ bệnh nhân để tạo ghi chú.";
+            TempData["ErrorMessage"] = "Please select a patient record to create a note.";
             return RedirectToPage("/Doctor/Patients/Index");
         }
 
         var (patient, err) = await _patientApi.GetByIdAsync(PatientRecordId);
         if (patient == null)
         {
-            TempData["ErrorMessage"] = "Không tìm thấy hồ sơ bệnh nhân.";
+            TempData["ErrorMessage"] = "Patient record not found.";
             return RedirectToPage("/Doctor/Patients/Index");
         }
         
@@ -76,7 +76,7 @@ public class CreateModel : PageModel
         var (success, error) = await _api.CreateAsync(Input);
         if (!success)
         {
-            Error = error ?? "Tạo hồ sơ tư vấn thất bại.";
+            Error = error ?? "Failed to create consultation record.";
             if (AppointmentId.HasValue)
             {
                 var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
@@ -85,7 +85,7 @@ public class CreateModel : PageModel
             return Page();
         }
         
-        TempData["Success"] = "Đã tạo hồ sơ tư vấn thành công!";
+        TempData["Success"] = "Consultation record created successfully!";
         return RedirectToPage("/Doctor/Patients/Details", new { id = PatientRecordId });
     }
 }

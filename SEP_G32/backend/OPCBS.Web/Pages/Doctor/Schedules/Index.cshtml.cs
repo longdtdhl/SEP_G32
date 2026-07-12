@@ -63,7 +63,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.DeleteDayOffAsync(id);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đã xóa ngày nghỉ.";
+        else TempData["Success"] = "Day off deleted successfully.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -71,7 +71,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.ToggleBlockSlotAsync(slotId);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đã cập nhật trạng thái slot thành công.";
+        else TempData["Success"] = "Updated trạng thái slot successfully.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -85,7 +85,7 @@ public class IndexModel : PageModel
         };
         var (data, error) = await _api.CreateSlotAsync(dto);
         if (error != null) TempData["Error"] = error;
-        else TempData["Success"] = "Đã tạo slot khám thành công.";
+        else TempData["Success"] = "Created slot khám successfully.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -93,7 +93,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.DeleteSlotAsync(slotId);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đã xóa slot thành công.";
+        else TempData["Success"] = "Deleted slot successfully.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -109,11 +109,11 @@ public class IndexModel : PageModel
                 var (success, _) = await _api.DeleteSlotAsync(slot.Id);
                 if (success) deletedCount++;
             }
-            TempData["Success"] = $"Đã xóa {deletedCount} slot trống. Slot đã khóa và đã đặt được giữ lại.";
+            TempData["Success"] = $"Deleted {deletedCount} slot trống. Slot đã khóa và đã đặt được giữ lại.";
         }
         else
         {
-            TempData["Error"] = error ?? "Không thể lấy danh sách slot để reset.";
+            TempData["Error"] = error ?? "Unable to lấy danh sách slot để reset.";
         }
         return RedirectToPage(new { week = Week });
     }

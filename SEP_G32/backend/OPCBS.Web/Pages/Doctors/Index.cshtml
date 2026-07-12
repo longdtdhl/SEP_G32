@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Doctors.IndexModel
 @{
-    ViewData["Title"] = "Tìm kiếm chuyên gia";
+    ViewData["Title"] = "Search specialist";
 }
 
 <style>
@@ -86,9 +86,9 @@
 
 <div class="mb-page-header mb-4">
     <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Tìm kiếm chuyên gia trị liệu
+        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search specialist therapy
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lựa chọn bác sĩ và chuyên gia tâm lý phù hợp với tình trạng của bạn</p>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lựa select doctor and specialist psyforlogy matching with tình trạng your</p>
 </div>
 
 <!-- Search & Filter Block -->
@@ -98,7 +98,7 @@
             <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
                 <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
                 <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
-                       placeholder="Tìm theo tên bác sĩ hoặc chuyên khoa..." 
+                       placeholder="Find theo tên doctor hoặc chuyên khoa..." 
                        style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
                 <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
             </form>
@@ -109,7 +109,7 @@
                 <select name="specialization" class="form-select" 
                         style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
                         onchange="this.form.submit()">
-                    <option value="">Tất cả chuyên khoa</option>
+                    <option value="">All chuyên khoa</option>
                     @foreach (var s in Model.Specializations)
                     {
                         <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
@@ -154,7 +154,7 @@
                     <!-- Name & Spec -->
                     <div class="doctor-name-modern">@doc.FullName</div>
                     <div class="d-inline-block">
-                        <span class="doctor-spec-modern">@(doc.Specialization ?? "Chuyên gia tâm lý")</span>
+                        <span class="doctor-spec-modern">@(doc.Specialization ?? "Therapist")</span>
                     </div>
 
                     <!-- Rating -->
@@ -181,13 +181,13 @@
                         }
                         @if (doc.ReviewCount > 0)
                         {
-                            <span style="font-size:0.75rem; color:#64748b; margin-left:4px;">(@doc.ReviewCount đánh giá)</span>
+                            <span style="font-size:0.75rem; color:#64748b; margin-left:4px;">(@doc.ReviewCount reviews)</span>
                         }
                     </div>
 
                     <!-- Experience & Fee Meta -->
                     <div class="mt-auto d-flex justify-content-between w-100 border-top pt-3" style="font-size:0.8rem; color:#64748b;">
-                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears năm KN</span>
+                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years KN</span>
                         @if (doc.ConsultationFee > 0)
                         {
                             <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
@@ -208,8 +208,8 @@ else
     <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px;">
         <div class="card-body">
             <i class="bi bi-search text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold">Không tìm thấy bác sĩ nào</h5>
-            <p class="text-muted small mb-0">Thử thay đổi từ khóa tìm kiếm hoặc chuyên khoa của bạn.</p>
+            <h5 class="fw-bold">Not found doctor nào</h5>
+            <p class="text-muted small mb-0">Thử thay đổi keyword search hoặc chuyên khoa your.</p>
         </div>
     </div>
 }

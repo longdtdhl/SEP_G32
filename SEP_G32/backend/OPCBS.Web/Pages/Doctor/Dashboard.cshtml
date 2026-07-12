@@ -7,7 +7,7 @@
 
 <div class="mb-page-header">
     <h1>Dashboard</h1>
-    <p class="text-muted">Tổng quan hoạt động tư vấn của bạn</p>
+    <p class="text-muted">Overview of your consultation activities</p>
 </div>
 
 @if (Model.Error != null)
@@ -28,27 +28,27 @@
                 <div class="flex-grow-1">
                     @if (statusLower == "submitted" || statusLower == "pending")
                     {
-                        <h5 class="fw-bold mb-1" style="color:#856404;">Hồ sơ đang chờ duyệt</h5>
-                        <p class="mb-2 text-muted">Hồ sơ xác minh của bạn đã được gửi và đang được xem xét. Bạn sẽ được thông báo khi có kết quả.</p>
-                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Đang chờ duyệt</span>
+                        <h5 class="fw-bold mb-1" style="color:#856404;">Profile pending approval</h5>
+                        <p class="mb-2 text-muted">Your verification profile has been submitted and is under review. You will be notified of the result.</p>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending approved</span>
                     }
                     else if (statusLower == "rejected")
                     {
-                        <h5 class="fw-bold mb-1" style="color:#721c24;">Hồ sơ bị từ chối</h5>
-                        <p class="mb-2 text-muted">Hồ sơ xác minh của bạn đã bị từ chối. Vui lòng chỉnh sửa và nộp lại.</p>
+                        <h5 class="fw-bold mb-1" style="color:#721c24;">Profile has been rejected</h5>
+                        <p class="mb-2 text-muted">Your verification profile has been rejected. Please edit and resubmit.</p>
                         @if (!string.IsNullOrEmpty(Model.RejectionReason))
                         {
                             <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.875rem;">
-                                <i class="bi bi-x-circle me-1"></i><strong>Lý do:</strong> @Model.RejectionReason
+                                <i class="bi bi-x-circle me-1"></i><strong>Reason:</strong> @Model.RejectionReason
                             </div>
                         }
-                        <a asp-page="/Doctor/Verification" class="btn btn-danger btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Nộp lại hồ sơ</a>
+                        <a asp-page="/Doctor/Verification" class="btn btn-danger btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Resubmit Profile</a>
                     }
                     else
                     {
-                        <h5 class="fw-bold mb-1" style="color:#856404;">Chưa xác minh hồ sơ</h5>
-                        <p class="mb-2 text-muted">Bạn cần nộp hồ sơ xác minh để bắt đầu sử dụng các chức năng trên nền tảng (đặt lịch, tư vấn, viết blog...).</p>
-                        <a asp-page="/Doctor/Verification" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i>Nộp hồ sơ xác minh</a>
+                        <h5 class="fw-bold mb-1" style="color:#856404;">Profile not verified</h5>
+                        <p class="mb-2 text-muted">You need to submit your verification profile to start using platform features (scheduling, consulting, blogging...).</p>
+                        <a asp-page="/Doctor/Verification" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i>Submit Verification Profile</a>
                     }
                 </div>
             </div>
@@ -63,7 +63,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold">@Model.TotalAppointments</h3>
-                    <small class="text-white-50">Tổng lịch hẹn</small>
+                    <small class="text-white-50">Total Appointments</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(255,255,255,0.2);">
                     <i class="bi bi-calendar-check" style="font-size: 1.5rem;"></i>
@@ -76,7 +76,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold" style="color: #f59e0b;">@Model.PendingCount</h3>
-                    <small class="text-muted">Chờ duyệt</small>
+                    <small class="text-muted">Pending Review</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #fffbeb; color: #f59e0b;">
                     <i class="bi bi-clock-history" style="font-size: 1.5rem;"></i>
@@ -89,7 +89,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold" style="color: #3b82f6;">@Model.TotalConsultations</h3>
-                    <small class="text-muted">Hồ sơ tư vấn</small>
+                    <small class="text-muted">Consultation Records</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6;">
                     <i class="bi bi-file-earmark-medical" style="font-size: 1.5rem;"></i>
@@ -102,7 +102,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold" style="color: #10b981;">@Model.TotalActivePackages</h3>
-                    <small class="text-muted">Gói ĐT đang HĐ</small>
+                    <small class="text-muted">Active Treatment Pkgs</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #ecfdf5; color: #10b981;">
                     <i class="bi bi-box-seam" style="font-size: 1.5rem;"></i>
@@ -117,8 +117,8 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Lịch hẹn sắp tới</h5>
-                <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3">Xem tất cả</a>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Upcoming Appointments</h5>
+                <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3">View All</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.UpcomingAppointments.Any())
@@ -127,10 +127,10 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4 text-muted font-weight-normal small">Bệnh nhân</th>
-                                    <th class="text-muted font-weight-normal small">Thời gian</th>
-                                    <th class="text-muted font-weight-normal small">Trạng thái</th>
-                                    <th class="pe-4 text-end text-muted font-weight-normal small">Thao tác</th>
+                                    <th class="ps-4 text-muted font-weight-normal small">Patient</th>
+                                    <th class="text-muted font-weight-normal small">Time</th>
+                                    <th class="text-muted font-weight-normal small">Status</th>
+                                    <th class="pe-4 text-end text-muted font-weight-normal small">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -152,7 +152,7 @@
                                             </div>
                                         </td>
                                         <td class="py-3">
-                                            <div class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy")</div>
+                                            <div class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy")</div>
                                             <small class="text-muted"><i class="bi bi-clock me-1"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm")</small>
                                         </td>
                                         <td class="py-3">
@@ -169,7 +169,7 @@
                                             <span class="badge rounded-pill @badgeClass px-3 py-2 fw-semibold">@apt.StatusText</span>
                                         </td>
                                         <td class="pe-4 text-end py-3">
-                                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="Xem chi tiết">
+                                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="View Details">
                                                 <i class="bi bi-chevron-right"></i>
                                             </a>
                                         </td>
@@ -185,8 +185,8 @@
                         <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
                             <i class="bi bi-calendar-x text-muted" style="font-size:2.5rem"></i>
                         </div>
-                        <h6 class="fw-bold">Không có lịch hẹn sắp tới</h6>
-                        <p class="small">Lịch trình của bạn hiện đang trống.</p>
+                        <h6 class="fw-bold">No upcoming appointments</h6>
+                        <p class="small">Your schedule is currently empty.</p>
                     </div>
                 }
             </div>
@@ -198,7 +198,7 @@
         <!-- Subscription Info -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; overflow: hidden;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-credit-card me-2 text-primary"></i>Gói dịch vụ</h5>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-credit-card me-2 text-primary"></i>Service Package</h5>
             </div>
             <div class="card-body px-4 pb-4">
                 @if (Model.CurrentSubscription != null)
@@ -208,19 +208,19 @@
                         <h4 class="text-primary fw-bold mb-1">@(Model.CurrentSubscription.PackageName ?? "N/A")</h4>
                         <p class="text-muted small mb-0">
                             <i class="bi bi-calendar3 me-1"></i>
-                            @Model.CurrentSubscription.StartDate.ToString("dd/MM/yyyy") - @Model.CurrentSubscription.EndDate.ToString("dd/MM/yyyy")
+                            @Model.CurrentSubscription.StartDate.ToString("MM/dd/yyyy") - @Model.CurrentSubscription.EndDate.ToString("MM/dd/yyyy")
                         </p>
                     </div>
                     <div class="mt-3 text-center">
-                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-outline-primary rounded-pill w-100">Quản lý dịch vụ</a>
+                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-outline-primary rounded-pill w-100">Manage Services</a>
                     </div>
                 }
                 else
                 {
                     <div class="text-center py-3 text-muted">
                         <i class="bi bi-credit-card-2-front d-block mb-3" style="font-size:2.5rem; color: #cbd5e1;"></i>
-                        <p class="mb-3">Bạn chưa đăng ký gói dịch vụ nào trên hệ thống.</p>
-                        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary rounded-pill w-100">Xem các gói dịch vụ</a>
+                        <p class="mb-3">You have not subscribed to any service package.</p>
+                        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary rounded-pill w-100">View Service Packages</a>
                     </div>
                 }
             </div>
@@ -229,8 +229,8 @@
         <!-- Active Treatment Packages -->
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Gói ĐT đang hoạt động</h6>
-                <a asp-page="/Doctor/TreatmentPackages/Index" class="text-primary small text-decoration-none">Tất cả</a>
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Active Treatment Packages</h6>
+                <a asp-page="/Doctor/TreatmentPackages/Index" class="text-primary small text-decoration-none">All</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.ActivePackages.Any())
@@ -244,7 +244,7 @@
                             <a asp-page="/Doctor/TreatmentPackages/Edit" asp-route-id="@pkg.Id" class="list-group-item list-group-item-action px-4 py-3 border-bottom-0 border-top">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="fw-semibold text-dark text-truncate" style="max-width: 70%;">@pkg.Name</span>
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Đang HĐ</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Active</span>
                                 </div>
                                 <div class="small text-muted mb-2">
                                     <i class="bi bi-person me-1"></i> @pkg.DisplayPatientName
@@ -262,7 +262,7 @@
                 else
                 {
                     <div class="text-center py-4 text-muted">
-                        <p class="small mb-0">Không có gói điều trị nào đang hoạt động.</p>
+                        <p class="small mb-0">No active treatment packages.</p>
                     </div>
                 }
             </div>
@@ -275,8 +275,8 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-medical me-2 text-primary"></i>Hồ sơ tư vấn gần đây</h5>
-                <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-sm btn-light rounded-pill px-3">Xem tất cả</a>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-medical me-2 text-primary"></i>Recent Consultation Records</h5>
+                <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-sm btn-light rounded-pill px-3">View All</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.RecentConsultations.Any())
@@ -285,10 +285,10 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4 text-muted font-weight-normal small">Bệnh nhân</th>
-                                    <th class="text-muted font-weight-normal small">Ngày tạo</th>
-                                    <th class="text-muted font-weight-normal small">Chẩn đoán</th>
-                                    <th class="pe-4 text-end text-muted font-weight-normal small">Thao tác</th>
+                                    <th class="ps-4 text-muted font-weight-normal small">Patient</th>
+                                    <th class="text-muted font-weight-normal small">Created Date</th>
+                                    <th class="text-muted font-weight-normal small">Diagnosis</th>
+                                    <th class="pe-4 text-end text-muted font-weight-normal small">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -296,20 +296,20 @@
                                 {
                                     <tr>
                                         <td class="ps-4 py-3">
-                                            <div class="fw-bold text-dark">@(rec.PatientName ?? rec.WalkInPatientName ?? "Khách vãng lai")</div>
+                                            <div class="fw-bold text-dark">@(rec.PatientName ?? rec.WalkInPatientName ?? "Guest")</div>
                                             @if (rec.PatientRecordId == Guid.Empty)
                                             {
                                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill mt-1" style="font-size: 0.65rem;">Vãng lai</span>
                                             }
                                         </td>
                                         <td class="py-3 text-muted">
-                                            @rec.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                            @rec.CreatedAt.ToString("MM/dd/yyyy HH:mm")
                                         </td>
                                         <td class="py-3 text-truncate" style="max-width: 250px;">
                                             @(string.IsNullOrEmpty(rec.Diagnosis) ? "-" : rec.Diagnosis)
                                         </td>
                                         <td class="pe-4 text-end py-3">
-                                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="btn btn-sm btn-light rounded-circle text-primary" title="Chỉnh sửa">
+                                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="btn btn-sm btn-light rounded-circle text-primary" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                         </td>
@@ -325,8 +325,8 @@
                         <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
                             <i class="bi bi-journal-x text-muted" style="font-size:2.5rem"></i>
                         </div>
-                        <h6 class="fw-bold">Chưa có hồ sơ tư vấn</h6>
-                        <p class="small">Bạn chưa tạo hồ sơ tư vấn nào cho bệnh nhân.</p>
+                        <h6 class="fw-bold">None yet profile consultation</h6>
+                        <p class="small">You have not created any consultation notes for patients.</p>
                     </div>
                 }
             </div>

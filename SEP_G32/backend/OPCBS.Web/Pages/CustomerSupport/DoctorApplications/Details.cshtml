@@ -84,7 +84,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="text-muted small mb-1">Submitted</div>
-                        <div class="fw-semibold">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-semibold">@app.SubmittedAt.ToString("MM/dd/yyyy HH:mm")</div>
                     </div>
                 </div>
             </div>
@@ -119,7 +119,7 @@
                                     <div class="fw-semibold small">Practitioner License</div>
                                     <div class="text-muted" style="font-size:0.75rem;">Uploaded document</div>
                                 </div>
-                                <a href="@app.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                <a href="@app.CertificateUrl" target="_bspreadk" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
                             </div>
                         </div>
                     </div>
@@ -176,7 +176,7 @@
                         <p class="mb-1">This application has been <strong>@displayStatus.ToLower()</strong>.</p>
                         @if (app.ReviewedAt.HasValue)
                         {
-                            <small class="text-muted">Reviewed on @app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                            <small class="text-muted">Reviewed on @app.ReviewedAt.Value.ToString("MM/dd/yyyy HH:mm")</small>
                         }
                         @if (!string.IsNullOrEmpty(app.ReviewedByName))
                         {
@@ -199,7 +199,7 @@
                     </div>
                     <div>
                         <small class="fw-semibold">Submitted</small>
-                        <small class="text-muted d-block">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                        <small class="text-muted d-block">@app.SubmittedAt.ToString("MM/dd/yyyy HH:mm")</small>
                     </div>
                 </div>
                 @if (app.ReviewedAt.HasValue)
@@ -210,7 +210,7 @@
                         </div>
                         <div>
                             <small class="fw-semibold">@displayStatus</small>
-                            <small class="text-muted d-block">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                            <small class="text-muted d-block">@app.ReviewedAt.Value.ToString("MM/dd/yyyy HH:mm")</small>
                             @if (!string.IsNullOrEmpty(app.ReviewedByName))
                             {
                                 <small class="text-muted d-block">by @app.ReviewedByName</small>

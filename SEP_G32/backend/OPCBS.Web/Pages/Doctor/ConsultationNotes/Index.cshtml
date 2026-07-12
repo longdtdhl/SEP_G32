@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.IndexModel
 @{
-    ViewData["Title"] = "Hồ sơ tư vấn";
+    ViewData["Title"] = "Consultation Records";
     ViewData["UseDashboardLayout"] = true;
     var groupedByPatient = Model.Records.GroupBy(r => r.DisplayPatientName).ToList();
     int totalRecords = Model.Records.Count;
@@ -88,12 +88,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-file-earmark-medical me-2" style="color:var(--mb-primary);"></i>Hồ sơ tư vấn
+            <i class="bi bi-file-earmark-medical me-2" style="color:var(--mb-primary);"></i>Consultation Records
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Quản lý bệnh án, chẩn đoán và ghi chú trị liệu của bệnh nhân</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Management medical record, diagnosis and notes therapy of patient</p>
     </div>
     <a asp-page="Create" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm" style="border-radius:12px; background:var(--mb-primary); border-color:var(--mb-primary);">
-        <i class="bi bi-plus-lg"></i>Tạo hồ sơ mới
+        <i class="bi bi-plus-lg"></i>Create New Record
     </a>
 </div>
 
@@ -119,21 +119,21 @@
         <div class="icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="bi bi-file-earmark-medical"></i></div>
         <div>
             <div class="value">@totalRecords</div>
-            <div class="label">Tổng hồ sơ</div>
+            <div class="label">Total profile</div>
         </div>
     </div>
     <div class="cr-stat">
         <div class="icon" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="bi bi-people"></i></div>
         <div>
             <div class="value" style="color:#10b981;">@totalPatients</div>
-            <div class="label">Bệnh nhân</div>
+            <div class="label">Patient</div>
         </div>
     </div>
     <div class="cr-stat">
         <div class="icon" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="bi bi-clock-history"></i></div>
         <div>
             <div class="value" style="font-size:1rem; color:#f59e0b;">@(latestRecord?.ConsultationDate.ToString("dd/MM") ?? "—")</div>
-            <div class="label">Hồ sơ gần nhất</div>
+            <div class="label">Profile recent</div>
         </div>
     </div>
 </div>
@@ -143,7 +143,7 @@
     <div class="col-lg-3 d-none d-lg-block">
         <div class="patient-sidebar">
             <div class="sidebar-header">
-                <h6><i class="bi bi-people-fill me-2" style="color:var(--mb-primary);"></i>Bệnh nhân</h6>
+                <h6><i class="bi bi-people-fill me-2" style="color:var(--mb-primary);"></i>Patient</h6>
             </div>
             @if (groupedByPatient.Any())
             {
@@ -163,7 +163,7 @@
             {
                 <div style="padding:2rem; text-align:center; color:#94a3b8; font-size:0.85rem;">
                     <i class="bi bi-inbox d-block mb-2" style="font-size:1.5rem; opacity:0.4;"></i>
-                    Chưa có bệnh nhân
+                    None yet patient
                 </div>
             }
         </div>
@@ -173,10 +173,10 @@
     <div class="col-lg-9">
         <div class="cr-card">
             <div class="cr-card-header">
-                <h5><i class="bi bi-journal-medical me-2" style="color:var(--mb-primary);"></i>Danh sách hồ sơ</h5>
+                <h5><i class="bi bi-journal-medical me-2" style="color:var(--mb-primary);"></i>List profile</h5>
                 <form method="get" class="search-box m-0">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="Search" value="@Model.Search" placeholder="Tìm theo tên, chẩn đoán..." />
+                    <input type="text" name="Search" value="@Model.Search" placeholder="Find theo tên, diagnosis..." />
                 </form>
             </div>
 
@@ -194,24 +194,24 @@
                                 @r.DisplayPatientName
                                 @if (r.IsWalkIn)
                                 {
-                                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 6px; border-radius:6px; margin-left:4px;">Khách vãng lai</span>
+                                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:1px 6px; border-radius:6px; margin-left:4px;">Guest</span>
                                 }
                                 else
                                 {
-                                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:1px 6px; border-radius:6px; margin-left:4px;">Hệ thống</span>
+                                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:1px 6px; border-radius:6px; margin-left:4px;">System</span>
                                 }
                             </div>
                             <div class="diagnosis">
-                                <i class="bi bi-clipboard2-pulse me-1"></i>@(string.IsNullOrEmpty(r.Diagnosis) ? "Chưa có chẩn đoán" : r.Diagnosis)
+                                <i class="bi bi-clipboard2-pulse me-1"></i>@(string.IsNullOrEmpty(r.Diagnosis) ? "No diagnosis recorded" : r.Diagnosis)
                             </div>
                         </div>
                         <div class="record-date">
-                            <div><i class="bi bi-calendar3 me-1"></i>@r.ConsultationDate.ToString("dd/MM/yyyy")</div>
+                            <div><i class="bi bi-calendar3 me-1"></i>@r.ConsultationDate.ToString("MM/dd/yyyy")</div>
                             <div style="font-size:0.7rem;">@r.ConsultationDate.ToString("HH:mm")</div>
                         </div>
                         <div class="record-actions">
                             <span class="btn btn-sm btn-outline-primary px-3">
-                                <i class="bi bi-eye me-1"></i>Chi tiết
+                                <i class="bi bi-eye me-1"></i>Details
                             </span>
                         </div>
                     </a>
@@ -221,10 +221,10 @@
             {
                 <div class="empty-state">
                     <i class="bi bi-file-earmark-medical"></i>
-                    <h6 style="font-weight:600; color:#1e293b;">Chưa có hồ sơ tư vấn nào</h6>
-                    <p style="font-size:0.85rem; margin:4px 0 16px;">Tất cả hồ sơ bệnh nhân của bạn sẽ xuất hiện ở đây</p>
+                    <h6 style="font-weight:600; color:#1e293b;">None yet profile consultation nào</h6>
+                    <p style="font-size:0.85rem; margin:4px 0 16px;">All profile patient your sẽ xuất hiện ở here</p>
                     <a asp-page="Create" class="btn btn-sm btn-primary px-4" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                        <i class="bi bi-plus-lg me-1"></i>Tạo hồ sơ đầu tiên
+                        <i class="bi bi-plus-lg me-1"></i>Create profile đầu tiên
                     </a>
                 </div>
             }

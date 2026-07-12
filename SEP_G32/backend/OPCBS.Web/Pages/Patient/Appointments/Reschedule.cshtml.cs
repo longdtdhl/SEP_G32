@@ -28,7 +28,7 @@ public class RescheduleModel : PageModel
         var dto = new RescheduleAppointmentDto { NewSlotId = NewSlotId, Reason = Reason };
         var (success, error) = await _service.RescheduleAsync(id, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã đổi lịch hẹn thành công.";
+        TempData["SuccessMessage"] = "Appointment rescheduled successfully.";
         return RedirectToPage("Details", new { id });
     }
 }

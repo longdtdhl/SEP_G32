@@ -59,7 +59,7 @@
                             <td class="small text-muted">@(app.LicenseNumber ?? "—")</td>
                             <td class="small">@app.ExperienceYears years</td>
                             <td><span class="badge @badgeClass" style="font-size:0.65rem;">@displayStatus</span></td>
-                            <td class="small text-muted">@app.SubmittedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="small text-muted">@app.SubmittedAt.ToString("MM/dd/yyyy")</td>
                             <td class="text-end pe-4">
                                 <a asp-page="Details" asp-route-id="@app.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Review</a>
                             </td>

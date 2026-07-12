@@ -37,7 +37,7 @@ public class DetailsModel : PageModel
         var recordResult = await _patientService.GetByIdAsync(id);
         if (recordResult.Error != null || recordResult.Data == null)
         {
-            TempData["ErrorMessage"] = "Không tìm thấy hồ sơ bệnh nhân.";
+            TempData["ErrorMessage"] = "Patient record not found.";
             return RedirectToPage("./Index");
         }
 

@@ -1,7 +1,7 @@
-@page "{id:guid}"
+﻿@page "{id:guid}"
 @model OPCBS.Web.Pages.Blog.DetailsModel
 @{
-    ViewData["Title"] = Model.Blog?.Title ?? "Bài viết";
+    ViewData["Title"] = Model.Blog?.Title ?? "Blog Post";
     ViewData["UseDashboardLayout"] = false;
 }
 
@@ -95,9 +95,9 @@
         <div style="width:100px; height:100px; background:#fef2f2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
             <i class="bi bi-exclamation-triangle" style="font-size:2.5rem; color:#ef4444;"></i>
         </div>
-        <h1 style="font-size:2rem; font-weight:800; color:#1e293b; margin-bottom:1rem;">Không tìm thấy bài viết</h1>
-        <p style="color:#64748b; font-size:1.1rem; margin-bottom:2rem;">Bài viết này không tồn tại, đã bị xóa hoặc bạn không có quyền truy cập.</p>
-        <a asp-page="Index" class="btn btn-primary" style="padding:0.75rem 2rem; border-radius:30px; font-weight:600;"><i class="bi bi-arrow-left me-2"></i>Về trang Blog</a>
+        <h1 style="font-size:2rem; font-weight:800; color:#1e293b; margin-bottom:1rem;">Not found articles</h1>
+        <p style="color:#64748b; font-size:1.1rem; margin-bottom:2rem;">This blog post does not exist, has been deleted, or you do not have access permissions.</p>
+        <a asp-page="Index" class="btn btn-primary" style="padding:0.75rem 2rem; border-radius:30px; font-weight:600;"><i class="bi bi-arrow-left me-2"></i>Back to Blog</a>
     </div>
     return;
 }
@@ -123,7 +123,7 @@
                         @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
                     }
                 </div>
-                <span style="font-weight:600; color:#334155;">@(blog.AuthorName ?? "Ẩn danh")</span>
+                <span style="font-weight:600; color:#334155;">@(blog.AuthorName ?? "Anonymous")</span>
             </div>
             <div class="meta-item">
                 <i class="bi bi-calendar3"></i>
@@ -131,7 +131,7 @@
             </div>
             <div class="meta-item">
                 <i class="bi bi-eye"></i>
-                <span>@blog.ViewCount lượt xem</span>
+                <span>@blog.ViewCount views</span>
             </div>
         </div>
     </header>
@@ -156,14 +156,14 @@
 
             <!-- Share Bar -->
             <div class="share-bar">
-                <span><i class="bi bi-share me-1"></i>Chia sẻ:</span>
-                <button class="share-btn fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href),'_blank','width=600,height=400')" title="Chia sẻ Facebook">
+                <span><i class="bi bi-share me-1"></i>Share:</span>
+                <button class="share-btn fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href),'_bspreadk','width=600,height=400')" title="Chia sẻ Facebook">
                     <i class="bi bi-facebook"></i>
                 </button>
-                <button class="share-btn tw" onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href)+'&text='+encodeURIComponent('@blog.Title'),'_blank','width=600,height=400')" title="Chia sẻ Twitter">
+                <button class="share-btn tw" onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href)+'&text='+encodeURIComponent('@blog.Title'),'_bspreadk','width=600,height=400')" title="Chia sẻ Twitter">
                     <i class="bi bi-twitter-x"></i>
                 </button>
-                <button class="share-btn link" onclick="navigator.clipboard.writeText(window.location.href);this.innerHTML='<i class=\'bi bi-check-lg\'></i>';setTimeout(()=>this.innerHTML='<i class=\'bi bi-link-45deg\'></i>',2000)" title="Sao chép liên kết">
+                <button class="share-btn link" onclick="navigator.clipboard.writeText(window.location.href);this.innerHTML='<i class=\'bi bi-check-lg\'></i>';setTimeout(()=>this.innerHTML='<i class=\'bi bi-link-45deg\'></i>',2000)" title="Sao chép linked">
                     <i class="bi bi-link-45deg"></i>
                 </button>
             </div>
@@ -181,15 +181,15 @@
                         @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
                     }
                 </div>
-                <h4>@(blog.AuthorName ?? "Tác giả ẩn danh")</h4>
-                <p>Bác sĩ / Chuyên gia Tâm lý</p>
-                <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-sm w-100" style="border-radius:20px; font-weight:600;">Xem hồ sơ</a>
+                <h4>@(blog.AuthorName ?? "Anonymous Author")</h4>
+                <p>Psychologist / Therapist</p>
+                <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-sm w-100" style="border-radius:20px; font-weight:600;">View Profile</a>
             </div>
             
             @if (blog.Tags.Any())
             {
                 <div class="sidebar-card sidebar-tags">
-                    <h5>Thẻ (Tags)</h5>
+                    <h5>Tags</h5>
                     <div class="tags-wrap">
                         @foreach (var tag in blog.Tags)
                         {
@@ -207,7 +207,7 @@
     <div class="comment-section">
         <div class="comment-section-header">
             <i class="bi bi-chat-dots" style="font-size:1.5rem; color:var(--mb-primary);"></i>
-            <h3>Bình luận</h3>
+            <h3>Comments</h3>
             @if (Model.Comments.Any())
             {
                 <span class="count-badge">@Model.Comments.Count</span>
@@ -234,13 +234,13 @@
             <div class="comment-form">
                 <div class="form-header">
                     <div class="user-avatar"><i class="bi bi-person-fill"></i></div>
-                    <span>Viết bình luận của bạn</span>
+                    <span>Write your comment</span>
                 </div>
                 <form method="post" asp-page-handler="Comment" asp-route-id="@blog.Id">
-                    <textarea name="NewComment" class="form-control mb-3" rows="3" placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..." required>@Model.NewComment</textarea>
+                    <textarea name="NewComment" class="form-control mb-3" rows="3" placeholder="Share your thoughts about this article..." required>@Model.NewComment</textarea>
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn-submit-comment">
-                            <i class="bi bi-send me-1"></i>Gửi bình luận
+                            <i class="bi bi-send me-1"></i>Post Comment
                         </button>
                     </div>
                 </form>
@@ -250,9 +250,9 @@
         {
             <div class="login-to-comment">
                 <i class="bi bi-chat-square-text"></i>
-                <p>Đăng nhập để tham gia thảo luận và chia sẻ ý kiến của bạn.</p>
+                <p>Log in to join the discussion and share your opinion.</p>
                 <a asp-page="/Account/Login" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Log in
                 </a>
             </div>
         }
@@ -270,7 +270,7 @@
                         <div style="flex:1; min-width:0;">
                             <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
                                 <span style="font-weight:600; color:#1e293b; font-size:0.9rem;">@comment.UserName</span>
-                                <span style="font-size:0.75rem; color:#94a3b8;">@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                <span style="font-size:0.75rem; color:#94a3b8;">@comment.CreatedAt.ToString("MM/dd/yyyy HH:mm")</span>
                             </div>
                             <p style="color:#475569; font-size:0.9rem; line-height:1.6; margin:0;">@comment.Content</p>
                         </div>
@@ -282,7 +282,7 @@
         {
             <div style="text-align:center; padding:2rem; color:#94a3b8; font-size:0.9rem;">
                 <i class="bi bi-chat-left-text d-block mb-2" style="font-size:2rem; opacity:0.4;"></i>
-                Hãy là người đầu tiên bình luận về bài viết này!
+                Be the first to comment on this article!
             </div>
         }
     </div>
@@ -295,7 +295,7 @@
         <div class="related-posts">
             <div class="related-posts-header">
                 <i class="bi bi-journal-richtext"></i>
-                Bài viết liên quan
+                Related Blog Posts
             </div>
             <div class="related-grid">
                 @foreach (var rp in Model.RelatedPosts)
@@ -314,8 +314,8 @@
                         <div class="rc-body">
                             <div class="rc-title">@rp.Title</div>
                             <div class="rc-meta">
-                                <span><i class="bi bi-person me-1"></i>@(rp.AuthorName ?? "Ẩn danh")</span>
-                                <span><i class="bi bi-calendar3 me-1"></i>@(rp.PublishedAt?.ToString("dd/MM/yyyy") ?? rp.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                                <span><i class="bi bi-person me-1"></i>@(rp.AuthorName ?? "Anonymous")</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>@(rp.PublishedAt?.ToString("MM/dd/yyyy") ?? rp.CreatedAt.ToString("MM/dd/yyyy"))</span>
                             </div>
                         </div>
                     </a>

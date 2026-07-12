@@ -26,7 +26,7 @@ public class EditModel : PageModel
         var (data, error) = await _apiService.GetByIdAsync(id);
         if (data == null)
         {
-            TempData["ErrorMessage"] = "Không tìm thấy hồ sơ.";
+            TempData["ErrorMessage"] = "Not found hồ sơ.";
             return RedirectToPage("./Index");
         }
 
@@ -56,11 +56,11 @@ public class EditModel : PageModel
         var (success, error) = await _apiService.UpdateAsync(Id, Input);
         if (success)
         {
-            TempData["Success"] = "Đã cập nhật hồ sơ bệnh nhân thành công!";
+            TempData["Success"] = "Patient record updated successfully!";
             return RedirectToPage("./Details", new { id = Id });
         }
 
-        TempData["ErrorMessage"] = error ?? "Cập nhật hồ sơ bệnh nhân thất bại.";
+        TempData["ErrorMessage"] = error ?? "Failed to update patient record.";
         return Page();
     }
 }

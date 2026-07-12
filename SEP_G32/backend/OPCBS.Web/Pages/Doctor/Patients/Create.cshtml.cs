@@ -50,7 +50,7 @@ public class CreateModel : PageModel
         var (success, error) = await _apiService.CreateAsync(Input);
         if (success)
         {
-            TempData["Success"] = "Đã tạo hồ sơ bệnh nhân thành công!";
+            TempData["Success"] = "Patient record created successfully!";
             if (AppointmentId.HasValue)
             {
                 // After creating patient record, go to Patients index. Ideally we'd go to Create Note, but we need the ID.
@@ -59,7 +59,7 @@ public class CreateModel : PageModel
             return RedirectToPage("./Index");
         }
 
-        TempData["ErrorMessage"] = error ?? "Tạo hồ sơ bệnh nhân thất bại.";
+        TempData["ErrorMessage"] = error ?? "Failed to create patient record.";
         return Page();
     }
 }

@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Patient.Appointments.IndexModel
 @{
-    ViewData["Title"] = "Lịch hẹn của tôi";
+    ViewData["Title"] = "My Appointments";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -47,11 +47,11 @@
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
-        <h1><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>Lịch hẹn của tôi</h1>
-        <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Quản lý và theo dõi các lịch hẹn tư vấn tâm lý</p>
+        <h1><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>My Appointments</h1>
+        <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Management and track the appointment consultation psyforlogy</p>
     </div>
     <a asp-page="/Doctors/Index" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Đặt lịch mới
+        <i class="bi bi-plus-lg me-1"></i>Book Again
     </a>
 </div>
 
@@ -70,18 +70,18 @@
             <input type="hidden" name="page" id="pageInput" value="1" />
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-5 col-lg-4">
-                    <label class="form-label small fw-bold text-muted text-uppercase mb-1.5" style="letter-spacing:0.04em; font-size:0.75rem;">Lọc theo trạng thái</label>
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1.5" style="letter-spacing:0.04em; font-size:0.75rem;">Filter theo status</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0" style="border-radius:12px 0 0 12px; padding-left:14px; padding-right:8px; color:var(--mb-primary);">
                             <i class="bi bi-funnel-fill"></i>
                         </span>
                         <select name="Status" onchange="document.getElementById('pageInput').value='1'; this.form.submit();" class="form-select bg-light border-0" style="border-radius:0 12px 12px 0; padding:10px 14px; font-size:0.875rem; color:#1e293b; font-weight:600;">
-                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">Tất cả lịch hẹn</option>
-                            <option value="0" selected="@(Model.Status == "0" ? "selected" : null)">Chờ xác nhận</option>
-                            <option value="1" selected="@(Model.Status == "1" ? "selected" : null)">Đã xác nhận</option>
-                            <option value="4" selected="@(Model.Status == "4" ? "selected" : null)">Hoàn thành</option>
-                            <option value="2" selected="@(Model.Status == "2" ? "selected" : null)">Từ chối</option>
-                            <option value="3" selected="@(Model.Status == "3" ? "selected" : null)">Đã hủy</option>
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">All appointment</option>
+                            <option value="0" selected="@(Model.Status == "0" ? "selected" : null)">Pending Confirmation</option>
+                            <option value="1" selected="@(Model.Status == "1" ? "selected" : null)">Confirmed</option>
+                            <option value="4" selected="@(Model.Status == "4" ? "selected" : null)">Completed</option>
+                            <option value="2" selected="@(Model.Status == "2" ? "selected" : null)">Rejected</option>
+                            <option value="3" selected="@(Model.Status == "3" ? "selected" : null)">Cancelled</option>
                         </select>
                     </div>
                 </div>
@@ -131,7 +131,7 @@
                                 <span class="date-month">@monthStr</span>
                             </div>
                             <div>
-                                <h6 class="mb-1">@(apt.DoctorName ?? "Chuyên gia")</h6>
+                                <h6 class="mb-1">@(apt.DoctorName ?? "Specialist")</h6>
                                 @if (!string.IsNullOrEmpty(apt.Specialization))
                                 {
                                     <span class="mb-chip small">@apt.Specialization</span>
@@ -150,12 +150,12 @@
                             <div class="d-flex gap-1">
                                 @if (isCompleted)
                                 {
-                                    <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-outline-warning" title="Viết đánh giá">
+                                    <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-outline-warning" title="Write Review">
                                         <i class="bi bi-star"></i>
                                     </a>
                                 }
                                 <a asp-page="Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i>Chi tiết
+                                    <i class="bi bi-eye me-1"></i>Details
                                 </a>
                             </div>
                         </div>
@@ -177,10 +177,10 @@ else
         <div class="empty-icon-wrapper">
             <i class="bi bi-calendar-heart"></i>
         </div>
-        <h4>Chưa có lịch hẹn nào</h4>
-        <p class="text-muted mb-4">Hãy bắt đầu hành trình chăm sóc sức khỏe tinh thần của bạn ngay hôm nay.</p>
+        <h4>None scheduled nào</h4>
+        <p class="text-muted mb-4">Hãy start hành trình care health mental your ngay hôm nay.</p>
         <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg">
-            <i class="bi bi-search-heart me-2"></i>Tìm chuyên gia tâm lý
+            <i class="bi bi-search-heart me-2"></i>Find a Therapist
         </a>
     </div>
 }

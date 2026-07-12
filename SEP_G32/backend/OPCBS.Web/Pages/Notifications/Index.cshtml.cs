@@ -21,7 +21,7 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnGetAsync()
     {
         ViewData["UseDashboardLayout"] = true;
-        ViewData["Title"] = "Thông báo";
+        ViewData["Title"] = "Notifications";
 
         var (data, pagination, _) = await _api.GetNotificationsAsync(CurrentPage, 15);
         Notifications = data;

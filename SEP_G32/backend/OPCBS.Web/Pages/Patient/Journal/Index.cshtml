@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Patient.Journal.IndexModel
 @{
-    ViewData["Title"] = "Nhật ký cảm xúc";
+    ViewData["Title"] = "Mood Journal";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -21,9 +21,9 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-journal-heart-fill me-2" style="color:var(--mb-primary);"></i>Nhật ký cảm xúc
+            <i class="bi bi-journal-heart-fill me-2" style="color:var(--mb-primary);"></i>Mood Journal
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Ghi chép tâm trạng hàng ngày và theo dõi xu hướng sức khỏe tinh thần</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Record daily mood and track mental health trends</p>
     </div>
 </div>
 
@@ -49,16 +49,16 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-3" style="font-size:1rem;">
-                    <i class="bi bi-plus-circle-fill me-2" style="color:var(--mb-primary);"></i>Ghi nhật ký mới
+                    <i class="bi bi-plus-circle-fill me-2" style="color:var(--mb-primary);"></i>Record New Journal
                 </h5>
                 <form method="post">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Tiêu đề</label>
-                        <input asp-for="Title" class="form-control" placeholder="Hôm nay bạn cảm thấy thế nào?" style="border-radius:10px;" />
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Title</label>
+                        <input asp-for="Title" class="form-control" placeholder="How are you feeling today?" style="border-radius:10px;" />
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Tâm trạng</label>
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Mood</label>
                         <div class="d-flex gap-2 flex-wrap">
                             <button type="button" class="mood-btn" data-mood="1" onclick="selectMood(1)">😢</button>
                             <button type="button" class="mood-btn" data-mood="2" onclick="selectMood(2)">😔</button>
@@ -70,7 +70,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Mức căng thẳng</label>
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Stress Level</label>
                         <div class="d-flex gap-2 flex-wrap">
                             <button type="button" class="stress-btn" data-stress="1" onclick="selectStress(1)">🟢</button>
                             <button type="button" class="stress-btn" data-stress="2" onclick="selectStress(2)">🟡</button>
@@ -82,19 +82,19 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Ghi chép chi tiết (tùy chọn)</label>
-                        <textarea asp-for="Content" class="form-control" rows="4" placeholder="Chia sẻ suy nghĩ, cảm xúc, hoặc sự kiện nổi bật trong ngày..." style="border-radius:10px; font-size:0.85rem;"></textarea>
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Detailed notes (optional)</label>
+                        <textarea asp-for="Content" class="form-control" rows="4" placeholder="Share your thoughts, feelings, or key events of the day..." style="border-radius:10px; font-size:0.85rem;"></textarea>
                     </div>
 
                     <div class="form-check mb-3">
                         <input asp-for="IsShared" class="form-check-input" type="checkbox" />
                         <label class="form-check-label" style="font-size:0.82rem; color:#64748b;">
-                            <i class="bi bi-share me-1"></i>Chia sẻ nhật ký này với bác sĩ trị liệu
+                            <i class="bi bi-share me-1"></i>Share this journal with my therapist
                         </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-                        <i class="bi bi-journal-plus me-1"></i>Lưu nhật ký
+                        <i class="bi bi-journal-plus me-1"></i>Save Journal
                     </button>
                 </form>
             </div>
@@ -103,7 +103,7 @@
         <!-- Mood Trend Chart -->
         <div class="chart-card p-4">
             <h5 class="fw-bold mb-3" style="font-size:1rem;">
-                <i class="bi bi-graph-up-arrow me-2" style="color:#6366f1;"></i>Xu hướng tâm trạng (7 ngày gần nhất)
+                <i class="bi bi-graph-up-arrow me-2" style="color:#6366f1;"></i>Mood Trend (Last 7 Days)
             </h5>
             <canvas id="moodChart" height="200"></canvas>
         </div>
@@ -113,7 +113,7 @@
     <div class="col-lg-7">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0" style="font-size:1rem;">
-                <i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Nhật ký gần đây (@Model.Journals.Count)
+                <i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Recent Journals (@Model.Journals.Count)
             </h5>
         </div>
 
@@ -130,16 +130,16 @@
                                     <div>
                                         <h6 class="fw-bold mb-0" style="color:#1e293b; font-size:0.92rem;">@j.Title</h6>
                                         <div style="font-size:0.72rem; color:#94a3b8;">
-                                            <i class="bi bi-calendar3 me-1"></i>@j.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                            <i class="bi bi-calendar3 me-1"></i>@j.CreatedAt.ToString("MM/dd/yyyy HH:mm")
                                             @if (j.IsShared)
                                             {
-                                                <span class="badge bg-info ms-1" style="font-size:0.6rem;">Đã chia sẻ</span>
+                                                <span class="badge bg-info ms-1" style="font-size:0.6rem;">Shared</span>
                                             }
                                         </div>
                                     </div>
                                 </div>
-                                <form method="post" asp-page-handler="Delete" asp-route-journalId="@j.Id" onsubmit="return confirm('Bạn muốn xóa nhật ký này?');">
-                                    <button type="submit" class="btn btn-link btn-sm text-muted p-0" title="Xóa">
+                                <form method="post" asp-page-handler="Delete" asp-route-journalId="@j.Id" onsubmit="return confirm('Do you want to delete this journal entry?');">
+                                    <button type="submit" class="btn btn-link btn-sm text-muted p-0" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -147,10 +147,10 @@
 
                             <div class="d-flex gap-3 mb-2">
                                 <div class="px-2 py-1 rounded-3" style="background:#eff6ff; font-size:0.75rem;">
-                                    <strong style="color:#3b82f6;">Tâm trạng:</strong> <span style="color:#1e293b;">@j.MoodText</span>
+                                    <strong style="color:#3b82f6;">Mood:</strong> <span style="color:#1e293b;">@j.MoodText</span>
                                 </div>
                                 <div class="px-2 py-1 rounded-3" style="background:#fef3c7; font-size:0.75rem;">
-                                    <strong style="color:#f59e0b;">Căng thẳng:</strong> <span style="color:#1e293b;">@j.StressText</span>
+                                    <strong style="color:#f59e0b;">Stress:</strong> <span style="color:#1e293b;">@j.StressText</span>
                                 </div>
                             </div>
 
@@ -167,8 +167,8 @@
         {
             <div class="text-center py-5 text-muted border border-dashed rounded-3" style="border-radius: 16px; background: #fafbfc;">
                 <i class="bi bi-journal-x d-block mb-2" style="font-size: 2.5rem; opacity:0.3;"></i>
-                <h6 class="fw-bold text-dark">Chưa có nhật ký nào</h6>
-                <span class="small">Hãy bắt đầu ghi lại cảm xúc hàng ngày để theo dõi sức khỏe tinh thần của bạn.</span>
+                <h6 class="fw-bold text-dark">No journal entries yet</h6>
+                <span class="small">Start recording your daily emotions to track your mental health.</span>
             </div>
         }
     </div>
@@ -191,7 +191,7 @@
         // Mood Trend Chart
         const journalData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
             Model.Journals.OrderBy(j => j.CreatedAt).TakeLast(7).Select(j => new {
-                date = j.CreatedAt.ToString("dd/MM"),
+                date = j.CreatedAt.ToString("MM/dd"),
                 mood = j.MoodScale,
                 stress = j.StressScale
             })
@@ -205,7 +205,7 @@
                     labels: journalData.map(d => d.date),
                     datasets: [
                         {
-                            label: 'Tâm trạng',
+                            label: 'Mood',
                             data: journalData.map(d => d.mood),
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99,102,241,0.1)',
@@ -215,7 +215,7 @@
                             pointBackgroundColor: '#6366f1'
                         },
                         {
-                            label: 'Căng thẳng',
+                            label: 'Stress',
                             data: journalData.map(d => d.stress),
                             borderColor: '#f59e0b',
                             backgroundColor: 'rgba(245,158,11,0.1)',
@@ -237,7 +237,7 @@
                 }
             });
         } else {
-            document.getElementById('moodChart').parentElement.innerHTML += '<p class="text-center text-muted small mt-3">Chưa có dữ liệu. Hãy ghi nhật ký để xem biểu đồ xu hướng.</p>';
+            document.getElementById('moodChart').parentElement.innerHTML += '<p class="text-center text-muted small mt-3">No data available. Record a journal entry to see the trend chart.</p>';
         }
     </script>
 }

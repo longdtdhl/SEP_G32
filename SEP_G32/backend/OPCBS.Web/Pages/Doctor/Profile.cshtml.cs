@@ -35,7 +35,7 @@ public class ProfileModel : PageModel
         Error = TempData["Error"] as string;
 
         var (userData, userErr) = await _auth.GetProfileAsync();
-        if (userData == null) { Error = userErr ?? "Không thể lấy thông tin người dùng."; return; }
+        if (userData == null) { Error = userErr ?? "Unable to retrieve user information."; return; }
         Profile = userData;
 
         var (docData, docErr) = await _doctorApi.GetMyProfileAsync();
@@ -85,7 +85,7 @@ public class ProfileModel : PageModel
         var (userOk, userErr) = await _auth.UpdateProfileAsync(Input);
         if (!userOk)
         {
-            Error = userErr ?? "Cập nhật thông tin cơ bản thất bại.";
+            Error = userErr ?? "Failed to update basic information.";
             IsEditing = true;
             Specializations = await _doctorApi.GetSpecializationDtosAsync();
             return Page();
@@ -96,13 +96,13 @@ public class ProfileModel : PageModel
         var (docOk, docErr) = await _doctorApi.UpdateMyProfileAsync(DoctorInput);
         if (!docOk)
         {
-            Error = docErr ?? "Cập nhật thông tin chuyên môn thất bại.";
+            Error = docErr ?? "Failed to update professional information.";
             IsEditing = true;
             Specializations = await _doctorApi.GetSpecializationDtosAsync();
             return Page();
         }
 
-        TempData["Success"] = "Hồ sơ của bạn đã được cập nhật thành công.";
+        TempData["Success"] = "Your profile has been updated successfully.";
         return RedirectToPage(new { edit = false });
     }
 }

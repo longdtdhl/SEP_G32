@@ -408,8 +408,8 @@ public class ConsultationNoteService : IConsultationNoteService
                         {
                             await _notificationService.CreateNotificationAsync(
                                 pat.UserId,
-                                "📋 Hồ sơ tư vấn mới",
-                                $"BS {doctorUser?.FullName ?? "bác sĩ"} đã tạo hồ sơ tư vấn cho buổi hẹn của bạn. Vui lòng kiểm tra.",
+                                "📋 New Consultation Record",
+                                $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a consultation record for your appointment. Please review it.",
                                 Domain.Enums.NotificationType.ConsultationNote,
                                 record.Id, // this might be empty guid since not saved yet
                                 "ConsultationNote",
@@ -1064,8 +1064,8 @@ public class TreatmentPackageService : ITreatmentPackageService
             var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
             await _notificationService.CreateNotificationAsync(
                 patient.UserId,
-                "📦 Gói điều trị mới",
-                $"BS {doctorUser?.FullName ?? "bác sĩ"} đã tạo gói điều trị \"{dto.Name}\" cho bạn. Vui lòng kiểm tra và xác nhận.",
+                "📦 New Treatment Package",
+                $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a treatment package \"{dto.Name}\" for you. Please review and confirm.",
                 Domain.Enums.NotificationType.Package,
                 package.Id,
                 "TreatmentPackage",

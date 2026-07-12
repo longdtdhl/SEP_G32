@@ -1,15 +1,15 @@
-@page "{id:guid}"
+﻿@page "{id:guid}"
 @model OPCBS.Web.Pages.Patient.Appointments.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết lịch hẹn";
+    ViewData["Title"] = "Appointment Details";
     ViewData["UseDashboardLayout"] = true;
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
-        <h1><i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Chi tiết lịch hẹn</h1>
+        <h1><i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Appointment Details</h1>
     </div>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
 </div>
 
 @if (Model.Error != null)
@@ -33,7 +33,7 @@
         <div class="appointment-status-banner status-pending">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-hourglass-split"></i>
-                <span><strong>Đang chờ xác nhận</strong> — Bác sĩ sẽ xem xét và phản hồi sớm nhất.</span>
+                <span><strong>Pending Confirmation</strong> — Doctor sẽ review and response soon.</span>
             </div>
         </div>
     }
@@ -42,7 +42,7 @@
         <div class="appointment-status-banner status-approved">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-check-circle-fill"></i>
-                <span><strong>Đã xác nhận</strong> — Lịch hẹn của bạn đã được bác sĩ xác nhận.</span>
+                <span><strong>Confirmed</strong> — Appointment your đã được doctor confirm.</span>
             </div>
         </div>
     }
@@ -52,10 +52,10 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-patch-check-fill"></i>
-                    <span><strong>Đã hoàn thành</strong> — Buổi tư vấn đã kết thúc.</span>
+                    <span><strong>Completed</strong> — Buổi consultation đã kết thúc.</span>
                 </div>
                 <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-warning">
-                    <i class="bi bi-star me-1"></i>Viết đánh giá
+                    <i class="bi bi-star me-1"></i>Write Review
                 </a>
             </div>
         </div>
@@ -65,7 +65,7 @@
         <div class="appointment-status-banner status-cancelled">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-x-circle-fill"></i>
-                <span><strong>Đã hủy</strong></span>
+                <span><strong>Cancelled</strong></span>
             </div>
         </div>
     }
@@ -74,7 +74,7 @@
         <div class="appointment-status-banner status-rejected">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-x-octagon-fill"></i>
-                <span><strong>Bị từ chối</strong> — Bác sĩ đã từ chối lịch hẹn này.</span>
+                <span><strong>Rejected</strong> — Doctor đã rejected appointment this.</span>
             </div>
         </div>
     }
@@ -112,7 +112,7 @@
                             <div class="detail-info-box">
                                 <div class="detail-info-icon"><i class="bi bi-calendar3"></i></div>
                                 <div>
-                                    <small class="text-muted d-block">Ngày hẹn</small>
+                                    <small class="text-muted d-block">Appointment Date</small>
                                     <strong>@apt.AppointmentDate</strong>
                                 </div>
                             </div>
@@ -121,7 +121,7 @@
                             <div class="detail-info-box">
                                 <div class="detail-info-icon"><i class="bi bi-clock"></i></div>
                                 <div>
-                                    <small class="text-muted d-block">Thời gian</small>
+                                    <small class="text-muted d-block">Time</small>
                                     <strong>@apt.StartTime — @apt.EndTime</strong>
                                 </div>
                             </div>
@@ -132,7 +132,7 @@
                                 <div class="detail-info-box">
                                     <div class="detail-info-icon"><i class="bi bi-upc-scan"></i></div>
                                     <div>
-                                        <small class="text-muted d-block">Mã đặt lịch</small>
+                                        <small class="text-muted d-block">Booking Code</small>
                                         <strong class="font-monospace" style="color:var(--mb-primary);">@apt.BookingCode</strong>
                                     </div>
                                 </div>
@@ -144,7 +144,7 @@
                                 <div class="detail-info-box">
                                     <div class="detail-info-icon"><i class="bi bi-wallet2"></i></div>
                                     <div>
-                                        <small class="text-muted d-block">Phí tư vấn</small>
+                                        <small class="text-muted d-block">Fee consultation</small>
                                         <strong>@apt.Fee?.ToString("N0") VND</strong>
                                     </div>
                                 </div>
@@ -154,17 +154,17 @@
 
                     <!-- Psychometric Test Section -->
                     <div class="mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">
-                        <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Đánh giá sức khỏe tinh thần trước buổi hẹn</h6>
+                        <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Review health mental before appointment session</h6>
                         @if (Model.PsychometricSubmission != null)
                         {
                             <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
+                                        <span class="badge bg-success-subtle text-success">Completed</span>
                                         <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
                                     </div>
-                                    <small class="text-muted d-block">Hoàn thành lúc: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm dd/MM/yyyy")</small>
-                                    <span class="text-secondary d-block mt-1">Kết quả: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Tổng điểm: @Model.PsychometricSubmission.TotalScore)</span>
+                                    <small class="text-muted d-block">Completed lúc: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")</small>
+                                    <span class="text-secondary d-block mt-1">Result: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Total Score: @Model.PsychometricSubmission.TotalScore)</span>
                                 </div>
                                 <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-bar-chart-fill me-1"></i>Xem biểu đồ chi tiết
@@ -177,8 +177,8 @@
                                 <div class="d-flex align-items-start gap-2 mb-2">
                                     <i class="bi bi-info-circle-fill text-warning mt-1"></i>
                                     <div>
-                                        <strong>Khuyến nghị làm bài kiểm tra tâm lý trước buổi hẹn</strong>
-                                        <p class="mb-0 text-muted" style="font-size: 0.875rem;">Để bác sĩ hiểu rõ hơn về tình trạng tâm lý tinh thần của bạn trước buổi tư vấn, bạn hãy làm bài đánh giá nhanh dưới đây.</p>
+                                        <strong>Khuyến nghị làm bài check psyforlogy before appointment session</strong>
+                                        <p class="mb-0 text-muted" style="font-size: 0.875rem;">Để doctor hiểu rõ more về tình trạng psyforlogy mental your before buổi consultation, bạn hãy làm bài reviews nhanh dưới here.</p>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2 flex-wrap mt-2">
@@ -193,14 +193,14 @@
                         }
                         else
                         {
-                            <p class="text-muted small">Không có bài test tâm lý nào được làm cho lịch hẹn này.</p>
+                            <p class="text-muted small">None bài test psyforlogy nào được làm for appointment this.</p>
                         }
                     </div>
 
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
                         <div class="mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">
-                            <h6><i class="bi bi-chat-left-text me-2" style="color:var(--mb-primary);"></i>Ghi chú</h6>
+                            <h6><i class="bi bi-chat-left-text me-2" style="color:var(--mb-primary);"></i>Notes</h6>
                             <p class="mb-0 text-muted" style="background:var(--mb-bg);padding:12px 16px;border-radius:10px;">@apt.Notes</p>
                         </div>
                     }
@@ -211,7 +211,7 @@
                             <div class="alert alert-warning mb-0 d-flex align-items-start gap-2" style="border-radius:10px;">
                                 <i class="bi bi-exclamation-triangle-fill mt-1"></i>
                                 <div>
-                                    <strong>Lý do hủy:</strong><br />
+                                    <strong>Cancellation Reason:</strong><br />
                                     @apt.CancellationReason
                                 </div>
                             </div>
@@ -225,32 +225,32 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 pb-0 pt-4 px-4">
-                    <h6 class="mb-0"><i class="bi bi-lightning-charge me-2" style="color:var(--mb-primary);"></i>Hành động</h6>
+                    <h6 class="mb-0"><i class="bi bi-lightning-charge me-2" style="color:var(--mb-primary);"></i>Actions</h6>
                 </div>
                 <div class="card-body d-grid gap-2 px-4 pb-4">
                     @if (isCompleted)
                     {
                         <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-primary">
-                            <i class="bi bi-star me-1"></i>Đánh giá bác sĩ
+                            <i class="bi bi-star me-1"></i>Rate Doctor
                         </a>
                         <a asp-page="/Patient/ConsultationRecords/Index" class="btn btn-outline-primary">
-                            <i class="bi bi-file-medical me-1"></i>Xem hồ sơ tư vấn
+                            <i class="bi bi-file-medical me-1"></i>View Profile consultation
                         </a>
                     }
 
                     @if (canCancel)
                     {
                         <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-repeat me-1"></i>Đổi lịch
+                            <i class="bi bi-arrow-repeat me-1"></i>Reschedule
                         </a>
                         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                            <i class="bi bi-x-circle me-1"></i>Hủy lịch hẹn
+                            <i class="bi bi-x-circle me-1"></i>Cancel Appointment
                         </button>
                     }
 
                     <hr class="my-1" />
                     <a asp-page="/Doctors/Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-search-heart me-1"></i>Đặt lịch mới
+                        <i class="bi bi-search-heart me-1"></i>Book Again
                     </a>
                 </div>
             </div>
@@ -258,11 +258,11 @@
             <!-- Quick Info -->
             <div class="card border-0 shadow-sm mt-3">
                 <div class="card-body p-4">
-                    <h6 class="mb-3"><i class="bi bi-lightbulb me-2" style="color:var(--mb-warning);"></i>Lưu ý</h6>
+                    <h6 class="mb-3"><i class="bi bi-lightbulb me-2" style="color:var(--mb-warning);"></i>Tips</h6>
                     <ul class="list-unstyled mb-0" style="font-size:0.8125rem;color:var(--mb-text-secondary);line-height:1.8;">
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Đến đúng giờ để buổi tư vấn hiệu quả</li>
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Chuẩn bị trước các câu hỏi muốn trao đổi</li>
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Hủy trước 24h nếu không thể tham dự</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Đến đúng giờ to buổi consultation effective</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Chuẩn bị before the câu hỏi muốn trao đổi</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Cancel before 24h nếu không thể tham dự</li>
                     </ul>
                 </div>
             </div>
@@ -277,19 +277,19 @@
                 <div class="modal-content" style="border-radius:16px;border:none;">
                     <form method="post" asp-page-handler="Cancel" asp-route-id="@apt.Id">
                         <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Hủy lịch hẹn</h5>
+                            <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel Appointment</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="text-muted">Bạn có chắc chắn muốn hủy lịch hẹn với <strong>@apt.DoctorName</strong> vào ngày <strong>@apt.AppointmentDate</strong>?</p>
+                            <p class="text-muted">Bạn có chắc chắn muốn hủy appointment with <strong>@apt.DoctorName</strong> ando ngày <strong>@apt.AppointmentDate</strong>?</p>
                             <div class="mb-3">
-                                <label class="form-label">Lý do hủy <span class="text-muted">(tùy chọn)</span></label>
-                                <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy..." style="border-radius:10px;"></textarea>
+                                <label class="form-label">Cancellation Reason <span class="text-muted">(optional)</span></label>
+                                <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Enter lý do hủy..." style="border-radius:10px;"></textarea>
                             </div>
                         </div>
                         <div class="modal-footer border-0 pt-0">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
-                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xác nhận hủy</button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Confirm hủy</button>
                         </div>
                     </form>
                 </div>
@@ -303,8 +303,8 @@ else
         <div class="mb-3">
             <i class="bi bi-calendar-x" style="font-size:3rem;color:var(--mb-text-muted);"></i>
         </div>
-        <h5>Không tìm thấy lịch hẹn</h5>
-        <p class="text-muted">Lịch hẹn này không tồn tại hoặc đã bị xóa.</p>
-        <a asp-page="Index" class="btn btn-primary mt-2"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+        <h5>Not found appointment</h5>
+        <p class="text-muted">Appointment this không tồn at hoặc đã bị xóa.</p>
+        <a asp-page="Index" class="btn btn-primary mt-2"><i class="bi bi-arrow-left me-1"></i>Back danh sách</a>
     </div>
 }

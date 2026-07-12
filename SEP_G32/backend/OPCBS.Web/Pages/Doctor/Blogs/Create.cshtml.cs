@@ -20,7 +20,7 @@ public class CreateModel : PageModel
         PrepareInput();
         var (data, error) = await _api.CreateAsync(Input);
         if (data == null) { Error = error; return Page(); }
-        TempData["Success"] = "Bài viết đã được lưu thành bản nháp.";
+        TempData["Success"] = "Article saved as draft.";
         return RedirectToPage("Index");
     }
 
@@ -33,11 +33,11 @@ public class CreateModel : PageModel
         var (success, submitError) = await _api.SubmitForReviewAsync(data.Id);
         if (!success)
         {
-            TempData["Error"] = submitError ?? "Không thể gửi duyệt.";
+            TempData["Error"] = submitError ?? "Unable to submit for approval.";
         }
         else
         {
-            TempData["Success"] = "Bài viết đã được lưu và gửi duyệt thành công.";
+            TempData["Success"] = "Article saved and submitted for approval successfully.";
         }
         return RedirectToPage("Index");
     }

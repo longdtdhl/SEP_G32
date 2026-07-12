@@ -41,7 +41,7 @@ public class DetailsModel : PageModel
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null)
         {
-            TempData["ErrorMessage"] = error ?? "Không tìm thấy ghi chú tư vấn.";
+            TempData["ErrorMessage"] = error ?? "Not found ghi chú tư vấn.";
             return RedirectToPage("/Doctor/Patients/Index");
         }
 

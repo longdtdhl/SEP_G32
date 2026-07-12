@@ -1,22 +1,22 @@
-@page
+﻿@page
 @model OPCBS.Web.Pages.Patient.Psychometrics.ResultModel
 @{
-    ViewData["Title"] = "Kết quả đánh giá tâm lý";
+    ViewData["Title"] = "Result reviews psyforlogy";
     ViewData["UseDashboardLayout"] = true;
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
-        <h1><i class="bi bi-bar-chart-line-fill me-2" style="color:var(--mb-primary);"></i>Kết quả đánh giá tâm lý</h1>
-        <p class="text-muted mb-0">Xem kết quả chi tiết của bạn và các khuyến nghị hữu ích.</p>
+        <h1><i class="bi bi-bar-chart-line-fill me-2" style="color:var(--mb-primary);"></i>Result reviews psyforlogy</h1>
+        <p class="text-muted mb-0">Xem results chi tiết your and the recommend hữu ích.</p>
     </div>
     @if (Model.Submission?.AppointmentId != null)
     {
-        <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.Submission.AppointmentId.Value" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại lịch hẹn</a>
+        <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.Submission.AppointmentId.Value" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back appointment</a>
     }
     else
     {
-        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back danh sách</a>
     }
 </div>
 
@@ -51,37 +51,37 @@ else if (Model.Submission != null)
                         <!-- Depression Score -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong>Trầm cảm (Depression)</strong>
+                                <strong>Depression (Depression)</strong>
                                 <span class="badge @GetDassBadgeClass(Model.DepressionScore, "Depression")">@Model.DepressionScore / 42 — @GetDassInterpretationText(Model.DepressionScore, "Depression")</span>
                             </div>
                             <div class="progress" style="height: 12px; border-radius: 6px;">
                                 <div class="progress-bar @GetDassProgressBarClass(Model.DepressionScore, "Depression")" role="progressbar" style="width: @(Model.DepressionScore * 100 / 42)%;" aria-valuenow="@Model.DepressionScore" aria-valuemin="0" aria-valuemax="42"></div>
                             </div>
-                            <small class="text-muted d-block mt-1">Đo lường các trạng thái giảm hứng thú, chán nản, u uất và mất động lực cuộc sống.</small>
+                            <small class="text-muted d-block mt-1">Đo lường the status giảm hứng thú, chán nản, u uất and mất động lực cuộc sống.</small>
                         </div>
 
                         <!-- Anxiety Score -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong>Lo âu (Anxiety)</strong>
+                                <strong>Anxiety (Anxiety)</strong>
                                 <span class="badge @GetDassBadgeClass(Model.AnxietyScore, "Anxiety")">@Model.AnxietyScore / 42 — @GetDassInterpretationText(Model.AnxietyScore, "Anxiety")</span>
                             </div>
                             <div class="progress" style="height: 12px; border-radius: 6px;">
                                 <div class="progress-bar @GetDassProgressBarClass(Model.AnxietyScore, "Anxiety")" role="progressbar" style="width: @(Model.AnxietyScore * 100 / 42)%;" aria-valuenow="@Model.AnxietyScore" aria-valuemin="0" aria-valuemax="42"></div>
                             </div>
-                            <small class="text-muted d-block mt-1">Đo lường các phản ứng lo sợ vô cớ, run rẩy, khó thở, lo lắng về các tình huống hoảng loạn.</small>
+                            <small class="text-muted d-block mt-1">Đo lường the phản ứng lo sợ vô cớ, run rẩy, khó breathing, lo lắng về the tình huống hoảng loạn.</small>
                         </div>
 
                         <!-- Stress Score -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong>Căng thẳng (Stress)</strong>
+                                <strong>Stressed (Stress)</strong>
                                 <span class="badge @GetDassBadgeClass(Model.StressScore, "Stress")">@Model.StressScore / 42 — @GetDassInterpretationText(Model.StressScore, "Stress")</span>
                             </div>
                             <div class="progress" style="height: 12px; border-radius: 6px;">
                                 <div class="progress-bar @GetDassProgressBarClass(Model.StressScore, "Stress")" role="progressbar" style="width: @(Model.StressScore * 100 / 42)%;" aria-valuenow="@Model.StressScore" aria-valuemin="0" aria-valuemax="42"></div>
                             </div>
-                            <small class="text-muted d-block mt-1">Đo lường mức độ khó thư giãn, dễ kích động, thiếu kiên nhẫn và phản ứng thái quá.</small>
+                            <small class="text-muted d-block mt-1">Đo lường mức độ khó thư giãn, dễ kích động, thiếu kiên nhẫn and phản ứng thái quá.</small>
                         </div>
                     }
                     else
@@ -89,13 +89,13 @@ else if (Model.Submission != null)
                         <!-- PHQ-9 Score -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong>Điểm trầm cảm PHQ-9</strong>
+                                <strong>Điểm depression PHQ-9</strong>
                                 <span class="badge @GetPhq9BadgeClass(sub.TotalScore)">@sub.TotalScore / 27 — @sub.Interpretation</span>
                             </div>
                             <div class="progress" style="height: 12px; border-radius: 6px;">
                                 <div class="progress-bar @GetPhq9ProgressBarClass(sub.TotalScore)" role="progressbar" style="width: @(sub.TotalScore * 100 / 27)%;" aria-valuenow="@sub.TotalScore" aria-valuemin="0" aria-valuemax="27"></div>
                             </div>
-                            <small class="text-muted d-block mt-1">Thang đánh giá sức khỏe bệnh nhân đo lường mức độ các triệu chứng trầm cảm trong 2 tuần qua.</small>
+                            <small class="text-muted d-block mt-1">Thang reviews health patient đo lường mức độ the triệu chứng depression trong 2 tuần qua.</small>
                         </div>
                     }
                 </div>
@@ -106,19 +106,19 @@ else if (Model.Submission != null)
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                    <h5 class="mb-0"><i class="bi bi-shield-heart text-danger me-2"></i>Diễn giải kết quả</h5>
+                    <h5 class="mb-0"><i class="bi bi-shield-heart text-danger me-2"></i>Diễn giải results</h5>
                 </div>
                 <div class="card-body p-4">
-                    <p class="mb-3">Dựa trên câu trả lời của bạn, hệ thống ghi nhận tình trạng cảm xúc hiện tại:</p>
+                    <p class="mb-3">Dựa trên câu trả lời your, system recorded tình trạng cảm xúc current:</p>
                     <div class="alert alert-secondary border-0 p-3 mb-4 text-center fs-5 fw-bold" style="border-radius:12px; background:#f0f2f5;">
                         @sub.Interpretation
                     </div>
 
-                    <h6>Khuyến nghị của MindBridge:</h6>
+                    <h6>Khuyến nghị of MindBridge:</h6>
                     <ul class="list-unstyled d-flex flex-column gap-2 text-muted small mt-2">
-                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Kết quả này được đo lường dựa trên các câu trả lời mang tính tự báo cáo (self-report) và không thay thế cho chẩn đoán y tế chuyên sâu.</li>
-                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Hãy chia sẻ kết quả này với bác sĩ tâm lý trong buổi hẹn sắp tới để giúp định hướng trị liệu chính xác hơn.</li>
-                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Nếu các điểm số ở mức <strong>Nặng hoặc Rất nặng</strong>, bạn nên ưu tiên đặt lịch tư vấn sớm để được hỗ trợ chuyên nghiệp kịp thời.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Result this được đo lường dựa trên the câu trả lời mang tính tự báo cáo (self-report) and không thay thế for diagnosis y tế in-depth.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Hãy share results this with doctor psyforlogy trong appointment session upcoming to help orientation therapy accurate more.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Nếu the điểm số ở mức <strong>Severe hoặc Very Severe</strong>, bạn nên ưu tiên booking consultation sớm to được support chuyên nghiệp kịp thời.</li>
                     </ul>
                 </div>
             </div>
@@ -126,11 +126,11 @@ else if (Model.Submission != null)
             <div class="d-grid gap-2">
                 @if (sub.AppointmentId != null)
                 {
-                    <a asp-page="/Patient/Appointments/Details" asp-route-id="@sub.AppointmentId.Value" class="btn btn-primary btn-lg"><i class="bi bi-calendar-check me-2"></i>Quay lại chi tiết lịch hẹn</a>
+                    <a asp-page="/Patient/Appointments/Details" asp-route-id="@sub.AppointmentId.Value" class="btn btn-primary btn-lg"><i class="bi bi-calendar-check me-2"></i>Back chi tiết appointment</a>
                 }
                 else
                 {
-                    <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-lg"><i class="bi bi-list-check me-2"></i>Xem danh sách lịch hẹn</a>
+                    <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-lg"><i class="bi bi-list-check me-2"></i>Xem danh sách appointment</a>
                 }
             </div>
         </div>
@@ -142,27 +142,27 @@ else if (Model.Submission != null)
     {
         if (category == "Depression")
         {
-            if (score <= 9) return "Bình thường";
-            if (score <= 13) return "Nhẹ";
+            if (score <= 9) return "Normal";
+            if (score <= 13) return "Mild";
             if (score <= 20) return "Vừa";
-            if (score <= 27) return "Nặng";
-            return "Rất nặng";
+            if (score <= 27) return "Severe";
+            return "Very Severe";
         }
         else if (category == "Anxiety")
         {
-            if (score <= 7) return "Bình thường";
-            if (score <= 9) return "Nhẹ";
+            if (score <= 7) return "Normal";
+            if (score <= 9) return "Mild";
             if (score <= 14) return "Vừa";
-            if (score <= 19) return "Nặng";
-            return "Rất nặng";
+            if (score <= 19) return "Severe";
+            return "Very Severe";
         }
         else // Stress
         {
-            if (score <= 14) return "Bình thường";
-            if (score <= 18) return "Nhẹ";
+            if (score <= 14) return "Normal";
+            if (score <= 18) return "Mild";
             if (score <= 25) return "Vừa";
-            if (score <= 33) return "Nặng";
-            return "Rất nặng";
+            if (score <= 33) return "Severe";
+            return "Very Severe";
         }
     }
 
@@ -171,11 +171,11 @@ else if (Model.Submission != null)
         var interpretation = GetDassInterpretationText(score, category);
         return interpretation switch
         {
-            "Bình thường" => "bg-success-subtle text-success",
-            "Nhẹ" => "bg-info-subtle text-info",
+            "Normal" => "bg-success-subtle text-success",
+            "Mild" => "bg-info-subtle text-info",
             "Vừa" => "bg-warning-subtle text-warning",
-            "Nặng" => "bg-danger-subtle text-danger",
-            "Rất nặng" => "bg-danger text-white",
+            "Severe" => "bg-danger-subtle text-danger",
+            "Very Severe" => "bg-danger text-white",
             _ => "bg-secondary-subtle text-secondary"
         };
     }
@@ -185,11 +185,11 @@ else if (Model.Submission != null)
         var interpretation = GetDassInterpretationText(score, category);
         return interpretation switch
         {
-            "Bình thường" => "bg-success",
-            "Nhẹ" => "bg-info",
+            "Normal" => "bg-success",
+            "Mild" => "bg-info",
             "Vừa" => "bg-warning",
-            "Nặng" => "bg-danger",
-            "Rất nặng" => "bg-danger",
+            "Severe" => "bg-danger",
+            "Very Severe" => "bg-danger",
             _ => "bg-secondary"
         };
     }

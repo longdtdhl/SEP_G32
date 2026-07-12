@@ -30,6 +30,6 @@ public class IndexModel : PageModel
             var (pkgs, _, _) = await _packages.GetMyPackagesAsync();
             ActivePackages = pkgs.Where(p => p.Status == "Active" && !p.IsExpired).ToList();
         }
-        catch { Error = "Không thể tải dữ liệu."; }
+        catch { Error = "Unable to tải dữ liệu."; }
     }
 }

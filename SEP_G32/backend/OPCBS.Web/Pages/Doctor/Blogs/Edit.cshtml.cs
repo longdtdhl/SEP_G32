@@ -22,7 +22,7 @@ public class EditModel : PageModel
     {
         BlogId = id;
         var (data, error) = await _api.GetByIdAsync(id);
-        if (data == null) { Error = error ?? "Không tìm thấy bài viết."; return Page(); }
+        if (data == null) { Error = error ?? "Article not found."; return Page(); }
         CurrentStatus = data.Status;
         RejectionReason = data.RejectionReason;
         ViewCount = data.ViewCount;
@@ -46,7 +46,7 @@ public class EditModel : PageModel
         PrepareInput();
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Bài viết đã được cập nhật.";
+        TempData["Success"] = "Article updated successfully.";
         return RedirectToPage("Index");
     }
 
@@ -59,11 +59,11 @@ public class EditModel : PageModel
         var (submitOk, submitError) = await _api.SubmitForReviewAsync(id);
         if (!submitOk)
         {
-            TempData["Error"] = submitError ?? "Không thể gửi duyệt.";
+            TempData["Error"] = submitError ?? "Unable to submit for approval.";
         }
         else
         {
-            TempData["Success"] = "Bài viết đã được cập nhật và gửi duyệt thành công.";
+            TempData["Success"] = "Article updated and submitted for approval successfully.";
         }
         return RedirectToPage("Index");
     }

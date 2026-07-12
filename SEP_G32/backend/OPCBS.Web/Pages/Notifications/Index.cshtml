@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Notifications.IndexModel
 @{
-    ViewData["Title"] = "Thông báo";
+    ViewData["Title"] = "Notifications";
 }
 
 <div class="container py-4" style="max-width: 800px;">
@@ -9,17 +9,17 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="mb-1 fw-bold" style="color: var(--mb-primary);">
-                <i class="bi bi-bell me-2"></i>Thông báo
+                <i class="bi bi-bell me-2"></i>Notifications
             </h3>
             <p class="text-muted mb-0" style="font-size: 0.9rem;">
                 @if (Model.UnreadCount > 0)
                 {
                     <span class="badge bg-primary rounded-pill me-1">@Model.UnreadCount</span>
-                    <span>thông báo chưa đọc</span>
+                    <span>unread notifications</span>
                 }
                 else
                 {
-                    <span>Tất cả thông báo đã được đọc</span>
+                    <span>All notifications have been read</span>
                 }
             </p>
         </div>
@@ -27,7 +27,7 @@
         {
             <form method="post" asp-page-handler="MarkAllRead">
                 <button type="submit" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-check2-all me-1"></i>Đánh dấu tất cả đã đọc
+                    <i class="bi bi-check2-all me-1"></i>Mark All as Read
                 </button>
             </form>
         }
@@ -38,8 +38,8 @@
     {
         <div class="text-center py-5">
             <i class="bi bi-bell-slash" style="font-size: 4rem; color: #ddd;"></i>
-            <h5 class="text-muted mt-3">Không có thông báo</h5>
-            <p class="text-muted">Bạn sẽ nhận thông báo khi có sự kiện quan trọng.</p>
+            <h5 class="text-muted mt-3">No notifications</h5>
+            <p class="text-muted">You will be notified when important events occur.</p>
         </div>
     }
     else
@@ -78,7 +78,7 @@
                                     @notif.Title
                                     @if (isUnread)
                                     {
-                                        <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.6rem;">Mới</span>
+                                        <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.6rem;">New</span>
                                     }
                                 </h6>
                                 <p class="mb-1 text-muted" style="font-size: 0.85rem;">@notif.Message</p>
@@ -86,11 +86,11 @@
                                     <i class="bi bi-clock me-1"></i>
                                     @{
                                         var diff = DateTime.UtcNow - notif.CreatedAt;
-                                        if (diff.TotalMinutes < 1) { <text>Vừa xong</text> }
-                                        else if (diff.TotalHours < 1) { <text>@((int)diff.TotalMinutes) phút trước</text> }
-                                        else if (diff.TotalDays < 1) { <text>@((int)diff.TotalHours) giờ trước</text> }
-                                        else if (diff.TotalDays < 7) { <text>@((int)diff.TotalDays) ngày trước</text> }
-                                        else { <text>@notif.CreatedAt.ToString("dd/MM/yyyy HH:mm")</text> }
+                                        if (diff.TotalMinutes < 1) { <text>Just now</text> }
+                                        else if (diff.TotalHours < 1) { <text>@((int)diff.TotalMinutes) minutes ago</text> }
+                                        else if (diff.TotalDays < 1) { <text>@((int)diff.TotalHours) hours ago</text> }
+                                        else if (diff.TotalDays < 7) { <text>@((int)diff.TotalDays) days ago</text> }
+                                        else { <text>@notif.CreatedAt.ToString("MM/dd/yyyy HH:mm")</text> }
                                     }
                                 </small>
                             </div>
@@ -105,7 +105,7 @@
                                 {
                                     <form method="post" asp-page-handler="MarkRead" class="d-inline">
                                         <input type="hidden" name="id" value="@notif.Id" />
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem; padding: 2px 8px;" title="Đánh dấu đã đọc">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem; padding: 2px 8px;" title="Mark as Read">
                                             <i class="bi bi-check2"></i>
                                         </button>
                                     </form>

@@ -1,15 +1,15 @@
-@page
+﻿@page
 @model OPCBS.Web.Pages.Doctor.ProfileModel
 @{
-    ViewData["Title"] = "Hồ sơ cá nhân";
+    ViewData["Title"] = "Personal Profile";
     ViewData["UseDashboardLayout"] = true;
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1><i class="bi bi-person-lines-fill me-2 text-primary"></i>Hồ sơ cá nhân</h1>
+    <h1><i class="bi bi-person-lines-fill me-2 text-primary"></i>Personal Profile</h1>
     @if (Model.Profile != null && !Model.IsEditing)
     {
-        <a asp-page="Profile" asp-route-edit="true" class="btn btn-primary"><i class="bi bi-pencil-square me-1"></i>Chỉnh sửa hồ sơ</a>
+        <a asp-page="Profile" asp-route-edit="true" class="btn btn-primary"><i class="bi bi-pencil-square me-1"></i>Edit profile</a>
     }
 </div>
 
@@ -51,24 +51,24 @@
                     <p class="text-muted small mb-3">@Model.Profile.Email</p>
                     
                     <div class="mb-3">
-                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-semibold"><i class="bi bi-shield-check me-1"></i>Bác sĩ tâm lý</span>
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-semibold"><i class="bi bi-shield-check me-1"></i>Doctor psyforlogy</span>
                     </div>
 
                     <hr />
 
                     <div class="text-start">
                         <div class="d-flex justify-content-between py-2 border-bottom">
-                            <span class="text-muted small">Mã thành viên:</span>
+                            <span class="text-muted small">Member ID:</span>
                             <span class="fw-medium small text-truncate" style="max-width: 150px;">@Model.Profile.Id</span>
                         </div>
                         <div class="d-flex justify-content-between py-2 border-bottom">
-                            <span class="text-muted small">Ngày tham gia:</span>
-                            <span class="fw-medium small">@Model.Profile.CreatedAt.ToString("dd/MM/yyyy")</span>
+                            <span class="text-muted small">Date join:</span>
+                            <span class="fw-medium small">@Model.Profile.CreatedAt.ToString("MM/dd/yyyy")</span>
                         </div>
                         <div class="d-flex justify-content-between py-2">
-                            <span class="text-muted small">Hiển thị tìm kiếm:</span>
+                            <span class="text-muted small">Search Visibility:</span>
                             <span class="badge @(Model.DoctorProfile?.IsVisible == true ? "bg-success" : "bg-secondary")">
-                                @(Model.DoctorProfile?.IsVisible == true ? "Đang hiển thị" : "Đang ẩn")
+                                @(Model.DoctorProfile?.IsVisible == true ? "Visible" : "Hidden")
                             </span>
                         </div>
                     </div>
@@ -80,42 +80,42 @@
         <div class="col-lg-8 col-md-7">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-info-circle me-2 text-primary"></i>Thông tin cá nhân</h5>
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-info-circle me-2 text-primary"></i>Personal Information</h5>
                     <div class="row g-3 mb-5">
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Họ và tên</div>
+                            <div class="text-muted small mb-1">Full Name</div>
                             <div class="fw-semibold text-dark">@Model.Profile.FullName</div>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Số điện thoại</div>
+                            <div class="text-muted small mb-1">Phone Number</div>
                             <div class="fw-semibold text-dark">@(Model.Profile.PhoneNumber ?? "-")</div>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Giới tính</div>
-                            <div class="fw-semibold text-dark">@(Model.Profile.Gender == "Male" ? "Nam" : Model.Profile.Gender == "Female" ? "Nữ" : Model.Profile.Gender ?? "-")</div>
+                            <div class="text-muted small mb-1">Gender</div>
+                            <div class="fw-semibold text-dark">@(Model.Profile.Gender == "Male" ? "Male" : Model.Profile.Gender == "Female" ? "Female" : Model.Profile.Gender ?? "-")</div>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Ngày sinh</div>
-                            <div class="fw-semibold text-dark">@(Model.Profile.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</div>
+                            <div class="text-muted small mb-1">Date of Birth</div>
+                            <div class="fw-semibold text-dark">@(Model.Profile.DateOfBirth?.ToString("MM/dd/yyyy") ?? "-")</div>
                         </div>
                         <div class="col-12">
-                            <div class="text-muted small mb-1">Địa chỉ</div>
+                            <div class="text-muted small mb-1">Address</div>
                             <div class="fw-semibold text-dark">@(Model.Profile.Address ?? "-")</div>
                         </div>
                     </div>
 
-                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-mortarboard me-2 text-primary"></i>Hồ sơ chuyên môn</h5>
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-mortarboard me-2 text-primary"></i>Professional Profile</h5>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Học hàm / Học vị / Chức danh</div>
+                            <div class="text-muted small mb-1">Academic Title / Degree</div>
                             <div class="fw-semibold text-dark">@(Model.DoctorProfile?.Specialization ?? "-")</div>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Số năm kinh nghiệm</div>
-                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.ExperienceYears ?? 0) năm</div>
+                            <div class="text-muted small mb-1">Years of Experience</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.ExperienceYears ?? 0) years</div>
                         </div>
                         <div class="col-12">
-                            <div class="text-muted small mb-1">Chuyên khoa</div>
+                            <div class="text-muted small mb-1">Specialization</div>
                             <div class="d-flex flex-wrap gap-2 mt-1">
                                 @if (Model.DoctorProfile?.Specializations != null && Model.DoctorProfile.Specializations.Any())
                                 {
@@ -131,9 +131,9 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <div class="text-muted small mb-1">Giới thiệu bản thân</div>
+                            <div class="text-muted small mb-1">About Me</div>
                             <div class="p-3 bg-light rounded-3 text-dark small" style="white-space: pre-line; line-height: 1.6;">
-                                @(Model.DoctorProfile?.Bio ?? "Chưa cấu hình giới thiệu bản thân.")
+                                @(Model.DoctorProfile?.Bio ?? "No biography configured yet.")
                             </div>
                         </div>
                     </div>
@@ -148,48 +148,48 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-4">
             <form method="post">
-                <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-person-gear me-2 text-primary"></i>Thông tin cá nhân</h5>
+                <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-person-gear me-2 text-primary"></i>Personal Information</h5>
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Họ tên <span class="text-danger">*</span></label>
-                        <input asp-for="Input.FullName" class="form-control" placeholder="Nhập họ tên" required />
+                        <label class="form-label fw-medium small">Full Name <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FullName" class="form-control" placeholder="Enter full name" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Số điện thoại</label>
-                        <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Nhập số điện thoại" />
+                        <label class="form-label fw-medium small">Phone Number</label>
+                        <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Enter phone number" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Giới tính</label>
+                        <label class="form-label fw-medium small">Gender</label>
                         <select asp-for="Input.Gender" class="form-select">
-                            <option value="">-- Chọn giới tính --</option>
-                            <option value="Male">Nam</option>
-                            <option value="Female">Nữ</option>
-                            <option value="Other">Khác</option>
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Ngày sinh</label>
+                        <label class="form-label fw-medium small">Date of Birth</label>
                         <input type="date" asp-for="Input.DateOfBirth" class="form-control" />
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-medium small">Địa chỉ</label>
-                        <input asp-for="Input.Address" class="form-control" placeholder="Nhập địa chỉ" />
+                        <label class="form-label fw-medium small">Address</label>
+                        <input asp-for="Input.Address" class="form-control" placeholder="Enter address" />
                     </div>
                 </div>
 
-                <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-mortarboard-fill me-2 text-primary"></i>Hồ sơ chuyên môn</h5>
+                <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-mortarboard-fill me-2 text-primary"></i>Professional Profile</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Học hàm / Học vị / Chức danh <span class="text-danger">*</span></label>
-                        <input asp-for="DoctorInput.ProfessionalTitle" class="form-control" placeholder="Ví dụ: Tiến sĩ Tâm lý lâm sàng" required />
+                        <label class="form-label fw-medium small">Academic Title / Degree <span class="text-danger">*</span></label>
+                        <input asp-for="DoctorInput.ProfessionalTitle" class="form-control" placeholder="e.g. Clinical Psychology PhD" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Số năm kinh nghiệm <span class="text-danger">*</span></label>
+                        <label class="form-label fw-medium small">Years of Experience <span class="text-danger">*</span></label>
                         <input type="number" asp-for="DoctorInput.ExperienceYears" class="form-control" min="0" required />
                     </div>
                     
                     <div class="col-12">
-                        <label class="form-label fw-medium small d-block">Chuyên khoa chuyên môn <span class="text-danger">*</span></label>
+                        <label class="form-label fw-medium small d-block">Professional Specialization <span class="text-danger">*</span></label>
                         <div class="row g-2 border rounded-3 p-3 bg-light m-0">
                             @foreach (var spec in Model.Specializations)
                             {
@@ -205,22 +205,22 @@ else
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label fw-medium small">Giới thiệu bản thân <span class="text-danger">*</span></label>
-                        <textarea asp-for="DoctorInput.Biography" class="form-control" rows="6" placeholder="Viết giới thiệu tóm tắt về kinh nghiệm, định hướng làm việc và chuyên môn trị liệu..." required></textarea>
+                        <label class="form-label fw-medium small">About Me <span class="text-danger">*</span></label>
+                        <textarea asp-for="DoctorInput.Biography" class="form-control" rows="6" placeholder="Write a brief introduction about your experience, orientation work and professional therapy..." required></textarea>
                     </div>
 
                     <div class="col-12">
                         <div class="form-check form-switch mt-2">
                             <input class="form-check-input" type="checkbox" role="switch" name="DoctorInput.IsVisible" value="true" id="isVisibleSwitch" @(Model.DoctorInput.IsVisible == true ? "checked" : "") />
                             <input type="hidden" name="DoctorInput.IsVisible" value="false" />
-                            <label class="form-check-label fw-medium small text-dark" for="isVisibleSwitch">Đồng ý hiển thị hồ sơ này trên trang tìm kiếm bác sĩ dành cho bệnh nhân</label>
+                            <label class="form-check-label fw-medium small text-dark" for="isVisibleSwitch">Agree to display this profile on the doctor search page for patients</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-4 pt-3 border-top d-flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu thay đổi</button>
-                    <a asp-page="Profile" class="btn btn-outline-secondary">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Save Changes</button>
+                    <a asp-page="Profile" class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </form>
         </div>

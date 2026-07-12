@@ -1,10 +1,10 @@
-@page "{id:guid}"
+﻿@page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.EditModel
 @{
-    ViewData["Title"] = "Chi tiết hồ sơ tư vấn";
+    ViewData["Title"] = "Details profile consultation";
     ViewData["UseDashboardLayout"] = true;
     var isWalkIn = Model.Record?.IsWalkIn ?? false;
-    var displayName = Model.Record?.DisplayPatientName ?? "Bệnh nhân";
+    var displayName = Model.Record?.DisplayPatientName ?? "Patient";
 }
 
 <style>
@@ -38,12 +38,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Hồ sơ tư vấn
+            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Consultation Records
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Xem chi tiết hoặc cập nhật thông tin chẩn đoán</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View details or update diagnosis information</p>
     </div>
     <a asp-page="./Details" asp-route-id="@Model.RecordId" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
-        <i class="bi bi-arrow-left me-2"></i> Quay lại
+        <i class="bi bi-arrow-left me-2"></i> Back
     </a>
 </div>
 
@@ -78,18 +78,18 @@
                     @if (isWalkIn)
                     {
                         <span class="badge bg-warning bg-opacity-15 text-warning px-2 py-1" style="border-radius:8px; font-size:0.7rem;">
-                            <i class="bi bi-person-plus me-1"></i>Bệnh nhân ngoài hệ thống
+                            <i class="bi bi-person-plus me-1"></i>Patient Outside System
                         </span>
                     }
                     else
                     {
                         <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1" style="border-radius:8px; font-size:0.7rem;">
-                            <i class="bi bi-person-check me-1"></i>Bệnh nhân hệ thống
+                            <i class="bi bi-person-check me-1"></i>Patient system
                         </span>
                     }
                 </div>
                 <div class="detail-meta">
-                    <span><i class="bi bi-calendar3 me-1"></i>@Model.Record.ConsultationDate.ToString("dd/MM/yyyy • HH:mm")</span>
+                    <span><i class="bi bi-calendar3 me-1"></i>@Model.Record.ConsultationDate.ToString("MM/dd/yyyy • HH:mm")</span>
                     @if (isWalkIn && !string.IsNullOrEmpty(Model.Record.WalkInPatientPhone))
                     {
                         <span>•</span>
@@ -103,12 +103,12 @@
                     @if (!isWalkIn && Model.Record.AppointmentId != null)
                     {
                         <span>•</span>
-                        <span><i class="bi bi-bookmark me-1"></i>Lịch hẹn: @Model.Record.AppointmentId.Value.ToString()[..8]...</span>
+                        <span><i class="bi bi-bookmark me-1"></i>Appointment: @Model.Record.AppointmentId.Value.ToString()[..8]...</span>
                     }
                 </div>
             </div>
             <span class="badge bg-success bg-opacity-10 text-success px-3 py-2" style="border-radius:10px; font-weight:600;">
-                <i class="bi bi-shield-check me-1"></i>Đã ghi chép
+                <i class="bi bi-shield-check me-1"></i>Recorded
             </span>
         </div>
     </div>
@@ -121,8 +121,8 @@
             {
                 <div class="sidebar-card bg-white mb-3">
                     <div class="card-header-custom">
-                        <i class="bi bi-box-seam"></i>Gói                                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientRecordId="@Model.Record.PatientRecordId" class="btn btn-sm btn-outline-primary w-100" style="border-radius:8px;">
-                                            <i class="bi bi-plus-circle me-1"></i>Tạo gói mới
+                        <i class="bi bi-box-seam"></i>Package                                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientRecordId="@Model.Record.PatientRecordId" class="btn btn-sm btn-outline-primary w-100" style="border-radius:8px;">
+                                            <i class="bi bi-plus-circle me-1"></i>Create New Package
                         </a>
                     </div>
                     <div style="padding:1rem;">
@@ -137,7 +137,7 @@
                                         <span style="font-weight:600; font-size:0.82rem; color:#1e293b;">@pkg.Name</span>
                                         <span style="font-size:0.7rem; color:@statusColor; font-weight:600;">@pkg.Status</span>
                                     </div>
-                                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:6px;">@pkg.CompletedSessions/@pkg.TotalSessions buổi • Hết hạn @pkg.ExpirationDate.ToString("dd/MM")</div>
+                                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:6px;">@pkg.CompletedSessions/@pkg.TotalSessions sessions • Expired @pkg.ExpirationDate.ToString("dd/MM")</div>
                                     <div style="background:#e2e8f0; border-radius:4px; height:4px;">
                                         <div style="background:var(--mb-primary); width:@(progress)%; height:100%; border-radius:4px;"></div>
                                     </div>
@@ -148,7 +148,7 @@
                         {
                             <div style="text-align:center; padding:1.5rem; color:#94a3b8; font-size:0.82rem;">
                                 <i class="bi bi-clipboard-x d-block mb-1" style="font-size:1.3rem; opacity:0.4;"></i>
-                                Chưa có gói điều trị
+                                No treatment packages yet
                             </div>
                         }
                     </div>
@@ -158,12 +158,12 @@
             <!-- Record Info -->
             <div class="sidebar-card bg-white">
                 <div class="card-header-custom">
-                    <i class="bi bi-clock-history"></i>Thông tin hồ sơ
+                    <i class="bi bi-clock-history"></i>Profile Information
                 </div>
                 <div style="padding:1rem;">
-                    <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Ngày tạo</div>
-                    <div style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:12px;">@Model.Record.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
-                    <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Mã hồ sơ</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Created Date</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:12px;">@Model.Record.CreatedAt.ToString("MM/dd/yyyy HH:mm")</div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Profile ID</div>
                     <div style="font-size:0.82rem; font-weight:500; color:#475569; font-family:monospace;">@Model.RecordId.ToString()[..12]...</div>
                 </div>
             </div>
@@ -177,34 +177,34 @@
                         
                         <div class="form-section">
                             <div class="form-section-title">
-                                <i class="bi bi-clipboard2-pulse-fill"></i>Chẩn đoán lâm sàng <span class="text-danger">*</span>
+                                <i class="bi bi-clipboard2-pulse-fill"></i>Diagnosis clinical <span class="text-danger">*</span>
                             </div>
-                            <input asp-for="Input.Diagnosis" class="form-control" style="border-radius:10px;" placeholder="Nhập chẩn đoán..." required />
+                            <input asp-for="Input.Diagnosis" class="form-control" style="border-radius:10px;" placeholder="Enter diagnosis..." required />
                         </div>
 
                         <div class="form-section">
                             <div class="form-section-title">
-                                <i class="bi bi-journal-text"></i>Nội dung & Ghi chú <span class="text-danger">*</span>
+                                <i class="bi bi-journal-text"></i>Content & Notes <span class="text-danger">*</span>
                             </div>
-                            <textarea asp-for="Input.Notes" class="form-control" style="border-radius:10px;" rows="5" placeholder="Ghi chú chi tiết..." required></textarea>
+                            <textarea asp-for="Input.Notes" class="form-control" style="border-radius:10px;" rows="5" placeholder="Notes chi tiết..." required></textarea>
                         </div>
 
                         <div class="form-section">
                                 <label asp-for="Input.TherapyPlan" class="form-label fw-semibold" style="font-size:0.9rem;">
-                                    <i class="bi bi-capsule me-1 text-secondary"></i>Kế hoạch trị liệu
+                                    <i class="bi bi-capsule me-1 text-secondary"></i>Plan therapy
                                 </label>
-                                <textarea asp-for="Input.TherapyPlan" class="form-control" rows="3" placeholder="Nhập kế hoạch trị liệu (nếu có)..." style="border-radius:10px;"></textarea>
+                                <textarea asp-for="Input.TherapyPlan" class="form-control" rows="3" placeholder="Enter therapy pspread (if applicable)..." style="border-radius:10px;"></textarea>
                                 <span asp-validation-for="Input.TherapyPlan" class="text-danger small"></span>
                             <div class="form-section-title">
-                                <i class="bi bi-heart-pulse-fill"></i>Khuyến nghị / Bài tập tại nhà
+                                <i class="bi bi-heart-pulse-fill"></i>Khuyến nghị / Assignment at home
                             </div>
-                            <textarea asp-for="Input.Recommendations" class="form-control" style="border-radius:10px;" rows="3" placeholder="Lời khuyên hoặc bài tập..."></textarea>
+                            <textarea asp-for="Input.Recommendations" class="form-control" style="border-radius:10px;" rows="3" placeholder="Advice hoặc assignment..."></textarea>
                         </div>
 
                         <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
-                            <a asp-page="./Details" asp-route-id="@Model.RecordId" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Hủy bỏ</a>
+                            <a asp-page="./Details" asp-route-id="@Model.RecordId" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
                             <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                <i class="bi bi-check-circle-fill"></i>Cập nhật hồ sơ
+                                <i class="bi bi-check-circle-fill"></i>Update profile
                             </button>
                         </div>
                     </div>

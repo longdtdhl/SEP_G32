@@ -1,7 +1,7 @@
 @page "{doctorId:guid?}"
 @model OPCBS.Web.Pages.Appointment.BookModel
 @{
-    ViewData["Title"] = "Đặt lịch hẹn";
+    ViewData["Title"] = "Book Appointment";
     var today = DateTime.Today;
     var dayNames = new[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" };
     var dayNamesEn = new[] { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
@@ -31,10 +31,10 @@
                     <i class="bi bi-box-seam" style="font-size:1.1rem;"></i>
                 </div>
                 <div class="flex-grow-1">
-                    <div style="font-weight:700; font-size:0.9rem; color:#166534;">Đặt lịch từ gói điều trị: @tPkg.Title</div>
-                    <div style="font-size:0.78rem; color:#4ade80;">Còn @tPkg.RemainingSessions / @tPkg.TotalSessions phiên &bull; HSD: @tPkg.ExpirationDate.ToString("dd/MM/yyyy")</div>
+                    <div style="font-weight:700; font-size:0.9rem; color:#166534;">Book from treatment package: @tPkg.Title</div>
+                    <div style="font-size:0.78rem; color:#4ade80;">Remaining: @tPkg.RemainingSessions / @tPkg.TotalSessions sessions &bull; Exp: @tPkg.ExpirationDate.ToString("MM/dd/yyyy")</div>
                 </div>
-                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@tPkg.Id" class="btn btn-sm btn-outline-success" style="border-radius:8px; font-size:0.75rem;">Xem gói</a>
+                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@tPkg.Id" class="btn btn-sm btn-outline-success" style="border-radius:8px; font-size:0.75rem;">View Package</a>
             </div>
         </div>
     }
@@ -44,9 +44,9 @@
         <!-- No doctor selected -->
         <div class="text-center py-5">
             <i class="bi bi-search-heart d-block mb-3" style="font-size:3rem;color:var(--mb-primary);"></i>
-            <h3>Chọn chuyên gia tâm lý</h3>
-            <p class="text-muted">Vui lòng chọn bác sĩ trước khi đặt lịch</p>
-            <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>Tìm chuyên gia</a>
+            <h3>Select Therapist</h3>
+            <p class="text-muted">Please select a doctor before booking</p>
+            <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>Find a Specialist</a>
         </div>
     }
     else
@@ -101,10 +101,10 @@
                             </div>
                             <div>
                                 <h6 class="mb-0">@Model.Doctor.FullName</h6>
-                                <small class="text-muted">@(Model.Doctor.Specialization ?? "Chuyên gia tâm lý")</small>
+                                <small class="text-muted">@(Model.Doctor.Specialization ?? "Therapist")</small>
                                 @if (Model.Doctor.Specializations?.Any() == true)
                                 {
-                                    <div class="mt-1"><small style="color:var(--mb-primary);">Chuyên khoa: @string.Join(", ", Model.Doctor.Specializations)</small></div>
+                                    <div class="mt-1"><small style="color:var(--mb-primary);">Specialization: @string.Join(", ", Model.Doctor.Specializations)</small></div>
                                 }
                             </div>
                         </div>
@@ -119,7 +119,7 @@
                                 <i class="bi bi-clock" style="color:var(--mb-primary);"></i>
                                 <span id="selectedTime" class="small fw-medium">—</span>
                             </div>
-                            <span class="badge bg-success">Đã chọn slot</span>
+                            <span class="badge bg-success">Slot Selected</span>
                         </div>
                     </div>
                 }
@@ -127,8 +127,8 @@
                 <!-- Legend -->
                 <div class="px-2">
                     <div class="wc-legend flex-column">
-                        <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Slot trống</div>
-                        <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Slot đầy</div>
+                        <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Available</div>
+                        <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Booked</div>
                     </div>
                 </div>
             </aside>
@@ -145,7 +145,7 @@
                             </div>
                         </div>
                         <span class="wc-title">@Model.WeekStart.ToString("MMM dd") — @Model.WeekEnd.ToString("MMM dd, yyyy")</span>
-                        <span class="wc-badge">Tuần @weekNumber</span>
+                        <span class="wc-badge">Week @weekNumber</span>
                         <div class="ms-auto wc-view-toggle">
                             <button class="btn active">Week</button>
                         </div>
@@ -184,7 +184,7 @@
                                                 var isAvailable = slot.Status == 0; // 0 = Available
                                                 var isBooked = slot.Status == 1;    // 1 = Booked
                                                 var cssClass = isAvailable ? "available" : "full";
-                                                var dateDisplay = day.ToString("dd/MM/yyyy");
+                                                var dateDisplay = day.ToString("MM/dd/yyyy");
                                                 <div class="wc-slot @cssClass"
                                                      style="top:2px;height:56px;@(isBooked ? "opacity:0.6;cursor:not-allowed;" : "")"
                                                      @Html.Raw(isAvailable ? "data-bs-toggle=\"modal\" data-bs-target=\"#bookingModal\"" : "")
@@ -192,14 +192,14 @@
                                                      data-slot-date="@dateDisplay"
                                                      data-slot-time="@slot.StartTime - @slot.EndTime"
                                                      @Html.Raw(isAvailable ? "onclick=\"fillSlotData(this)\"" : "")
-                                                     title="@(isAvailable ? $"Trống - {slot.StartTime} - {slot.EndTime}" : $"Đã đặt - {slot.StartTime} - {slot.EndTime}")">
+                                                     title="@(isAvailable ? $"Available - {slot.StartTime} - {slot.EndTime}" : $"Booked - {slot.StartTime} - {slot.EndTime}")">
                                                     @if (isBooked)
                                                     {
-                                                        <span class="slot-label"><i class="bi bi-lock-fill me-1"></i>ĐÃ ĐẶT</span>
+                                                        <span class="slot-label"><i class="bi bi-lock-fill me-1"></i>BOOKED</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="slot-label">TRỐNG</span>
+                                                        <span class="slot-label">AVAILABLE</span>
                                                     }
                                                     <span class="slot-time">@slot.StartTime - @slot.EndTime</span>
                                                 </div>
@@ -214,7 +214,7 @@
                         {
                             <div class="text-center py-5 text-muted">
                                 <i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;"></i>
-                                <p>Không có slot trống trong tuần này</p>
+                                <p>No available slots this week</p>
                             </div>
                         }
                     </div>
@@ -231,9 +231,9 @@
             <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg, #f0f7f3 0%, #e8f5ee 100%);padding:24px 28px 16px;">
                 <div>
                     <h4 class="modal-title fw-bold" id="bookingModalLabel" style="color:var(--mb-primary);">
-                        <i class="bi bi-calendar-check me-2"></i>Xác nhận đặt lịch
+                        <i class="bi bi-calendar-check me-2"></i>Confirm Booking
                     </h4>
-                    <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Kiểm tra thông tin và điền form bên dưới</p>
+                    <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Review the information and fill in the form below</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -242,22 +242,22 @@
                 <div class="p-3 rounded-3 mb-4" style="background:#f0f7f3;border:1px solid #d0e5d8;">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">BÁC SĨ</div>
+                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">DOCTOR</div>
                             <div class="fw-bold mt-1" style="color:var(--mb-primary);">@(Model.Doctor?.FullName ?? "—")</div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">NGÀY</div>
+                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">DATE</div>
                             <div class="fw-semibold mt-1" id="modalDate">—</div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">THỜI GIAN</div>
+                            <div class="text-uppercase small text-muted fw-semibold" style="letter-spacing:0.05em;font-size:0.7rem;">TIME</div>
                             <div class="fw-semibold mt-1" id="modalTime">—</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Patient Form -->
-                <h6 class="fw-bold mb-3"><i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Thông tin bệnh nhân</h6>
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Patient Information</h6>
                 <form method="post" id="bookingForm">
                     <input type="hidden" asp-for="Input.DoctorId" />
                     <input type="hidden" asp-for="Input.AppointmentSlotId" id="slotIdInput" />
@@ -267,10 +267,10 @@
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">HỌ TÊN <span class="text-danger">*</span></label>
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">FULL NAME <span class="text-danger">*</span></label>
                             @if (Model.IsGuest)
                             {
-                                <input asp-for="Input.GuestName" class="form-control" placeholder="VD: Nguyễn Văn A" style="border-radius:12px;padding:10px 14px;" required />
+                                <input asp-for="Input.GuestName" class="form-control" placeholder="e.g. John Doe" style="border-radius:12px;padding:10px 14px;" required />
                             }
                             else
                             {
@@ -290,7 +290,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">SỐ ĐIỆN THOẠI</label>
+                        <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER</label>
                         @if (Model.IsGuest)
                         {
                             <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" />
@@ -302,20 +302,20 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">LÝ DO KHÁM</label>
-                        <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Mô tả ngắn gọn tình trạng hoặc lý do bạn muốn tư vấn..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
+                        <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">REASON FOR VISIT</label>
+                        <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Brief description of your condition or reason for consultation..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
                     </div>
 
                     <!-- Privacy note -->
                     <div class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background:#f8faf8;">
                         <i class="bi bi-shield-check" style="color:var(--mb-primary);font-size:1.2rem;margin-top:2px;"></i>
-                        <small class="text-muted">Thông tin của bạn được bảo mật và chỉ chia sẻ với bác sĩ tư vấn.</small>
+                        <small class="text-muted">Your information is confidential and shared only with the consulting doctor.</small>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:12px;">Hủy</button>
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:12px;">Cancel</button>
                         <button type="submit" class="btn btn-primary px-4 fw-semibold d-flex align-items-center gap-2" id="confirmBtn" style="border-radius:12px;">
-                            <i class="bi bi-check-circle"></i>Xác nhận đặt lịch
+                            <i class="bi bi-check-circle"></i>Confirm Booking
                         </button>
                     </div>
                 </form>

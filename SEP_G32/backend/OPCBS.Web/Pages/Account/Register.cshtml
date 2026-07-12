@@ -1,13 +1,13 @@
 @page
 @model OPCBS.Web.Pages.Account.RegisterModel
 @{
-    ViewData["Title"] = "Create Account";
+    ViewData["Title"] = "Register";
     Layout = "_AuthLayout";
 }
 
 <div class="mb-auth-card">
     <h2>Create Your Account</h2>
-    <p class="auth-subtitle">Join MindBridge and start your wellness journey</p>
+    <p class="auth-subtitle">Join MindBridge and begin your mental wellness journey</p>
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
     <form method="post">
         <div class="mb-3">
@@ -17,7 +17,7 @@
         </div>
         <div class="mb-3">
             <label asp-for="Input.Email" class="form-label">Email</label>
-            <input asp-for="Input.Email" type="email" class="form-control" placeholder="your@email.com" />
+            <input asp-for="Input.Email" type="email" class="form-control" placeholder="example@email.com" />
             <span asp-validation-for="Input.Email" class="text-danger"></span>
         </div>
         <div class="mb-3">
@@ -27,7 +27,7 @@
         </div>
         <div class="mb-3">
             <label asp-for="Input.Password" class="form-label">Password</label>
-            <input asp-for="Input.Password" type="password" class="form-control" placeholder="Create a password" />
+            <input asp-for="Input.Password" type="password" class="form-control" placeholder="Create your password" />
             <span asp-validation-for="Input.Password" class="text-danger"></span>
         </div>
         <div class="mb-3">
@@ -35,11 +35,11 @@
             <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
             <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
         </div>
-        <button type="submit" class="btn btn-primary w-100 btn-lg">Create Account</button>
+        <button type="submit" class="btn btn-primary w-100 btn-lg">Register Account</button>
     </form>
     <div class="auth-footer">
-        Already have an account? <a asp-page="/Account/Login">Log in</a>
+        Already have an account? <a asp-page="/Account/Login">Log In</a>
         <br />
-        <small class="text-muted">Bạn là bác sĩ?</small> <a asp-page="/Account/RegisterDoctor" style="color:var(--mb-primary);font-weight:600;"><i class="bi bi-heart-pulse me-1"></i>Become a Doctor</a>
+        <small class="text-muted">Are you a doctor?</small> <a asp-page="/Account/RegisterDoctor" style="color:var(--mb-primary);font-weight:600;"><i class="bi bi-heart-pulse me-1"></i>Become a Doctor</a>
     </div>
 </div>

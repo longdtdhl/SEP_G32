@@ -1,7 +1,7 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết gói điều trị";
+    ViewData["Title"] = "Treatment Package Details";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -38,12 +38,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Chi tiết gói điều trị
+            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package Details
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Xem thông tin và tiến trình gói điều trị của bạn</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View information and progress of your treatment package</p>
     </div>
     <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
-        <i class="bi bi-arrow-left me-1"></i>Quay lại
+        <i class="bi bi-arrow-left me-1"></i>Back
     </a>
 </div>
 
@@ -61,8 +61,8 @@
     var isPending = pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned" || pkg.Status == "0" || pkg.Status == "1";
     var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
     var statusClass = pkg.Status switch { "Active" => "active", "Accepted" => "active", "Created" => "created", "Pending" => "pending", "Assigned" => "pending", "Completed" => "completed", _ => "created" };
-    var statusLabel = pkg.Status switch { "Active" => "Hoạt động", "Accepted" => "Đã chấp nhận", "Created" => "Đã tạo", "Pending" => "Chờ xác nhận", "Assigned" => "Chờ xác nhận", "Completed" => "Hoàn thành", "Cancelled" => "Đã hủy", "Rejected" => "Đã từ chối", _ => pkg.Status };
-    if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Hết hạn"; }
+    var statusLabel = pkg.Status switch { "Active" => "Active", "Accepted" => "Accepted", "Created" => "Created", "Pending" => "Pending Approval", "Assigned" => "Pending Approval", "Completed" => "Completed", "Cancelled" => "Cancelled", "Rejected" => "Rejected", _ => pkg.Status };
+    if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Expired"; }
     var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
 
     <div class="row g-4">
@@ -70,7 +70,7 @@
         <div class="col-lg-4" style="position: sticky; top: 100px; align-self: flex-start;">
             <!-- Doctor Info -->
             <div class="pkg-detail-sidebar mb-3">
-                <div class="pkg-sidebar-header"><i class="bi bi-person-badge-fill"></i>Bác sĩ phụ trách</div>
+                <div class="pkg-sidebar-header"><i class="bi bi-person-badge-fill"></i>Assigned Doctor</div>
                 <div style="padding:1.25rem; text-align:center;">
                     @{
                         var docName = pkg.DoctorName ?? "N/A";
@@ -79,14 +79,14 @@
                         var dcolor = dcolors[Math.Abs(docName.GetHashCode()) % dcolors.Length];
                     }
                     <div style="width:56px; height:56px; border-radius:14px; background:@(dcolor)18; color:@dcolor; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; margin:0 auto 8px;">@docInitial</div>
-                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">BS. @docName</div>
-                    <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">Bác sĩ phụ trách gói điều trị</div>
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">Dr. @docName</div>
+                    <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">Doctor in charge of treatment package</div>
                 </div>
             </div>
 
             <!-- Progress -->
             <div class="pkg-detail-sidebar mb-3">
-                <div class="pkg-sidebar-header"><i class="bi bi-graph-up"></i>Tiến trình điều trị</div>
+                <div class="pkg-sidebar-header"><i class="bi bi-graph-up"></i>Treatment Progress</div>
                 <div style="padding:1.25rem; text-align:center;">
                     <div style="position:relative; width:90px; height:90px; margin:0 auto 12px;">
                         <svg width="90" height="90" style="transform:rotate(-90deg);">
@@ -98,100 +98,100 @@
                         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.2rem; font-weight:800; color:@progressColor;">@(progress)%</div>
                     </div>
                     <div style="font-size:0.82rem; color:#64748b;">
-                        <strong style="color:#1e293b;">@pkg.CompletedSessions</strong> / @pkg.TotalSessions phiên hoàn thành
+                        <strong style="color:#1e293b;">@pkg.CompletedSessions</strong> / @pkg.TotalSessions sessions completed
                     </div>
                 </div>
             </div>
 
             <!-- Package Details -->
             <div class="pkg-detail-sidebar mb-3">
-                <div class="pkg-sidebar-header"><i class="bi bi-info-circle"></i>Thông tin gói</div>
+                <div class="pkg-sidebar-header"><i class="bi bi-info-circle"></i>Package Information</div>
                 <div style="padding:1rem 1.25rem;">
                     <div class="pkg-sidebar-row">
-                        <span class="label">Trạng thái</span>
+                        <span class="label">Status</span>
                         <span class="pkg-status-badge @statusClass">@statusLabel</span>
                     </div>
                     <div class="pkg-sidebar-row">
-                        <span class="label">Giá</span>
+                        <span class="label">Price</span>
                         <span class="value" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</span>
                     </div>
                     <div class="pkg-sidebar-row">
-                        <span class="label">Hiệu lực</span>
-                        <span class="value">@pkg.ValidityDays ngày</span>
+                        <span class="label">Validity</span>
+                        <span class="value">@pkg.ValidityDays days</span>
                     </div>
                     <div class="pkg-sidebar-row">
-                        <span class="label">Hết hạn</span>
-                        <span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</span>
+                        <span class="label">Expiration Date</span>
+                        <span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</span>
                     </div>
                     <div class="pkg-sidebar-row">
-                        <span class="label">Ngày tạo</span>
-                        <span class="value">@pkg.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        <span class="label">Created Date</span>
+                        <span class="value">@pkg.CreatedAt.ToString("MM/dd/yyyy")</span>
                     </div>
                     @if (pkg.AcceptedDate.HasValue)
                     {
                         <div class="pkg-sidebar-row">
-                            <span class="label">Ngày chấp nhận</span>
-                            <span class="value">@pkg.AcceptedDate.Value.ToString("dd/MM/yyyy")</span>
+                            <span class="label">Accepted Date</span>
+                            <span class="value">@pkg.AcceptedDate.Value.ToString("MM/dd/yyyy")</span>
                         </div>
                     }
                     @if (pkg.ActiveDate.HasValue)
                     {
                         <div class="pkg-sidebar-row">
-                            <span class="label">Ngày kích hoạt</span>
-                            <span class="value">@pkg.ActiveDate.Value.ToString("dd/MM/yyyy")</span>
+                            <span class="label">Active Date</span>
+                            <span class="value">@pkg.ActiveDate.Value.ToString("MM/dd/yyyy")</span>
                         </div>
                     }
                     <div class="pkg-sidebar-row">
-                        <span class="label">Còn lại</span>
-                        <span class="value">@pkg.RemainingSessions phiên</span>
+                        <span class="label">Remaining</span>
+                        <span class="value">@pkg.RemainingSessions sessions</span>
                     </div>
                 </div>
             </div>
 
             <!-- Actions -->
             <div class="pkg-detail-sidebar">
-                <div class="pkg-sidebar-header"><i class="bi bi-lightning-charge"></i>Thao tác</div>
+                <div class="pkg-sidebar-header"><i class="bi bi-lightning-charge"></i>Actions</div>
                 <div style="padding:1rem 1.25rem;" class="d-grid gap-2">
                     @if (isPending)
                     {
                         <div class="alert alert-info mb-2" style="border-radius:10px; font-size:0.82rem;">
-                            <i class="bi bi-info-circle me-1"></i>Bác sĩ đã chỉ định gói điều trị này cho bạn. Vui lòng xác nhận hoặc từ chối.
+                            <i class="bi bi-info-circle me-1"></i>The doctor has assigned this treatment package to you. Please accept or reject it.
                         </div>
                         <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id">
                             <button type="submit" class="btn btn-success w-100 mb-2" style="border-radius:10px;">
-                                <i class="bi bi-check-circle me-1"></i>Chấp nhận gói điều trị
+                                <i class="bi bi-check-circle me-1"></i>Accept Treatment Package
                             </button>
                         </form>
                         <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal" style="border-radius:10px;">
-                            <i class="bi bi-x-circle me-1"></i>Từ chối
+                            <i class="bi bi-x-circle me-1"></i>Reject
                         </button>
                     }
                     else if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
                     {
                         <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
                            class="btn btn-primary w-100 mb-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-calendar-plus me-1"></i>Đặt lịch tư vấn với BS. @(pkg.DoctorName ?? "N/A")
+                            <i class="bi bi-calendar-plus me-1"></i>Book Session with Dr. @(pkg.DoctorName ?? "N/A")
                         </a>
                         <button type="button" class="btn btn-outline-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px;">
-                            <i class="bi bi-x-circle me-1"></i>Hủy gói điều trị
+                            <i class="bi bi-x-circle me-1"></i>Cancel Treatment Package
                         </button>
                         <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
-                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                            <i class="bi bi-arrow-left me-1"></i>Back to List
                         </a>
                     }
                     else if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
                     {
                         <button type="button" class="btn btn-outline-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px;">
-                            <i class="bi bi-x-circle me-1"></i>Hủy gói điều trị
+                            <i class="bi bi-x-circle me-1"></i>Cancel Treatment Package
                         </button>
                         <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
-                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                            <i class="bi bi-arrow-left me-1"></i>Back to List
                         </a>
                     }
                     else
                     {
                         <a asp-page="Index" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
-                            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+                            <i class="bi bi-arrow-left me-1"></i>Back to List
                         </a>
                     }
                 </div>
@@ -203,38 +203,38 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section">
-                        <div class="form-section-title"><i class="bi bi-tag-fill"></i>Tên gói điều trị</div>
+                        <div class="form-section-title"><i class="bi bi-tag-fill"></i>Treatment Package Title</div>
                         <h4 style="color:#1e293b; font-weight:700;">@pkg.Title</h4>
                     </div>
 
                     @if (!string.IsNullOrEmpty(pkg.Description))
                     {
                         <div class="form-section">
-                            <div class="form-section-title"><i class="bi bi-card-text"></i>Mô tả chi tiết</div>
+                            <div class="form-section-title"><i class="bi bi-card-text"></i>Detailed Description</div>
                             <p style="color:#475569; line-height:1.7; white-space:pre-line;">@pkg.Description</p>
                         </div>
                     }
 
                     <!-- Session Stats -->
                     <div class="form-section">
-                        <div class="form-section-title"><i class="bi bi-bar-chart"></i>Tổng quan phiên điều trị</div>
+                        <div class="form-section-title"><i class="bi bi-bar-chart"></i>Treatment Sessions Overview</div>
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <div class="p-3 rounded-3 text-center" style="background:#eff6ff; border:1px solid #dbeafe;">
                                     <div style="font-size:1.5rem; font-weight:800; color:#3b82f6;">@pkg.TotalSessions</div>
-                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Tổng số phiên</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Total Sessions</div>
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="p-3 rounded-3 text-center" style="background:#dcfce7; border:1px solid #bbf7d0;">
                                     <div style="font-size:1.5rem; font-weight:800; color:#16a34a;">@pkg.CompletedSessions</div>
-                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Đã hoàn thành</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Completed</div>
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="p-3 rounded-3 text-center" style="background:#fef3c7; border:1px solid #fde68a;">
                                     <div style="font-size:1.5rem; font-weight:800; color:#f59e0b;">@pkg.RemainingSessions</div>
-                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Còn lại</div>
+                                    <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Remaining</div>
                                 </div>
                             </div>
                         </div>
@@ -243,7 +243,7 @@
                     <!-- Progress Bar -->
                     <div class="form-section">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span style="font-size:0.82rem; color:#64748b; font-weight:600;">Tiến trình tổng thể</span>
+                            <span style="font-size:0.82rem; color:#64748b; font-weight:600;">Overall Progress</span>
                             <span style="font-size:0.82rem; color:@progressColor; font-weight:700;">@(progress)%</span>
                         </div>
                         <div class="progress" style="height:10px; border-radius:8px;">
@@ -255,12 +255,12 @@
                     <ul class="nav nav-tabs mb-4" role="tablist" style="border-bottom: 2px solid #e2e8f0;">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="tab-roadmap" data-bs-toggle="tab" data-bs-target="#roadmap-content" type="button" role="tab" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0; color:#1e293b;">
-                                <i class="bi bi-signpost-split me-1"></i>Lộ trình trị liệu
+                                <i class="bi bi-signpost-split me-1"></i>Treatment Roadmap
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="tab-assignments" data-bs-toggle="tab" data-bs-target="#assignments-content" type="button" role="tab" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0; color:#1e293b;">
-                                <i class="bi bi-journal-check me-1"></i>Bài tập trị liệu
+                                <i class="bi bi-journal-check me-1"></i>Therapy Assignments
                                 @if (Model.Assignments.Any())
                                 {
                                     <span class="badge rounded-pill bg-primary ms-1" style="font-size:0.65rem;">@Model.Assignments.Count</span>
@@ -274,15 +274,15 @@
                         <div class="tab-pane fade show active" id="roadmap-content" role="tabpanel">
                             <!-- Timeline -->
                             <div class="form-section mb-4">
-                                <div class="form-section-title"><i class="bi bi-clock-history"></i>Dòng thời gian gói</div>
+                                <div class="form-section-title"><i class="bi bi-clock-history"></i>Package Timeline</div>
                                 <div class="list-group list-group-flush">
                                     <div class="list-group-item d-flex align-items-center gap-3 px-0 py-2 border-0">
                                         <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; background:#eff6ff; color:#3b82f6; flex-shrink:0;">
                                             <i class="bi bi-plus-circle" style="font-size:0.85rem;"></i>
                                         </div>
                                         <div>
-                                            <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Gói được chỉ định bởi Bác sĩ</div>
-                                            <div style="font-size:0.72rem; color:#94a3b8;">@pkg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                            <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Package assigned by Doctor</div>
+                                            <div style="font-size:0.72rem; color:#94a3b8;">@pkg.CreatedAt.ToString("MM/dd/yyyy HH:mm")</div>
                                         </div>
                                     </div>
                                     @if (pkg.AcceptedDate.HasValue)
@@ -292,8 +292,8 @@
                                                 <i class="bi bi-check-circle" style="font-size:0.85rem;"></i>
                                             </div>
                                             <div>
-                                                <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Bạn đã xác nhận chấp nhận gói</div>
-                                                <div style="font-size:0.72rem; color:#94a3b8;">@pkg.AcceptedDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                                <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">You accepted the package</div>
+                                                <div style="font-size:0.72rem; color:#94a3b8;">@pkg.AcceptedDate.Value.ToString("MM/dd/yyyy HH:mm")</div>
                                             </div>
                                         </div>
                                     }
@@ -304,8 +304,8 @@
                                                 <i class="bi bi-lightning-charge" style="font-size:0.85rem;"></i>
                                             </div>
                                             <div>
-                                                <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Gói điều trị được kích hoạt hoạt động</div>
-                                                <div style="font-size:0.72rem; color:#94a3b8;">@pkg.ActiveDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                                <div style="font-size:0.82rem; font-weight:600; color:#1e293b;">Treatment package activated</div>
+                                                <div style="font-size:0.72rem; color:#94a3b8;">@pkg.ActiveDate.Value.ToString("MM/dd/yyyy HH:mm")</div>
                                             </div>
                                         </div>
                                     }
@@ -314,7 +314,7 @@
 
                             <!-- Completed Sessions Notes -->
                             <div class="form-section">
-                                <div class="form-section-title"><i class="bi bi-clipboard2-pulse"></i>Các phiên trị liệu đã thực hiện (@Model.PackageNotes.Count)</div>
+                                <div class="form-section-title"><i class="bi bi-clipboard2-pulse"></i>Treatment Sessions Completed (@Model.PackageNotes.Count)</div>
                                 @if (Model.PackageNotes.Any())
                                 {
                                     <div class="d-flex flex-column gap-3 mt-3">
@@ -324,29 +324,29 @@
                                             <div class="card border border-light shadow-none bg-light p-3" style="border-radius:12px;">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div>
-                                                        <span class="badge bg-primary px-2.5 py-1 rounded-pill mb-2" style="font-size: 0.68rem; font-weight: 700;">Phiên @(i + 1)</span>
-                                                        <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(note.Diagnosis) ? "Chưa có chẩn đoán cụ thể" : note.Diagnosis)</h6>
+                                                        <span class="badge bg-primary px-2.5 py-1 rounded-pill mb-2" style="font-size: 0.68rem; font-weight: 700;">Session @(i + 1)</span>
+                                                        <h6 class="fw-bold mb-0 text-dark">@(string.IsNullOrEmpty(note.Diagnosis) ? "No diagnosis recorded" : note.Diagnosis)</h6>
                                                     </div>
-                                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@note.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@note.CreatedAt.ToString("MM/dd/yyyy")</small>
                                                 </div>
                                                 
                                                 @if (!string.IsNullOrEmpty(note.ConsultationSummary))
                                                 {
                                                     <p class="mb-2 small text-secondary" style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-                                                        <strong>Ghi chép:</strong> @note.ConsultationSummary
+                                                        <strong>Notes:</strong> @note.ConsultationSummary
                                                     </p>
                                                 }
                                                 
                                                 @if (!string.IsNullOrEmpty(note.Recommendation))
                                                 {
                                                     <div class="alert bg-white border border-light py-2 px-3 mb-2 small text-dark" style="border-radius:8px;">
-                                                        <strong><i class="bi bi-heart-pulse-fill text-danger me-1"></i>Bài tập & Lời khuyên:</strong> @note.Recommendation
+                                                        <strong><i class="bi bi-heart-pulse-fill text-danger me-1"></i>Exercises &amp; Recommendations:</strong> @note.Recommendation
                                                     </div>
                                                 }
 
                                                 <div class="text-end">
                                                     <a asp-page="/Patient/ConsultationRecords/Index" class="btn btn-sm btn-link text-decoration-none fw-bold p-0" style="font-size:0.75rem;">
-                                                        Xem toàn bộ ghi chép <i class="bi bi-arrow-right"></i>
+                                                        View full record <i class="bi bi-arrow-right"></i>
                                                     </a>
                                                 </div>
                                             </div>
@@ -357,7 +357,7 @@
                                 {
                                     <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius: 12px; background: #fafbfc;">
                                         <i class="bi bi-clipboard2-check d-block mb-2" style="font-size: 1.8rem; opacity:0.4;"></i>
-                                        <span class="small">Chưa có phiên trị liệu nào được thực hiện hoặc ghi nhận trong gói này.</span>
+                                        <span class="small">No treatment sessions have been recorded in this package yet.</span>
                                     </div>
                                 }
                             </div>
@@ -366,7 +366,7 @@
                         <!-- Tab 2: Assignments -->
                         <div class="tab-pane fade" id="assignments-content" role="tabpanel">
                             <div class="form-section">
-                                <div class="form-section-title"><i class="bi bi-journal-check"></i>Bài tập từ Bác sĩ (@Model.Assignments.Count)</div>
+                                <div class="form-section-title"><i class="bi bi-journal-check"></i>Assignments from Doctor (@Model.Assignments.Count)</div>
                                 @if (Model.Assignments.Any())
                                 {
                                     <div class="d-flex flex-column gap-3 mt-3">
@@ -382,7 +382,7 @@
                                                         @if (hw.DueDate.HasValue)
                                                         {
                                                             <small class="text-muted" style="white-space:nowrap;">
-                                                                <i class="bi bi-calendar-event me-1"></i>Hạn: @hw.DueDate.Value.ToString("dd/MM/yyyy")
+                                                                <i class="bi bi-calendar-event me-1"></i>Due: @hw.DueDate.Value.ToString("MM/dd/yyyy")
                                                             </small>
                                                         }
                                                     </div>
@@ -398,7 +398,7 @@
                                                     {
                                                         <div class="p-2 rounded-3 mb-2" style="background:#eff6ff; border:1px solid #dbeafe;">
                                                             <div style="font-size:0.72rem; color:#3b82f6; font-weight:700; margin-bottom:4px;">
-                                                                <i class="bi bi-send-check me-1"></i>Bài làm của bạn (Nộp lúc @hw.SubmittedAt?.ToString("dd/MM HH:mm"))
+                                                                <i class="bi bi-send-check me-1"></i>Your submission (Submitted at @hw.SubmittedAt?.ToString("MM/dd HH:mm"))
                                                             </div>
                                                             <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.PatientSubmission</div>
                                                         </div>
@@ -408,7 +408,7 @@
                                                     {
                                                         <div class="p-2 rounded-3 mb-2" style="background:#dcfce7; border:1px solid #bbf7d0;">
                                                             <div style="font-size:0.72rem; color:#16a34a; font-weight:700; margin-bottom:4px;">
-                                                                <i class="bi bi-chat-heart me-1"></i>Nhận xét từ Bác sĩ (@hw.FeedbackAt?.ToString("dd/MM HH:mm"))
+                                                                <i class="bi bi-chat-heart me-1"></i>Feedback from Doctor (Feedback at @hw.FeedbackAt?.ToString("MM/dd HH:mm"))
                                                             </div>
                                                             <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.DoctorFeedback</div>
                                                         </div>
@@ -418,10 +418,10 @@
                                                     {
                                                         <form method="post" asp-page-handler="SubmitAssignment" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" class="mt-2">
                                                             <div class="mb-2">
-                                                                <textarea name="SubmissionText" class="form-control" rows="3" placeholder="Nhập nội dung bài tập / phản hồi của bạn..." style="border-radius:10px; font-size:0.85rem;"></textarea>
+                                                                <textarea name="SubmissionText" class="form-control" rows="3" placeholder="Enter your submission details..." style="border-radius:10px; font-size:0.85rem;"></textarea>
                                                             </div>
                                                             <button type="submit" class="btn btn-primary btn-sm px-3" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                                                <i class="bi bi-send me-1"></i>Nộp bài tập
+                                                                <i class="bi bi-send me-1"></i>Submit Assignment
                                                             </button>
                                                         </form>
                                                     }
@@ -434,7 +434,7 @@
                                 {
                                     <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius: 12px; background: #fafbfc;">
                                         <i class="bi bi-journal-x d-block mb-2" style="font-size: 1.8rem; opacity:0.4;"></i>
-                                        <span class="small">Bác sĩ chưa giao bài tập nào trong gói điều trị này.</span>
+                                        <span class="small">The doctor has not assigned any homework in this treatment package yet.</span>
                                     </div>
                                 }
                             </div>
@@ -452,19 +452,19 @@
             <div class="modal-dialog"><div class="modal-content" style="border-radius:16px;">
                 <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
                     <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold">Từ chối gói điều trị</h5>
+                        <h5 class="modal-title fw-bold">Reject Treatment Package</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted" style="font-size:0.85rem;">Vui lòng cho biết lý do bạn muốn từ chối gói điều trị này.</p>
+                        <p class="text-muted" style="font-size:0.85rem;">Please specify the reason you want to reject this treatment package.</p>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Lý do từ chối</label>
-                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Nhập lý do..." style="border-radius:10px;"></textarea>
+                            <label class="form-label fw-semibold">Reason for Rejection</label>
+                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Enter reason..." style="border-radius:10px;"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
-                        <button type="submit" class="btn btn-danger" style="border-radius:10px;">Xác nhận từ chối</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                        <button type="submit" class="btn btn-danger" style="border-radius:10px;">Confirm Rejection</button>
                     </div>
                 </form>
             </div></div>
@@ -478,21 +478,21 @@
             <div class="modal-dialog"><div class="modal-content" style="border-radius:16px;">
                 <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
                     <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Hủy gói điều trị</h5>
+                        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel Treatment Package</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">
-                            <i class="bi bi-info-circle me-1"></i>Bạn đang hủy gói <strong>@pkg.Title</strong>. Thao tác này không thể hoàn tác.
+                            <i class="bi bi-info-circle me-1"></i>You are about to cancel package <strong>@pkg.Title</strong>. This action cannot be undone.
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Lý do hủy (tùy chọn)</label>
-                            <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy gói..." style="border-radius:10px;"></textarea>
+                            <label class="form-label fw-semibold">Reason for Cancellation (optional)</label>
+                            <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Enter reason..." style="border-radius:10px;"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
-                        <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Xác nhận hủy</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                        <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Confirm Cancellation</button>
                     </div>
                 </form>
             </div></div>
@@ -505,8 +505,8 @@ else
         <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
             <i class="bi bi-box text-muted" style="font-size:2.5rem;"></i>
         </div>
-        <h5 class="fw-bold">Không tìm thấy gói điều trị</h5>
-        <p class="text-muted">Gói điều trị này không tồn tại hoặc bạn không có quyền truy cập.</p>
-        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Quay lại danh sách</a>
+        <h5 class="fw-bold">Treatment Package Not Found</h5>
+        <p class="text-muted">This treatment package does not exist or you do not have permission to access it.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Back to List</a>
     </div>
 }

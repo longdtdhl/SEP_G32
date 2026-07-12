@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.IndexModel
 @{
-    ViewData["Title"] = "Gói điều trị của tôi";
+    ViewData["Title"] = "My Treatment Packages";
     ViewData["UseDashboardLayout"] = true;
     var activePkgs = Model.Packages.Count(p => p.Status == "Active");
     var totalSessions = Model.Packages.Sum(p => p.TotalSessions);
@@ -52,9 +52,9 @@
 <!-- Page Header -->
 <div class="mb-page-header">
     <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-        <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Gói điều trị của tôi
+        <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>My Treatment Packages
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Theo dõi các gói điều trị được bác sĩ chỉ định cho bạn</p>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Follow-up the gói treatment được doctor chỉ định for bạn</p>
 </div>
 
 @if (Model.Error != null)
@@ -80,7 +80,7 @@
             <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-box-seam"></i></div>
             <div>
                 <div class="stat-value">@Model.Packages.Count</div>
-                <div class="stat-label">Tổng gói</div>
+                <div class="stat-label">Total gói</div>
             </div>
         </div>
     </div>
@@ -89,7 +89,7 @@
             <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="bi bi-lightning-charge"></i></div>
             <div>
                 <div class="stat-value">@activePkgs</div>
-                <div class="stat-label">Đang hoạt động</div>
+                <div class="stat-label">Active</div>
             </div>
         </div>
     </div>
@@ -98,7 +98,7 @@
             <div class="stat-icon" style="background:#fef3c7; color:#f59e0b;"><i class="bi bi-calendar2-check"></i></div>
             <div>
                 <div class="stat-value">@completedSessions / @totalSessions</div>
-                <div class="stat-label">Phiên hoàn thành</div>
+                <div class="stat-label">Session complete</div>
             </div>
         </div>
     </div>
@@ -125,14 +125,14 @@
                 "Active" => "Hoạt động",
                 "Accepted" => "Đã chấp nhận",
                 "Created" => "Đã tạo",
-                "Pending" => "Chờ xác nhận",
-                "Assigned" => "Chờ xác nhận",
-                "Completed" => "Hoàn thành",
-                "Cancelled" => "Đã hủy",
-                "Rejected" => "Đã từ chối",
+                "Pending" => "Pending Confirmation",
+                "Assigned" => "Pending Confirmation",
+                "Completed" => "Completed",
+                "Cancelled" => "Cancelled",
+                "Rejected" => "Rejected",
                 _ => pkg.Status
             };
-            if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Hết hạn"; }
+            if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Expired"; }
             var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
             var isPending = pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned" || pkg.Status == "0" || pkg.Status == "1";
 
@@ -157,15 +157,15 @@
                             <p style="font-size:0.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
                         }
 
-                        <div class="pt-meta-row"><i class="bi bi-calendar2-check"></i><span>Phiên: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
-                        <div class="pt-meta-row"><i class="bi bi-hourglass-split"></i><span>Còn lại: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
-                        <div class="pt-meta-row"><i class="bi bi-calendar-x"></i><span>Hết hạn: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</strong></span></div>
-                        <div class="pt-meta-row"><i class="bi bi-currency-dollar"></i><span>Phí: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-calendar2-check"></i><span>Session: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-calendar-x"></i><span>Expired: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-currency-dollar"></i><span>Fee: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
 
                         <!-- Progress bar -->
                         <div style="margin-top:10px;">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Tiến trình</span>
+                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Progress</span>
                                 <span style="font-size:0.72rem; color:@progressColor; font-weight:700;">@(progress)%</span>
                             </div>
                             <div class="pt-progress-track">
@@ -177,14 +177,14 @@
                     <!-- Footer -->
                     <div class="pt-card-footer d-flex gap-2">
                         <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-eye"></i>Chi tiết
+                            <i class="bi bi-eye"></i>Details
                         </a>
                         @if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
                         {
                             <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
                                class="btn btn-sm btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
                                style="border-radius:8px; font-size:0.78rem; font-weight:600; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                <i class="bi bi-calendar-plus"></i>Đặt lịch
+                                <i class="bi bi-calendar-plus"></i>Book Now
                             </a>
                         }
                         @if (isPending)
@@ -205,10 +205,10 @@
         <div class="col-12">
             <div class="pt-empty">
                 <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
-                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">Chưa có gói điều trị nào</h5>
-                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Bác sĩ sẽ tạo gói điều trị dành riêng cho bạn sau khi tư vấn</p>
+                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No treatment packages yet nào</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Doctor sẽ tạo gói treatment dành riêng for bạn after when consultation</p>
                 <a asp-page="/Doctors/Index" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                    <i class="bi bi-search me-1"></i>Tìm bác sĩ
+                    <i class="bi bi-search me-1"></i>Find doctor
                 </a>
             </div>
         </div>

@@ -1,13 +1,13 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.Blogs.EditModel
-@{ ViewData["Title"] = "Chỉnh sửa bài viết"; ViewData["UseDashboardLayout"] = true; }
+@{ ViewData["Title"] = "Edit articles"; ViewData["UseDashboardLayout"] = true; }
 
 <style>
     /* Quill Editor */
     .ql-toolbar.ql-snow { border-radius: 10px 10px 0 0 !important; border: 1.5px solid #e2e8f0 !important; border-bottom: none !important; }
     .ql-container.ql-snow { border-radius: 0 0 10px 10px !important; border: 1.5px solid #e2e8f0 !important; font-size: 0.9rem; min-height: 300px; }
     .ql-editor { min-height: 300px; line-height: 1.8; }
-    .ql-editor.ql-blank::before { font-style: normal; color: #94a3b8; }
+    .ql-editor.ql-bspreadk::before { font-style: normal; color: #94a3b8; }
     .edit-header { margin-bottom: 1.5rem; }
     .edit-header h1 { font-size: 1.4rem; font-weight: 700; }
     .editor-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
@@ -42,10 +42,10 @@
 
 <div class="edit-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
-        <h1><i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Chỉnh sửa bài viết</h1>
-        <p class="text-muted mb-0" style="font-size:0.82rem;">Cập nhật nội dung bài viết của bạn</p>
+        <h1><i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Edit articles</h1>
+        <p class="text-muted mb-0" style="font-size:0.82rem;">Update content articles your</p>
     </div>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
 </div>
 
 @if (Model.Error != null)
@@ -56,7 +56,7 @@
 @if (Model.CurrentStatus == "Rejected" && !string.IsNullOrEmpty(Model.RejectionReason))
 {
     <div class="rejection-alert">
-        <div class="alert-title"><i class="bi bi-exclamation-circle me-1"></i>Bài viết bị từ chối</div>
+        <div class="alert-title"><i class="bi bi-exclamation-circle me-1"></i>Blog Post Rejected</div>
         <div class="alert-body">@Model.RejectionReason</div>
     </div>
 }
@@ -67,20 +67,20 @@
         <div class="col-lg-8">
             <div class="editor-card">
                 <div class="card-section">
-                    <div class="section-title"><i class="bi bi-type-h1"></i>Nội dung chính</div>
+                    <div class="section-title"><i class="bi bi-type-h1"></i>Main Content</div>
                     <div class="mb-3">
-                        <label class="form-label">Tiêu đề bài viết <span class="text-danger">*</span></label>
+                        <label class="form-label">Title articles <span class="text-danger">*</span></label>
                         <input asp-for="Input.Title" class="form-control" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Tóm tắt nội dung</label>
+                        <label class="form-label">Summary content</label>
                         <textarea asp-for="Input.Summary" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
                 <div class="card-section">
-                    <div class="section-title"><i class="bi bi-text-paragraph"></i>Nội dung bài viết</div>
+                    <div class="section-title"><i class="bi bi-text-paragraph"></i>Content articles</div>
                     <div class="mb-0">
-                        <label class="form-label">Nội dung <span class="text-danger">*</span></label>
+                        <label class="form-label">Content <span class="text-danger">*</span></label>
                         <div id="quill-editor"></div>
                         <textarea asp-for="Input.Content" id="hiddenContent" style="display:none;"></textarea>
                     </div>
@@ -92,51 +92,51 @@
         <div class="col-lg-4 meta-sidebar">
             @{
                 var statusClass = Model.CurrentStatus switch { "Draft" => "status-draft", "Pending" or "PendingApproval" => "status-pending", "Published" => "status-published", "Rejected" => "status-rejected", _ => "status-draft" };
-                var statusVi = Model.CurrentStatus switch { "Draft" => "Bản nháp", "Pending" or "PendingApproval" => "Chờ duyệt", "Published" => "Đã xuất bản", "Rejected" => "Bị từ chối", _ => "Bản nháp" };
+                var statusVi = Model.CurrentStatus switch { "Draft" => "Draft", "Pending" or "PendingApproval" => "Pending Review", "Published" => "Published", "Rejected" => "Rejected", _ => "Draft" };
                 var statusIcon = Model.CurrentStatus switch { "Draft" => "bi-file-earmark", "Pending" or "PendingApproval" => "bi-hourglass-split", "Published" => "bi-check-circle", "Rejected" => "bi-x-circle", _ => "bi-file-earmark" };
             }
 
             <!-- Status -->
             <div class="meta-card">
-                <div class="meta-title"><i class="bi bi-info-circle"></i>Trạng thái</div>
+                <div class="meta-title"><i class="bi bi-info-circle"></i>Status</div>
                 <div class="status-info @statusClass">
                     <i class="bi @statusIcon"></i>
                     <strong>@statusVi</strong>
                 </div>
-                <div class="stat-row"><span class="label">Lượt xem</span><span class="value">@Model.ViewCount</span></div>
+                <div class="stat-row"><span class="label">Views</span><span class="value">@Model.ViewCount</span></div>
                 @if (Model.PublishedAt.HasValue)
                 {
-                    <div class="stat-row"><span class="label">Ngày xuất bản</span><span class="value">@Model.PublishedAt.Value.ToString("dd/MM/yyyy")</span></div>
+                    <div class="stat-row"><span class="label">Date published</span><span class="value">@Model.PublishedAt.Value.ToString("MM/dd/yyyy")</span></div>
                 }
             </div>
 
             <div class="meta-card">
-                <div class="meta-title"><i class="bi bi-gear"></i>Cài đặt</div>
+                <div class="meta-title"><i class="bi bi-gear"></i>Settings</div>
                 <div class="mb-3">
-                    <label class="form-label">Danh mục</label>
+                    <label class="form-label">Category</label>
                     <select asp-for="Input.Category" class="form-select">
-                        <option value="">— Chọn danh mục —</option>
-                        <option value="Sức khỏe tâm thần">Sức khỏe tâm thần</option>
-                        <option value="Trầm cảm">Trầm cảm</option>
-                        <option value="Lo âu">Lo âu</option>
-                        <option value="Stress">Stress & Áp lực</option>
-                        <option value="Mối quan hệ">Mối quan hệ</option>
-                        <option value="Trẻ em & Thanh thiếu niên">Trẻ em & Thanh thiếu niên</option>
-                        <option value="Tự chăm sóc">Tự chăm sóc bản thân</option>
-                        <option value="Khác">Khác</option>
+                        <option value="">— Select category —</option>
+                        <option value="Mental Health">Mental Health</option>
+                        <option value="Depression">Depression</option>
+                        <option value="Anxiety">Anxiety</option>
+                        <option value="Stress">Stress & Pressure</option>
+                        <option value="Relationships">Relationships</option>
+                        <option value="Children & Adolescents">Children & Adolescents</option>
+                        <option value="Self-care">Self-care yourself</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="mb-0">
                     <label class="form-label">Tags</label>
-                    <input asp-for="TagsInput" class="form-control" placeholder="stress, lo âu" />
-                    <div class="tag-input-hint" style="font-size:0.7rem;color:#94a3b8;margin-top:0.25rem;">Phân cách bằng dấu phẩy</div>
+                    <input asp-for="TagsInput" class="form-control" placeholder="stress, anxiety" />
+                    <div class="tag-input-hint" style="font-size:0.7rem;color:#94a3b8;margin-top:0.25rem;">Separate with commas</div>
                 </div>
             </div>
 
             <div class="meta-card">
-                <div class="meta-title"><i class="bi bi-image"></i>Ảnh bìa</div>
+                <div class="meta-title"><i class="bi bi-image"></i>Cover Image</div>
                 <div class="mb-0">
-                    <label class="form-label">URL ảnh bìa</label>
+                    <label class="form-label">Cover Image URL</label>
                     <input asp-for="Input.ImageUrl" class="form-control" id="imageUrlInput" />
                     <div class="img-preview" id="imgPreview">
                         @if (!string.IsNullOrEmpty(Model.Input.ImageUrl))
@@ -145,25 +145,25 @@
                         }
                         else
                         {
-                            <span class="placeholder"><i class="bi bi-image me-1"></i>Xem trước ảnh bìa</span>
+                            <span class="placeholder"><i class="bi bi-image me-1"></i>Preview Cover Image</span>
                         }
                     </div>
                 </div>
             </div>
 
             <div class="meta-card" style="background:linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: rgba(34,197,94,0.15);">
-                <div class="meta-title" style="color:#16a34a;"><i class="bi bi-rocket-takeoff"></i>Hành động</div>
+                <div class="meta-title" style="color:#16a34a;"><i class="bi bi-rocket-takeoff"></i>Actions</div>
                 <div class="btn-actions flex-column">
                     <button type="submit" asp-page-handler="" class="btn btn-primary w-100">
-                        <i class="bi bi-save me-1"></i>Cập nhật
+                        <i class="bi bi-save me-1"></i>Update
                     </button>
                     @if (Model.CurrentStatus is "Draft" or "Rejected" or null)
                     {
                         <button type="submit" asp-page-handler="Submit" class="btn btn-success w-100">
-                            <i class="bi bi-send me-1"></i>Cập nhật & Gửi duyệt
+                            <i class="bi bi-send me-1"></i>Update & Send approved
                         </button>
                     }
-                    <a asp-page="Index" class="btn btn-outline-secondary w-100"><i class="bi bi-x me-1"></i>Hủy</a>
+                    <a asp-page="Index" class="btn btn-outline-secondary w-100"><i class="bi bi-x me-1"></i>Cancel</a>
                 </div>
             </div>
         </div>
@@ -176,7 +176,7 @@
     // Initialize Quill
     var quill = new Quill('#quill-editor', {
         theme: 'snow',
-        placeholder: 'Viết nội dung bài viết của bạn tại đây...',
+        placeholder: 'Write your article content here...',
         modules: {
             toolbar: [
                 [{ 'header': [1, 2, 3, false] }],
@@ -211,9 +211,9 @@
         imgInput.addEventListener('input', function() {
             var url = imgInput.value.trim();
             if (url) {
-                preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentElement.innerHTML=\'<span class=placeholder><i class=bi bi-exclamation-triangle me-1></i>Không tải được ảnh</span>\'" />';
+                preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentElement.innerHTML=\'<span class=placeholder><i class=bi bi-exclamation-triangle me-1></i>Cannot load image</span>\'" />';
             } else {
-                preview.innerHTML = '<span class="placeholder"><i class="bi bi-image me-1"></i>Xem trước ảnh bìa</span>';
+                preview.innerHTML = '<span class="placeholder"><i class="bi bi-image me-1"></i>Preview Cover Image</span>';
             }
         });
     }

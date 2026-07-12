@@ -1,7 +1,7 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.CustomerSupport.BlogModeration.DetailsModel
 @{
-    ViewData["Title"] = "Xem xét bài viết";
+    ViewData["Title"] = "Review articles";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -44,11 +44,11 @@
 
 @if (Model.Blog == null)
 {
-    <div class="review-header"><h1>Không tìm thấy bài viết</h1></div>
+    <div class="review-header"><h1>Not found articles</h1></div>
     <div class="text-center py-5 text-muted">
         <i class="bi bi-journal-x d-block mb-2" style="font-size:3rem;"></i>
-        <p>Bài viết này không tồn tại hoặc đã bị xóa.</p>
-        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+        <p>This blog post does not exist or has been deleted.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
     </div>
     return;
 }
@@ -58,8 +58,8 @@
 <div class="review-header d-flex align-items-center gap-3 mb-4">
     <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;"><i class="bi bi-arrow-left"></i></a>
     <div>
-        <h1><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Xem xét bài viết</h1>
-        <p class="text-muted mb-0" style="font-size:0.8rem;">Đọc kỹ nội dung và quyết định phê duyệt</p>
+        <h1><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Review articles</h1>
+        <p class="text-muted mb-0" style="font-size:0.8rem;">Read the content carefully and decide on approval</p>
     </div>
 </div>
 
@@ -78,14 +78,14 @@
                 }
                 <h2 class="blog-title">@blog.Title</h2>
                 <div class="blog-meta">
-                    <span><i class="bi bi-person-circle"></i>@(blog.AuthorName ?? "Ẩn danh")</span>
-                    <span><i class="bi bi-calendar3"></i>@blog.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
-                    <span><i class="bi bi-eye"></i>@blog.ViewCount lượt xem</span>
+                    <span><i class="bi bi-person-circle"></i>@(blog.AuthorName ?? "Anonymous")</span>
+                    <span><i class="bi bi-calendar3"></i>@blog.CreatedAt.ToString("MM/dd/yyyy HH:mm")</span>
+                    <span><i class="bi bi-eye"></i>@blog.ViewCount views</span>
                 </div>
                 @if (!string.IsNullOrEmpty(blog.DisplaySummary))
                 {
                     <div class="blog-summary">
-                        <strong>Tóm tắt:</strong> @blog.DisplaySummary
+                        <strong>Summary:</strong> @blog.DisplaySummary
                     </div>
                 }
                 @if (blog.Tags.Any())
@@ -106,40 +106,40 @@
     <div class="col-lg-4">
         <!-- Info -->
         <div class="sidebar-card">
-            <div class="sidebar-title"><i class="bi bi-info-circle"></i>Thông tin bài viết</div>
+            <div class="sidebar-title"><i class="bi bi-info-circle"></i>Article Information</div>
             @{
-                var statusVi = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "Chờ duyệt", "approved" or "published" => "Đã xuất bản", "rejected" => "Bị từ chối", _ => "Bản nháp" };
+                var statusVi = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "Pending Review", "approved" or "published" => "Published", "rejected" => "Rejected", _ => "Draft" };
                 var statusClass = blog.Status?.ToLower() switch { "pending" or "pendingapproval" => "status-pending", "approved" or "published" => "status-published", "rejected" => "status-rejected", _ => "status-pending" };
             }
-            <div class="info-row"><span class="label">Trạng thái</span><span class="status-pill @statusClass">@statusVi</span></div>
-            <div class="info-row"><span class="label">Tác giả</span><span class="value">@(blog.AuthorName ?? "—")</span></div>
-            <div class="info-row"><span class="label">Danh mục</span><span class="value">@(blog.Category ?? "—")</span></div>
-            <div class="info-row"><span class="label">Ngày tạo</span><span class="value">@blog.CreatedAt.ToString("dd/MM/yyyy")</span></div>
+            <div class="info-row"><span class="label">Status</span><span class="status-pill @statusClass">@statusVi</span></div>
+            <div class="info-row"><span class="label">Author</span><span class="value">@(blog.AuthorName ?? "—")</span></div>
+            <div class="info-row"><span class="label">Category</span><span class="value">@(blog.Category ?? "—")</span></div>
+            <div class="info-row"><span class="label">Created Date</span><span class="value">@blog.CreatedAt.ToString("MM/dd/yyyy")</span></div>
             @if (blog.UpdatedAt.HasValue)
             {
-                <div class="info-row"><span class="label">Cập nhật</span><span class="value">@blog.UpdatedAt.Value.ToString("dd/MM/yyyy")</span></div>
+                <div class="info-row"><span class="label">Update</span><span class="value">@blog.UpdatedAt.Value.ToString("MM/dd/yyyy")</span></div>
             }
         </div>
 
         <!-- Actions -->
         <div class="sidebar-card action-card">
-            <div class="sidebar-title"><i class="bi bi-clipboard-check"></i>Hành động phê duyệt</div>
+            <div class="sidebar-title"><i class="bi bi-clipboard-check"></i>Approval Actions</div>
             @if (isPending)
             {
                 <form method="post" asp-page-handler="Approve" asp-route-id="@blog.Id" class="mb-2">
-                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Xác nhận duyệt và xuất bản bài viết này?')">
-                        <i class="bi bi-check-circle me-1"></i>Duyệt & Xuất bản
+                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Confirm to approve and publish this article?')">
+                        <i class="bi bi-check-circle me-1"></i>Approve & Publish
                     </button>
                 </form>
 
                 <div class="reject-section">
                     <form method="post" asp-page-handler="Reject" asp-route-id="@blog.Id">
                         <div class="mb-2">
-                            <label class="form-label" style="font-size:0.8rem;font-weight:500;color:#334155;">Lý do từ chối</label>
-                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Mô tả lý do từ chối (tùy chọn)..."></textarea>
+                            <label class="form-label" style="font-size:0.8rem;font-weight:500;color:#334155;">Rejection Reason</label>
+                            <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Describe the rejection reason (optional)..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Xác nhận từ chối bài viết này?')">
-                            <i class="bi bi-x-circle me-1"></i>Từ chối bài viết
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Confirm to reject this article?')">
+                            <i class="bi bi-x-circle me-1"></i>Rejected articles
                         </button>
                     </form>
                 </div>
@@ -150,17 +150,17 @@
                     @if (blog.Status?.ToLower() is "approved" or "published")
                     {
                         <i class="bi bi-check-circle-fill" style="color:#22c55e;"></i>
-                        <p class="mb-0" style="font-size:0.85rem;color:#065f46;">Bài viết đã được <strong>duyệt</strong>.</p>
+                        <p class="mb-0" style="font-size:0.85rem;color:#065f46;">Blog post has been <strong>approved</strong>.</p>
                     }
                     else if (blog.Status?.ToLower() == "rejected")
                     {
                         <i class="bi bi-x-circle-fill" style="color:#ef4444;"></i>
-                        <p class="mb-0" style="font-size:0.85rem;color:#991b1b;">Bài viết đã bị <strong>từ chối</strong>.</p>
+                        <p class="mb-0" style="font-size:0.85rem;color:#991b1b;">Blog post has been <strong>rejected</strong>.</p>
                     }
                     else
                     {
                         <i class="bi bi-file-earmark" style="color:#64748b;"></i>
-                        <p class="mb-0" style="font-size:0.85rem;color:#64748b;">Bài viết ở trạng thái <strong>@blog.Status</strong>.</p>
+                        <p class="mb-0" style="font-size:0.85rem;color:#64748b;">Blog post is in status <strong>@blog.Status</strong>.</p>
                     }
                 </div>
             }

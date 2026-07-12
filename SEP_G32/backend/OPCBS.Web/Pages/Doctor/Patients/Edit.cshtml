@@ -1,7 +1,7 @@
-@page "{id:guid}"
+﻿@page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.Patients.EditModel
 @{
-    ViewData["Title"] = "Cập nhật hồ sơ bệnh nhân";
+    ViewData["Title"] = "Update profile patient";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -25,12 +25,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Cập nhật hồ sơ bệnh nhân
+            <i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Update profile patient
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Chỉnh sửa thông tin cơ bản và tiền sử lâm sàng</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Edit thông tin cơ bản and tiền sử clinical</p>
     </div>
     <a asp-page="./Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
-        <i class="bi bi-arrow-left me-1"></i> Quay lại
+        <i class="bi bi-arrow-left me-1"></i> Back
     </a>
 </div>
 
@@ -49,15 +49,15 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-person-badge"></i>Thông tin cá nhân
+                        <i class="bi bi-person-badge"></i>Personal Information
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tên bệnh nhân <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Patient Name <span class="text-danger">*</span></label>
                         <input type="text" asp-for="Input.GuestName" class="form-control" required />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Số điện thoại</label>
+                        <label class="form-label fw-bold">Phone Number</label>
                         <input type="tel" asp-for="Input.GuestPhone" class="form-control" />
                     </div>
                     <div class="mb-3">
@@ -65,20 +65,20 @@
                         <input type="email" asp-for="Input.GuestEmail" class="form-control" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Ngày sinh</label>
+                        <label class="form-label fw-bold">Date of Birth</label>
                         <input type="date" asp-for="Input.GuestDateOfBirth" class="form-control" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Giới tính</label>
+                        <label class="form-label fw-bold">Gender</label>
                         <select asp-for="Input.GuestGender" class="form-select" style="border-radius:10px;">
-                            <option value="">-- Chọn giới tính --</option>
-                            <option value="Male">Nam</option>
-                            <option value="Female">Nữ</option>
-                            <option value="Other">Khác</option>
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Địa chỉ</label>
+                        <label class="form-label fw-bold">Address</label>
                         <input type="text" asp-for="Input.GuestAddress" class="form-control" />
                     </div>
                 </div>
@@ -89,16 +89,16 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-heart-pulse-fill"></i>Thông tin lâm sàng & Tâm lý
+                        <i class="bi bi-heart-pulse-fill"></i>Thông tin clinical & Psychology
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Tiền sử tâm lý (Psychological History)</label>
+                        <label class="form-label fw-bold">Psychological History (Psychological History)</label>
                         <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3"></textarea>
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Triệu chứng hiện tại (Current Symptoms)</label>
+                        <label class="form-label fw-bold">Current Symptoms (Current Symptoms)</label>
                         <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3"></textarea>
                     </div>
 
@@ -108,14 +108,14 @@
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Ghi chú (Notes)</label>
+                        <label class="form-label fw-bold">Notes (Notes)</label>
                         <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2"></textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-3 pt-3 mt-4" style="border-top:2px solid #f1f5f9;">
-                        <a asp-page="./Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Hủy bỏ</a>
+                        <a asp-page="./Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-check-circle-fill"></i>Cập nhật hồ sơ
+                            <i class="bi bi-check-circle-fill"></i>Update profile
                         </button>
                     </div>
                 </div>

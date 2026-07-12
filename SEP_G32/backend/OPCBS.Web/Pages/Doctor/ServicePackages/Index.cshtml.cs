@@ -35,7 +35,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _subscriptions.SubscribeAsync(new CreateSubscriptionDto { ServicePackageId = packageId });
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đăng ký gói dịch vụ thành công!";
+        else TempData["Success"] = "Đăng ký gói dịch vụ successfully!";
         return RedirectToPage();
     }
 }

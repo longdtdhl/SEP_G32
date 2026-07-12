@@ -57,7 +57,7 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(NewComment))
         {
-            TempData["CommentError"] = "Vui lòng nhập nội dung bình luận.";
+            TempData["CommentError"] = "Please enter your comment.";
             return RedirectToPage(new { id });
         }
 
@@ -65,11 +65,11 @@ public class DetailsModel : PageModel
         var (data, error) = await _blogService.AddCommentAsync(dto);
         if (data == null)
         {
-            TempData["CommentError"] = error ?? "Không thể gửi bình luận.";
+            TempData["CommentError"] = error ?? "Unable to submit comment.";
         }
         else
         {
-            TempData["CommentSuccess"] = "Bình luận đã được gửi!";
+            TempData["CommentSuccess"] = "Comment submitted successfully!";
         }
         return RedirectToPage(new { id });
     }

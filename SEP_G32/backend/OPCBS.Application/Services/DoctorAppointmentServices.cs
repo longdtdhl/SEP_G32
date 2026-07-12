@@ -388,8 +388,8 @@ public class AppointmentService : IAppointmentService
             {
                 await _notificationService.CreateNotificationAsync(
                     doctor.UserId,
-                    "📅 Lịch hẹn mới",
-                    $"Bạn có lịch hẹn mới từ {patientName} vào ngày {slot.SlotDate:dd/MM/yyyy} lúc {slot.StartTime.ToString("HH':'mm")}.",
+                    "📅 New Appointment",
+                    $"You have a new appointment from {patientName} on {slot.SlotDate:MM/dd/yyyy} at {slot.StartTime.ToString("HH':'mm")}.",
                     NotificationType.Appointment,
                     appointment.Id,
                     "Appointment",
@@ -635,8 +635,8 @@ public class AppointmentService : IAppointmentService
                 var patUser = allUsers.FirstOrDefault(u => u.Id == userId);
                 await _notificationService.CreateNotificationAsync(
                     cancelDoctor.UserId,
-                    "🚫 Lịch hẹn đã bị hủy",
-                    $"{patUser?.FullName ?? "Bệnh nhân"} đã hủy lịch hẹn ngày {cancelDateStr} lúc {cancelTimeStr}.",
+                    "🚫 Appointment Cancelled",
+                    $"{patUser?.FullName ?? "Patient"} has cancelled the appointment on {cancelDateStr} at {cancelTimeStr}.",
                     NotificationType.Appointment, appointmentId, "Appointment", ct);
             }
             else if (!isPatientCancel && cancelPatient != null)
@@ -644,8 +644,8 @@ public class AppointmentService : IAppointmentService
                 var docUser = cancelDoctor != null ? allUsers.FirstOrDefault(u => u.Id == cancelDoctor.UserId) : null;
                 await _notificationService.CreateNotificationAsync(
                     cancelPatient.UserId,
-                    "🚫 Lịch hẹn đã bị hủy",
-                    $"BS {docUser?.FullName ?? "bác sĩ"} đã hủy lịch hẹn ngày {cancelDateStr} lúc {cancelTimeStr}.",
+                    "🚫 Appointment Cancelled",
+                    $"Dr. {docUser?.FullName ?? "your doctor"} has cancelled the appointment on {cancelDateStr} at {cancelTimeStr}.",
                     NotificationType.Appointment, appointmentId, "Appointment", ct);
             }
         }
@@ -721,8 +721,8 @@ public class AppointmentService : IAppointmentService
                 {
                     await _notificationService.CreateNotificationAsync(
                         pat.UserId,
-                        "✅ Lịch hẹn đã được xác nhận",
-                        $"Lịch hẹn của bạn vào ngày {slot?.SlotDate:dd/MM/yyyy} lúc {slot?.StartTime.ToString("HH':'mm")} đã được BS {doctorUser?.FullName ?? "bác sĩ"} xác nhận.",
+                        "✅ Appointment Confirmed",
+                        $"Your appointment on {slot?.SlotDate:MM/dd/yyyy} at {slot?.StartTime.ToString("HH':'mm")} has been confirmed by Dr. {doctorUser?.FullName ?? "your doctor"}.",
                         NotificationType.Appointment,
                         appointmentId,
                         "Appointment",
@@ -799,8 +799,8 @@ public class AppointmentService : IAppointmentService
                 {
                     await _notificationService.CreateNotificationAsync(
                         pat.UserId,
-                        "❌ Lịch hẹn bị từ chối",
-                        $"Lịch hẹn của bạn vào ngày {slot2?.SlotDate:dd/MM/yyyy} đã bị BS {doctorUser?.FullName ?? "bác sĩ"} từ chối. Lý do: {dto.Reason ?? "Không nêu lý do"}.",
+                        "❌ Appointment Rejected",
+                        $"Your appointment on {slot2?.SlotDate:MM/dd/yyyy} has been rejected by Dr. {doctorUser?.FullName ?? "your doctor"}. Reason: {dto.Reason ?? "No reason provided"}.",
                         NotificationType.Appointment,
                         appointmentId,
                         "Appointment",
@@ -864,8 +864,8 @@ public class AppointmentService : IAppointmentService
                 {
                     await _notificationService.CreateNotificationAsync(
                         pat.UserId,
-                        "🎉 Buổi tư vấn đã hoàn thành",
-                        $"Buổi tư vấn với BS {doctorUser?.FullName ?? "bác sĩ"} đã hoàn thành. Vui lòng kiểm tra hồ sơ tư vấn.",
+                        "🎉 Consultation Completed",
+                        $"Your consultation with Dr. {doctorUser?.FullName ?? "your doctor"} has been completed. Please check your consultation records.",
                         NotificationType.Appointment,
                         appointmentId,
                         "Appointment",

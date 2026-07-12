@@ -1,7 +1,7 @@
-@page "{id:Guid}"
+﻿@page "{id:Guid}"
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết Ghi chú Tư vấn";
+    ViewData["Title"] = "Consultation Note Details";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -28,21 +28,21 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Chi tiết Hồ sơ tư vấn
+            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Consultation Record Details
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Xem thông tin chẩn đoán và kế hoạch trị liệu</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View diagnosis information and therapy pspread</p>
     </div>
     <div>
         @if (Model.Record != null)
         {
-            <a asp-page="./Edit" asp-route-id="@Model.Record.Id" class="btn btn-warning me-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-pencil-square me-1"></i>Sửa ghi chú</a>
+            <a asp-page="./Edit" asp-route-id="@Model.Record.Id" class="btn btn-warning me-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-pencil-square me-1"></i>Edit Note</a>
             <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.Record.PatientRecordId" class="btn btn-outline-secondary px-3 py-2 fw-semibold" style="border-radius:10px;">
-                <i class="bi bi-arrow-left me-1"></i>Hồ sơ Bệnh nhân
+                <i class="bi bi-arrow-left me-1"></i>Patient Profile
             </a>
         }
         else
         {
-            <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+            <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
         }
     </div>
 </div>
@@ -57,7 +57,7 @@
 
 @if (Model.Record != null)
 {
-    var displayName = Model.Record.DisplayPatientName ?? "Bệnh nhân";
+    var displayName = Model.Record.DisplayPatientName ?? "Patient";
     var initial = displayName.Substring(0, 1).ToUpper();
 
     <div class="detail-banner d-flex align-items-center gap-3 shadow-sm">
@@ -67,17 +67,17 @@
                 @displayName
                 @if (Model.Record.IsWalkIn)
                 {
-                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px;">Khách vãng lai</span>
+                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px;">Guest</span>
                 }
                 else
                 {
-                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px;">Hệ thống</span>
+                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px;">System User</span>
                 }
             </h4>
             <div class="detail-meta">
-                <span><i class="bi bi-person-badge"></i> Bác sĩ: @Model.Record.DoctorName</span>
+                <span><i class="bi bi-person-badge"></i> Doctor: @Model.Record.DoctorName</span>
                 <span>•</span>
-                <span><i class="bi bi-calendar3"></i> Ngày tạo: @Model.Record.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                <span><i class="bi bi-calendar3"></i> Created Date: @Model.Record.CreatedAt.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</span>
             </div>
         </div>
     </div>
@@ -88,52 +88,52 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-journal-medical"></i>Thông tin tư vấn lâm sàng
+                        <i class="bi bi-journal-medical"></i>Clinical Consultation Information
                     </div>
                     
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <h6 class="fw-bold" style="color:#334155;">Chẩn đoán sơ bộ (Diagnosis)</h6>
-                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem;">@(string.IsNullOrEmpty(Model.Record.Diagnosis) ? "Chưa có chẩn đoán" : Model.Record.Diagnosis)</p>
+                            <h6 class="fw-bold" style="color:#334155;">Preliminary Diagnosis</h6>
+                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem;">@(string.IsNullOrEmpty(Model.Record.Diagnosis) ? "No diagnosis recorded" : Model.Record.Diagnosis)</p>
                         </div>
                     </div>
 
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <h6 class="fw-bold" style="color:#334155;">Đánh giá / Tóm tắt tư vấn (Summary)</h6>
-                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.ConsultationSummary) ? "Không có đánh giá" : Model.Record.ConsultationSummary)</p>
+                            <h6 class="fw-bold" style="color:#334155;">Consultation Summary</h6>
+                            <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.ConsultationSummary) ? "No summary recorded" : Model.Record.ConsultationSummary)</p>
                         </div>
                     </div>
                     
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <h6 class="fw-bold" style="color:#334155;"><i class="bi bi-capsule me-2 text-success"></i>Kế hoạch trị liệu (Therapy Plan)</h6>
-                            <p class="p-3 rounded" style="background:#f0fdf4; border: 1px solid #bbf7d0; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.TherapyPlan) ? "Chưa ghi nhận kế hoạch trị liệu" : Model.Record.TherapyPlan)</p>
+                            <h6 class="fw-bold" style="color:#334155;"><i class="bi bi-capsule me-2 text-success"></i>Therapy Plan</h6>
+                            <p class="p-3 rounded" style="background:#f0fdf4; border: 1px solid #bbf7d0; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.TherapyPlan) ? "No therapy pspread recorded" : Model.Record.TherapyPlan)</p>
                         </div>
                     </div>
 
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <h6 class="fw-bold" style="color:#334155;">Lời khuyên / Đề xuất (Recommendations)</h6>
-                            <p class="p-3 rounded" style="background:#fffbeb; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.Recommendations) ? "Không có" : Model.Record.Recommendations)</p>
+                            <h6 class="fw-bold" style="color:#334155;">Recommendations</h6>
+                            <p class="p-3 rounded" style="background:#fffbeb; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.Recommendations) ? "None" : Model.Record.Recommendations)</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="fw-bold" style="color:#334155;">Ghi chú theo dõi (Follow-up Notes)</h6>
-                            <p class="p-3 rounded" style="background:#fef2f2; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.FollowUpNotes) ? "Không có" : Model.Record.FollowUpNotes)</p>
+                            <h6 class="fw-bold" style="color:#334155;">Follow-up Notes</h6>
+                            <p class="p-3 rounded" style="background:#fef2f2; font-size:0.9rem; white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.Record.FollowUpNotes) ? "None" : Model.Record.FollowUpNotes)</p>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-12">
-                            <h6 class="fw-bold" style="color:#334155;">Ngày tái khám dự kiến (Next Appointment Recommended)</h6>
+                            <h6 class="fw-bold" style="color:#334155;">Next Recommended Appointment Date</h6>
                             <p class="p-3 rounded" style="background:#f8fafc; font-size:0.9rem;">
                                 @if (Model.Record.NextAppointmentRecommendedDate.HasValue)
                                 {
-                                    <i class="bi bi-calendar-check me-2 text-primary"></i>@Model.Record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                    <i class="bi bi-calendar-check me-2 text-primary"></i>@Model.Record.NextAppointmentRecommendedDate.Value.ToString("MM/dd/yyyy HH:mm")
                                 }
                                 else
                                 {
-                                    <span>Chưa có lịch hẹn</span>
+                                    <span>None scheduled</span>
                                 }
                             </p>
                         </div>
@@ -154,13 +154,13 @@
                 <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                            <i class="bi bi-box-seam-fill text-success me-2"></i>Gói điều trị của phiên này
+                            <i class="bi bi-box-seam-fill text-success me-2"></i>Treatment Package for this Session
                         </h5>
                         <div class="p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
                             <h6 class="fw-bold text-dark mb-2" style="font-size:0.88rem; line-height:1.4;">@pkg.Title</h6>
                             
                             <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
-                                <span>Tiến độ: @pkg.CompletedSessions/@pkg.TotalSessions phiên</span>
+                                <span>Progress: @pkg.CompletedSessions/@pkg.TotalSessions sessions</span>
                                 <span style="color:@progressColor; font-weight:700;">@progress%</span>
                             </div>
                             <div class="progress mb-3" style="height:6px; border-radius:4px;">
@@ -168,12 +168,12 @@
                             </div>
 
                             <div class="d-flex flex-column gap-2" style="font-size:0.8rem; color:#475569;">
-                                <div><i class="bi bi-calendar-event me-1"></i>Hạn dùng: @pkg.ExpirationDate.ToString("dd/MM/yyyy")</div>
-                                <div><i class="bi bi-hourglass-split me-1"></i>Còn lại: @pkg.RemainingSessions phiên</div>
+                                <div><i class="bi bi-calendar-event me-1"></i>Expires: @pkg.ExpirationDate.ToString("MM/dd/yyyy")</div>
+                                <div><i class="bi bi-hourglass-split me-1"></i>Remaining: @pkg.RemainingSessions sessions</div>
                             </div>
                         </div>
                         <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-primary w-100 fw-bold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-                            <i class="bi bi-journal-check me-1"></i>Bài tập & Nhận xét
+                            <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
                         </a>
                     </div>
                 </div>
@@ -185,7 +185,7 @@
                 <div class="card border-0 shadow-sm" style="border-radius:16px;">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                            <i class="bi bi-boxes text-primary me-2"></i>Gói điều trị của bệnh nhân
+                            <i class="bi bi-boxes text-primary me-2"></i>Patient's Treatment Packages
                         </h5>
                         <div class="d-flex flex-column gap-3">
                             @foreach (var pkg in Model.PatientPackages)
@@ -198,14 +198,14 @@
                                     <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
                                         <h6 class="fw-bold text-dark mb-1" style="font-size:0.85rem; line-height:1.4;">@pkg.Title</h6>
                                         <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
-                                            <span>Phiên: @pkg.CompletedSessions/@pkg.TotalSessions</span>
+                                            <span>Sessions: @pkg.CompletedSessions/@pkg.TotalSessions</span>
                                             <span style="color:@progressColor; font-weight:700;">@progress%</span>
                                         </div>
                                         <div class="progress mb-2" style="height:6px; border-radius:4px;">
                                             <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
                                         </div>
                                         <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
-                                            <i class="bi bi-journal-check me-1"></i>Bài tập & Nhận xét
+                                            <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
                                         </a>
                                     </div>
                                 }

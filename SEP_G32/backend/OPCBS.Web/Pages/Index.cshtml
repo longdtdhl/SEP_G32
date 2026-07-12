@@ -93,52 +93,52 @@
         box-shadow: 0 10px 25px rgba(30, 58, 49, 0.1);
         background: rgba(255, 255, 255, 0.7);
     }
-    /* Container bọc toàn bộ phần danh mục */
+    /* Category container wrapper */
     .specialization-container {
       max-width: 1200px;
       margin: 40px auto;
       padding: 0 20px;
     }
 
-    /* Tiêu đề "Specialization Categories" */
+    /* Title "Specialization Categories" */
     .specialization-container h2 {
       font-size: 24px;
       font-weight: 700;
-      color: #1E3A31; /* Xanh lục sẫm tương phản cao */
+      color: #1E3A31; /* Dark green high contrast */
       margin-bottom: 20px;
     }
 
-    /* Vùng chứa các thẻ tag (sử dụng Flexbox để tự động xuống dòng mượt mà) */
+    /* Tag container using Flexbox for smooth wrapping */
     .tags-wrapper {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px; /* Khoảng cách giữa các tag */
+      gap: 12px; /* Gap between tags */
     }
 
-    /* Định dạng từng thẻ Tag chuyên khoa */
+    /* Individual specialty tag styling */
     .spec-tag {
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 500;
-      color: #2D6A51; /* Màu chữ xanh thương hiệu */
-      background-color: rgba(226, 240, 233, 0.6); /* Nền xanh mint rất nhạt và trong suốt nhẹ */
+      color: #2D6A51; /* Brand green text color */
+      background-color: rgba(226, 240, 233, 0.6); /* Very light mint green transparent background */
       padding: 8px 18px;
-      border: 1px solid rgba(45, 106, 81, 0.15); /* Viền mảnh tinh tế */
-      border-radius: 50px; /* Bo tròn hoàn toàn dạng kẹo thuốc/capsule */
+      border: 1px solid rgba(45, 106, 81, 0.15); /* Subtle thin border */
+      border-radius: 50px; /* Fully rounded capsule shape */
       cursor: pointer;
-      transition: all 0.25s ease; /* Hiệu ứng mượt mà */
+      transition: all 0.25s ease; /* Smooth transition effect */
       text-decoration: none;
     }
 
-    /* Hiệu ứng khi di chuột vào thẻ tag */
+    /* Tag hover effect */
     .spec-tag:hover {
       background-color: #2D6A51;
       color: #ffffff;
       box-shadow: 0 4px 12px rgba(45, 106, 81, 0.15);
-      transform: translateY(-2px); /* Nhấc nhẹ tag lên */
+      transform: translateY(-2px); /* Lift tag slightly */
     }
 
-    /* Vùng chứa danh sách bác sĩ */
+    /* Doctor list container */
     .doctors-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -146,7 +146,7 @@
       margin-bottom: 50px;
     }
 
-    /* Từng thẻ hồ sơ bác sĩ */
+    /* Individual doctor profile card */
     .doctor-card {
       background: rgba(255, 255, 255, 0.5);
       backdrop-filter: blur(20px);
@@ -178,7 +178,7 @@
       background: rgba(255, 255, 255, 0.8);
     }
 
-    /* Phần ảnh đại diện (Avatar) của bác sĩ */
+    /* Doctor avatar section */
     .doctor-avatar {
       width: 110px;
       height: 110px;
@@ -207,7 +207,7 @@
         object-fit: cover;
     }
 
-    /* Tên Bác sĩ */
+    /* Doctor name */
     .doctor-name {
       font-size: 1.15rem;
       font-weight: 700;
@@ -218,7 +218,7 @@
       z-index: 1;
     }
 
-    /* Chức danh/Học vị */
+    /* Title/Degree */
     .doctor-title {
       font-size: 0.9rem;
       color: #4A5D54;
@@ -229,7 +229,7 @@
       flex-grow: 1;
     }
 
-    /* Phần đánh giá sao (Stars) */
+    /* Star rating section */
     .doctor-rating {
       color: #FFB800;
       font-size: 15px;
@@ -576,7 +576,7 @@
         <div class="col-md-4">
             <div class="testimonial-card">
                 <span class="quote-icon">"</span>
-                <p class="testimonial-quote">After years of struggling to find the right therapist, I was matched with an incredible psychologist here. The video sessions are secure and very convenient for my schedule.</p>
+                <p class="testimonial-quote">After years of struggling to find the right therapist, I was matched with an incredible psyforlogist here. The video sessions are secure and very convenient for my schedule.</p>
                 <div class="testimonial-author">
                     <div class="avatar-placeholder">M</div>
                     <div>

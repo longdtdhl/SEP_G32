@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Patient.DashboardModel
 @{
-    ViewData["Title"] = "Bảng điều khiển";
+    ViewData["Title"] = "Dashboard";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -93,9 +93,9 @@
         <i class="bi bi-emoji-smile"></i>
     </div>
     <div>
-        <h2 class="fw-bold mb-1" style="color: #0f172a; font-size: 1.4rem;">Xin chào, @Model.PatientName!</h2>
+        <h2 class="fw-bold mb-1" style="color: #0f172a; font-size: 1.4rem;">Hello, @Model.PatientName!</h2>
         <p class="text-secondary mb-0 small" style="max-width: 600px;">
-            Chúc bạn một ngày tốt lành! Hãy cùng MindBridge chăm sóc sức khỏe tinh thần và theo dõi tiến trình trị liệu của bạn hôm nay.
+            Chúc bạn một ngày tốt lành! Hãy cùng MindBridge care health mental and track tiến trình therapy your hôm nay.
         </p>
     </div>
 </div>
@@ -108,7 +108,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold">@Model.TotalAppointments</h3>
-                    <small class="text-white-50">Tổng lịch hẹn</small>
+                    <small class="text-white-50">Total Appointments</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; background: rgba(255,255,255,0.2);">
                     <i class="bi bi-calendar-check" style="font-size: 1.3rem;"></i>
@@ -122,7 +122,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold text-warning">@Model.PendingCount</h3>
-                    <small class="text-muted">Đang chờ</small>
+                    <small class="text-muted">Pending</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; background: #fff9db; color: #f59e0b;">
                     <i class="bi bi-clock-history" style="font-size: 1.3rem;"></i>
@@ -136,7 +136,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold text-success">@Model.CompletedCount</h3>
-                    <small class="text-muted">Đã hoàn thành</small>
+                    <small class="text-muted">Completed</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; background: #ebfbee; color: #0ca678;">
                     <i class="bi bi-check-circle" style="font-size: 1.3rem;"></i>
@@ -150,7 +150,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
                     <h3 class="mb-0 fw-bold text-info">@Model.PackageCount</h3>
-                    <small class="text-muted">Gói điều trị</small>
+                    <small class="text-muted">Treatment Package</small>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; background: #e3fafc; color: #15aabf;">
                     <i class="bi bi-box-seam" style="font-size: 1.3rem;"></i>
@@ -165,8 +165,8 @@
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar3 me-2 text-primary"></i>Lịch hẹn sắp tới</h5>
-                <a asp-page="/Patient/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3 fw-bold" style="font-size: 0.8rem;">Xem tất cả</a>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar3 me-2 text-primary"></i>Upcoming Appointments</h5>
+                <a asp-page="/Patient/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3 fw-bold" style="font-size: 0.8rem;">View All</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.UpcomingAppointments.Any())
@@ -175,16 +175,16 @@
                         <table class="table mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4 text-muted font-weight-normal small">Bác sĩ</th>
-                                    <th class="text-muted font-weight-normal small">Thời gian</th>
-                                    <th class="text-muted font-weight-normal small">Trạng thái</th>
-                                    <th class="pe-4 text-end text-muted font-weight-normal small">Chi tiết</th>
+                                    <th class="ps-4 text-muted font-weight-normal small">Doctor</th>
+                                    <th class="text-muted font-weight-normal small">Time</th>
+                                    <th class="text-muted font-weight-normal small">Status</th>
+                                    <th class="pe-4 text-end text-muted font-weight-normal small">Details</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var apt in Model.UpcomingAppointments)
                                 {
-                                    var docName = apt.DoctorName ?? "Chuyên gia MindBridge";
+                                    var docName = apt.DoctorName ?? "Specialist MindBridge";
                                     var docInitial = docName.Substring(0, 1).ToUpper();
                                     var colors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
                                     var color = colors[Math.Abs(docName.GetHashCode()) % colors.Length];
@@ -213,7 +213,7 @@
                                             <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
                                         </td>
                                         <td class="pe-4 text-end py-3">
-                                            <a asp-page="/Patient/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="Xem chi tiết">
+                                            <a asp-page="/Patient/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="View Details">
                                                 <i class="bi bi-chevron-right"></i>
                                             </a>
                                         </td>
@@ -229,10 +229,10 @@
                         <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
                             <i class="bi bi-calendar-x" style="font-size: 2rem; color: #cbd5e1;"></i>
                         </div>
-                        <h6 class="fw-bold text-dark">Bạn chưa có lịch hẹn nào sắp tới</h6>
-                        <p class="small text-muted mb-3">Tìm chuyên gia và bắt đầu buổi tư vấn trị liệu tâm lý ngay.</p>
+                        <h6 class="fw-bold text-dark">You have not có appointment nào upcoming</h6>
+                        <p class="small text-muted mb-3">Find a Specialist and start buổi consultation therapy psyforlogy ngay.</p>
                         <a asp-page="/Doctors/Index" class="btn btn-primary btn-sm rounded-pill px-4" style="background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-plus-lg me-1"></i>Đặt lịch hẹn mới
+                            <i class="bi bi-plus-lg me-1"></i>Book Appointment new
                         </a>
                     </div>
                 }
@@ -245,28 +245,28 @@
         <!-- Quick Actions -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-lightning-charge me-2 text-primary"></i>Thao tác nhanh</h5>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-lightning-charge me-2 text-primary"></i>Actions nhanh</h5>
             </div>
             <div class="card-body d-grid gap-2 px-4 pb-4">
                 <a asp-page="/Doctors/Index" class="action-btn-modern">
                     <i class="bi bi-search-heart"></i>
-                    <span>Tìm chuyên gia tâm lý</span>
+                    <span>Find a Therapist</span>
                 </a>
                 <a asp-page="/Patient/Appointments/Index" class="action-btn-modern">
                     <i class="bi bi-calendar-event"></i>
-                    <span>Lịch hẹn của tôi</span>
+                    <span>My Appointments</span>
                 </a>
                 <a asp-page="/Patient/ConsultationRecords/Index" class="action-btn-modern">
                     <i class="bi bi-file-earmark-medical"></i>
-                    <span>Hồ sơ tư vấn sức khỏe</span>
+                    <span>Consultation Records health</span>
                 </a>
                 <a asp-page="/Patient/TreatmentPackages/Index" class="action-btn-modern">
                     <i class="bi bi-box-seam"></i>
-                    <span>Gói điều trị đang chạy</span>
+                    <span>Treatment Package is chạy</span>
                 </a>
                 <a asp-page="/Blog/Index" class="action-btn-modern">
                     <i class="bi bi-journal-text"></i>
-                    <span>Bài viết & Kiến thức bổ ích</span>
+                    <span>Blog Post & Kiến thức bổ ích</span>
                 </a>
             </div>
         </div>
@@ -274,8 +274,8 @@
         <!-- Active Treatment Packages -->
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Gói ĐT đang hoạt động</h5>
-                <a asp-page="/Patient/TreatmentPackages/Index" class="text-primary small text-decoration-none fw-bold">Tất cả</a>
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Active Treatment Packages</h5>
+                <a asp-page="/Patient/TreatmentPackages/Index" class="text-primary small text-decoration-none fw-bold">All</a>
             </div>
             <div class="card-body p-0">
                 @if (Model.ActivePackages.Any())
@@ -301,12 +301,12 @@
                                     <small class="text-muted fw-bold" style="min-width: 35px; text-align: right; font-size: 0.75rem;">@progress%</small>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small text-secondary" style="font-size: 0.75rem;">Phiên: <strong>@pkg.CompletedSessions / @pkg.TotalSessions</strong></span>
+                                    <span class="small text-secondary" style="font-size: 0.75rem;">Session: <strong>@pkg.CompletedSessions / @pkg.TotalSessions</strong></span>
                                     @if (pkg.RemainingSessions > 0)
                                     {
                                         <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id" 
                                            class="btn btn-sm btn-primary py-1 px-2.5" style="font-size: 0.72rem; border-radius: 6px; background-color: var(--mb-primary); border-color: var(--mb-primary);">
-                                            <i class="bi bi-calendar-plus me-1"></i>Đặt phiên mới
+                                            <i class="bi bi-calendar-plus me-1"></i>Đặt phiên new
                                         </a>
                                     }
                                 </div>
@@ -317,7 +317,7 @@
                 else
                 {
                     <div class="text-center py-4 text-muted px-3">
-                        <p class="small mb-0">Bạn hiện không có gói điều trị nào đang hoạt động.</p>
+                        <p class="small mb-0">Bạn hiện không có gói treatment nào is active.</p>
                     </div>
                 }
             </div>

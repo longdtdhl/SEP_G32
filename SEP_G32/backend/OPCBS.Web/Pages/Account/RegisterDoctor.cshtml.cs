@@ -37,21 +37,21 @@ public class RegisterDoctorModel : PageModel
         if (string.IsNullOrWhiteSpace(Input.Email) || string.IsNullOrWhiteSpace(Input.Password) ||
             string.IsNullOrWhiteSpace(Input.FullName) || string.IsNullOrWhiteSpace(Input.PhoneNumber))
         {
-            ErrorMessage = "Vui lòng điền đầy đủ thông tin bắt buộc.";
+            ErrorMessage = "Please fill in all required fields.";
             return Page();
         }
 
         if (Input.Password != Input.ConfirmPassword)
         {
-            ErrorMessage = "Mật khẩu xác nhận không khớp.";
+            ErrorMessage = "Password confirmation does not match.";
             return Page();
         }
 
         // Set defaults for skippable fields
         if (string.IsNullOrWhiteSpace(Input.ProfessionalTitle))
-            Input.ProfessionalTitle = "Chưa cập nhật";
+            Input.ProfessionalTitle = "Not yet updated";
         if (string.IsNullOrWhiteSpace(Input.Biography))
-            Input.Biography = "Chưa cập nhật";
+            Input.Biography = "Not yet updated";
 
         // Attach selected specializations
         Input.SpecializationIds = SelectedSpecializations?.Where(id => id != Guid.Empty).ToList();
@@ -59,7 +59,7 @@ public class RegisterDoctorModel : PageModel
         var (success, error) = await _authService.RegisterDoctorAsync(Input);
         if (!success)
         {
-            ErrorMessage = error ?? "Đăng ký không thành công. Vui lòng thử lại.";
+            ErrorMessage = error ?? "Registration failed. Please try again.";
             return Page();
         }
 

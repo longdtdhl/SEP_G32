@@ -34,7 +34,7 @@ public class TakeTestModel : PageModel
         var (tests, testsError) = await _psychService.GetTestsAsync();
         if (tests == null)
         {
-            Error = testsError ?? "Không thể tải danh sách bài trắc nghiệm.";
+            Error = testsError ?? "Unable to tải danh sách bài trắc nghiệm.";
             return Page();
         }
 
@@ -45,14 +45,14 @@ public class TakeTestModel : PageModel
             Test = tests.FirstOrDefault(t => t.Id == testId.Value);
             if (Test == null)
             {
-                Error = "Không tìm thấy bài trắc nghiệm này.";
+                Error = "Not found bài trắc nghiệm này.";
                 return Page();
             }
 
             var (questions, error) = await _psychService.GetQuestionsAsync(testId.Value);
             if (questions == null || questions.Count == 0)
             {
-                Error = error ?? "Không thể tải câu hỏi của bài trắc nghiệm.";
+                Error = error ?? "Unable to tải câu hỏi của bài trắc nghiệm.";
                 return Page();
             }
 
@@ -93,11 +93,11 @@ public class TakeTestModel : PageModel
         var (result, error) = await _psychService.SubmitTestAsync(submitDto);
         if (result == null)
         {
-            TempData["ErrorMessage"] = error ?? "Nộp bài trắc nghiệm thất bại.";
+            TempData["ErrorMessage"] = error ?? "Nộp bài trắc nghiệm failed.";
             return RedirectToPage(new { testId, appointmentId });
         }
 
-        TempData["SuccessMessage"] = "Đã nộp bài trắc nghiệm thành công!";
+        TempData["SuccessMessage"] = "Đã nộp bài trắc nghiệm successfully!";
         return RedirectToPage("Result", new { submissionId = result.Id });
     }
 }

@@ -68,7 +68,7 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(AssignmentTitle))
         {
-            Error = "Vui lòng nhập tiêu đề bài tập.";
+            Error = "Please nhập tiêu đề bài tập.";
             return await OnGetAsync(id);
         }
 
@@ -82,7 +82,7 @@ public class DetailsModel : PageModel
 
         var (result, error) = await _therapyService.CreateAssignmentAsync(dto);
         if (result == null) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã giao bài tập thành công!";
+        TempData["SuccessMessage"] = "Đã giao bài tập successfully!";
         return RedirectToPage(new { id });
     }
 
@@ -90,14 +90,14 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(FeedbackText))
         {
-            Error = "Vui lòng nhập nhận xét.";
+            Error = "Please nhập nhận xét.";
             return await OnGetAsync(id);
         }
 
         var dto = new FeedbackAssignmentDto { DoctorFeedback = FeedbackText };
         var (success, error) = await _therapyService.FeedbackAssignmentAsync(assignmentId, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã gửi nhận xét cho bệnh nhân.";
+        TempData["SuccessMessage"] = "Submitted nhận xét cho bệnh nhân.";
         return RedirectToPage(new { id });
     }
 
@@ -105,7 +105,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _therapyService.DeleteAssignmentAsync(assignmentId);
         if (!success) { Error = error; }
-        else TempData["SuccessMessage"] = "Đã xóa bài tập.";
+        else TempData["SuccessMessage"] = "Deleted bài tập.";
         return RedirectToPage(new { id });
     }
 }

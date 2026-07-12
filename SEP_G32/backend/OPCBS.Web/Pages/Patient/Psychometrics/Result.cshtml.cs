@@ -29,7 +29,7 @@ public class ResultModel : PageModel
         var (data, error) = await _psychService.GetSubmissionByIdAsync(submissionId);
         if (data == null)
         {
-            Error = error ?? "Không tìm thấy kết quả trắc nghiệm.";
+            Error = error ?? "Not found kết quả trắc nghiệm.";
             return Page();
         }
 

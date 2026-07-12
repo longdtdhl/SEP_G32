@@ -36,7 +36,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.CancelAsync(id, CancelReason);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đã hủy gói điều trị thành công.";
+        else TempData["Success"] = "Cancelled gói điều trị successfully.";
         return RedirectToPage();
     }
 }

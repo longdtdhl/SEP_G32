@@ -45,13 +45,13 @@ public class IndexModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(Title))
         {
-            Error = "Vui lòng nhập tiêu đề nhật ký.";
+            Error = "Please nhập tiêu đề nhật ký.";
             await OnGetAsync();
             return Page();
         }
         if (MoodScale < 1 || MoodScale > 5 || StressScale < 1 || StressScale > 5)
         {
-            Error = "Vui lòng chọn thang điểm từ 1 đến 5.";
+            Error = "Please chọn thang điểm từ 1 đến 5.";
             await OnGetAsync();
             return Page();
         }
@@ -75,7 +75,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _service.DeleteJournalAsync(journalId);
         if (!success) { Error = error; }
-        else TempData["SuccessMessage"] = "Đã xóa nhật ký.";
+        else TempData["SuccessMessage"] = "Deleted nhật ký.";
         return RedirectToPage();
     }
 }

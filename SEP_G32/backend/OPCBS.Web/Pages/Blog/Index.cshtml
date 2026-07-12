@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Blog.IndexModel
 @{
-    ViewData["Title"] = "Kiến thức Tâm lý";
+    ViewData["Title"] = "Mental Health Knowledge";
     ViewData["UseDashboardLayout"] = false;
 }
 
@@ -52,16 +52,16 @@
 <div class="blog-hero">
     <div class="blog-hero-pattern"></div>
     <div class="container hero-content">
-        <h1>Kiến thức Tâm lý & Sức khỏe</h1>
-        <p>Khám phá các bài viết chuyên sâu từ đội ngũ bác sĩ và chuyên gia tâm lý hàng đầu.<br/>Trau dồi kiến thức để tự chăm sóc sức khỏe tinh thần mỗi ngày.</p>
+        <h1>Mental Health & Wellness Knowledge</h1>
+        <p>Explore in-depth articles from our team of leading doctors and psyforlogists.<br/>Build knowledge to care for your mental health every day.</p>
         <form method="get" class="blog-search">
             <i class="bi bi-search"></i>
-            <input type="text" name="search" value="@Model.Filter.Search" placeholder="Tìm kiếm bài viết, chủ đề..." />
+            <input type="text" name="search" value="@Model.Filter.Search" placeholder="Search articles, topics..." />
             @if (!string.IsNullOrEmpty(Model.Filter.Category))
             {
                 <input type="hidden" name="category" value="@Model.Filter.Category" />
             }
-            <button type="submit">Tìm kiếm</button>
+            <button type="submit">Search</button>
         </form>
     </div>
 </div>
@@ -70,14 +70,14 @@
     <!-- Category Filter Tabs -->
     @{
         var categories = new[] {
-            ("", "Tất cả", "bi-grid"),
-            ("Sức khỏe tâm thần", "Sức khỏe tâm thần", "bi-heart-pulse"),
-            ("Trầm cảm", "Trầm cảm", "bi-cloud-rain"),
-            ("Lo âu", "Lo âu", "bi-emoji-frown"),
-            ("Stress", "Stress & Áp lực", "bi-lightning"),
-            ("Mối quan hệ", "Mối quan hệ", "bi-people"),
-            ("Trẻ em & Thanh thiếu niên", "Trẻ em", "bi-balloon"),
-            ("Tự chăm sóc", "Tự chăm sóc", "bi-flower1")
+            ("", "All", "bi-grid"),
+            ("Mental Health", "Mental Health", "bi-heart-pulse"),
+            ("Depression", "Depression", "bi-cloud-rain"),
+            ("Anxiety", "Anxiety", "bi-emoji-frown"),
+            ("Stress", "Stress & Pressure", "bi-lightning"),
+            ("Relationships", "Relationships", "bi-people"),
+            ("Children & Adolescents", "Children", "bi-balloon"),
+            ("Self-care", "Self-care", "bi-flower1")
         };
         var currentCat = Model.Filter.Category ?? "";
     }
@@ -97,18 +97,18 @@
     {
         <div class="result-info">
             <div class="result-count">
-                Tìm thấy <strong>@Model.Blogs.Count</strong> bài viết
+                Found <strong>@Model.Blogs.Count</strong> articles
                 @if (!string.IsNullOrEmpty(Model.Filter.Search))
                 {
-                    <span>cho "<strong>@Model.Filter.Search</strong>"</span>
+                    <span>for "<strong>@Model.Filter.Search</strong>"</span>
                 }
                 @if (!string.IsNullOrEmpty(Model.Filter.Category))
                 {
-                    <span>trong danh mục <strong>@Model.Filter.Category</strong></span>
+                    <span>in category <strong>@Model.Filter.Category</strong></span>
                 }
             </div>
             <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:20px; font-size:0.8rem;">
-                <i class="bi bi-x-lg me-1"></i>Xóa bộ lọc
+                <i class="bi bi-x-lg me-1"></i>Clear Filters
             </a>
         </div>
     }
@@ -135,7 +135,7 @@
                     </div>
                     <div class="card-body">
                         <h2 class="card-title">@blog.Title</h2>
-                        <div class="card-excerpt">@(blog.DisplaySummary ?? "Chưa có tóm tắt.")</div>
+                        <div class="card-excerpt">@(blog.DisplaySummary ?? "No summary available.")</div>
                         <div class="card-footer">
                             <div class="author">
                                 <div class="author-avatar">
@@ -148,10 +148,10 @@
                                         @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
                                     }
                                 </div>
-                                <span class="author-name">@(blog.AuthorName ?? "Ẩn danh")</span>
+                                <span class="author-name">@(blog.AuthorName ?? "Anonymous")</span>
                             </div>
                             <div class="date">
-                                <i class="bi bi-calendar3"></i> @(blog.PublishedAt?.ToString("dd/MM/yyyy") ?? blog.CreatedAt.ToString("dd/MM/yyyy"))
+                                <i class="bi bi-calendar3"></i> @(blog.PublishedAt?.ToString("MM/dd/yyyy") ?? blog.CreatedAt.ToString("MM/dd/yyyy"))
                             </div>
                         </div>
                     </div>
@@ -181,9 +181,9 @@
             <div style="width:80px; height:80px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
                 <i class="bi bi-search" style="font-size:2rem; color:#94a3b8;"></i>
             </div>
-            <h3 style="color:#334155; font-weight:700; margin-bottom:0.5rem;">Không tìm thấy bài viết</h3>
-            <p style="color:#64748b;">Rất tiếc, chúng tôi không tìm thấy bài viết nào phù hợp.<br/>Vui lòng thử lại với từ khóa hoặc danh mục khác.</p>
-            <a asp-page="Index" class="btn btn-outline-primary mt-3" style="border-radius:30px; padding:0.6rem 1.5rem;">Xóa bộ lọc</a>
+            <h3 style="color:#334155; font-weight:700; margin-bottom:0.5rem;">Not found articles</h3>
+            <p style="color:#64748b;">Sorry, we couldn't find any matching articles.<br/>Please try again with different keywords or categories.</p>
+            <a asp-page="Index" class="btn btn-outline-primary mt-3" style="border-radius:30px; padding:0.6rem 1.5rem;">Clear Filters</a>
         </div>
     }
 </div>

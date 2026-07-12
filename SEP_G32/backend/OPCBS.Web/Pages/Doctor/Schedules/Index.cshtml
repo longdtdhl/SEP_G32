@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Schedules.IndexModel
 @{
-    ViewData["Title"] = "Quản lý lịch làm việc";
+    ViewData["Title"] = "Schedule Management";
     ViewData["UseDashboardLayout"] = true;
     
     var today = DateTime.Today;
@@ -24,7 +24,7 @@
                 display = "background",
                 backgroundColor = "rgba(239,68,68,0.08)",
                 borderColor = "transparent",
-                title = "Ngày nghỉ",
+                title = "Day Off",
                 extendedProps = new { isDayOff = true, reason = d.Reason ?? "" }
             });
         }
@@ -131,9 +131,9 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Quản lý lịch làm việc
+            <i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Schedule Management
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Tạo, quản lý và theo dõi lịch khám bệnh của bạn</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Create, manage and track lịch consultations bệnh your</p>
     </div>
     <div class="header-actions d-flex gap-2 align-items-center">
         <select id="monthSelector" class="form-select form-select-sm" style="width:auto; border-radius:10px; font-size:0.8rem;">
@@ -143,12 +143,12 @@
                 <option value="@d.ToString("yyyy-MM-01")">Tháng @d.ToString("MM/yyyy")</option>
             }
         </select>
-        <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ slot trống? (Slot đã khóa và đã đặt sẽ được giữ lại)');">
+        <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Are you sure you want to xóa toàn bộ slot trống? (Slot đã khóa and đã đặt sẽ được giữ lại)');">
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>
         </form>
-        <a asp-page="DaysOff" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-x me-1"></i>Ngày nghỉ</a>
+        <a asp-page="DaysOff" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-x me-1"></i>Day Off</a>
     </div>
 </div>
 
@@ -172,14 +172,14 @@
         <div class="stat-icon total"><i class="bi bi-calendar3"></i></div>
         <div>
             <div class="stat-value">@totalSlots</div>
-            <div class="stat-label">Tổng slot</div>
+            <div class="stat-label">Total slot</div>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon available"><i class="bi bi-check-circle"></i></div>
         <div>
             <div class="stat-value" style="color:#10b981;">@availableSlots</div>
-            <div class="stat-label">Slot trống</div>
+            <div class="stat-label">Available</div>
         </div>
     </div>
     <div class="stat-card">
@@ -203,8 +203,8 @@
 {
     <div class="days-off-bar">
         <div class="bar-header">
-            <h6><i class="bi bi-calendar-x me-1 text-danger"></i>Ngày nghỉ đã đăng ký</h6>
-            <a asp-page="DaysOff" style="font-size:0.78rem; color:var(--mb-primary); text-decoration:none; font-weight:500;">Quản lý →</a>
+            <h6><i class="bi bi-calendar-x me-1 text-danger"></i>Day Off đã registration</h6>
+            <a asp-page="DaysOff" style="font-size:0.78rem; color:var(--mb-primary); text-decoration:none; font-weight:500;">Management →</a>
         </div>
         <div class="d-flex flex-wrap gap-2">
             @foreach (var d in Model.DaysOff)
@@ -213,9 +213,9 @@
                     <i class="bi bi-x-circle-fill"></i>
                     @d.StartDate.ToString("dd/MM") @(d.EndDate != d.StartDate ? $"- {d.EndDate:dd/MM}" : "")
                     @if (!string.IsNullOrEmpty(d.Reason)) { <span style="opacity:0.7;">(@d.Reason)</span> }
-                    <form method="post" asp-page-handler="DeleteDayOff" onsubmit="return confirm('Xóa ngày nghỉ này?');">
+                    <form method="post" asp-page-handler="DeleteDayOff" onsubmit="return confirm('Delete ngày nghỉ this?');">
                         <input type="hidden" name="id" value="@d.Id" />
-                        <button type="submit" class="btn-remove" title="Xóa"><i class="bi bi-x-lg"></i></button>
+                        <button type="submit" class="btn-remove" title="Delete"><i class="bi bi-x-lg"></i></button>
                     </form>
                 </div>
             }
@@ -237,9 +237,9 @@
         <div class="legend-item"><div class="legend-dot" style="background:#ecfdf5; border:1.5px solid #10b981;"></div>Trống</div>
         <div class="legend-item"><div class="legend-dot" style="background:#fef3c7; border:1.5px solid #f59e0b;"></div>Đã đặt</div>
         <div class="legend-item"><div class="legend-dot" style="background:#f1f5f9; border:1.5px solid #94a3b8;"></div>Đã khóa</div>
-        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.08); border:1.5px solid #fca5a5;"></div>Ngày nghỉ</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.08); border:1.5px solid #fca5a5;"></div>Day Off</div>
     </div>
-    <div style="font-size:0.78rem; color:#94a3b8;"><i class="bi bi-hand-index-thumb me-1"></i>Kéo thả trên lịch để tạo slot làm việc</div>
+    <div style="font-size:0.78rem; color:#94a3b8;"><i class="bi bi-hand-index-thumb me-1"></i>Kéo thả trên lịch to tạo slot work</div>
 </div>
 
 <!-- Create Slot Modal -->
@@ -257,25 +257,25 @@
                     <input type="hidden" name="date" id="modalDate" />
                     
                     <div class="mb-3">
-                        <label class="form-label small fw-medium">Ngày</label>
+                        <label class="form-label small fw-medium">Date</label>
                         <input type="text" class="form-control form-control-sm" id="modalDateDisplay" readonly style="background:#f8fafc; border-radius:10px;" />
                     </div>
                     
                     <div class="row g-2">
                         <div class="col-6">
-                            <label class="form-label small fw-medium">Giờ bắt đầu</label>
+                            <label class="form-label small fw-medium">Start Time</label>
                             <input type="time" name="startTime" id="modalStartTime" class="form-control form-control-sm" required style="border-radius:10px;" />
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-medium">Giờ kết thúc</label>
+                            <label class="form-label small fw-medium">End Time</label>
                             <input type="time" name="endTime" id="modalEndTime" class="form-control form-control-sm" required style="border-radius:10px;" />
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Hủy</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                        <i class="bi bi-check-lg me-1"></i>Lưu Slot
+                        <i class="bi bi-check-lg me-1"></i>Save Slot
                     </button>
                 </div>
             </form>
@@ -289,7 +289,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" style="font-size:1rem; font-weight:600;">
-                    <i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Chi tiết Slot
+                    <i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Details Slot
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -300,18 +300,18 @@
                     </div>
                     <div style="background:#f8fafc; border-radius:12px; padding:1rem;">
                         <div class="d-flex justify-content-between mb-2">
-                            <span style="font-size:0.8rem; color:#64748b;">Ngày</span>
+                            <span style="font-size:0.8rem; color:#64748b;">Date</span>
                             <span id="detailDate" style="font-size:0.85rem; font-weight:600; color:#1e293b;"></span>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <span style="font-size:0.8rem; color:#64748b;">Thời gian</span>
+                            <span style="font-size:0.8rem; color:#64748b;">Time</span>
                             <span id="detailTime" style="font-size:0.85rem; font-weight:600; color:#1e293b;"></span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer" id="detailActions" style="flex-wrap:nowrap; gap:8px;">
-                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
                 
                 <!-- Toggle form with proper Razor tag helpers -->
                 <form id="toggleForm" method="post" asp-page-handler="ToggleBlock" class="flex-fill m-0" style="display:none;">
@@ -320,10 +320,10 @@
                 </form>
                 
                 <!-- Delete form with proper Razor tag helpers -->
-                <form id="deleteForm" method="post" asp-page-handler="DeleteSlot" class="flex-fill m-0" style="display:none;" onsubmit="return confirm('Bạn có chắc muốn xóa slot này?');">
+                <form id="deleteForm" method="post" asp-page-handler="DeleteSlot" class="flex-fill m-0" style="display:none;" onsubmit="return confirm('Are you sure you want to xóa slot this?');">
                     <input type="hidden" name="slotId" id="deleteSlotId" />
                     <button type="submit" class="btn btn-sm btn-danger w-100" style="border-radius:10px;">
-                        <i class="bi bi-trash3 me-1"></i>Xóa
+                        <i class="bi bi-trash3 me-1"></i>Delete
                     </button>
                 </form>
             </div>
@@ -401,9 +401,9 @@
                     right: 'timeGridWeek,timeGridDay'
                 },
                 buttonText: {
-                    today: 'Hôm nay',
+                    today: 'Today',
                     week: 'Tuần',
-                    day: 'Ngày'
+                    day: 'Date'
                 },
                 slotMinTime: '06:00:00',
                 slotMaxTime: '22:00:00',
@@ -471,7 +471,7 @@
                               '<i class="bi ' + icon + '" style="font-size:0.7rem;"></i>' +
                               '<span>' + statusLabel + '</span>' +
                               '</div>' +
-                              '<div style="font-size:0.65rem; color:rgba(0,0,0,0.4); margin-top:auto;">Click để xem</div>' +
+                              '<div style="font-size:0.65rem; color:rgba(0,0,0,0.4); margin-top:auto;">Click to xem</div>' +
                               '</div>'
                     };
                 }

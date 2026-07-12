@@ -18,7 +18,7 @@ public class EditModel : PageModel
     {
         PackageId = id;
         var (data, error) = await _api.GetByIdAsync(id);
-        if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
+        if (data == null) { Error = error ?? "Not found."; return Page(); }
         Package = data;
         Input = new UpdateTreatmentPackageDto { Title = data.Title, Description = data.Description, TotalSessions = data.TotalSessions, Price = data.Price };
         return Page();
@@ -29,7 +29,7 @@ public class EditModel : PageModel
         PackageId = id;
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Cập nhật gói điều trị thành công!";
+        TempData["Success"] = "Cập nhật gói điều trị successfully!";
         return RedirectToPage("Index");
     }
 }

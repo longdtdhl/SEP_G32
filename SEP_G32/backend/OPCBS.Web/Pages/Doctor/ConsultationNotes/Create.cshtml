@@ -1,7 +1,7 @@
-@page
+﻿@page
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.CreateModel
 @{
-    ViewData["Title"] = "Tạo hồ sơ tư vấn";
+    ViewData["Title"] = "Create profile consultation";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -40,12 +40,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Tạo hồ sơ tư vấn
+            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Create profile consultation
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lập bệnh án, ghi chú tư vấn và khuyến nghị bài tập sau buổi trị liệu</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lập medical record, notes consultation and recommend assignment after buổi therapy</p>
     </div>
     <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.PatientRecordId" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
-        <i class="bi bi-arrow-left me-1"></i>Quay lại hồ sơ
+        <i class="bi bi-arrow-left me-1"></i>Back profile
     </a>
 </div>
 
@@ -69,20 +69,20 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-person-lines-fill"></i>Thông tin bệnh nhân
+                        <i class="bi bi-person-lines-fill"></i>Patient Information
                     </div>
                     <div class="patient-info-card mb-3">
-                        <div class="label">Họ và tên</div>
+                        <div class="label">Full Name</div>
                         <div class="value">
-                            <i class="bi bi-person-fill me-1" style="color:var(--mb-primary);"></i>@(Model.PatientRecord?.DisplayName ?? "Không xác định")
+                            <i class="bi bi-person-fill me-1" style="color:var(--mb-primary);"></i>@(Model.PatientRecord?.DisplayName ?? "Unknown")
                             @if (Model.PatientRecord?.IsGuest == true)
                             {
-                                <span class="badge bg-secondary ms-2">Khách vãng lai</span>
+                                <span class="badge bg-secondary ms-2">Guest</span>
                             }
                         </div>
                     </div>
                     <div class="patient-info-card mb-3">
-                        <div class="label">Số điện thoại / Email</div>
+                        <div class="label">Phone Number / Email</div>
                         <div class="value" style="font-size:0.82rem;"><i class="bi bi-telephone me-1"></i>@(Model.PatientRecord?.DisplayPhone ?? "N/A")</div>
                         <div class="value" style="font-size:0.82rem;"><i class="bi bi-envelope me-1"></i>@(Model.PatientRecord?.DisplayEmail ?? "N/A")</div>
                     </div>
@@ -94,10 +94,10 @@
                 <div class="card border-0 shadow-sm mt-3" style="border-radius:16px;">
                     <div class="card-body p-4">
                         <div class="form-section-title">
-                            <i class="bi bi-link-45deg"></i>Thông tin lịch hẹn
+                            <i class="bi bi-link-45deg"></i>Appointment Information
                         </div>
                         <div class="patient-info-card mb-3">
-                            <div class="label">Mã cuộc hẹn</div>
+                            <div class="label">Appointment Code</div>
                             <div class="value">
                                 <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1" style="border-radius:8px;">
                                     @Model.SelectedAppointment.BookingCode
@@ -105,7 +105,7 @@
                             </div>
                         </div>
                         <div class="patient-info-card">
-                            <div class="label">Thời gian tư vấn</div>
+                            <div class="label">Time consultation</div>
                             <div class="value" style="font-size:0.82rem;"><i class="bi bi-calendar3 me-1"></i>@Model.SelectedAppointment.AppointmentDate • @Model.SelectedAppointment.StartTime - @Model.SelectedAppointment.EndTime</div>
                         </div>
                     </div>
@@ -115,12 +115,12 @@
             <!-- Tips Card -->
             <div class="tip-card mt-3">
                 <h6 style="font-size:0.85rem; font-weight:700; color:#92400e; margin-bottom:8px;">
-                    <i class="bi bi-lightbulb-fill text-warning me-1"></i>Lưu ý
+                    <i class="bi bi-lightbulb-fill text-warning me-1"></i>Tips
                 </h6>
                 <ul style="font-size:0.8rem; color:#78716c; padding-left:1.2rem; margin:0;">
-                    <li class="mb-1">Ghi chẩn đoán lâm sàng rõ ràng để bệnh nhân theo dõi.</li>
-                    <li class="mb-1">Khuyến nghị bài tập thực hành giúp tiến trình trị liệu hiệu quả hơn.</li>
-                    <li>Hồ sơ sẽ hiển thị ngay sau khi lưu.</li>
+                    <li class="mb-1">Write clear clinical diagnoses for patient tracking.</li>
+                    <li class="mb-1">Recommend practice assignments to make therapy more effective.</li>
+                    <li>The record will be displayed immediately after saving.</li>
                 </ul>
             </div>
         </div>
@@ -133,60 +133,60 @@
                     <!-- Diagnosis -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-clipboard2-pulse-fill"></i>Chẩn đoán lâm sàng <span class="text-danger">*</span>
+                            <i class="bi bi-clipboard2-pulse-fill"></i>Diagnosis clinical <span class="text-danger">*</span>
                         </div>
                         <input asp-for="Input.Diagnosis" class="form-control" style="border-radius:10px;"
-                               placeholder="Ví dụ: Rối loạn lo âu lan tỏa (GAD), Stress công việc nặng..." required />
+                               placeholder="e.g.: Generalized Anxiety Disorder (GAD), Work-related stress..." required />
                     </div>
 
                     <!-- Consultation Summary -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-journal-text"></i>Nội dung & Ghi chú tư vấn <span class="text-danger">*</span>
+                            <i class="bi bi-journal-text"></i>Content & Consultation Notes <span class="text-danger">*</span>
                         </div>
                         <textarea asp-for="Input.ConsultationSummary" class="form-control" style="border-radius:10px;" rows="5"
-                                  placeholder="Ghi nhận diễn biến buổi tư vấn, các biểu hiện tâm lý, kết quả kiểm tra..." required></textarea>
+                                  placeholder="Record consultation progress, psyforlogical symptoms, check results..." required></textarea>
                     </div>
 
                     <!-- TherapyPlan -->
                     <div class="form-section">
                         <label asp-for="Input.TherapyPlan" class="form-label fw-semibold" style="font-size:0.9rem;">
-                            <i class="bi bi-capsule me-1 text-secondary"></i>Kế hoạch trị liệu
+                            <i class="bi bi-capsule me-1 text-secondary"></i>Plan therapy
                         </label>
-                        <textarea asp-for="Input.TherapyPlan" class="form-control" rows="3" placeholder="Nhập kế hoạch trị liệu (nếu có)..." style="border-radius:10px;"></textarea>
+                        <textarea asp-for="Input.TherapyPlan" class="form-control" rows="3" placeholder="Enter therapy pspread (if applicable)..." style="border-radius:10px;"></textarea>
                         <span asp-validation-for="Input.TherapyPlan" class="text-danger small"></span>
                     </div>
 
                     <!-- Recommendations -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-heart-pulse-fill"></i>Lời khuyên / Bài tập tại nhà
+                            <i class="bi bi-heart-pulse-fill"></i>Advice / Home Assignments
                         </div>
                         <textarea asp-for="Input.Recommendation" class="form-control" style="border-radius:10px;" rows="4"
-                                  placeholder="Ví dụ:&#10;- Thực hành bài tập thở 4-7-8 trước khi đi ngủ.&#10;- Viết nhật ký biết ơn mỗi tối.&#10;- Hạn chế thiết bị điện tử sau 22h..."></textarea>
+                                  placeholder="e.g.:&#10;- Practice 4-7-8 breathing exercises before sleep.&#10;- Write a gratitude journal every evening.&#10;- Hạn chế device electronic after 22h..."></textarea>
                     </div>
 
                     <!-- Follow-up Notes -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-arrow-repeat"></i>Ghi chú theo dõi
+                            <i class="bi bi-arrow-repeat"></i>Notes track
                         </div>
                         <textarea asp-for="Input.FollowUpNotes" class="form-control" style="border-radius:10px;" rows="2"
-                                  placeholder="Ghi chú cho buổi tái khám tiếp theo (nếu cần)..."></textarea>
+                                  placeholder="Notes for follow-up consultations next (if needed)..."></textarea>
                     </div>
 
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-calendar"></i>Ngày tái khám dự kiến
+                            <i class="bi bi-calendar"></i>Expected Follow-up Date
                         </div>
                         <input asp-for="Input.NextAppointmentRecommendedDate" class="form-control" type="date" style="border-radius:10px;" />
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
-                        <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.PatientRecordId" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Hủy bỏ</a>
+                        <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.PatientRecordId" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-save2-fill"></i>Lưu hồ sơ tư vấn
+                            <i class="bi bi-save2-fill"></i>Save profile consultation
                         </button>
                     </div>
                 </div>

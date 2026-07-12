@@ -1,4 +1,4 @@
-@inject OPCBS.Web.Helpers.JwtCookieService JwtService
+﻿@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @inject OPCBS.Web.Services.IVerificationApiService VerificationService
 
 @{
@@ -30,35 +30,35 @@
 <aside class="mb-sidebar" id="mb-sidebar">
     @if (isPatient)
     {
-        <div class="sidebar-header">Cổng Bệnh nhân</div>
+        <div class="sidebar-header">Patient Portal</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/patient/dashboard" ? "active" : "")" asp-page="/Patient/Dashboard">
-                <i class="bi bi-house"></i> Bảng điều khiển
+                <i class="bi bi-house"></i> Dashboard
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/appointments") ? "active" : "")" asp-page="/Patient/Appointments/Index">
-                <i class="bi bi-calendar-check"></i> Lịch hẹn của tôi
+                <i class="bi bi-calendar-check"></i> My Appointments
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index">
-                <i class="bi bi-file-medical"></i> Hồ sơ tư vấn
+                <i class="bi bi-file-medical"></i> Consultation Records
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
-                <i class="bi bi-box-seam"></i> Gói điều trị
+                <i class="bi bi-box-seam"></i> Treatment Packages
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
-                <i class="bi bi-journal-heart"></i> Nhật ký cảm xúc
+                <i class="bi bi-journal-heart"></i> Mood Journal
             </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
-                <i class="bi bi-clipboard2-pulse"></i> Bài test sàng lọc
+            <a class="nav-link @(currentPath.StartsWith("/patient/psyformetrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
+                <i class="bi bi-clipboard2-pulse"></i> Psychometric Tests
             </a>
             <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
-                <i class="bi bi-bell"></i> Thông báo <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge"></span>
+                <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge"></span>
             </a>
-            <div class="sidebar-header mt-3">Thao tác nhanh</div>
+            <div class="sidebar-header mt-3">Quick Actions</div>
             <a class="nav-link" asp-page="/Doctors/Index">
-                <i class="bi bi-search-heart"></i> Tìm chuyên gia tâm lý
+                <i class="bi bi-search-heart"></i> Find a Therapist
             </a>
             <a class="nav-link" asp-page="/Account/Profile">
-                <i class="bi bi-person"></i> Hồ sơ cá nhân
+                <i class="bi bi-person"></i> My Profile
             </a>
         </nav>
     }
@@ -67,75 +67,75 @@
         <div class="sidebar-header">Doctor Portal</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/doctor/dashboard" ? "active" : "")" asp-page="/Doctor/Dashboard">
-                <i class="bi bi-house"></i> Bảng điều khiển
+                <i class="bi bi-house"></i> Dashboard
             </a>
 
             @if (isVerified)
             {
                 <a class="nav-link @(currentPath.StartsWith("/doctor/appointments") ? "active" : "")" asp-page="/Doctor/Appointments/Index">
-                    <i class="bi bi-calendar-check"></i> Lịch hẹn
+                    <i class="bi bi-calendar-check"></i> Appointments
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
-                    <i class="bi bi-clock"></i> Lịch làm việc
+                    <i class="bi bi-clock"></i> Schedules
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/patients") ? "active" : "")" asp-page="/Doctor/Patients/Index">
-                    <i class="bi bi-person-lines-fill"></i> Hồ sơ bệnh nhân
+                    <i class="bi bi-person-lines-fill"></i> Patient Records
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/consultationnotes") ? "active" : "")" asp-page="/Doctor/ConsultationNotes/Index">
-                    <i class="bi bi-file-medical"></i> Ghi chú tư vấn
+                    <i class="bi bi-file-medical"></i> Consultation Notes
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
-                    <i class="bi bi-box-seam"></i> Gói điều trị
+                    <i class="bi bi-box-seam"></i> Treatment Packages
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
-                    <i class="bi bi-journal-text"></i> Bài viết blog
+                    <i class="bi bi-journal-text"></i> Blog Posts
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
-                    <i class="bi bi-bell"></i> Thông báo <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge-doc"></span>
+                    <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge-doc"></span>
                 </a>
             }
             else
             {
                 <!-- Disabled items for unverified doctors -->
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-calendar-check"></i> Lịch hẹn <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-calendar-check"></i> Appointments <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-clock"></i> Lịch làm việc <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-clock"></i> Schedules <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-person-lines-fill"></i> Hồ sơ bệnh nhân <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-person-lines-fill"></i> Patient Records <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-file-medical"></i> Ghi chú tư vấn <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-file-medical"></i> Consultation Notes <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-box-seam"></i> Gói điều trị <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-box-seam"></i> Treatment Packages <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
-                <span class="nav-link disabled text-muted" title="Cần xác minh trước">
-                    <i class="bi bi-journal-text"></i> Bài viết blog <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-journal-text"></i> Blog Posts <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
             }
 
-            <div class="sidebar-header mt-3">Tài khoản</div>
+            <div class="sidebar-header mt-3">Account</div>
             <a class="nav-link @(currentPath == "/doctor/profile" ? "active" : "")" asp-page="/Doctor/Profile">
-                <i class="bi bi-person"></i> Hồ sơ cá nhân
+                <i class="bi bi-person"></i> My Profile
             </a>
             <a class="nav-link @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/Verification">
-                <i class="bi bi-patch-check"></i> Xác minh danh tính
+                <i class="bi bi-patch-check"></i> Identity Verification
                 @if (!isVerified)
                 {
-                    <span class="badge bg-warning text-dark ms-auto" style="font-size:0.6rem;">Chưa duyệt</span>
+                    <span class="badge bg-warning text-dark ms-auto" style="font-size:0.6rem;">Pending</span>
                 }
             </a>
 
             @if (isVerified)
             {
                 <a class="nav-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
-                    <i class="bi bi-gem"></i> Gói dịch vụ
+                    <i class="bi bi-gem"></i> Service Packages
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
-                    <i class="bi bi-credit-card"></i> Gói đăng ký
+                    <i class="bi bi-credit-card"></i> Subscription Status
                 </a>
             }
         </nav>

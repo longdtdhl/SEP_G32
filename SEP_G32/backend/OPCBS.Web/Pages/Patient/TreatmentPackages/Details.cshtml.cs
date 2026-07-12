@@ -92,7 +92,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _service.CancelAsync(id, CancelReason);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã hủy gói điều trị thành công.";
+        TempData["SuccessMessage"] = "Cancelled gói điều trị successfully.";
         return RedirectToPage("Index");
     }
 
@@ -100,14 +100,14 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(SubmissionText))
         {
-            Error = "Vui lòng nhập nội dung bài tập.";
+            Error = "Please nhập nội dung bài tập.";
             return await OnGetAsync(id);
         }
 
         var dto = new SubmitAssignmentDto { PatientSubmission = SubmissionText };
         var (success, error) = await _therapyService.SubmitAssignmentAsync(assignmentId, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã nộp bài tập thành công!";
+        TempData["SuccessMessage"] = "Đã nộp bài tập successfully!";
         return RedirectToPage(new { id });
     }
 }

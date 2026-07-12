@@ -154,20 +154,20 @@ public class BookModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.DoctorId == Guid.Empty) { Error = "Vui lòng chọn bác sĩ."; await OnGetAsync(); return Page(); }
-        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Vui lòng chọn slot thời gian."; await OnGetAsync(); return Page(); }
+        if (Input.DoctorId == Guid.Empty) { Error = "Please select a doctor."; await OnGetAsync(); return Page(); }
+        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Please select a time slot."; await OnGetAsync(); return Page(); }
 
         // Guest validation
         if (IsGuest)
         {
-            if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Vui lòng nhập họ tên."; await OnGetAsync(); return Page(); }
-            if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Vui lòng nhập email."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Please enter your full name."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Please enter your email."; await OnGetAsync(); return Page(); }
         }
 
         var (bookedAppointment, error) = await _appointmentService.BookAsync(Input);
         if (bookedAppointment == null)
         {
-            Error = error ?? "Không thể đặt lịch. Vui lòng thử lại.";
+            Error = error ?? "Unable to book appointment. Please try again.";
             await OnGetAsync();
             return Page();
         }

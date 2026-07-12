@@ -1,7 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.IndexModel
 @{
-    ViewData["Title"] = "Gói điều trị";
+    ViewData["Title"] = "Treatment Package";
     ViewData["UseDashboardLayout"] = true;
     var totalPkgs = Model.Packages.Count;
     var activePkgs = Model.Packages.Count(p => p.Status == "Active");
@@ -72,12 +72,12 @@
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Gói điều trị
+            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Quản lý và theo dõi các gói trị liệu dành riêng cho từng bệnh nhân</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Management and track the gói therapy dành riêng for từng patient</p>
     </div>
     <a asp-page="Create" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-        <i class="bi bi-plus-lg"></i>Tạo gói mới
+        <i class="bi bi-plus-lg"></i>Create New Package
     </a>
 </div>
 
@@ -104,7 +104,7 @@
             <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-box-seam"></i></div>
             <div>
                 <div class="stat-value">@totalPkgs</div>
-                <div class="stat-label">Tổng gói</div>
+                <div class="stat-label">Total gói</div>
             </div>
         </div>
     </div>
@@ -113,7 +113,7 @@
             <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="bi bi-lightning-charge"></i></div>
             <div>
                 <div class="stat-value">@activePkgs</div>
-                <div class="stat-label">Đang hoạt động</div>
+                <div class="stat-label">Active</div>
             </div>
         </div>
     </div>
@@ -122,7 +122,7 @@
             <div class="stat-icon" style="background:#fef3c7; color:#f59e0b;"><i class="bi bi-calendar2-check"></i></div>
             <div>
                 <div class="stat-value">@completedSessions / @totalSessions</div>
-                <div class="stat-label">Phiên hoàn thành</div>
+                <div class="stat-label">Session complete</div>
             </div>
         </div>
     </div>
@@ -131,7 +131,7 @@
             <div class="stat-icon" style="background:#fee2e2; color:#ef4444;"><i class="bi bi-exclamation-triangle"></i></div>
             <div>
                 <div class="stat-value">@expiredPkgs</div>
-                <div class="stat-label">Hết hạn</div>
+                <div class="stat-label">Expired</div>
             </div>
         </div>
     </div>
@@ -139,11 +139,11 @@
 
 <!-- Search & Filter -->
 <div class="search-filter-bar">
-    <input type="text" class="search-input" placeholder="Tìm theo tên gói hoặc bệnh nhân..." id="pkgSearch" oninput="filterPackages()" />
-    <span class="filter-chip active" data-filter="all" onclick="setFilter(this, 'all')">Tất cả</span>
+    <input type="text" class="search-input" placeholder="Find theo tên gói hoặc patient..." id="pkgSearch" oninput="filterPackages()" />
+    <span class="filter-chip active" data-filter="all" onclick="setFilter(this, 'all')">All</span>
     <span class="filter-chip" data-filter="Active" onclick="setFilter(this, 'Active')">Hoạt động</span>
     <span class="filter-chip" data-filter="Created" onclick="setFilter(this, 'Created')">Đã tạo</span>
-    <span class="filter-chip" data-filter="Completed" onclick="setFilter(this, 'Completed')">Hoàn thành</span>
+    <span class="filter-chip" data-filter="Completed" onclick="setFilter(this, 'Completed')">Completed</span>
 </div>
 
 <!-- Package Cards -->
@@ -170,11 +170,11 @@
             var statusLabel = pkg.Status switch {
                 "Active" => "Hoạt động",
                 "Created" => "Đã tạo",
-                "Completed" => "Hoàn thành",
-                "Cancelled" => "Đã hủy",
+                "Completed" => "Completed",
+                "Cancelled" => "Cancelled",
                 _ => pkg.Status
             };
-            if (pkg.IsExpired && pkg.Status == "Active") { statusClass = "expired"; statusLabel = "Hết hạn"; statusIcon = "bi-exclamation-triangle-fill"; }
+            if (pkg.IsExpired && pkg.Status == "Active") { statusClass = "expired"; statusLabel = "Expired"; statusIcon = "bi-exclamation-triangle-fill"; }
 
             var initial = pkg.DisplayPatientName.Substring(0, 1).ToUpper();
             var colors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
@@ -202,15 +202,15 @@
                             <p style="font-size:0.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
                         }
 
-                        <div class="pkg-meta-row"><i class="bi bi-calendar2-check"></i><span>Phiên: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
-                        <div class="pkg-meta-row"><i class="bi bi-hourglass-split"></i><span>Còn lại: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
-                        <div class="pkg-meta-row"><i class="bi bi-calendar-x"></i><span>Hết hạn: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</strong></span></div>
-                        <div class="pkg-meta-row"><i class="bi bi-currency-dollar"></i><span>Giá: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
+                        <div class="pkg-meta-row"><i class="bi bi-calendar2-check"></i><span>Session: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
+                        <div class="pkg-meta-row"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
+                        <div class="pkg-meta-row"><i class="bi bi-calendar-x"></i><span>Expired: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</strong></span></div>
+                        <div class="pkg-meta-row"><i class="bi bi-currency-dollar"></i><span>Price: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
 
                         <!-- Progress bar -->
                         <div style="margin-top:10px;">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Tiến trình</span>
+                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Progress</span>
                                 <span style="font-size:0.72rem; color:@progressColor; font-weight:700;">@(progress)%</span>
                             </div>
                             <div class="pkg-progress-track">
@@ -222,17 +222,17 @@
                     <!-- Footer -->
                     <div class="pkg-card-footer d-flex gap-2">
                         <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-journal-check"></i>Bài tập
+                            <i class="bi bi-journal-check"></i>Assignment
                         </a>
                         <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-pencil-square"></i>Chỉnh sửa
+                            <i class="bi bi-pencil-square"></i>Edit
                         </a>
                         @if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
                         {
                             <button type="button" class="btn btn-sm btn-outline-danger flex-fill d-flex align-items-center justify-content-center gap-1"
                                     style="border-radius:8px; font-size:0.78rem; font-weight:600;"
                                     data-bs-toggle="modal" data-bs-target="#cancelModal-@pkg.Id.ToString("N")">
-                                <i class="bi bi-x-circle"></i>Hủy gói
+                                <i class="bi bi-x-circle"></i>Cancel gói
                             </button>
                         }
                     </div>
@@ -245,10 +245,10 @@
         <div class="col-12">
             <div class="pkg-empty">
                 <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
-                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">Chưa có gói điều trị nào</h5>
-                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Tạo gói trị liệu đầu tiên để bắt đầu theo dõi bệnh nhân</p>
+                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No treatment packages yet nào</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Create gói therapy đầu tiên to start track patient</p>
                 <a asp-page="Create" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                    <i class="bi bi-plus-lg me-1"></i>Tạo gói đầu tiên
+                    <i class="bi bi-plus-lg me-1"></i>Create gói đầu tiên
                 </a>
             </div>
         </div>
@@ -262,21 +262,21 @@
         <div class="modal-dialog"><div class="modal-content" style="border-radius:16px;">
             <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Hủy gói điều trị</h5>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel gói treatment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">
-                        <i class="bi bi-info-circle me-1"></i>Bạn đang hủy gói <strong>@pkg.Title</strong> của bệnh nhân <strong>@pkg.DisplayPatientName</strong>. Thao tác này không thể hoàn tác.
+                        <i class="bi bi-info-circle me-1"></i>Bạn is cancel <strong>@pkg.Title</strong> of patient <strong>@pkg.DisplayPatientName</strong>. Actions this không thể hoàn tác.
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Lý do hủy (tùy chọn)</label>
-                        <textarea name="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy gói..." style="border-radius:10px;"></textarea>
+                        <label class="form-label fw-semibold">Cancellation Reason (optional)</label>
+                        <textarea name="CancelReason" class="form-control" rows="3" placeholder="Enter lý do cancel..." style="border-radius:10px;"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Đóng</button>
-                    <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Xác nhận hủy</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                    <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Confirm hủy</button>
                 </div>
             </form>
         </div></div>

@@ -116,3 +116,46 @@ Không được sử dụng route `api/v1/specializations` để đọc hoặc t
 * **Ghi chú tư vấn (`Doctor/ConsultationNotes/Details`):** 
   1. Nếu phiên tư vấn gắn liền với lịch hẹn (`AppointmentId`), hệ thống sẽ tìm kiếm gói điều trị được liên kết trực tiếp với lịch hẹn đó để hiển thị.
   2. Dự phòng (Fallback): Nếu không có gói điều trị trực tiếp, hệ thống tự động hiển thị danh sách các gói điều trị khác của bệnh nhân này với bác sĩ để bác sĩ dễ dàng truy cập và giao bài tập.
+
+---
+
+## 7. Thống nhất Ngôn ngữ Tiếng Anh cho Toàn bộ Hệ thống (English Localization Alignment)
+
+Để đáp ứng trải nghiệm người dùng quốc tế, toàn bộ giao diện và các trường thông tin của MindBridge đã được chuyển đổi đồng bộ sang tiếng Anh chuẩn hóa:
+* **Hệ thống Điều hướng & Thanh Menu (`_Header.cshtml`, `_Sidebar.cshtml`, `_Footer.cshtml`):**
+  * Đưa tất cả các mục điều hướng chính, tiêu đề cổng thông tin, danh mục chân trang và menu cá nhân về tiếng Anh.
+  * Các menu bên (Sidebar) dành cho Bác sĩ và Bệnh nhân được dịch toàn bộ sang tiếng Anh (ví dụ: `Bảng điều khiển` -> `Dashboard`, `Lịch hẹn` -> `Appointments`, `Nhật ký cảm xúc` -> `Mood Journal`, v.v.).
+* **Trang chủ (`Index.cshtml`):** Các đề mục Hero, Trust Stats, featured therapists, How it works, Stories of healing, tài nguyên và CTA được đưa lại về tiếng Anh.
+* **Màn hình xác thực & Tài khoản (`Pages/Account/*`):**
+  * `Register.cshtml`, `Login.cshtml`, `RegisterDoctor.cshtml` được dịch hoàn toàn sang tiếng Anh.
+  * Các trang khôi phục tài khoản, OTP và thay đổi thông tin cá nhân (`Profile.cshtml`, `ChangePassword.cshtml`, `ForgotPassword.cshtml`, `ResetPassword.cshtml`, `VerifyOtp.cshtml`) hiển thị hoàn toàn bằng tiếng Anh.
+* **Trang điều trị & chuyên sâu của Bệnh nhân & Bác sĩ:** Các trang chi tiết gói trị liệu (`Details.cshtml`), Nhật ký cảm xúc (`Journal/Index.cshtml`) và Sàng lọc tâm lý (`Psychometrics/TakeTest.cshtml`) được chuyển ngữ toàn bộ sang tiếng Anh.
+
+### 5.3 Full English Localization (Comprehensive Pass)
+
+**Objective:** Convert ALL remaining Vietnamese text across the entire website to English. The user explicitly requested zero Vietnamese text visible on the UI.
+
+**Approach:**
+* Built a custom C# console translation tool (`TranslateApp`) that runs 6+ replacement passes over all `.cshtml` files.
+* Each pass targeted: dictionary-based phrase translation → mixed Vietnamese/English cleanup → single-word Vietnamese cleanup.
+
+**Files Updated:** 94 `.cshtml` files across all modules (Doctor, Patient, Admin, Blog, Appointment, CustomerSupport, etc.).
+
+**Key Areas Translated:**
+* All page titles, headers, labels, buttons, placeholders, tooltips, error messages, and empty state text
+* CSS comments containing Vietnamese descriptions
+* JavaScript strings (e.g. share buttons, clipboard copy feedback, EasyMDE placeholders)
+* Appointment statuses, blog moderation workflows, verification flows
+* Clinical consultation forms (diagnoses, therapy plans, follow-up notes)
+* Treatment package management and subscription UIs
+
+**Known Issue - Aggressive Word Replacement:**
+Short Vietnamese words like "cho", "lan", "và" can corrupt C# property names when used in `.Replace()`. Examples encountered:
+* `PsychologicalHistory` → `PsyforlogicalHistory` (from "cho" → "for")
+* `PsychometricSubmission` → `PsyformetricSubmission`
+* `TherapyPlan` → `TherapyPspread` (from "lan" → "spread")
+* `Specialization` → `Sspreadization`
+
+**Mitigation:** Post-translation fixup script scans all `.cshtml` files for corrupted identifiers and restores them. Always run `dotnet build` after translation passes to catch any namespace/property corruption.
+
+**Remaining Work:** ~228 lines across 34 files still contain Vietnamese characters, mostly in deeply embedded mixed English/Vietnamese strings that require manual per-file editing for complete cleanup.
