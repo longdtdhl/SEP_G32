@@ -6,38 +6,49 @@
 }
 
 <div class="mb-page-header"><h1><i class="bi bi-graph-up me-2" style="color:var(--mb-primary);"></i>Analytics Overview</h1></div>
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning">@Model.Error</div>
+}
 
 <!-- KPI Cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
-            <i class="bi bi-currency-dollar fs-3 text-success d-block mb-1"></i>
-            <small class="text-muted d-block">Total Revenue</small>
-            <h4 class="mb-0 fw-bold">@Model.Stats.TotalRevenue.ToString("N0")</h4>
-            <small class="text-muted">VND</small>
-        </div></div>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-currency-dollar fs-3 text-success d-block mb-1"></i>
+                <small class="text-muted d-block">Total Revenue</small>
+                <h4 class="mb-0 fw-bold">@Model.Stats.TotalRevenue.ToString("N0")</h4>
+                <small class="text-muted">VND</small>
+            </div>
+        </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
-            <i class="bi bi-people fs-3 d-block mb-1" style="color:var(--mb-primary);"></i>
-            <small class="text-muted d-block">Total Users</small>
-            <h4 class="mb-0 fw-bold">@Model.Stats.TotalUsers</h4>
-        </div></div>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-people fs-3 d-block mb-1" style="color:var(--mb-primary);"></i>
+                <small class="text-muted d-block">Total Users</small>
+                <h4 class="mb-0 fw-bold">@Model.Stats.TotalUsers</h4>
+            </div>
+        </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
-            <i class="bi bi-calendar-check fs-3 d-block mb-1" style="color:#6366f1;"></i>
-            <small class="text-muted d-block">Appointments</small>
-            <h4 class="mb-0 fw-bold">@Model.Stats.TotalAppointments</h4>
-        </div></div>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-calendar-check fs-3 d-block mb-1" style="color:#6366f1;"></i>
+                <small class="text-muted d-block">Appointments</small>
+                <h4 class="mb-0 fw-bold">@Model.Stats.TotalAppointments</h4>
+            </div>
+        </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
-            <i class="bi bi-credit-card fs-3 d-block mb-1" style="color:#ec4899;"></i>
-            <small class="text-muted d-block">Subscriptions</small>
-            <h4 class="mb-0 fw-bold">@Model.Stats.ActiveSubscriptions</h4>
-        </div></div>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-credit-card fs-3 d-block mb-1" style="color:#ec4899;"></i>
+                <small class="text-muted d-block">Subscriptions</small>
+                <h4 class="mb-0 fw-bold">@Model.Stats.ActiveSubscriptions</h4>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -48,7 +59,9 @@
             <div class="card-header bg-white"><h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-1"></i>Revenue Trend</h6></div>
             <div class="card-body text-center py-5">
                 <div style="height:200px;display:flex;align-items:flex-end;justify-content:center;gap:12px;">
-                    @{ var bars = new[] { 45, 60, 35, 80, 65, 90, 75, 55, 85, 70, 95, 60 }; var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }; }
+                    @{
+                        var bars = new[] { 45, 60, 35, 80, 65, 90, 75, 55, 85, 70, 95, 60 }; var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                    }
                     @for (int i = 0; i < 12; i++)
                     {
                         <div class="text-center">
@@ -78,7 +91,10 @@
                             <span class="fw-bold small" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") VND</span>
                         </li>
                     }
-                    @if (!Model.Packages.Any()) { <li class="list-group-item text-center text-muted py-3">No data</li> }
+                    @if (!Model.Packages.Any())
+                    {
+                        <li class="list-group-item text-center text-muted py-3">No data</li>
+                    }
                 </ul>
             </div>
         </div>
@@ -98,7 +114,10 @@
                     <div class="progress" style="height:6px;"><div class="progress-bar" style="width:@(Math.Max(pct, 5))%;background:var(--mb-primary);"></div></div>
                 </div>
             }
-            @if (!Model.Specializations.Any()) { <div class="col-12 text-center text-muted py-3">No specializations data</div> }
+            @if (!Model.Specializations.Any())
+            {
+                <div class="col-12 text-center text-muted py-3">No specializations data</div>
+            }
         </div>
     </div>
 </div>
