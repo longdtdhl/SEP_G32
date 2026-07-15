@@ -147,6 +147,9 @@ out/
 .next/
 .nuxt/
 
+# Do not ignore dist folders inside wwwroot/lib/
+!**/wwwroot/lib/**/dist/
+
 
 
 ## Cache
