@@ -407,6 +407,99 @@ public class AuthServiceTests
         Assert.True(BCrypt.Net.BCrypt.Verify("NewPass123", user.PasswordHash));
         Assert.Null(user.RefreshToken); // Refresh token invalidated
     }
+    [Fact]
+    public async Task Register_EmptyEmail_Fails()
+    {
+        var dto = new RegisterDto
+        {
+            Email = "", Password = "Password1", ConfirmPassword = "Password1",
+            FullName = "Name", PhoneNumber = "0901234567"
+        };
+        var result = await _sut.RegisterAsync(dto);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task Register_PasswordMismatch_Fails()
+    {
+        var dto = new RegisterDto
+        {
+            Email = "test@test.com", Password = "Password1", ConfirmPassword = "DifferentPassword1",
+            FullName = "Name", PhoneNumber = "0901234567"
+        };
+        var result = await _sut.RegisterAsync(dto);
+        Assert.False(result.Success);
+        Assert.Contains("match", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task Register_DoctorRoleSuccess_CreatesDoctorProfile()
+    {
+        _userRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<User>());
+        _roleRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<Role> { _doctorRole });
+
+        var dto = new RegisterDoctorDto
+        {
+            Email = "doctor@test.com", Password = "Password1", ConfirmPassword = "Password1",
+            FullName = "Doctor Fullname", PhoneNumber = "0901234567",
+            ProfessionalTitle = "Psychologist", Biography = "Bio...", ExperienceYears = 5
+        };
+
+        var result = await _sut.RegisterDoctorAsync(dto);
+
+        Assert.True(result.Success);
+        _userRepoMock.Verify(r => r.AddAsync(It.IsAny<User>(), default), Times.Once);
+        _doctorRepoMock.Verify(r => r.AddAsync(It.IsAny<DoctorProfile>(), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_RoleNotFound_Fails()
+    {
+        _userRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<User>());
+        _roleRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<Role>()); // No roles found
+
+        var dto = new RegisterDto
+        {
+            Email = "new@test.com", Password = "Password1", ConfirmPassword = "Password1",
+            FullName = "Name", PhoneNumber = "0901234567"
+        };
+
+        var result = await _sut.RegisterAsync(dto);
+        Assert.False(result.Success);
+        Assert.Contains("role", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task Login_EmptyEmail_Fails()
+    {
+        var result = await _sut.LoginAsync(new LoginDto { Email = "", Password = "Password1" });
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task Login_EmptyPassword_Fails()
+    {
+        var result = await _sut.LoginAsync(new LoginDto { Email = "test@test.com", Password = "" });
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task Login_DbException_RollsBack()
+    {
+        var user = new User
+        {
+            Email = "test@test.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("CorrectPass1"),
+            FullName = "Test", PhoneNumber = "0901111111",
+            IsEmailVerified = true, Status = UserStatus.Active,
+            Role = _patientRole, RoleId = _patientRole.Id
+        };
+        _userRepoMock.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new List<User> { user });
+        _roleRepoMock.Setup(r => r.GetByIdAsync(_patientRole.Id, default)).ReturnsAsync(_patientRole);
+        _uowMock.Setup(u => u.SaveChangesAsync(default)).ThrowsAsync(new Exception("DB Error"));
+
+        await Assert.ThrowsAsync<Exception>(() => _sut.LoginAsync(new LoginDto { Email = "test@test.com", Password = "CorrectPass1" }));
+    }
 }
 
 public class UserServiceTests

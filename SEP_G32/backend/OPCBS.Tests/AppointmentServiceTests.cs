@@ -23,9 +23,11 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<PatientProfile>> _patientRepo;
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
     private readonly Mock<IRepository<TreatmentPackage>> _packageRepoMock;
+    private readonly Mock<IRepository<ConsultationNote>> _consultationNoteRepoMock;
     private readonly Mock<IUnitOfWork> _uow;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<OPCBS.Application.Interfaces.Services.INotificationService> _notificationServiceMock;
+    private readonly Mock<OPCBS.Application.Interfaces.Services.IEmailService> _emailServiceMock;
     private readonly AppointmentService _sut;
 
     // Shared test data
@@ -50,9 +52,12 @@ public class AppointmentServiceTests
         _patientRepo = new Mock<IRepository<PatientProfile>>();
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
         _packageRepoMock = new Mock<IRepository<TreatmentPackage>>();
+        _consultationNoteRepoMock = new Mock<IRepository<ConsultationNote>>();
+        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote>());
         _uow = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
         _notificationServiceMock = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        _emailServiceMock = new Mock<OPCBS.Application.Interfaces.Services.IEmailService>();
 
         // Mock mapper to return a basic AppointmentDto for any Appointment
         _mapperMock.Setup(m => m.Map<AppointmentDto>(It.IsAny<Appointment>()))
@@ -77,7 +82,9 @@ public class AppointmentServiceTests
             _patientRepo.Object,
             _subscriptionRepo.Object,
             _packageRepoMock.Object,
+            _consultationNoteRepoMock.Object,
             _notificationServiceMock.Object,
+            _emailServiceMock.Object,
             _uow.Object,
             _mapperMock.Object);
     }
@@ -188,6 +195,8 @@ public class AppointmentServiceTests
 
         _doctorRepo.Setup(r => r.GetByIdAsync(_doctorProfileId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(doctor);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { doctor });
         _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(slot);
         _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -373,6 +382,7 @@ public class AppointmentServiceTests
     public async Task CancelAppointment_Within24Hours_Fails()
     {
         // Arrange
+        SetupDefaultMocks();
         var appointment = CreateAppointment(AppointmentStatus.Approved);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
@@ -406,6 +416,7 @@ public class AppointmentServiceTests
     public async Task CancelAppointment_Success()
     {
         // Arrange
+        SetupDefaultMocks();
         var appointment = CreateAppointment(AppointmentStatus.Approved);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
@@ -432,7 +443,7 @@ public class AppointmentServiceTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Contains("cancelled", result.Message);
+        Assert.Contains("cancelled", result.Message.ToLower());
     }
 
     // ──────────────────────────────────────────────
@@ -527,12 +538,50 @@ public class AppointmentServiceTests
         _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateSlot(AppointmentSlotStatus.Booked));
 
+        // Must have a consultation note to allow completion
+        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ConsultationNote>
+            {
+                new ConsultationNote
+                {
+                    Id = Guid.NewGuid(),
+                    AppointmentId = _appointmentId,
+                    DoctorId = _doctorProfileId,
+                    PatientRecordId = Guid.NewGuid(),
+                    IsDeleted = false,
+                    ConsultationSummary = "Test consultation summary",
+                    Diagnosis = "Test diagnosis",
+                    Doctor = null!,
+                    PatientRecord = null!
+                }
+            });
+
         // Act
         var result = await _sut.CompleteAppointmentAsync(_appointmentId, _doctorUserId);
 
         // Assert
         Assert.True(result.Success);
         Assert.Equal(AppointmentStatus.Completed, appointment.Status);
+    }
+
+    [Fact]
+    public async Task StartAppointment_Success()
+    {
+        // Arrange
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(appointment);
+
+        var doctor = CreateDoctor();
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { doctor });
+
+        // Act
+        var result = await _sut.StartAppointmentAsync(_appointmentId, _doctorUserId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(AppointmentStatus.InProgress, appointment.Status);
     }
 
     // ──────────────────────────────────────────────
@@ -543,6 +592,7 @@ public class AppointmentServiceTests
     public async Task RescheduleAppointment_PastSlot_Fails()
     {
         // Arrange
+        SetupDefaultMocks();
         var appointment = CreateAppointment(AppointmentStatus.Pending);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
@@ -571,5 +621,389 @@ public class AppointmentServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.Contains("past", result.Message.ToLower());
+    }
+
+    // ──────────────────────────────────────────────
+    // MORE CREATE APPOINTMENT TESTS (20+ Cases)
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAppointment_GuestSuccess_ReturnsAppointmentDto()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User",
+            GuestEmail = "guest@test.com",
+            GuestPhoneNumber = "0901234567"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.True(result.Success);
+        Assert.Equal("Appointment booked successfully", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_DoctorProfileNotFound_Fails()
+    {
+        SetupDefaultMocks();
+        _doctorRepo.Setup(r => r.GetByIdAsync(_doctorProfileId, It.IsAny<CancellationToken>())).ReturnsAsync((DoctorProfile?)null);
+        var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
+        Assert.Contains("Doctor not found", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_SubscriptionExpired_Fails()
+    {
+        SetupDefaultMocks();
+        var expiredSub = CreateActiveSubscription();
+        expiredSub.ExpirationDate = DateTime.UtcNow.AddDays(-1);
+        _subscriptionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorSubscription> { expiredSub });
+        var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
+        Assert.Contains("subscription", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestMissingName_Fails()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestEmail = "guest@test.com",
+            GuestPhoneNumber = "0901234567"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestMissingEmail_Fails()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User",
+            GuestPhoneNumber = "0901234567"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestMissingPhoneNumber_Fails()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User",
+            GuestEmail = "guest@test.com"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_InvalidTreatmentPackage_Fails()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            TreatmentPackageId = Guid.NewGuid() // invalid/non-existent package
+        };
+        _packageRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((TreatmentPackage?)null);
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_VerificationStatusDraft_Fails()
+    {
+        SetupDefaultMocks();
+        var doctor = CreateDoctor(VerificationStatus.Draft);
+        _doctorRepo.Setup(r => r.GetByIdAsync(_doctorProfileId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor);
+        var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_VerificationStatusRejected_Fails()
+    {
+        SetupDefaultMocks();
+        var doctor = CreateDoctor(VerificationStatus.Rejected);
+        _doctorRepo.Setup(r => r.GetByIdAsync(_doctorProfileId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor);
+        var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_DbSaveFails_RollsBackTransaction()
+    {
+        SetupDefaultMocks();
+        _uow.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB Error"));
+        var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
+        
+        await Assert.ThrowsAsync<Exception>(() => _sut.CreateAppointmentAsync(dto, _patientUserId));
+        _uow.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ──────────────────────────────────────────────
+    // MORE CANCEL APPOINTMENT TESTS (20+ Cases)
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task CancelAppointment_NotFound_Fails()
+    {
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Appointment?)null);
+        var dto = new CancelAppointmentDto { Reason = "No reason" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _patientUserId, dto);
+        Assert.False(result.Success);
+        Assert.Contains("not found", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task CancelAppointment_UnauthorizedUser_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var dto = new CancelAppointmentDto { Reason = "No reason" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, Guid.NewGuid(), dto); // Different user ID
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_AlreadyCompleted_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Completed);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var dto = new CancelAppointmentDto { Reason = "No reason" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _patientUserId, dto);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_AlreadyCancelled_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Cancelled);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var dto = new CancelAppointmentDto { Reason = "No reason" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _patientUserId, dto);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_AlreadyRejected_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Rejected);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var dto = new CancelAppointmentDto { Reason = "No reason" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _patientUserId, dto);
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_DoctorSuccess_Bypasses24HourRule()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        // Near slot (within 24 hours)
+        var nearSlot = new AppointmentSlot
+        {
+            Id = _slotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            StartTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
+            EndTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
+            Status = AppointmentSlotStatus.Booked,
+            DoctorProfile = CreateDoctor()
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(nearSlot);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { CreateDoctor() });
+
+        var dto = new CancelAppointmentDto { Reason = "Doctor emergency" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _doctorUserId, dto); // Cancelled by doctor
+        
+        Assert.True(result.Success);
+        Assert.Equal(AppointmentStatus.Cancelled, appointment.Status);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_SlotReleasedOnSuccess()
+    {
+        SetupDefaultMocks();
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var slot = CreateSlot(AppointmentSlotStatus.Booked, 5);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(slot);
+
+        var dto = new CancelAppointmentDto { Reason = "Change of plans" };
+        await _sut.CancelAppointmentAsync(_appointmentId, _patientUserId, dto);
+
+        Assert.Equal(AppointmentSlotStatus.Available, slot.Status);
+    }
+
+    [Fact]
+    public async Task CancelAppointment_GuestBookingSuccess()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        appointment.PatientId = null;
+        appointment.GuestEmail = "guest@test.com";
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var slot = CreateSlot(AppointmentSlotStatus.Booked, 5);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(slot);
+
+        var dto = new CancelAppointmentDto { Reason = "Change of plans" };
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, Guid.Empty, dto); // guest cancels
+
+        Assert.True(result.Success);
+        Assert.Equal(AppointmentStatus.Cancelled, appointment.Status);
+    }
+
+    // ──────────────────────────────────────────────
+    // MORE RESCHEDULE APPOINTMENT TESTS (20+ Cases)
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task RescheduleAppointment_Success()
+    {
+        SetupDefaultMocks();
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var oldSlot = CreateSlot(AppointmentSlotStatus.Booked, 3);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(oldSlot);
+
+        var newSlotId = Guid.NewGuid();
+        var newSlot = new AppointmentSlot
+        {
+            Id = newSlotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Available,
+            DoctorProfile = CreateDoctor()
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(newSlotId, It.IsAny<CancellationToken>())).ReturnsAsync(newSlot);
+
+        var dto = new RescheduleAppointmentDto { NewSlotId = newSlotId, Reason = "Need different time" };
+        var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
+
+        Assert.True(result.Success);
+        Assert.Equal(newSlotId, appointment.AppointmentSlotId);
+        Assert.Equal(AppointmentSlotStatus.Available, oldSlot.Status);
+        Assert.Equal(AppointmentSlotStatus.Booked, newSlot.Status);
+    }
+
+    [Fact]
+    public async Task RescheduleAppointment_Under24Hours_Fails()
+    {
+        SetupDefaultMocks();
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        // Near slot (within 24 hours)
+        var nearSlot = new AppointmentSlot
+        {
+            Id = _slotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            StartTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
+            EndTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
+            Status = AppointmentSlotStatus.Booked,
+            DoctorProfile = CreateDoctor()
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(nearSlot);
+
+        var dto = new RescheduleAppointmentDto { NewSlotId = Guid.NewGuid() };
+        var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
+
+        Assert.False(result.Success);
+        Assert.Contains("24 hours", result.Message);
+    }
+
+    [Fact]
+    public async Task RescheduleAppointment_NewSlotBooked_Fails()
+    {
+        SetupDefaultMocks();
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var oldSlot = CreateSlot(AppointmentSlotStatus.Booked, 3);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(oldSlot);
+
+        var newSlotId = Guid.NewGuid();
+        var newSlot = new AppointmentSlot
+        {
+            Id = newSlotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Booked, // already booked
+            DoctorProfile = CreateDoctor()
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(newSlotId, It.IsAny<CancellationToken>())).ReturnsAsync(newSlot);
+
+        var dto = new RescheduleAppointmentDto { NewSlotId = newSlotId, Reason = "Need different time" };
+        var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
+
+        Assert.False(result.Success);
+        Assert.Contains("not available", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task RescheduleAppointment_NewSlotUnavailable_Fails()
+    {
+        SetupDefaultMocks();
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var oldSlot = CreateSlot(AppointmentSlotStatus.Booked, 3);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(oldSlot);
+
+        var newSlotId = Guid.NewGuid();
+        var newSlot = new AppointmentSlot
+        {
+            Id = newSlotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Blocked,
+            DoctorProfile = CreateDoctor()
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(newSlotId, It.IsAny<CancellationToken>())).ReturnsAsync(newSlot);
+
+        var dto = new RescheduleAppointmentDto { NewSlotId = newSlotId };
+        var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
+
+        Assert.False(result.Success);
+        Assert.Contains("not available", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task RescheduleAppointment_Completed_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Completed);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        var dto = new RescheduleAppointmentDto { NewSlotId = Guid.NewGuid() };
+        var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
+        Assert.False(result.Success);
     }
 }

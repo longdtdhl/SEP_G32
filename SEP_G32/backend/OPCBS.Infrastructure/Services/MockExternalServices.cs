@@ -32,6 +32,36 @@ public class MockEmailService : IEmailService
         _logger.LogInformation("[MockEmail] Password reset OTP sent to {To}: {OtpCode}", to, otpCode);
         return Task.CompletedTask;
     }
+
+    public Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Appointment confirmed email to {To}: {Patient} with Dr. {Doctor} on {Date} at {Time}", to, patientName, doctorName, date, time);
+        return Task.CompletedTask;
+    }
+
+    public Task SendAppointmentCancelledEmailAsync(string to, string recipientName, string cancelledBy, string date, string reason, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Appointment cancelled email to {To}: cancelled by {CancelledBy} on {Date}", to, cancelledBy, date);
+        return Task.CompletedTask;
+    }
+
+    public Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Consultation completed email to {To}: {Patient} with Dr. {Doctor}", to, patientName, doctorName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendAppointmentReminderEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Appointment reminder to {To}: {Patient} with Dr. {Doctor} on {Date} at {Time}", to, patientName, doctorName, date, time);
+        return Task.CompletedTask;
+    }
+
+    public Task SendConsultationNoteEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Consultation note email to {To}: from Dr. {Doctor}", to, doctorName);
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>

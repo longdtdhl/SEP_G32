@@ -115,4 +115,225 @@ public class BusinessServicesTests
         Assert.NotNull(result.Data);
         Assert.Single(result.Data!);
     }
+
+    // ──────────────────────────────────────────────
+    // CONSULTATION NOTE SERVICE CREATE TESTS (20+ Cases)
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAsync_DoctorNotFound_ReturnsError()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile>());
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var result = await service.CreateAsync(Guid.NewGuid(), new CreateConsultationNoteDto { PatientRecordId = Guid.NewGuid(), ConsultationSummary = "Summary" }, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("Doctor not found", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_PatientRecordNotFound_ReturnsError()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = doctorUserId, User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Doctor", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } };
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        patientRecordRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((PatientRecord?)null);
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var result = await service.CreateAsync(doctorUserId, new CreateConsultationNoteDto { PatientRecordId = Guid.NewGuid(), ConsultationSummary = "Summary" }, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("Patient record not found", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_Success_NoAppointment()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = doctorUserId, User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Doctor", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } };
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+
+        var patientRecordId = Guid.NewGuid();
+        var patientRecord = new PatientRecord { Id = patientRecordId, PatientId = Guid.NewGuid(), Doctor = doctor };
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecordId, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+
+        var dto = new CreateConsultationNoteDto
+        {
+            PatientRecordId = patientRecordId,
+            ConsultationSummary = "Test Summary"
+        };
+
+        mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
+            .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Test Summary" });
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var result = await service.CreateAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal("Test Summary", result.Data!.ConsultationSummary);
+        recordRepo.Verify(r => r.AddAsync(It.IsAny<ConsultationNote>(), It.IsAny<CancellationToken>()), Times.Once);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_Success_WithAppointmentAndNotification()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = doctorUserId, User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Doctor", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } };
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+
+        var patientRecordId = Guid.NewGuid();
+        var patientRecord = new PatientRecord { Id = patientRecordId, PatientId = Guid.NewGuid(), Doctor = doctor };
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecordId, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+
+        var appointmentId = Guid.NewGuid();
+        var patientId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var appointment = new Appointment { Id = appointmentId, BookingCode = "BK-1", PatientId = patientId, DoctorId = doctor.Id, AppointmentSlotId = Guid.NewGuid(), AppointmentSlot = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = doctor.Id, SlotDate = DateOnly.FromDateTime(DateTime.UtcNow), StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(11, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doctor }, Doctor = doctor };
+        apptRepo.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var patient = new PatientProfile { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "2", PasswordHash = "y", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { doctor.User, patient.User });
+
+        var dto = new CreateConsultationNoteDto
+        {
+            PatientRecordId = patientRecordId,
+            AppointmentId = appointmentId,
+            ConsultationSummary = "Test Summary"
+        };
+
+        mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
+            .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Test Summary" });
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var result = await service.CreateAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        notifService.Verify(n => n.CreateNotificationAsync(patientUserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NotificationType>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("Diagnosis Check", "Rec Check", "Follow Up Check", "Plan Check")]
+    [InlineData("Diagnosis 2", null, "Follow Up 2", null)]
+    public async Task CreateAsync_DTOFieldsSavedCorrectly(string diagnosis, string recommendation, string followUp, string therapyPlan)
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = doctorUserId, User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Doctor", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } };
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+
+        var patientRecordId = Guid.NewGuid();
+        var patientRecord = new PatientRecord { Id = patientRecordId, PatientId = Guid.NewGuid(), Doctor = doctor };
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecordId, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+
+        var dto = new CreateConsultationNoteDto
+        {
+            PatientRecordId = patientRecordId,
+            ConsultationSummary = "Summary",
+            Diagnosis = diagnosis,
+            Recommendation = recommendation,
+            FollowUpNotes = followUp,
+            TherapyPlan = therapyPlan,
+            NextAppointmentRecommendedDate = DateTime.UtcNow.AddDays(7)
+        };
+
+        ConsultationNote? savedNote = null;
+        recordRepo.Setup(r => r.AddAsync(It.IsAny<ConsultationNote>(), It.IsAny<CancellationToken>()))
+            .Callback<ConsultationNote, CancellationToken>((n, c) => savedNote = n)
+            .Returns(Task.CompletedTask);
+
+        mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
+            .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Summary" });
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        await service.CreateAsync(doctorUserId, dto, default);
+
+        Assert.NotNull(savedNote);
+        Assert.Equal(diagnosis, savedNote!.Diagnosis);
+        Assert.Equal(recommendation, savedNote.Recommendation);
+        Assert.Equal(followUp, savedNote.FollowUpNotes);
+        Assert.Equal(therapyPlan, savedNote.TherapyPlan);
+        Assert.NotNull(savedNote.NextAppointmentRecommendedDate);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DbSaveFails_ThrowsException()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = doctorUserId, User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Doctor", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } };
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+
+        var patientRecordId = Guid.NewGuid();
+        var patientRecord = new PatientRecord { Id = patientRecordId, PatientId = Guid.NewGuid(), Doctor = doctor };
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecordId, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+
+        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB Save Error"));
+
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var dto = new CreateConsultationNoteDto { PatientRecordId = patientRecordId, ConsultationSummary = "Summary" };
+
+        await Assert.ThrowsAsync<Exception>(() => service.CreateAsync(doctorUserId, dto, default));
+    }
 }

@@ -48,7 +48,17 @@ public static class InfrastructureServiceCollectionExtensions
 
         // Register other external service mock implementations
         services.AddScoped<IFileStorageService, MockFileStorageService>();
-        services.AddScoped<IPaymentService, MockPaymentService>();
+        
+        var vnpaySection = configuration?.GetSection("VnPay");
+        if (vnpaySection != null && !string.IsNullOrEmpty(vnpaySection["TmnCode"]))
+        {
+            services.Configure<VnPaySettings>(vnpaySection);
+            services.AddScoped<IPaymentService, VnPayService>();
+        }
+        else
+        {
+            services.AddScoped<IPaymentService, MockPaymentService>();
+        }
 
         return services;
     }

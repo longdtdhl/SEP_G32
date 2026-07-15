@@ -1,4 +1,4 @@
-﻿@page "{id:guid}"
+@page "{id:guid}"
 @model OPCBS.Web.Pages.Patient.Appointments.DetailsModel
 @{
     ViewData["Title"] = "Appointment Details";
@@ -33,7 +33,7 @@
         <div class="appointment-status-banner status-pending">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-hourglass-split"></i>
-                <span><strong>Pending Confirmation</strong> — Doctor sẽ review and response soon.</span>
+                <span><strong>Pending Confirmation</strong> — The doctor will review and respond shortly.</span>
             </div>
         </div>
     }
@@ -42,7 +42,7 @@
         <div class="appointment-status-banner status-approved">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-check-circle-fill"></i>
-                <span><strong>Confirmed</strong> — Appointment your đã được doctor confirm.</span>
+                <span><strong>Confirmed</strong> — Your appointment has been confirmed by the doctor.</span>
             </div>
         </div>
     }
@@ -52,7 +52,7 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-patch-check-fill"></i>
-                    <span><strong>Completed</strong> — Buổi consultation đã kết thúc.</span>
+                    <span><strong>Completed</strong> — Your consultation session has ended.</span>
                 </div>
                 <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-warning">
                     <i class="bi bi-star me-1"></i>Write Review
@@ -74,7 +74,7 @@
         <div class="appointment-status-banner status-rejected">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-x-octagon-fill"></i>
-                <span><strong>Rejected</strong> — Doctor đã rejected appointment this.</span>
+                <span><strong>Rejected</strong> — The doctor has declined this appointment request.</span>
             </div>
         </div>
     }
@@ -144,7 +144,7 @@
                                 <div class="detail-info-box">
                                     <div class="detail-info-icon"><i class="bi bi-wallet2"></i></div>
                                     <div>
-                                        <small class="text-muted d-block">Fee consultation</small>
+                                        <small class="text-muted d-block">Consultation Fee</small>
                                         <strong>@apt.Fee?.ToString("N0") VND</strong>
                                     </div>
                                 </div>
@@ -154,7 +154,7 @@
 
                     <!-- Psychometric Test Section -->
                     <div class="mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">
-                        <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Review health mental before appointment session</h6>
+                        <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Mental Health Assessment</h6>
                         @if (Model.PsychometricSubmission != null)
                         {
                             <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -163,11 +163,11 @@
                                         <span class="badge bg-success-subtle text-success">Completed</span>
                                         <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
                                     </div>
-                                    <small class="text-muted d-block">Completed lúc: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")</small>
+                                    <small class="text-muted d-block">Completed at: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")</small>
                                     <span class="text-secondary d-block mt-1">Result: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Total Score: @Model.PsychometricSubmission.TotalScore)</span>
                                 </div>
                                 <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-bar-chart-fill me-1"></i>Xem biểu đồ chi tiết
+                                    <i class="bi bi-bar-chart-fill me-1"></i>View Detailed Results
                                 </a>
                             </div>
                         }
@@ -177,15 +177,15 @@
                                 <div class="d-flex align-items-start gap-2 mb-2">
                                     <i class="bi bi-info-circle-fill text-warning mt-1"></i>
                                     <div>
-                                        <strong>Khuyến nghị làm bài check psyforlogy before appointment session</strong>
-                                        <p class="mb-0 text-muted" style="font-size: 0.875rem;">Để doctor hiểu rõ more về tình trạng psyforlogy mental your before buổi consultation, bạn hãy làm bài reviews nhanh dưới here.</p>
+                                        <strong>We recommend completing a mental health assessment before your session</strong>
+                                        <p class="mb-0 text-muted" style="font-size: 0.875rem;">This helps your doctor better understand your current mental health status before the consultation.</p>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2 flex-wrap mt-2">
                                     @foreach (var test in Model.AvailableTests)
                                     {
                                         <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-primary">
-                                            <i class="bi bi-pencil-square me-1"></i>Làm bài test: @test.Title
+                                            <i class="bi bi-pencil-square me-1"></i>Take Test: @test.Title
                                         </a>
                                     }
                                 </div>
@@ -193,7 +193,7 @@
                         }
                         else
                         {
-                            <p class="text-muted small">None bài test psyforlogy nào được làm for appointment this.</p>
+                            <p class="text-muted small">No mental health assessments were completed for this appointment.</p>
                         }
                     </div>
 
@@ -234,7 +234,7 @@
                             <i class="bi bi-star me-1"></i>Rate Doctor
                         </a>
                         <a asp-page="/Patient/ConsultationRecords/Index" class="btn btn-outline-primary">
-                            <i class="bi bi-file-medical me-1"></i>View Profile consultation
+                            <i class="bi bi-file-medical me-1"></i>View Consultation Records
                         </a>
                     }
 
@@ -260,9 +260,9 @@
                 <div class="card-body p-4">
                     <h6 class="mb-3"><i class="bi bi-lightbulb me-2" style="color:var(--mb-warning);"></i>Tips</h6>
                     <ul class="list-unstyled mb-0" style="font-size:0.8125rem;color:var(--mb-text-secondary);line-height:1.8;">
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Đến đúng giờ to buổi consultation effective</li>
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Chuẩn bị before the câu hỏi muốn trao đổi</li>
-                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Cancel before 24h nếu không thể tham dự</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Arrive on time for an effective consultation</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Prepare your questions in advance</li>
+                        <li><i class="bi bi-check2 me-2" style="color:var(--mb-primary);"></i>Cancel at least 24 hours before if you cannot attend</li>
                     </ul>
                 </div>
             </div>
@@ -281,15 +281,27 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="text-muted">Bạn có chắc chắn muốn hủy appointment with <strong>@apt.DoctorName</strong> ando ngày <strong>@apt.AppointmentDate</strong>?</p>
+                            <p class="text-muted">Are you sure you want to cancel the appointment with <strong>@apt.DoctorName</strong> on <strong>@apt.AppointmentDate</strong>?</p>
                             <div class="mb-3">
-                                <label class="form-label">Cancellation Reason <span class="text-muted">(optional)</span></label>
-                                <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Enter lý do hủy..." style="border-radius:10px;"></textarea>
+                                <label class="form-label fw-semibold">Cancellation Reason</label>
+                                <select class="form-select mb-2" id="cancelCategory" onchange="document.getElementById('cancelReasonText').placeholder = this.value === 'Other' ? 'Please specify your reason...' : 'Additional details (optional)';">
+                                    <option value="" disabled selected>Select a reason...</option>
+                                    <option value="Schedule Conflict">Schedule Conflict</option>
+                                    <option value="Feeling Better">Feeling Better</option>
+                                    <option value="Financial Reasons">Financial Reasons</option>
+                                    <option value="Found Another Doctor">Found Another Doctor</option>
+                                    <option value="Personal Emergency">Personal Emergency</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <textarea asp-for="CancelReason" id="cancelReasonText" class="form-control" rows="3" placeholder="Additional details (optional)" style="border-radius:10px;"></textarea>
+                            </div>
+                            <div class="alert alert-info py-2 small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>Cancellations must be made at least 24 hours before the scheduled appointment time.
                             </div>
                         </div>
                         <div class="modal-footer border-0 pt-0">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Confirm hủy</button>
+                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Confirm Cancellation</button>
                         </div>
                     </form>
                 </div>
@@ -303,8 +315,8 @@ else
         <div class="mb-3">
             <i class="bi bi-calendar-x" style="font-size:3rem;color:var(--mb-text-muted);"></i>
         </div>
-        <h5>Not found appointment</h5>
-        <p class="text-muted">Appointment this không tồn at hoặc đã bị xóa.</p>
-        <a asp-page="Index" class="btn btn-primary mt-2"><i class="bi bi-arrow-left me-1"></i>Back danh sách</a>
+        <h5>Appointment Not Found</h5>
+        <p class="text-muted">This appointment does not exist or has been removed.</p>
+        <a asp-page="Index" class="btn btn-primary mt-2"><i class="bi bi-arrow-left me-1"></i>Back to Appointments</a>
     </div>
 }

@@ -114,11 +114,17 @@ public class AppointmentsController : ControllerBase
     /// <summary>GET /api/v1/appointments/doctor - Doctor own appointments</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("doctor")]
-    public async Task<IActionResult> GetDoctorAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
+    public async Task<IActionResult> GetDoctorAppointments(
+        [FromQuery] int page = 1, 
+        [FromQuery] int pageSize = 10, 
+        [FromQuery] string? status = null, 
+        [FromQuery] string? search = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _apptService.GetDoctorAppointmentsAsync(userId.Value, page, pageSize);
+        var result = await _apptService.GetDoctorAppointmentsAsync(userId.Value, page, pageSize, status, search, fromDate, toDate);
         return Ok(result);
     }
 
@@ -145,6 +151,17 @@ public class AppointmentsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _apptService.RejectAppointmentAsync(appointmentId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/start/{id} - Doctor starts appointment</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("start/{appointmentId:guid}")]
+    public async Task<IActionResult> StartAppointment(Guid appointmentId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.StartAppointmentAsync(appointmentId, userId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

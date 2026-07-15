@@ -61,10 +61,9 @@ public class SmtpEmailService : IEmailService
         }
     }
 
-    public async Task SendOtpEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default)
+    private string BuildEmailTemplate(string headerTitle, string headerSubtitle, string headerGradient, string bodyHtml)
     {
-        var subject = "🔐 MindBridge - Mã xác nhận đăng ký";
-        var htmlBody = $@"
+        return $@"
 <!DOCTYPE html>
 <html>
 <head>
@@ -72,91 +71,144 @@ public class SmtpEmailService : IEmailService
     <style>
         body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }}
         .container {{ max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }}
-        .header {{ background: linear-gradient(135deg, #2d6a4f 0%, #40916c 100%); padding: 32px; text-align: center; }}
+        .header {{ background: linear-gradient(135deg, {headerGradient}); padding: 32px; text-align: center; }}
         .header h1 {{ color: #fff; margin: 0; font-size: 24px; }}
         .header p {{ color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px; }}
-        .body {{ padding: 32px; text-align: center; }}
-        .otp-box {{ background: #f0fdf4; border: 2px dashed #40916c; border-radius: 12px; padding: 20px; margin: 24px 0; }}
-        .otp-code {{ font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #2d6a4f; }}
+        .body {{ padding: 32px; }}
         .info {{ color: #64748b; font-size: 14px; line-height: 1.6; }}
-        .warning {{ background: #fff7ed; border-radius: 8px; padding: 12px 16px; margin-top: 20px; font-size: 13px; color: #9a3412; }}
         .footer {{ padding: 20px 32px; background: #f8faf9; text-align: center; font-size: 12px; color: #94a3b8; }}
     </style>
 </head>
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>🌿 MindBridge</h1>
-            <p>Connecting Minds, Supporting Wellbeing</p>
+            <h1>{headerTitle}</h1>
+            <p>{headerSubtitle}</p>
         </div>
         <div class='body'>
-            <h2 style='color:#1e293b;margin:0 0 8px;'>Xác nhận email của bạn</h2>
-            <p class='info'>Chào bạn! Vui lòng sử dụng mã OTP dưới đây để hoàn tất đăng ký tài khoản MindBridge.</p>
-            <div class='otp-box'>
-                <div class='otp-code'>{otpCode}</div>
-            </div>
-            <p class='info'>Mã này có hiệu lực trong <strong>10 phút</strong>.</p>
-            <div class='warning'>
-                ⚠️ Không chia sẻ mã này với bất kỳ ai. MindBridge không bao giờ yêu cầu mã OTP qua điện thoại.
-            </div>
+            {bodyHtml}
         </div>
         <div class='footer'>
-            <p>© 2026 MindBridge. All rights reserved.</p>
-            <p>Nếu bạn không yêu cầu email này, vui lòng bỏ qua.</p>
+            <p>&copy; 2026 MindBridge. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>";
+    }
 
-        await SendEmailAsync(to, subject, htmlBody, cancellationToken);
+    public async Task SendOtpEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default)
+    {
+        var subject = "🔐 MindBridge - Email Verification Code";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;text-align:center;'>Verify Your Email</h2>
+            <p class='info' style='text-align:center;'>Welcome! Please use the OTP code below to complete your MindBridge registration.</p>
+            <div style='background:#f0fdf4; border:2px dashed #40916c; border-radius:12px; padding:20px; margin:24px 0; text-align:center;'>
+                <div style='font-size:36px; font-weight:700; letter-spacing:8px; color:#2d6a4f;'>{otpCode}</div>
+            </div>
+            <p class='info' style='text-align:center;'>This code is valid for <strong>10 minutes</strong>.</p>
+            <div style='background:#fff7ed; border-radius:8px; padding:12px 16px; margin-top:20px; font-size:13px; color:#9a3412;'>
+                ⚠️ Do not share this code with anyone. MindBridge will never ask for your OTP via phone.
+            </div>";
+        var html = BuildEmailTemplate("🌿 MindBridge", "Connecting Minds, Supporting Wellbeing", "#2d6a4f 0%, #40916c 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
     }
 
     public async Task SendPasswordResetEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default)
     {
-        var subject = "🔑 MindBridge - Đặt lại mật khẩu";
-        var htmlBody = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <style>
-        body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }}
-        .container {{ max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }}
-        .header {{ background: linear-gradient(135deg, #b45309 0%, #d97706 100%); padding: 32px; text-align: center; }}
-        .header h1 {{ color: #fff; margin: 0; font-size: 24px; }}
-        .header p {{ color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px; }}
-        .body {{ padding: 32px; text-align: center; }}
-        .otp-box {{ background: #fffbeb; border: 2px dashed #d97706; border-radius: 12px; padding: 20px; margin: 24px 0; }}
-        .otp-code {{ font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #b45309; }}
-        .info {{ color: #64748b; font-size: 14px; line-height: 1.6; }}
-        .warning {{ background: #fef2f2; border-radius: 8px; padding: 12px 16px; margin-top: 20px; font-size: 13px; color: #991b1b; }}
-        .footer {{ padding: 20px 32px; background: #f8faf9; text-align: center; font-size: 12px; color: #94a3b8; }}
-    </style>
-</head>
-<body>
-    <div class='container'>
-        <div class='header'>
-            <h1>🔑 MindBridge</h1>
-            <p>Yêu cầu đặt lại mật khẩu</p>
-        </div>
-        <div class='body'>
-            <h2 style='color:#1e293b;margin:0 0 8px;'>Đặt lại mật khẩu</h2>
-            <p class='info'>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Sử dụng mã OTP dưới đây:</p>
-            <div class='otp-box'>
-                <div class='otp-code'>{otpCode}</div>
+        var subject = "🔑 MindBridge - Password Reset";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;text-align:center;'>Reset Your Password</h2>
+            <p class='info' style='text-align:center;'>We received a request to reset the password for your account. Use the OTP code below:</p>
+            <div style='background:#fffbeb; border:2px dashed #d97706; border-radius:12px; padding:20px; margin:24px 0; text-align:center;'>
+                <div style='font-size:36px; font-weight:700; letter-spacing:8px; color:#b45309;'>{otpCode}</div>
             </div>
-            <p class='info'>Mã này có hiệu lực trong <strong>10 phút</strong>.</p>
-            <div class='warning'>
-                🚨 Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này và đảm bảo tài khoản của bạn an toàn.
-            </div>
-        </div>
-        <div class='footer'>
-            <p>© 2026 MindBridge. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>";
+            <p class='info' style='text-align:center;'>This code is valid for <strong>10 minutes</strong>.</p>
+            <div style='background:#fef2f2; border-radius:8px; padding:12px 16px; margin-top:20px; font-size:13px; color:#991b1b;'>
+                🚨 If you did not request a password reset, please ignore this email and ensure your account is secure.
+            </div>";
+        var html = BuildEmailTemplate("🔑 MindBridge", "Password Reset Request", "#b45309 0%, #d97706 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
 
-        await SendEmailAsync(to, subject, htmlBody, cancellationToken);
+    public async Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default)
+    {
+        var subject = "✅ MindBridge - Appointment Confirmed";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Appointment Confirmed</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, your appointment has been confirmed!</p>
+            <div style='background:#f0fdf4; border-radius:12px; padding:20px; margin:20px 0;'>
+                <table style='width:100%; font-size:14px;'>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Doctor</td><td style='font-weight:600;'>Dr. {doctorName}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Date</td><td style='font-weight:600;'>{date}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Time</td><td style='font-weight:600;'>{time}</td></tr>
+                </table>
+            </div>
+            <p class='info'>Please be on time. If you need to reschedule, please do so at least 24 hours in advance.</p>";
+        var html = BuildEmailTemplate("✅ MindBridge", "Your appointment is confirmed", "#166534 0%, #22c55e 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
+
+    public async Task SendAppointmentCancelledEmailAsync(string to, string recipientName, string cancelledBy, string date, string reason, CancellationToken cancellationToken = default)
+    {
+        var subject = "🚫 MindBridge - Appointment Cancelled";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Appointment Cancelled</h2>
+            <p class='info'>Hi <strong>{recipientName}</strong>, the following appointment has been cancelled:</p>
+            <div style='background:#fef2f2; border-radius:12px; padding:20px; margin:20px 0;'>
+                <table style='width:100%; font-size:14px;'>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Date</td><td style='font-weight:600;'>{date}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Cancelled By</td><td style='font-weight:600;'>{cancelledBy}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Reason</td><td style='font-weight:600;'>{reason}</td></tr>
+                </table>
+            </div>
+            <p class='info'>If you have any questions, please contact us through the platform.</p>";
+        var html = BuildEmailTemplate("🚫 MindBridge", "Appointment cancellation notice", "#991b1b 0%, #ef4444 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
+
+    public async Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default)
+    {
+        var subject = "🎉 MindBridge - Consultation Completed";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Consultation Completed</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, your consultation with <strong>Dr. {doctorName}</strong> has been completed.</p>
+            <div style='background:#f0fdf4; border-radius:12px; padding:20px; margin:20px 0; text-align:center;'>
+                <p style='font-size:16px; color:#166534; font-weight:600; margin:0;'>✅ Your consultation records are now available</p>
+            </div>
+            <p class='info'>Please log in to your MindBridge account to view your consultation notes and recommendations. Don't forget to leave a review for your doctor!</p>";
+        var html = BuildEmailTemplate("🎉 MindBridge", "Your consultation is complete", "#166534 0%, #22c55e 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
+
+    public async Task SendAppointmentReminderEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default)
+    {
+        var subject = "⏰ MindBridge - Appointment Reminder";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Appointment Reminder</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, this is a reminder that your appointment is coming up soon!</p>
+            <div style='background:#eff6ff; border-radius:12px; padding:20px; margin:20px 0;'>
+                <table style='width:100%; font-size:14px;'>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Doctor</td><td style='font-weight:600;'>Dr. {doctorName}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Date</td><td style='font-weight:600;'>{date}</td></tr>
+                    <tr><td style='color:#64748b; padding:6px 0;'>Time</td><td style='font-weight:600;'>{time}</td></tr>
+                </table>
+            </div>
+            <p class='info'>Please make sure to be available at the scheduled time. If you need to cancel, please do so at least 24 hours in advance.</p>";
+        var html = BuildEmailTemplate("⏰ MindBridge", "Your appointment is coming up", "#1e40af 0%, #3b82f6 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
+
+    public async Task SendConsultationNoteEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default)
+    {
+        var subject = "📋 MindBridge - New Consultation Note";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Consultation Note Available</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, <strong>Dr. {doctorName}</strong> has created a consultation note for your recent session.</p>
+            <div style='background:#f0fdf4; border-radius:12px; padding:20px; margin:20px 0; text-align:center;'>
+                <p style='font-size:16px; color:#166534; font-weight:600; margin:0;'>📋 Log in to view your consultation details</p>
+            </div>
+            <p class='info'>Your consultation note includes diagnosis, recommendations, and follow-up instructions. Please review it carefully.</p>";
+        var html = BuildEmailTemplate("📋 MindBridge", "New consultation note from your doctor", "#166534 0%, #22c55e 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
     }
 }

@@ -11,6 +11,7 @@ public class SubscriptionDto
     public DateTime EndDate { get; set; }
     public decimal AmountPaid { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? PaymentUrl { get; set; }
 }
 
 public class CreateSubscriptionDto

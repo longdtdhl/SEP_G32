@@ -177,6 +177,7 @@ public class SubscriptionDto
     public DateTime StartDate { get; set; }
     public DateTime ExpirationDate { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? PaymentUrl { get; set; }
 }
 
 public class SpecializationDto

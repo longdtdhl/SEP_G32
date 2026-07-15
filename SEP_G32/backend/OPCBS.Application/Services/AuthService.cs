@@ -56,6 +56,8 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Email already exists");
         if (allUsers.Any(u => u.PhoneNumber == dto.PhoneNumber))
             return ApiResponse<AuthResponseDto>.ErrorResponse("Phone number already exists");
+        if (dto.Password != dto.ConfirmPassword)
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Passwords do not match.");
 
         var allRoles = await _roleRepo.GetAllAsync(ct);
         var patientRole = allRoles.FirstOrDefault(r => r.Name == RoleConstants.Patient);

@@ -54,6 +54,9 @@ public static class ApiRoutes
     // Subscriptions
     public const string Subscriptions = $"{Base}/subscriptions";
 
+    // Payments
+    public const string Payments = $"{Base}/payments";
+
     // Notifications
     public const string Notifications = $"{Base}/notifications";
 

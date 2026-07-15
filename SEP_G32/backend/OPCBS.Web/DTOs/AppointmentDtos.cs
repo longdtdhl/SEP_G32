@@ -1,6 +1,6 @@
 namespace OPCBS.Web.DTOs;
 
-// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=Cancelled, 4=Completed, 5=NoShow
+// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -26,9 +26,9 @@ public class AppointmentDto
         0 => "Pending",
         1 => "Approved",
         2 => "Rejected",
-        3 => "Cancelled",
+        3 => "In Progress",
         4 => "Completed",
-        5 => "No Show",
+        5 => "Cancelled",
         _ => "Unknown"
     };
 
@@ -56,6 +56,7 @@ public class AppointmentListItemDto
     public string? Specialization { get; set; }
     public string? AppointmentDate { get; set; }
     public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
     public int Status { get; set; }
     public decimal? Fee { get; set; }
     public Guid? TreatmentPackageId { get; set; }
@@ -65,9 +66,9 @@ public class AppointmentListItemDto
         0 => "Pending",
         1 => "Approved",
         2 => "Rejected",
-        3 => "Cancelled",
+        3 => "In Progress",
         4 => "Completed",
-        5 => "No Show",
+        5 => "Cancelled",
         _ => "Unknown"
     };
 

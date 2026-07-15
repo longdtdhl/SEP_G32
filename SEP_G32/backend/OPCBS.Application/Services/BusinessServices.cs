@@ -1241,6 +1241,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly IRepository<ServicePackage> _pkgRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<PaymentTransaction> _paymentRepo;
+    private readonly IPaymentService _paymentService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -1249,6 +1250,7 @@ public class SubscriptionService : ISubscriptionService
         IRepository<ServicePackage> pkgRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<PaymentTransaction> paymentRepo,
+        IPaymentService paymentService,
         IUnitOfWork uow,
         IMapper mapper)
     {
@@ -1256,6 +1258,7 @@ public class SubscriptionService : ISubscriptionService
         _pkgRepo = pkgRepo;
         _doctorRepo = doctorRepo;
         _paymentRepo = paymentRepo;
+        _paymentService = paymentService;
         _uow = uow;
         _mapper = mapper;
     }
@@ -1296,7 +1299,14 @@ public class SubscriptionService : ISubscriptionService
         await _paymentRepo.AddAsync(payment, ct);
         await _uow.SaveChangesAsync(ct);
 
-        // In production, generate VNPay redirect URL here
+        // Generate VNPay redirect URL
+        string paymentUrl = await _paymentService.CreatePaymentUrlAsync(
+            subscription.Id,
+            package.Price,
+            $"Subscribe {package.Name} package",
+            returnUrl,
+            ct);
+
         return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
         {
             Id = subscription.Id,
@@ -1304,7 +1314,8 @@ public class SubscriptionService : ISubscriptionService
             Status = subscription.Status.ToString(),
             StartDate = subscription.StartDate,
             ExpirationDate = subscription.ExpirationDate,
-            CreatedAt = subscription.CreatedAt
+            CreatedAt = subscription.CreatedAt,
+            PaymentUrl = paymentUrl
         }, "Subscription created. Redirect to VNPay for payment.");
     }
 
@@ -1419,17 +1430,42 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task<ApiResponse> ProcessPaymentCallbackAsync(IDictionary<string, string> queryParams, CancellationToken ct)
     {
-        // In production, verify VNPay hash, extract transaction info, update subscription status
-        // For MVP: auto-activate subscription
-        if (queryParams.TryGetValue("vnp_TxnRef", out var txnRef) &&
-            Guid.TryParse(txnRef, out var subscriptionId))
+        var paymentResult = await _paymentService.ProcessCallbackAsync(queryParams, ct);
+        if (!paymentResult.IsSuccess || string.IsNullOrEmpty(paymentResult.TransactionCode))
+        {
+            return ApiResponse.ErrorResponse(paymentResult.Message ?? "Invalid payment callback");
+        }
+
+        if (Guid.TryParse(paymentResult.TransactionCode, out var subscriptionId))
         {
             var sub = await _subRepo.GetByIdAsync(subscriptionId, ct);
             if (sub != null && sub.Status == SubscriptionStatus.PendingPayment)
             {
+                // Deactivate any existing active subscriptions for this doctor
+                var allSubs = await _subRepo.GetAllAsync(ct);
+                var activeSubs = allSubs.Where(s => s.DoctorProfileId == sub.DoctorProfileId && s.Status == SubscriptionStatus.Active).ToList();
+                foreach (var activeSub in activeSubs)
+                {
+                    activeSub.Status = SubscriptionStatus.Expired;
+                    activeSub.UpdatedAt = DateTime.UtcNow;
+                    _subRepo.Update(activeSub);
+                }
+
                 sub.Status = SubscriptionStatus.Active;
                 sub.UpdatedAt = DateTime.UtcNow;
                 _subRepo.Update(sub);
+
+                // Update payment transaction record status to success
+                var allPayments = await _paymentRepo.GetAllAsync(ct);
+                var txn = allPayments.FirstOrDefault(p => p.DoctorSubscriptionId == subscriptionId);
+                if (txn != null)
+                {
+                    txn.PaymentStatus = Domain.Enums.PaymentStatus.Success;
+                    txn.TransactionCode = paymentResult.TransactionCode;
+                    txn.UpdatedAt = DateTime.UtcNow;
+                    _paymentRepo.Update(txn);
+                }
+
                 await _uow.SaveChangesAsync(ct);
                 return ApiResponse.SuccessResponse("Payment processed, subscription activated");
             }

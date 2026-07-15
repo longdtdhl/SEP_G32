@@ -169,4 +169,264 @@ public class PsychometricServiceTests
         Assert.Equal(14 + 14 + 28, response.Data!.TotalScore);
         Assert.Equal("Trầm cảm: Vừa, Lo âu: Vừa, Căng thẳng: Nặng", response.Data.Interpretation);
     }
+
+    // ──────────────────────────────────────────────
+    // MORE PSYCHOMETRIC TEST SUBMISSION TESTS (20+ Cases)
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task SubmitTestAsync_TestNotFound_Fails()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var patientUserId = Guid.NewGuid();
+        var patient = new PatientProfile { Id = Guid.NewGuid(), UserId = patientUserId, User = new User { Email = "p@t.com", FullName = "Pat", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        testRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((PsychometricTest?)null);
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = Guid.NewGuid(), Answers = new List<AnswerDto>() };
+        var response = await service.SubmitTestAsync(submitDto, patientUserId, default);
+
+        Assert.False(response.Success);
+        Assert.Contains("Không tìm thấy bài trắc nghiệm", response.Message);
+    }
+
+    [Fact]
+    public async Task SubmitTestAsync_PatientNotFound_Fails()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var test = new PsychometricTest { Id = Guid.NewGuid(), Title = "PHQ-9", TestType = "PHQ9" };
+        testRepo.Setup(r => r.GetByIdAsync(test.Id, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile>()); // No patients
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = test.Id, Answers = new List<AnswerDto>() };
+        var response = await service.SubmitTestAsync(submitDto, Guid.NewGuid(), default);
+
+        Assert.False(response.Success);
+        Assert.Contains("Không tìm thấy hồ sơ bệnh nhân", response.Message);
+    }
+
+    [Fact]
+    public async Task SubmitTestAsync_EmptyAnswers_Fails()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var testId = Guid.NewGuid();
+        var test = new PsychometricTest { Id = testId, Title = "PHQ-9", TestType = "PHQ9" };
+        var patient = new PatientProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Email = "p@t.com", FullName = "Pat", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+
+        testRepo.Setup(r => r.GetByIdAsync(test.Id, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+
+        var question = new PsychometricQuestion { Id = Guid.NewGuid(), TestId = testId, QuestionNumber = 1, Test = test, QuestionText = "Q1" };
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PsychometricQuestion> { question });
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = test.Id, Answers = new List<AnswerDto>() }; // Empty answers
+        var response = await service.SubmitTestAsync(submitDto, patient.UserId, default);
+
+        Assert.False(response.Success);
+        Assert.Contains("không khớp", response.Message);
+    }
+
+    [Theory]
+    [InlineData(0, "Bình thường / Không trầm cảm")]
+    [InlineData(4, "Bình thường / Không trầm cảm")]
+    [InlineData(5, "Trầm cảm nhẹ")]
+    [InlineData(9, "Trầm cảm nhẹ")]
+    [InlineData(10, "Trầm cảm vừa")]
+    [InlineData(14, "Trầm cảm vừa")]
+    [InlineData(15, "Trầm cảm trung bình nặng")]
+    [InlineData(19, "Trầm cảm trung bình nặng")]
+    [InlineData(20, "Trầm cảm nặng")]
+    [InlineData(27, "Trầm cảm nặng")]
+    public async Task SubmitTestAsync_PHQ9Interpretations(int totalScore, string expectedInterpretation)
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var testId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var test = new PsychometricTest { Id = testId, Title = "PHQ-9", TestType = "PHQ9" };
+        var patient = new PatientProfile { Id = Guid.NewGuid(), UserId = patientUserId, User = new User { Email = "p@t.com", FullName = "Pat", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+
+        var questions = new List<PsychometricQuestion>();
+        var answersDto = new List<AnswerDto>();
+
+        // We distribute the totalScore across 9 questions (each answer score between 0 and 3)
+        int remainingScore = totalScore;
+        for (int i = 0; i < 9; i++)
+        {
+            var qId = Guid.NewGuid();
+            questions.Add(new PsychometricQuestion { Id = qId, TestId = testId, QuestionNumber = i + 1, Test = test, QuestionText = $"Question {i + 1}" });
+
+            int scoreForThisQuestion = Math.Min(remainingScore, 3);
+            remainingScore -= scoreForThisQuestion;
+            answersDto.Add(new AnswerDto { QuestionId = qId, Score = scoreForThisQuestion });
+        }
+
+        testRepo.Setup(r => r.GetByIdAsync(testId, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(questions);
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = testId, Answers = answersDto };
+        var response = await service.SubmitTestAsync(submitDto, patientUserId, default);
+
+        Assert.True(response.Success);
+        Assert.Equal(totalScore, response.Data!.TotalScore);
+        Assert.Equal(expectedInterpretation, response.Data.Interpretation);
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0, "Trầm cảm: Bình thường, Lo âu: Bình thường, Căng thẳng: Bình thường")]
+    [InlineData(8, 6, 12, "Trầm cảm: Bình thường, Lo âu: Bình thường, Căng thẳng: Bình thường")]
+    [InlineData(10, 8, 16, "Trầm cảm: Nhẹ, Lo âu: Nhẹ, Căng thẳng: Nhẹ")]
+    [InlineData(12, 8, 18, "Trầm cảm: Nhẹ, Lo âu: Nhẹ, Căng thẳng: Nhẹ")]
+    [InlineData(14, 10, 20, "Trầm cảm: Vừa, Lo âu: Vừa, Căng thẳng: Vừa")]
+    [InlineData(20, 14, 24, "Trầm cảm: Vừa, Lo âu: Vừa, Căng thẳng: Vừa")]
+    [InlineData(22, 16, 26, "Trầm cảm: Nặng, Lo âu: Nặng, Căng thẳng: Nặng")]
+    [InlineData(26, 18, 32, "Trầm cảm: Nặng, Lo âu: Nặng, Căng thẳng: Nặng")]
+    [InlineData(28, 20, 34, "Trầm cảm: Rất nặng, Lo âu: Rất nặng, Căng thẳng: Rất nặng")]
+    [InlineData(42, 42, 42, "Trầm cảm: Rất nặng, Lo âu: Rất nặng, Căng thẳng: Rất nặng")]
+    public async Task SubmitTestAsync_DASS21Interpretations(int depScore, int anxScore, int strScore, string expectedInterpretation)
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var testId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var test = new PsychometricTest { Id = testId, Title = "DASS-21", TestType = "DASS21" };
+        var patient = new PatientProfile { Id = Guid.NewGuid(), UserId = patientUserId, User = new User { Email = "p@t.com", FullName = "Pat", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+
+        var questions = new List<PsychometricQuestion>();
+        var answersDto = new List<AnswerDto>();
+
+        // DASS21 questions are split equally between Depression, Anxiety, and Stress.
+        // DASS21 scores are calculated as the sum of answers multiplied by 2 (according to standard scale, or let's check DASS21 implementation).
+        // Let's verify how it is implemented in PsychometricService. Let's see: if total score is depScore, then the sum of scores of the 7 depression questions is depScore / 2.
+        int qNum = 1;
+        var categories = new[] { ("Depression", depScore), ("Anxiety", anxScore), ("Stress", strScore) };
+        foreach (var (cat, targetScore) in categories)
+        {
+            int remainingScore = targetScore / 2; // DASS21 multiplies by 2
+            for (int i = 0; i < 7; i++)
+            {
+                var qId = Guid.NewGuid();
+                questions.Add(new PsychometricQuestion { Id = qId, TestId = testId, QuestionNumber = qNum++, Category = cat, Test = test, QuestionText = $"Question {qNum}" });
+                int scoreVal = Math.Min(remainingScore, 3);
+                remainingScore -= scoreVal;
+                answersDto.Add(new AnswerDto { QuestionId = qId, Score = scoreVal });
+            }
+        }
+
+        testRepo.Setup(r => r.GetByIdAsync(testId, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(questions);
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = testId, Answers = answersDto };
+        var response = await service.SubmitTestAsync(submitDto, patientUserId, default);
+
+        Assert.True(response.Success);
+        Assert.Equal(expectedInterpretation, response.Data!.Interpretation);
+    }
+
+    [Fact]
+    public async Task SubmitTestAsync_DbSaveFails_ThrowsException()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var testId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var test = new PsychometricTest { Id = testId, Title = "PHQ-9", TestType = "PHQ9" };
+        var patient = new PatientProfile { Id = Guid.NewGuid(), UserId = patientUserId, User = new User { Email = "p@t.com", FullName = "Pat", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } };
+
+        var questions = new List<PsychometricQuestion>();
+        var answersDto = new List<AnswerDto>();
+
+        for (int i = 0; i < 9; i++)
+        {
+            var qId = Guid.NewGuid();
+            questions.Add(new PsychometricQuestion { Id = qId, TestId = testId, QuestionNumber = i + 1, Test = test, QuestionText = $"Question {i + 1}" });
+            answersDto.Add(new AnswerDto { QuestionId = qId, Score = 1 });
+        }
+
+        testRepo.Setup(r => r.GetByIdAsync(testId, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(questions);
+
+        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB Error"));
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var submitDto = new SubmitTestDto { TestId = testId, Answers = answersDto };
+        await Assert.ThrowsAsync<Exception>(() => service.SubmitTestAsync(submitDto, patientUserId, default));
+    }
 }

@@ -11,6 +11,7 @@ public interface IAppointmentApiService
     Task<(bool Success, string? Error)> RescheduleAsync(Guid id, RescheduleAppointmentDto dto);
     Task<(bool Success, string? Error)> CancelAsync(Guid id, CancelAppointmentDto dto);
     Task<(bool Success, string? Error)> ConfirmAsync(Guid id);
+    Task<(bool Success, string? Error)> StartAsync(Guid id);
     Task<(bool Success, string? Error)> CompleteAsync(Guid id);
     Task<(List<AppointmentListItemDto> Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto);
     Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null);

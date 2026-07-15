@@ -228,6 +228,19 @@ public class SubscriptionApiService : ApiServiceBase, ISubscriptionApiService
         return (data ?? new(), error);
     }
     public async Task<(bool Success, string? Error)> SubscribeAsync(CreateSubscriptionDto dto) => await PostAsync(ApiRoutes.Subscriptions, dto);
+    
+    public async Task<(SubscriptionDto? Data, string? Error)> PurchaseAsync(Guid packageId, string returnUrl)
+    {
+        var (data, error) = await PostAsync<SubscriptionDto>($"{ApiRoutes.Payments}/create-vnpay", new { ServicePackageId = packageId, ReturnUrl = returnUrl });
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> ProcessCallbackAsync(IDictionary<string, string> queryParams)
+    {
+        var queryStr = string.Join("&", queryParams.Select(kv => $"{kv.Key}={System.Net.WebUtility.UrlEncode(kv.Value)}"));
+        var (_, _, error) = await GetAsync<object>($"{ApiRoutes.Payments}/callback?{queryStr}");
+        return (error == null, error);
+    }
 }
 
 // --- Admin ---

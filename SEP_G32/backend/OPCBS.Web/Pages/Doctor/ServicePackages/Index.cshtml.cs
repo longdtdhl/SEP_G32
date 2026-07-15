@@ -33,9 +33,13 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostSubscribeAsync(Guid packageId)
     {
-        var (success, error) = await _subscriptions.SubscribeAsync(new CreateSubscriptionDto { ServicePackageId = packageId });
-        if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Đăng ký gói dịch vụ successfully!";
-        return RedirectToPage();
+        var returnUrl = $"{Request.Scheme}://{Request.Host}/Doctor/Subscriptions/PaymentCallback";
+        var (sub, error) = await _subscriptions.PurchaseAsync(packageId, returnUrl);
+        if (sub == null || string.IsNullOrEmpty(sub.PaymentUrl))
+        {
+            TempData["Error"] = error ?? "Failed to initiate payment. Please try again.";
+            return RedirectToPage();
+        }
+        return Redirect(sub.PaymentUrl);
     }
 }

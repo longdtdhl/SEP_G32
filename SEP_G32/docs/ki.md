@@ -159,3 +159,130 @@ Short Vietnamese words like "cho", "lan", "và" can corrupt C# property names wh
 **Mitigation:** Post-translation fixup script scans all `.cshtml` files for corrupted identifiers and restores them. Always run `dotnet build` after translation passes to catch any namespace/property corruption.
 
 **Remaining Work:** ~228 lines across 34 files still contain Vietnamese characters, mostly in deeply embedded mixed English/Vietnamese strings that require manual per-file editing for complete cleanup.
+
+---
+
+## 8. Doctor Appointment List UI Redesign (Phase 1)
+
+### Design Architecture
+The doctor's appointment list page (`Pages/Doctor/Appointments/Index.cshtml`) was redesigned from a plain table to a card-based layout with the following components:
+
+* **Status Summary Cards:** Four clickable summary cards at the top showing counts for Pending, Approved, Completed, and Cancelled appointments. Clicking a card filters by that status.
+* **Filter Section:** Enhanced filters including Status dropdown, Patient name search, Date From/To range pickers, with a clear-all reset button.
+* **Card-Based Appointment List:** Appointments are grouped by date with each appointment rendered as a horizontal card showing:
+  - Patient avatar (initials-based, gradient background)
+  - Patient name + booking code
+  - Time badge (start — end)
+  - Status badge with color coding
+  - Fee or Package indicator
+  - Quick-action buttons (Approve/Complete/Cancel) as compact icon buttons
+* **Empty State:** Custom empty state with illustration when no appointments match filters.
+
+### Technical Details
+* **Code-behind (`Index.cshtml.cs`):** Makes two API calls — one for filtered paginated data and one unfiltered (pageSize=9999) to compute status counts. Uses `AppointmentFilterDto` with `FromDate` and `ToDate` for date range filtering.
+* **DTO Enhancement:** `AppointmentListItemDto` (both Web and Application layers) now includes `EndTime` property alongside `StartTime`, populated by `EnrichAppointmentListDtosAsync` from `slot.EndTime.ToString("HH:mm")`.
+* **Razor Syntax Note:** Within an `@if` block, declare variables directly (`var grouped = ...;`) — do NOT wrap them in `@{ }` blocks as this causes Razor error `RZ1010`.
+
+---
+
+## 9. Consultation Note Completion Guard (Phase 2)
+
+### Business Rule
+Doctors MUST create a consultation note for an appointment before they can mark it as "Completed". This prevents incomplete clinical records.
+
+### Implementation
+* **Backend Guard (`DoctorAppointmentServices.cs` → `CompleteAppointmentAsync`):** Queries `IRepository<ConsultationNote>` before allowing status transition. If no non-deleted note exists for the appointment, returns error: "Please create a consultation note before completing this appointment."
+* **DI Change:** `AppointmentService` now requires `IRepository<ConsultationNote>` as a constructor parameter. Any code instantiating `AppointmentService` (including unit tests) must pass this dependency.
+* **Frontend Guard (`Details.cshtml`):** When status is Approved:
+  - If `HasConsultationNote` is true → green success alert + enabled "Mark as Completed" button
+  - If false → yellow warning alert + disabled button with tooltip
+  - Always shows appropriate CTA: "View/Edit Consultation Note" or "Create Consultation Note" or "Create Patient Record"
+* **Test Impact:** `CompleteAppointment_Success` test must set up `_consultationNoteRepoMock` to return a note for the appointment. Use `null!` for `required` navigation properties (`Doctor`, `PatientRecord`) that aren't exercised in test logic.
+
+---
+
+## 10. Email Service Expansion Pattern
+
+### Architecture
+* **Interface:** `IEmailService` (in `OPCBS.Application/Interfaces/Services/ExternalServices.cs`) defines typed email methods instead of requiring callers to build HTML.
+* **Implementation:** `SmtpEmailService` (in `OPCBS.Infrastructure/Services/SmtpEmailService.cs`) uses a shared `BuildEmailTemplate(headerTitle, headerSubtitle, headerGradient, bodyHtml)` helper that produces branded, responsive HTML emails.
+* **Mock:** `MockEmailService` (in `MockExternalServices.cs`) logs all email sends to console for development.
+
+### Available Email Methods
+| Method | Trigger |
+|--------|---------|
+| `SendOtpEmailAsync` | Registration verification |
+| `SendPasswordResetEmailAsync` | Password reset request |
+| `SendAppointmentConfirmedEmailAsync` | Doctor approves appointment |
+| `SendAppointmentCancelledEmailAsync` | Either party cancels |
+| `SendAppointmentCompletedEmailAsync` | Doctor completes appointment |
+| `SendAppointmentReminderEmailAsync` | Background reminder service |
+| `SendConsultationNoteEmailAsync` | Doctor creates consultation note |
+
+### Adding New Email Types
+1. Add method signature to `IEmailService` interface
+2. Implement in `SmtpEmailService` using `BuildEmailTemplate()` helper
+3. Add no-op mock in `MockEmailService`
+4. Call from the relevant service method, wrapped in `try/catch`
+
+---
+
+## 11. Appointment Cancellation Flow (Phase 3)
+
+### Business Rules
+* **24-Hour Policy:** Both patients and doctors must cancel at least 24 hours before the scheduled appointment time. The backend enforces this in `CancelAppointmentAsync`.
+* **Slot Release:** Upon cancellation, the appointment slot is set back to `Available`, allowing the time to be rebooked.
+* **Treatment Package Restore:** If the appointment was linked to a treatment package, `RemainingSessions` is incremented back (capped at `SessionQuantity`).
+
+### UI Design
+* **Doctor Side** (`Pages/Doctor/Appointments/Details.cshtml`): Cancel button triggers a Bootstrap modal with:
+  - Confirmation message showing patient name and date
+  - Category dropdown (Schedule Conflict, Emergency, Patient Request, Unavailable, Other)
+  - Free-text textarea for additional details
+  - 24h policy info alert
+* **Patient Side** (`Pages/Patient/Appointments/Details.cshtml`): Similar modal with patient-oriented categories (Schedule Conflict, Feeling Better, Financial Reasons, Found Another Doctor, Personal Emergency, Other).
+
+### Notification Flow
+After cancellation, the system notifies the **other party** (if patient cancels → doctor gets notified, and vice versa) via both:
+1. In-app notification (`INotificationService`)
+2. Email notification (`IEmailService.SendAppointmentCancelledEmailAsync`)
+
+---
+
+## 12. Email Integration into Appointment Lifecycle (Phase 4)
+
+### DI Change
+`AppointmentService` now requires `IEmailService` as a constructor parameter (after `INotificationService`, before `IUnitOfWork`). Unit tests must mock this with `Mock<IEmailService>`.
+
+### Lifecycle Emails Wired
+| Event | Method | Recipient |
+|-------|--------|-----------|
+| Appointment Approved | `ApproveAppointmentAsync` → `SendAppointmentConfirmedEmailAsync` | Patient |
+| Appointment Cancelled | `CancelAppointmentAsync` → `SendAppointmentCancelledEmailAsync` | Other party |
+| Appointment Completed | `CompleteAppointmentAsync` → `SendAppointmentCompletedEmailAsync` | Patient |
+
+### Pattern
+All email calls are placed inside existing `try { ... } catch { }` blocks alongside notification calls. They are fire-and-forget — a failed email will not roll back the appointment state transition.
+
+---
+
+## 13. VNPay Service Package Payment Gateway (Phase 5)
+
+### API Layer
+* `VnPayService.cs` implements `IPaymentService` using the standard VNPay 2.1.0 specification.
+* Generates a request URL containing query parameters sorted alphabetically and signed with HMAC-SHA512 using the merchant hash secret.
+* Signature verification is executed during callbacks and IPN calls by stripping the incoming secure hash and calculating HMAC-SHA512 over the alphabetically sorted remaining params.
+
+### Web / Razor Flow
+* When a doctor registers or renews a service package on `Doctor/ServicePackages/Index.cshtml`, `PurchaseAsync` is called with the package ID and return URL.
+* The API generates the VNPay URL, and the Razor Page redirects the user to the VNPay Sandbox page.
+* Upon payment completion, VNPay redirects the user back to `/Doctor/Subscriptions/PaymentCallback` which queries the API `ProcessCallbackAsync` to verify signatures, deactivate any older subscriptions (Expired), activate the new subscription (Active), and update `PaymentTransaction` to `Success`.
+
+---
+
+## 14. In-Progress Session & Inline Consultation Note Modal (Phase 2 Upgrade)
+
+### Appointment State Machine
+* **InProgress (3)**: Transition action `StartAppointmentAsync` allows a doctor to mark an Approved appointment as "In Progress" when starting consultation.
+* **Completion Guard**: If the session has no Consultation Note, completion is blocked. Instead of redirecting the user to a separate note creation page, the details page triggers a Bootstrap modal (`#createNoteModal`).
+* **Modal Submit & Complete**: The form in the modal allows the doctor to record diagnostic findings, chief complaints, and session notes, then submits to `OnPostCreateNoteAndCompleteAsync` which creates the note record and completes the appointment in a single request.

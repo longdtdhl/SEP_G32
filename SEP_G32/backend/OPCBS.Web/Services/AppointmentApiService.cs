@@ -43,6 +43,9 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Error)> ConfirmAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/approve/{id}");
 
+    public async Task<(bool Success, string? Error)> StartAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Appointments}/start/{id}");
+
     public async Task<(bool Success, string? Error)> CompleteAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/complete/{id}");
 
