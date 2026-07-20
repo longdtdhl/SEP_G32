@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Doctor.VerificationModel
 @{
     ViewData["Title"] = "Doctor Account Verification";
@@ -142,10 +142,45 @@
 
             @if (!string.IsNullOrEmpty(v.CertificateUrl))
             {
+                var certUrl = v.CertificateUrl;
+                var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) 
+                           || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) 
+                           || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                           || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase);
+                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                var isLocalUpload = certUrl.StartsWith("/uploads/");
+                
                 <hr class="my-4" />
-                <div class="text-muted small mb-2">Certificates & Attached Documents</div>
-                <div>
-                    <a href="@v.CertificateUrl" target="_bspreadk" class="btn btn-sm btn-outline-primary px-3"><i class="bi bi-file-earmark-pdf-fill me-1"></i>View Documents attached (PDF/Link)</a>
+                <div class="text-muted small mb-2"><i class="bi bi-award me-1"></i>Certificates & Attached Documents</div>
+
+                <div class="card border bg-light mb-3">
+                    <div class="card-body">
+                        @if (isImage)
+                        {
+                            <div class="text-center mb-3">
+                                <img src="@certUrl" alt="Certificate Document" class="img-fluid rounded shadow-sm" style="max-height: 500px; cursor: pointer;" 
+                                     onclick="window.open(this.src, '_blank')" title="Click to view full size" />
+                            </div>
+                        }
+                        else if (isPdf && isLocalUpload)
+                        {
+                            <div class="ratio ratio-16x9 mb-3">
+                                <iframe src="@certUrl" title="Certificate PDF" class="rounded border"></iframe>
+                            </div>
+                        }
+                        
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <a href="@certUrl" target="_blank" class="btn btn-sm btn-outline-primary px-3">
+                                <i class="bi bi-eye-fill me-1"></i>View Full Document
+                            </a>
+                            <a href="@certUrl" download class="btn btn-sm btn-outline-secondary px-3">
+                                <i class="bi bi-download me-1"></i>Download
+                            </a>
+                            <span class="text-muted small ms-2">
+                                <i class="bi bi-link-45deg me-1"></i>@(certUrl.Length > 60 ? certUrl.Substring(0, 60) + "..." : certUrl)
+                            </span>
+                        </div>
+                    </div>
                 </div>
             }
 

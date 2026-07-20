@@ -48,7 +48,14 @@ public class VerificationModel : PageModel
         }
 
         var (success, error) = await _api.SubmitAsync(Input);
-        if (!success) { Error = error; return Page(); }
+        if (!success)
+        {
+            Error = error;
+            // Reload existing verification data so the page renders correctly
+            var (data, _) = await _api.GetMyVerificationAsync();
+            if (data != null) { Verification = data; HasExisting = true; }
+            return Page();
+        }
         TempData["Success"] = "Verification profile submitted successfully!";
         return RedirectToPage();
     }

@@ -1,16 +1,20 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace OPCBS.Web.Helpers;
 
 public class JwtCookieService
 {
     private readonly IHttpContextAccessor _contextAccessor;
+    private readonly IWebHostEnvironment _env;
     private const string JwtCookieName = "OPCBS.JwtToken";
 
-    public JwtCookieService(IHttpContextAccessor contextAccessor)
+    public JwtCookieService(IHttpContextAccessor contextAccessor, IWebHostEnvironment env)
     {
         _contextAccessor = contextAccessor;
+        _env = env;
     }
 
     public string? GetToken()
@@ -22,11 +26,15 @@ public class JwtCookieService
     {
         if (_contextAccessor.HttpContext == null) return;
 
+        // In development (HTTP), Secure must be false or the browser
+        // will refuse to store the cookie, causing 401 on every API call.
+        var isHttps = _contextAccessor.HttpContext.Request.IsHttps;
+
         _contextAccessor.HttpContext.Response.Cookies.Append(JwtCookieName, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.Strict : SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
     }
