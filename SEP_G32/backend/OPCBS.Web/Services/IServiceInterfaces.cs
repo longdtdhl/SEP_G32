@@ -16,6 +16,7 @@ public interface IScheduleApiService
     Task<(bool Success, string? Error)> ToggleBlockSlotAsync(Guid slotId);
     Task<(AppointmentSlotDto? Data, string? Error)> CreateSlotAsync(CreateSlotDto dto);
     Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
+    Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes);
 }
 
 public interface IPatientRecordApiService

@@ -71,21 +71,22 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.ToggleBlockSlotAsync(slotId);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Updated trạng thái slot successfully.";
+        else TempData["Success"] = "Slot status updated successfully.";
         return RedirectToPage(new { week = Week });
     }
 
-    public async Task<IActionResult> OnPostCreateSlotAsync(string date, string startTime, string endTime)
+    public async Task<IActionResult> OnPostCreateSlotAsync(string date, string startTime, string endTime, string? notes)
     {
         var dto = new CreateSlotDto
         {
             Date = date,
             StartTime = startTime,
-            EndTime = endTime
+            EndTime = endTime,
+            Notes = notes
         };
         var (data, error) = await _api.CreateSlotAsync(dto);
         if (error != null) TempData["Error"] = error;
-        else TempData["Success"] = "Created slot khám successfully.";
+        else TempData["Success"] = "Appointment slot created successfully.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -94,6 +95,14 @@ public class IndexModel : PageModel
         var (success, error) = await _api.DeleteSlotAsync(slotId);
         if (!success) TempData["Error"] = error;
         else TempData["Success"] = "Deleted slot successfully.";
+        return RedirectToPage(new { week = Week });
+    }
+
+    public async Task<IActionResult> OnPostUpdateNotesAsync(Guid slotId, string? notes)
+    {
+        var (success, error) = await _api.UpdateSlotNotesAsync(slotId, notes);
+        if (!success) TempData["Error"] = error;
+        else TempData["Success"] = "Slot notes updated.";
         return RedirectToPage(new { week = Week });
     }
 
@@ -109,11 +118,11 @@ public class IndexModel : PageModel
                 var (success, _) = await _api.DeleteSlotAsync(slot.Id);
                 if (success) deletedCount++;
             }
-            TempData["Success"] = $"Deleted {deletedCount} slot trống. Slot đã khóa và đã đặt được giữ lại.";
+            TempData["Success"] = $"Deleted {deletedCount} available slot(s). Blocked and booked slots were kept.";
         }
         else
         {
-            TempData["Error"] = error ?? "Unable to lấy danh sách slot để reset.";
+            TempData["Error"] = error ?? "Unable to retrieve slot list for reset.";
         }
         return RedirectToPage(new { week = Week });
     }

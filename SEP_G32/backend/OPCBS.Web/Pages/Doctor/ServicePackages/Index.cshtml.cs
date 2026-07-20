@@ -35,11 +35,20 @@ public class IndexModel : PageModel
     {
         var returnUrl = $"{Request.Scheme}://{Request.Host}/Doctor/Subscriptions/PaymentCallback";
         var (sub, error) = await _subscriptions.PurchaseAsync(packageId, returnUrl);
-        if (sub == null || string.IsNullOrEmpty(sub.PaymentUrl))
+        if (sub == null)
         {
             TempData["Error"] = error ?? "Failed to initiate payment. Please try again.";
             return RedirectToPage();
         }
+
+        // Free package — already activated, no redirect needed
+        if (string.IsNullOrEmpty(sub.PaymentUrl))
+        {
+            TempData["Success"] = "Free Trial activated successfully!";
+            return RedirectToPage();
+        }
+
+        // Paid package — redirect to VNPay
         return Redirect(sub.PaymentUrl);
     }
 }

@@ -16,12 +16,16 @@ public class BookModel : PageModel
     [BindProperty(SupportsGet = true)] public Guid? DoctorId { get; set; }
     [BindProperty(SupportsGet = true)] public string? Week { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? TreatmentPackageId { get; set; }
+    [BindProperty(SupportsGet = true)] public bool Returning { get; set; }
+
+    public bool IsReturningPatient { get; set; }
 
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public DoctorDto? Doctor { get; set; }
     public bool IsGuest => !User.Identity?.IsAuthenticated ?? true;
     public string? Error { get; set; }
     public TreatmentPackageDto? TreatmentPackage { get; set; }
+    public bool HasPackageButNotBookingVia { get; set; }
 
     // Week data
     public DateTime WeekStart { get; set; }
@@ -47,21 +51,7 @@ public class BookModel : PageModel
 
     public async Task OnGetAsync()
     {
-        // Auto fill patient info if logged in
-        if (!IsGuest)
-        {
-            try
-            {
-                var (profile, _) = await _authService.GetProfileAsync();
-                if (profile != null)
-                {
-                    Input.GuestName = profile.FullName;
-                    Input.GuestEmail = profile.Email;
-                    Input.GuestPhoneNumber = profile.PhoneNumber;
-                }
-            }
-            catch { }
-        }
+        // Patient fills in their own information — no auto-fill
 
         // Calculate week
         var today = DateTime.Today;
@@ -100,9 +90,26 @@ public class BookModel : PageModel
                     
                     if (activePkg != null)
                     {
-                        TreatmentPackageId = activePkg.Id;
-                        Input.TreatmentPackageId = activePkg.Id;
                         TreatmentPackage = activePkg;
+                        HasPackageButNotBookingVia = true;
+                    }
+                }
+                catch { }
+            }
+
+            // Check if returning patient (skip pre-evaluation)
+            if (!IsGuest && DoctorId.HasValue)
+            {
+                try
+                {
+                    if (Returning)
+                    {
+                        IsReturningPatient = true;
+                    }
+                    else
+                    {
+                        var (isReturning, _) = await _appointmentService.IsReturningAsync(DoctorId.Value);
+                        IsReturningPatient = isReturning;
                     }
                 }
                 catch { }

@@ -62,6 +62,12 @@ public class MockEmailService : IEmailService
         _logger.LogInformation("[MockEmail] Consultation note email to {To}: from Dr. {Doctor}", to, doctorName);
         return Task.CompletedTask;
     }
+
+    public Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Follow-up reminder to {To}: {Patient} with Dr. {Doctor} on {Date}", to, patientName, doctorName, date);
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>

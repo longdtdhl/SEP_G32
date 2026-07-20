@@ -14,6 +14,12 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)] public new int Page { get; set; } = 1;
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
 
+    // Status summary counts
+    public int PendingCount { get; set; }
+    public int ApprovedCount { get; set; }
+    public int CompletedCount { get; set; }
+    public int TotalCount { get; set; }
+
     public IndexModel(IAppointmentApiService service) { _service = service; }
 
     public async Task OnGetAsync()
@@ -25,6 +31,13 @@ public class IndexModel : PageModel
             var (data, pagination, _) = await _service.GetMyAppointmentsAsync(filter);
             Appointments = data;
             Pagination = pagination;
+
+            // Load all appointments for status counts
+            var (allData, _, _) = await _service.GetMyAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 9999 });
+            PendingCount = allData?.Count(a => a.Status == 0) ?? 0;
+            ApprovedCount = allData?.Count(a => a.Status == 1 || a.Status == 3) ?? 0;
+            CompletedCount = allData?.Count(a => a.Status == 4) ?? 0;
+            TotalCount = allData?.Count ?? 0;
         }
         catch { }
     }

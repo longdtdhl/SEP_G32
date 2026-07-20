@@ -286,3 +286,128 @@ All email calls are placed inside existing `try { ... } catch { }` blocks alongs
 * **InProgress (3)**: Transition action `StartAppointmentAsync` allows a doctor to mark an Approved appointment as "In Progress" when starting consultation.
 * **Completion Guard**: If the session has no Consultation Note, completion is blocked. Instead of redirecting the user to a separate note creation page, the details page triggers a Bootstrap modal (`#createNoteModal`).
 * **Modal Submit & Complete**: The form in the modal allows the doctor to record diagnostic findings, chief complaints, and session notes, then submits to `OnPostCreateNoteAndCompleteAsync` which creates the note record and completes the appointment in a single request.
+
+---
+
+## 15. Follow-up Appointment Workflow & Doctor Detail Enrichment
+
+### Ngữ cảnh & Nghiệp vụ
+Hệ thống cần hỗ trợ tái khám: khi bác sĩ ghi nhận ngày tái khám trong Consultation Note (`NextAppointmentRecommendedDate`), bệnh nhân sẽ nhận email nhắc nhở 1 ngày trước ngày hẹn. Ngoài ra, bệnh nhân đã từng khám bác sĩ (returning patient) không cần điền lại thông tin Pre-Appointment Evaluation, và có thêm nút "Book Follow-up" trên trang chi tiết lịch hẹn đã hoàn thành.
+
+### Returning Patient Detection
+* **Backend:** `GetVisitCountAsync(patientUserId, doctorProfileId)` đếm số lượng appointment có `Status = Completed` giữa patient và doctor. `IsReturningPatientAsync` trả về `true` nếu `VisitCount > 0`.
+* **API Endpoints:** `GET /api/v1/appointments/visit-count/{doctorId}` và `GET /api/v1/appointments/is-returning/{doctorId}` (Patient role).
+* **Web Frontend:**
+  * Patient `Details.cshtml` hiển thị badge "Visit #N" cạnh specialization chip và nút "Book Follow-up" (chỉ khi `IsReturningPatient = true` và status = Completed).
+  * Nút "Book Follow-up" redirect đến `/Appointment/Book?doctorId=X&returning=true`.
+
+### Skip Pre-Evaluation cho Returning Patient
+* `Book.cshtml.cs` nhận query parameter `Returning=true` hoặc gọi `IsReturningAsync` để set `IsReturningPatient`.
+* `Book.cshtml` ẩn section Pre-Appointment Evaluation (Symptoms, MedicalHistory, Expectations) và hiển thị banner "Welcome back!" thay thế.
+
+### Follow-up Reminder (Background Service)
+* **Trigger:** `AppointmentReminderService.CheckAndSendFollowUpRemindersAsync` chạy mỗi 5 phút, quét `ConsultationNote` có `NextAppointmentRecommendedDate.Date = tomorrow (UTC)`.
+* **Actions:** Gửi in-app notification + email (`SendFollowUpReminderEmailAsync`) cho patient.
+* **Deduplication:** Sử dụng `RelatedEntityType = "FollowUpReminder"` + `RelatedEntityId = note.Id` trong bảng Notification để tránh gửi trùng.
+
+### Doctor Appointment Detail Enrichment
+* `EnrichAppointmentDtoAsync` populate thêm:
+  * `Fee` — từ `AppointmentSlot.Price`
+  * `TreatmentPackageName` — từ `TreatmentPackage.Name` (nếu có `TreatmentPackageId`)
+  * `VisitCount` — đếm completed appointments cùng patient + doctor
+* Doctor `Details.cshtml` hiển thị:
+  * Treatment Package badge (nếu có)
+  * Visit Count badge ("First consultation" hoặc "Visit #N")
+
+### Các file liên quan
+* `IAppointmentService.cs`, `DoctorAppointmentServices.cs`, `AppointmentsController.cs` (Backend)
+* `ExternalServices.cs`, `SmtpEmailService.cs`, `MockExternalServices.cs` (Email)
+* `AppointmentReminderService.cs` (Background Job)
+* `AppointmentDtos.cs` (Backend + Web), `IAppointmentApiService.cs`, `AppointmentApiService.cs` (Web)
+* Patient `Details.cshtml[.cs]`, `Book.cshtml[.cs]`, Doctor `Details.cshtml` (Razor Pages)
+
+---
+
+## 16. Doctor Booking Flow Improvements (6 fixes)
+
+### 16.1 Trường ngày tái khám trong Consultation Note Modal
+* Modal `#createNoteModal` trong Doctor `Details.cshtml` đã thêm input `date` cho `NoteInput.NextAppointmentRecommendedDate`.
+* DTO `CreateConsultationNoteDto` đã có sẵn field này — chỉ cần render input trên UI.
+
+### 16.2 Loại bỏ phần giá (Fee)
+* OPCBS không quản lý giá — dòng "Consultation Fee" đã bị xóa khỏi Appointment Information section trong Doctor `Details.cshtml`.
+
+### 16.3 Thông tin đầy đủ cho bệnh nhân tái khám
+* Doctor `Details.cshtml.cs` thêm 2 properties:
+  * `LatestConsultationNote` — ghi chú gần nhất từ lần khám trước (lọc bỏ buổi hiện tại), truy vấn qua `GetByPatientRecordIdAsync`.
+  * `ActiveTreatmentPackage` — gói điều trị đang active (Status = Active/Accepted, chưa hết hạn, còn sessions), truy vấn qua `GetMyPackagesAsync` và filter theo `PatientId`.
+* UI hiển thị:
+  * "Previous Consultation (Latest)" section — diagnosis, session notes, recommendations, therapy plan.
+  * "Active Package" row — tên gói, sessions completed/total, remaining, ngày hết hạn.
+
+### 16.4 Appointment List ẩn Cancelled
+* `Index.cshtml.cs`: Khi không có filter, lọc bỏ status Cancelled (5) và Rejected (2) khỏi danh sách.
+* Stat card "Cancelled" đổi thành "In Progress" (status 3), `CancelledCount` → `InProgressCount`.
+* `ApprovedCount` tách riêng, không gộp InProgress nữa.
+
+### 16.5 Nút Create Package ↔ View Package Details
+* Nếu `ActiveTreatmentPackage != null` → hiển thị "View Package Details" link đến `/Doctor/TreatmentPackages/Edit/{id}` + badge remaining sessions.
+* Nếu không → giữ nút "Create Treatment Package" như cũ.
+
+### 16.6 Badge gói khám trên đầu buổi hẹn
+* Khi appointment có `TreatmentPackageId` + `TreatmentPackageName`, hiển thị banner xanh lá phía trên Status Banner: "Treatment Package Appointment — This appointment is part of package: [Name]".
+
+### Các file liên quan
+* Doctor `Details.cshtml.cs`, Doctor `Details.cshtml` (Appointment Details)
+* Doctor `Index.cshtml.cs`, Doctor `Index.cshtml` (Appointment List)
+
+---
+
+## 17. Patient Booking Flow Improvements (3 fixes + bonus)
+
+### 17.1 Block booking outside treatment package
+* `Book.cshtml.cs`: Thêm `HasPackageButNotBookingVia` flag. Khi auto-detect active package nhưng patient không đến qua URL có `treatmentPackageId`, set flag = true và KHÔNG tự gán `TreatmentPackageId`.
+* `Book.cshtml`: Khi `HasPackageButNotBookingVia = true`, hiển thị warning banner vàng "You have an active treatment package" với 2 nút "Book via Package" và "View Package Details". Calendar bị ẩn hoàn toàn — patient phải đặt qua gói.
+
+### 17.2 Persist test results + Retake button
+* `Patient/Appointments/Details.cshtml`: Khi `PsychometricSubmission != null`, hiển thị kết quả test + thêm nút "Retake: [Test Title]" (chỉ khi status Pending/Approved). Nút retake link đến `/Patient/Psychometrics/TakeTest` với appointmentId.
+
+### 17.3 Patient Appointment List filter redesign
+* **Bug fix quan trọng**: Filter dropdown sử dụng sai status values (value="3" được label "Cancelled" nhưng 3 = InProgress). Sửa thành dùng enum names (Pending, Approved, InProgress, Completed, Cancelled, Rejected).
+* **Redesign**: Thêm 4 stat cards (Pending, Confirmed, Completed, All) giống giao diện bác sĩ. Thêm `PendingCount`, `ApprovedCount`, `CompletedCount`, `TotalCount` vào code-behind.
+* Sửa text mixed Vietnamese/English.
+
+### 17.4 Bonus: Status mapping bug fix
+* `Patient/Appointments/Details.cshtml`: `isCancelled` sai mapping Status == 3 (thực tế là InProgress). Sửa thành Status == 5. Thêm `isInProgress` = Status == 3.
+* Xóa "Consultation Fee" khỏi patient details (consistent với doctor side — OPCBS không quản lý giá).
+
+### Các file liên quan
+* `Appointment/Book.cshtml[.cs]` (Booking page)
+* Patient `Appointments/Details.cshtml` (Patient appointment details)
+* Patient `Appointments/Index.cshtml[.cs]` (Patient appointment list)
+
+---
+
+## 18. Sidebar Removal, expanded Dropdown Menu, and Doctor Header Customization
+
+### 18.1 Sidebar Removal
+* `_Layout.cshtml`: Loại bỏ partial view `<partial name="_Sidebar" />`. Thay đổi container Dashboard từ `.mb-dashboard-content` sang `.container py-4` chuẩn. Việc này loại bỏ hoàn toàn sidebar trái trên tất cả các trang Portal/Dashboard, đưa layout về dạng căn giữa chuẩn và hiển thị cả footer.
+
+### 18.2 Profile Dropdown Menu Upgrade
+* `_Header.cshtml`: Nâng cấp dropdown menu góc phải (ảnh đại diện). Thiết lập `min-width: 265px` và `max-height: 85vh; overflow-y: auto;` để hiển thị danh sách dài một cách tối ưu.
+* Đã chuyển toàn bộ liên kết chức năng của mọi vai trò từ sidebar cũ sang dropdown menu này:
+  * **Patient**: Dashboard, My Appointments, Consultation Records, Treatment Packages, Mood Journal, Psychometric Tests, Notifications.
+  * **Doctor**: Dashboard, Appointments, Schedules, Patient Records, Consultation Notes, Treatment Packages, Blog Posts, Service Packages, Subscription Status, Identity Verification, Profile. (Kiểm tra xác thực `isVerified` qua `IVerificationApiService` để khóa/mở các liên kết tương tự sidebar).
+  * **Customer Support**: Dashboard, Doctor Applications, Blog Moderation.
+  * **Business Manager**: Dashboard, Service Packages, Specializations, Analytics, Reports.
+  * **System Admin**: Dashboard, Users, Roles, Permissions, Audit Logs, Reports, Settings.
+
+### 18.3 Doctor Header Navigation Customization
+* `_Header.cshtml`: Đối với menu trái (`navbar-nav me-auto`), nếu người dùng đăng nhập dưới vai trò Bác sĩ (`isDoctor`), chỉ hiển thị duy nhất liên kết **Resources** (`/Blog/Index`). Ẩn tất cả các liên kết Home, Find a Therapist, Track Appointment.
+
+### Các file liên quan
+* `_Layout.cshtml` (Main layout)
+* `_Header.cshtml` (Main header & dropdown navigation)
+
+
+

@@ -74,4 +74,5 @@ public class CreateSlotDto
     public required string Date { get; set; }
     public required string StartTime { get; set; }
     public required string EndTime { get; set; }
+    public string? Notes { get; set; }
 }

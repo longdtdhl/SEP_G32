@@ -121,6 +121,16 @@ public class SchedulesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>PUT /api/v1/schedules/slots/{slotId}/notes — Update slot notes</summary>
+    [HttpPut("slots/{slotId}/notes")]
+    public async Task<IActionResult> UpdateSlotNotes(Guid slotId, [FromBody] UpdateSlotNotesRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.UpdateSlotNotesAsync(slotId, userId.Value, request.Notes);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

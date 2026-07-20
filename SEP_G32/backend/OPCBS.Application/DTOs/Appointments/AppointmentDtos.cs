@@ -11,6 +11,11 @@ public class CreateAppointmentDto
     public Guid AppointmentSlotId { get; set; }
     public string? Notes { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+
+    // Pre-evaluation fields
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
     
     // For guest bookings
     public string? GuestName { get; set; }
@@ -34,7 +39,16 @@ public class AppointmentDto
     public required string EndTime { get; set; }
     public AppointmentStatus Status { get; set; }
     public string? Notes { get; set; }
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
     public DateTime CreatedAt { get; set; }
+    public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public string? TreatmentPackageName { get; set; }
+    public int VisitCount { get; set; }
+    public string? Specialization { get; set; }
+    public string? CancellationReason { get; set; }
 }
 
 /// <summary>
@@ -111,6 +125,7 @@ public class AppointmentSlotDto
     public required string EndTime { get; set; }
     public AppointmentSlotStatus Status { get; set; }
     public decimal? Price { get; set; }
+    public string? Notes { get; set; }
 }
 
 /// <summary>

@@ -1,7 +1,7 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Doctor.Patients.CreateModel
 @{
-    ViewData["Title"] = "Create profile patient";
+    ViewData["Title"] = "Create Patient Profile";
     ViewData["UseDashboardLayout"] = true;
 }
 
@@ -27,7 +27,7 @@
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
             <i class="bi bi-person-plus-fill me-2" style="color:var(--mb-primary);"></i>Create New Patient Record
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Điền thông tin cơ bản and tiền sử psyforlogy of patient</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Fill in basic information and psychological history of the patient</p>
     </div>
     <a asp-page="./Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
         <i class="bi bi-arrow-left me-1"></i> Back
@@ -51,10 +51,7 @@
                         <i class="bi bi-person-badge"></i>Personal Information
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-muted small">Patient system (Tùy select)</label>
-                        <input type="text" asp-for="Input.PatientId" class="form-control" placeholder="Mã Guid (if applicable)" />
-                    </div>
+                    <input type="hidden" asp-for="Input.PatientId" />
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Patient Name <span class="text-danger">*</span></label>
@@ -89,33 +86,33 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-heart-pulse-fill"></i>Thông tin clinical & Psychology
+                        <i class="bi bi-heart-pulse-fill"></i>Clinical & Psychology Information
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Psychological History (Psychological History)</label>
-                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3" placeholder="Các diagnosis before here, history treatment..."></textarea>
+                        <label class="form-label fw-bold">Psychological History</label>
+                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3" placeholder="Previous diagnoses, treatment history..."></textarea>
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Current Symptoms (Current Symptoms)</label>
-                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3" placeholder="Biểu hiện anxiety, mất ngủ, depression..."></textarea>
+                        <label class="form-label fw-bold">Current Symptoms</label>
+                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3" placeholder="Anxiety, insomnia, depression..."></textarea>
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Các yếu tố sang chấn (Stress Factors)</label>
-                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3" placeholder="Pressure work, mâu thuẫn gia đình..."></textarea>
+                        <label class="form-label fw-bold">Stress Factors</label>
+                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3" placeholder="Work pressure, family conflicts..."></textarea>
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">Notes (Notes)</label>
-                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2" placeholder="Notes thêm..."></textarea>
+                        <label class="form-label fw-bold">General Notes</label>
+                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-3 pt-3 mt-4" style="border-top:2px solid #f1f5f9;">
                         <a asp-page="./Index" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-save2-fill"></i>Save profile
+                            <i class="bi bi-save2-fill"></i>Save Profile
                         </button>
                     </div>
                 </div>

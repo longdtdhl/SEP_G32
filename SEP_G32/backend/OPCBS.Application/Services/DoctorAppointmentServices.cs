@@ -352,6 +352,9 @@ public class AppointmentService : IAppointmentService
                 GuestEmail = dto.GuestEmail,
                 GuestPhoneNumber = dto.GuestPhoneNumber,
                 Notes = dto.Notes,
+                Symptoms = dto.Symptoms,
+                MedicalHistory = dto.MedicalHistory,
+                Expectations = dto.Expectations,
                 TreatmentPackageId = dto.TreatmentPackageId,
                 Status = AppointmentStatus.Pending,
                 AppointmentDate = slotDateTime,
@@ -395,7 +398,10 @@ public class AppointmentService : IAppointmentService
                 StartTime = slot.StartTime.ToString("HH:mm"),
                 EndTime = slot.EndTime.ToString("HH:mm"),
                 Status = appointment.Status,
-                Notes = appointment.Notes
+                Notes = appointment.Notes,
+                Symptoms = appointment.Symptoms,
+                MedicalHistory = appointment.MedicalHistory,
+                Expectations = appointment.Expectations
             };
 
             // Notify doctor about new booking
@@ -495,7 +501,30 @@ public class AppointmentService : IAppointmentService
             dto.AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd");
             dto.StartTime = slot.StartTime.ToString("HH:mm");
             dto.EndTime = slot.EndTime.ToString("HH:mm");
+            dto.Fee = slot.Price;
         }
+
+        // Enrich with TreatmentPackage info
+        dto.TreatmentPackageId = appt.TreatmentPackageId;
+        if (appt.TreatmentPackageId.HasValue)
+        {
+            var pkg = await _packageRepo.GetByIdAsync(appt.TreatmentPackageId.Value, ct);
+            dto.TreatmentPackageName = pkg?.Name;
+        }
+
+        // Enrich with visit count (completed appointments with same doctor)
+        if (appt.PatientId.HasValue)
+        {
+            var allAppts = await _apptRepo.GetAllAsync(ct);
+            dto.VisitCount = allAppts.Count(a =>
+                a.PatientId == appt.PatientId &&
+                a.DoctorId == appt.DoctorId &&
+                a.Status == AppointmentStatus.Completed &&
+                !a.IsDeleted);
+        }
+
+        // Enrich with cancellation reason
+        dto.CancellationReason = appt.CancellationReason;
     }
 
     public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default)
@@ -1142,6 +1171,29 @@ public class AppointmentService : IAppointmentService
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Appointment rescheduled successfully");
     }
+
+    public async Task<ApiResponse<int>> GetVisitCountAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default)
+    {
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        if (patient == null)
+            return ApiResponse<int>.SuccessResponse(0);
+
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+        var count = allAppts.Count(a =>
+            a.PatientId == patient.Id &&
+            a.DoctorId == doctorProfileId &&
+            a.Status == AppointmentStatus.Completed &&
+            !a.IsDeleted);
+
+        return ApiResponse<int>.SuccessResponse(count);
+    }
+
+    public async Task<ApiResponse<bool>> IsReturningPatientAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default)
+    {
+        var result = await GetVisitCountAsync(patientUserId, doctorProfileId, ct);
+        return ApiResponse<bool>.SuccessResponse(result.Data > 0);
+    }
 }
 
 
@@ -1395,7 +1447,8 @@ public class ScheduleService : IScheduleService
             StartTime = s.StartTime.ToString("HH:mm"),
             EndTime = s.EndTime.ToString("HH:mm"),
             Status = s.Status,
-            Price = s.Price
+            Price = s.Price,
+            Notes = s.Notes
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -1434,7 +1487,8 @@ public class ScheduleService : IScheduleService
             StartTime = s.StartTime.ToString("HH:mm"),
             EndTime = s.EndTime.ToString("HH:mm"),
             Status = s.Status,
-            Price = s.Price
+            Price = s.Price,
+            Notes = s.Notes
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -1541,6 +1595,7 @@ public class ScheduleService : IScheduleService
             StartTime = startTime,
             EndTime = endTime,
             Status = AppointmentSlotStatus.Available,
+            Notes = dto.Notes,
             DoctorProfile = doctor
         };
 
@@ -1554,7 +1609,8 @@ public class ScheduleService : IScheduleService
             StartTime = slot.StartTime.ToString("HH:mm"),
             EndTime = slot.EndTime.ToString("HH:mm"),
             Status = slot.Status,
-            Price = slot.Price
+            Price = slot.Price,
+            Notes = slot.Notes
         };
 
         return ApiResponse<AppointmentSlotDto>.SuccessResponse(returnDto, "Slot created successfully");
@@ -1562,7 +1618,9 @@ public class ScheduleService : IScheduleService
 
     public async Task<ApiResponse> DeleteSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default)
     {
-        var slot = await _slotRepo.GetByIdAsync(slotId, ct);
+        // Use GetAllAsync instead of GetByIdAsync to respect HasQueryFilter (FindAsync ignores it)
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slot = allSlots.FirstOrDefault(s => s.Id == slotId);
         if (slot == null)
             return ApiResponse.ErrorResponse("Slot not found");
 
@@ -1574,9 +1632,29 @@ public class ScheduleService : IScheduleService
         if (slot.Status == AppointmentSlotStatus.Booked || slot.Status == AppointmentSlotStatus.Completed)
             return ApiResponse.ErrorResponse("Cannot delete a booked or completed slot");
 
+        // Soft delete via repo (HasQueryFilter prevents deleted slots from appearing in overlap checks)
         _slotRepo.Delete(slot);
         await _uow.SaveChangesAsync(ct);
 
         return ApiResponse.SuccessResponse("Slot deleted successfully");
+    }
+
+    public async Task<ApiResponse> UpdateSlotNotesAsync(Guid slotId, Guid doctorUserId, string? notes, CancellationToken ct = default)
+    {
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slot = allSlots.FirstOrDefault(s => s.Id == slotId);
+        if (slot == null)
+            return ApiResponse.ErrorResponse("Slot not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || slot.DoctorProfileId != doctor.Id)
+            return ApiResponse.ErrorResponse("Not authorized");
+
+        slot.Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        _slotRepo.Update(slot);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse.SuccessResponse("Slot notes updated successfully");
     }
 }

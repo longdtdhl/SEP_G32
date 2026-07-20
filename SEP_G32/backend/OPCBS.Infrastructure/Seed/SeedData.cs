@@ -137,10 +137,11 @@ public static class SeedData
         await context.SaveChangesAsync();
 
         // 5. Seed Service Packages
+        var freePkg = new ServicePackage { Name = "Free Trial", Description = "Free trial for demo — no payment required", DurationDays = 30, Price = 0, MaxPatientCapacity = 5, MaxDailySlotsCapacity = 3, DisplayOrder = 0 };
         var basicPkg = new ServicePackage { Name = "Basic", Description = "Basic plan for new doctors", DurationDays = 30, Price = 299000, MaxPatientCapacity = 10, MaxDailySlotsCapacity = 5, DisplayOrder = 1 };
         var proPkg = new ServicePackage { Name = "Professional", Description = "Professional plan with more capacity", DurationDays = 90, Price = 799000, MaxPatientCapacity = 30, MaxDailySlotsCapacity = 10, IsFeatured = true, DisplayOrder = 2 };
         var premPkg = new ServicePackage { Name = "Premium", Description = "Unlimited premium plan", DurationDays = 365, Price = 2499000, MaxPatientCapacity = 100, MaxDailySlotsCapacity = 20, DisplayOrder = 3 };
-        context.ServicePackages.AddRange(basicPkg, proPkg, premPkg);
+        context.ServicePackages.AddRange(freePkg, basicPkg, proPkg, premPkg);
         await context.SaveChangesAsync();
 
         // 6. Seed System Config

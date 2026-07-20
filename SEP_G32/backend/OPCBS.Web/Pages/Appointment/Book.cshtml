@@ -25,18 +25,47 @@
     @if (Model.TreatmentPackage != null)
     {
         var tPkg = Model.TreatmentPackage;
-        <div class="alert border-0 shadow-sm mb-3" style="border-radius:14px; background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left:4px solid var(--mb-primary) !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px; background:var(--mb-primary); color:white;">
-                    <i class="bi bi-box-seam" style="font-size:1.1rem;"></i>
+
+        @if (!Model.HasPackageButNotBookingVia)
+        {
+            @* Booking via package — show informational banner *@
+            <div class="alert border-0 shadow-sm mb-3" style="border-radius:14px; background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left:4px solid var(--mb-primary) !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px; background:var(--mb-primary); color:white;">
+                        <i class="bi bi-box-seam" style="font-size:1.1rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div style="font-weight:700; font-size:0.9rem; color:#166534;">Booking from treatment package: @tPkg.Title</div>
+                        <div style="font-size:0.78rem; color:#4ade80;">Remaining: @tPkg.RemainingSessions / @tPkg.TotalSessions sessions &bull; Exp: @tPkg.ExpirationDate.ToString("MM/dd/yyyy")</div>
+                    </div>
+                    <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@tPkg.Id" class="btn btn-sm btn-outline-success" style="border-radius:8px; font-size:0.75rem;">View Package</a>
                 </div>
-                <div class="flex-grow-1">
-                    <div style="font-weight:700; font-size:0.9rem; color:#166534;">Book from treatment package: @tPkg.Title</div>
-                    <div style="font-size:0.78rem; color:#4ade80;">Remaining: @tPkg.RemainingSessions / @tPkg.TotalSessions sessions &bull; Exp: @tPkg.ExpirationDate.ToString("MM/dd/yyyy")</div>
-                </div>
-                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@tPkg.Id" class="btn btn-sm btn-outline-success" style="border-radius:8px; font-size:0.75rem;">View Package</a>
             </div>
-        </div>
+        }
+        else
+        {
+            @* Has active package but NOT booking via package — block booking *@
+            <div class="alert border-0 shadow-sm mb-3" style="border-radius:14px; background:linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-left:4px solid #f59e0b !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px; height:48px; background:#f59e0b; color:white;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size:1.3rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div style="font-weight:700; font-size:0.95rem; color:#92400e;">You have an active treatment package with this doctor</div>
+                        <div style="font-size:0.82rem; color:#b45309;">Package: <strong>@tPkg.Title</strong> — Remaining: <strong>@tPkg.RemainingSessions / @tPkg.TotalSessions</strong> sessions</div>
+                        <div style="font-size:0.78rem; color:#d97706; margin-top:4px;">Please book your next appointment through your treatment package instead of booking separately.</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.DoctorId" asp-route-treatmentPackageId="@tPkg.Id" class="btn btn-warning btn-sm fw-semibold" style="border-radius:10px;">
+                        <i class="bi bi-box-seam me-1"></i>Book via Package
+                    </a>
+                    <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@tPkg.Id" class="btn btn-outline-warning btn-sm" style="border-radius:10px;">
+                        <i class="bi bi-eye me-1"></i>View Package Details
+                    </a>
+                </div>
+            </div>
+        }
     }
 
     @if (!Model.DoctorId.HasValue)
@@ -48,6 +77,10 @@
             <p class="text-muted">Please select a doctor before booking</p>
             <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>Find a Specialist</a>
         </div>
+    }
+    else if (Model.HasPackageButNotBookingVia)
+    {
+        @* Calendar is intentionally hidden — patient must book via package *@
     }
     else
     {
@@ -268,43 +301,56 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">FULL NAME <span class="text-danger">*</span></label>
-                            @if (Model.IsGuest)
-                            {
-                                <input asp-for="Input.GuestName" class="form-control" placeholder="e.g. John Doe" style="border-radius:12px;padding:10px 14px;" required />
-                            }
-                            else
-                            {
-                                <input asp-for="Input.GuestName" class="form-control" readonly style="border-radius:12px;padding:10px 14px;background-color:#f1f5f9;" />
-                            }
+                            <input asp-for="Input.GuestName" class="form-control" placeholder="e.g. John Doe" style="border-radius:12px;padding:10px 14px;" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">EMAIL <span class="text-danger">*</span></label>
-                            @if (Model.IsGuest)
-                            {
-                                <input asp-for="Input.GuestEmail" type="email" class="form-control" placeholder="email@example.com" style="border-radius:12px;padding:10px 14px;" required />
-                            }
-                            else
-                            {
-                                <input asp-for="Input.GuestEmail" type="email" class="form-control" readonly style="border-radius:12px;padding:10px 14px;background-color:#f1f5f9;" />
-                            }
+                            <input asp-for="Input.GuestEmail" type="email" class="form-control" placeholder="email@example.com" style="border-radius:12px;padding:10px 14px;" required />
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER</label>
-                        @if (Model.IsGuest)
-                        {
-                            <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" />
-                        }
-                        else
-                        {
-                            <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control" readonly style="border-radius:12px;padding:10px 14px;background-color:#f1f5f9;" />
-                        }
+                        <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" />
                     </div>
 
-                    <div class="mb-3">
+                        <div class="mb-3">
                         <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">REASON FOR VISIT</label>
                         <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Brief description of your condition or reason for consultation..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
                     </div>
+
+                    <!-- Pre-Evaluation Form -->
+                    @if (Model.IsReturningPatient)
+                    {
+                        <hr style="border-color:#e2e8f0; margin:1rem 0;" />
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-3" style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid rgba(59,130,246,0.15);">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px; background:#3b82f6; color:white;">
+                                <i class="bi bi-arrow-repeat" style="font-size:1.1rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700; font-size:0.88rem; color:#1e40af;">Welcome back!</div>
+                                <div style="font-size:0.78rem; color:#3b82f6;">You've visited this doctor before. Pre-appointment evaluation is not required for follow-up visits.</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <hr style="border-color:#e2e8f0; margin:1rem 0;" />
+                        <h6 class="fw-bold mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Pre-Appointment Evaluation</h6>
+                        <p class="text-muted mb-3" style="font-size:0.8rem;">Please fill in to help the doctor prepare for your consultation.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">CURRENT SYMPTOMS <span class="text-danger">*</span></label>
+                            <textarea asp-for="Input.Symptoms" class="form-control" rows="3" placeholder="Describe your current symptoms, their duration, and severity..." style="border-radius:12px;padding:10px 14px;resize:vertical;" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">MEDICAL HISTORY</label>
+                            <textarea asp-for="Input.MedicalHistory" class="form-control" rows="2" placeholder="Past treatments, medications, diagnosed conditions..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">EXPECTATIONS FOR THIS SESSION</label>
+                            <textarea asp-for="Input.Expectations" class="form-control" rows="2" placeholder="What do you hope to achieve from this consultation?" style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
+                        </div>
+                    }
 
                     <!-- Privacy note -->
                     <div class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background:#f8faf8;">

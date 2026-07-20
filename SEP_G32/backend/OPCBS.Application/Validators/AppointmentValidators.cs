@@ -42,8 +42,7 @@ public class CreateConsultationNoteDtoValidator : AbstractValidator<CreateConsul
 {
     public CreateConsultationNoteDtoValidator()
     {
-        RuleFor(x => x.PatientRecordId)
-            .NotEmpty().WithMessage("Patient record ID is required");
+        // PatientRecordId is optional — auto-created from appointment if not provided
 
         RuleFor(x => x.ConsultationSummary)
             .NotEmpty().WithMessage("Consultation summary is required")

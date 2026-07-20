@@ -71,10 +71,10 @@
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
             <i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Patient Profile
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Management thông tin patient system and khách vãng lai</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage system patients and walk-in guests</p>
     </div>
     <a asp-page="./Create" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm" style="border-radius:12px; background:var(--mb-primary); border-color:var(--mb-primary);">
-        <i class="bi bi-plus-lg"></i>Thêm profile new
+        <i class="bi bi-plus-lg"></i>Add New Profile
     </a>
 </div>
 
@@ -100,14 +100,14 @@
         <div class="icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="bi bi-people-fill"></i></div>
         <div>
             <div class="value">@totalAll</div>
-            <div class="label">Total profile</div>
+            <div class="label">Total Profiles</div>
         </div>
     </div>
     <div class="pr-stat">
         <div class="icon" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="bi bi-person-check-fill"></i></div>
         <div>
             <div class="value" style="color:#10b981;">@totalSystem</div>
-            <div class="label">Patient system</div>
+            <div class="label">System Patients</div>
         </div>
     </div>
     <div class="pr-stat">
@@ -122,7 +122,7 @@
 <!-- Records List -->
 <div class="pr-card">
     <div class="pr-card-header">
-        <h5><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>List profile</h5>
+        <h5><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Patient List</h5>
         <div class="tab-pills">
             <a class="tab-pill active" onclick="showTab('all', this)" href="javascript:void(0)">
                 <i class="bi bi-grid-fill"></i>All <span class="badge-count">@totalAll</span>
@@ -131,7 +131,7 @@
                 <i class="bi bi-person-check"></i>System <span class="badge-count">@totalSystem</span>
             </a>
             <a class="tab-pill" onclick="showTab('guest', this)" href="javascript:void(0)">
-                <i class="bi bi-person-plus"></i>Vãng lai <span class="badge-count">@totalGuest</span>
+                <i class="bi bi-person-plus"></i>Guest <span class="badge-count">@totalGuest</span>
             </a>
         </div>
     </div>
@@ -148,7 +148,7 @@
             @foreach (var item in allPatients)
             {
                 var p = item.Record;
-                var displayName = p.DisplayName ?? p.GuestName ?? "Không tên";
+                var displayName = p.DisplayName ?? p.GuestName ?? "Unknown";
                 var initial = displayName.Length > 0 ? displayName.Substring(0, 1).ToUpper() : "?";
                 var colors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
                 var color = colors[Math.Abs(displayName.GetHashCode()) % colors.Length];
@@ -187,10 +187,10 @@
         {
             <div class="empty-state">
                 <i class="bi bi-person-lines-fill"></i>
-                <h6 style="font-weight:600; color:#1e293b;">None yet profile patient nào</h6>
-                <p style="font-size:0.85rem; margin:4px 0 16px;">All profile patient your sẽ xuất hiện ở here</p>
+                <h6 style="font-weight:600; color:#1e293b;">No patient profiles yet</h6>
+                <p style="font-size:0.85rem; margin:4px 0 16px;">All your patient profiles will appear here</p>
                 <a asp-page="./Create" class="btn btn-sm btn-primary px-4" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                    <i class="bi bi-plus-lg me-1"></i>Thêm profile đầu tiên
+                    <i class="bi bi-plus-lg me-1"></i>Add First Profile
                 </a>
             </div>
         }

@@ -13,6 +13,7 @@ public interface IEmailService
     Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
     Task SendAppointmentReminderEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
     Task SendConsultationNoteEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
+    Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

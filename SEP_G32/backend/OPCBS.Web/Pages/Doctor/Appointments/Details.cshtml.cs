@@ -12,21 +12,26 @@ public class DetailsModel : PageModel
     private readonly IAppointmentApiService _api;
     private readonly IConsultationNoteApiService _recordApi;
     private readonly IPsychometricApiService _psychService;
+    private readonly ITreatmentPackageApiService _packageApi;
 
     public DetailsModel(
         IAppointmentApiService api, 
         IConsultationNoteApiService recordApi,
-        IPsychometricApiService psychService)
+        IPsychometricApiService psychService,
+        ITreatmentPackageApiService packageApi)
     {
         _api = api;
         _recordApi = recordApi;
         _psychService = psychService;
+        _packageApi = packageApi;
     }
 
     public AppointmentDto? Appointment { get; set; }
     public ConsultationNoteDto? AssociatedRecord { get; set; }
     public PatientRecordDto? PatientRecord { get; set; }
     public PsychometricSubmissionDto? PsychometricSubmission { get; set; }
+    public ConsultationNoteDto? LatestConsultationNote { get; set; }
+    public TreatmentPackageDto? ActiveTreatmentPackage { get; set; }
     public bool HasConsultationNote => AssociatedRecord != null;
     public string? Error { get; set; }
     public string? Success { get; set; }
@@ -67,6 +72,36 @@ public class DetailsModel : PageModel
 
         var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(id);
         PsychometricSubmission = subData;
+
+        // Fetch latest consultation note from previous visits (for returning patients)
+        if (PatientRecord != null)
+        {
+            var (allNotes, _, _) = await _recordApi.GetByPatientRecordIdAsync(PatientRecord.Id, 1, 50);
+            if (allNotes != null && allNotes.Count > 0)
+            {
+                // Get the most recent note that is NOT for the current appointment
+                LatestConsultationNote = allNotes
+                    .Where(n => n.AppointmentId != id)
+                    .OrderByDescending(n => n.CreatedAt)
+                    .FirstOrDefault();
+            }
+        }
+
+        // Fetch active treatment package for this patient-doctor pair
+        if (data.PatientId.HasValue)
+        {
+            var (packages, _, _) = await _packageApi.GetMyPackagesAsync(1, 100);
+            if (packages != null)
+            {
+                ActiveTreatmentPackage = packages
+                    .Where(p => p.PatientId == data.PatientId.Value
+                             && (p.Status == "Active" || p.Status == "Accepted")
+                             && p.ExpirationDate > DateTime.Now
+                             && p.RemainingSessions > 0)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .FirstOrDefault();
+            }
+        }
 
         return Page();
     }

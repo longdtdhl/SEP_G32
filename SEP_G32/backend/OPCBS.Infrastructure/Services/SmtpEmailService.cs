@@ -211,4 +211,19 @@ public class SmtpEmailService : IEmailService
         var html = BuildEmailTemplate("📋 MindBridge", "New consultation note from your doctor", "#166534 0%, #22c55e 100%", bodyHtml);
         await SendEmailAsync(to, subject, html, cancellationToken);
     }
+
+    public async Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default)
+    {
+        var subject = "🔔 MindBridge - Follow-up Appointment Reminder";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Follow-up Appointment Reminder</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, this is a reminder that your follow-up appointment with <strong>Dr. {doctorName}</strong> is recommended for <strong>{date}</strong>.</p>
+            <div style='background:#fef3c7; border-radius:12px; padding:20px; margin:20px 0; text-align:center;'>
+                <p style='font-size:16px; color:#92400e; font-weight:600; margin:0;'>📅 Recommended follow-up date: {date}</p>
+            </div>
+            <p class='info'>Your doctor has recommended a follow-up consultation. Please log in to MindBridge to book your next appointment.</p>
+            <p class='info'>If you've already booked or no longer need a follow-up, you can safely ignore this email.</p>";
+        var html = BuildEmailTemplate("🔔 MindBridge", "Time for your follow-up appointment", "#92400e 0%, #f59e0b 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
 }

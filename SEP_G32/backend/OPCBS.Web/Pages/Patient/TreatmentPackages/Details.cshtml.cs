@@ -76,7 +76,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _service.AcceptAsync(id);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã chấp nhận gói điều trị.";
+        TempData["SuccessMessage"] = "Treatment package accepted.";
         return RedirectToPage("Index");
     }
 
@@ -84,7 +84,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _service.RejectAsync(id, RejectReason);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã từ chối gói điều trị.";
+        TempData["SuccessMessage"] = "Treatment package rejected.";
         return RedirectToPage("Index");
     }
 
@@ -92,7 +92,7 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _service.CancelAsync(id, CancelReason);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Cancelled gói điều trị successfully.";
+        TempData["SuccessMessage"] = "Treatment package cancelled successfully.";
         return RedirectToPage("Index");
     }
 
@@ -100,14 +100,14 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(SubmissionText))
         {
-            Error = "Please nhập nội dung bài tập.";
+            Error = "Please enter your assignment submission.";
             return await OnGetAsync(id);
         }
 
         var dto = new SubmitAssignmentDto { PatientSubmission = SubmissionText };
         var (success, error) = await _therapyService.SubmitAssignmentAsync(assignmentId, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã nộp bài tập successfully!";
+        TempData["SuccessMessage"] = "Assignment submitted successfully!";
         return RedirectToPage(new { id });
     }
 }

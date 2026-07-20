@@ -77,6 +77,9 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Price/consultation fee for this slot (if not using packages)</summary>
     public decimal? Price { get; set; }
 
+    /// <summary>Optional notes/description for the slot</summary>
+    public string? Notes { get; set; }
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 
@@ -112,6 +115,15 @@ public class Appointment : BaseEntity
 
     /// <summary>Optional appointment notes/reason</summary>
     public string? Notes { get; set; }
+
+    /// <summary>Symptoms or current condition described by patient</summary>
+    public string? Symptoms { get; set; }
+
+    /// <summary>Medical history / past treatments</summary>
+    public string? MedicalHistory { get; set; }
+
+    /// <summary>Expectations/goals for the consultation session</summary>
+    public string? Expectations { get; set; }
 
     /// <summary>Current appointment status (Pending, Approved, Rejected, etc.)</summary>
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;

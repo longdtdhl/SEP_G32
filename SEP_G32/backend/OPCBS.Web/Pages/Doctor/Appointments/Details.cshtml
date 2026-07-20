@@ -66,6 +66,18 @@
         _ => "status-rejected"
     };
 
+    @* Issue 6: Treatment Package Banner *@
+    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
+    {
+        <div class="alert d-flex align-items-center gap-2 mb-3" style="background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border: 1px solid #a5d6a7; border-radius: 12px; padding: 1rem 1.5rem;">
+            <i class="bi bi-box-seam-fill fs-4" style="color:#2e7d32;"></i>
+            <div>
+                <strong style="color:#2e7d32;">Treatment Package Appointment</strong>
+                <div class="small text-muted">This appointment is part of package: <strong class="text-dark">@apt.TreatmentPackageName</strong></div>
+            </div>
+        </div>
+    }
+
     <!-- Status Banner -->
     <div class="appointment-status-banner @statusBannerClass">
         <div class="d-flex align-items-center gap-2">
@@ -126,9 +138,34 @@
                         <div class="col-sm-4 text-muted">Specialization</div>
                         <div class="col-sm-8">@(apt.Specialization ?? "-")</div>
                     </div>
+                    @* Issue 2: Consultation Fee removed — OPCBS does not manage pricing *@
+                    @if (!string.IsNullOrEmpty(apt.TreatmentPackageName))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted"><i class="bi bi-box-seam me-1"></i>Treatment Package</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-success bg-opacity-15 text-success px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
+                                    <i class="bi bi-box-seam me-1"></i>@apt.TreatmentPackageName
+                                </span>
+                            </div>
+                        </div>
+                    }
                     <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Consultation Fee</div>
-                        <div class="col-sm-8">@(apt.Fee?.ToString("N0") ?? "-") ₫</div>
+                        <div class="col-sm-4 text-muted"><i class="bi bi-arrow-repeat me-1"></i>Visit Count</div>
+                        <div class="col-sm-8">
+                            @if (apt.VisitCount == 0)
+                            {
+                                <span class="badge bg-info bg-opacity-15 text-info px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
+                                    <i class="bi bi-person-plus me-1"></i>First consultation
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary bg-opacity-15 text-primary px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Visit #@apt.VisitCount
+                                </span>
+                            }
+                        </div>
                     </div>
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
@@ -136,6 +173,42 @@
                             <div class="col-sm-4 text-muted">Booking Notes</div>
                             <div class="col-sm-8 text-secondary">@apt.Notes</div>
                         </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations))
+                    {
+                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
+                            <div class="col-12">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Pre-Appointment Evaluation</h6>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(apt.Symptoms))
+                        {
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted"><i class="bi bi-activity me-1"></i>Current Symptoms</div>
+                                <div class="col-sm-8">
+                                    <div class="p-2 rounded-2" style="background:#fef2f2; border:1px solid #fecaca;">@apt.Symptoms</div>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(apt.MedicalHistory))
+                        {
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted"><i class="bi bi-journal-medical me-1"></i>Medical History</div>
+                                <div class="col-sm-8">
+                                    <div class="p-2 rounded-2" style="background:#f0f9ff; border:1px solid #bae6fd;">@apt.MedicalHistory</div>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(apt.Expectations))
+                        {
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted"><i class="bi bi-bullseye me-1"></i>Expectations</div>
+                                <div class="col-sm-8">
+                                    <div class="p-2 rounded-2" style="background:#f0fdf4; border:1px solid #bbf7d0;">@apt.Expectations</div>
+                                </div>
+                            </div>
+                        }
                     }
 
                     <!-- Psychometric Test Result -->
@@ -192,6 +265,57 @@
                                             </div>
                                         </div>
                                     }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* Issue 3: Previous Consultation Summary (from earlier visits) *@
+                    @if (Model.LatestConsultationNote != null)
+                    {
+                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
+                            <div class="col-12">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2" style="color:#6366f1;"></i>Previous Consultation (Latest)</h6>
+                            </div>
+                            <div class="col-sm-12">
+                                <div class="p-3 rounded-3 border" style="background:#f5f3ff;">
+                                    <div class="small text-muted mb-2"><i class="bi bi-calendar3 me-1"></i>@Model.LatestConsultationNote.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Diagnosis))
+                                    {
+                                        <div class="mb-2"><strong>Diagnosis:</strong> @Model.LatestConsultationNote.Diagnosis</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.ConsultationSummary))
+                                    {
+                                        <div class="mb-2"><strong>Session Notes:</strong> @Model.LatestConsultationNote.ConsultationSummary</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Recommendation))
+                                    {
+                                        <div class="mb-2"><strong>Recommendations:</strong> @Model.LatestConsultationNote.Recommendation</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.TherapyPlan))
+                                    {
+                                        <div class="mb-0"><strong>Therapy Plan:</strong> @Model.LatestConsultationNote.TherapyPlan</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* Issue 3: Active Treatment Package *@
+                    @if (Model.ActiveTreatmentPackage != null)
+                    {
+                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
+                            <div class="col-sm-4 text-muted"><i class="bi bi-box-seam me-1"></i>Active Package</div>
+                            <div class="col-sm-8">
+                                <div class="p-3 rounded-3 border" style="background:#ecfdf5;">
+                                    <div class="fw-bold text-success mb-1">@Model.ActiveTreatmentPackage.Name</div>
+                                    <div class="small text-muted">
+                                        Sessions: <strong>@Model.ActiveTreatmentPackage.CompletedSessions / @Model.ActiveTreatmentPackage.TotalSessions</strong>
+                                        &nbsp;•&nbsp; Remaining: <strong class="text-primary">@Model.ActiveTreatmentPackage.RemainingSessions</strong>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        Expires: @Model.ActiveTreatmentPackage.ExpirationDate.ToString("dd/MM/yyyy")
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -279,17 +403,11 @@
                                 <i class="bi bi-file-earmark-medical me-1"></i>View/Edit Note
                             </a>
                         }
-                        else if (Model.PatientRecord != null)
+                        else
                         {
                             <button type="button" class="btn btn-outline-primary w-100 rounded-3" data-bs-toggle="modal" data-bs-target="#createNoteModal">
                                 <i class="bi bi-file-earmark-medical me-1"></i>Write Consultation Note
                             </button>
-                        }
-                        else
-                        {
-                            <a asp-page="/Doctor/Patients/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary w-100 rounded-3">
-                                <i class="bi bi-person-plus me-1"></i>Create Patient Record
-                            </a>
                         }
                     }
 
@@ -302,11 +420,22 @@
                                 <i class="bi bi-file-earmark-medical me-1"></i>View/Edit Consultation Note
                             </a>
                         }
+                        @* Issue 5: Toggle Create/View Package button *@
                         @if (apt.PatientId.HasValue)
                         {
-                            <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@apt.PatientId" class="btn btn-outline-info w-100 rounded-3 mt-2">
-                                <i class="bi bi-box-seam me-1"></i>Create Treatment Package
-                            </a>
+                            @if (Model.ActiveTreatmentPackage != null)
+                            {
+                                <a asp-page="/Doctor/TreatmentPackages/Edit" asp-route-id="@Model.ActiveTreatmentPackage.Id" class="btn btn-outline-success w-100 rounded-3 mt-2">
+                                    <i class="bi bi-box-seam me-1"></i>View Package Details
+                                    <span class="badge bg-success ms-1">@Model.ActiveTreatmentPackage.RemainingSessions left</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@apt.PatientId" class="btn btn-outline-info w-100 rounded-3 mt-2">
+                                    <i class="bi bi-box-seam me-1"></i>Create Treatment Package
+                                </a>
+                            }
                         }
                     }
 
@@ -330,7 +459,7 @@
     </div>
 
     <!-- Create Note & Complete Modal -->
-    @if (apt.Status == 3 && Model.PatientRecord != null)
+    @if (apt.Status == 3)
     {
         <div class="modal fade" id="createNoteModal" tabindex="-1" aria-labelledby="createNoteModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -372,6 +501,13 @@
                                     <label class="form-label fw-semibold">Follow-up Notes</label>
                                     <textarea asp-for="NoteInput.FollowUpNotes" class="form-control" rows="3" placeholder="Enter follow-up instructions..." style="border-radius:10px;"></textarea>
                                 </div>
+                            </div>
+
+                            @* Issue 1: Follow-up date field *@
+                            <div class="mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
+                                <label class="form-label fw-semibold"><i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date</label>
+                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" class="form-control" style="border-radius:10px;" />
+                                <div class="form-text">Set a recommended date for the patient's next visit. An email reminder will be sent 1 day before.</div>
                             </div>
                         </div>
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OPCBS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using OPCBS.Infrastructure.Persistence;
 namespace OPCBS.Infrastructure.Migrations
 {
     [DbContext(typeof(OpcbsDbContext))]
-    partial class OpcbsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260715081958_AddSlotNotesAndPreEvaluation")]
+    partial class AddSlotNotesAndPreEvaluation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -202,8 +205,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DoctorProfileId", "SlotDate", "StartTime")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .IsUnique();
 
                     b.ToTable("AppointmentSlots");
                 });

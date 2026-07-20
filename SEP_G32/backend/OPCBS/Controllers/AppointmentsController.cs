@@ -176,6 +176,28 @@ public class AppointmentsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/appointments/visit-count/{doctorId} - Get count of completed visits with a doctor</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpGet("visit-count/{doctorId:guid}")]
+    public async Task<IActionResult> GetVisitCount(Guid doctorId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.GetVisitCountAsync(userId.Value, doctorId);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/appointments/is-returning/{doctorId} - Check if patient is a returning patient</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpGet("is-returning/{doctorId:guid}")]
+    public async Task<IActionResult> IsReturningPatient(Guid doctorId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.IsReturningPatientAsync(userId.Value, doctorId);
+        return Ok(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using OPCBS.Domain.Common;
 using OPCBS.Domain.Entities;
 using OPCBS.Domain.Enums;
+using System.Linq.Expressions;
 
 namespace OPCBS.Infrastructure.Persistence;
 
@@ -88,6 +90,12 @@ public class OpcbsDbContext : DbContext
         ConfigureBlogAndNotificationEntities(modelBuilder);
         ConfigureSystemEntities(modelBuilder);
         ConfigurePsychometricEntities(modelBuilder);
+
+        // Targeted query filters: exclude soft-deleted slots and appointments
+        // (Not applied globally to avoid breaking required navigation properties
+        //  e.g. AppointmentHistory -> Appointment, OtpVerification -> User)
+        modelBuilder.Entity<AppointmentSlot>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Appointment>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     private static void ConfigureIdentityEntities(ModelBuilder modelBuilder)
@@ -319,7 +327,9 @@ public class OpcbsDbContext : DbContext
                 .WithOne()
                 .HasForeignKey<Appointment>(a => a.AppointmentSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasIndex(e => new { e.DoctorProfileId, e.SlotDate, e.StartTime }).IsUnique();
+            entity.HasIndex(e => new { e.DoctorProfileId, e.SlotDate, e.StartTime })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
         // Appointment

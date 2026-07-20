@@ -58,15 +58,15 @@
                 <div class="dt-sidebar-header"><i class="bi bi-person-fill"></i>Patient</div>
                 <div style="padding:1.25rem; text-align:center;">
                     <div style="font-weight:700; font-size:1rem; color:#1e293b;">@(pkg.PatientName ?? "N/A")</div>
-                    <div style="font-size:0.78rem; color:#94a3b8;">Patient được chỉ định gói this</div>
+                    <div style="font-size:0.78rem; color:#94a3b8;">Patient assigned to this package</div>
                 </div>
             </div>
 
             <div class="dt-sidebar mb-3">
-                <div class="dt-sidebar-header"><i class="bi bi-info-circle"></i>Thông tin gói</div>
+                <div class="dt-sidebar-header"><i class="bi bi-info-circle"></i>Package Info</div>
                 <div style="padding:1rem 1.25rem;">
                     <div class="dt-sidebar-row"><span class="label">Package Name</span><span class="value">@pkg.Title</span></div>
-                    <div class="dt-sidebar-row"><span class="label">Total phiên</span><span class="value">@pkg.TotalSessions</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Total Sessions</span><span class="value">@pkg.TotalSessions</span></div>
                     <div class="dt-sidebar-row"><span class="label">Completed</span><span class="value" style="color:#16a34a;">@pkg.CompletedSessions</span></div>
                     <div class="dt-sidebar-row"><span class="label">Remaining</span><span class="value" style="color:#f59e0b;">@pkg.RemainingSessions</span></div>
                     <div class="dt-sidebar-row"><span class="label">Expired</span><span class="value">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</span></div>
@@ -89,21 +89,21 @@
 
             <!-- Create Assignment Form -->
             <div class="dt-sidebar">
-                <div class="dt-sidebar-header"><i class="bi bi-plus-circle-fill"></i>Giao assignment new</div>
+                <div class="dt-sidebar-header"><i class="bi bi-plus-circle-fill"></i>Create New Assignment</div>
                 <div style="padding:1rem 1.25rem;">
                     <form method="post" asp-page-handler="CreateAssignment" asp-route-id="@pkg.Id">
                         <div class="mb-2">
-                            <input asp-for="AssignmentTitle" class="form-control form-control-sm" placeholder="Title assignment *" style="border-radius:8px;" />
+                            <input asp-for="AssignmentTitle" class="form-control form-control-sm" placeholder="Assignment title *" style="border-radius:8px;" />
                         </div>
                         <div class="mb-2">
-                            <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="3" placeholder="Description / request chi tiết..." style="border-radius:8px;"></textarea>
+                            <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="3" placeholder="Detailed description / requirements..." style="border-radius:8px;"></textarea>
                         </div>
                         <div class="mb-2">
-                            <label style="font-size:0.75rem; color:#64748b;">Hạn nộp (optional)</label>
+                            <label style="font-size:0.75rem; color:#64748b;">Due date (optional)</label>
                             <input asp-for="AssignmentDueDate" type="date" class="form-control form-control-sm" style="border-radius:8px;" />
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm w-100" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-send me-1"></i>Giao assignment
+                            <i class="bi bi-send me-1"></i>Assign
                         </button>
                     </form>
                 </div>
@@ -121,7 +121,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-journal" type="button" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0;">
-                        <i class="bi bi-journal-heart me-1"></i>Nhật ký BN (@Model.PatientJournals.Count)
+                        <i class="bi bi-journal-heart me-1"></i>Patient Journal (@Model.PatientJournals.Count)
                     </button>
                 </li>
             </ul>
@@ -161,7 +161,7 @@
                                         {
                                             <div class="p-2 rounded-3 mb-2" style="background:#eff6ff; border:1px solid #dbeafe;">
                                                 <div style="font-size:0.72rem; color:#3b82f6; font-weight:700; margin-bottom:4px;">
-                                                    <i class="bi bi-send-check me-1"></i>Bài làm of BN (Submit lúc @hw.SubmittedAt?.ToString("dd/MM HH:mm"))
+                                                    <i class="bi bi-send-check me-1"></i>Patient Submission (Submitted at @hw.SubmittedAt?.ToString("dd/MM HH:mm"))
                                                 </div>
                                                 <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.PatientSubmission</div>
                                             </div>
@@ -171,7 +171,7 @@
                                         {
                                             <div class="p-2 rounded-3 mb-2" style="background:#dcfce7; border:1px solid #bbf7d0;">
                                                 <div style="font-size:0.72rem; color:#16a34a; font-weight:700; margin-bottom:4px;">
-                                                    <i class="bi bi-chat-heart me-1"></i>Feedback your (@hw.FeedbackAt?.ToString("dd/MM HH:mm"))
+                                                    <i class="bi bi-chat-heart me-1"></i>Your Feedback (@hw.FeedbackAt?.ToString("dd/MM HH:mm"))
                                                 </div>
                                                 <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.DoctorFeedback</div>
                                             </div>
@@ -181,10 +181,10 @@
                                         {
                                             <form method="post" asp-page-handler="Feedback" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" class="mt-2">
                                                 <div class="mb-2">
-                                                    <textarea name="FeedbackText" class="form-control form-control-sm" rows="2" placeholder="Enter nhận xét for patient..." style="border-radius:8px;"></textarea>
+                                                    <textarea name="FeedbackText" class="form-control form-control-sm" rows="2" placeholder="Enter feedback for the patient..." style="border-radius:8px;"></textarea>
                                                 </div>
                                                 <button type="submit" class="btn btn-success btn-sm px-3" style="border-radius:8px;">
-                                                    <i class="bi bi-chat-heart me-1"></i>Send nhận xét
+                                                    <i class="bi bi-chat-heart me-1"></i>Send Feedback
                                                 </button>
                                             </form>
                                         }
@@ -197,7 +197,7 @@
                     {
                         <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
                             <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
-                            <span class="small">None yet assignment nào. Dùng form bên trái to giao assignment for patient.</span>
+                            <span class="small">No assignments yet. Use the form on the left to create one for the patient.</span>
                         </div>
                     }
                 </div>
@@ -241,7 +241,7 @@
                     {
                         <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
                             <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
-                            <span class="small">Patient chưa share journal cảm xúc nào.</span>
+                            <span class="small">Patient has not shared any journal entries yet.</span>
                         </div>
                     }
                 </div>
@@ -255,8 +255,8 @@ else
         <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
             <i class="bi bi-box text-muted" style="font-size:2.5rem;"></i>
         </div>
-        <h5 class="fw-bold">Not found gói treatment</h5>
-        <p class="text-muted">Treatment Package this không tồn at hoặc bạn không có access permissions.</p>
-        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Back danh sách</a>
+        <h5 class="fw-bold">Treatment Package Not Found</h5>
+        <p class="text-muted">This treatment package does not exist or you do not have access permissions.</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Back to List</a>
     </div>
 }

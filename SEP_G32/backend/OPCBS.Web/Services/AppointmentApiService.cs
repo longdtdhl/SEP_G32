@@ -81,6 +81,18 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         return (data, error);
     }
 
+    public async Task<(int Count, string? Error)> GetVisitCountAsync(Guid doctorId)
+    {
+        var (data, _, error) = await GetAsync<int>($"{ApiRoutes.Appointments}/visit-count/{doctorId}");
+        return (data, error);
+    }
+
+    public async Task<(bool IsReturning, string? Error)> IsReturningAsync(Guid doctorId)
+    {
+        var (data, _, error) = await GetAsync<bool>($"{ApiRoutes.Appointments}/is-returning/{doctorId}");
+        return (data, error);
+    }
+
     private static string BuildFilterUrl(string baseUrl, AppointmentFilterDto? filter)
     {
         if (filter == null) return baseUrl;

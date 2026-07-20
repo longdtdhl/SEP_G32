@@ -30,6 +30,7 @@ public class AppointmentReminderService : BackgroundService
             try
             {
                 await CheckAndSendRemindersAsync(stoppingToken);
+                await CheckAndSendFollowUpRemindersAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -149,6 +150,110 @@ public class AppointmentReminderService : BackgroundService
             }
 
             _logger.LogInformation("Sent reminders for appointment {ApptId}", appt.Id);
+        }
+    }
+
+    /// <summary>
+    /// Checks ConsultationNotes with NextAppointmentRecommendedDate and sends
+    /// follow-up reminders 1 day before the recommended date.
+    /// </summary>
+    private async Task CheckAndSendFollowUpRemindersAsync(CancellationToken ct)
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var noteRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.ConsultationNote>>();
+        var doctorRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.DoctorProfile>>();
+        var patientRecordRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.PatientRecord>>();
+        var patientRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.PatientProfile>>();
+        var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.User>>();
+        var notifRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.Notification>>();
+        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+        var now = DateTime.UtcNow;
+        var tomorrowStart = now.Date.AddDays(1);
+        var tomorrowEnd = tomorrowStart.AddDays(1);
+
+        var allNotes = await noteRepo.GetAllAsync(ct);
+        var allNotifs = await notifRepo.GetAllAsync(ct);
+
+        // Find notes with follow-up date = tomorrow
+        var followUpNotes = allNotes.Where(n =>
+            !n.IsDeleted &&
+            n.NextAppointmentRecommendedDate.HasValue &&
+            n.NextAppointmentRecommendedDate.Value.Date >= tomorrowStart &&
+            n.NextAppointmentRecommendedDate.Value.Date < tomorrowEnd
+        ).ToList();
+
+        if (!followUpNotes.Any()) return;
+
+        var allDoctors = await doctorRepo.GetAllAsync(ct);
+        var allPatientRecords = await patientRecordRepo.GetAllAsync(ct);
+        var allPatients = await patientRepo.GetAllAsync(ct);
+        var allUsers = await userRepo.GetAllAsync(ct);
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u);
+        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
+
+        foreach (var note in followUpNotes)
+        {
+            // Check if follow-up reminder already sent (dedup)
+            var alreadySent = allNotifs.Any(n =>
+                n.RelatedEntityId == note.Id &&
+                n.RelatedEntityType == "FollowUpReminder" &&
+                n.Type == NotificationType.Reminder);
+            if (alreadySent) continue;
+
+            // Get patient user
+            var patientRecord = allPatientRecords.FirstOrDefault(pr => pr.Id == note.PatientRecordId);
+            if (patientRecord?.PatientId == null) continue;
+
+            var patient = allPatients.FirstOrDefault(p => p.Id == patientRecord.PatientId.Value);
+            if (patient == null) continue;
+
+            if (!userDict.TryGetValue(patient.UserId, out var patientUser)) continue;
+
+            // Get doctor name
+            var doctorName = "your doctor";
+            if (doctorUserMap.TryGetValue(note.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docUser))
+                doctorName = docUser.FullName;
+
+            var dateStr = note.NextAppointmentRecommendedDate!.Value.ToString("dd/MM/yyyy");
+
+            // Send in-app notification
+            try
+            {
+                await notificationService.CreateNotificationAsync(
+                    patient.UserId,
+                    "🔔 Nhắc nhở tái khám",
+                    $"Bạn có lịch tái khám với BS {doctorName} vào ngày {dateStr}. Hãy đặt lịch hẹn ngay nhé!",
+                    NotificationType.Reminder,
+                    note.Id,
+                    "FollowUpReminder",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send follow-up notification for note {NoteId}", note.Id);
+            }
+
+            // Send email
+            try
+            {
+                if (!string.IsNullOrEmpty(patientUser.Email))
+                {
+                    await emailService.SendFollowUpReminderEmailAsync(
+                        patientUser.Email,
+                        patientUser.FullName ?? "Patient",
+                        doctorName,
+                        dateStr,
+                        ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send follow-up email for note {NoteId}", note.Id);
+            }
+
+            _logger.LogInformation("Sent follow-up reminder for consultation note {NoteId}", note.Id);
         }
     }
 }

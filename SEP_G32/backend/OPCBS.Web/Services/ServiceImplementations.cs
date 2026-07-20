@@ -45,6 +45,7 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
         return (data, error);
     }
     public async Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId) => await base.DeleteAsync($"{ApiRoutes.Schedules}/slots/{slotId}");
+    public async Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/notes", new { Notes = notes });
 }
 
 // --- Consultation Record ---

@@ -24,6 +24,8 @@ public class DetailsModel : PageModel
     [BindProperty] public string? CancelReason { get; set; }
     public PsychometricSubmissionDto? PsychometricSubmission { get; set; }
     public List<PsychometricTestDto> AvailableTests { get; set; } = new();
+    public bool IsReturningPatient { get; set; }
+    public int VisitCount { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -36,6 +38,17 @@ public class DetailsModel : PageModel
 
         var (tests, _) = await _psychService.GetTestsAsync();
         AvailableTests = tests ?? new();
+
+        // Check if patient is a returning patient for this doctor
+        try
+        {
+            var (isReturning, _) = await _service.IsReturningAsync(data.DoctorId);
+            IsReturningPatient = isReturning;
+
+            var (count, _) = await _service.GetVisitCountAsync(data.DoctorId);
+            VisitCount = count;
+        }
+        catch { }
 
         return Page();
     }

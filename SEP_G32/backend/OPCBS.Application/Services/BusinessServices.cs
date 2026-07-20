@@ -373,8 +373,50 @@ public class ConsultationNoteService : IConsultationNoteService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Doctor not found");
 
-        var patientRecord = await _patientRecordRepo.GetByIdAsync(dto.PatientRecordId, ct);
-        if (patientRecord == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Patient record not found");
+        PatientRecord? patientRecord = null;
+        if (dto.PatientRecordId != Guid.Empty)
+        {
+            patientRecord = await _patientRecordRepo.GetByIdAsync(dto.PatientRecordId, ct);
+        }
+
+        // Auto-create PatientRecord if missing (e.g., guest booking)
+        if (patientRecord == null && dto.AppointmentId.HasValue)
+        {
+            var appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
+            if (appointment != null)
+            {
+                if (appointment.PatientId.HasValue)
+                {
+                    // Check if patient already has a record with this doctor
+                    var allRecords = await _patientRecordRepo.GetAllAsync(ct);
+                    patientRecord = allRecords.FirstOrDefault(r => r.PatientId == appointment.PatientId && r.DoctorId == doctor.Id);
+                }
+
+                if (patientRecord == null)
+                {
+                    patientRecord = new PatientRecord
+                    {
+                        DoctorId = doctor.Id,
+                        PatientId = appointment.PatientId,
+                        Doctor = doctor,
+                        GuestName = appointment.GuestName,
+                        GuestEmail = appointment.GuestEmail,
+                        GuestPhone = appointment.GuestPhoneNumber,
+                        GeneralNotes = $"Auto-created from appointment {appointment.BookingCode}"
+                    };
+                    if (appointment.PatientId.HasValue)
+                    {
+                        var allPatients = await _patientRepo.GetAllAsync(ct);
+                        var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                        if (pat != null) patientRecord.Patient = pat;
+                    }
+                    await _patientRecordRepo.AddAsync(patientRecord, ct);
+                    await _uow.SaveChangesAsync(ct);
+                }
+            }
+        }
+
+        if (patientRecord == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Could not resolve or create patient record");
 
         var record = new ConsultationNote
         {
@@ -1273,6 +1315,55 @@ public class SubscriptionService : ISubscriptionService
         if (package == null || !package.IsActive)
             return ApiResponse<SubscriptionDto>.ErrorResponse("Service package not found or inactive");
 
+        // FREE PACKAGE — activate immediately without VNPay
+        if (package.Price <= 0)
+        {
+            // Deactivate existing active subscriptions
+            var allSubs = await _subRepo.GetAllAsync(ct);
+            var activeSubs = allSubs.Where(s => s.DoctorProfileId == doctor.Id && s.Status == SubscriptionStatus.Active).ToList();
+            foreach (var activeSub in activeSubs)
+            {
+                activeSub.Status = SubscriptionStatus.Expired;
+                _subRepo.Update(activeSub);
+            }
+
+            var freeSub = new DoctorSubscription
+            {
+                DoctorProfileId = doctor.Id,
+                ServicePackageId = servicePackageId,
+                Status = SubscriptionStatus.Active,
+                StartDate = DateTime.UtcNow,
+                ExpirationDate = DateTime.UtcNow.AddDays(package.DurationDays),
+                DoctorProfile = doctor,
+                ServicePackage = package
+            };
+            await _subRepo.AddAsync(freeSub, ct);
+
+            var freePayment = new PaymentTransaction
+            {
+                DoctorSubscriptionId = freeSub.Id,
+                TransactionCode = $"TXN-FREE-{Guid.NewGuid():N}",
+                Amount = 0,
+                PaymentMethod = "Free",
+                PaymentStatus = Domain.Enums.PaymentStatus.Success,
+                PaidAt = DateTime.UtcNow,
+                DoctorSubscription = freeSub
+            };
+            await _paymentRepo.AddAsync(freePayment, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
+            {
+                Id = freeSub.Id,
+                PackageName = package.Name,
+                Status = freeSub.Status.ToString(),
+                StartDate = freeSub.StartDate,
+                ExpirationDate = freeSub.ExpirationDate,
+                CreatedAt = freeSub.CreatedAt
+            }, "Free trial activated successfully!");
+        }
+
+        // PAID PACKAGE — use VNPay
         var subscription = new DoctorSubscription
         {
             DoctorProfileId = doctor.Id,

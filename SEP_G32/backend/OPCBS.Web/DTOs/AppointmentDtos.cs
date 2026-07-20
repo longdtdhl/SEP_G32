@@ -15,11 +15,16 @@ public class AppointmentDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public string? Notes { get; set; }
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
     public int Status { get; set; }
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public string? TreatmentPackageName { get; set; }
+    public int VisitCount { get; set; }
 
     public string StatusText => Status switch
     {
@@ -90,6 +95,11 @@ public class CreateAppointmentDto
     public string? Notes { get; set; }
     public Guid? TreatmentPackageId { get; set; }
 
+    // Pre-evaluation fields
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
+
     // Guest booking
     public string? GuestName { get; set; }
     public string? GuestEmail { get; set; }
@@ -134,6 +144,7 @@ public class AppointmentSlotDto
     // Backend returns AppointmentSlotStatus as int (0=Available, 1=Booked, 2=Unavailable)
     public int Status { get; set; }
     public decimal? Price { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class AvailableSlotsDto

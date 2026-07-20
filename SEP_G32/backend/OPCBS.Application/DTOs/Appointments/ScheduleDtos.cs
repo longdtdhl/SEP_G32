@@ -59,5 +59,13 @@ public class CreateSlotDto
     public string Date { get; set; } = string.Empty; // Format: yyyy-MM-dd
     public string StartTime { get; set; } = string.Empty; // Format: HH:mm
     public string EndTime { get; set; } = string.Empty; // Format: HH:mm
+    public string? Notes { get; set; }
 }
 
+/// <summary>
+/// Update slot notes request DTO
+/// </summary>
+public class UpdateSlotNotesRequest
+{
+    public string? Notes { get; set; }
+}

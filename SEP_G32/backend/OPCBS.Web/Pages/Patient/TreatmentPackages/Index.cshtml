@@ -54,7 +54,7 @@
     <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
         <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>My Treatment Packages
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Follow-up the gói treatment được doctor chỉ định for bạn</p>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Track your treatment packages assigned by your doctor</p>
 </div>
 
 @if (Model.Error != null)
@@ -80,7 +80,7 @@
             <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-box-seam"></i></div>
             <div>
                 <div class="stat-value">@Model.Packages.Count</div>
-                <div class="stat-label">Total gói</div>
+                <div class="stat-label">Total Packages</div>
             </div>
         </div>
     </div>
@@ -98,7 +98,7 @@
             <div class="stat-icon" style="background:#fef3c7; color:#f59e0b;"><i class="bi bi-calendar2-check"></i></div>
             <div>
                 <div class="stat-value">@completedSessions / @totalSessions</div>
-                <div class="stat-label">Session complete</div>
+                <div class="stat-label">Sessions Completed</div>
             </div>
         </div>
     </div>
@@ -122,9 +122,9 @@
                 _ => pkg.IsExpired ? "expired" : "created"
             };
             var statusLabel = pkg.Status switch {
-                "Active" => "Hoạt động",
-                "Accepted" => "Đã chấp nhận",
-                "Created" => "Đã tạo",
+                "Active" => "Active",
+                "Accepted" => "Accepted",
+                "Created" => "Created",
                 "Pending" => "Pending Confirmation",
                 "Assigned" => "Pending Confirmation",
                 "Completed" => "Completed",
@@ -158,8 +158,8 @@
                         }
 
                         <div class="pt-meta-row"><i class="bi bi-calendar2-check"></i><span>Session: <strong style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
-                        <div class="pt-meta-row"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong style="color:#1e293b;">@pkg.RemainingSessions phiên</strong></span></div>
-                        <div class="pt-meta-row"><i class="bi bi-calendar-x"></i><span>Expired: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong style="color:#1e293b;">@pkg.RemainingSessions sessions</strong></span></div>
+                        <div class="pt-meta-row"><i class="bi bi-calendar-x"></i><span>Expires: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</strong></span></div>
                         <div class="pt-meta-row"><i class="bi bi-currency-dollar"></i><span>Fee: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
 
                         <!-- Progress bar -->
@@ -192,7 +192,7 @@
                             <a asp-page="Details" asp-route-id="@pkg.Id"
                                class="btn btn-sm btn-success flex-fill d-flex align-items-center justify-content-center gap-1"
                                style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                                <i class="bi bi-check-circle"></i>Phản hồi
+                                <i class="bi bi-check-circle"></i>Respond
                             </a>
                         }
                     </div>
@@ -205,10 +205,10 @@
         <div class="col-12">
             <div class="pt-empty">
                 <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
-                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No treatment packages yet nào</h5>
-                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Doctor sẽ tạo gói treatment dành riêng for bạn after when consultation</p>
+                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No treatment packages yet</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Your doctor will create a personalized treatment package for you after consultation</p>
                 <a asp-page="/Doctors/Index" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                    <i class="bi bi-search me-1"></i>Find doctor
+                    <i class="bi bi-search me-1"></i>Find a Doctor
                 </a>
             </div>
         </div>

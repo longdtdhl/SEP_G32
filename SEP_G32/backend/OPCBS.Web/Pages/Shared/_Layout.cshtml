@@ -42,37 +42,25 @@
     }
 
     <!-- Main Content -->
-    @if (ViewData["UseDashboardLayout"] as bool? == true)
+    @if (ViewData["FullWidthLayout"] as bool? == true)
     {
-        <!-- Dashboard Layout with Sidebar -->
-        <partial name="_Sidebar" />
-        <div class="mb-dashboard-content">
+        <main role="main">
             @RenderBody()
-        </div>
+        </main>
     }
     else
     {
-        <!-- Standard Content Layout -->
-        @if (ViewData["FullWidthLayout"] as bool? == true)
-        {
+        <div class="container py-4">
             <main role="main">
                 @RenderBody()
             </main>
-        }
-        else
-        {
-            <div class="container py-4">
-                <main role="main">
-                    @RenderBody()
-                </main>
-            </div>
-        }
-
-        <!-- Footer (only for non-dashboard pages) -->
-        <footer>
-            <partial name="_Footer" />
-        </footer>
+        </div>
     }
+
+    <!-- Footer -->
+    <footer>
+        <partial name="_Footer" />
+    </footer>
 
     <!-- Scroll to top button -->
     <button id="scroll-to-top" class="scroll-to-top" aria-label="Scroll to top">

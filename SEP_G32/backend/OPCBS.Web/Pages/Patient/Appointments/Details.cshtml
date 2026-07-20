@@ -22,9 +22,10 @@
     var apt = Model.Appointment;
     var isPending = apt.Status == 0;
     var isApproved = apt.Status == 1;
-    var isCompleted = apt.Status == 4;
-    var isCancelled = apt.Status == 3;
     var isRejected = apt.Status == 2;
+    var isInProgress = apt.Status == 3;
+    var isCompleted = apt.Status == 4;
+    var isCancelled = apt.Status == 5;
     var canCancel = isPending || isApproved;
 
     <!-- Status Banner -->
@@ -54,9 +55,17 @@
                     <i class="bi bi-patch-check-fill"></i>
                     <span><strong>Completed</strong> — Your consultation session has ended.</span>
                 </div>
-                <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-warning">
-                    <i class="bi bi-star me-1"></i>Write Review
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (Model.IsReturningPatient)
+                    {
+                        <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Book Follow-up
+                        </a>
+                    }
+                    <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-warning">
+                        <i class="bi bi-star me-1"></i>Write Review
+                    </a>
+                </div>
             </div>
         </div>
     }
@@ -102,6 +111,12 @@
                             {
                                 <span class="mb-chip">@apt.Specialization</span>
                             }
+                            @if (Model.VisitCount > 0)
+                            {
+                                <span class="badge bg-info bg-opacity-15 text-info px-2 py-1" style="border-radius:8px; font-size:0.72rem;">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Visit #@Model.VisitCount
+                                </span>
+                            }
                         </div>
                         <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
                     </div>
@@ -138,18 +153,6 @@
                                 </div>
                             </div>
                         }
-                        @if (apt.Fee.HasValue)
-                        {
-                            <div class="col-sm-6">
-                                <div class="detail-info-box">
-                                    <div class="detail-info-icon"><i class="bi bi-wallet2"></i></div>
-                                    <div>
-                                        <small class="text-muted d-block">Consultation Fee</small>
-                                        <strong>@apt.Fee?.ToString("N0") VND</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        }
                     </div>
 
                     <!-- Psychometric Test Section -->
@@ -157,18 +160,31 @@
                         <h6 class="mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Mental Health Assessment</h6>
                         @if (Model.PsychometricSubmission != null)
                         {
-                            <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge bg-success-subtle text-success">Completed</span>
-                                        <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
+                            <div class="p-3 bg-light rounded-3">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge bg-success-subtle text-success">Completed</span>
+                                            <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
+                                        </div>
+                                        <small class="text-muted d-block">Completed at: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")</small>
+                                        <span class="text-secondary d-block mt-1">Result: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Total Score: @Model.PsychometricSubmission.TotalScore)</span>
                                     </div>
-                                    <small class="text-muted d-block">Completed at: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")</small>
-                                    <span class="text-secondary d-block mt-1">Result: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Total Score: @Model.PsychometricSubmission.TotalScore)</span>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-bar-chart-fill me-1"></i>View Results
+                                        </a>
+                                        @if (isApproved || isPending)
+                                        {
+                                            @foreach (var test in Model.AvailableTests)
+                                            {
+                                                <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-arrow-repeat me-1"></i>Retake: @test.Title
+                                                </a>
+                                            }
+                                        }
+                                    </div>
                                 </div>
-                                <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-bar-chart-fill me-1"></i>View Detailed Results
-                                </a>
                             </div>
                         }
                         else if (isApproved || isPending)

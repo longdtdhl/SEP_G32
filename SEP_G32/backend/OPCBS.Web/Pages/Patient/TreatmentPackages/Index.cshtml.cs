@@ -20,6 +20,6 @@ public class IndexModel : PageModel
             Packages = data;
             Error = error;
         }
-        catch { Error = "Unable to tải dữ liệu."; }
+        catch { Error = "Unable to load data."; }
     }
 }
