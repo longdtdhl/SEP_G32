@@ -3,11 +3,13 @@
 @{
     ViewData["Title"] = "Treatment Package";
     ViewData["UseDashboardLayout"] = true;
-    var totalPkgs = Model.Packages.Count;
-    var activePkgs = Model.Packages.Count(p => p.Status == "Active");
-    var expiredPkgs = Model.Packages.Count(p => p.IsExpired);
-    var totalSessions = Model.Packages.Sum(p => p.TotalSessions);
-    var completedSessions = Model.Packages.Sum(p => p.CompletedSessions);
+    // Filter out cancelled and rejected packages
+    var visiblePackages = Model.Packages.Where(p => p.Status != "Cancelled" && p.Status != "Rejected").ToList();
+    var totalPkgs = visiblePackages.Count;
+    var activePkgs = visiblePackages.Count(p => p.Status == "Active");
+    var expiredPkgs = visiblePackages.Count(p => p.IsExpired);
+    var totalSessions = visiblePackages.Sum(p => p.TotalSessions);
+    var completedSessions = visiblePackages.Sum(p => p.CompletedSessions);
 }
 
 <style>
@@ -238,48 +240,6 @@
     </div>
 }
 
-<!-- Stats -->
-<div class="pkg-stats">
-    <div class="pkg-stat-card">
-        <div class="d-flex align-items-center gap-3">
-            <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-box-seam"></i></div>
-            <div>
-                <div class="stat-value">@totalPkgs</div>
-                <div class="stat-label">Total Packages</div>
-            </div>
-        </div>
-    </div>
-    <div class="pkg-stat-card">
-        <div class="d-flex align-items-center gap-3">
-            <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="bi bi-lightning-charge"></i>
-            </div>
-            <div>
-                <div class="stat-value">@activePkgs</div>
-                <div class="stat-label">Active</div>
-            </div>
-        </div>
-    </div>
-    <div class="pkg-stat-card">
-        <div class="d-flex align-items-center gap-3">
-            <div class="stat-icon" style="background:#fef3c7; color:#f59e0b;"><i class="bi bi-calendar2-check"></i>
-            </div>
-            <div>
-                <div class="stat-value">@completedSessions / @totalSessions</div>
-                <div class="stat-label">Sessions Completed</div>
-            </div>
-        </div>
-    </div>
-    <div class="pkg-stat-card">
-        <div class="d-flex align-items-center gap-3">
-            <div class="stat-icon" style="background:#fee2e2; color:#ef4444;"><i class="bi bi-exclamation-triangle"></i>
-            </div>
-            <div>
-                <div class="stat-value">@expiredPkgs</div>
-                <div class="stat-label">Expired</div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Search & Filter -->
 <div class="search-filter-bar">
@@ -293,9 +253,9 @@
 
 <!-- Package Cards -->
 <div class="row g-3" id="pkgGrid">
-    @if (Model.Packages.Any())
+    @if (visiblePackages.Any())
     {
-        @foreach (var pkg in Model.Packages.OrderByDescending(p => p.CreatedAt))
+        @foreach (var pkg in visiblePackages.OrderByDescending(p => p.CreatedAt))
         {
             var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
             var statusClass = pkg.Status switch

@@ -75,4 +75,13 @@ public class CreateSlotDto
     public required string StartTime { get; set; }
     public required string EndTime { get; set; }
     public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+}
+
+public class UpdateSlotDto
+{
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public string? Notes { get; set; }
+    public int? MaxPatients { get; set; }
 }

@@ -29,6 +29,8 @@ public class DetailsModel : PageModel
     // Create assignment
     [BindProperty] public string AssignmentTitle { get; set; } = string.Empty;
     [BindProperty] public string? AssignmentDescription { get; set; }
+    [BindProperty] public string? AssignmentDetailedInstructions { get; set; }
+    [BindProperty] public string? AssignmentResourceUrl { get; set; }
     [BindProperty] public DateTime? AssignmentDueDate { get; set; }
 
     // Feedback
@@ -52,9 +54,9 @@ public class DetailsModel : PageModel
             // Load patient's shared journals
             try
             {
-                if (Package.PatientId != Guid.Empty)
+                if (Package.PatientId.HasValue && Package.PatientId.Value != Guid.Empty)
                 {
-                    var (journals, _) = await _therapyService.GetPatientSharedJournalsAsync(Package.PatientId);
+                    var (journals, _) = await _therapyService.GetPatientSharedJournalsAsync(Package.PatientId.Value);
                     PatientJournals = journals;
                 }
             }
@@ -77,6 +79,8 @@ public class DetailsModel : PageModel
             TreatmentPackageId = id,
             Title = AssignmentTitle,
             Description = AssignmentDescription,
+            DetailedInstructions = AssignmentDetailedInstructions,
+            ResourceUrl = AssignmentResourceUrl,
             DueDate = AssignmentDueDate
         };
 

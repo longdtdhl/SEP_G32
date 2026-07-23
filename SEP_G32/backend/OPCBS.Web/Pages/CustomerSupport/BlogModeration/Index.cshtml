@@ -41,17 +41,6 @@
 @if (ViewData["Success"] is string suc) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
 @if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
 
-<!-- Stats -->
-<div class="mod-stats">
-    <div class="mod-stat">
-        <div class="icon-wrap" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="bi bi-hourglass-split"></i></div>
-        <div class="stat-info"><div class="num" style="color:#f59e0b;">@Model.Blogs.Count</div><div class="label">Pending Review</div></div>
-    </div>
-    <div class="mod-stat">
-        <div class="icon-wrap" style="background:rgba(78,139,112,0.1); color:var(--mb-primary);"><i class="bi bi-journal-text"></i></div>
-        <div class="stat-info"><div class="num">@(Model.Pagination?.TotalItems ?? Model.Blogs.Count)</div><div class="label">Total Submissions</div></div>
-    </div>
-</div>
 
 <!-- Queue -->
 @if (Model.Blogs.Any())

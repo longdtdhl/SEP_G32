@@ -169,6 +169,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("CurrentBookings")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("DoctorProfileId")
                         .HasColumnType("uniqueidentifier");
 
@@ -177,6 +180,9 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("MaxPatients")
+                        .HasColumnType("int");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
@@ -517,6 +523,55 @@ namespace OPCBS.Infrastructure.Migrations
                     b.ToTable("ConsultationNotes");
                 });
 
+            modelBuilder.Entity("OPCBS.Domain.Entities.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TreatmentPackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("TreatmentPackageId");
+
+                    b.HasIndex("PatientId", "DoctorId");
+
+                    b.ToTable("Conversations");
+                });
+
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorDayOff", b =>
                 {
                     b.Property<Guid>("Id")
@@ -618,9 +673,6 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasDefaultValue(0);
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("DoctorProfiles");
                 });
@@ -770,6 +822,81 @@ namespace OPCBS.Infrastructure.Migrations
                     b.ToTable("EmotionJournals");
                 });
 
+            modelBuilder.Entity("OPCBS.Domain.Entities.FavoriteDoctor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId", "DoctorId")
+                        .IsUnique();
+
+                    b.ToTable("FavoriteDoctors");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AttachmentUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("OPCBS.Domain.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -909,9 +1036,6 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("PatientProfiles");
                 });
@@ -1601,6 +1725,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DetailedInstructions")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("DoctorFeedback")
                         .HasColumnType("nvarchar(max)");
 
@@ -1614,6 +1741,12 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("PatientSubmission")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PatientSubmissionUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResourceUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
@@ -1673,6 +1806,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<DateTime>("ExpirationDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Instructions")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1681,12 +1817,15 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<Guid>("PatientId")
+                    b.Property<Guid?>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RecommendedExercises")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(1000)
@@ -1700,6 +1839,9 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("TargetOutcome")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1983,6 +2125,41 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Navigation("PatientRecord");
                 });
 
+            modelBuilder.Entity("OPCBS.Domain.Entities.Conversation", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OPCBS.Domain.Entities.DoctorProfile", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.PatientProfile", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentPackage", "TreatmentPackage")
+                        .WithMany()
+                        .HasForeignKey("TreatmentPackageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("TreatmentPackage");
+                });
+
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorDayOff", b =>
                 {
                     b.HasOne("OPCBS.Domain.Entities.DoctorProfile", "DoctorProfile")
@@ -2052,6 +2229,38 @@ namespace OPCBS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.FavoriteDoctor", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.DoctorProfile", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.PatientProfile", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.Message", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Notification", b =>
@@ -2251,8 +2460,7 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasOne("OPCBS.Domain.Entities.PatientProfile", "Patient")
                         .WithMany("TreatmentPackages")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Doctor");
 
@@ -2298,6 +2506,11 @@ namespace OPCBS.Infrastructure.Migrations
             modelBuilder.Entity("OPCBS.Domain.Entities.BlogPost", b =>
                 {
                     b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.DoctorProfile", b =>

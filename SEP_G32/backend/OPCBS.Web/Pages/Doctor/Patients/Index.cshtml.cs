@@ -11,36 +11,58 @@ namespace OPCBS.Web.Pages.Doctor.Patients;
 public class IndexModel : PageModel
 {
     private readonly IPatientRecordApiService _apiService;
-    private readonly ILogger<IndexModel> _logger;
+    private readonly IConsultationNoteApiService _noteService;
 
-    public IndexModel(IPatientRecordApiService apiService, ILogger<IndexModel> logger)
+    public IndexModel(IPatientRecordApiService apiService, IConsultationNoteApiService noteService)
     {
         _apiService = apiService;
-        _logger = logger;
+        _noteService = noteService;
     }
 
-    public List<PatientRecordDto> SystemPatients { get; set; } = new();
-    public List<PatientRecordDto> GuestPatients { get; set; } = new();
+    public List<PatientRecordDto> Patients { get; set; } = new();
+    public List<ConsultationNoteDto> AllNotes { get; set; } = new();
+
+    [BindProperty(SupportsGet = true)]
+    public string? Tab { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
-        var sysTask = _apiService.GetSystemPatientsAsync();
-        var guestTask = _apiService.GetGuestPatientsAsync();
-
-        await Task.WhenAll(sysTask, guestTask);
-
-        var sysResult = sysTask.Result;
-        if (sysResult.Error == null)
-            SystemPatients = sysResult.Data;
+        var (data, error) = await _apiService.GetMyPatientsAsync();
+        if (error != null)
+            TempData["ErrorMessage"] = error;
         else
-            TempData["ErrorMessage"] = sysResult.Error;
+            Patients = data;
 
-        var guestResult = guestTask.Result;
-        if (guestResult.Error == null)
-            GuestPatients = guestResult.Data;
-        else if (sysResult.Error == null) // don't overwrite sys error
-            TempData["ErrorMessage"] = guestResult.Error;
+        // Fetch all consultation notes for note counts
+        var (notes, _, noteError) = await _noteService.GetAllAsync(1, 500);
+        if (noteError == null && notes != null)
+            AllNotes = notes;
+
+        // Tab filter
+        if (Tab == "system")
+            Patients = Patients.Where(p => !p.IsGuest).ToList();
+        else if (Tab == "guest")
+            Patients = Patients.Where(p => p.IsGuest).ToList();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var q = Search.Trim().ToLowerInvariant();
+            Patients = Patients.Where(p =>
+                (p.DisplayName?.ToLowerInvariant().Contains(q) ?? false) ||
+                (p.DisplayEmail?.ToLowerInvariant().Contains(q) ?? false) ||
+                (p.DisplayPhone?.ToLowerInvariant().Contains(q) ?? false)
+            ).ToList();
+        }
 
         return Page();
+    }
+
+    public int GetNoteCount(Guid patientRecordId)
+    {
+        return AllNotes.Count(n => n.PatientRecordId == patientRecordId);
     }
 }

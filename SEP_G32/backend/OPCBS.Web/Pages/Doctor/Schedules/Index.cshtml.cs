@@ -106,6 +106,21 @@ public class IndexModel : PageModel
         return RedirectToPage(new { week = Week });
     }
 
+    public async Task<IActionResult> OnPostUpdateSlotAsync(Guid slotId, string? startTime, string? endTime, string? notes, int? maxPatients)
+    {
+        var dto = new DTOs.UpdateSlotDto
+        {
+            StartTime = startTime,
+            EndTime = endTime,
+            Notes = notes,
+            MaxPatients = maxPatients
+        };
+        var (success, error) = await _api.UpdateSlotAsync(slotId, dto);
+        if (!success) TempData["Error"] = error;
+        else TempData["Success"] = "Slot updated successfully.";
+        return RedirectToPage(new { week = Week });
+    }
+
     public async Task<IActionResult> OnPostResetScheduleAsync()
     {
         var (slotsData, error) = await _api.GetMySlotsAsync();

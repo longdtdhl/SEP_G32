@@ -26,7 +26,7 @@ public class PatientRecordsController : ControllerBase
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
 
-    [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.SystemAdmin)]
+    [Authorize(Roles = RoleConstants.SystemAdmin)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -34,26 +34,65 @@ public class PatientRecordsController : ControllerBase
         return Ok(new { Data = records, Success = true });
     }
 
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpGet("my-patients")]
+    public async Task<IActionResult> GetMyPatients()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var records = await _service.GetMyPatientsAsync(userId.Value);
+        return Ok(new { Data = records, Success = true });
+    }
+
     [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.SystemAdmin)]
     [HttpGet("system")]
     public async Task<IActionResult> GetSystemPatients()
     {
-        var records = await _service.GetSystemPatientsAsync();
-        return Ok(new { Data = records, Success = true });
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        // Doctors only see their own patients
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var records = await _service.GetMyPatientsAsync(userId.Value);
+            return Ok(new { Data = records.Where(r => r.PatientId != null).ToList(), Success = true });
+        }
+
+        var allRecords = await _service.GetSystemPatientsAsync();
+        return Ok(new { Data = allRecords, Success = true });
     }
 
     [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.SystemAdmin)]
     [HttpGet("guest")]
     public async Task<IActionResult> GetGuestPatients()
     {
-        var records = await _service.GetGuestPatientsAsync();
-        return Ok(new { Data = records, Success = true });
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        // Doctors only see their own guest patients
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var records = await _service.GetMyPatientsAsync(userId.Value);
+            return Ok(new { Data = records.Where(r => r.PatientId == null).ToList(), Success = true });
+        }
+
+        var allRecords = await _service.GetGuestPatientsAsync();
+        return Ok(new { Data = allRecords, Success = true });
     }
 
     [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
+        // Access control: doctors can only see their own patients
+        var userId = GetUserId();
+        if (userId != null && User.IsInRole(RoleConstants.Doctor))
+        {
+            var canAccess = await _service.CanDoctorAccessPatientAsync(userId.Value, id);
+            if (!canAccess)
+                return Forbid();
+        }
+
         var record = await _service.GetByIdAsync(id);
         if (record == null) return NotFound(new { Success = false, Error = "Patient record not found" });
         return Ok(new { Data = record, Success = true });
@@ -65,6 +104,16 @@ public class PatientRecordsController : ControllerBase
     {
         var record = await _service.GetByUserIdAsync(userId);
         if (record == null) return NotFound(new { Success = false, Error = "Patient record not found" });
+
+        // Access control for doctors
+        var currentUserId = GetUserId();
+        if (currentUserId != null && User.IsInRole(RoleConstants.Doctor))
+        {
+            var canAccess = await _service.CanDoctorAccessPatientAsync(currentUserId.Value, record.Id);
+            if (!canAccess)
+                return Forbid();
+        }
+
         return Ok(new { Data = record, Success = true });
     }
 
@@ -82,6 +131,15 @@ public class PatientRecordsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRecordDto dto)
     {
+        // Access control for doctors
+        var userId = GetUserId();
+        if (userId != null && User.IsInRole(RoleConstants.Doctor))
+        {
+            var canAccess = await _service.CanDoctorAccessPatientAsync(userId.Value, id);
+            if (!canAccess)
+                return Forbid();
+        }
+
         var result = await _service.UpdateAsync(id, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }

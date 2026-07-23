@@ -1,4 +1,4 @@
-﻿@page "{id:Guid}"
+@page "{id:Guid}"
 @model OPCBS.Web.Pages.Doctor.Patients.DetailsModel
 @{
     ViewData["Title"] = "Patient Profile Details";
@@ -103,22 +103,48 @@
         {
             <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                        <i class="bi bi-box-seam text-success me-2"></i>Psychotherapy Packages
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <h5 class="fw-bold mb-0" style="color:#1e293b; font-size:1rem;">
+                            <i class="bi bi-box-seam text-success me-2"></i>Psychotherapy Packages
+                        </h5>
+                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.PatientId" 
+                           class="btn btn-sm btn-primary fw-semibold d-flex align-items-center gap-1" 
+                           style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary); font-size:0.75rem;">
+                            <i class="bi bi-plus-lg"></i>Create New
+                        </a>
+                    </div>
                     
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success py-2 mb-3" style="border-radius:10px; font-size:0.82rem; border:none;">
+                            <i class="bi bi-check-circle-fill me-1"></i>@TempData["SuccessMessage"]
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger py-2 mb-3" style="border-radius:10px; font-size:0.82rem; border:none;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>@TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <!-- Active Packages List -->
                     @if (Model.TreatmentPackages.Any())
                     {
-                        <div class="d-flex flex-column gap-3">
+                        <div class="d-flex flex-column gap-3 mb-3">
                             @foreach (var pkg in Model.TreatmentPackages)
                             {
                                 var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
                                 var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-                                
+                                var statusBg = pkg.Status switch {
+                                    "Active" => "bg-success", "Accepted" => "bg-success",
+                                    "Completed" => "bg-primary", "Assigned" => "bg-warning",
+                                    _ => "bg-secondary"
+                                };
+
                                 <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="fw-bold text-dark mb-0" style="font-size:0.85rem; line-height:1.4;">@pkg.Title</h6>
-                                        <span class="badge @(pkg.Status == "Active" ? "bg-success" : pkg.Status == "Completed" ? "bg-primary" : "bg-warning")" style="font-size:0.65rem;">@pkg.Status</span>
+                                        <span class="badge @statusBg" style="font-size:0.65rem;">@pkg.Status</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
                                         <span>Completed: @pkg.CompletedSessions/@pkg.TotalSessions</span>
@@ -127,7 +153,8 @@
                                     <div class="progress mb-2" style="height:6px; border-radius:4px;">
                                         <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
                                     </div>
-                                    <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
+                                    <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" 
+                                       class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
                                         <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
                                     </a>
                                 </div>
@@ -136,14 +163,34 @@
                     }
                     else
                     {
-                        <div class="text-center py-3 text-muted">
-                            <i class="bi bi-box-seam d-block mb-1" style="font-size:1.5rem; opacity:0.4;"></i>
-                            <span class="small">No treatment package registered yet.</span>
-                            <div class="mt-2">
-                                <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.PatientId" class="btn btn-sm btn-primary w-100 fw-bold" style="font-size:0.72rem; border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                    <i class="bi bi-plus-lg me-1"></i>Assign New Package
-                                </a>
-                            </div>
+                        <div class="text-center py-3 mb-3 text-muted rounded-3" style="background:#fafbfc; border:1px dashed #e2e8f0;">
+                            <i class="bi bi-box-seam d-block mb-1" style="font-size:1.4rem; opacity:0.35;"></i>
+                            <span class="small">No active treatment package for this patient.</span>
+                        </div>
+                    }
+
+                    <!-- Assign Template Package Section -->
+                    @if (Model.TemplatePackages.Any())
+                    {
+                        <div class="mt-2 pt-3 border-top">
+                            <h6 class="fw-bold mb-2" style="font-size:0.82rem; color:#334155;">
+                                <i class="bi bi-clipboard-plus me-1 text-primary"></i>Assign Existing Template
+                            </h6>
+                            <form method="post" asp-page-handler="AssignTemplate" asp-route-id="@Model.PatientRecord.Id">
+                                <select name="AssignTemplateId" class="form-select form-select-sm mb-2" style="border-radius:8px; font-size:0.82rem;" required>
+                                    <option value="">-- Select a template package --</option>
+                                    @foreach (var tpl in Model.TemplatePackages)
+                                    {
+                                        <option value="@tpl.Id">
+                                            @tpl.Title (@tpl.TotalSessions sessions, @tpl.ValidityDays days)
+                                        </option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-semibold" 
+                                        style="border-radius:8px; font-size:0.78rem;">
+                                    <i class="bi bi-clipboard-check me-1"></i>Assign Selected Template to Patient
+                                </button>
+                            </form>
                         </div>
                     }
                 </div>

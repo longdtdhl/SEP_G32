@@ -8,16 +8,116 @@
 <style>
     .appointment-status-banner {
         padding: 1rem 1.5rem;
-        border-radius: 12px;
+        border-radius: 16px;
         margin-bottom: 1.5rem;
         font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     }
-    .status-pending { background-color: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); border: 1px solid var(--bs-warning-border-subtle); }
-    .status-approved { background-color: var(--bs-info-bg-subtle); color: var(--bs-info-text-emphasis); border: 1px solid var(--bs-info-border-subtle); }
-    .status-inprogress { background-color: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); border: 1px solid var(--bs-warning-border-subtle); }
-    .status-completed { background-color: var(--bs-success-bg-subtle); color: var(--bs-success-text-emphasis); border: 1px solid var(--bs-success-border-subtle); }
-    .status-rejected { background-color: var(--bs-secondary-bg-subtle); color: var(--bs-secondary-text-emphasis); border: 1px solid var(--bs-secondary-border-subtle); }
-    .status-cancelled { background-color: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); border: 1px solid var(--bs-danger-border-subtle); }
+    .status-pending { background: linear-gradient(135deg, #fef3c7, #fffbeb); color: #92400e; border: 1px solid #fde68a; }
+    .status-approved { background: linear-gradient(135deg, #e0f2fe, #f0f9ff); color: #0369a1; border: 1px solid #bae6fd; }
+    .status-inprogress { background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #c2410c; border: 1px solid #fed7aa; }
+    .status-completed { background: linear-gradient(135deg, #dcfce7, #f0fdf4); color: #15803d; border: 1px solid #bbf7d0; }
+    .status-rejected { background: linear-gradient(135deg, #f3f4f6, #f9fafb); color: #4b5563; border: 1px solid #e5e7eb; }
+    .status-cancelled { background: linear-gradient(135deg, #fee2e2, #fef2f2); color: #b91c1c; border: 1px solid #fecaca; }
+
+    .detail-card {
+        border-radius: 18px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        background: #fff;
+        overflow: hidden;
+    }
+    .detail-card-header {
+        background: linear-gradient(135deg, #fbfcfe, #ffffff);
+        border-bottom: 1px solid #f0f2f5;
+        padding: 1.5rem;
+    }
+    .detail-card-body {
+        padding: 2rem;
+    }
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f0f2f5;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-row-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    .info-row-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.1rem;
+    }
+    .info-row-val {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .bg-icon-primary { background: rgba(66, 153, 225, 0.15); color: #3182ce; }
+    .bg-icon-success { background: rgba(72, 187, 120, 0.15); color: #38a169; }
+    .bg-icon-info { background: rgba(0, 180, 216, 0.15); color: #0077b6; }
+    .bg-icon-purple { background: rgba(159, 122, 234, 0.15); color: #805ad5; }
+    .bg-icon-orange { background: rgba(237, 137, 54, 0.15); color: #dd6b20; }
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.08); }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1); }
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.08); }
+    
+    .evaluation-section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .evaluation-item {
+        margin-bottom: 1.25rem;
+    }
+    .evaluation-item:last-child {
+        margin-bottom: 0;
+    }
+    .evaluation-bubble {
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        border: 1px solid transparent;
+        line-height: 1.6;
+    }
+    .bubble-symptoms { background-color: #fff5f5; border-color: #feb2b2; color: #9b2c2c; }
+    .bubble-history { background-color: #ebf8ff; border-color: #90cdf4; color: #2b6cb0; }
+    .bubble-expectations { background-color: #f0fff4; border-color: #9ae6b4; color: #22543d; }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #edf2f7;
+    }
+    .progress-bar-custom .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #48bb78, #38a169);
+    }
+    
+    .dass-badge {
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
 </style>
 
 <div class="mb-page-header d-flex justify-content-between align-items-center">
@@ -90,6 +190,12 @@
             {
                 <i class="bi bi-calendar-check"></i>
                 <span><strong>Approved</strong> — This appointment is confirmed. Click "Start Consultation" when the session begins.</span>
+                @if (apt.PatientId.HasValue)
+                {
+                    <a asp-page="/Doctor/Messages/Index" asp-route-patientId="@apt.PatientId" class="btn btn-sm btn-info text-white ms-auto" style="border-radius:10px;white-space:nowrap;">
+                        <i class="bi bi-chat-dots-fill me-1"></i>Chat with Patient
+                    </a>
+                }
             }
             else if (apt.Status == 3)
             {
@@ -116,205 +222,242 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="mb-0 fw-bold">Appointment Information</h5>
-                    <span class="badge @badgeClass px-3 py-2 rounded-pill">@apt.StatusText</span>
+            <div class="detail-card mb-4">
+                <div class="detail-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1 fw-bold text-dark"><i class="bi bi-calendar2-heart text-primary me-2"></i>Appointment Details</h5>
+                        <div class="text-muted small">Booking Code: <strong class="text-dark">@apt.BookingCode</strong></div>
+                    </div>
+                    <span class="badge @badgeClass px-3 py-2 rounded-pill fs-6 fw-semibold shadow-sm">@apt.StatusText</span>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Patient Name</div>
-                        <div class="col-sm-8"><strong>@(apt.PatientName ?? "N/A")</strong></div>
+                <div class="detail-card-body">
+                    
+                    <!-- Information Grid -->
+                    <!-- Appointment Info Rows -->
+                    <div class="bg-white rounded-3 border mb-4" style="overflow:hidden;">
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-primary"><i class="bi bi-person-fill"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Patient Name</div>
+                                <div class="info-row-val">@(apt.PatientName ?? "N/A")</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-purple"><i class="bi bi-clock-fill"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Schedule Time</div>
+                                <div class="info-row-val">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy") &nbsp; <span style="color:#4f46e5; font-weight:500;">@apt.StartAt.LocalDateTime.ToString("HH:mm") – @apt.EndAt.LocalDateTime.ToString("HH:mm")</span></div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-success"><i class="bi bi-activity"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Specialization</div>
+                                <div class="info-row-val">@(apt.Specialization ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-info"><i class="bi bi-arrow-repeat"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Visit History</div>
+                                <div class="info-row-val">
+                                    @if (apt.VisitCount == 0)
+                                    {
+                                        <i class="bi bi-person-plus" style="color:#0d9488; margin-right:4px;"></i>
+                                        <text>First Consultation</text>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-arrow-repeat" style="color:#a5ca38; margin-right:4px;"></i>
+                                        <text>Visit :@apt.VisitCount times</text>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Start Time</div>
-                        <div class="col-sm-8">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy HH:mm")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">End Time</div>
-                        <div class="col-sm-8">@apt.EndAt.LocalDateTime.ToString("MM/dd/yyyy HH:mm")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Specialization</div>
-                        <div class="col-sm-8">@(apt.Specialization ?? "-")</div>
-                    </div>
-                    @* Issue 2: Consultation Fee removed — OPCBS does not manage pricing *@
-                    @if (!string.IsNullOrEmpty(apt.TreatmentPackageName))
+
+                    @* Associated Treatment Package *@
+                    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
                     {
-                        <div class="row mb-3">
-                            <div class="col-sm-4 text-muted"><i class="bi bi-box-seam me-1"></i>Treatment Package</div>
-                            <div class="col-sm-8">
-                                <span class="badge bg-success bg-opacity-15 text-success px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
-                                    <i class="bi bi-box-seam me-1"></i>@apt.TreatmentPackageName
-                                </span>
+                        <div class="p-3 mb-4 rounded-3 border d-flex align-items-center gap-3" style="background:#f0fdf4; border-color:#bbf7d0;">
+                            <div class="bg-icon-success p-2 rounded-3 text-success d-flex align-items-center justify-content-center" style="width:45px; height:45px; font-size:1.5rem; background: rgba(72, 187, 120, 0.15);">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small uppercase fw-semibold" style="font-size:0.8rem;">Associated Treatment Package</div>
+                                <strong class="text-success fs-5">@apt.TreatmentPackageName</strong>
                             </div>
                         </div>
                     }
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted"><i class="bi bi-arrow-repeat me-1"></i>Visit Count</div>
-                        <div class="col-sm-8">
-                            @if (apt.VisitCount == 0)
-                            {
-                                <span class="badge bg-info bg-opacity-15 text-info px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
-                                    <i class="bi bi-person-plus me-1"></i>First consultation
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-primary bg-opacity-15 text-primary px-2 py-1" style="border-radius:8px; font-size:0.8rem;">
-                                    <i class="bi bi-arrow-repeat me-1"></i>Visit #@apt.VisitCount
-                                </span>
-                            }
-                        </div>
-                    </div>
+
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
-                        <div class="row mb-3">
-                            <div class="col-sm-4 text-muted">Booking Notes</div>
-                            <div class="col-sm-8 text-secondary">@apt.Notes</div>
+                        <div class="mb-4">
+                            <div class="fw-semibold text-muted mb-2"><i class="bi bi-chat-left-text me-2 text-primary"></i>Booking Notes</div>
+                            <div class="bg-light p-3 rounded-3 text-secondary" style="font-size:0.95rem; border: 1px solid #edf2f7;">@apt.Notes</div>
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations))
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-12">
-                                <h6 class="fw-bold mb-3"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>Pre-Appointment Evaluation</h6>
-                            </div>
+                        <div class="evaluation-section">
+                            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                                <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
+                            </h5>
+                            
+                            @if (!string.IsNullOrEmpty(apt.Symptoms))
+                            {
+                                <div class="evaluation-item">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-activity text-danger me-1"></i>Current Symptoms</div>
+                                    <div class="evaluation-bubble bubble-symptoms">@apt.Symptoms</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(apt.MedicalHistory))
+                            {
+                                <div class="evaluation-item">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-journal-medical text-primary me-1"></i>Medical History</div>
+                                    <div class="evaluation-bubble bubble-history">@apt.MedicalHistory</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(apt.Expectations))
+                            {
+                                <div class="evaluation-item">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-bullseye text-success me-1"></i>Expectations</div>
+                                    <div class="evaluation-bubble bubble-expectations">@apt.Expectations</div>
+                                </div>
+                            }
                         </div>
-                        @if (!string.IsNullOrEmpty(apt.Symptoms))
-                        {
-                            <div class="row mb-3">
-                                <div class="col-sm-4 text-muted"><i class="bi bi-activity me-1"></i>Current Symptoms</div>
-                                <div class="col-sm-8">
-                                    <div class="p-2 rounded-2" style="background:#fef2f2; border:1px solid #fecaca;">@apt.Symptoms</div>
-                                </div>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(apt.MedicalHistory))
-                        {
-                            <div class="row mb-3">
-                                <div class="col-sm-4 text-muted"><i class="bi bi-journal-medical me-1"></i>Medical History</div>
-                                <div class="col-sm-8">
-                                    <div class="p-2 rounded-2" style="background:#f0f9ff; border:1px solid #bae6fd;">@apt.MedicalHistory</div>
-                                </div>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(apt.Expectations))
-                        {
-                            <div class="row mb-3">
-                                <div class="col-sm-4 text-muted"><i class="bi bi-bullseye me-1"></i>Expectations</div>
-                                <div class="col-sm-8">
-                                    <div class="p-2 rounded-2" style="background:#f0fdf4; border:1px solid #bbf7d0;">@apt.Expectations</div>
-                                </div>
-                            </div>
-                        }
                     }
 
                     <!-- Psychometric Test Result -->
                     @if (Model.PsychometricSubmission != null)
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-sm-4 text-muted">Patient Assessment Screening</div>
-                            <div class="col-sm-8">
-                                <div class="p-3 bg-light rounded-3 border">
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <i class="bi bi-clipboard2-pulse text-primary fs-5"></i>
-                                        <strong class="text-primary">@Model.PsychometricSubmission.TestTitle</strong>
-                                        <span class="badge bg-success text-white ms-auto">Completed</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Result:</strong> <span class="text-danger fw-bold">@Model.PsychometricSubmission.Interpretation</span>
-                                    </div>
-                                    <div class="text-muted small">
-                                        Total Score: <strong>@Model.PsychometricSubmission.TotalScore</strong>
-                                    </div>
-                                    
-                                    @if (Model.PsychometricSubmission.TestType == "DASS21")
-                                    {
-                                        int depScore = 0, anxScore = 0, strScore = 0;
-                                        try
-                                        {
-                                            var doc = System.Text.Json.JsonDocument.Parse(Model.PsychometricSubmission.ScoreDataJson);
-                                            var root = doc.RootElement;
-                                            if (root.TryGetProperty("Depression", out var dep)) depScore = dep.GetInt32();
-                                            if (root.TryGetProperty("Anxiety", out var anx)) anxScore = anx.GetInt32();
-                                            if (root.TryGetProperty("Stress", out var str)) strScore = str.GetInt32();
-                                        }
-                                        catch { }
-                                        <div class="mt-3">
-                                            <div class="row g-2">
-                                                <div class="col-4 text-center">
-                                                    <div class="border rounded p-2" style="background:#fff;">
-                                                        <div class="small text-muted">Depression</div>
-                                                        <strong class="text-danger">@depScore</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="col-4 text-center">
-                                                    <div class="border rounded p-2" style="background:#fff;">
-                                                        <div class="small text-muted">Anxiety</div>
-                                                        <strong class="text-warning">@anxScore</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="col-4 text-center">
-                                                    <div class="border rounded p-2" style="background:#fff;">
-                                                        <div class="small text-muted">Stress</div>
-                                                        <strong class="text-info">@strScore</strong>
-                                                    </div>
-                                                </div>
+                        <div class="mb-4 p-4 rounded-4 border shadow-sm bg-white">
+                            <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
+                                <i class="bi bi-clipboard-data text-primary fs-4"></i>
+                                <h5 class="mb-0 fw-bold">Patient Assessment Screening</h5>
+                                <span class="badge bg-success text-white ms-auto px-3 py-1.5 rounded-pill">Completed</span>
+                            </div>
+                            <div class="p-3 bg-light rounded-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong class="text-primary fs-5">@Model.PsychometricSubmission.TestTitle</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Result Interpretation:</span> 
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle fs-6 px-3 py-1 ms-1">@Model.PsychometricSubmission.Interpretation</span>
+                                </div>
+                                <div class="text-muted small">
+                                    Total Score: <strong class="text-dark">@Model.PsychometricSubmission.TotalScore</strong>
+                                </div>
+                            </div>
+                            
+                            @if (Model.PsychometricSubmission.TestType == "DASS21")
+                            {
+                                int depScore = 0, anxScore = 0, strScore = 0;
+                                try
+                                {
+                                    var doc = System.Text.Json.JsonDocument.Parse(Model.PsychometricSubmission.ScoreDataJson);
+                                    var root = doc.RootElement;
+                                    if (root.TryGetProperty("Depression", out var dep)) depScore = dep.GetInt32();
+                                    if (root.TryGetProperty("Anxiety", out var anx)) anxScore = anx.GetInt32();
+                                    if (root.TryGetProperty("Stress", out var str)) strScore = str.GetInt32();
+                                }
+                                catch { }
+                                <div class="mt-3">
+                                    <div class="row g-3">
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-danger text-danger text-center">
+                                                <div class="small text-muted mb-1">Depression</div>
+                                                <strong class="fs-4">@depScore</strong>
                                             </div>
                                         </div>
-                                    }
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-warning text-warning text-center">
+                                                <div class="small text-muted mb-1">Anxiety</div>
+                                                <strong class="fs-4">@anxScore</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-info text-info text-center">
+                                                <div class="small text-muted mb-1">Stress</div>
+                                                <strong class="fs-4">@strScore</strong>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            }
                         </div>
                     }
 
-                    @* Issue 3: Previous Consultation Summary (from earlier visits) *@
+                    @* Previous Consultation Summary (from earlier visits) *@
                     @if (Model.LatestConsultationNote != null)
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-12">
-                                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2" style="color:#6366f1;"></i>Previous Consultation (Latest)</h6>
-                            </div>
-                            <div class="col-sm-12">
-                                <div class="p-3 rounded-3 border" style="background:#f5f3ff;">
-                                    <div class="small text-muted mb-2"><i class="bi bi-calendar3 me-1"></i>@Model.LatestConsultationNote.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
-                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Diagnosis))
-                                    {
-                                        <div class="mb-2"><strong>Diagnosis:</strong> @Model.LatestConsultationNote.Diagnosis</div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.ConsultationSummary))
-                                    {
-                                        <div class="mb-2"><strong>Session Notes:</strong> @Model.LatestConsultationNote.ConsultationSummary</div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Recommendation))
-                                    {
-                                        <div class="mb-2"><strong>Recommendations:</strong> @Model.LatestConsultationNote.Recommendation</div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.TherapyPlan))
-                                    {
-                                        <div class="mb-0"><strong>Therapy Plan:</strong> @Model.LatestConsultationNote.TherapyPlan</div>
-                                    }
-                                </div>
+                        <div class="mb-4 p-4 rounded-4 border bg-white shadow-sm" style="border-left: 5px solid #6366f1 !important;">
+                            <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-clock-history text-indigo"></i>
+                                <span>Previous Consultation (Latest)</span>
+                                <span class="ms-auto text-muted small"><i class="bi bi-calendar3 me-1"></i>@Model.LatestConsultationNote.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </h5>
+                            <div class="p-3 rounded-3" style="background:#f5f3ff;">
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Diagnosis))
+                                {
+                                    <div class="mb-2"><strong>Diagnosis:</strong> <span class="text-dark">@Model.LatestConsultationNote.Diagnosis</span></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.ConsultationSummary))
+                                {
+                                    <div class="mb-2"><strong>Session Notes:</strong> <p class="text-secondary small mb-0 mt-1 bg-white p-2.5 rounded-2 border">@Model.LatestConsultationNote.ConsultationSummary</p></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Recommendation))
+                                {
+                                    <div class="mb-2"><strong>Recommendations:</strong> <span class="text-dark">@Model.LatestConsultationNote.Recommendation</span></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.TherapyPlan))
+                                {
+                                    <div class="mb-0"><strong>Therapy Plan:</strong> <span class="text-dark">@Model.LatestConsultationNote.TherapyPlan</span></div>
+                                }
                             </div>
                         </div>
                     }
 
-                    @* Issue 3: Active Treatment Package *@
+                    @* Active Treatment Package *@
                     @if (Model.ActiveTreatmentPackage != null)
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-sm-4 text-muted"><i class="bi bi-box-seam me-1"></i>Active Package</div>
-                            <div class="col-sm-8">
-                                <div class="p-3 rounded-3 border" style="background:#ecfdf5;">
-                                    <div class="fw-bold text-success mb-1">@Model.ActiveTreatmentPackage.Name</div>
-                                    <div class="small text-muted">
-                                        Sessions: <strong>@Model.ActiveTreatmentPackage.CompletedSessions / @Model.ActiveTreatmentPackage.TotalSessions</strong>
-                                        &nbsp;•&nbsp; Remaining: <strong class="text-primary">@Model.ActiveTreatmentPackage.RemainingSessions</strong>
+                        <div class="mb-4 p-4 rounded-4 border bg-white shadow-sm" style="border-left: 5px solid #10b981 !important;">
+                            <h5 class="fw-bold text-success mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-box-seam-fill text-success"></i>
+                                <span>Active Treatment Package</span>
+                                <span class="ms-auto badge bg-success bg-opacity-10 text-success border border-success-subtle">Active</span>
+                            </h5>
+                            <div class="p-3 rounded-3" style="background:#ecfdf5;">
+                                <div class="fw-bold fs-5 text-dark mb-2">@Model.ActiveTreatmentPackage.Name</div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between text-muted small mb-1">
+                                        <span>Completion Progress</span>
+                                        <strong>@Model.ActiveTreatmentPackage.CompletedSessions / @Model.ActiveTreatmentPackage.TotalSessions Sessions</strong>
                                     </div>
-                                    <div class="small text-muted mt-1">
-                                        Expires: @Model.ActiveTreatmentPackage.ExpirationDate.ToString("dd/MM/yyyy")
+                                    <div class="progress-bar-custom">
+                                        @{
+                                            var pct = Model.ActiveTreatmentPackage.TotalSessions > 0 
+                                                ? (double)Model.ActiveTreatmentPackage.CompletedSessions / Model.ActiveTreatmentPackage.TotalSessions * 100 
+                                                : 0;
+                                        }
+                                        <div class="progress-fill" style="width: @(pct)%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="row text-center mt-3 g-2">
+                                    <div class="col-6">
+                                        <div class="bg-white p-2 rounded-2 border">
+                                            <div class="text-muted small" style="font-size: 0.8rem;">Remaining Sessions</div>
+                                            <strong class="text-primary fs-5">@Model.ActiveTreatmentPackage.RemainingSessions</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-white p-2 rounded-2 border">
+                                            <div class="text-muted small" style="font-size: 0.8rem;">Expiration Date</div>
+                                            <strong class="text-dark">@Model.ActiveTreatmentPackage.ExpirationDate.ToString("dd/MM/yyyy")</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -323,25 +466,25 @@
 
                     @if (!string.IsNullOrEmpty(apt.CancellationReason))
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-sm-4 text-muted text-danger fw-bold">Cancellation Reason</div>
-                            <div class="col-sm-8 text-danger fw-semibold">@apt.CancellationReason</div>
+                        <div class="p-3 mb-4 rounded-3 bg-danger bg-opacity-10 border border-danger-subtle text-danger">
+                            <h6 class="fw-bold mb-1"><i class="bi bi-x-circle me-1"></i>Cancellation Reason</h6>
+                            <p class="mb-0 fw-semibold">@apt.CancellationReason</p>
                         </div>
                     }
                     
                     @if (Model.AssociatedRecord != null)
                     {
-                        <div class="row mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                            <div class="col-sm-4 text-muted">Consultation Summary</div>
-                            <div class="col-sm-8">
-                                <div class="p-3 bg-light rounded-3 border">
-                                    <h6 class="fw-bold mb-2">Diagnosis / Findings:</h6>
-                                    <p class="mb-2 text-dark">@(Model.AssociatedRecord.Diagnosis ?? "No diagnosis recorded")</p>
-                                    <h6 class="fw-bold mb-2">Session Notes:</h6>
-                                    <p class="mb-2 text-dark">@(Model.AssociatedRecord.ConsultationSummary ?? "No summary recorded")</p>
-                                    <h6 class="fw-bold mb-2">Recommendations:</h6>
-                                    <p class="mb-0 text-dark">@(Model.AssociatedRecord.Recommendation ?? "No recommendation recorded")</p>
-                                </div>
+                        <div class="p-4 rounded-4 border bg-white shadow-sm mb-0">
+                            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical-fill text-primary me-2"></i>Consultation Summary</h5>
+                            <div class="p-3 bg-light rounded-3">
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Diagnosis / Findings:</h6>
+                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Diagnosis ?? "No diagnosis recorded")</p>
+                                
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Session Notes:</h6>
+                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.ConsultationSummary ?? "No summary recorded")</p>
+                                
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Recommendations:</h6>
+                                <p class="mb-0 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Recommendation ?? "No recommendation recorded")</p>
                             </div>
                         </div>
                     }

@@ -350,3 +350,22 @@ public class VerificationRequest : BaseEntity
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 }
+
+/// <summary>
+/// Favorite doctor entity - patient saves doctors they are interested in.
+/// Doctors do NOT know who added them.
+/// </summary>
+public class FavoriteDoctor : BaseEntity
+{
+    /// <summary>Foreign key to PatientProfile (via UserId)</summary>
+    public Guid PatientId { get; set; }
+
+    /// <summary>Foreign key to DoctorProfile (via UserId)</summary>
+    public Guid DoctorId { get; set; }
+
+    /// <summary>Navigation property to PatientProfile</summary>
+    public virtual required PatientProfile Patient { get; set; }
+
+    /// <summary>Navigation property to DoctorProfile</summary>
+    public virtual required DoctorProfile Doctor { get; set; }
+}

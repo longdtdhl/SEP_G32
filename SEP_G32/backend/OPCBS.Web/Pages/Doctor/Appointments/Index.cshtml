@@ -115,61 +115,6 @@
     </div>
 }
 
-<!-- Status Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <a href="?status=Pending" class="stat-card card shadow-sm d-block @(Model.Status == "Pending" ? "ring ring-warning" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-warning">@Model.PendingCount</div>
-                    <div class="stat-label">Pending</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?status=Approved" class="stat-card card shadow-sm d-block @(Model.Status == "Approved" ? "ring ring-info" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-info bg-opacity-10 text-info">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-info">@Model.ApprovedCount</div>
-                    <div class="stat-label">Approved</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?status=Completed" class="stat-card card shadow-sm d-block @(Model.Status == "Completed" ? "ring ring-success" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                    <i class="bi bi-check-all"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-success">@Model.CompletedCount</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?status=InProgress" class="stat-card card shadow-sm d-block @(Model.Status == "InProgress" ? "ring ring-warning" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-play-circle"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-warning">@Model.InProgressCount</div>
-                    <div class="stat-label">In Progress</div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
 
 <!-- Filters -->
 <div class="card filter-section shadow-sm mb-4">
@@ -318,6 +263,12 @@
                                     <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-primary" title="View Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    @if (apt.Status is 1 or 3 && apt.PatientId.HasValue)
+                                    {
+                                        <a asp-page="/Doctor/Messages/Index" asp-route-patientId="@apt.PatientId" class="action-btn btn btn-outline-info" title="Chat with Patient">
+                                            <i class="bi bi-chat-dots-fill"></i>
+                                        </a>
+                                    }
                                     @if (apt.Status == 0)
                                     {
                                         <form method="post" asp-page-handler="Confirm" class="d-inline">

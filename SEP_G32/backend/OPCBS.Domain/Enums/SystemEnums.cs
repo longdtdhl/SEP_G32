@@ -192,7 +192,10 @@ public enum NotificationType
     Reminder = 6,
 
     /// <summary>Consultation record notification</summary>
-    ConsultationNote = 7
+    ConsultationNote = 7,
+
+    /// <summary>New message notification</summary>
+    Message = 8
 }
 
 /// <summary>
@@ -290,4 +293,16 @@ public enum AuditAction
     
     /// <summary>Custom action specific to the entity type</summary>
     Custom = 3
+}
+
+/// <summary>
+/// Conversation status for doctor-patient messaging
+/// </summary>
+public enum ConversationStatus
+{
+    /// <summary>Conversation is open and active</summary>
+    Open = 0,
+
+    /// <summary>Conversation is closed and read-only</summary>
+    Closed = 1
 }

@@ -63,25 +63,6 @@
     var rejectedCount = allBlogs.Count(b => b.Status is "Rejected");
 }
 
-<!-- Stats -->
-<div class="blog-stats-grid">
-    <div class="blog-stat-card">
-        <div class="stat-num">@allBlogs.Count</div>
-        <div class="stat-label">Total Articles</div>
-    </div>
-    <div class="blog-stat-card">
-        <div class="stat-num" style="color:#f59e0b;">@pendingCount</div>
-        <div class="stat-label">Pending Review</div>
-    </div>
-    <div class="blog-stat-card">
-        <div class="stat-num" style="color:#22c55e;">@publishedCount</div>
-        <div class="stat-label">Published</div>
-    </div>
-    <div class="blog-stat-card">
-        <div class="stat-num" style="color:#ef4444;">@rejectedCount</div>
-        <div class="stat-label">Rejected</div>
-    </div>
-</div>
 
 <!-- Filter Tabs -->
 <div class="blog-filter-tabs">

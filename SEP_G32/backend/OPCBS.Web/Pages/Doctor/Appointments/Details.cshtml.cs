@@ -90,7 +90,7 @@ public class DetailsModel : PageModel
         // Fetch active treatment package for this patient-doctor pair
         if (data.PatientId.HasValue)
         {
-            var (packages, _, _) = await _packageApi.GetMyPackagesAsync(1, 100);
+            var (packages, _, _) = await _packageApi.GetAllAsync(1, 100);
             if (packages != null)
             {
                 ActiveTreatmentPackage = packages

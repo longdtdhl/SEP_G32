@@ -17,11 +17,13 @@ public interface IScheduleApiService
     Task<(AppointmentSlotDto? Data, string? Error)> CreateSlotAsync(CreateSlotDto dto);
     Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
     Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes);
+    Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto);
 }
 
 public interface IPatientRecordApiService
 {
     Task<(List<PatientRecordDto> Data, string? Error)> GetAllAsync();
+    Task<(List<PatientRecordDto> Data, string? Error)> GetMyPatientsAsync();
     Task<(List<PatientRecordDto> Data, string? Error)> GetSystemPatientsAsync();
     Task<(List<PatientRecordDto> Data, string? Error)> GetGuestPatientsAsync();
     Task<(PatientRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
@@ -160,4 +162,23 @@ public interface ITherapyApiService
     Task<(List<EmotionJournalDto> Data, string? Error)> GetPatientSharedJournalsAsync(Guid patientId);
     Task<(EmotionJournalDto? Data, string? Error)> CreateJournalAsync(CreateJournalDto dto);
     Task<(bool Success, string? Error)> DeleteJournalAsync(Guid id);
+}
+
+public interface IFavoriteApiService
+{
+    Task<(List<FavoriteDoctorWebDto> Data, string? Error)> GetFavoritesAsync();
+    Task<(bool Success, string? Error)> AddFavoriteAsync(Guid doctorId);
+    Task<(bool Success, string? Error)> RemoveFavoriteAsync(Guid doctorId);
+    Task<(bool IsFavorite, string? Error)> IsFavoriteAsync(Guid doctorId);
+}
+
+public interface IMessagingApiService
+{
+    Task<(List<ConversationWebDto> Data, string? Error)> GetConversationsAsync();
+    Task<(List<MessageWebDto> Data, string? Error)> GetMessagesAsync(Guid conversationId);
+    Task<(MessageWebDto? Data, string? Error)> SendMessageAsync(Guid conversationId, object dto);
+    Task<(bool Success, string? Error)> MarkAsReadAsync(Guid conversationId);
+    Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationAsync(Guid doctorUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null);
+    Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationByPatientAsync(Guid patientUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null);
+    Task<(int Count, string? Error)> GetUnreadCountAsync();
 }

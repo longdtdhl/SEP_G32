@@ -6,24 +6,26 @@
 }
 
 <style>
-    .dt-sidebar { border-radius:16px; border:1px solid #f1f5f9; overflow:hidden; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
-    .dt-sidebar-header { padding:1.25rem; border-bottom:1px solid #f1f5f9; font-weight:700; font-size:0.85rem; color:#1e293b; display:flex; align-items:center; gap:8px; }
+    .dt-sidebar { border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.03); }
+    .dt-sidebar-header { padding:1.1rem 1.25rem; border-bottom:1px solid #f1f5f9; font-weight:700; font-size:0.85rem; color:#1e293b; display:flex; align-items:center; gap:8px; background:#fafcfb; }
     .dt-sidebar-header i { color:var(--mb-primary); }
-    .dt-sidebar-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:0.82rem; }
+    .dt-sidebar-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:0.82rem; border-bottom:1px solid #f8fafc; }
+    .dt-sidebar-row:last-child { border-bottom:none; }
     .dt-sidebar-row .label { color:#64748b; }
     .dt-sidebar-row .value { font-weight:600; color:#1e293b; }
-    .form-section { margin-bottom:1.25rem; }
-    .form-section-title { font-size:0.85rem; font-weight:700; color:#1e293b; margin-bottom:0.75rem; padding-bottom:0.5rem; border-bottom:2px solid rgba(78,139,112,0.1); display:flex; align-items:center; gap:8px; }
-    .form-section-title i { color:var(--mb-primary); }
+    
+    .instruction-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; font-size:0.83rem; color:#334155; }
+    .resource-link-btn { display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; padding:4px 12px; border-radius:8px; background:#f0f9ff; color:#0284c7; text-decoration:none; border:1px solid #bae6fd; }
+    .resource-link-btn:hover { background:#e0f2fe; color:#0369a1; }
 </style>
 
 <!-- Page Header -->
-<div class="mb-page-header d-flex justify-content-between align-items-center">
+<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
             <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package Details
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Management assignment, xem journal patient</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage treatment assignments, detailed resources, and patient journals</p>
     </div>
     <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
         <i class="bi bi-arrow-left me-1"></i>Back
@@ -54,28 +56,64 @@
     <div class="row g-4">
         <!-- Sidebar -->
         <div class="col-lg-4">
+            <!-- Patient / Status -->
             <div class="dt-sidebar mb-3">
-                <div class="dt-sidebar-header"><i class="bi bi-person-fill"></i>Patient</div>
+                <div class="dt-sidebar-header"><i class="bi bi-person-fill"></i>Patient Information</div>
                 <div style="padding:1.25rem; text-align:center;">
-                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">@(pkg.PatientName ?? "N/A")</div>
-                    <div style="font-size:0.78rem; color:#94a3b8;">Patient assigned to this package</div>
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">@pkg.DisplayPatientName</div>
+                    <div style="font-size:0.78rem; color:#94a3b8;">
+                        @(pkg.IsTemplate ? "Template Package (Unassigned)" : "Assigned Patient")
+                    </div>
                 </div>
             </div>
 
+            <!-- Package Specs -->
             <div class="dt-sidebar mb-3">
-                <div class="dt-sidebar-header"><i class="bi bi-info-circle"></i>Package Info</div>
+                <div class="dt-sidebar-header"><i class="bi bi-info-circle"></i>Package Specifications</div>
                 <div style="padding:1rem 1.25rem;">
                     <div class="dt-sidebar-row"><span class="label">Package Name</span><span class="value">@pkg.Title</span></div>
                     <div class="dt-sidebar-row"><span class="label">Total Sessions</span><span class="value">@pkg.TotalSessions</span></div>
                     <div class="dt-sidebar-row"><span class="label">Completed</span><span class="value" style="color:#16a34a;">@pkg.CompletedSessions</span></div>
                     <div class="dt-sidebar-row"><span class="label">Remaining</span><span class="value" style="color:#f59e0b;">@pkg.RemainingSessions</span></div>
-                    <div class="dt-sidebar-row"><span class="label">Expired</span><span class="value">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Validity</span><span class="value">@pkg.ValidityDays Days</span></div>
+                    <div class="dt-sidebar-row"><span class="label">Expiration</span><span class="value">@pkg.ExpirationDate.ToString("dd/MM/yyyy")</span></div>
                 </div>
             </div>
 
+            <!-- Package Details (Target Outcomes / Exercises / Instructions) -->
+            @if (!string.IsNullOrEmpty(pkg.TargetOutcome) || !string.IsNullOrEmpty(pkg.RecommendedExercises) || !string.IsNullOrEmpty(pkg.Instructions))
+            {
+                <div class="dt-sidebar mb-3">
+                    <div class="dt-sidebar-header"><i class="bi bi-file-text"></i>Detailed Package Plan</div>
+                    <div style="padding:1rem 1.25rem; font-size:0.82rem;">
+                        @if (!string.IsNullOrEmpty(pkg.TargetOutcome))
+                        {
+                            <div class="mb-2">
+                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-trophy me-1 text-warning"></i>Target Outcomes:</span>
+                                <div class="instruction-box">@pkg.TargetOutcome</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(pkg.RecommendedExercises))
+                        {
+                            <div class="mb-2">
+                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-journal-check me-1 text-primary"></i>Recommended Exercises:</span>
+                                <div class="instruction-box">@pkg.RecommendedExercises</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(pkg.Instructions))
+                        {
+                            <div>
+                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-info-circle me-1 text-success"></i>Patient Guidance:</span>
+                                <div class="instruction-box">@pkg.Instructions</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
             <!-- Progress -->
             <div class="dt-sidebar mb-3">
-                <div class="dt-sidebar-header"><i class="bi bi-graph-up"></i>Progress</div>
+                <div class="dt-sidebar-header"><i class="bi bi-graph-up"></i>Session Progress</div>
                 <div style="padding:1rem 1.25rem;">
                     <div class="d-flex justify-content-between mb-2">
                         <span style="font-size:0.82rem; color:#64748b;">Completed</span>
@@ -87,23 +125,33 @@
                 </div>
             </div>
 
-            <!-- Create Assignment Form -->
+            <!-- Create New Assignment Form -->
             <div class="dt-sidebar">
                 <div class="dt-sidebar-header"><i class="bi bi-plus-circle-fill"></i>Create New Assignment</div>
-                <div style="padding:1rem 1.25rem;">
+                <div style="padding:1.25rem;">
                     <form method="post" asp-page-handler="CreateAssignment" asp-route-id="@pkg.Id">
-                        <div class="mb-2">
-                            <input asp-for="AssignmentTitle" class="form-control form-control-sm" placeholder="Assignment title *" style="border-radius:8px;" />
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Assignment Title <span class="text-danger">*</span></label>
+                            <input asp-for="AssignmentTitle" class="form-control form-control-sm" placeholder="e.g. Daily CBT Mood Log & Breathing Exercise" style="border-radius:8px;" required />
                         </div>
-                        <div class="mb-2">
-                            <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="3" placeholder="Detailed description / requirements..." style="border-radius:8px;"></textarea>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Short Overview / Requirements</label>
+                            <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="2" placeholder="Summary of what the patient needs to do..." style="border-radius:8px;"></textarea>
                         </div>
-                        <div class="mb-2">
-                            <label style="font-size:0.75rem; color:#64748b;">Due date (optional)</label>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Detailed Instructions (Hướng dẫn chi tiết)</label>
+                            <textarea asp-for="AssignmentDetailedInstructions" class="form-control form-control-sm" rows="3" placeholder="Step-by-step guidance, instructions, or notes for the patient..." style="border-radius:8px;"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Resource File / Video URL (Link tài liệu/video)</label>
+                            <input asp-for="AssignmentResourceUrl" type="url" class="form-control form-control-sm" placeholder="https://example.com/guide.pdf or video link" style="border-radius:8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Due Date (Optional)</label>
                             <input asp-for="AssignmentDueDate" type="date" class="form-control form-control-sm" style="border-radius:8px;" />
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm w-100" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-send me-1"></i>Assign
+                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                            <i class="bi bi-send me-1"></i>Create &amp; Assign Exercise
                         </button>
                     </form>
                 </div>
@@ -116,7 +164,7 @@
             <ul class="nav nav-tabs mb-4" role="tablist" style="border-bottom:2px solid #e2e8f0;">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-hw" type="button" style="font-weight:600; font-size:0.85rem; border-radius:10px 10px 0 0;">
-                        <i class="bi bi-journal-check me-1"></i>Assignment (@Model.Assignments.Count)
+                        <i class="bi bi-journal-check me-1"></i>Assignments (@Model.Assignments.Count)
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -139,31 +187,64 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <span class="@hw.StatusBadgeClass">@hw.StatusText</span>
-                                                <h6 class="fw-bold mb-0 mt-1" style="color:#1e293b;">@hw.Title</h6>
+                                                <h6 class="fw-bold mb-0 mt-1" style="color:#1e293b; font-size:0.95rem;">@hw.Title</h6>
                                             </div>
                                             <div class="d-flex gap-2 align-items-center">
                                                 @if (hw.DueDate.HasValue)
                                                 {
-                                                    <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>@hw.DueDate.Value.ToString("MM/dd/yyyy")</small>
+                                                    <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Due: @hw.DueDate.Value.ToString("dd/MM/yyyy")</small>
                                                 }
-                                                <form method="post" asp-page-handler="DeleteAssignment" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" onsubmit="return confirm('Delete assignment this?');">
-                                                    <button class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash"></i></button>
+                                                <form method="post" asp-page-handler="DeleteAssignment" asp-route-id="@pkg.Id" asp-route-assignmentId="@hw.Id" onsubmit="return confirm('Are you sure you want to delete this assignment?');">
+                                                    <button class="btn btn-link btn-sm text-danger p-0 ms-2"><i class="bi bi-trash"></i></button>
                                                 </form>
                                             </div>
                                         </div>
 
                                         @if (!string.IsNullOrEmpty(hw.Description))
                                         {
-                                            <div class="p-2 rounded-3 mb-2" style="background:#f8fafc; font-size:0.82rem; color:#475569; white-space:pre-line;">@hw.Description</div>
+                                            <div class="p-2 rounded-3 mb-2" style="background:#f8fafc; font-size:0.82rem; color:#475569; white-space:pre-line;">
+                                                <strong>Overview:</strong> @hw.Description
+                                            </div>
                                         }
 
-                                        @if (hw.Status >= 1 && !string.IsNullOrEmpty(hw.PatientSubmission))
+                                        @if (!string.IsNullOrEmpty(hw.DetailedInstructions))
+                                        {
+                                            <div class="p-2 rounded-3 mb-2" style="background:#fff7ed; border:1px solid #ffedd5; font-size:0.82rem; color:#9a3412;">
+                                                <div class="fw-bold mb-1"><i class="bi bi-list-check me-1"></i>Detailed Instructions:</div>
+                                                <div style="white-space:pre-line;">@hw.DetailedInstructions</div>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrEmpty(hw.ResourceUrl))
+                                        {
+                                            <div class="mb-2">
+                                                <a href="@hw.ResourceUrl" target="_blank" rel="noopener noreferrer" class="resource-link-btn">
+                                                    <i class="bi bi-link-45deg"></i>
+                                                    View Resource File / Link
+                                                    <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.7rem;"></i>
+                                                </a>
+                                            </div>
+                                        }
+
+                                        @if (hw.Status >= 1 && (!string.IsNullOrEmpty(hw.PatientSubmission) || !string.IsNullOrEmpty(hw.PatientSubmissionUrl)))
                                         {
                                             <div class="p-2 rounded-3 mb-2" style="background:#eff6ff; border:1px solid #dbeafe;">
-                                                <div style="font-size:0.72rem; color:#3b82f6; font-weight:700; margin-bottom:4px;">
-                                                    <i class="bi bi-send-check me-1"></i>Patient Submission (Submitted at @hw.SubmittedAt?.ToString("dd/MM HH:mm"))
+                                                <div style="font-size:0.72rem; color:#3b82f6; font-weight:700; margin-bottom:6px;">
+                                                    <i class="bi bi-send-check me-1"></i>Patient Submission (@hw.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))
                                                 </div>
-                                                <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.PatientSubmission</div>
+                                                @if (!string.IsNullOrEmpty(hw.PatientSubmission))
+                                                {
+                                                    <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line; margin-bottom:6px;">@hw.PatientSubmission</div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(hw.PatientSubmissionUrl))
+                                                {
+                                                    <a href="@hw.PatientSubmissionUrl" target="_blank" rel="noopener noreferrer" 
+                                                       style="display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; padding:4px 12px; border-radius:8px; background:#dbeafe; color:#1d4ed8; text-decoration:none; border:1px solid #93c5fd;">
+                                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                                        Patient's Submitted File / Link
+                                                        <i class="bi bi-box-arrow-up-right" style="font-size:0.65rem;"></i>
+                                                    </a>
+                                                }
                                             </div>
                                         }
 
@@ -171,7 +252,7 @@
                                         {
                                             <div class="p-2 rounded-3 mb-2" style="background:#dcfce7; border:1px solid #bbf7d0;">
                                                 <div style="font-size:0.72rem; color:#16a34a; font-weight:700; margin-bottom:4px;">
-                                                    <i class="bi bi-chat-heart me-1"></i>Your Feedback (@hw.FeedbackAt?.ToString("dd/MM HH:mm"))
+                                                    <i class="bi bi-chat-heart me-1"></i>Doctor Feedback (@hw.FeedbackAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))
                                                 </div>
                                                 <div style="font-size:0.82rem; color:#1e293b; white-space:pre-line;">@hw.DoctorFeedback</div>
                                             </div>
@@ -195,42 +276,34 @@
                     }
                     else
                     {
-                        <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
-                            <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
-                            <span class="small">No assignments yet. Use the form on the left to create one for the patient.</span>
+                        <div class="text-center py-5 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
+                            <i class="bi bi-journal-x d-block mb-2" style="font-size:2.2rem; opacity:0.4;"></i>
+                            <h6 class="fw-semibold text-dark">No assignments created yet</h6>
+                            <p class="small text-muted mb-0">Use the form on the left sidebar to add exercises and instructions for the patient.</p>
                         </div>
                     }
                 </div>
 
-                <!-- Patient Journals Tab -->
+                <!-- Patient Journal Tab -->
                 <div class="tab-pane fade" id="tab-journal" role="tabpanel">
                     @if (Model.PatientJournals.Any())
                     {
                         <div class="d-flex flex-column gap-3">
                             @foreach (var j in Model.PatientJournals)
                             {
-                                <div class="card border-0 shadow-sm" style="border-radius:14px;">
+                                <div class="card border-0 shadow-sm" style="border-radius:14px; border-left: 4px solid #8b5cf6 !important;">
                                     <div class="card-body p-3">
-                                        <div class="d-flex align-items-center gap-2 mb-2">
-                                            <div style="font-size:1.8rem; line-height:1;">@j.MoodEmoji</div>
-                                            <div>
-                                                <h6 class="fw-bold mb-0" style="font-size:0.92rem; color:#1e293b;">@j.Title</h6>
-                                                <div style="font-size:0.72rem; color:#94a3b8;">
-                                                    <i class="bi bi-calendar3 me-1"></i>@j.CreatedAt.ToString("MM/dd/yyyy HH:mm")
-                                                </div>
-                                            </div>
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="fw-bold mb-0" style="color:#1e293b;">@j.Title</h6>
+                                            <small class="text-muted"><i class="bi bi-clock me-1"></i>@j.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
                                         </div>
-                                        <div class="d-flex gap-3 mb-2">
-                                            <div class="px-2 py-1 rounded-3" style="background:#eff6ff; font-size:0.75rem;">
-                                                <strong style="color:#3b82f6;">Mood:</strong> @j.MoodText
-                                            </div>
-                                            <div class="px-2 py-1 rounded-3" style="background:#fef3c7; font-size:0.75rem;">
-                                                <strong style="color:#f59e0b;">Stressed:</strong> @j.StressText
-                                            </div>
+                                        <div class="d-flex gap-3 mb-2" style="font-size:0.78rem;">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary">Mood Scale: @j.MoodScale/10</span>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning">Stress Scale: @j.StressScale/10</span>
                                         </div>
                                         @if (!string.IsNullOrEmpty(j.Content))
                                         {
-                                            <p class="mb-0 small text-secondary" style="line-height:1.7; white-space:pre-line;">@j.Content</p>
+                                            <div class="p-2 rounded-3" style="background:#f8fafc; font-size:0.82rem; color:#475569; white-space:pre-line;">@j.Content</div>
                                         }
                                     </div>
                                 </div>
@@ -239,24 +312,14 @@
                     }
                     else
                     {
-                        <div class="text-center py-4 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
-                            <i class="bi bi-journal-x d-block mb-2" style="font-size:1.8rem; opacity:0.4;"></i>
-                            <span class="small">Patient has not shared any journal entries yet.</span>
+                        <div class="text-center py-5 text-muted border border-dashed rounded-3" style="border-radius:14px; background:#fafbfc;">
+                            <i class="bi bi-journal-heart d-block mb-2" style="font-size:2.2rem; opacity:0.4;"></i>
+                            <h6 class="fw-semibold text-dark">No shared journal entries</h6>
+                            <p class="small text-muted mb-0">The patient has not shared any emotion journal entries yet.</p>
                         </div>
                     }
                 </div>
             </div>
         </div>
-    </div>
-}
-else
-{
-    <div class="text-center py-5">
-        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
-            <i class="bi bi-box text-muted" style="font-size:2.5rem;"></i>
-        </div>
-        <h5 class="fw-bold">Treatment Package Not Found</h5>
-        <p class="text-muted">This treatment package does not exist or you do not have access permissions.</p>
-        <a asp-page="Index" class="btn btn-primary" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">Back to List</a>
     </div>
 }

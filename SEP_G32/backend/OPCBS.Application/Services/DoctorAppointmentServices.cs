@@ -245,8 +245,11 @@ public class AppointmentService : IAppointmentService
 
         // Validate slot exists and is available
         var slot = await _slotRepo.GetByIdAsync(dto.AppointmentSlotId, ct);
-        if (slot == null || slot.Status != AppointmentSlotStatus.Available)
-            return ApiResponse<AppointmentDto>.ErrorResponse("Slot not available");
+        if (slot == null || (slot.Status != AppointmentSlotStatus.Available && slot.Status != AppointmentSlotStatus.Booked))
+            return ApiResponse<AppointmentDto>.ErrorResponse("Slot is not available for booking.");
+        // Check capacity
+        if (slot.CurrentBookings >= slot.MaxPatients)
+            return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã đạt giới hạn số lượng bệnh nhân.");
 
         // BOOK-03: No past booking
         var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
@@ -275,13 +278,14 @@ public class AppointmentService : IAppointmentService
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
 
-        // 1. Ensure the slot is not already booked by an active appointment
-        var isSlotBooked = allAppts.Any(a =>
+        // 1. Ensure the patient hasn't already booked this specific slot
+        var isSlotBookedByPatient = allAppts.Any(a =>
             a.AppointmentSlotId == dto.AppointmentSlotId &&
             a.Status != AppointmentStatus.Cancelled &&
-            a.Status != AppointmentStatus.Rejected);
-        if (isSlotBooked)
-            return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã được đặt trước.");
+            a.Status != AppointmentStatus.Rejected &&
+            (patientProfileId.HasValue ? a.PatientId == patientProfileId : a.GuestEmail == dto.GuestEmail));
+        if (isSlotBookedByPatient)
+            return ApiResponse<AppointmentDto>.ErrorResponse("Bạn đã đặt khung giờ này rồi.");
 
         // 2. Ensure patient does not have another appointment in the same time slot
         if (patientProfileId.HasValue)
@@ -337,7 +341,9 @@ public class AppointmentService : IAppointmentService
                 _packageRepo.Update(treatmentPackage);
             }
 
-            slot.Status = AppointmentSlotStatus.Booked;
+            slot.CurrentBookings++;
+            if (slot.CurrentBookings >= slot.MaxPatients)
+                slot.Status = AppointmentSlotStatus.Booked;
             _slotRepo.Update(slot);
 
             var bookingCode = $"OPCBS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
@@ -445,15 +451,29 @@ public class AppointmentService : IAppointmentService
             var appt = appointments.FirstOrDefault(a => a.Id == dto.Id);
             if (appt == null) continue;
 
-            if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
-                dto.DoctorName = docName;
+            // Set DoctorId (UserId, not ProfileId)
+            if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId))
+            {
+                dto.DoctorId = docUserId;
+                if (userDict.TryGetValue(docUserId, out var docName))
+                    dto.DoctorName = docName;
+                else
+                    dto.DoctorName = "Doctor";
+            }
             else
+            {
                 dto.DoctorName = "Doctor";
+            }
 
+            // Set PatientId (UserId, not ProfileId)
             if (appt.PatientId.HasValue)
             {
-                if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
-                    dto.PatientName = patName;
+                if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId))
+                {
+                    dto.PatientId = patUserId;
+                    if (userDict.TryGetValue(patUserId, out var patName))
+                        dto.PatientName = patName;
+                }
             }
             else
             {
@@ -465,7 +485,10 @@ public class AppointmentService : IAppointmentService
                 dto.AppointmentDate = slot.SlotDate.ToString("yyyy-MM-dd");
                 dto.StartTime = slot.StartTime.ToString("HH:mm");
                 dto.EndTime = slot.EndTime.ToString("HH:mm");
+                dto.Fee = slot.Price;
             }
+
+            dto.TreatmentPackageId = appt.TreatmentPackageId;
         }
     }
 
@@ -481,15 +504,27 @@ public class AppointmentService : IAppointmentService
         var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
         var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
 
-        if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
-            dto.DoctorName = docName;
+        if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId))
+        {
+            dto.DoctorId = docUserId;
+            if (userDict.TryGetValue(docUserId, out var docName))
+                dto.DoctorName = docName;
+            else
+                dto.DoctorName = "Doctor";
+        }
         else
+        {
             dto.DoctorName = "Doctor";
+        }
 
         if (appt.PatientId.HasValue)
         {
-            if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
-                dto.PatientName = patName;
+            if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId))
+            {
+                dto.PatientId = patUserId;
+                if (userDict.TryGetValue(patUserId, out var patName))
+                    dto.PatientName = patName;
+            }
         }
         else
         {
@@ -512,14 +547,16 @@ public class AppointmentService : IAppointmentService
             dto.TreatmentPackageName = pkg?.Name;
         }
 
-        // Enrich with visit count (completed appointments with same doctor)
+        // Enrich with visit count (all non-cancelled appointments with same doctor, excluding current)
         if (appt.PatientId.HasValue)
         {
             var allAppts = await _apptRepo.GetAllAsync(ct);
             dto.VisitCount = allAppts.Count(a =>
                 a.PatientId == appt.PatientId &&
                 a.DoctorId == appt.DoctorId &&
-                a.Status == AppointmentStatus.Completed &&
+                a.Id != appt.Id &&
+                a.Status != AppointmentStatus.Cancelled &&
+                a.Status != AppointmentStatus.Rejected &&
                 !a.IsDeleted);
         }
 
@@ -657,7 +694,9 @@ public class AppointmentService : IAppointmentService
         // Release the slot
         if (slot != null)
         {
-            slot.Status = AppointmentSlotStatus.Available;
+            slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+            if (slot.CurrentBookings < slot.MaxPatients)
+                slot.Status = AppointmentSlotStatus.Available;
             _slotRepo.Update(slot);
         }
 
@@ -929,7 +968,9 @@ public class AppointmentService : IAppointmentService
         var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
         if (slot != null)
         {
-            slot.Status = AppointmentSlotStatus.Available;
+            slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+            if (slot.CurrentBookings < slot.MaxPatients)
+                slot.Status = AppointmentSlotStatus.Available;
             _slotRepo.Update(slot);
         }
 
@@ -1129,8 +1170,8 @@ public class AppointmentService : IAppointmentService
 
         // Verify the new slot is available
         var newSlot = await _slotRepo.GetByIdAsync(dto.NewSlotId, ct);
-        if (newSlot == null || newSlot.Status != AppointmentSlotStatus.Available)
-            return ApiResponse.ErrorResponse("New slot is not available");
+        if (newSlot == null || (newSlot.Status != AppointmentSlotStatus.Available && newSlot.CurrentBookings >= newSlot.MaxPatients))
+            return ApiResponse.ErrorResponse("New slot is not available or is fully booked");
 
         // New slot must belong to the same doctor
         if (newSlot.DoctorProfileId != appointment.DoctorId)
@@ -1146,12 +1187,16 @@ public class AppointmentService : IAppointmentService
         // Release old slot
         if (oldSlot != null)
         {
-            oldSlot.Status = AppointmentSlotStatus.Available;
+            oldSlot.CurrentBookings = Math.Max(0, oldSlot.CurrentBookings - 1);
+            if (oldSlot.CurrentBookings < oldSlot.MaxPatients)
+                oldSlot.Status = AppointmentSlotStatus.Available;
             _slotRepo.Update(oldSlot);
         }
 
         // Book new slot
-        newSlot.Status = AppointmentSlotStatus.Booked;
+        newSlot.CurrentBookings++;
+        if (newSlot.CurrentBookings >= newSlot.MaxPatients)
+            newSlot.Status = AppointmentSlotStatus.Booked;
         _slotRepo.Update(newSlot);
 
         appointment.AppointmentSlotId = dto.NewSlotId;
@@ -1448,7 +1493,9 @@ public class ScheduleService : IScheduleService
             EndTime = s.EndTime.ToString("HH:mm"),
             Status = s.Status,
             Price = s.Price,
-            Notes = s.Notes
+            Notes = s.Notes,
+            MaxPatients = s.MaxPatients,
+            CurrentBookings = s.CurrentBookings
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -1488,7 +1535,9 @@ public class ScheduleService : IScheduleService
             EndTime = s.EndTime.ToString("HH:mm"),
             Status = s.Status,
             Price = s.Price,
-            Notes = s.Notes
+            Notes = s.Notes,
+            MaxPatients = s.MaxPatients,
+            CurrentBookings = s.CurrentBookings
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -1596,6 +1645,8 @@ public class ScheduleService : IScheduleService
             EndTime = endTime,
             Status = AppointmentSlotStatus.Available,
             Notes = dto.Notes,
+            MaxPatients = dto.MaxPatients > 0 ? dto.MaxPatients : 1,
+            CurrentBookings = 0,
             DoctorProfile = doctor
         };
 
@@ -1610,7 +1661,9 @@ public class ScheduleService : IScheduleService
             EndTime = slot.EndTime.ToString("HH:mm"),
             Status = slot.Status,
             Price = slot.Price,
-            Notes = slot.Notes
+            Notes = slot.Notes,
+            MaxPatients = slot.MaxPatients,
+            CurrentBookings = slot.CurrentBookings
         };
 
         return ApiResponse<AppointmentSlotDto>.SuccessResponse(returnDto, "Slot created successfully");
@@ -1656,5 +1709,58 @@ public class ScheduleService : IScheduleService
         await _uow.SaveChangesAsync(ct);
 
         return ApiResponse.SuccessResponse("Slot notes updated successfully");
+    }
+
+    public async Task<ApiResponse> UpdateSlotAsync(Guid slotId, Guid doctorUserId, UpdateSlotDto dto, CancellationToken ct = default)
+    {
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slot = allSlots.FirstOrDefault(s => s.Id == slotId);
+        if (slot == null)
+            return ApiResponse.ErrorResponse("Slot not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || slot.DoctorProfileId != doctor.Id)
+            return ApiResponse.ErrorResponse("Not authorized");
+
+        // Cannot edit time of a fully booked slot
+        if (slot.Status == AppointmentSlotStatus.Booked && (dto.StartTime != null || dto.EndTime != null))
+            return ApiResponse.ErrorResponse("Cannot change time of a fully booked slot");
+
+        // Update time if provided
+        if (dto.StartTime != null && TimeOnly.TryParse(dto.StartTime, out var newStart))
+            slot.StartTime = newStart;
+        if (dto.EndTime != null && TimeOnly.TryParse(dto.EndTime, out var newEnd))
+            slot.EndTime = newEnd;
+
+        if (slot.StartTime >= slot.EndTime)
+            return ApiResponse.ErrorResponse("Start time must be before end time");
+
+        // Check overlap with other slots (excluding itself)
+        var otherSlots = allSlots.Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate == slot.SlotDate && s.Id != slotId).ToList();
+        foreach (var existing in otherSlots)
+        {
+            if (slot.StartTime < existing.EndTime && slot.EndTime > existing.StartTime)
+                return ApiResponse.ErrorResponse("Updated time overlaps with an existing slot");
+        }
+
+        // Update notes
+        if (dto.Notes != null)
+            slot.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim();
+
+        // Update max patients
+        if (dto.MaxPatients.HasValue)
+        {
+            if (dto.MaxPatients.Value < 1)
+                return ApiResponse.ErrorResponse("Maximum patients must be at least 1");
+            if (dto.MaxPatients.Value < slot.CurrentBookings)
+                return ApiResponse.ErrorResponse($"Cannot set max patients below current bookings ({slot.CurrentBookings})");
+            slot.MaxPatients = dto.MaxPatients.Value;
+        }
+
+        _slotRepo.Update(slot);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse.SuccessResponse("Slot updated successfully");
     }
 }

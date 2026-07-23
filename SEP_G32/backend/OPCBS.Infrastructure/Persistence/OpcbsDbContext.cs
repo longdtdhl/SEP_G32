@@ -76,6 +76,13 @@ public class OpcbsDbContext : DbContext
     public DbSet<TherapyAssignment> TherapyAssignments => Set<TherapyAssignment>();
     public DbSet<EmotionJournal> EmotionJournals => Set<EmotionJournal>();
 
+    // Favorites
+    public DbSet<FavoriteDoctor> FavoriteDoctors => Set<FavoriteDoctor>();
+
+    // Messaging
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<Message> Messages => Set<Message>();
+
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -90,6 +97,8 @@ public class OpcbsDbContext : DbContext
         ConfigureBlogAndNotificationEntities(modelBuilder);
         ConfigureSystemEntities(modelBuilder);
         ConfigurePsychometricEntities(modelBuilder);
+        ConfigureFavoriteEntities(modelBuilder);
+        ConfigureMessagingEntities(modelBuilder);
 
         // Targeted query filters: exclude soft-deleted slots and appointments
         // (Not applied globally to avoid breaking required navigation properties
@@ -695,6 +704,75 @@ public class OpcbsDbContext : DbContext
                 .WithMany(q => q.Answers)
                 .HasForeignKey(e => e.QuestionId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureFavoriteEntities(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<FavoriteDoctor>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.PatientId, e.DoctorId }).IsUnique();
+
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .HasPrincipalKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Doctor)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorId)
+                .HasPrincipalKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureMessagingEntities(ModelBuilder modelBuilder)
+    {
+        // Conversation
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.PatientId, e.DoctorId });
+
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .HasPrincipalKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Doctor)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorId)
+                .HasPrincipalKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Appointment)
+                .WithMany()
+                .HasForeignKey(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.TreatmentPackage)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentPackageId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Message (ImmutableEntity - no soft delete)
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ConversationId);
+            entity.HasIndex(e => e.SenderId);
+
+            entity.Property(e => e.Content).HasMaxLength(4000);
+            entity.Property(e => e.AttachmentUrl).HasMaxLength(2048);
+
+            entity.HasOne(e => e.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(e => e.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -52,6 +52,8 @@ public class TherapyAssignmentService : ITherapyAssignmentService
             TreatmentPackageId = dto.TreatmentPackageId,
             Title = dto.Title,
             Description = dto.Description,
+            DetailedInstructions = dto.DetailedInstructions,
+            ResourceUrl = dto.ResourceUrl,
             DueDate = dto.DueDate,
             Status = 0,
             TreatmentPackage = pkg
@@ -66,15 +68,16 @@ public class TherapyAssignmentService : ITherapyAssignmentService
     {
         var entity = await _assignmentRepo.GetByIdAsync(id, ct);
         if (entity == null || entity.IsDeleted)
-            return ApiResponse<TherapyAssignmentDto>.ErrorResponse("Không tìm thấy bài tập.");
+            return ApiResponse<TherapyAssignmentDto>.ErrorResponse("Assignment not found.");
 
         entity.PatientSubmission = dto.PatientSubmission;
+        entity.PatientSubmissionUrl = dto.PatientSubmissionUrl;
         entity.SubmittedAt = DateTime.UtcNow;
         entity.Status = 1;
         entity.UpdatedAt = DateTime.UtcNow;
         _assignmentRepo.Update(entity);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<TherapyAssignmentDto>.SuccessResponse(MapToDto(entity), "Đã nộp bài tập thành công.");
+        return ApiResponse<TherapyAssignmentDto>.SuccessResponse(MapToDto(entity), "Assignment submitted successfully.");
     }
 
     public async Task<ApiResponse<TherapyAssignmentDto>> FeedbackAsync(Guid id, FeedbackAssignmentDto dto, CancellationToken ct)
@@ -110,9 +113,12 @@ public class TherapyAssignmentService : ITherapyAssignmentService
         TreatmentPackageId = e.TreatmentPackageId,
         Title = e.Title,
         Description = e.Description,
+        DetailedInstructions = e.DetailedInstructions,
+        ResourceUrl = e.ResourceUrl,
         DueDate = e.DueDate,
         Status = e.Status,
         PatientSubmission = e.PatientSubmission,
+        PatientSubmissionUrl = e.PatientSubmissionUrl,
         SubmittedAt = e.SubmittedAt,
         DoctorFeedback = e.DoctorFeedback,
         FeedbackAt = e.FeedbackAt,

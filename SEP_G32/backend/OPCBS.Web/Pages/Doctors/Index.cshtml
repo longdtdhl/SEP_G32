@@ -1,7 +1,9 @@
 @page
 @model OPCBS.Web.Pages.Doctors.IndexModel
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
     ViewData["Title"] = "Search specialist";
+    var isPatient = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Patient", StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
@@ -82,6 +84,17 @@
     
     .star-filled { color: #f59e0b; }
     .star-empty { color: #cbd5e1; }
+
+    .fav-heart-btn {
+        position: absolute; top: 8px; right: 8px; z-index: 10;
+        background: rgba(255,255,255,0.9); border: none; border-radius: 50%;
+        width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 1rem; color: #cbd5e1;
+    }
+    .fav-heart-btn:hover { transform: scale(1.15); background: #fff; }
+    .fav-heart-btn.active { color: #ef4444; }
+    .fav-heart-btn.active:hover { color: #dc2626; }
 </style>
 
 <div class="mb-page-header mb-4">
@@ -128,7 +141,13 @@
         {
             var initials = string.Join("", (doc.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
             
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-lg-4 col-xl-3" style="position:relative;">
+                @if (isPatient)
+                {
+                    <button class="fav-heart-btn" data-doctor-id="@doc.Id" onclick="toggleFavorite(event, this)" title="Add to Favorites">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                }
                 <a asp-page="Details" asp-route-id="@doc.Id" class="doctor-card-modern">
                     <!-- Avatar -->
                     <div class="avatar-wrapper">
@@ -212,4 +231,49 @@ else
             <p class="text-muted small mb-0">Thử thay đổi keyword search hoặc chuyên khoa your.</p>
         </div>
     </div>
+}
+
+@if (isPatient)
+{
+<script>
+async function toggleFavorite(e, btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    var doctorId = btn.dataset.doctorId;
+    try {
+        var res = await fetch('/Patient/Favorites?handler=Toggle&doctorId=' + doctorId, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+        });
+        if (res.ok) {
+            var data = await res.json();
+            btn.classList.toggle('active', data.isFavorite);
+            var icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = data.isFavorite ? 'bi bi-heart-fill' : 'bi bi-heart';
+            }
+            btn.title = data.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+        }
+    } catch(err) { console.error('Favorite toggle failed', err); }
+}
+
+// Load favorite statuses on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    var btns = document.querySelectorAll('.fav-heart-btn');
+    for (var btn of btns) {
+        try {
+            var res = await fetch('/Patient/Favorites?handler=Check&doctorId=' + btn.dataset.doctorId);
+            if (res.ok) {
+                var data = await res.json();
+                btn.classList.toggle('active', data.isFavorite);
+                var icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = data.isFavorite ? 'bi bi-heart-fill' : 'bi bi-heart';
+                }
+                btn.title = data.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+            }
+        } catch(e) {}
+    }
+});
+</script>
 }

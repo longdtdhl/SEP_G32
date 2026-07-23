@@ -46,6 +46,7 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
     }
     public async Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId) => await base.DeleteAsync($"{ApiRoutes.Schedules}/slots/{slotId}");
     public async Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/notes", new { Notes = notes });
+    public async Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}", dto);
 }
 
 // --- Consultation Record ---
@@ -56,6 +57,12 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
     public async Task<(List<PatientRecordDto> Data, string? Error)> GetAllAsync()
     {
         var (data, _, error) = await GetAsync<List<PatientRecordDto>>(ApiRoutes.PatientRecords);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<PatientRecordDto> Data, string? Error)> GetMyPatientsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<PatientRecordDto>>($"{ApiRoutes.PatientRecords}/my-patients");
         return (data ?? new(), error);
     }
 
@@ -491,4 +498,81 @@ public class TherapyApiService : ApiServiceBase, ITherapyApiService
 
     public async Task<(bool Success, string? Error)> DeleteJournalAsync(Guid id) =>
         await DeleteAsync($"{ApiRoutes.Therapy}/journals/{id}");
+}
+
+// --- Favorites ---
+public class FavoriteApiService : ApiServiceBase, IFavoriteApiService
+{
+    public FavoriteApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<FavoriteDoctorWebDto> Data, string? Error)> GetFavoritesAsync()
+    {
+        var (data, _, error) = await GetAsync<List<FavoriteDoctorWebDto>>(ApiRoutes.Favorites);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> AddFavoriteAsync(Guid doctorId) =>
+        await PostAsync($"{ApiRoutes.Favorites}/{doctorId}");
+
+    public async Task<(bool Success, string? Error)> RemoveFavoriteAsync(Guid doctorId) =>
+        await DeleteAsync($"{ApiRoutes.Favorites}/{doctorId}");
+
+    public async Task<(bool IsFavorite, string? Error)> IsFavoriteAsync(Guid doctorId)
+    {
+        var (data, _, error) = await GetAsync<bool>($"{ApiRoutes.Favorites}/{doctorId}/check");
+        return (data, error);
+    }
+}
+
+// --- Messaging ---
+public class MessagingApiService : ApiServiceBase, IMessagingApiService
+{
+    public MessagingApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<ConversationWebDto> Data, string? Error)> GetConversationsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<ConversationWebDto>>(ApiRoutes.Messages);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<MessageWebDto> Data, string? Error)> GetMessagesAsync(Guid conversationId)
+    {
+        var (data, _, error) = await GetAsync<List<MessageWebDto>>($"{ApiRoutes.Messages}/{conversationId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(MessageWebDto? Data, string? Error)> SendMessageAsync(Guid conversationId, object dto)
+    {
+        var (data, error) = await PostAsync<MessageWebDto>($"{ApiRoutes.Messages}/{conversationId}", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> MarkAsReadAsync(Guid conversationId) =>
+        await PutAsync($"{ApiRoutes.Messages}/read?conversationId={conversationId}");
+
+    public async Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationAsync(
+        Guid doctorUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null)
+    {
+        var url = $"{ApiRoutes.Messages}/conversation?doctorUserId={doctorUserId}";
+        if (appointmentId.HasValue) url += $"&appointmentId={appointmentId}";
+        if (treatmentPackageId.HasValue) url += $"&treatmentPackageId={treatmentPackageId}";
+        var (data, error) = await PostAsync<ConversationWebDto>(url);
+        return (data, error);
+    }
+
+    public async Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationByPatientAsync(
+        Guid patientUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null)
+    {
+        var url = $"{ApiRoutes.Messages}/conversation?patientUserId={patientUserId}";
+        if (appointmentId.HasValue) url += $"&appointmentId={appointmentId}";
+        if (treatmentPackageId.HasValue) url += $"&treatmentPackageId={treatmentPackageId}";
+        var (data, error) = await PostAsync<ConversationWebDto>(url);
+        return (data, error);
+    }
+
+    public async Task<(int Count, string? Error)> GetUnreadCountAsync()
+    {
+        var (data, _, error) = await GetAsync<int>($"{ApiRoutes.Messages}/unread");
+        return (data, error);
+    }
 }

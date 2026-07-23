@@ -38,6 +38,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IPsychometricService, PsychometricService>();
         services.AddScoped<ITherapyAssignmentService, TherapyAssignmentService>();
         services.AddScoped<IEmotionJournalService, EmotionJournalService>();
+        services.AddScoped<IFavoriteDoctorService, FavoriteDoctorService>();
+        services.AddScoped<IMessagingService, MessagingService>();
 
         return services;
     }

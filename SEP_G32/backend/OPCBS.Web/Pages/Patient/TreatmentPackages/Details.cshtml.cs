@@ -32,6 +32,7 @@ public class DetailsModel : PageModel
     [BindProperty] public string? RejectReason { get; set; }
     [BindProperty] public string? CancelReason { get; set; }
     [BindProperty] public string? SubmissionText { get; set; }
+    [BindProperty] public string? SubmissionUrl { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -98,13 +99,17 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnPostSubmitAssignmentAsync(Guid id, Guid assignmentId)
     {
-        if (string.IsNullOrWhiteSpace(SubmissionText))
+        if (string.IsNullOrWhiteSpace(SubmissionText) && string.IsNullOrWhiteSpace(SubmissionUrl))
         {
-            Error = "Please enter your assignment submission.";
+            Error = "Please enter your submission details or provide a link.";
             return await OnGetAsync(id);
         }
 
-        var dto = new SubmitAssignmentDto { PatientSubmission = SubmissionText };
+        var dto = new SubmitAssignmentDto 
+        { 
+            PatientSubmission = SubmissionText ?? string.Empty,
+            PatientSubmissionUrl = string.IsNullOrWhiteSpace(SubmissionUrl) ? null : SubmissionUrl.Trim()
+        };
         var (success, error) = await _therapyService.SubmitAssignmentAsync(assignmentId, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
         TempData["SuccessMessage"] = "Assignment submitted successfully!";

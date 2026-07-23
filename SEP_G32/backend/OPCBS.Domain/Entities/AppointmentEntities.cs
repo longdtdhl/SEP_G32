@@ -80,6 +80,12 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Optional notes/description for the slot</summary>
     public string? Notes { get; set; }
 
+    /// <summary>Maximum number of patients that can book this slot (default 1). Slot auto-locks when CurrentBookings >= MaxPatients.</summary>
+    public int MaxPatients { get; set; } = 1;
+
+    /// <summary>Current number of bookings for this slot</summary>
+    public int CurrentBookings { get; set; } = 0;
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 

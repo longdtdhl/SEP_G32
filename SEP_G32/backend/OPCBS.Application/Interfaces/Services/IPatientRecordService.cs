@@ -12,6 +12,8 @@ public interface IPatientRecordService
     Task<List<PatientRecordDto>> GetAllAsync(CancellationToken ct = default);
     Task<List<PatientRecordDto>> GetSystemPatientsAsync(CancellationToken ct = default);
     Task<List<PatientRecordDto>> GetGuestPatientsAsync(CancellationToken ct = default);
+    Task<List<PatientRecordDto>> GetMyPatientsAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<bool> CanDoctorAccessPatientAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default);
     Task<PatientRecordDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<PatientRecordDto?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task<ApiResponse> CreateAsync(Guid doctorId, CreatePatientRecordDto dto, CancellationToken ct = default);

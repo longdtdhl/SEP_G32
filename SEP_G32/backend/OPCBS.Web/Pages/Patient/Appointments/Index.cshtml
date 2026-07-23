@@ -6,177 +6,250 @@
 }
 
 <style>
-    .stat-card {
-        border-radius: 12px;
-        border: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* ── Stat Summary Cards ── */
+    .apt-stat-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+    }
+    @@media (max-width: 768px) {
+        .apt-stat-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    .apt-stat {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.2s ease;
         cursor: pointer;
         text-decoration: none;
+        color: inherit;
     }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+    .apt-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+        border-color: #cbd5e1;
     }
-    .stat-card .stat-icon {
-        width: 48px; height: 48px;
+    .apt-stat-icon {
+        width: 44px; height: 44px;
         border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.25rem;
-    }
-    .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1; }
-    .stat-card .stat-label { font-size: 0.8rem; color: #6c757d; font-weight: 500; }
-
-    .appointment-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        border-left: 4px solid transparent;
-        transition: all 0.2s ease;
-    }
-    .appointment-card:hover {
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-        transform: translateX(2px);
-    }
-    .appointment-card.status-pending { border-left-color: #f59e0b; }
-    .appointment-card.status-approved { border-left-color: #3b82f6; }
-    .appointment-card.status-inprogress { border-left-color: #f59e0b; }
-    .appointment-card.status-completed { border-left-color: #10b981; }
-    .appointment-card.status-cancelled { border-left-color: #ef4444; }
-    .appointment-card.status-rejected { border-left-color: #6c757d; }
-
-    .appointment-card-body { padding: 1.25rem; }
-
-    .appointment-date-badge {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: #f1f5f9; border-radius: 10px; width: 54px; height: 54px; text-align: center;
+        font-size: 1.15rem;
         flex-shrink: 0;
     }
-    .date-day { font-size: 1.2rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
-    .date-month { font-size: 0.65rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
-    .mb-chip {
-        display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 10px; border-radius: 8px; font-weight: 600; font-size: 0.75rem;
+    .apt-stat-icon.bg-total { background: #eff6ff; color: #3b82f6; }
+    .apt-stat-icon.bg-pending { background: #fefce8; color: #eab308; }
+    .apt-stat-icon.bg-active { background: #f0fdf4; color: #22c55e; }
+    .apt-stat-icon.bg-done { background: #f0f9ff; color: #0ea5e9; }
+    .apt-stat-num { font-size: 1.5rem; font-weight: 700; color: #1e293b; line-height: 1; }
+    .apt-stat-label { font-size: 0.75rem; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+
+    /* ── Filter Bar ── */
+    .apt-filter-bar {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
     }
 
-    .filter-section {
-        border-radius: 12px;
-        border: none;
+    /* ── Appointment Cards ── */
+    .apt-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        margin-bottom: 0.875rem;
+        border-left: 4px solid transparent;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+    .apt-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+        transform: translateX(2px);
+    }
+    .apt-card.st-pending   { border-left-color: #f59e0b; }
+    .apt-card.st-approved  { border-left-color: #3b82f6; }
+    .apt-card.st-inprogress { border-left-color: #8b5cf6; }
+    .apt-card.st-completed { border-left-color: #10b981; }
+    .apt-card.st-cancelled { border-left-color: #ef4444; }
+    .apt-card.st-rejected  { border-left-color: #6b7280; }
+
+    .apt-card-body { padding: 1.25rem 1.5rem; }
+
+    .apt-date-box {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: #f8fafc; border-radius: 12px;
+        width: 56px; height: 56px;
+        flex-shrink: 0;
+        border: 1px solid #f1f5f9;
+    }
+    .apt-date-day { font-size: 1.25rem; font-weight: 700; color: #1e293b; line-height: 1.1; }
+    .apt-date-month { font-size: 0.6rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .apt-spec-chip {
+        display: inline-block;
+        background: #eff6ff;
+        color: #2563eb;
+        padding: 2px 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.72rem;
+    }
+    .apt-pkg-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #f0fdf4;
+        color: #16a34a;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.68rem;
+    }
+    .apt-meta {
+        font-size: 0.8rem;
+        color: #64748b;
     }
 
-    .empty-appointments-state {
+    /* ── Status Badges ── */
+    .apt-status {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .apt-status.s-pending    { background: #fef3c7; color: #92400e; }
+    .apt-status.s-approved   { background: #dbeafe; color: #1e40af; }
+    .apt-status.s-inprogress { background: #ede9fe; color: #5b21b6; }
+    .apt-status.s-completed  { background: #d1fae5; color: #065f46; }
+    .apt-status.s-cancelled  { background: #fee2e2; color: #991b1b; }
+    .apt-status.s-rejected   { background: #f3f4f6; color: #374151; }
+
+    /* ── Action Buttons ── */
+    .apt-btn {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 5px 14px;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .apt-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    .apt-btn.btn-view { border-color: #bfdbfe; color: #2563eb; }
+    .apt-btn.btn-view:hover { background: #eff6ff; }
+    .apt-btn.btn-chat { border-color: #a5f3fc; color: #0891b2; }
+    .apt-btn.btn-chat:hover { background: #ecfeff; }
+    .apt-btn.btn-star { border-color: #fde68a; color: #d97706; }
+    .apt-btn.btn-star:hover { background: #fffbeb; }
+
+    /* ── Empty State ── */
+    .apt-empty {
         text-align: center;
-        padding: 80px 20px;
+        padding: 80px 24px;
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
     }
-    .empty-appointments-state i { font-size: 3.5rem; color: #dee2e6; }
-    .empty-appointments-state h4 { color: #6c757d; margin-top: 16px; }
-    .empty-appointments-state p { color: #adb5bd; font-size: 0.9rem; }
+    .apt-empty-icon {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 2rem;
+        color: #94a3b8;
+        margin-bottom: 1.25rem;
+    }
 </style>
 
+<!-- Page Header -->
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
         <h1><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>My Appointments</h1>
         <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Manage and track your consultation appointments</p>
     </div>
-    <a asp-page="/Doctors/Index" class="btn btn-primary" style="border-radius:10px;">
+    <a asp-page="/Doctors/Index" class="btn btn-primary" style="border-radius:10px; padding:8px 20px;">
         <i class="bi bi-plus-lg me-1"></i>Book New Appointment
     </a>
 </div>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius:12px; border:none;">
         <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<!-- Status Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <a href="?status=Pending" class="stat-card card shadow-sm d-block @(Model.Status == "Pending" ? "ring ring-warning" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-warning">@Model.PendingCount</div>
-                    <div class="stat-label">Pending</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?status=Approved" class="stat-card card shadow-sm d-block @(Model.Status == "Approved" ? "ring ring-info" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-info bg-opacity-10 text-info">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-info">@Model.ApprovedCount</div>
-                    <div class="stat-label">Confirmed</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?status=Completed" class="stat-card card shadow-sm d-block @(Model.Status == "Completed" ? "ring ring-success" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                    <i class="bi bi-check-all"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-success">@Model.CompletedCount</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-lg-3">
-        <a href="?" class="stat-card card shadow-sm d-block @(string.IsNullOrEmpty(Model.Status) ? "ring ring-secondary" : "")">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
-                    <i class="bi bi-list-ul"></i>
-                </div>
-                <div>
-                    <div class="stat-value text-secondary">@Model.TotalCount</div>
-                    <div class="stat-label">All</div>
-                </div>
-            </div>
-        </a>
-    </div>
+<!-- Stat Summary -->
+<div class="apt-stat-row">
+    <a href="?Status=" class="apt-stat">
+        <div class="apt-stat-icon bg-total"><i class="bi bi-calendar2-check"></i></div>
+        <div>
+            <div class="apt-stat-num">@Model.TotalCount</div>
+            <div class="apt-stat-label">Total</div>
+        </div>
+    </a>
+    <a href="?Status=Pending" class="apt-stat">
+        <div class="apt-stat-icon bg-pending"><i class="bi bi-hourglass-split"></i></div>
+        <div>
+            <div class="apt-stat-num">@Model.PendingCount</div>
+            <div class="apt-stat-label">Pending</div>
+        </div>
+    </a>
+    <a href="?Status=Approved" class="apt-stat">
+        <div class="apt-stat-icon bg-active"><i class="bi bi-check-circle"></i></div>
+        <div>
+            <div class="apt-stat-num">@Model.ApprovedCount</div>
+            <div class="apt-stat-label">Confirmed</div>
+        </div>
+    </a>
+    <a href="?Status=Completed" class="apt-stat">
+        <div class="apt-stat-icon bg-done"><i class="bi bi-patch-check"></i></div>
+        <div>
+            <div class="apt-stat-num">@Model.CompletedCount</div>
+            <div class="apt-stat-label">Completed</div>
+        </div>
+    </a>
 </div>
 
-<!-- Search & Filter Bar -->
-<div class="card filter-section shadow-sm mb-4">
-    <div class="card-body p-3">
-        <form method="get" id="filterForm">
-            <input type="hidden" name="page" id="pageInput" value="1" />
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-md-5 col-lg-4">
-                    <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="letter-spacing:0.04em; font-size:0.7rem;">Filter by Status</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0" style="border-radius:12px 0 0 12px; padding-left:14px; padding-right:8px; color:var(--mb-primary);">
-                            <i class="bi bi-funnel-fill"></i>
-                        </span>
-                        <select name="Status" onchange="document.getElementById('pageInput').value='1'; this.form.submit();" class="form-select bg-light border-0" style="border-radius:0 12px 12px 0; padding:10px 14px; font-size:0.875rem; color:#1e293b; font-weight:600;">
-                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">All Appointments</option>
-                            <option value="Pending" selected="@(Model.Status == "Pending" ? "selected" : null)">Pending</option>
-                            <option value="Approved" selected="@(Model.Status == "Approved" ? "selected" : null)">Confirmed</option>
-                            <option value="InProgress" selected="@(Model.Status == "InProgress" ? "selected" : null)">In Progress</option>
-                            <option value="Completed" selected="@(Model.Status == "Completed" ? "selected" : null)">Completed</option>
-                            <option value="Cancelled" selected="@(Model.Status == "Cancelled" ? "selected" : null)">Cancelled</option>
-                            <option value="Rejected" selected="@(Model.Status == "Rejected" ? "selected" : null)">Rejected</option>
-                        </select>
-                    </div>
-                </div>
+<!-- Filter Bar -->
+<div class="apt-filter-bar">
+    <form method="get" id="filterForm">
+        <input type="hidden" name="page" id="pageInput" value="1" />
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2" style="color:#64748b; font-size:0.8rem; font-weight:600;">
+                <i class="bi bi-funnel"></i>
+                <span>Filter:</span>
             </div>
-        </form>
-    </div>
+            <select name="Status" onchange="document.getElementById('pageInput').value='1'; this.form.submit();"
+                    class="form-select" style="max-width:200px; border-radius:10px; border:1px solid #e2e8f0; padding:8px 14px; font-size:0.85rem; font-weight:600; color:#1e293b;">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">All Appointments</option>
+                <option value="Pending" selected="@(Model.Status == "Pending" ? "selected" : null)">Pending</option>
+                <option value="Approved" selected="@(Model.Status == "Approved" ? "selected" : null)">Confirmed</option>
+                <option value="InProgress" selected="@(Model.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                <option value="Completed" selected="@(Model.Status == "Completed" ? "selected" : null)">Completed</option>
+                <option value="Rejected" selected="@(Model.Status == "Rejected" ? "selected" : null)">Rejected</option>
+            </select>
+            @if (!string.IsNullOrEmpty(Model.Status))
+            {
+                <a href="?" class="apt-btn" style="font-size:0.75rem;">
+                    <i class="bi bi-x-lg"></i> Clear
+                </a>
+            }
+        </div>
+    </form>
 </div>
 
 @if (Model.Appointments.Any())
 {
-    <!-- Appointment Cards -->
     <div class="appointment-list">
         @foreach (var apt in Model.Appointments.OrderByDescending(a => a.StartAt))
         {
@@ -187,20 +260,34 @@
             var isCompleted = apt.Status == 4;
             var isCancelled = apt.Status == 5;
 
-            var borderClass = isPending ? "status-pending" :
-                              isApproved ? "status-approved" :
-                              isInProgress ? "status-inprogress" :
-                              isCompleted ? "status-completed" :
-                              isCancelled ? "status-cancelled" :
-                              isRejected ? "status-rejected" : "";
+            var borderClass = isPending ? "st-pending" :
+                              isApproved ? "st-approved" :
+                              isInProgress ? "st-inprogress" :
+                              isCompleted ? "st-completed" :
+                              isCancelled ? "st-cancelled" :
+                              isRejected ? "st-rejected" : "";
 
-            <div class="appointment-card @borderClass">
-                <div class="appointment-card-body">
+            var statusClass = isPending ? "s-pending" :
+                              isApproved ? "s-approved" :
+                              isInProgress ? "s-inprogress" :
+                              isCompleted ? "s-completed" :
+                              isCancelled ? "s-cancelled" :
+                              isRejected ? "s-rejected" : "";
+
+            var statusIcon = isPending ? "bi-hourglass-split" :
+                             isApproved ? "bi-check-circle-fill" :
+                             isInProgress ? "bi-play-circle-fill" :
+                             isCompleted ? "bi-patch-check-fill" :
+                             isCancelled ? "bi-x-circle-fill" :
+                             isRejected ? "bi-slash-circle" : "bi-question-circle";
+
+            <div class="apt-card @borderClass">
+                <div class="apt-card-body">
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="appointment-date-badge">
+                        <!-- Left: Date + Info -->
+                        <div class="d-flex align-items-center gap-3" style="flex:1; min-width:0;">
+                            <div class="apt-date-box">
                                 @{
-                                    var dateDisplay = apt.AppointmentDate ?? "";
                                     var dayNum = "";
                                     var monthStr = "";
                                     if (DateTime.TryParse(apt.AppointmentDate, out var parsedDate))
@@ -211,41 +298,57 @@
                                     else
                                     {
                                         dayNum = "—";
-                                        monthStr = "";
                                     }
                                 }
-                                <span class="date-day">@dayNum</span>
-                                <span class="date-month">@monthStr</span>
+                                <span class="apt-date-day">@dayNum</span>
+                                <span class="apt-date-month">@monthStr</span>
                             </div>
-                            <div>
-                                <h6 class="mb-1">@(apt.DoctorName ?? "Specialist")</h6>
-                                @if (!string.IsNullOrEmpty(apt.Specialization))
-                                {
-                                    <span class="mb-chip">@apt.Specialization</span>
-                                }
-                                <div class="mt-1 d-flex flex-wrap gap-2 align-items-center" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
-                                    <span><i class="bi bi-clock me-1"></i>@(apt.StartTime ?? "—")</span>
+                            <div style="min-width:0;">
+                                <h6 class="mb-1 fw-bold" style="font-size:0.95rem; color:#1e293b;">@(apt.DoctorName ?? "Specialist")</h6>
+                                <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+                                    @if (!string.IsNullOrEmpty(apt.Specialization))
+                                    {
+                                        <span class="apt-spec-chip">@apt.Specialization</span>
+                                    }
+                                    @if (apt.TreatmentPackageId.HasValue)
+                                    {
+                                        <span class="apt-pkg-chip"><i class="bi bi-box-seam"></i>Package</span>
+                                    }
+                                </div>
+                                <div class="d-flex flex-wrap gap-3 apt-meta">
+                                    <span><i class="bi bi-clock me-1"></i>@(apt.StartTime ?? "—") — @(apt.EndTime ?? "")</span>
                                     @if (!string.IsNullOrEmpty(apt.BookingCode))
                                     {
                                         <span class="d-none d-sm-inline"><i class="bi bi-upc me-1"></i>@apt.BookingCode</span>
                                     }
-                                    @if (apt.TreatmentPackageId.HasValue)
+                                    @if (apt.Fee.HasValue && apt.Fee > 0)
                                     {
-                                        <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;"><i class="bi bi-box-seam me-1"></i>Package</span>
+                                        <span><i class="bi bi-wallet2 me-1"></i>@apt.Fee?.ToString("N0") VND</span>
                                     }
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Right: Status + Actions -->
                         <div class="d-flex flex-column align-items-end gap-2">
-                            <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
-                            <div class="d-flex gap-1">
+                            <span class="apt-status @statusClass">
+                                <i class="bi @statusIcon"></i>
+                                @apt.StatusText
+                            </span>
+                            <div class="d-flex gap-1 flex-wrap">
                                 @if (isCompleted)
                                 {
-                                    <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-outline-warning" title="Write Review">
+                                    <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="apt-btn btn-star" title="Write Review">
                                         <i class="bi bi-star"></i>
                                     </a>
                                 }
-                                <a asp-page="Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary">
+                                @if (isApproved || isInProgress)
+                                {
+                                    <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId" class="apt-btn btn-chat" title="Chat with Doctor">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </a>
+                                }
+                                <a asp-page="Details" asp-route-id="@apt.Id" class="apt-btn btn-view">
                                     <i class="bi bi-eye me-1"></i>Details
                                 </a>
                             </div>
@@ -263,12 +366,13 @@
 }
 else
 {
-    <!-- Empty State -->
-    <div class="empty-appointments-state">
-        <i class="bi bi-calendar-heart d-block"></i>
-        <h4>No appointments found</h4>
-        <p class="text-muted mb-4">Start your mental health care journey today.</p>
-        <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg" style="border-radius:12px;">
+    <div class="apt-empty">
+        <div class="apt-empty-icon">
+            <i class="bi bi-calendar-heart"></i>
+        </div>
+        <h4 style="color:#475569; font-weight:700; margin-bottom:8px;">No appointments found</h4>
+        <p class="text-muted mb-4" style="font-size:0.9rem;">Start your mental health care journey today.</p>
+        <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg" style="border-radius:12px; padding:10px 28px;">
             <i class="bi bi-search-heart me-2"></i>Find a Therapist
         </a>
     </div>

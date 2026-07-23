@@ -102,8 +102,8 @@ public class MappingProfile : Profile
 
         // TreatmentPackage → TreatmentPackageDto
         CreateMap<TreatmentPackage, TreatmentPackageDto>()
-            .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
-            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.Patient.User.FullName))
+            .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor != null && s.Doctor.User != null ? s.Doctor.User.FullName : null))
+            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.Patient != null && s.Patient.User != null ? s.Patient.User.FullName : null))
             .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
 
         // Specialization → SpecializationDto

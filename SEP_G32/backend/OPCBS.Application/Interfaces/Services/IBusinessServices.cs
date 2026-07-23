@@ -143,10 +143,13 @@ public class TreatmentPackageDto
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
+    public string? TargetOutcome { get; set; }
+    public string? RecommendedExercises { get; set; }
+    public string? Instructions { get; set; }
     public Guid DoctorId { get; set; }
-    public required string DoctorName { get; set; }
-    public Guid PatientId { get; set; }
-    public required string PatientName { get; set; }
+    public string? DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
+    public string? PatientName { get; set; }
     public int SessionQuantity { get; set; }
     public int RemainingSessions { get; set; }
     public int ValidityDays { get; set; }
@@ -161,11 +164,14 @@ public class TreatmentPackageDto
 
 public class CreateTreatmentPackageDto
 {
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
+    public string? TargetOutcome { get; set; }
+    public string? RecommendedExercises { get; set; }
+    public string? Instructions { get; set; }
     public int SessionQuantity { get; set; }
-    public int ValidityDays { get; set; }
+    public int ValidityDays { get; set; } = 90;
     public decimal Price { get; set; }
 }
 

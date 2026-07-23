@@ -56,7 +56,9 @@ public class AppointmentListItemDto
 {
     public Guid Id { get; set; }
     public string? BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
     public string? DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
     public string? Specialization { get; set; }
     public string? AppointmentDate { get; set; }
@@ -145,6 +147,8 @@ public class AppointmentSlotDto
     public int Status { get; set; }
     public decimal? Price { get; set; }
     public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
 }
 
 public class AvailableSlotsDto

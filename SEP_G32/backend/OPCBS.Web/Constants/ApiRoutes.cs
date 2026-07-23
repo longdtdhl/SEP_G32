@@ -83,4 +83,10 @@ public static class ApiRoutes
 
     // Therapy (Assignments & Journals)
     public const string Therapy = $"{Base}/therapy";
+
+    // Favorites
+    public const string Favorites = $"{Base}/favorites";
+
+    // Messages
+    public const string Messages = $"{Base}/messages";
 }

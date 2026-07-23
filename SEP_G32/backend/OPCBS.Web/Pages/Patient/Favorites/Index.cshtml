@@ -1,0 +1,122 @@
+@page
+@model OPCBS.Web.Pages.Patient.Favorites.IndexModel
+@{
+    ViewData["Title"] = "Favorite Doctors";
+}
+
+<style>
+    .fav-page { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+    .fav-header { margin-bottom: 28px; }
+    .fav-header h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0; }
+    .fav-header p { color: #64748b; font-size: 0.88rem; margin-top: 4px; }
+    .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .fav-card {
+        background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
+        padding: 20px; display: flex; gap: 16px; align-items: flex-start;
+        transition: all 0.2s; position: relative;
+    }
+    .fav-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .fav-avatar {
+        width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6); flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.4rem; font-weight: 700;
+    }
+    .fav-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .fav-info { flex: 1; min-width: 0; }
+    .fav-name { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+    .fav-title { font-size: 0.78rem; color: #6366f1; font-weight: 600; margin-bottom: 6px; }
+    .fav-specs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .fav-spec-tag {
+        font-size: 0.68rem; padding: 2px 8px; border-radius: 20px;
+        background: #eff6ff; color: #3b82f6; font-weight: 600;
+    }
+    .fav-stats { display: flex; gap: 12px; font-size: 0.78rem; color: #64748b; }
+    .fav-stats .star { color: #f59e0b; }
+    .fav-remove {
+        position: absolute; top: 12px; right: 12px;
+        background: none; border: none; cursor: pointer;
+        color: #ef4444; font-size: 1.2rem; padding: 4px;
+        border-radius: 50%; transition: all 0.2s;
+    }
+    .fav-remove:hover { background: #fef2f2; transform: scale(1.1); }
+    .fav-empty {
+        text-align: center; padding: 60px 20px;
+        background: #f8fafc; border-radius: 16px; border: 2px dashed #e2e8f0;
+    }
+    .fav-empty i { font-size: 3rem; color: #cbd5e1; margin-bottom: 12px; }
+    .fav-empty h3 { font-size: 1.1rem; color: #475569; margin-bottom: 4px; }
+    .fav-empty p { font-size: 0.85rem; color: #94a3b8; }
+    .fav-added { font-size: 0.7rem; color: #94a3b8; margin-top: 4px; }
+</style>
+
+<div class="fav-page">
+    <div class="fav-header">
+        <h1><i class="bi bi-heart-fill" style="color:#ef4444;"></i> Favorite Doctors</h1>
+        <p>Doctors you've saved for quick access</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.Favorites.Count == 0)
+    {
+        <div class="fav-empty">
+            <i class="bi bi-heart"></i>
+            <h3>No favorites yet</h3>
+            <p>Browse doctors and add them to your favorites list</p>
+            <a href="/Patient/Appointments" class="btn btn-primary mt-3" style="border-radius:10px;">
+                <i class="bi bi-search me-1"></i>Browse Doctors
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="fav-grid">
+            @foreach (var doc in Model.Favorites)
+            {
+                <div class="fav-card">
+                    <form method="post" asp-page-handler="Remove" asp-route-doctorId="@doc.DoctorId">
+                        <button type="submit" class="fav-remove" title="Remove from favorites">
+                            <i class="bi bi-heart-fill"></i>
+                        </button>
+                    </form>
+
+                    <div class="fav-avatar">
+                        @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                        {
+                            <img src="@doc.AvatarUrl" alt="@doc.DoctorName" />
+                        }
+                        else
+                        {
+                            @doc.DoctorName[0]
+                        }
+                    </div>
+                    <div class="fav-info">
+                        <div class="fav-name">@doc.DoctorName</div>
+                        @if (!string.IsNullOrEmpty(doc.ProfessionalTitle))
+                        {
+                            <div class="fav-title">@doc.ProfessionalTitle</div>
+                        }
+                        @if (doc.Specializations.Any())
+                        {
+                            <div class="fav-specs">
+                                @foreach (var spec in doc.Specializations.Take(3))
+                                {
+                                    <span class="fav-spec-tag">@spec</span>
+                                }
+                            </div>
+                        }
+                        <div class="fav-stats">
+                            <span><i class="bi bi-star-fill star"></i> @doc.AverageRating.ToString("F1")</span>
+                            <span><i class="bi bi-chat-dots"></i> @doc.ReviewCount reviews</span>
+                        </div>
+                        <div class="fav-added">Added @doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

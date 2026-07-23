@@ -8,66 +8,71 @@ namespace OPCBS.Web.Pages.Doctor.TreatmentPackages;
 public class CreateModel : PageModel
 {
     private readonly ITreatmentPackageApiService _api;
-    private readonly IConsultationNoteApiService _consultation;
+    private readonly IPatientRecordApiService _patientApi;
 
-    public CreateModel(ITreatmentPackageApiService api, IConsultationNoteApiService consultation)
+    public CreateModel(ITreatmentPackageApiService api, IPatientRecordApiService patientApi)
     {
         _api = api;
-        _consultation = consultation;
+        _patientApi = patientApi;
     }
 
-    [BindProperty] public CreateTreatmentPackageDto Input { get; set; } = new();
-    public string? Error { get; set; }
-    public Guid? PrefilledPatientId { get; set; }
+    [BindProperty]
+    public CreateTreatmentPackageDto Input { get; set; } = new();
 
-    // Patient list from consultation records for dropdown
-    public List<PatientOptionDto> PatientOptions { get; set; } = new();
+    public string? Error { get; set; }
+    public PatientRecordDto? PrefilledPatient { get; set; }
+    public List<PatientRecordDto> DoctorPatients { get; set; } = new();
 
     public async Task OnGetAsync([FromQuery] Guid? patientId)
     {
+        await LoadPatientsAsync();
+
         if (patientId.HasValue)
         {
-            Input.PatientId = patientId.Value;
-            PrefilledPatientId = patientId.Value;
+            PrefilledPatient = DoctorPatients.FirstOrDefault(p => p.PatientId == patientId.Value || p.Id == patientId.Value);
+            if (PrefilledPatient != null && PrefilledPatient.PatientId.HasValue)
+            {
+                Input.PatientId = PrefilledPatient.PatientId.Value;
+            }
+            else if (patientId.HasValue)
+            {
+                Input.PatientId = patientId.Value;
+            }
         }
-
-        await LoadPatientOptions();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // If PatientId is Guid.Empty, reset to null for template packages
+        if (Input.PatientId == Guid.Empty)
+        {
+            Input.PatientId = null;
+        }
+
         var (success, error) = await _api.CreateAsync(Input);
         if (!success)
         {
             Error = error;
-            await LoadPatientOptions();
+            await LoadPatientsAsync();
+            if (Input.PatientId.HasValue)
+            {
+                PrefilledPatient = DoctorPatients.FirstOrDefault(p => p.PatientId == Input.PatientId.Value);
+            }
             return Page();
         }
         return RedirectToPage("Index");
     }
 
-    private async Task LoadPatientOptions()
+    private async Task LoadPatientsAsync()
     {
         try
         {
-            var (records, _, _) = await _consultation.GetMyRecordsAsync(1, 200);
-            PatientOptions = records
-                .Where(r => r.PatientRecordId != Guid.Empty && !string.IsNullOrEmpty(r.PatientName))
-                .Select(r => new PatientOptionDto
-                {
-                    PatientId = r.PatientRecordId,
-                    Name = r.PatientName!
-                })
-                .DistinctBy(p => p.PatientId)
-                .OrderBy(p => p.Name)
-                .ToList();
+            var (patients, _) = await _patientApi.GetMyPatientsAsync();
+            if (patients != null)
+            {
+                DoctorPatients = patients.Where(p => !p.IsGuest && p.PatientId.HasValue).ToList();
+            }
         }
         catch { }
     }
-}
-
-public class PatientOptionDto
-{
-    public Guid PatientId { get; set; }
-    public string Name { get; set; } = string.Empty;
 }

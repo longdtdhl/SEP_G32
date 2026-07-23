@@ -1062,34 +1062,42 @@ public class TreatmentPackageService : ITreatmentPackageService
         if (doctor == null)
             return ApiResponse<TreatmentPackageDto>.ErrorResponse("Doctor not found");
 
-        var patient = await _patientRepo.GetByIdAsync(dto.PatientId, ct);
-        if (patient == null)
-            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Patient not found");
+        PatientProfile? patient = null;
+        if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
+        {
+            patient = await _patientRepo.GetByIdAsync(dto.PatientId.Value, ct);
+            if (patient == null)
+                return ApiResponse<TreatmentPackageDto>.ErrorResponse("Patient not found");
 
-        // Constraint: 1 patient can only have 1 active treatment package
-        var allPackages = await _packageRepo.GetAllAsync(ct);
-        var existingActive = allPackages.FirstOrDefault(p =>
-            p.PatientId == dto.PatientId &&
-            !p.IsDeleted &&
-            p.Status != TreatmentPackageStatus.Completed &&
-            p.Status != TreatmentPackageStatus.Cancelled &&
-            p.Status != TreatmentPackageStatus.Rejected);
-        if (existingActive != null)
-            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Bệnh nhân này đã có gói điều trị đang hoạt động. Vui lòng hủy gói cũ trước khi tạo gói mới.");
+            // Constraint: 1 patient can only have 1 active treatment package
+            var allPackages = await _packageRepo.GetAllAsync(ct);
+            var existingActive = allPackages.FirstOrDefault(p =>
+                p.PatientId == dto.PatientId.Value &&
+                !p.IsDeleted &&
+                p.Status != TreatmentPackageStatus.Completed &&
+                p.Status != TreatmentPackageStatus.Cancelled &&
+                p.Status != TreatmentPackageStatus.Rejected);
+            if (existingActive != null)
+                return ApiResponse<TreatmentPackageDto>.ErrorResponse("Bệnh nhân này đã có gói điều trị đang hoạt động. Vui lòng hủy gói cũ trước khi tạo gói mới.");
+        }
 
+        var validityDays = dto.ValidityDays > 0 ? dto.ValidityDays : 90;
         var package = new TreatmentPackage
         {
             DoctorId = doctor.Id,
-            PatientId = dto.PatientId,
+            PatientId = patient?.Id,
             Name = dto.Name,
             Description = dto.Description,
+            TargetOutcome = dto.TargetOutcome,
+            RecommendedExercises = dto.RecommendedExercises,
+            Instructions = dto.Instructions,
             SessionQuantity = dto.SessionQuantity,
             RemainingSessions = dto.SessionQuantity,
-            ValidityDays = dto.ValidityDays,
-            ExpirationDate = DateTime.UtcNow.AddDays(dto.ValidityDays),
+            ValidityDays = validityDays,
+            ExpirationDate = DateTime.UtcNow.AddDays(validityDays),
             Price = dto.Price,
-            Status = TreatmentPackageStatus.Assigned,
-            AssignedDate = DateTime.UtcNow,
+            Status = patient != null ? TreatmentPackageStatus.Assigned : TreatmentPackageStatus.Created,
+            AssignedDate = patient != null ? DateTime.UtcNow : null,
             Doctor = doctor,
             Patient = patient
         };
@@ -1099,23 +1107,26 @@ public class TreatmentPackageService : ITreatmentPackageService
         var createdDto = _mapper.Map<TreatmentPackageDto>(package);
         await EnrichNamesAsync(new List<TreatmentPackageDto> { createdDto }, ct);
 
-        // Notify patient about new treatment package
-        try
+        // Notify patient about new treatment package if assigned
+        if (patient != null)
         {
-            var allUsers = await _userRepo.GetAllAsync(ct);
-            var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
-            await _notificationService.CreateNotificationAsync(
-                patient.UserId,
-                "📦 New Treatment Package",
-                $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a treatment package \"{dto.Name}\" for you. Please review and confirm.",
-                Domain.Enums.NotificationType.Package,
-                package.Id,
-                "TreatmentPackage",
-                ct);
+            try
+            {
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                await _notificationService.CreateNotificationAsync(
+                    patient.UserId,
+                    "📦 New Treatment Package",
+                    $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a treatment package \"{dto.Name}\" for you. Please review and confirm.",
+                    Domain.Enums.NotificationType.Package,
+                    package.Id,
+                    "TreatmentPackage",
+                    ct);
+            }
+            catch { }
         }
-        catch { }
 
-        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, "Treatment package created and assigned to patient");
+        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and assigned to patient" : "Template treatment package created successfully");
     }
 
     /// <summary>Resolve DoctorName/PatientName from User entities (nav props not loaded by generic repo)</summary>
@@ -1131,10 +1142,18 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         foreach (var dto in dtos)
         {
-            if (string.IsNullOrEmpty(dto.DoctorName) && doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
-                dto.DoctorName = docName;
-            if (string.IsNullOrEmpty(dto.PatientName) && patientUserMap.TryGetValue(dto.PatientId, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
-                dto.PatientName = patName;
+            if (doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId))
+            {
+                dto.DoctorId = docUserId;
+                if (string.IsNullOrEmpty(dto.DoctorName) && userDict.TryGetValue(docUserId, out var docName))
+                    dto.DoctorName = docName;
+            }
+            if (dto.PatientId.HasValue && patientUserMap.TryGetValue(dto.PatientId.Value, out var patUserId))
+            {
+                dto.PatientId = patUserId;
+                if (string.IsNullOrEmpty(dto.PatientName) && userDict.TryGetValue(patUserId, out var patName))
+                    dto.PatientName = patName;
+            }
         }
     }
 
