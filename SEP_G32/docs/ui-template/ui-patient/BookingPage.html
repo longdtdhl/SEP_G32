@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Appointment Summary | MindBridge</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e1e3df",
+                        "primary-fixed": "#b0f0d0",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-secondary-fixed": "#0f1e19",
+                        "tertiary-container": "#a66261",
+                        "surface-bright": "#f8faf6",
+                        "inverse-on-surface": "#eff1ed",
+                        "secondary": "#52625a",
+                        "secondary-container": "#d5e7dd",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#95d4b5",
+                        "surface-container": "#eceeea",
+                        "on-tertiary-fixed-variant": "#6f3535",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "on-surface-variant": "#404943",
+                        "tertiary-fixed-dim": "#ffb3b1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "on-tertiary-fixed": "#390b0d",
+                        "tertiary-fixed": "#ffdad8",
+                        "on-background": "#191c1a",
+                        "error-container": "#ffdad6",
+                        "background": "#f8faf6",
+                        "on-surface": "#191c1a",
+                        "surface-tint": "#2b6950",
+                        "primary-container": "#438066",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e1e3df",
+                        "on-primary-fixed": "#002115",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f4f0",
+                        "surface-container-high": "#e7e9e5",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "inverse-surface": "#2e312f",
+                        "surface": "#f8faf6",
+                        "tertiary": "#894a49",
+                        "secondary-fixed": "#d5e7dd",
+                        "inverse-primary": "#95d4b5",
+                        "on-primary-container": "#f5fff7",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#586860",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bfc9c2",
+                        "surface-dim": "#d8dbd7",
+                        "primary": "#29674e",
+                        "outline": "#707973",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "12px",
+                        "2xl": "20px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "24px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "lg": "48px",
+                        "margin-mobile": "16px",
+                        "xl": "80px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .soft-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04);
+        }
+        .mist-bg { background-color: #FAFBFA; }
+        .input-focus:focus {
+            outline: none;
+            border-color: #29674e;
+            box-shadow: 0 0 0 3px rgba(176, 240, 208, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant/10 dark:border-outline-variant/20 shadow-sm sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-[1280px] mx-auto h-20">
+<div class="flex items-center gap-base">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">MindBridge</span>
+</div>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Find a Therapist</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Business</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Resources</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">About</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">FAQ</a>
+</nav>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors font-body-md text-body-md active:scale-95 duration-150">Log In</button>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold hover:bg-surface-tint transition-all active:scale-95 duration-150">Get Started</button>
+</div>
+</div>
+</header>
+<main class="mist-bg min-h-screen py-xl">
+<div class="max-w-[800px] mx-auto px-margin-mobile md:px-0">
+<!-- Breadcrumb/Back Action -->
+<div class="mb-md flex items-center gap-xs text-on-surface-variant hover:text-primary cursor-pointer transition-colors w-fit group">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+<span class="font-label-md text-label-md">BACK TO SPECIALISTS</span>
+</div>
+<!-- Central Content Card -->
+<div class="bg-surface-container-lowest rounded-2xl soft-shadow overflow-hidden">
+<div class="p-lg md:p-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-lg">Appointment Summary</h1>
+<!-- Summary Section -->
+<div class="bg-secondary-container/30 border border-secondary-container rounded-xl p-md mb-lg">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-secondary-container/70">COUNSELOR</span>
+<span class="font-body-lg text-body-lg font-semibold text-primary">Dr. Sarah Jenkins</span>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-secondary-container/70">DATE</span>
+<span class="font-body-lg text-body-lg text-on-secondary-container">June 28, 2026</span>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-secondary-container/70">TIME</span>
+<span class="font-body-lg text-body-lg text-on-secondary-container">9:00 AM - 10:00 AM</span>
+</div>
+</div>
+</div>
+<!-- Patient Form -->
+<section>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-md">Patient Information</h2>
+<form class="space-y-md">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Full Name -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">FULL NAME</label>
+<input class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all" placeholder="e.g. Alex Rivera" type="text"/>
+</div>
+<!-- DOB -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">DATE OF BIRTH</label>
+<div class="relative">
+<input class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all appearance-none" type="date"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">calendar_month</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Gender -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">GENDER</label>
+<select class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all">
+<option disabled="" selected="" value="">Select gender</option>
+<option value="male">Male</option>
+<option value="female">Female</option>
+<option value="non-binary">Non-binary</option>
+<option value="prefer-not-to-say">Prefer not to say</option>
+</select>
+</div>
+<!-- Email -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">EMAIL</label>
+<input class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all" placeholder="alex@example.com" type="email"/>
+</div>
+</div>
+<!-- Phone Number -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">PHONE NUMBER</label>
+<input class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+<!-- Reason for Visit -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">REASON FOR VISIT</label>
+<textarea class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all resize-none" placeholder="Briefly describe what's on your mind..." rows="3"></textarea>
+</div>
+<!-- Medical History -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">MEDICAL HISTORY</label>
+<textarea class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all resize-none" placeholder="Relevant health history or medications..." rows="3"></textarea>
+</div>
+<!-- Previous Therapy -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant">PREVIOUS THERAPY EXPERIENCE (IF ANY)</label>
+<textarea class="w-full border-outline-variant/30 border rounded-xl p-md bg-surface-container-lowest input-focus font-body-md text-body-md transition-all resize-none" placeholder="How was your experience with previous specialists?" rows="3"></textarea>
+</div>
+<!-- Action -->
+<div class="flex justify-end pt-md">
+<button class="bg-primary text-on-primary px-xl py-md rounded-xl font-bold font-body-lg text-body-lg hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200" type="submit">
+                                    Send
+                                </button>
+</div>
+</form>
+</section>
+</div>
+</div>
+<!-- Supporting Info -->
+<div class="mt-lg grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="p-md bg-white/50 backdrop-blur-sm rounded-2xl border border-outline-variant/20 flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-full">security</span>
+<div>
+<h4 class="font-body-md font-semibold text-on-surface">Privacy First</h4>
+<p class="text-body-sm text-on-surface-variant">Your information is encrypted and only shared with your counselor.</p>
+</div>
+</div>
+<div class="p-md bg-white/50 backdrop-blur-sm rounded-2xl border border-outline-variant/20 flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-full">support_agent</span>
+<div>
+<h4 class="font-body-md font-semibold text-on-surface">Need Help?</h4>
+<p class="text-body-sm text-on-surface-variant">Contact our 24/7 support team if you have any questions.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-container-lowest w-full py-xl px-margin-desktop max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-start gap-lg">
+<div class="flex flex-col gap-sm">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">MindBridge</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-[300px]">Nurturing minds through accessible, professional therapy and wellness resources for everyone.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-lg">
+<div class="flex flex-col gap-base">
+<span class="font-label-md text-label-md text-on-surface-variant">RESOURCES</span>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Blog</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Therapy Guide</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">FAQ</a>
+</div>
+<div class="flex flex-col gap-base">
+<span class="font-label-md text-label-md text-on-surface-variant">COMPANY</span>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">About</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Careers</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-base">
+<span class="font-label-md text-label-md text-on-surface-variant">CONNECT</span>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">LinkedIn</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Instagram</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline decoration-primary transition-colors" href="#">Twitter</a>
+</div>
+</div>
+<div class="flex flex-col gap-sm md:items-end">
+<span class="font-body-sm text-body-sm text-on-surface-variant">© 2024 MindBridge. All rights reserved.</span>
+<div class="flex gap-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple form interaction
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Sending...';
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            
+            setTimeout(() => {
+                btn.innerText = 'Request Sent!';
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                }, 2000);
+            }, 1500);
+        });
+    </script>
+</body></html>

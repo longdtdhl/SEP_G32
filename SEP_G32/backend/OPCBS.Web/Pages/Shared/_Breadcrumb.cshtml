@@ -1,0 +1,7 @@
+@* Simple breadcrumb placeholder *@
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
+        @RenderSection("Breadcrumb", required: false)
+    </ol>
+</nav>

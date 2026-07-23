@@ -1,0 +1,72 @@
+@page
+@model OPCBS.Web.Pages.Admin.Permissions.IndexModel
+@{
+    ViewData["Title"] = "Permissions";
+    ViewData["UseDashboardLayout"] = true;
+
+    // Static permission matrix based on docs/18-permission-matrix.md
+    var modules = new (string Module, string Icon, string[] Perms)[]
+    {
+        ("User Management", "bi-people", new[] { "View Users", "Lock/Unlock Users", "View User Details" }),
+        ("Doctor Verification", "bi-person-check", new[] { "View Applications", "Approve/Reject" }),
+        ("Blog Moderation", "bi-journal-check", new[] { "View Pending", "Approve/Reject Blog" }),
+        ("Service Packages", "bi-gem", new[] { "Create Package", "Update Package", "Toggle Active" }),
+        ("Specializations", "bi-tags", new[] { "Create", "Update", "Delete" }),
+        ("Audit Logs", "bi-journal-text", new[] { "View Logs", "Filter by Entity" }),
+        ("Reports", "bi-bar-chart", new[] { "View Reports", "Export Data" }),
+        ("Settings", "bi-gear", new[] { "View Settings", "Update Settings" }),
+    };
+}
+
+<div class="mb-page-header">
+    <h1><i class="bi bi-key me-2" style="color:var(--mb-primary);"></i>Permission Matrix</h1>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <h6 class="mb-0 fw-semibold">System Permissions by Module</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="min-width:200px;">Module</th>
+                        <th>Permissions</th>
+                        <th class="text-center">SystemAdmin</th>
+                        <th class="text-center">BusinessManager</th>
+                        <th class="text-center">CustomerSupport</th>
+                        <th class="text-center">Doctor</th>
+                        <th class="text-center">Patient</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var mod in modules)
+                    {
+                        <tr>
+                            <td class="ps-4"><div class="d-flex align-items-center gap-2"><i class="bi @mod.Icon" style="color:var(--mb-primary);"></i><span class="fw-semibold">@mod.Module</span></div></td>
+                            <td>
+                                @foreach (var p in mod.Perms) { <span class="badge bg-primary bg-opacity-10 text-primary me-1 mb-1" style="font-size:0.65rem;">@p</span> }
+                            </td>
+                            <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                            <td class="text-center">
+                                @if (mod.Module is "Service Packages" or "Specializations" or "Reports") { <i class="bi bi-check-circle-fill text-success"></i> }
+                                else { <i class="bi bi-dash text-muted"></i> }
+                            </td>
+                            <td class="text-center">
+                                @if (mod.Module is "Doctor Verification" or "Blog Moderation") { <i class="bi bi-check-circle-fill text-success"></i> }
+                                else { <i class="bi bi-dash text-muted"></i> }
+                            </td>
+                            <td class="text-center"><i class="bi bi-dash text-muted"></i></td>
+                            <td class="text-center"><i class="bi bi-dash text-muted"></i></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white text-muted small">
+        <i class="bi bi-info-circle me-1"></i>Permission management is read-only. Modify role permissions via backend configuration.
+        <!-- TODO: Connect to /api/v1/admin/permissions when backend supports CRUD -->
+    </div>
+</div>

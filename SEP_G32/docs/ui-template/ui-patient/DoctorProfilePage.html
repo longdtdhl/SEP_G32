@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dr. Sarah Mitchell - Specialist Profile | SerenityPath</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#eff1ed",
+                    "tertiary-fixed": "#ffdad8",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e1e3df",
+                    "primary-container": "#438066",
+                    "primary-fixed": "#b0f0d0",
+                    "inverse-surface": "#2e312f",
+                    "surface-bright": "#f8faf6",
+                    "primary": "#29674e",
+                    "secondary-container": "#d5e7dd",
+                    "surface": "#f8faf6",
+                    "on-secondary-fixed": "#0f1e19",
+                    "on-secondary-container": "#586860",
+                    "on-secondary-fixed-variant": "#3a4a43",
+                    "surface-container-low": "#f2f4f0",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#b9cbc1",
+                    "on-tertiary-fixed-variant": "#6f3535",
+                    "tertiary-container": "#a66261",
+                    "error": "#ba1a1a",
+                    "surface-container": "#eceeea",
+                    "background": "#f8faf6",
+                    "outline": "#707973",
+                    "secondary-fixed": "#d5e7dd",
+                    "on-tertiary-fixed": "#390b0d",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#95d4b5",
+                    "on-primary-container": "#f5fff7",
+                    "on-surface": "#191c1a",
+                    "tertiary-fixed-dim": "#ffb3b1",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-highest": "#e1e3df",
+                    "tertiary": "#894a49",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#d8dbd7",
+                    "on-primary-fixed-variant": "#0c513a",
+                    "on-primary-fixed": "#002115",
+                    "surface-container-high": "#e7e9e5",
+                    "surface-tint": "#2b6950",
+                    "secondary": "#52625a",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#bfc9c2",
+                    "on-surface-variant": "#404943",
+                    "primary-fixed-dim": "#95d4b5",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#191c1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "20px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "xl": "80px",
+                    "sm": "12px",
+                    "gutter": "24px",
+                    "margin-desktop": "64px",
+                    "lg": "48px",
+                    "base": "8px",
+                    "md": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter", "sans-serif"],
+                    "body-sm": ["Inter", "sans-serif"],
+                    "body-lg": ["Inter", "sans-serif"],
+                    "label-md": ["Inter", "sans-serif"],
+                    "headline-md": ["Inter", "sans-serif"],
+                    "body-md": ["Inter", "sans-serif"],
+                    "headline-lg": ["Inter", "sans-serif"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-shadow { box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04); }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant/10 sticky z-50">
+<nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-[1280px] mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary">SerenityPath</div>
+<div class="hidden md:flex items-center space-x-lg">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Find a Therapist</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Business</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Resources</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">About</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">FAQ</a>
+</div>
+<div class="flex items-center space-x-md">
+<button class="text-secondary font-body-md hover:bg-surface-container-low px-4 py-2 rounded-xl transition-all">Log in</button>
+<button class="bg-primary text-on-primary font-body-md px-6 py-2 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all">Get Started</button>
+</div>
+</nav>
+</header>
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-xl">
+<!-- Specialist Header -->
+<section class="bg-surface-container-lowest rounded-2xl p-md md:p-lg card-shadow mb-lg">
+<div class="flex flex-col md:flex-row gap-lg items-center md:items-start">
+<div class="relative">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-surface-container-low overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A professional and warm studio portrait of a clinical psychologist named Dr. Sarah Mitchell. She is a woman in her late 30s with a kind, empathetic smile, wearing professional yet approachable business casual attire. The background is a soft, out-of-focus wellness clinic with warm natural lighting and touches of greenery, creating a serene and trustworthy atmosphere in a high-key light mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDl6I3yknlXlroH_oF-RfbqHT9i9IoxZEqd-PBhuhP6iOK1-4fpzr5_Am5FDmNJoBf6EQ8Iw__VWTF_6EBEwoW9b7OBI22IQKfSj1XFDPft1fiIVb-buk77jTmprKaVjlBdACUzVgM0W4phEf6hEC4YduJ__JrG6gTsCcyOtbe8_-IAoDz0O_mnYxLmdfKX2hTpJ6cfC89ZVgSAL1dk3xrsu2TOTQ2ttFb6Kc2x6JSokJaGPYdawJUv7_FPXY8JiLKsJEGbTiWK1sAl"/>
+</div>
+<div class="absolute bottom-2 right-2 bg-primary-container text-on-primary-container p-1 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div class="flex-1 text-center md:text-left">
+<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Dr. Sarah Mitchell</h1>
+<p class="text-primary font-semibold font-body-lg">Clinical Psychologist</p>
+<div class="flex flex-wrap justify-center md:justify-start gap-xs mt-sm">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md">Trauma &amp; Anxiety</span>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md">Cognitive Behavioral Therapy</span>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-headline-md shadow-lg shadow-primary/10 hover:opacity-90 active:scale-95 transition-all w-full md:w-auto">
+                            Book an Appointment
+                        </button>
+</div>
+<div class="grid grid-cols-3 gap-md mt-lg border-t border-outline-variant/10 pt-md">
+<div class="text-center md:text-left">
+<p class="font-bold text-headline-md text-on-surface">12+</p>
+<p class="text-on-surface-variant font-body-sm uppercase tracking-wider">Years Exp.</p>
+</div>
+<div class="text-center md:text-left">
+<p class="font-bold text-headline-md text-on-surface">1.2k</p>
+<p class="text-on-surface-variant font-body-sm uppercase tracking-wider">Patients Helped</p>
+</div>
+<div class="text-center md:text-left">
+<p class="font-bold text-headline-md text-on-surface">45</p>
+<p class="text-on-surface-variant font-body-sm uppercase tracking-wider">Posts Published</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Tabs -->
+<section>
+<div class="flex border-b border-outline-variant/20 mb-md overflow-x-auto whitespace-nowrap">
+<button class="px-6 py-4 font-semibold text-primary border-b-2 border-primary transition-all" id="tab-about" onclick="switchTab('about')">About me</button>
+<button class="px-6 py-4 font-medium text-on-surface-variant hover:text-primary transition-all" id="tab-background" onclick="switchTab('background')">Professional Background</button>
+<button class="px-6 py-4 font-medium text-on-surface-variant hover:text-primary transition-all" id="tab-reviews" onclick="switchTab('reviews')">Reviews &amp; Ratings</button>
+<button class="px-6 py-4 font-medium text-on-surface-variant hover:text-primary transition-all" id="tab-activity" onclick="switchTab('activity')">Activity</button>
+</div>
+<!-- About Me Content -->
+<div class="tab-content active" id="content-about">
+<div class="bg-surface-container-lowest p-md md:p-lg rounded-2xl card-shadow">
+<h2 class="font-headline-md text-headline-md mb-md">Personal Bio</h2>
+<p class="text-on-surface-variant text-body-lg leading-relaxed max-w-4xl">
+                        Hello, I'm Dr. Sarah Mitchell. My passion lies in helping individuals navigate the complexities of trauma and anxiety through evidence-based psychological practices. With over a decade of clinical experience, I believe in creating a sanctuary of healing where my clients feel heard, understood, and empowered to reclaim their mental well-being.
+                        <br/><br/>
+                        My approach is deeply collaborative and human-centered. I specialize in Cognitive Behavioral Therapy (CBT) and Eye Movement Desensitization and Reprocessing (EMDR), tailoring each session to the unique rhythm of your journey. Together, we will build a toolkit of resilience and find the path back to your most authentic self.
+                    </p>
+<div class="mt-lg grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="flex items-start gap-md p-md bg-surface-container-low rounded-xl">
+<span class="material-symbols-outlined text-primary text-[32px]">favorite</span>
+<div>
+<h3 class="font-bold text-on-surface">Compassionate Care</h3>
+<p class="text-body-sm text-on-surface-variant">A non-judgmental environment focused on your emotional safety.</p>
+</div>
+</div>
+<div class="flex items-start gap-md p-md bg-surface-container-low rounded-xl">
+<span class="material-symbols-outlined text-primary text-[32px]">science</span>
+<div>
+<h3 class="font-bold text-on-surface">Evidence-Based</h3>
+<p class="text-body-sm text-on-surface-variant">Techniques backed by modern psychological research.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Background Content -->
+<div class="tab-content" id="content-background">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="bg-surface-container-lowest p-lg rounded-2xl card-shadow border border-outline-variant/5">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-md text-headline-md">Practitioner License</h2>
+<a class="text-primary font-semibold flex items-center gap-xs text-body-sm hover:underline" href="#">
+                                View <span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+<div class="p-lg border-2 border-dashed border-outline-variant/30 rounded-xl bg-surface-container-low flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-outline-variant text-[48px] mb-md">badge</span>
+<p class="font-bold text-on-surface">Clinical Psychologist License</p>
+<p class="text-on-surface-variant text-body-sm">State Board of Psychology • ID: 882910-XC</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-2xl card-shadow border border-outline-variant/5">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-md text-headline-md">Academic Degrees</h2>
+<a class="text-primary font-semibold flex items-center gap-xs text-body-sm hover:underline" href="#">
+                                View <span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+<div class="p-lg border-2 border-dashed border-outline-variant/30 rounded-xl bg-surface-container-low flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-outline-variant text-[48px] mb-md">school</span>
+<p class="font-bold text-on-surface">Ph.D. in Clinical Psychology</p>
+<p class="text-on-surface-variant text-body-sm">Stanford University • Class of 2012</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Reviews Content -->
+<div class="tab-content" id="content-reviews">
+<div class="bg-surface-container-lowest p-md md:p-lg rounded-2xl card-shadow">
+<div class="flex flex-col lg:flex-row gap-lg mb-lg items-center border-b border-outline-variant/10 pb-lg">
+<div class="text-center lg:text-left lg:border-r border-outline-variant/10 lg:pr-lg">
+<div class="flex items-baseline justify-center lg:justify-start gap-xs">
+<span class="text-[64px] font-bold text-on-surface">4.8</span>
+<span class="text-on-surface-variant text-headline-md">/ 5.0</span>
+</div>
+<div class="flex items-center gap-xs justify-center lg:justify-start text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined">star_half</span>
+</div>
+<p class="text-on-surface-variant font-body-sm mt-sm">Based on 123 verified reviews</p>
+</div>
+<div class="flex-1 w-full space-y-sm">
+<!-- Rating bars -->
+<div class="flex items-center gap-md">
+<span class="text-body-sm font-semibold w-12">5 stars</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%] rounded-full"></div>
+</div>
+<span class="text-body-sm text-on-surface-variant w-10">85%</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="text-body-sm font-semibold w-12">4 stars</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[10%] rounded-full"></div>
+</div>
+<span class="text-body-sm text-on-surface-variant w-10">10%</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="text-body-sm font-semibold w-12">3 stars</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[3%] rounded-full"></div>
+</div>
+<span class="text-body-sm text-on-surface-variant w-10">3%</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="text-body-sm font-semibold w-12">2 stars</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[1%] rounded-full"></div>
+</div>
+<span class="text-body-sm text-on-surface-variant w-10">1%</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="text-body-sm font-semibold w-12">1 star</span>
+<div class="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[1%] rounded-full"></div>
+</div>
+<span class="text-body-sm text-on-surface-variant w-10">1%</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-md text-headline-md">Patient Feedback</h3>
+<div class="flex items-center gap-sm">
+<span class="text-body-sm text-on-surface-variant">Filter by</span>
+<select class="bg-surface border-outline-variant/20 rounded-lg text-body-sm focus:ring-primary focus:border-primary">
+<option>Newest</option>
+<option>Highest Rating</option>
+<option>Helpful</option>
+</select>
+</div>
+</div>
+<div class="space-y-md">
+<!-- Review Card -->
+<div class="p-md bg-surface-container-low rounded-xl border border-outline-variant/10">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold">JD</div>
+<div>
+<p class="font-bold text-on-surface">Jane Doe</p>
+<p class="text-[12px] text-on-surface-variant">June 14, 2026</p>
+</div>
+</div>
+<div class="flex text-tertiary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-body-md italic leading-relaxed">
+                                "Dr. Mitchell has been an absolute pillar of support during my recovery. Her approach to trauma is so gentle and insightful. I finally feel like I'm moving forward after years of feeling stuck."
+                            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Content -->
+<div class="tab-content" id="content-activity">
+<div class="space-y-lg">
+<div class="bg-surface-container-lowest rounded-2xl card-shadow overflow-hidden border border-outline-variant/10">
+<div class="aspect-video md:h-80 w-full">
+<img class="w-full h-full object-cover" data-alt="A serene and minimalist conceptual photograph depicting a peaceful morning bedroom setting. Soft, diffused sunlight streams through a sheer white curtain, illuminating a cozy, neatly made bed with sage green linen. A small wooden nightstand holds a journal and a single stem of eucalyptus in a glass vase. The overall mood is quiet, restful, and deeply calming, embodying the aesthetic of a premium mental health and wellness publication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3yjulSSy5-hrfZHt1uDtT5EBpc1JMWOawhmlEbNSDDYl53SFpK4RzzZnlHBfP2HQHdg3jX3V1fyEibluiRMFEz2rj3sqHdRrOMeNlGTVB7jyEzc1pUX2pHEMYu48I_U9kPSiy6ubJkaHuGPwmdBje0i8DOONzd6OFhrNh2JG_IZVBoM3Ll3R-nbdsEhl9ZV7ZxMZDutsU66TtHYsPE_xflaUiQ1B4zxtFagNYkIQhuY5HDJwFAjTx8tx4_s8ValUaRFAdjutkge37"/>
+</div>
+<div class="p-lg">
+<div class="flex items-center gap-sm mb-sm text-primary font-semibold text-label-md uppercase tracking-widest">
+<span>Article</span> • <span>Mental Wellness</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-md">The Importance of Sleep in Mental Health</h2>
+<p class="text-on-surface-variant text-body-lg mb-lg line-clamp-3">
+                                Sleep isn't just about resting the body; it's the primary restoration period for the brain. In this article, I explore how sleep hygiene directly impacts emotional regulation and long-term psychological resilience.
+                            </p>
+<div class="flex justify-between items-center border-t border-outline-variant/10 pt-md">
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">favorite</span> <span>124</span>
+</button>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chat_bubble</span> <span>45 Comments</span>
+</button>
+</div>
+<button class="text-primary font-bold hover:underline">Read More</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 full-width bottom-0">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-xl max-w-[1280px] mx-auto space-y-md md:space-y-0">
+<div class="flex flex-col items-center md:items-start space-y-sm">
+<div class="font-headline-sm text-headline-sm font-semibold text-primary">SerenityPath</div>
+<p class="text-on-surface-variant font-body-sm text-center md:text-left max-w-xs">© 2024 SerenityPath. All rights reserved. Your privacy is our priority.</p>
+</div>
+<div class="flex flex-wrap justify-center md:justify-end gap-lg">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Accessibility</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Show selected content
+            document.getElementById('content-' + tabId).classList.add('active');
+
+            // Reset tab styles
+            document.querySelectorAll('section button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('text-primary', 'border-b-2', 'border-primary', 'font-semibold');
+                btn.classList.add('text-on-surface-variant', 'font-medium');
+            });
+            // Apply active tab style
+            const activeTab = document.getElementById('tab-' + tabId);
+            activeTab.classList.add('text-primary', 'border-b-2', 'border-primary', 'font-semibold');
+            activeTab.classList.remove('text-on-surface-variant', 'font-medium');
+        }
+    </script>
+</body></html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Edit Care Package | MindBridge</title>
+<!-- Tailwind CSS & Material Symbols -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Design System Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f8faf9",
+                    "on-primary-fixed": "#002115",
+                    "tertiary": "#525d6c",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#2b6950",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#f0f1f0",
+                    "inverse-primary": "#95d4b5",
+                    "on-primary-container": "#f5fff7",
+                    "on-surface-variant": "#404943",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d9dad9",
+                    "secondary-fixed-dim": "#b9cbc1",
+                    "on-surface": "#191c1c",
+                    "tertiary-container": "#6b7586",
+                    "primary-fixed": "#b0f0d0",
+                    "primary-container": "#438066",
+                    "primary": "#29674e",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#d5e7dd",
+                    "tertiary-fixed-dim": "#bdc7d9",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#f3f4f3",
+                    "inverse-surface": "#2e3131",
+                    "on-secondary-fixed": "#0f1e19",
+                    "on-primary-fixed-variant": "#0c513a",
+                    "background": "#f8faf9",
+                    "on-tertiary-fixed": "#121c2a",
+                    "tertiary-fixed": "#d9e3f6",
+                    "outline-variant": "#bfc9c2",
+                    "on-secondary-fixed-variant": "#3a4a43",
+                    "on-secondary-container": "#586860",
+                    "surface-bright": "#f8faf9",
+                    "on-tertiary-container": "#fdfcff",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e2",
+                    "primary-fixed-dim": "#95d4b5",
+                    "secondary-container": "#d5e7dd",
+                    "on-error-container": "#93000a",
+                    "secondary": "#52625a",
+                    "surface-container-highest": "#e1e3e2",
+                    "on-background": "#191c1c",
+                    "outline": "#707973",
+                    "surface-container-high": "#e7e8e7",
+                    "surface-container": "#edeeed",
+                    "on-tertiary-fixed-variant": "#3d4756"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "container-max": "1280px",
+                    "2xl": "48px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f8faf9;
+            font-family: 'Inter', sans-serif;
+        }
+        .form-card {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+        }
+        .custom-input {
+            transition: all 0.2s ease-in-out;
+            border-radius: 12px;
+        }
+        .custom-input:focus {
+            box-shadow: 0 0 0 4px rgba(41, 103, 78, 0.1);
+            border-color: #29674e;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar Mapping -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-lg h-20 max-w-container-max mx-auto bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-xl">
+<span class="text-headline-md font-headline-md font-bold text-primary">MindBridge</span>
+<nav class="hidden md:flex gap-lg items-center">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-label-md font-label-md" href="#">Home</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-label-md font-label-md" href="#">Blog</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-label-md font-label-md" href="#">Specialists</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-label-md font-label-md" href="#">My Package</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-bold text-label-md font-label-md" href="#">Case Records</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-body-sm w-48 focus:ring-2 focus:ring-primary/20" placeholder="Search" type="text">
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<img alt="User Profile" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a friendly clinic administrator in a bright, modern office setting. The lighting is soft and natural, emphasizing a high-quality clinical environment with soft green accents. The aesthetic is modern corporate yet approachable and empathetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvY9sq10dkODN_-m7_PuA83_yKjK4rV5JZIr69pb-0AGS-zNBowkfW8BV3Cnzp0WPos2JP7wh0qDbMy5UV6W0oyy9tOegl9KPt_24OHj3vYkPzQ5xRuFWz6SzmXJc6cCqdCgsLs7oWjvLe_24G8ggtuEJjByBnAEChz7E1nE07amyzCgCu-AgxJ7l05prrtfjyQPufBec6SPgKwBRQHj3Kj-l-c52XiwhXr1w5h1BCRdXqRRLuy7cpdQqym_9md6lZv4TbFsZtSLE">
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow pt-28 pb-xl px-md md:px-lg max-w-[900px] mx-auto w-full">
+<!-- Breadcrumb & Back -->
+<div class="mb-lg">
+<a class="inline-flex items-center gap-sm text-primary hover:opacity-80 transition-opacity text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Back to list
+            </a>
+</div>
+<!-- Title -->
+<div class="text-center mb-xl">
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Edit Care Package</h1>
+<p class="text-on-surface-variant text-body-md mt-sm">Update the clinical details and structure of this therapeutic offering.</p>
+</div>
+<!-- Form Card -->
+<div class="form-card bg-surface-container-lowest p-xl md:p-2xl">
+<form action="#" class="space-y-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Package Name -->
+<div class="flex flex-col gap-xs col-span-2 md:col-span-1">
+<label class="text-label-md font-label-md text-on-surface-variant">Package Name</label>
+<input class="custom-input border-outline-variant bg-surface-container-low px-md py-3 text-body-md focus:ring-0" placeholder="e.g., Stress Management Pro" type="text">
+</div>
+<!-- Package Type -->
+<div class="flex flex-col gap-xs col-span-2 md:col-span-1">
+<label class="text-label-md font-label-md text-on-surface-variant">Package Type</label>
+<select class="custom-input border-outline-variant bg-surface-container-low px-md py-3 text-body-md focus:ring-0 appearance-none">
+<option value="specialty">Specialty</option>
+<option value="general">General Wellness</option>
+<option value="acute">Acute Care</option>
+<option value="preventative">Preventative</option>
+</select>
+</div>
+</div>
+<!-- Description -->
+<div class="flex flex-col gap-xs">
+<label class="text-label-md font-label-md text-on-surface-variant">Description</label>
+<textarea class="custom-input border-outline-variant bg-surface-container-low px-md py-3 text-body-md focus:ring-0 resize-none" placeholder="Describe the therapeutic focus and intended goals for this package..." rows="4"></textarea>
+</div>
+<!-- Target Condition -->
+<div class="flex flex-col gap-xs">
+<label class="text-label-md font-label-md text-on-surface-variant">Target Condition</label>
+<textarea class="custom-input border-outline-variant bg-surface-container-low px-md py-3 text-body-md focus:ring-0 resize-none" placeholder="e.g., Anxiety, ADHD, Depression, OCD..." rows="3"></textarea>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Total Sessions -->
+<div class="flex flex-col gap-xs">
+<label class="text-label-md font-label-md text-on-surface-variant">Total Sessions</label>
+<input class="custom-input border-outline-variant bg-surface-container-low px-md py-3 text-body-md focus:ring-0" placeholder="0" type="number">
+</div>
+<!-- Price -->
+<div class="flex flex-col gap-xs relative">
+<label class="text-label-md font-label-md text-on-surface-variant">Price (USD)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-medium">$</span>
+<input class="custom-input border-outline-variant bg-surface-container-low pl-8 pr-md py-3 text-body-md focus:ring-0 w-full" placeholder="0.00" type="number">
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="flex justify-end pt-md">
+<button class="px-2xl py-3 rounded-xl bg-primary text-on-primary font-label-md hover:bg-[#20513e] shadow-md hover:shadow-lg transition-all duration-300 active:scale-95" type="submit">Recommend</button>
+</div>
+</form>
+</div>
+<!-- Atmospheric Section Background Decoration -->
+<div class="mt-2xl flex flex-col items-center gap-md opacity-20 pointer-events-none">
+<div class="h-1 w-24 bg-primary-fixed-dim rounded-full"></div>
+<p class="text-body-sm font-body-sm text-center max-w-md italic">
+                Editing this package will affect all upcoming scheduled records associated with this specific specialty program.
+            </p>
+</div>
+</main>
+<!-- Footer Mapping -->
+<footer class="w-full py-xl px-lg flex flex-col md:flex-row justify-between items-center gap-md bg-surface-container-high border-t border-outline-variant mt-auto">
+<div class="flex flex-col md:items-start items-center gap-xs">
+<span class="text-label-md font-label-md font-bold text-primary">MindBridge</span>
+<p class="text-body-sm font-body-sm text-on-surface-variant">© 2024 MindBridge Mental Health. Connecting Minds, Supporting Wellbeing.</p>
+</div>
+<div class="flex gap-lg">
+<a class="text-on-surface-variant text-label-sm font-label-sm hover:text-primary transition-colors underline" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant text-label-sm font-label-sm hover:text-primary transition-colors underline" href="#">Terms of Service</a>
+<a class="text-on-surface-variant text-label-sm font-label-sm hover:text-primary transition-colors underline" href="#">Support</a>
+</div>
+</footer>
+<script>
+        // Micro-interaction for input hover/focus effects
+        document.querySelectorAll('.custom-input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.querySelector('label').style.color = '#29674e';
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.querySelector('label').style.color = '';
+            });
+        });
+    </script>
+</body></html>

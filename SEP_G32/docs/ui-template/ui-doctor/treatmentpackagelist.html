@@ -1,0 +1,337 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Manage Care Packages | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#edeeed",
+                        "on-tertiary-fixed": "#121c2a",
+                        "on-secondary-fixed": "#0f1e19",
+                        "inverse-primary": "#95d4b5",
+                        "surface-tint": "#2b6950",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f3f4f3",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "secondary-fixed": "#d5e7dd",
+                        "inverse-surface": "#2e3131",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "primary-fixed": "#b0f0d0",
+                        "on-primary-fixed": "#002115",
+                        "background": "#f8faf9",
+                        "outline-variant": "#bfc9c2",
+                        "surface-container-high": "#e7e8e7",
+                        "outline": "#707973",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e2",
+                        "primary-container": "#438066",
+                        "on-tertiary-fixed-variant": "#3d4756",
+                        "on-secondary-container": "#586860",
+                        "tertiary-container": "#6b7586",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#525d6c",
+                        "surface-bright": "#f8faf9",
+                        "surface": "#f8faf9",
+                        "primary": "#29674e",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-background": "#191c1c",
+                        "on-primary-container": "#f5fff7",
+                        "secondary": "#52625a",
+                        "primary-fixed-dim": "#95d4b5",
+                        "inverse-on-surface": "#f0f1f0",
+                        "on-surface": "#191c1c",
+                        "surface-dim": "#d9dad9",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#bdc7d9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#fdfcff",
+                        "tertiary-fixed": "#d9e3f6",
+                        "secondary-container": "#d5e7dd",
+                        "on-surface-variant": "#404943"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "2xl": "48px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #29674e;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #29674e;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-surface shadow-sm sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-lg py-sm max-w-container-max mx-auto">
+<div class="flex items-center gap-xl">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">MindBridge</span>
+<nav class="hidden md:flex gap-lg"><a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Home</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Specialists</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Schedules</a>
+<a class="font-label-md text-label-md text-primary font-bold border-b-2 border-primary pb-1" href="#">Case Records</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Appointment List</a></nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-xs rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-xs rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border border-outline-variant">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB96aT8-2jID9Uv2g0LN2cWIzTd11CBzumk4IOr6frVTNPkkFMwHxiqkRdRfdCwwQVd99rZJQyvba6b0HiOEFnYlVWW6taviE_Dm3nQbMqN4JdTJui_q7Ipj-Qt1HPAvPSpIgso-4D196smCV25Dky7ecLnoAHKMBlx4Us2w2zkURaolvFvS92135WIBpURoN3qxM-qC-y3S4slNe20NUGdJPgKxZtAmh2d_aX8mnR8xTJrmeeMkZ8vJgpOFJ7eYD1DrbKlpxu0p5Y">
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-lg py-xl">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-start justify-between mb-xl gap-md">
+<div class="text-left">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Care package</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage and organize therapeutic service tiers for your patients.</p>
+</div>
+<button class="flex items-center gap-sm bg-primary text-on-primary px-lg py-sm rounded-xl font-label-md text-label-md hover:bg-primary-container transition-all active:scale-95 shadow-sm mt-2">
+<span class="material-symbols-outlined">add</span>
+                Create
+            </button>
+</div>
+<!-- Data Container / Table -->
+<div class="glass-card rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden border border-outline-variant">
+<div class="overflow-x-auto">
+<table class="w-full border-collapse text-left">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant">Package Name</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant">Package Type</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant">Sessions</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant">Price</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant">Status</th>
+<th class="px-lg py-md font-label-md text-label-md text-on-surface-variant text-center">Detail</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Stress Management</span>
+</div>
+</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">Group Therapy</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">8 Sessions</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface font-bold">$450.00</td>
+<td class="px-lg py-lg">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:ring-0 outline-none" id="toggle1" name="toggle" type="checkbox">
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer" for="toggle1"></label>
+</div>
+</td>
+<td class="px-lg py-lg text-center">
+<button class="p-sm rounded-lg hover:bg-secondary-container text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined">healing</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Trauma Support</span>
+</div>
+</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">Intensive Care</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">12 Sessions</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface font-bold">$820.00</td>
+<td class="px-lg py-lg">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:ring-0 outline-none" id="toggle2" name="toggle" type="checkbox">
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer" for="toggle2"></label>
+</div>
+</td>
+<td class="px-lg py-lg text-center">
+<button class="p-sm rounded-lg hover:bg-secondary-container text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed-variant">
+<span class="material-symbols-outlined">spa</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Mindfulness Essentials</span>
+</div>
+</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">Wellness Workshop</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">4 Sessions</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface font-bold">$199.00</td>
+<td class="px-lg py-lg">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:ring-0 outline-none" id="toggle3" name="toggle" type="checkbox">
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer" for="toggle3"></label>
+</div>
+</td>
+<td class="px-lg py-lg text-center">
+<button class="p-sm rounded-lg hover:bg-secondary-container text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">family_restroom</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Couples Counseling</span>
+</div>
+</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">Marital Support</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">10 Sessions</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface font-bold">$600.00</td>
+<td class="px-lg py-lg">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:ring-0 outline-none" id="toggle4" name="toggle" type="checkbox">
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer" for="toggle4"></label>
+</div>
+</td>
+<td class="px-lg py-lg text-center">
+<button class="p-sm rounded-lg hover:bg-secondary-container text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined">self_improvement</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Anxiety Workshop</span>
+</div>
+</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">Cognitive Behavioral</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface-variant">6 Sessions</td>
+<td class="px-lg py-lg font-body-md text-body-md text-on-surface font-bold">$320.00</td>
+<td class="px-lg py-lg">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:ring-0 outline-none" id="toggle5" name="toggle" type="checkbox">
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer" for="toggle5"></label>
+</div>
+</td>
+<td class="px-lg py-lg text-center">
+<button class="p-sm rounded-lg hover:bg-secondary-container text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex flex-col sm:flex-row items-center justify-between px-lg py-md bg-surface-container-lowest border-t border-outline-variant gap-md">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing 5 of 24 packages</span>
+<div class="flex items-center gap-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary font-label-sm text-label-sm">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container font-label-sm text-label-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container font-label-sm text-label-sm">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container font-label-sm text-label-sm">4</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<footer class="w-full py-2xl px-lg bg-surface-container-low border-t border-outline-variant"><div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-lg"><div class="flex flex-col gap-xs text-center md:text-left"><span class="text-headline-sm font-bold text-primary">MindBridge</span><p class="text-body-sm text-on-surface-variant">© 2024 MindBridge Mental Health. Connecting Minds, Supporting Wellbeing.</p></div><nav class="flex flex-wrap justify-center gap-lg"><a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a><a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a><a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a></nav></div></footer>
+<script>
+        // Simple micro-interaction for detail buttons
+        document.querySelectorAll('table button').forEach(button => {
+            button.addEventListener('click', () => {
+                button.classList.add('scale-90');
+                setTimeout(() => button.classList.remove('scale-90'), 150);
+            });
+        });
+
+        // Toggle state simulation
+        document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const row = this.closest('tr');
+                if (this.checked) {
+                    row.style.opacity = '1';
+                } else {
+                    row.style.opacity = '0.6';
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

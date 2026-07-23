@@ -1,0 +1,424 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Specialization Management | MindBridge Admin Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#b9cbc1",
+                    "surface-container": "#edeeed",
+                    "primary-container": "#438066",
+                    "surface-container-highest": "#e1e3e2",
+                    "on-surface": "#191c1c",
+                    "inverse-primary": "#95d4b5",
+                    "primary-fixed-dim": "#95d4b5",
+                    "surface-variant": "#e1e3e2",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#002115",
+                    "tertiary": "#006947",
+                    "on-primary-fixed-variant": "#0c513a",
+                    "primary": "#29674e",
+                    "inverse-surface": "#2e3131",
+                    "primary-fixed": "#b0f0d0",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "on-background": "#191c1c",
+                    "on-tertiary-fixed": "#002113",
+                    "on-secondary-fixed-variant": "#3a4a43",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#0f1e19",
+                    "surface-container-low": "#f3f4f3",
+                    "on-surface-variant": "#404943",
+                    "surface-bright": "#f8faf9",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8faf9",
+                    "secondary-container": "#d5e7dd",
+                    "on-tertiary-container": "#f5fff6",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "secondary": "#52625a",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "tertiary-container": "#00855b",
+                    "on-secondary-container": "#586860",
+                    "surface-dim": "#d9dad9",
+                    "outline-variant": "#bfc9c2",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#2b6950",
+                    "secondary-fixed": "#d5e7dd",
+                    "tertiary-fixed": "#6ffbbe",
+                    "surface-container-high": "#e7e8e7",
+                    "outline": "#707973",
+                    "on-primary-container": "#f5fff7",
+                    "surface": "#f8faf9",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#f0f1f0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "80px",
+                    "base": "8px",
+                    "margin-desktop": "48px",
+                    "container-max": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "button": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "button": ["16px", {"lineHeight": "24px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAFBFA; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+        .card-shadow { box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05); }
+        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="h-full w-64 fixed left-0 top-0 flex flex-col p-4 border-r border-outline-variant/30 bg-surface z-50">
+<div class="mb-10 px-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">MindBridge</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-1"><a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">how_to_reg</span>
+<span class="font-label-md text-label-md">Doctor Applications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-label-md text-label-md">Content Moderation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="font-label-md text-label-md">Manage Blog</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">Package Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-secondary-container/50 rounded-xl font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+<span class="font-label-md text-label-md">Specialization Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl" href="#">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="font-label-md text-label-md">Account Management</span>
+</a></nav>
+<div class="mt-auto pt-4 border-t border-outline-variant/30"><div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-secondary-container/50 rounded-xl cursor-pointer transition-all">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="font-label-md text-label-md truncate">Admin Sarah</p>
+</div>
+<span class="material-symbols-outlined text-sm" title="Sign Out">logout</span>
+</div></div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-8 py-4 sticky top-0 bg-surface/80 backdrop-blur-md z-40 border-b border-outline-variant/30">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">Specialization Management</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 transition-all" placeholder="Search specializations..." type="text">
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Breadcrumbs & Actions -->
+<div class="flex justify-between items-end mb-8">
+<nav class="flex text-sm text-outline mb-2">
+<span class="hover:text-primary cursor-pointer">Admin Portal</span>
+<span class="mx-2">/</span>
+<span class="text-on-surface font-medium">Specializations</span>
+</nav>
+<button class="bg-primary hover:bg-[#3F735C] text-white px-6 py-3 rounded-xl font-button text-button flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 active:scale-95" onclick="document.getElementById('createModal').classList.remove('hidden')">
+<span class="material-symbols-outlined">add</span>
+                    Create Specialization
+                </button>
+</div>
+<!-- Bento Grid Stats (Optional but adds premium feel) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-white p-6 rounded-3xl card-shadow border border-outline-variant/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-2xl bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">Total Specialties</p>
+<p class="text-headline-md font-headline-md text-primary">24</p>
+</div>
+</div>
+<div class="bg-white p-6 rounded-3xl card-shadow border border-outline-variant/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">Active</p>
+<p class="text-headline-md font-headline-md text-primary">22</p>
+</div>
+</div>
+<div class="bg-white p-6 rounded-3xl card-shadow border border-outline-variant/10 flex items-center gap-4 overflow-hidden relative">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 opacity-10">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNenRIUq6xmlQ7nSFGUQalTIT2TCiRylDAs67ziNlnbDDy_ddUKo6SmCIBq6Oz6QiC66jUh1NzIiSNsb7L0My-idxbNxdhXle_3bDbkpOlYnGY4dZJOpXKmV8s5_5jSHKstUmkuWThu3iQddLueltaZYP3q7kJ02siw-zqvtrLYuQplhEB6iq-kJffyQhwrMC2SLklttytGTkGu6m6TwPJYQMKyCYQmI4Jj0Sr82yy8k7XyBm6fMtvStVL9IHTDvRRomnYQP5Kq5c">
+</div>
+<div class="w-12 h-12 rounded-2xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">Pending Review</p>
+<p class="text-headline-md font-headline-md text-primary">02</p>
+</div>
+</div>
+</div>
+<!-- Manage Specialization Table Card -->
+<div class="bg-white rounded-[20px] card-shadow border border-outline-variant/10 overflow-hidden">
+<div class="px-6 py-5 border-b border-outline-variant/10 bg-surface-container-lowest flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface">Manage Specializations</h3>
+<div class="flex gap-2">
+<button class="p-2 border border-outline-variant rounded-lg text-outline hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+<button class="p-2 border border-outline-variant rounded-lg text-outline hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Specialization Name</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Description</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Status</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Clinical Psychology</span>
+</div>
+</td>
+<td class="px-6 py-5 max-w-xs">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Focuses on diagnosing and treating mental, emotional, and behavioral disorders.</p>
+</td>
+<td class="px-6 py-5">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<span class="ms-3 font-label-md text-label-md text-on-surface-variant">Active</span>
+</label>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-error hover:bg-error/10 rounded-lg transition-all" title="Delete">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">family_restroom</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Family Therapy</span>
+</div>
+</td>
+<td class="px-6 py-5 max-w-xs">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Working with families and couples in intimate relationships to nurture change.</p>
+</td>
+<td class="px-6 py-5">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<span class="ms-3 font-label-md text-label-md text-on-surface-variant">Active</span>
+</label>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-error hover:bg-error/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed-dim/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">child_care</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Pediatric Psychiatry</span>
+</div>
+</td>
+<td class="px-6 py-5 max-w-xs">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Diagnosis, treatment and prevention of mental disorders in children and adolescents.</p>
+</td>
+<td class="px-6 py-5">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<span class="ms-3 font-label-md text-label-md text-on-surface-variant">Inactive</span>
+</label>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-error hover:bg-error/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low/30 border-t border-outline-variant/10 flex items-center justify-between">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Showing 1 to 3 of 24 entries</p>
+<div class="flex items-center gap-2">
+<button class="px-4 py-2 border border-outline-variant rounded-lg text-sm disabled:opacity-50 hover:bg-white transition-all">Previous</button>
+<button class="w-8 h-8 rounded-lg bg-primary text-white text-sm font-bold">1</button>
+<button class="w-8 h-8 rounded-lg hover:bg-white text-sm">2</button>
+<button class="w-8 h-8 rounded-lg hover:bg-white text-sm">3</button>
+<button class="px-4 py-2 border border-outline-variant rounded-lg text-sm hover:bg-white transition-all">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Create Specialization Modal -->
+<div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden" id="createModal">
+<div class="bg-white rounded-[24px] w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+<div class="p-6 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-primary">Create Specialization</h3>
+<button class="p-1 hover:bg-surface-container rounded-full transition-colors" onclick="document.getElementById('createModal').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="p-8 space-y-6">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">Specialization Name</label>
+<input class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline-variant" placeholder="e.g., Trauma Therapy" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">Description</label>
+<textarea class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline-variant resize-none" placeholder="Briefly describe the specialization and its scope..." rows="4"></textarea>
+</div>
+<div class="flex items-center justify-between py-2">
+<div>
+<p class="font-label-md text-label-md text-on-surface">Initial Status</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Set whether this is active immediately</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-12 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-6 rtl:peer-checked:after:-translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="pt-4 flex gap-3">
+<button class="flex-1 px-6 py-3 border border-outline-variant rounded-xl font-button text-on-surface hover:bg-surface-container transition-all" onclick="document.getElementById('createModal').classList.add('hidden')" type="button">Cancel</button>
+<button class="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-button hover:bg-[#3F735C] transition-all shadow-md active:scale-95" type="submit">Save Specialty</button>
+</div>
+</form>
+</div>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-1/2 h-screen overflow-hidden pointer-events-none opacity-20">
+<svg class="w-full h-full text-secondary-fixed-dim fill-current" viewBox="0 0 400 400">
+<circle cx="400" cy="0" opacity="0.3" r="300"></circle>
+<circle cx="450" cy="100" opacity="0.1" r="200"></circle>
+</svg>
+</div>
+<script>
+        // Simple micro-interactions
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                // row selection logic could go here
+                row.classList.toggle('bg-secondary-container/10');
+            });
+        });
+
+        // Toggle handling
+        document.querySelectorAll('input[type="checkbox"]').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const label = this.closest('label').querySelector('span');
+                if (label) {
+                    label.textContent = this.checked ? 'Active' : 'Inactive';
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,68 @@
+@page
+@model OPCBS.Web.Pages.Patient.Appointments.IndexModel
+@{
+    ViewData["Title"] = "Lịch hẹn của tôi";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>Lịch hẹn của tôi</h1>
+    <a asp-page="/Doctors/Index" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Đặt lịch mới</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã</th>
+                        <th>Bác sĩ</th>
+                        <th>Ngày</th>
+                        <th>Giờ</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Appointments.Any())
+                    {
+                        @foreach (var apt in Model.Appointments)
+                        {
+                            <tr>
+                                <td><code class="small">@(apt.BookingCode ?? "---")</code></td>
+                                <td class="fw-semibold">@apt.DoctorName</td>
+                                <td>@apt.AppointmentDate</td>
+                                <td>@apt.StartTime</td>
+                                <td><partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' /></td>
+                                <td class="text-end">
+                                    <a asp-page="Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;color:var(--mb-text-muted);"></i>
+                                <p class="text-muted mb-2">Chưa có lịch hẹn nào</p>
+                                <a asp-page="/Doctors/Index" class="btn btn-primary btn-sm">Tìm chuyên gia</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

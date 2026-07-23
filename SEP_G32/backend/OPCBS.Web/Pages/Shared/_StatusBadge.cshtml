@@ -1,0 +1,19 @@
+@* Appointment status badge partial — pass ViewData["Status"] *@
+@{
+    var status = (ViewData["Status"] as string ?? "Unknown").ToLower();
+    var cssClass = status switch
+    {
+        "pending" => "badge-pending",
+        "confirmed" => "badge-confirmed",
+        "completed" => "badge-completed",
+        "cancelled" => "badge-cancelled",
+        "approved" => "badge-approved",
+        "rejected" => "badge-rejected",
+        "draft" => "badge-draft",
+        "active" => "badge-active",
+        "expired" => "badge-expired",
+        _ => "badge-draft"
+    };
+    var displayText = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(status);
+}
+<span class="badge-status @cssClass">@displayText</span>

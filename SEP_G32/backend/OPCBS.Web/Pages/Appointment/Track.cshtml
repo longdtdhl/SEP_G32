@@ -1,0 +1,43 @@
+@page
+@model OPCBS.Web.Pages.Appointment.TrackModel
+@{
+    ViewData["Title"] = "Track Appointment";
+}
+
+<div class="mb-auth-container">
+    <div class="mb-auth-card">
+        <h2><i class="bi bi-search me-2" style="color:var(--mb-primary);"></i>Track Appointment</h2>
+        <p class="auth-subtitle">Enter your email or tracking code to find your appointments.</p>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-control" placeholder="your@email.com" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tracking Code (optional)</label>
+                <input asp-for="Input.TrackingCode" class="form-control" placeholder="e.g. APT-XXXXX" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Track</button>
+        </form>
+    </div>
+
+    @if (Model.Results != null && Model.Results.Any())
+    {
+        <div class="mt-4">
+            <h5>Your Appointments</h5>
+            @foreach (var apt in Model.Results)
+            {
+                <div class="card mb-2">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@apt.DoctorName</div>
+                            <small class="text-muted">@apt.StartAt.ToString("MMM dd, yyyy HH:mm")</small>
+                        </div>
+                        <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

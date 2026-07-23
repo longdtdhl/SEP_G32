@@ -1,0 +1,152 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Patient.Appointments.DetailsModel
+@{
+    ViewData["Title"] = "Chi tiết lịch hẹn";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Chi tiết lịch hẹn</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+</div>
+
+@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+
+@if (Model.Appointment != null)
+{
+    var apt = Model.Appointment;
+    var isPending = apt.Status == "Pending" || apt.Status == "0";
+    var isApproved = apt.Status == "Approved" || apt.Status == "1";
+    var isCompleted = apt.Status == "Completed" || apt.Status == "4";
+    var isCancelled = apt.Status == "Cancelled" || apt.Status == "5";
+    var canCancel = isPending || isApproved;
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h4 class="mb-1">@apt.DoctorName</h4>
+                            @if (!string.IsNullOrEmpty(apt.Specialization))
+                            {
+                                <span class="badge bg-light text-primary">@apt.Specialization</span>
+                            }
+                        </div>
+                        <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded" style="background:var(--mb-surface);">
+                                <small class="text-muted d-block"><i class="bi bi-calendar3 me-1"></i>Ngày hẹn</small>
+                                <strong>@apt.AppointmentDate</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded" style="background:var(--mb-surface);">
+                                <small class="text-muted d-block"><i class="bi bi-clock me-1"></i>Thời gian</small>
+                                <strong>@apt.StartTime — @apt.EndTime</strong>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(apt.BookingCode))
+                        {
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded" style="background:var(--mb-surface);">
+                                    <small class="text-muted d-block"><i class="bi bi-upc me-1"></i>Mã đặt lịch</small>
+                                    <strong class="font-monospace">@apt.BookingCode</strong>
+                                </div>
+                            </div>
+                        }
+                        @if (apt.Fee.HasValue)
+                        {
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded" style="background:var(--mb-surface);">
+                                    <small class="text-muted d-block"><i class="bi bi-wallet2 me-1"></i>Phí tư vấn</small>
+                                    <strong>@apt.Fee?.ToString("N0") VND</strong>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(apt.Notes))
+                    {
+                        <div class="mt-4">
+                            <h6><i class="bi bi-chat-left-text me-1"></i>Ghi chú</h6>
+                            <p class="mb-0 text-muted">@apt.Notes</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(apt.CancellationReason))
+                    {
+                        <div class="alert alert-warning mt-4 mb-0">
+                            <i class="bi bi-exclamation-triangle me-1"></i><strong>Lý do hủy:</strong> @apt.CancellationReason
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white"><h6 class="mb-0">Hành động</h6></div>
+                <div class="card-body d-grid gap-2">
+                    @if (isCompleted)
+                    {
+                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-primary">
+                            <i class="bi bi-star me-1"></i>Đánh giá bác sĩ
+                        </a>
+                        <a asp-page="/Patient/ConsultationRecords/Index" class="btn btn-outline-primary">
+                            <i class="bi bi-file-medical me-1"></i>Xem hồ sơ tư vấn
+                        </a>
+                    }
+
+                    @if (canCancel)
+                    {
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i>Hủy lịch hẹn
+                        </button>
+                    }
+
+                    <a asp-page="/Doctors/Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-search-heart me-1"></i>Đặt lịch mới
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (canCancel)
+    {
+        <!-- Cancel Modal -->
+        <div class="modal fade" id="cancelModal" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+                <form method="post" asp-page-handler="Cancel" asp-route-id="@apt.Id">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Hủy lịch hẹn</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Bạn có chắc chắn muốn hủy lịch hẹn này?</p>
+                        <div class="mb-3">
+                            <label class="form-label">Lý do hủy (tùy chọn)</label>
+                            <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                    </div>
+                </form>
+            </div></div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="bi bi-calendar-x d-block mb-2" style="font-size:3rem;color:var(--mb-text-muted);"></i>
+        <h5>Không tìm thấy lịch hẹn</h5>
+        <a asp-page="Index" class="btn btn-primary mt-2">Quay lại danh sách</a>
+    </div>
+}

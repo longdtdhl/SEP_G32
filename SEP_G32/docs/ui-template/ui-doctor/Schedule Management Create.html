@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Consultation Slot - MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="custom-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            "primary": "#4e8b70",
+            "on-tertiary-fixed-variant": "#005236",
+            "surface-container-high": "#dee9fc",
+            "surface-tint": "#2b6950",
+            "on-error": "#ffffff",
+            "on-background": "#121c2a",
+            "tertiary": "#006947",
+            "surface-container-low": "#eff4ff",
+            "on-secondary": "#ffffff",
+            "secondary": "#52625a",
+            "on-tertiary-container": "#f5fff6",
+            "on-secondary-fixed-variant": "#3a4a43",
+            "on-surface-variant": "#404943",
+            "inverse-primary": "#95d4b5",
+            "surface-variant": "#d9e3f6",
+            "error": "#ba1a1a",
+            "inverse-surface": "#27313f",
+            "on-secondary-container": "#586860",
+            "inverse-on-surface": "#eaf1ff",
+            "secondary-fixed-dim": "#b9cbc1",
+            "tertiary-fixed-dim": "#4edea3",
+            "secondary-container": "#d5e7dd",
+            "surface-bright": "#f8f9ff",
+            "on-tertiary-fixed": "#002113",
+            "tertiary-container": "#00855b",
+            "surface-container": "#e6eeff",
+            "secondary-fixed": "#d5e7dd",
+            "primary-fixed": "#b0f0d0",
+            "on-primary-fixed": "#002115",
+            "surface-dim": "#d0dbed",
+            "outline-variant": "#bfc9c2",
+            "on-tertiary": "#ffffff",
+            "surface-container-highest": "#d9e3f6",
+            "on-surface": "#121c2a",
+            "primary-fixed-dim": "#95d4b5",
+            "on-secondary-fixed": "#0f1e19",
+            "on-error-container": "#93000a",
+            "on-primary-fixed-variant": "#0c513a",
+            "on-primary-container": "#f5fff7",
+            "tertiary-fixed": "#6ffbbe",
+            "surface-container-lowest": "#ffffff",
+            "background": "#fafbfa",
+            "primary-container": "#438066",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "surface": "#ffffff",
+            "outline": "#707973",
+            primaryHover: '#3d6e59',
+            textMain: '#1a1c1e',
+            textMuted: '#73777f',
+            border: '#e1e2e8',
+          },
+          borderRadius: {
+            'card': '20px',
+            'element': '12px',
+          }
+        }
+      }
+    }
+  </style>
+<style data-purpose="custom-styles">
+    body {
+      background-color: #fafbfa;
+      color: #1a1c1e;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Custom Scrollbar for notes */
+    textarea::-webkit-scrollbar {
+      width: 8px;
+    }
+    textarea::-webkit-scrollbar-track {
+      background: transparent; 
+    }
+    textarea::-webkit-scrollbar-thumb {
+      background: #e1e2e8; 
+      border-radius: 4px;
+    }
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: #c4c7c5; 
+    }
+  </style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+<!-- BEGIN: MainHeader -->
+<header class="bg-surface border-b border-border sticky top-0 z-10 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<!-- Logo -->
+<a class="flex items-center gap-2 text-primary font-bold text-xl tracking-tight" href="#">
+<img alt="MindBridge Logo" class="h-8 w-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOWPFAZidWY_0gyRxZPmQac4cxH1IOAuQ5WvqqyDGPZS5xmPHKhyjRbcYtFHWpnk9qx-OpVTs4dSVmZObjx5nQa-KXqMZvctiFQBFfpG-ck4WOV8LAfPCSwSKWmng39wxNycYgYADmnnxiV1pDZQIx5ewhez0vHwowH5n3LCBEjdUM-4QYj7LTSOfvC06RTzi9CSkAhkrTCkTFGzXvWYWEAuPMRL2epnyLxt-qnPrQUwtK12GZIGnu5FxEz1tezw5F9edP5oHibBs"/>
+        MindBridge
+      </a>
+<!-- Navigation -->
+<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-textMuted">
+<a class="hover:text-textMain transition-colors" href="#">Home</a>
+<a class="hover:text-textMain transition-colors" href="#">Specialists</a>
+<a class="text-primary border-b-2 border-primary pb-1 -mb-[18px]" href="#">Schedules</a>
+<a class="hover:text-textMain transition-colors" href="#">Case Records</a>
+<a class="hover:text-textMain transition-colors" href="#">Appointment List</a>
+</nav>
+</div>
+<!-- Right Actions -->
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-textMuted text-sm"></i>
+<input class="pl-9 pr-4 py-2 bg-background border-none rounded-full text-sm w-48 focus:ring-1 focus:ring-primary focus:outline-none placeholder-textMuted" placeholder="Search" type="text"/>
+</div>
+<button aria-label="Notifications" class="text-textMuted hover:text-textMain relative">
+<i class="fa-regular fa-bell text-lg"></i>
+<span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+</button>
+<button aria-label="User Profile" class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIHfFyIAqLyEObL0lnu9EqZ0gFGJ9vDupdCPZk6HtOPowTqV1PCHgfk7bn7DMZesgCwJn7MGPDdmfx_gp1fXl2x9QYhNlRWS9CdYR5umrrSlWAC1BsAM27PSU6a_s8PJ-ruF7wK4i1-wCpNLEtb0tuAD0VWFfL3o4I9Nzsjs9wiX4LkH8pMovtZVEGarhaVyZmDMvFVHApHmVdHbp_n399c0eN1Iwun2KfzV3Tm2DZ2YDzR6nktLCljROBj6zoncrwabqCSVPwqSE"/>
+</button>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-12">
+<!-- Breadcrumb -->
+<div class="flex items-center gap-2 text-sm text-textMuted mb-8">
+<a class="hover:text-textMain flex items-center gap-2" href="#">
+<i class="fa-solid fa-arrow-left"></i>
+        Schedules
+      </a>
+<i class="fa-solid fa-chevron-right text-[10px]"></i>
+<span class="text-textMain font-medium">Create Consultation Slot</span>
+</div>
+<!-- Card Container -->
+<div class="bg-surface rounded-card shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-border/50 p-10">
+<h1 class="text-3xl font-bold text-textMain mb-10 tracking-tight">Create Consultation Slot</h1>
+<!-- Form Area -->
+<form class="space-y-10">
+<!-- Slot List -->
+<div class="space-y-6">
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-6 pb-4 border-b border-border/60 text-xs font-semibold text-textMuted uppercase tracking-widest">
+<div class="col-span-1 pl-2">Slot</div>
+<div class="col-span-3">Start Time</div>
+<div class="col-span-3">End Time</div>
+<div class="col-span-2">Slot Capacity</div>
+<div class="col-span-3">Repeat</div>
+</div>
+<!-- Slot Row 1 -->
+<div class="grid grid-cols-12 gap-6 items-center">
+<div class="col-span-1 font-medium text-textMain pl-4">1</div>
+<div class="col-span-3 relative">
+<input class="w-full border border-border rounded-element py-3 px-4 text-sm text-textMain focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" type="time" value="17:45"/>
+</div>
+<div class="col-span-3 relative">
+<input class="w-full border border-border rounded-element py-3 px-4 text-sm text-textMain focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" type="time" value="17:45"/>
+</div>
+<div class="col-span-2">
+<input class="w-full border border-border rounded-element py-3 px-4 text-sm text-textMain focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow" min="1" type="number" value="3"/>
+</div>
+<div class="col-span-3 relative">
+<select class="w-full border border-border rounded-element py-3 pl-4 pr-10 text-sm text-textMain focus:ring-1 focus:ring-primary focus:border-primary outline-none appearance-none bg-white transition-shadow cursor-pointer">
+<option>This day</option>
+<option>This Week</option>
+<option>This Month</option>
+</select>
+<i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-textMuted text-xs pointer-events-none"></i>
+</div>
+</div>
+</div>
+<!-- Add Slot Button -->
+<div class="pt-2">
+<button class="flex items-center gap-2 text-textMain font-medium text-sm hover:text-primary transition-colors" type="button">
+<i class="fa-solid fa-circle-plus text-primary"></i>
+            Add Slot
+          </button>
+</div>
+<!-- Notes Section -->
+<div class="pt-6 border-t border-border/40">
+<label class="block text-sm font-medium text-textMain mb-3" for="notes">Notes</label>
+<textarea class="w-full border border-border rounded-element p-5 text-sm text-textMain focus:ring-1 focus:ring-primary focus:border-primary outline-none resize-y transition-shadow placeholder-textMuted/70" id="notes" placeholder="Add any additional notes for these consultation slots..." rows="5"></textarea>
+</div>
+<!-- Action Footer -->
+<div class="pt-10 flex justify-end">
+<button class="bg-primary hover:bg-primaryHover text-white font-medium py-3 px-8 rounded-element transition-all duration-200 shadow-sm hover:shadow-md" type="submit">
+            Create Schedules
+          </button>
+</div>
+</form>
+</div>
+</main>
+<!-- END: MainContent -->
+</body></html>

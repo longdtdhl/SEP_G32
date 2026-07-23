@@ -1,0 +1,88 @@
+@page
+@model OPCBS.Web.Pages.Doctors.IndexModel
+@{ ViewData["Title"] = "Find a Therapist"; }
+
+<section class="mb-section">
+    <div class="mb-page-header">
+        <h1>Find a Therapist</h1>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <form method="get" class="mb-search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Search by name or specialization..." />
+                <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
+            </form>
+        </div>
+        <div class="col-lg-4">
+            <form method="get">
+                <input type="hidden" name="search" value="@Model.Filter.Search" />
+                <select name="specialization" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Specializations</option>
+                    @foreach (var s in new[] { "Anxiety & Stress", "Depression", "Relationships", "Family Issues", "Trauma", "Burnout", "Addiction", "Career Counseling" })
+                    {
+                        <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
+                    }
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Doctor Cards Grid -->
+    @if (Model.Doctors.Any())
+    {
+        <div class="row g-4">
+            @foreach (var doc in Model.Doctors)
+            {
+                <div class="col-sm-6 col-lg-4 col-xl-3">
+                    <a asp-page="Details" asp-route-id="@doc.Id" class="text-decoration-none">
+                        <div class="mb-doctor-card h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div>
+                                    @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                                    {
+                                        <img src="@doc.AvatarUrl" alt="@doc.FullName" class="doctor-avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background-color:var(--mb-secondary);">
+                                            <i class="bi bi-person-fill" style="font-size:1.5rem;color:var(--mb-primary);"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="doctor-name mb-0">@doc.FullName</h5>
+                                    <p class="doctor-specialization mb-0">@doc.Specialization</p>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", doc.Rating }, { "ReviewCount", doc.ReviewCount } })' />
+                                @if (doc.IsVerified)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">
+                                        <i class="bi bi-patch-check-fill me-1"></i>Verified
+                                    </span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
+                                <span><i class="bi bi-briefcase me-1"></i>@doc.ExperienceYears yrs exp.</span>
+                                @if (doc.ConsultationFee > 0)
+                                {
+                                    <span class="fw-semibold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0") VND</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+
+        <partial name="_Pagination" view-data='@(new ViewDataDictionary(ViewData) { { "Pagination", Model.Pagination }, { "PageUrl", "/Doctors" } })' />
+    }
+    else
+    {
+        <partial name="_EmptyState" view-data='@(new ViewDataDictionary(ViewData) { { "EmptyIcon", "bi-search" }, { "EmptyTitle", "No therapists found" }, { "EmptyMessage", "Try adjusting your search filters." } })' />
+    }
+</section>

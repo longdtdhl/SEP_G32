@@ -1,0 +1,122 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Doctors.DetailsModel
+@{ ViewData["Title"] = Model.Doctor?.FullName ?? "Doctor Details"; }
+
+@if (Model.Doctor == null)
+{
+    <partial name="_ErrorState" view-data='@(new ViewDataDictionary(ViewData) { { "ErrorMessage", "Doctor not found." } })' />
+    return;
+}
+
+<section class="mb-section">
+    <div class="row g-4">
+        <!-- Doctor Info -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-sm-row gap-4 mb-4">
+                        <div style="width:120px;height:120px;flex-shrink:0;">
+                            @if (!string.IsNullOrEmpty(Model.Doctor.AvatarUrl))
+                            {
+                                <img src="@Model.Doctor.AvatarUrl" alt="@Model.Doctor.FullName" class="rounded-circle w-100 h-100" style="object-fit:cover;border:3px solid var(--mb-secondary);" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle w-100 h-100 d-flex align-items-center justify-content-center" style="background-color:var(--mb-secondary);">
+                                    <i class="bi bi-person-fill" style="font-size:3rem;color:var(--mb-primary);"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <h1 class="h3 mb-1">@Model.Doctor.FullName</h1>
+                                    <p class="mb-2" style="color:var(--mb-primary);font-weight:500;">@Model.Doctor.Specialization</p>
+                                </div>
+                                @if (Model.Doctor.IsVerified)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        <i class="bi bi-patch-check-fill me-1"></i>Verified
+                                    </span>
+                                }
+                            </div>
+                            <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", Model.Doctor.Rating }, { "ReviewCount", Model.Doctor.ReviewCount } })' />
+                            <div class="d-flex flex-wrap gap-3 mt-3" style="font-size:0.875rem;color:var(--mb-text-secondary);">
+                                <span><i class="bi bi-briefcase me-1"></i>@Model.Doctor.ExperienceYears years experience</span>
+                                @if (Model.Doctor.ConsultationFee > 0)
+                                {
+                                    <span><i class="bi bi-cash me-1"></i>@Model.Doctor.ConsultationFee.ToString("N0") VND / session</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Doctor.Bio))
+                    {
+                        <div class="mb-4">
+                            <h5>About</h5>
+                            <p class="text-muted">@Model.Doctor.Bio</p>
+                        </div>
+                    }
+
+                    @if (Model.Doctor.Specializations.Any())
+                    {
+                        <div class="mb-4">
+                            <h5>Specializations</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var s in Model.Doctor.Specializations)
+                                {
+                                    <span class="mb-chip">@s</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Reviews -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Patient Reviews</h5>
+                    <a asp-page="/Doctors/Ratings" asp-route-id="@Model.Doctor.Id" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.Reviews.Any())
+                    {
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <div class="border-bottom py-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold">@review.PatientName</span>
+                                    <small class="text-muted">@review.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </div>
+                                <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", (double)review.Rating }, { "ReviewCount", 0 } })' />
+                                @if (!string.IsNullOrEmpty(review.Comment))
+                                {
+                                    <p class="text-muted mt-2 mb-0" style="font-size:0.875rem;">@review.Comment</p>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">No reviews yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking CTA Sidebar -->
+        <div class="col-lg-4">
+            <div class="card" style="position:sticky;top:90px;">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">Book a Session</h5>
+                    <p class="text-muted mb-4" style="font-size:0.875rem;">Take the first step toward your wellbeing. Schedule a consultation with @Model.Doctor.FullName.</p>
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.Doctor.Id" class="btn btn-primary w-100 btn-lg">
+                        <i class="bi bi-calendar-plus me-2"></i>Book Appointment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

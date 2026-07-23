@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Renew Subscription | MindBridge</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .plan-radio:checked + .plan-label {
+            border-color: #29674e;
+            background-color: #f5fff7;
+        }
+        .plan-radio:checked + .plan-label .radio-dot {
+            background-color: #29674e;
+            box-shadow: inset 0 0 0 2px white;
+        }
+        body {
+            background-color: #f8faf6;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-container": "#fffbff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "on-tertiary-fixed": "#390b0d",
+                      "surface-container-highest": "#e1e3df",
+                      "error": "#ba1a1a",
+                      "tertiary": "#894a49",
+                      "surface-tint": "#2b6950",
+                      "on-surface-variant": "#404943",
+                      "on-primary-fixed": "#002115",
+                      "inverse-on-surface": "#eff1ed",
+                      "surface": "#f8faf6",
+                      "on-secondary-container": "#586860",
+                      "surface-bright": "#f8faf6",
+                      "inverse-surface": "#2e312f",
+                      "tertiary-container": "#a66261",
+                      "surface-container": "#eceeea",
+                      "outline": "#707973",
+                      "inverse-primary": "#95d4b5",
+                      "on-secondary-fixed": "#0f1e19",
+                      "background": "#f8faf6",
+                      "secondary-fixed-dim": "#b9cbc1",
+                      "on-secondary-fixed-variant": "#3a4a43",
+                      "secondary-container": "#d5e7dd",
+                      "on-background": "#191c1a",
+                      "on-surface": "#191c1a",
+                      "tertiary-fixed-dim": "#ffb3b1",
+                      "tertiary-fixed": "#ffdad8",
+                      "surface-container-high": "#e7e9e5",
+                      "primary-fixed-dim": "#95d4b5",
+                      "on-primary-fixed-variant": "#0c513a",
+                      "outline-variant": "#bfc9c2",
+                      "primary": "#29674e",
+                      "on-primary": "#ffffff",
+                      "surface-dim": "#d8dbd7",
+                      "primary-fixed": "#b0f0d0",
+                      "on-error-container": "#93000a",
+                      "secondary": "#52625a",
+                      "on-tertiary-fixed-variant": "#6f3535",
+                      "on-primary-container": "#f5fff7",
+                      "surface-variant": "#e1e3df",
+                      "primary-container": "#438066",
+                      "surface-container-low": "#f2f4f0",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#d5e7dd"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max-width": "1200px",
+                      "gutter": "24px",
+                      "margin-mobile": "16px",
+                      "section-gap": "80px",
+                      "stack-md": "16px",
+                      "stack-sm": "8px",
+                      "unit": "4px",
+                      "stack-lg": "32px",
+                      "margin-desktop": "40px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-xl": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="font-body-md text-on-background min-h-screen flex flex-col overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="bg-surface shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary">MindBridge</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Blog</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Specialists</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-md text-body-md" href="#">My Package</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">My Appointments</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-container-low border-none rounded-full px-4 py-2 text-body-sm w-48 focus:ring-2 focus:ring-primary/20" placeholder="Search" type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-2 text-outline text-[20px]" data-icon="search">search</span>
+</div>
+<button class="material-symbols-outlined text-outline p-2 hover:bg-secondary-container/50 rounded-lg transition-all" data-icon="notifications">notifications</button>
+<div class="w-10 h-10 rounded-full bg-primary-fixed overflow-hidden border-2 border-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly user for a healthcare profile avatar, soft natural studio lighting, neutral background, modern and clean aesthetic consistent with the MindBridge platform's compassionate tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrjQYrnfTAZlN2QsR78NlxrASEZ2rh_-tHzqfxmxNIyUEBBmBW5ttXDPhENRMLFhVMkpKnJDACyAl-6a5oC-zCeW0azCm4eR4PBLMeEZAPdefL0tVWukfmz9Q8lDzH3ZCW6Z5ZI_xdYnSOPhkoI-QwBxrWcx9VX79Qj2C6ZcGc4cOX0uq2TDrOeUPILvFaQzJHHU9KIAXRSTX0GWxOpvMMmkisknp3oXSlp2A-qhsTNKqzXJfXCaQzBtAl6T8cdT1_-2YOihbiDyw"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow max-w-[1000px] w-full mx-auto px-margin-desktop py-12">
+<!-- Navigation Header -->
+<div class="flex items-center gap-4 mb-8">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined text-on-surface" data-icon="arrow_back">arrow_back</span>
+</button>
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Renew Subscription</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Your current plan : <span class="text-primary font-bold">Pro</span></p>
+</div>
+</div>
+<!-- Subscription Selection Card -->
+<div class="bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
+<div class="p-8 md:p-10 flex flex-col md:grid md:grid-cols-5 gap-12">
+<!-- Left Column: Selection -->
+<div class="md:col-span-3">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6">Select Duration</h2>
+<div class="space-y-4">
+<!-- Option 1 -->
+<label class="relative block cursor-pointer group">
+<input checked="" class="plan-radio absolute opacity-0" name="duration" type="radio" value="1month"/>
+<div class="plan-label border-2 border-outline-variant rounded-xl p-4 flex items-center justify-between transition-all group-hover:border-primary/40">
+<div class="flex items-center gap-4">
+<div class="radio-dot w-5 h-5 rounded-full border-2 border-outline transition-all"></div>
+<span class="font-body-md text-body-md text-on-surface">1 Month</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary">199,000 ₫</span>
+</div>
+</label>
+<!-- Option 2 -->
+<label class="relative block cursor-pointer group">
+<input class="plan-radio absolute opacity-0" name="duration" type="radio" value="3month"/>
+<div class="plan-label border-2 border-outline-variant rounded-xl p-4 flex items-center justify-between transition-all group-hover:border-primary/40">
+<div class="flex items-center gap-4">
+<div class="radio-dot w-5 h-5 rounded-full border-2 border-outline transition-all"></div>
+<span class="font-body-md text-body-md text-on-surface">3 Month</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-headline-md text-headline-md text-primary">549,000 ₫</span>
+<span class="text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Save 8%</span>
+</div>
+</div>
+</label>
+<!-- Option 3 -->
+<label class="relative block cursor-pointer group">
+<input class="plan-radio absolute opacity-0" name="duration" type="radio" value="12month"/>
+<div class="plan-label border-2 border-outline-variant rounded-xl p-4 flex items-center justify-between transition-all group-hover:border-primary/40">
+<div class="flex items-center gap-4">
+<div class="radio-dot w-5 h-5 rounded-full border-2 border-outline transition-all"></div>
+<span class="font-body-md text-body-md text-on-surface">12 Month</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-headline-md text-headline-md text-primary">1,799,000 ₫</span>
+<span class="text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Best Value - Save 25%</span>
+</div>
+</div>
+</label>
+<!-- Option 4: Custom -->
+<div class="mt-8 pt-8 border-t border-outline-variant/30">
+<label class="relative block cursor-pointer group">
+<input class="plan-radio absolute opacity-0" name="duration" type="radio" value="custom"/>
+<div class="plan-label border-2 border-outline-variant rounded-xl p-4 flex items-center gap-4 transition-all group-hover:border-primary/40">
+<div class="radio-dot w-5 h-5 rounded-full border-2 border-outline transition-all"></div>
+<div class="flex-grow flex items-center gap-2">
+<input class="w-16 border-b border-outline-variant focus:border-primary focus:ring-0 bg-transparent py-1 text-body-md text-on-surface text-center" placeholder="[]" type="number"/>
+<span class="font-body-md text-body-md text-on-surface">Month -</span>
+<input class="w-24 border-b border-outline-variant focus:border-primary focus:ring-0 bg-transparent py-1 text-body-md text-on-surface text-center" placeholder="[]" type="text"/>
+<span class="font-body-md text-body-md text-on-surface">₫</span>
+</div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Right Column: Summary -->
+<div class="md:col-span-2 bg-surface-container-low rounded-xl p-8 flex flex-col justify-between">
+<div>
+<div class="mb-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Current Expiry Date</p>
+<p class="font-headline-md text-headline-md text-on-surface">01/07/2026</p>
+</div>
+<div class="mb-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">New Expiry Date</p>
+<p class="font-headline-md text-headline-md text-primary">01/10/2026</p>
+</div>
+<div class="pt-8 border-t border-outline-variant">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Total Amount</p>
+<p class="font-headline-xl text-headline-xl text-on-surface">549.000 <span class="text-body-lg">VND</span></p>
+</div>
+</div>
+<div class="mt-12">
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold font-body-md text-body-md shadow-sm hover:brightness-110 active:scale-95 transition-all">
+                            Confirm Renewal
+                        </button>
+<p class="text-center text-on-surface-variant text-body-sm mt-4 font-body-sm">
+                            Secure payment processed by MindBridge
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Supportive Visual Element -->
+<div class="mt-section-gap flex flex-col md:flex-row items-center gap-8 bg-primary-container/20 p-8 rounded-[20px]">
+<div class="w-full md:w-1/3 aspect-video rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A peaceful image of a Zen garden with soft green moss, smooth grey stones, and gentle ripples in sand. The lighting is ethereal and morning-like, promoting a sense of mental clarity and calm, perfectly aligned with MindBridge's sanctuary-like branding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnrduM6F7xBlw79Wnzs10fEUBpAyzT4UNipCoJI90V-vHVa8fjI4Ec777jLF3ZYc6wwutvjQD-oEreNCdiKqk3KpyQSUszpOfzLFp6sdsW9f9UZRMq30kdgfCJbqtFkqlHh22znX2xnECmfCvJ3wHuoB-VGBjF7D1Xquon9xWfYJ1N63TiVk9vUFI06tA_RL6CzZGhW1en4DF9uExxeFPV4oAvDB_vyaqi8YpWMyOl4K33mMUP7ftMcxh6rUQmuWXKyWItlQSrLeY"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Why Stay on Pro?</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
+                    Maintain uninterrupted access to your dedicated specialist, priority booking, and our full library of crisis resources and therapeutic guides. Your journey to wellness is our priority.
+                </p>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low mt-section-gap border-t border-outline-variant">
+<div class="w-full px-margin-desktop py-stack-lg max-w-container-max-width mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+<div class="md:col-span-1">
+<div class="font-headline-sm text-headline-sm font-bold text-primary mb-4">MindBridge</div>
+<p class="text-on-surface-variant text-body-sm font-body-sm">Providing a sanctuary for mental wellness through compassionate clarity and professional guidance.</p>
+</div>
+<div class="md:col-span-3 flex flex-wrap gap-x-12 gap-y-6 md:justify-end">
+<a class="text-on-surface-variant hover:text-primary transition-all font-body-sm text-body-sm hover:underline" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-all font-body-sm text-body-sm hover:underline" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-all font-body-sm text-body-sm hover:underline" href="#">Contact Us</a>
+<a class="text-on-surface-variant hover:text-primary transition-all font-body-sm text-body-sm hover:underline font-bold" href="#">Crisis Resources</a>
+<a class="text-on-surface-variant hover:text-primary transition-all font-body-sm text-body-sm hover:underline" href="#">About Our Specialists</a>
+</div>
+</div>
+<div class="border-t border-outline-variant/30 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-on-surface-variant font-body-sm text-body-sm text-center md:text-left">
+                    © 2024 MindBridge. All rights reserved. Providing a sanctuary for mental wellness through compassionate clarity.
+                </p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary" data-icon="public">public</span>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary" data-icon="share">share</span>
+</div>
+</div>
+</div>
+</footer>
+<!-- Interactive Logic -->
+<script>
+        // Simple interactivity for radio selection
+        const radios = document.querySelectorAll('.plan-radio');
+        radios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // Potential for dynamic price updates could be added here
+                console.log('Selected plan:', e.target.value);
+            });
+        });
+
+        // Micro-interaction for the "Back" button
+        document.querySelector('[aria-label="Go back"]').addEventListener('click', () => {
+            history.back();
+        });
+    </script>
+</body></html>

@@ -1,0 +1,79 @@
+@page
+@model OPCBS.Web.Pages.Patient.TreatmentPackages.IndexModel
+@{
+    ViewData["Title"] = "Gói điều trị";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header">
+    <h1><i class="bi bi-box-seam me-2" style="color:var(--mb-primary);"></i>Gói điều trị của tôi</h1>
+    <p class="text-muted mb-0">Theo dõi các gói điều trị được bác sĩ chỉ định</p>
+</div>
+
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+@if (Model.Packages.Any())
+{
+    <div class="row g-4">
+        @foreach (var pkg in Model.Packages)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="mb-0">@pkg.Title</h5>
+                            @{
+                                var badgeClass = pkg.Status switch
+                                {
+                                    "Active" => "bg-success",
+                                    "Pending" => "bg-warning text-dark",
+                                    "Completed" => "bg-info",
+                                    "Expired" => "bg-secondary",
+                                    "Rejected" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badgeClass">@pkg.Status</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(pkg.Description))
+                        {
+                            <p class="text-muted small mb-3">@pkg.Description</p>
+                        }
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
+                                    <div class="fw-bold" style="color:var(--mb-primary);">@pkg.TotalSessions</div>
+                                    <small class="text-muted">Tổng buổi</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
+                                    <div class="fw-bold text-success">@pkg.RemainingSessions</div>
+                                    <small class="text-muted">Còn lại</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted"><i class="bi bi-wallet2 me-1"></i>@pkg.Price.ToString("N0") VND</small>
+                            <small class="text-muted"><i class="bi bi-calendar-x me-1"></i>HSD: @pkg.ExpirationDate.ToString("dd/MM/yyyy")</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pb-3 px-3">
+                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-eye me-1"></i>Chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-box d-block mb-2" style="font-size:2.5rem;color:var(--mb-text-muted);"></i>
+            <p class="text-muted mb-0">Chưa có gói điều trị nào</p>
+        </div>
+    </div>
+}

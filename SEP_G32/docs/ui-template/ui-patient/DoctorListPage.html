@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Find a Specialist | SerenityPath</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-secondary-fixed": "#0f1e19",
+                        "primary-container": "#438066",
+                        "on-background": "#191c1a",
+                        "inverse-surface": "#2e312f",
+                        "primary-fixed-dim": "#95d4b5",
+                        "on-secondary-container": "#586860",
+                        "surface-container": "#eceeea",
+                        "surface-bright": "#f8faf6",
+                        "tertiary": "#894a49",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#bfc9c2",
+                        "tertiary-fixed-dim": "#ffb3b1",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#a66261",
+                        "on-tertiary-fixed": "#390b0d",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#95d4b5",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e7e9e5",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#404943",
+                        "on-surface": "#191c1a",
+                        "secondary-container": "#d5e7dd",
+                        "surface-variant": "#e1e3df",
+                        "surface-dim": "#d8dbd7",
+                        "surface-tint": "#2b6950",
+                        "outline": "#707973",
+                        "on-tertiary-container": "#fffbff",
+                        "background": "#f8faf6",
+                        "surface-container-highest": "#e1e3df",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "tertiary-fixed": "#ffdad8",
+                        "secondary-fixed": "#d5e7dd",
+                        "secondary": "#52625a",
+                        "primary-fixed": "#b0f0d0",
+                        "inverse-on-surface": "#eff1ed",
+                        "primary": "#29674e",
+                        "on-primary-container": "#f5fff7",
+                        "surface-container-low": "#f2f4f0",
+                        "on-tertiary-fixed-variant": "#6f3535",
+                        "surface": "#f8faf6",
+                        "on-primary-fixed": "#002115",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "card": "20px",
+                        "ui": "12px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xl": "80px",
+                        "base": "8px",
+                        "xs": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAFBFA; color: #191c1a; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-card-shadow { box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04); }
+        .dropdown-shadow { box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08); }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-[1280px] mx-auto">
+<div class="flex items-center gap-8">
+<a class="flex items-center" href="#">
+<img alt="MindBridge" class="h-8" src="https://lh3.googleusercontent.com/aida/AP1WRLtMJFZ56cSIcPnM3S6Gq94U3tr6NX9RXnQxY6ah7GMyooCEfYsM5oz_JODTJzwGvAELzMI5z5DHXBMi0XFd-O8Q8PUPliIAF-0vIvQJfUf063VObd910fZI4oQ0QBdqvuCWBt5S9yNZP1j55ObNPBZUTwbjGUpuNyqAtlsdbrL75bx30CLXB0ZqoIS4zD1NrUdrQW375hvHZt7M-VmuzUN0193lRa1F7uUGRNOURrUYc7VcF7PdBL3UZjbG"/>
+</a>
+<nav class="hidden md:flex items-center space-x-8 font-body-md text-body-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Blog</a>
+<div class="relative group">
+<button class="flex items-center gap-1 text-primary font-semibold border-b-2 border-primary pb-1">
+                            Specialists
+                            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<!-- Dropdown Menu -->
+<div class="absolute top-full left-0 mt-2 w-48 bg-surface-container-lowest dropdown-shadow rounded-ui overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container-low transition-colors" href="#">All</a>
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container-low transition-colors" href="#">Specialization 1</a>
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container-low transition-colors" href="#">Specialization 2</a>
+</div>
+</div>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:flex items-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined mr-2">search</span>
+<span class="font-body-sm text-body-sm">Search</span>
+</button>
+<button class="px-6 py-2 rounded-ui font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low transition-all">Log in</button>
+<button class="px-6 py-2 rounded-ui font-body-sm text-body-sm bg-primary text-on-primary hover:bg-primary-container transition-all">Get Started</button>
+</div>
+</div>
+</header>
+<main class="flex-grow max-w-[1280px] mx-auto w-full px-margin-mobile md:px-margin-desktop py-lg">
+<!-- Recommended Section -->
+<section class="mb-xl">
+<div class="flex items-center justify-between mb-8 border-b border-outline-variant/10 pb-4">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Recommended for you</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a warm and smiling female therapist in a bright, modern office. She has a compassionate expression, wearing professional attire. The lighting is soft and natural, emphasizing a calm and trusting environment in the SerenityPath forest green and mint aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfatRKc-4xcrt4kH-lNH4JHCRO9PTNSI4dtMPJQ8ajWozXhAXxBtPW4COUhvSmMYM4u0IeFts3BKdZV6lBh3f-c4nkLhZwokDo0KU5TBwW361rmDdzfukFVJCL3Rk-N8UhyTgctRFgSOb8vz784xSLkLdue2wOdFLYtSBY-KBTlLQGiKFQhBnI4mgoAUTrr4lBrE9RBCXUNiAvL80JPGL5yo-On_e1d-pQuLtN4zOCyEA0KEQ8QuGHj5iAXHzSVtGIL-NbbnqxtuQa"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Sarah Jenkins</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Senior Psychotherapist</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cognitive Behavioral Therapy</p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a calm male therapist with glasses, sitting in a serene wellness space. He has a welcoming and thoughtful look. The background features soft greenery and a clean minimalist studio style. High-key lighting highlights the professional and empathetic tone of MindBridge." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeAfCbONWzzh4I4YjdlVIKXM-YXfpCMU4QQ4Zc0ppGHs6BGKS2L4KE3LNLoB3QGm9U0SEn25g89zZ8QUd-pGwYh1VljMsh9Gf4CoMNcClbY0iFKd9Wx2yptPbzdbpYHL1ctf0Yh6gLSiIKOj26efO7wKKB25bu9GxXsXIMa2WHAjL4GwX6iKCbChkGPxfPf69ku4_beNJPSA3Et5nN_IM4_AiNtgpX24XDhTDnkXDxZ43OjBLECsaXaNvpB9FjRVVQF-vw7NsfUU4o"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Marcus Thorne</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Clinical Specialist</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mindfulness-Based Stress Reduction</p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a diverse female specialist with a bright, encouraging smile. She is in a contemporary clinic with soft light-mode colors. The aesthetic is clean, minimalist, and deeply professional, focusing on human connection and emotional safety within the MindBridge platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiFf5Y5boAI_IFm4pHlqZoUspoj5_EJ6UM6iYaI9VmJ4tW2cH9RNdwlgnYzqrARfMwtPgkw-Vm0vunzyki6uIaGl6ipcgCoelE_MgGqylE1lMUaoml0bEFqM0iJssoNzwKjNhkxMzHB1iKZMpXmeBjBQ3Kt1YYlz1gj-5mQKKdmlkLdK6igUPcrWJMy-uvFfUcisxXjcdzU5PCo9Nh8TlLECN-3sjJhg4VNCp4jNoNrHOF8rWyFVyJd_4NCzzfjkyB1gxz41VAAV00"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Elena Rodriguez</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Family Consultant</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Relational Dynamics</p>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of an approachable male therapist in his late 40s. He is wearing a clean linen shirt, looking directly at the camera with kindness. The environment is an airy, sun-drenched minimalist consultation room. Soft forest green accents in the background reinforce the SerenityPath brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-B-ssuzIuMsr3HCVERLsXPgyUn-YRP0QepNLyv8gV9FEiP7J66H2NV2lwbgJ628vTiJMlglyyf_RkJ1aYH1uIYde5_3cHV233ftc3VBy-3z68_lcli7RP1-pDmZcz0cj776YjZRWPbrIza8euMAd9aDO9DdHGW4o1aKCciu_j0tasvBGVi-HUt7izpn1omD9oH6L5wKjl9NRj6Mg79bys9_uERgmQRKcbA3cR0GZhff4v1COVPqJfgI2b9jGsiPesQDZS7mB-vPcW"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">David Chen</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Behavioral Expert</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Addiction Recovery</p>
+</div>
+</div>
+<div class="mt-8 flex justify-center md:justify-end">
+<button class="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors group">
+                    Show more
+                    <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">expand_more</span>
+</button>
+</div>
+</section>
+<!-- Featured Section -->
+<section>
+<div class="flex items-center justify-between mb-8 border-b border-outline-variant/10 pb-4">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Featured Specialists for Specialization 1</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Card 5 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="Professional portrait of a young female psychologist in a bright, modern interior. She has a confident, gentle smile. The palette is dominated by soft whites and subtle secondary mint greens, creating a feeling of breathability and hope, consistent with MindBridge's design language." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQsyOWHr6CxzwMaZ8p3hMY9_dFSGGvKxmjbXj0PsUySr_znIoNlV3hsQaAhXhxI4b_4jHLbm3j8boXJvgfaHHLaVjcPUeGop_K6YtYxbWy2_V5--oATD4Ch3Rg9tVoHVYbS_kgqQN9wZn1X68PY8sSCRaqM2_MZ1thiNcWFs8de_mj71TS4tkF8P8Sjf_i0UmSnj8sUt71Xvxi3tyZlPn2C3TscOrkdndPp-UN42V-dhSwi8_y7xv_kQwjMuVFtu6E_C7rDF7yqaR6"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Sophia Miller</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Lead Analyst</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Specialization 1</p>
+</div>
+<!-- Card 6 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A studio portrait of a warm and attentive male therapist. He has a friendly, professional demeanor, set against a blurred background of a minimalist wellness studio. The lighting is diffused and soft, using a high-key light mode style that evokes calm and empathy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwTe6fCFqtGpyQQ-sP59QUBgkOJbyb1kW9sUUvR8lEAwg_Fyo0doxlLuxHAbVyW2AE3Zm3yG-71m1qTRv5VjHtI_cOgrjdVNPjhBS0EYigPSJPbZYV3Xya3XbomvNugfSp3kjzJzCx4RotC6kXdu3Qfkfcdy0ZrOk8t1QPh6y6SD_ZvDqErgpKPhC9J6NQYz2S2TVxR66dQA2W9KdFRwi-ZYCjf3Oqr2PB7-kHqf2B8xZ68PjKecfODL5IeyL3d_axdJY9nVUS-vEY"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">James Wilson</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Clinical Director</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Specialization 1</p>
+</div>
+<!-- Card 7 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="Close-up of a smiling woman in professional health-care attire. She looks empathetic and knowledgeable. The background is a crisp white office with subtle wood textures and greenery. The overall aesthetic is one of clean, reliable professional care for SerenityPath." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDznr-CbRavhfqqN0qrlWMF68v84LPj0JPxw1__juMfQcP_yVbXzyJfIeEPRNxpk4dUt9flCbASMos2R6xUDHqJaiv9PoIC8CpqKDq9tNmyVD4mpPufWHhts5p-Hd9AMXZ_kIvb_Yr5dYaLG3FmNqzHORYiEYYlsJeP-gEHkxbEH72Qt56jBP7hhtD19HJeDF_fZIUa0UzVXfNKIMc9wgF3iu8p6s3ToyZ-DwOdeVOSVnZFc7rABRerUlBwLLkZdXREUBwsLCXzZit9"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Amelia Grant</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Wellness Coach</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Specialization 1</p>
+</div>
+<!-- Card 8 -->
+<div class="bg-surface-container-lowest rounded-card p-6 custom-card-shadow flex flex-col items-center text-center group cursor-pointer hover:translate-y-[-4px] transition-all duration-300">
+<div class="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged therapist with a kind, reassuring gaze. He is in a modern, light-filled consultation room. The color scheme features the signature forest green tones. The image conveys wisdom, serenity, and professional integrity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZi4bQ-xfjc-PEkVGXraYhde9CsX4kxno5LjEADVu5CPKMRsTQDjXhmMqqFzCkvbZ68vKF4ZZhoqFesR4xBD5KwX6OPNqLwSOzLR_W-dxUF9IwLK8SEER290Rr13VwbzNcEQJTeLj4ZYwQIjmv64PQuESz6cnaGTps3W4Hsm4roEc0MOBuFEOEediSTYUAgqx77NjZ65usmVxYXxJpjG408EADYTDsXtsHc8jnNpOGdzVgkFMLfS_PMPaBzrG86bOejzQRJpKRtCHV"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Robert Vance</h3>
+<p class="font-body-sm text-body-sm text-primary font-semibold mb-1">Behavioral Analyst</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Specialization 1</p>
+</div>
+</div>
+<div class="mt-8 flex justify-center md:justify-end">
+<button class="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors group">
+                    Show more
+                    <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">expand_more</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-xl max-w-[1280px] mx-auto space-y-md md:space-y-0">
+<div class="flex flex-col items-center md:items-start">
+<img alt="MindBridge" class="h-6 mb-4" src="https://lh3.googleusercontent.com/aida/AP1WRLtMJFZ56cSIcPnM3S6Gq94U3tr6NX9RXnQxY6ah7GMyooCEfYsM5oz_JODTJzwGvAELzMI5z5DHXBMi0XFd-O8Q8PUPliIAF-0vIvQJfUf063VObd910fZI4oQ0QBdqvuCWBt5S9yNZP1j55ObNPBZUTwbjGUpuNyqAtlsdbrL75bx30CLXB0ZqoIS4zD1NrUdrQW375hvHZt7M-VmuzUN0193lRa1F7uUGRNOURrUYc7VcF7PdBL3UZjbG"/>
+<p class="font-body-sm text-body-sm text-secondary text-center md:text-left">
+                    © 2024 SerenityPath. All rights reserved. Your privacy is our priority.
+                </p>
+</div>
+<nav class="flex flex-wrap justify-center gap-6">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Us</a>
+</nav>
+</div>
+</footer>
+<script>
+        // Simple interactive script for the dropdown on mobile or small devices
+        document.querySelectorAll('.group button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const dropdown = btn.nextElementSibling;
+                dropdown.classList.toggle('opacity-0');
+                dropdown.classList.toggle('invisible');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdownContainer = document.querySelector('.group');
+            if (dropdownContainer && !dropdownContainer.contains(e.target)) {
+                const dropdown = dropdownContainer.querySelector('div');
+                if (dropdown) {
+                    dropdown.classList.add('opacity-0');
+                    dropdown.classList.add('invisible');
+                }
+            }
+        });
+    </script>
+</body></html>

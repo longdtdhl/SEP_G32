@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Appointment Summary - MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-fonts">
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FAFBFA;
+      color: #1F2937;
+    }
+  </style>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4E8B70',
+            primaryHover: '#3A6B55',
+            background: '#FAFBFA',
+            card: '#FFFFFF',
+            text: '#1F2937',
+            subtext: '#6B7280',
+            border: '#E5E7EB',
+          },
+          borderRadius: {
+            'card': '20px',
+            'btn': '12px',
+          },
+          boxShadow: {
+            'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background min-h-screen flex flex-col">
+<!-- BEGIN: MainHeader -->
+<header class="bg-white border-b border-border sticky top-0 z-10 px-6 py-4 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-8">
+<!-- Logo -->
+<a class="flex items-center gap-2 text-primary font-bold text-xl" href="#">
+<svg class="w-8 h-8" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        MindBridge
+      </a>
+<!-- Navigation -->
+<nav class="hidden md:flex items-center gap-6 text-sm font-medium text-subtext">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+<a class="hover:text-primary transition-colors" href="#">Specialists</a>
+<a class="hover:text-primary transition-colors" href="#">Schedules</a>
+<a class="hover:text-primary transition-colors" href="#">Case Records</a>
+<a class="text-primary border-b-2 border-primary pb-1" href="#">Appointment List</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative hidden sm:block">
+<svg class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<input class="pl-10 pr-4 py-2 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-48 lg:w-64" placeholder="Search" type="text"/>
+</div>
+<!-- Notifications -->
+<button class="relative p-2 text-subtext hover:bg-gray-100 rounded-full transition-colors">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<!-- Profile Avatar -->
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-border hover:border-primary transition-colors">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL-muRYyuml65ryUUSEfbDmSmbPn4K7WbaAfRz_JNcSph2-qvsoyWzEW67VkkJQVB5tsrAyrf-5Y4jazt8le9pcGlF5p_YxYRlYy0wZjVYoN7rcXHmEyV5spQISd3_D_cIUCS-pLlGJAHZPLy19eTVXCoe9RjxWbENgAhdZgK3XDF-hzyVXw9vZHvq7SbwrtuBZrv_qZdz8eIwNJ5Q5ZwnOmKy4KkDXZFFH3elaeeqY86r2RiUeHOariyloW7842mNdwfwVnsyjoI"/>
+</button>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-grow p-6 md:p-8 lg:p-12 max-w-5xl mx-auto w-full">
+<!-- Back Button & Title -->
+<div class="mb-8 flex flex-col gap-4">
+<a class="inline-flex items-center gap-2 text-subtext hover:text-primary transition-colors w-fit" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Back to Appointments</span>
+</a>
+<h1 class="text-3xl font-bold text-text">Appointment Summary</h1>
+</div>
+<!-- Appointment Info Box -->
+<section class="bg-card rounded-card border border-border p-6 shadow-soft mb-8 flex flex-wrap gap-x-12 gap-y-4 items-center" data-purpose="appointment-details">
+<div class="flex flex-col">
+<span class="text-sm text-subtext font-medium mb-1">Counselor</span>
+<span class="text-text font-semibold">Dr. Sarah Jenkins</span>
+</div>
+<div class="hidden sm:block w-px h-10 bg-border"></div>
+<div class="flex flex-col">
+<span class="text-sm text-subtext font-medium mb-1">Date</span>
+<span class="text-text font-semibold">October 24, 2023</span>
+</div>
+<div class="hidden sm:block w-px h-10 bg-border"></div>
+<div class="flex flex-col">
+<span class="text-sm text-subtext font-medium mb-1">Time</span>
+<span class="text-text font-semibold">10:00 AM - 11:00 AM</span>
+</div>
+</section>
+<!-- Patient Information Details -->
+<div class="bg-card rounded-card border border-border shadow-soft overflow-hidden" data-purpose="patient-summary">
+<!-- Patient Details Header -->
+<div class="px-8 py-6 border-b border-border bg-gray-50/50">
+<h2 class="text-xl font-semibold text-text mb-6">Patient Information</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+<div class="flex flex-col gap-1">
+<span class="text-sm text-subtext font-medium">Full name</span>
+<span class="text-text font-medium">Nguyen Van A</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-sm text-subtext font-medium">Date of Birth</span>
+<span class="text-text font-medium">01/01/2001</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-sm text-subtext font-medium">Gender</span>
+<span class="text-text font-medium">Male</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-sm text-subtext font-medium">Email</span>
+<span class="text-text font-medium">Email@email.com</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-sm text-subtext font-medium">Phone number</span>
+<span class="text-text font-medium">+01 000000000</span>
+</div>
+</div>
+</div>
+<!-- Clinical Information Sections -->
+<div class="p-8 space-y-8">
+<!-- Reason for Visit -->
+<section data-purpose="reason-for-visit">
+<h3 class="text-sm font-semibold text-subtext uppercase tracking-wider mb-3">Reason for Visit</h3>
+<p class="text-text leading-relaxed">
+            Patient reports feeling increasingly overwhelmed and anxious over the past three weeks, particularly in social situations and at work. They mentioned having difficulty concentrating and experiencing occasional sleep disturbances.
+          </p>
+</section>
+<hr class="border-border border-dashed"/>
+<!-- Medical History -->
+<section data-purpose="medical-history">
+<h3 class="text-sm font-semibold text-subtext uppercase tracking-wider mb-3">Medical History</h3>
+<p class="text-text leading-relaxed">
+            No known chronic illnesses. Patient was previously diagnosed with mild depression in 2018, which was managed with cognitive behavioral therapy. Currently not taking any prescription medications.
+          </p>
+</section>
+<hr class="border-border border-dashed"/>
+<!-- Previous Therapy Experience -->
+<section data-purpose="previous-therapy">
+<h3 class="text-sm font-semibold text-subtext uppercase tracking-wider mb-3">Previous Therapy Experience (if any)</h3>
+<p class="text-text leading-relaxed">
+            Attended 12 sessions of CBT in 2018 for mild depression. Patient reported finding the coping mechanisms helpful but feels they need a refresher and new strategies for their current anxiety symptoms.
+          </p>
+</section>
+</div>
+</div>
+<!-- Action Area -->
+<div class="mt-8 flex justify-end">
+<button class="bg-primary hover:bg-primaryHover text-white font-medium py-3 px-6 rounded-btn shadow-soft transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" data-purpose="write-progress-note-btn">
+        Write Progress Note
+      </button>
+</div>
+</main>
+<!-- END: MainContent -->
+</body></html>

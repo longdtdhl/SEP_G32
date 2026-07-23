@@ -1,0 +1,262 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Create Care Package | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#d5e7dd",
+                    "surface-container-low": "#f3f4f3",
+                    "on-primary": "#ffffff",
+                    "surface": "#f8faf9",
+                    "secondary": "#52625a",
+                    "on-secondary-fixed-variant": "#3a4a43",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#438066",
+                    "outline": "#707973",
+                    "inverse-primary": "#95d4b5",
+                    "tertiary-container": "#6b7586",
+                    "on-tertiary-fixed": "#121c2a",
+                    "outline-variant": "#bfc9c2",
+                    "inverse-on-surface": "#f0f1f0",
+                    "surface-dim": "#d9dad9",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#e7e8e7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#d9e3f6",
+                    "surface-container-highest": "#e1e3e2",
+                    "on-primary-container": "#f5fff7",
+                    "on-background": "#191c1c",
+                    "background": "#f8faf9",
+                    "on-surface-variant": "#404943",
+                    "tertiary-fixed-dim": "#bdc7d9",
+                    "secondary-fixed": "#d5e7dd",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f8faf9",
+                    "surface-container": "#edeeed",
+                    "on-surface": "#191c1c",
+                    "primary-fixed": "#b0f0d0",
+                    "secondary-fixed-dim": "#b9cbc1",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#0f1e19",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e1e3e2",
+                    "on-secondary-container": "#586860",
+                    "primary-fixed-dim": "#95d4b5",
+                    "surface-tint": "#2b6950",
+                    "on-tertiary-container": "#fdfcff",
+                    "on-tertiary-fixed-variant": "#3d4756",
+                    "on-primary-fixed": "#002115",
+                    "inverse-surface": "#2e3131",
+                    "tertiary": "#525d6c",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#0c513a",
+                    "primary": "#29674e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "container-max": "1280px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "2xl": "48px",
+                    "xs": "4px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .soft-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .input-focus:focus {
+            outline: none;
+            border-color: #29674e;
+            box-shadow: 0 0 0 3px rgba(41, 103, 78, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface min-h-screen text-on-surface">
+<!-- TopNavBar (Shared Component JSON) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-lg h-20 max-w-container-max mx-auto bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-xl">
+<span class="text-headline-md font-headline-md font-bold text-primary">MindBridge</span>
+<nav class="hidden md:flex gap-lg"><a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 text-label-md font-label-md" href="#">Home</a><a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 text-label-md font-label-md" href="#">Specialists</a><a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 text-label-md font-label-md" href="#">Schedules</a><a class="hover:text-primary transition-colors duration-200 text-label-md font-label-md text-primary font-bold border-b-2 border-primary" href="#">Case Records</a><a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 text-label-md font-label-md" href="#">Appointment List</a></nav>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none text-body-sm w-64 input-focus" placeholder="Search..." type="text">
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly clinical administrator for a mental health platform. The subject is a woman in her late 30s with a warm smile, wearing professional business casual attire. The background is a soft-focus clinical office environment with natural lighting and a calming, professional atmosphere. High-resolution photography with a clean, light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuBj6tvALpu6bO79nZ4Hiri2bb7k2vwuKb9aS-O4zPG2K5aiKuELGOrj2xWxo-qqNJ98kRKannNGZUXo9Qsz5IMpzubBQkDYS-Edoy3szl6OdrucITOWn_OunJayL3698-gidpeqIqojzxn6GOWUYD6LxtlNuilAP_WUm8gSn6yN7zqP6oU8yzkoP98-0apoeEjWN36yApGIsCSpeAiWySu6zNSc6wDlF_aXZlosf03LSg2Fy58fOFpNcs8xhpVhycHT7UrcM7ZYw">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-28 pb-xl px-md max-w-4xl mx-auto">
+<!-- Header Actions -->
+<div class="flex items-center justify-between mb-xl">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-all duration-200" onclick="history.back()">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="text-label-md font-label-md">Back to list</span>
+</button>
+<h1 class="text-headline-md font-headline-md text-on-surface text-center flex-grow pr-20">Care Package Information</h1>
+</div>
+<!-- Form Card Container -->
+<section class="bg-surface-container-lowest rounded-[20px] soft-shadow p-xl border border-outline-variant/30">
+<form action="#" class="space-y-lg" method="POST">
+<!-- Two Column Row for Basic Info -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Package Name -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="package-name">Package Name</label>
+<input class="w-full px-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all" id="package-name" name="package-name" placeholder="e.g., Stress Management Pro" type="text">
+</div>
+<!-- Package Type -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="package-type">Package Type</label>
+<div class="relative">
+<select class="w-full appearance-none px-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all cursor-pointer" id="package-type" name="package-type">
+<option value="specialty">Specialty</option>
+<option value="general">General Counseling</option>
+<option value="intensive">Intensive Care</option>
+<option value="group">Group Therapy</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+</div>
+<!-- One Column Row for Descriptions -->
+<div class="space-y-lg">
+<!-- Description -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="description">Description</label>
+<textarea class="w-full px-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all resize-none" id="description" name="description" placeholder="Briefly describe the therapeutic focus and goals..." rows="4"></textarea>
+</div>
+<!-- Target Condition -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="target-condition">Target Condition</label>
+<textarea class="w-full px-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all resize-none" id="target-condition" name="target-condition" placeholder="Specify conditions like Anxiety, ADHD, or Post-Partum Depression..." rows="3"></textarea>
+</div>
+</div>
+<!-- Two Column Row for Specifics -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Total Sessions -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="sessions">Total Sessions</label>
+<div class="relative">
+<input class="w-full px-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all" id="sessions" name="sessions" placeholder="10" type="number">
+<span class="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant text-body-sm">sessions</span>
+</div>
+</div>
+<!-- Price -->
+<div class="space-y-sm">
+<label class="text-label-md font-label-md text-on-surface-variant block" for="price">Price (USD)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-medium">$</span>
+<input class="w-full pl-8 pr-md py-3 rounded-xl border border-outline-variant bg-surface input-focus text-body-md transition-all" id="price" name="price" placeholder="0.00" type="text">
+</div>
+</div>
+</div>
+<!-- Form Actions -->
+<div class="flex items-center justify-end gap-md pt-xl mt-xl border-t border-outline-variant/30">
+
+<button class="px-2xl py-3 rounded-xl bg-primary text-on-primary font-label-md hover:bg-[#20513e] shadow-md hover:shadow-lg transition-all duration-300 active:scale-95" type="submit">
+                        Recommend
+                    </button>
+</div>
+</form>
+</section>
+<!-- Illustration / Mood area (Modern UI Enhancement) -->
+
+</main>
+<!-- Footer (Shared Component JSON) -->
+<footer class="w-full py-xl px-lg flex flex-col md:flex-row justify-between items-center gap-md bg-surface-container-high border-t border-outline-variant mt-2xl">
+<div class="flex flex-col gap-xs items-center md:items-start">
+<span class="text-label-md font-label-md font-bold text-primary">MindBridge</span>
+<p class="text-body-sm font-body-sm text-on-surface-variant">© 2024 MindBridge Mental Health. Connecting Minds, Supporting Wellbeing.</p>
+</div>
+<div class="flex gap-lg">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Support</a>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for form completion visualization
+        const inputs = document.querySelectorAll('input, select, textarea');
+        const recommendBtn = document.querySelector('button[type="submit"]');
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const filled = Array.from(inputs).every(i => i.value.trim() !== '');
+                if (filled) {
+                    recommendBtn.classList.remove('opacity-80');
+                    recommendBtn.classList.add('shadow-primary/20');
+                }
+            });
+        });
+
+        // Add focus effect to the card on interaction
+        const card = document.querySelector('section');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                card.classList.add('ring-1', 'ring-primary/10');
+            });
+            input.addEventListener('blur', () => {
+                card.classList.remove('ring-1', 'ring-primary/10');
+            });
+        });
+    </script>
+
+
+</body></html>

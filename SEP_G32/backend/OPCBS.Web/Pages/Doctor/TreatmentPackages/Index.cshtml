@@ -1,0 +1,65 @@
+@page
+@model OPCBS.Web.Pages.Doctor.TreatmentPackages.IndexModel
+@{
+    ViewData["Title"] = "Gói trị liệu";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1>Gói trị liệu</h1>
+    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tạo gói mới</a>
+</div>
+
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<div class="row g-3">
+    @if (Model.Packages.Any())
+    {
+        @foreach (var pkg in Model.Packages)
+        {
+            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@pkg.Title</h5>
+                            <span class="badge @(pkg.Status == "Active" ? "bg-success" : "bg-secondary")">@(pkg.Status ?? "N/A")</span>
+                        </div>
+                        <p class="text-muted small">@(pkg.Description ?? "")</p>
+                        <div class="mb-2">
+                            <small class="text-muted">Bệnh nhân: </small><strong>@(pkg.PatientName ?? "Chưa gán")</strong>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">Tiến trình: @pkg.CompletedSessions / @pkg.TotalSessions phiên</small>
+                            <div class="progress mt-1" style="height:6px">
+                                <div class="progress-bar bg-primary" style="width:@(progress)%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">Giá: </small><strong class="text-primary">@pkg.Price.ToString("N0") ₫</strong>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex gap-1">
+                        <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-pencil"></i> Sửa</a>
+                        <form method="post" asp-page-handler="Delete" class="flex-fill">
+                            <input type="hidden" name="id" value="@pkg.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('Xóa gói này?')"><i class="bi bi-trash"></i> Xóa</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="bi bi-box d-block" style="font-size:2rem"></i>
+                    <p class="mt-2">Chưa có gói trị liệu nào</p>
+                    <a asp-page="Create" class="btn btn-primary btn-sm">Tạo gói đầu tiên</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

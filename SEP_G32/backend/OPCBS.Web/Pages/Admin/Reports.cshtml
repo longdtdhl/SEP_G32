@@ -1,0 +1,94 @@
+@page
+@model OPCBS.Web.Pages.Admin.ReportsModel
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header">
+    <h1><i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--mb-primary);"></i>Reports</h1>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(78,139,112,0.1);">
+                    <i class="bi bi-people fs-3" style="color:var(--mb-primary);"></i>
+                </div>
+                <h6 class="fw-bold">User Report</h6>
+                <p class="text-muted small mb-3">Overview of all registered users, roles, and account status.</p>
+                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
+                <!-- TODO: Implement user report export -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(99,102,241,0.1);">
+                    <i class="bi bi-calendar-check fs-3" style="color:#6366f1;"></i>
+                </div>
+                <h6 class="fw-bold">Appointment Report</h6>
+                <p class="text-muted small mb-3">Statistics on appointments, completion rates, and scheduling patterns.</p>
+                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
+                <!-- TODO: Implement appointment report export -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(16,185,129,0.1);">
+                    <i class="bi bi-currency-dollar fs-3 text-success"></i>
+                </div>
+                <h6 class="fw-bold">Revenue Report</h6>
+                <p class="text-muted small mb-3">Subscription revenue, payment history, and financial overview.</p>
+                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
+                <!-- TODO: Implement revenue report export -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(245,158,11,0.1);">
+                    <i class="bi bi-journal-text fs-3 text-warning"></i>
+                </div>
+                <h6 class="fw-bold">Audit Report</h6>
+                <p class="text-muted small mb-3">System activity logs, security events, and admin actions.</p>
+                <a asp-page="AuditLogs/Index" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View Logs</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(236,72,153,0.1);">
+                    <i class="bi bi-heart-pulse fs-3" style="color:#ec4899;"></i>
+                </div>
+                <h6 class="fw-bold">Doctor Performance</h6>
+                <p class="text-muted small mb-3">Ratings, consultation counts, and doctor engagement metrics.</p>
+                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
+                <!-- TODO: Implement doctor performance report -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(59,130,246,0.1);">
+                    <i class="bi bi-graph-up fs-3" style="color:#3b82f6;"></i>
+                </div>
+                <h6 class="fw-bold">Platform Analytics</h6>
+                <p class="text-muted small mb-3">Usage trends, growth metrics, and platform health indicators.</p>
+                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-bar-chart me-1"></i>View Analytics</button>
+                <!-- TODO: Implement platform analytics -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 text-muted small">
+    <i class="bi bi-info-circle me-1"></i>Export and analytics features are coming soon. Currently only audit logs are viewable.
+</div>

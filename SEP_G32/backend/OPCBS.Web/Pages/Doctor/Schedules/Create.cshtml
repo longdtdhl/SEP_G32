@@ -1,0 +1,41 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Schedules.CreateModel
+@{ ViewData["Title"] = "Thêm lịch làm việc"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1>Thêm lịch làm việc</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+</div>
+@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+<div class="card border-0 shadow-sm"><div class="card-body">
+    <form method="post">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Ngày làm việc <span class="text-danger">*</span></label>
+                <div class="d-flex flex-wrap gap-2">
+                    @{ var days = new[] { ("T2", 1), ("T3", 2), ("T4", 4), ("T5", 8), ("T6", 16), ("T7", 32), ("CN", 64) }; }
+                    @foreach (var (name, val) in days)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="SelectedDays" value="@val" id="day_@val" />
+                            <label class="form-check-label" for="day_@val">@name</label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-md-4"><label class="form-label">Giờ bắt đầu</label><input asp-for="Input.StartTime" class="form-control" placeholder="08:00" /></div>
+            <div class="col-md-4"><label class="form-label">Giờ kết thúc</label><input asp-for="Input.EndTime" class="form-control" placeholder="17:00" /></div>
+            <div class="col-md-4">
+                <label class="form-label">Thời lượng slot</label>
+                <select asp-for="Input.SlotDuration" class="form-select">
+                    <option value="30">30 phút</option>
+                    <option value="45">45 phút</option>
+                    <option value="60" selected>60 phút</option>
+                    <option value="90">90 phút</option>
+                    <option value="120">120 phút</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Tạo lịch</button> <a asp-page="Index" class="btn btn-outline-secondary ms-2">Hủy</a></div>
+    </form>
+</div></div>

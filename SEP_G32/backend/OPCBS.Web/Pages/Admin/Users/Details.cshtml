@@ -1,0 +1,133 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Admin.Users.DetailsModel
+@{
+    ViewData["Title"] = "User Details";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+@{ var s = TempData["Success"] as string; var e = TempData["Error"] as string; }
+@if (s != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@s<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (e != null) { <div class="alert alert-warning">@e</div> }
+
+@if (Model.UserDetail == null)
+{
+    <div class="mb-page-header"><h1>User Not Found</h1></div>
+    <div class="text-center py-5 text-muted"><i class="bi bi-person-x d-block mb-2" style="font-size:3rem;"></i><p>The requested user could not be found.</p><a asp-page="Index" class="btn btn-primary"><i class="bi bi-arrow-left me-1"></i>Back to Users</a></div>
+    return;
+}
+
+@{ var u = Model.UserDetail; }
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="mb-0"><i class="bi bi-person-circle me-2" style="color:var(--mb-primary);"></i>User Details</h1>
+    </div>
+    <div class="d-flex gap-2">
+        @if (u.IsActive)
+        {
+            <form method="post" asp-page-handler="Lock" class="d-inline"><input type="hidden" name="id" value="@u.Id" /><button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Lock this account?')"><i class="bi bi-lock me-1"></i>Lock Account</button></form>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Unlock" class="d-inline"><input type="hidden" name="id" value="@u.Id" /><button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Unlock this account?')"><i class="bi bi-unlock me-1"></i>Unlock Account</button></form>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-white mb-3" style="width:80px;height:80px;background:var(--mb-primary);font-size:1.5rem;">
+                    @u.Initials
+                </div>
+                <h5 class="fw-bold mb-1">@u.FullName</h5>
+                <small class="text-muted d-block mb-3">@u.Email</small>
+
+                @{
+                    var roleBadge = u.Role switch
+                    {
+                        "Doctor" => "bg-info",
+                        "SystemAdmin" => "bg-danger",
+                        "CustomerSupport" => "bg-warning text-dark",
+                        "BusinessManager" => "bg-primary",
+                        _ => "bg-secondary"
+                    };
+                }
+                <span class="badge @roleBadge rounded-pill mb-2">@(u.Role ?? "N/A")</span>
+
+                <div class="mt-2">
+                    @if (u.IsActive)
+                    {
+                        <span class="badge bg-success bg-opacity-75 rounded-pill"><i class="bi bi-check-circle me-1"></i>Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger bg-opacity-75 rounded-pill"><i class="bi bi-lock me-1"></i>Locked</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-info-circle me-1"></i>Account Information</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Full Name</label>
+                        <p class="fw-semibold mb-2">@u.FullName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Email</label>
+                        <p class="fw-semibold mb-2">@u.Email</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Phone</label>
+                        <p class="fw-semibold mb-2">@(u.PhoneNumber ?? "—")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Role</label>
+                        <p class="fw-semibold mb-2">@(u.Role ?? "N/A")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Email Verified</label>
+                        <p class="mb-2">
+                            @if (u.EmailConfirmed) { <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Verified</span> }
+                            else { <span class="text-warning fw-semibold"><i class="bi bi-exclamation-circle me-1"></i>Not verified</span> }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Account Status</label>
+                        <p class="mb-2">
+                            @if (u.IsActive) { <span class="text-success fw-semibold">Active</span> }
+                            else { <span class="text-danger fw-semibold">Locked</span> }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">Created</label>
+                        <p class="fw-semibold mb-2">@u.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small mb-0">User ID</label>
+                        <p class="mb-2"><code style="font-size:0.75rem;">@u.Id</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Placeholder -->
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Recent Activity</h6></div>
+            <div class="card-body text-center py-4 text-muted">
+                <i class="bi bi-clock d-block mb-2" style="font-size:2rem;"></i>
+                <p class="mb-0">Activity timeline will be available in a future update.</p>
+                <!-- TODO: Add user-specific audit log endpoint -->
+            </div>
+        </div>
+    </div>
+</div>

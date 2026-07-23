@@ -1,0 +1,380 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MindBridge Admin - Doctor Applications</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#0f1e19",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-surface": "#191c1c",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "inverse-surface": "#2e3131",
+                        "surface-bright": "#f8faf9",
+                        "primary-fixed-dim": "#95d4b5",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e2",
+                        "on-surface-variant": "#404943",
+                        "on-primary-fixed": "#002115",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bfc9c2",
+                        "surface": "#f8faf9",
+                        "on-tertiary-fixed": "#002113",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f0f1f0",
+                        "on-primary-container": "#f5fff7",
+                        "background": "#f8faf9",
+                        "tertiary": "#006947",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "surface-container-low": "#f3f4f3",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-tint": "#2b6950",
+                        "secondary": "#52625a",
+                        "outline": "#707973",
+                        "on-background": "#191c1c",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeed",
+                        "inverse-primary": "#95d4b5",
+                        "tertiary-container": "#00855b",
+                        "on-secondary-container": "#586860",
+                        "secondary-fixed": "#d5e7dd",
+                        "on-tertiary-container": "#f5fff6",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#b0f0d0",
+                        "secondary-container": "#d5e7dd",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#e7e8e7",
+                        "primary-container": "#438066",
+                        "primary": "#29674e",
+                        "surface-dim": "#d9dad9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "2xl": "20px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "section-gap": "80px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "button": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #FAFBFA;
+            color: #191C1C;
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar-active {
+            background-color: #d5e7dd;
+            color: #0c513a;
+            font-weight: 600;
+        }
+        .card-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="w-64 bg-surface-container-lowest border-r border-outline-variant flex flex-col sticky top-0 h-screen"><div class="p-6 flex flex-col h-full">
+    <div class="mb-10">
+        <h2 class="text-primary font-headline-md text-headline-md">MindBridge</h2>
+        <p class="text-on-surface-variant text-body-sm">Admin Portal</p>
+    </div>
+    <nav class="flex-1 flex flex-col gap-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container transition-all">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="text-label-md font-label-md">Dashboard</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl sidebar-active transition-all">
+            <span class="material-symbols-outlined">person_search</span>
+            <span class="text-label-md font-label-md">Doctor Applications</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container transition-all">
+            <span class="material-symbols-outlined">gavel</span>
+            <span class="text-label-md font-label-md">Content Moderation</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container transition-all">
+            <span class="material-symbols-outlined">article</span>
+            <span class="text-label-md font-label-md">Manage Blog</span>
+        </a>
+    </nav>
+    <div class="mt-auto pt-6 border-t border-outline-variant">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold">S</div>
+            <div>
+                <p class="text-body-sm font-semibold text-on-surface">Admin Sarah</p>
+                <p class="text-body-sm text-on-surface-variant">Super Admin</p>
+            </div>
+        </div>
+        <button class="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-error hover:bg-error-container transition-all">
+            <span class="material-symbols-outlined">logout</span>
+            <span class="text-label-md font-label-md">Sign Out</span>
+        </button>
+    </div>
+</div></aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-desktop py-12">
+<header class="mb-10 flex justify-between items-end">
+<div>
+<h1 class="text-headline-xl font-headline-xl text-on-surface">Doctor Applications</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant mt-2">Review and approve new practitioner credentials to ensure community safety.</p>
+</div>
+<div class="flex gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-body-md font-body-md w-64" placeholder="Search applicants..." type="text">
+</div>
+<button class="flex items-center gap-2 bg-white border border-outline-variant px-4 py-2 rounded-xl text-on-surface hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">filter_list</span>
+<span class="text-label-md font-label-md">Filter</span>
+</button>
+</div>
+</header>
+<!-- Stats Overview Row -->
+<section class="grid grid-cols-3 gap-6 mb-8">
+<div class="bg-white p-6 rounded-2xl card-shadow border border-surface-variant">
+<div class="text-on-surface-variant text-label-md font-label-md mb-2">Total Pending</div>
+<div class="text-headline-lg font-headline-lg text-primary">24</div>
+<div class="text-body-sm font-body-sm text-tertiary mt-2">↑ 12% from last week</div>
+</div>
+<div class="bg-white p-6 rounded-2xl card-shadow border border-surface-variant">
+<div class="text-on-surface-variant text-label-md font-label-md mb-2">Approved Today</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">8</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-2">Target: 15 per day</div>
+</div>
+<div class="bg-white p-6 rounded-2xl card-shadow border border-surface-variant">
+<div class="text-on-surface-variant text-label-md font-label-md mb-2">Avg. Response Time</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">4.2h</div>
+<div class="text-body-sm font-body-sm text-error mt-2">↓ 0.5h slower than usual</div>
+</div>
+</section>
+<!-- Data Table Container -->
+<section class="bg-white rounded-2xl card-shadow border border-surface-variant overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="px-8 py-5 text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Full Name</th>
+<th class="px-6 py-5 text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Specialization</th>
+<th class="px-6 py-5 text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Submission Time</th>
+<th class="px-6 py-5 text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-8 py-5 text-label-md font-label-md text-on-surface-variant uppercase tracking-wider text-right">Detail</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Target Row: Mr. A -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold">A</div>
+<div>
+<p class="text-body-md font-semibold text-on-surface">Mr. A</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">alex.m@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md">Clinical Psychologist</span>
+</td>
+<td class="px-6 py-5 text-body-md font-body-md text-on-surface-variant">
+                            May 28, 09:00 - 11:00
+                        </td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-primary font-medium">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-md font-label-md">Under Review</span>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Additional Rows for Context -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed font-bold">B</div>
+<div>
+<p class="text-body-md font-semibold text-on-surface">Dr. Beatrice Chen</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">b.chen@medical.org</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md">Neuro-Psychiatrist</span>
+</td>
+<td class="px-6 py-5 text-body-md font-body-md text-on-surface-variant">
+                            May 28, 10:15 - 12:00
+                        </td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-on-surface-variant font-medium">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="text-label-md font-label-md">Pending Documents</span>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-bold">S</div>
+<div>
+<p class="text-body-md font-semibold text-on-surface">Samwise Thorne</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">sthorne@counsel.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md">Family Therapist</span>
+</td>
+<td class="px-6 py-5 text-body-md font-body-md text-on-surface-variant">
+                            May 27, 16:30 - 18:00
+                        </td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-primary font-medium">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-md font-label-md">Under Review</span>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed-dim flex items-center justify-center text-on-primary-fixed font-bold">K</div>
+<div>
+<p class="text-body-md font-semibold text-on-surface">Dr. Karen Wu</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">karen.wu@clinic.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md">Child Psychology</span>
+</td>
+<td class="px-6 py-5 text-body-md font-body-md text-on-surface-variant">
+                            May 27, 14:00 - 15:30
+                        </td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2 text-on-surface-variant font-medium">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="text-label-md font-label-md">Verification Stage</span>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination Footer -->
+<div class="px-8 py-5 bg-surface-container-low flex justify-between items-center">
+<span class="text-body-sm font-body-sm text-on-surface-variant">Showing 1 to 4 of 24 applications</span>
+<nav class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant text-on-surface-variant hover:bg-white transition-all disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<!-- Target Pagination: 1, 2, 3, 4 -->
+<button class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-white font-bold transition-all shadow-sm">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant text-on-surface hover:bg-white transition-all">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant text-on-surface hover:bg-white transition-all">3</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant text-on-surface hover:bg-white transition-all">4</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant text-on-surface-variant hover:bg-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</nav>
+</div>
+</section>
+<!-- Help Tooltip FAB -->
+<button class="fixed bottom-10 right-10 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform group">
+<span class="material-symbols-outlined">help</span>
+<div class="absolute right-full mr-4 bg-on-surface text-white px-3 py-1.5 rounded-lg text-label-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                Need help with a review?
+            </div>
+</button>
+</main>
+<script>
+        // Simple logic for interactive states
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                document.querySelectorAll('nav a').forEach(l => {
+                    l.classList.remove('sidebar-active');
+                    l.classList.add('text-on-surface-variant');
+                });
+                link.classList.add('sidebar-active');
+                link.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Add visual feedback to buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+
+
+</body></html>

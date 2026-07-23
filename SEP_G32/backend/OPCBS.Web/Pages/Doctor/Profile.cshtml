@@ -1,0 +1,67 @@
+@page
+@model OPCBS.Web.Pages.Doctor.ProfileModel
+@{ ViewData["Title"] = "Hồ sơ cá nhân"; ViewData["UseDashboardLayout"] = true; }
+
+<div class="mb-page-header"><h1>Hồ sơ cá nhân</h1></div>
+
+@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Success != null) { <div class="alert alert-success">@Model.Success</div> }
+
+@if (Model.Profile != null && !Model.IsEditing)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row align-items-center mb-4">
+                <div class="col-auto">
+                    <div style="width:80px;height:80px;border-radius:50%;background:var(--mb-secondary);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--mb-primary)">
+                        @if (!string.IsNullOrEmpty(Model.Profile.AvatarUrl))
+                        { <img src="@Model.Profile.AvatarUrl" class="rounded-circle" width="80" height="80" style="object-fit:cover" /> }
+                        else { <i class="bi bi-person"></i> }
+                    </div>
+                </div>
+                <div class="col">
+                    <h3 class="mb-0">@Model.Profile.FullName</h3>
+                    <span class="badge bg-primary">@(Model.Profile.Role ?? "Doctor")</span>
+                </div>
+                <div class="col-auto">
+                    <a asp-page="Profile" asp-route-edit="true" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+                </div>
+            </div>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-6"><div class="text-muted small">Email</div><div>@Model.Profile.Email</div></div>
+                <div class="col-md-6"><div class="text-muted small">Điện thoại</div><div>@(Model.Profile.PhoneNumber ?? "-")</div></div>
+                <div class="col-md-6"><div class="text-muted small">Giới tính</div><div>@(Model.Profile.Gender ?? "-")</div></div>
+                <div class="col-md-6"><div class="text-muted small">Ngày sinh</div><div>@(Model.Profile.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</div></div>
+                <div class="col-12"><div class="text-muted small">Địa chỉ</div><div>@(Model.Profile.Address ?? "-")</div></div>
+                <div class="col-12"><div class="text-muted small">Ngày tham gia</div><div>@Model.Profile.CreatedAt.ToString("dd/MM/yyyy")</div></div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm"><div class="card-body">
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">Họ tên</label><input asp-for="Input.FullName" class="form-control" /></div>
+                <div class="col-md-6"><label class="form-label">Điện thoại</label><input asp-for="Input.PhoneNumber" class="form-control" /></div>
+                <div class="col-md-6">
+                    <label class="form-label">Giới tính</label>
+                    <select asp-for="Input.Gender" class="form-select">
+                        <option value="">-- Chọn --</option>
+                        <option value="Male">Nam</option>
+                        <option value="Female">Nữ</option>
+                        <option value="Other">Khác</option>
+                    </select>
+                </div>
+                <div class="col-md-6"><label class="form-label">Ngày sinh</label><input type="date" asp-for="Input.DateOfBirth" class="form-control" /></div>
+                <div class="col-12"><label class="form-label">Địa chỉ</label><input asp-for="Input.Address" class="form-control" /></div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                <a asp-page="Profile" class="btn btn-outline-secondary ms-2">Hủy</a>
+            </div>
+        </form>
+    </div></div>
+}

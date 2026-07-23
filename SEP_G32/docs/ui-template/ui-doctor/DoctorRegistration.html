@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Practitioner Verification | MindBridge</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- BEGIN: Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mindbridge: {
+              primary: '#4e8b70',
+              primaryDark: '#3d6d58',
+              surface: '#FAFBFA',
+              border: '#E2E8F0',
+              text: '#1E293B',
+              muted: '#64748B'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'card': '20px',
+            'component': '12px',
+          }
+        }
+      }
+    }
+  </script>
+<!-- END: Tailwind Configuration -->
+<style data-purpose="custom-layout">
+    body {
+      background-color: #FAFBFA;
+      color: #1E293B;
+    }
+    .shadow-soft {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    /* Hide default number stepper appearance for custom styling if needed */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen py-10 px-4">
+<!-- BEGIN: MainContainer -->
+<main class="max-w-3xl mx-auto">
+<!-- BEGIN: FormCard -->
+<section class="bg-white rounded-card shadow-soft border border-gray-100 p-8 md:p-12" data-purpose="verification-form-container">
+<!-- BEGIN: HeaderSection -->
+<div class="flex items-center justify-between mb-10" data-purpose="form-header">
+<button aria-label="Go back" class="p-2 hover:bg-gray-50 rounded-full transition-colors border border-gray-200">
+<svg class="text-mindbridge-muted" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="m15 18-6-6 6-6"></path></svg>
+</button>
+<div class="flex flex-col items-center">
+<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border-4 border-white shadow-sm mb-2 overflow-hidden">
+<!-- Profile Avatar Placeholder -->
+<svg fill="none" height="48" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="48" xmlns="http://www.w3.org/2000/svg"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+</div>
+<h1 class="text-xl font-semibold text-gray-800">Practitioner Verification</h1>
+<p class="text-sm text-mindbridge-muted">Complete your profile to join the network</p>
+</div>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</div>
+<!-- END: HeaderSection -->
+<!-- BEGIN: FormFields -->
+<form class="space-y-6" data-purpose="practitioner-form">
+<!-- Row 1: Name & Title -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="full_name">Full name</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="full_name" name="full_name" placeholder="Dr. Jane Smith" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="job_title">Job Title/Position</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="job_title" name="job_title" placeholder="Clinical Psychologist" type="text"/>
+</div>
+</div>
+<!-- Row 2: License & Specialization & Experience -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="license_1">Practitioner License Number</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="license_1" name="license_1" placeholder="e.g. LIC-12345678" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="specialization">Specialization</label>
+<select class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all appearance-none" id="specialization" name="specialization">
+<option value="">Select...</option>
+<option value="cbt">CBT</option>
+<option value="psychiatry">Psychiatry</option>
+<option value="counseling">Counseling</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="experience">Years of Exp.</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="experience" min="0" name="experience" type="number" value="3"/>
+</div>
+</div>
+</div>
+<!-- Row 3: Phone & Secondary License Field (matching wireframe) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="phone">Phone number</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="phone" name="phone" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="license_2">Practitioner License Number</label>
+<input class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all" id="license_2" name="license_2" placeholder="Secondary ID (if applicable)" type="text"/>
+</div>
+</div>
+<!-- Professional Summary -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-gray-700" for="bio">Professional Summary (Bio)</label>
+<textarea class="w-full px-4 py-3 rounded-component border-gray-200 focus:ring-mindbridge-primary focus:border-mindbridge-primary transition-all resize-none" id="bio" name="bio" placeholder="Briefly describe your approach and professional background..." rows="4"></textarea>
+</div>
+<!-- Upload Zones -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+<!-- License Upload -->
+<div class="space-y-3">
+<p class="text-sm font-medium text-gray-700">Practitioner License</p>
+<div class="border-2 border-dashed border-gray-200 rounded-component p-8 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" data-purpose="upload-zone">
+<svg class="text-mindbridge-primary mb-3" fill="none" height="32" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M12 13v8"></path><path d="M8 17l4-4 4 4"></path></svg>
+<button class="bg-white border border-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:shadow-sm transition-all mb-1" type="button">Choose files to Upload</button>
+<p class="text-xs text-mindbridge-muted">or drag and drop them here</p>
+</div>
+</div>
+<!-- Degree Upload -->
+<div class="space-y-3">
+<p class="text-sm font-medium text-gray-700">Academic Degrees</p>
+<div class="border-2 border-dashed border-gray-200 rounded-component p-8 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" data-purpose="upload-zone">
+<svg class="text-mindbridge-primary mb-3" fill="none" height="32" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path><path d="M12 13v8"></path><path d="M8 17l4-4 4 4"></path></svg>
+<button class="bg-white border border-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:shadow-sm transition-all mb-1" type="button">Choose files to Upload</button>
+<p class="text-xs text-mindbridge-muted">or drag and drop them here</p>
+</div>
+</div>
+</div>
+<!-- Certification & Submit -->
+<div class="pt-6 space-y-6">
+<div class="flex items-start gap-3">
+<div class="flex items-center h-5">
+<input class="h-5 w-5 rounded border-gray-300 text-mindbridge-primary focus:ring-mindbridge-primary" id="certify" name="certify" type="checkbox"/>
+</div>
+<label class="text-sm text-gray-600 leading-snug" for="certify">
+              I certify that all provided documents and information are accurate. I have read and agreed to the <a class="text-mindbridge-primary hover:underline font-medium" href="#">Terms of Service</a> and <a class="text-mindbridge-primary hover:underline font-medium" href="#">Practitioner Ethics Policy</a>.
+            </label>
+</div>
+<div class="flex justify-end pt-4">
+<button class="w-full md:w-auto px-8 py-3 bg-mindbridge-primary hover:bg-mindbridge-primaryDark text-white font-semibold rounded-component shadow-md hover:shadow-lg transform active:scale-95 transition-all" type="submit">
+              Submit for Verification
+            </button>
+</div>
+</div>
+</form>
+<!-- END: FormFields -->
+</section>
+<!-- END: FormCard -->
+<!-- Footer Branding -->
+<footer class="mt-8 text-center" data-purpose="page-footer">
+<p class="text-sm text-mindbridge-muted">© 2023 MindBridge Professional Network. All rights reserved.</p>
+</footer>
+</main>
+<!-- END: MainContainer -->
+</body></html>

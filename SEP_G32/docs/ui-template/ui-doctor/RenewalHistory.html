@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Subscription History | MindBridge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "secondary-container": "#d5e7dd",
+                "secondary-fixed-dim": "#b9cbc1",
+                "inverse-primary": "#95d4b5",
+                "background": "#f8faf6",
+                "primary": "#29674e",
+                "surface-container-low": "#f2f4f0",
+                "on-tertiary-container": "#fffbff",
+                "on-error": "#ffffff",
+                "on-tertiary-fixed": "#390b0d",
+                "outline": "#707973",
+                "surface-container": "#eceeea",
+                "on-tertiary": "#ffffff",
+                "secondary": "#52625a",
+                "surface-bright": "#f8faf6",
+                "on-primary-fixed-variant": "#0c513a",
+                "surface-dim": "#d8dbd7",
+                "primary-container": "#438066",
+                "surface-variant": "#e1e3df",
+                "on-tertiary-fixed-variant": "#6f3535",
+                "surface-tint": "#2b6950",
+                "error-container": "#ffdad6",
+                "outline-variant": "#bfc9c2",
+                "tertiary": "#894a49",
+                "surface-container-lowest": "#ffffff",
+                "secondary-fixed": "#d5e7dd",
+                "primary-fixed": "#b0f0d0",
+                "surface": "#f8faf6",
+                "on-primary-fixed": "#002115",
+                "tertiary-fixed": "#ffdad8",
+                "on-primary": "#ffffff",
+                "surface-container-highest": "#e1e3df",
+                "primary-fixed-dim": "#95d4b5",
+                "on-secondary-fixed": "#0f1e19",
+                "error": "#ba1a1a",
+                "surface-container-high": "#e7e9e5",
+                "on-surface": "#191c1a",
+                "tertiary-container": "#a66261",
+                "inverse-on-surface": "#eff1ed",
+                "inverse-surface": "#2e312f",
+                "on-surface-variant": "#404943",
+                "on-secondary-fixed-variant": "#3a4a43",
+                "on-background": "#191c1a",
+                "tertiary-fixed-dim": "#ffb3b1",
+                "on-secondary-container": "#586860",
+                "on-primary-container": "#f5fff7",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "2xl": "20px",
+                "full": "9999px"
+            },
+            "spacing": {
+                "section-gap": "80px",
+                "stack-sm": "8px",
+                "margin-desktop": "40px",
+                "container-max-width": "1200px",
+                "stack-lg": "32px",
+                "unit": "4px",
+                "margin-mobile": "16px",
+                "gutter": "24px",
+                "stack-md": "16px"
+            },
+            "fontFamily": {
+                "body-lg": ["Inter"],
+                "headline-xl": ["Inter"],
+                "headline-lg": ["Inter"],
+                "label-sm": ["Inter"],
+                "body-sm": ["Inter"],
+                "body-md": ["Inter"],
+                "label-md": ["Inter"],
+                "headline-md": ["Inter"]
+            },
+            "fontSize": {
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8faf6; color: #191c1a; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
+        .transition-standard { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-container-max-width mx-auto">
+<div class="flex items-center gap-stack-lg">
+<span class="font-headline-md text-headline-md font-bold text-primary">MindBridge</span>
+<div class="hidden md:flex gap-stack-md ml-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Blog</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Specialists</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-md text-body-md" href="#">My Package</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">My Appointments</a>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="relative hidden lg:block">
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full w-64 focus:ring-2 focus:ring-primary/20 text-body-sm font-body-sm transition-standard" placeholder="Search resources..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+<button class="p-2 hover:bg-secondary-container/50 rounded-lg transition-standard">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional close-up studio portrait of a friendly woman with a warm smile, wearing business casual attire. The background is a soft, out-of-focus wellness clinic environment with natural lighting and a calming emerald green color palette to match the MindBridge brand identity. High-quality digital photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZoqtDzZUqwMolPjLYAqbs62lUab93euVClMhSDiywCOSvudb7gZhnLP7t6OpsoGyFShcIAVTW3ez-lqYUDqVzcgDArm3tzHJmyr52Mexzjx9sFUc5ucl-Q2-iqpBRiFisQchQvOikNx2VCvg3yk5qw-w5R54lDXwAOE89tVTEzmE8ApAhEwuR98qOu_sV4z37Tzulv_duWu_H-WZrC4ysw-po_wzRf4LKU-GT77dp_lFBQU8-EGy7I6lAikp50EXZJtcyWD7_A4I"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max-width mx-auto px-margin-desktop py-12">
+<!-- Header Section -->
+<div class="mb-stack-lg flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
+<div class="flex items-center gap-stack-md">
+<button class="p-2 hover:bg-secondary-container/50 rounded-full transition-standard text-primary" onclick="history.back()">
+<span class="material-symbols-outlined font-bold">arrow_back</span>
+</button>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Subscription History</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Review your past transactions and plan renewals.</p>
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-label-md text-label-md text-on-surface-variant">Filter by:</span>
+<div class="relative">
+<select class="appearance-none bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2 pr-10 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-standard cursor-pointer">
+<option>All Statuses</option>
+<option>Successful</option>
+<option>Pending</option>
+<option>Failed</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-surface-container">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="px-8 py-5 font-label-md text-label-md text-on-surface-variant">Transaction ID</th>
+<th class="px-8 py-5 font-label-md text-label-md text-on-surface-variant">Date</th>
+<th class="px-8 py-5 font-label-md text-label-md text-on-surface-variant">Duration</th>
+<th class="px-8 py-5 font-label-md text-label-md text-on-surface-variant">Amount</th>
+<th class="px-8 py-5 font-label-md text-label-md text-on-surface-variant text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<!-- Row 1 -->
+<tr class="hover:bg-background transition-standard group">
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-medium text-on-surface">#1</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">calendar_today</span>
+<span class="font-body-md text-body-md text-on-surface-variant">May 28, 2026</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+                                1 Month
+                            </span>
+</td>
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-bold text-primary">100,000 ₫</span>
+</td>
+<td class="px-8 py-6 text-right">
+<button class="text-primary hover:bg-primary-container/10 px-4 py-2 rounded-lg transition-standard font-label-md text-label-md">
+                                Receipt
+                            </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-background transition-standard group">
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-medium text-on-surface">#2</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">calendar_today</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Jan 28, 2026</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-primary-fixed-dim/20 text-on-primary-fixed-variant font-label-sm text-label-sm">
+                                3 Months
+                            </span>
+</td>
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-bold text-primary">250,000 ₫</span>
+</td>
+<td class="px-8 py-6 text-right">
+<button class="text-primary hover:bg-primary-container/10 px-4 py-2 rounded-lg transition-standard font-label-md text-label-md">
+                                Receipt
+                            </button>
+</td>
+</tr>
+<!-- Row 3 (Placeholder for visual depth) -->
+<tr class="hover:bg-background transition-standard group">
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-medium text-on-surface">#3</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-outline text-[20px]">calendar_today</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Oct 15, 2025</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+                                1 Month
+                            </span>
+</td>
+<td class="px-8 py-6">
+<span class="font-body-md text-body-md font-bold text-primary">100,000 ₫</span>
+</td>
+<td class="px-8 py-6 text-right">
+<button class="text-primary hover:bg-primary-container/10 px-4 py-2 rounded-lg transition-standard font-label-md text-label-md">
+                                Receipt
+                            </button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Empty state filler (optional visual touch) -->
+<div class="bg-surface-container-lowest h-24 border-t border-surface-container"></div>
+</div>
+<!-- Pagination Section -->
+<div class="mt-stack-lg flex justify-center">
+<nav class="inline-flex items-center bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<button class="px-4 py-3 hover:bg-surface-container-low text-outline transition-standard">
+<span class="material-symbols-outlined align-middle">keyboard_double_arrow_left</span>
+</button>
+<button class="px-6 py-3 bg-primary text-on-primary font-bold transition-standard">1</button>
+<button class="px-6 py-3 hover:bg-surface-container-low text-on-surface font-medium transition-standard border-l border-outline-variant">2</button>
+<button class="px-6 py-3 hover:bg-surface-container-low text-on-surface font-medium transition-standard border-l border-outline-variant">3</button>
+<button class="px-6 py-3 hover:bg-surface-container-low text-on-surface font-medium transition-standard border-l border-outline-variant">4</button>
+<button class="px-4 py-3 hover:bg-surface-container-low text-outline transition-standard border-l border-outline-variant">
+<span class="material-symbols-outlined align-middle">keyboard_double_arrow_right</span>
+</button>
+</nav>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant mt-section-gap">
+<div class="w-full px-margin-desktop py-stack-lg max-w-container-max-width mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-stack-lg mb-stack-lg">
+<div class="col-span-1 lg:col-span-2">
+<span class="font-headline-sm text-headline-sm font-bold text-primary block mb-stack-sm">MindBridge</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+                        © 2024 MindBridge. All rights reserved. Providing a sanctuary for mental wellness through compassionate clarity.
+                    </p>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface font-bold mb-stack-md uppercase tracking-wider">Resources</h4>
+<ul class="space-y-stack-sm">
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">About Our Specialists</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Crisis Resources</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Contact Us</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface font-bold mb-stack-md uppercase tracking-wider">Legal</h4>
+<ul class="space-y-stack-sm">
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all" href="#">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple interactivity for demonstration
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if(!e.target.closest('button')) {
+                    // Logic for selecting a row could go here
+                }
+            });
+        });
+
+        // Dropdown simulation
+        const filterSelect = document.querySelector('select');
+        filterSelect.addEventListener('change', (e) => {
+            console.log('Filtering by:', e.target.value);
+            // Integration logic here
+        });
+    </script>
+</body></html>

@@ -1,0 +1,11 @@
+@* Empty state partial — pass ViewData["EmptyIcon"], ViewData["EmptyTitle"], ViewData["EmptyMessage"] *@
+@{
+    var icon = ViewData["EmptyIcon"] as string ?? "bi-inbox";
+    var title = ViewData["EmptyTitle"] as string ?? "No data found";
+    var message = ViewData["EmptyMessage"] as string ?? "There are no items to display at this time.";
+}
+<div class="mb-empty-state">
+    <i class="bi @icon d-block"></i>
+    <h5>@title</h5>
+    <p>@message</p>
+</div>

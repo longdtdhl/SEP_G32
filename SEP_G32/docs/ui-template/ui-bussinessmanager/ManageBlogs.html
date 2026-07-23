@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Manage Blogs | MindBridge Admin Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "background": "#f8faf9",
+                        "secondary-container": "#d5e7dd",
+                        "on-tertiary-container": "#f5fff6",
+                        "surface-bright": "#f8faf9",
+                        "surface-dim": "#d9dad9",
+                        "outline-variant": "#bfc9c2",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#00855b",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "secondary": "#52625a",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary-container": "#586860",
+                        "outline": "#707973",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-container-high": "#e7e8e7",
+                        "surface-tint": "#2b6950",
+                        "secondary-fixed": "#d5e7dd",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f0f1f0",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#f5fff7",
+                        "surface": "#f8faf9",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-surface": "#191c1c",
+                        "surface-container": "#edeeed",
+                        "secondary-fixed-dim": "#b9cbc1",
+                        "primary-container": "#438066",
+                        "primary-fixed-dim": "#95d4b5",
+                        "tertiary": "#006947",
+                        "surface-variant": "#e1e3e2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#002115",
+                        "inverse-primary": "#95d4b5",
+                        "inverse-surface": "#2e3131",
+                        "primary": "#29674e",
+                        "on-primary-fixed-variant": "#0c513a",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#0f1e19",
+                        "on-tertiary-fixed": "#002113",
+                        "on-secondary-fixed-variant": "#3a4a43",
+                        "on-surface-variant": "#404943",
+                        "surface-container-low": "#f3f4f3",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#b0f0d0",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c1c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "section-gap": "80px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "button": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f8faf9;
+            color: #191c1c;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen bg-background">
+<!-- SideNavBar Anchor -->
+<aside class="h-full w-64 fixed left-0 top-0 flex flex-col p-4 border-r border-outline-variant/30 bg-surface z-50">
+<div class="mb-10 px-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">MindBridge</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">how_to_reg</span>
+<span class="font-label-md text-label-md">Doctor Applications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-secondary-container/50 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">gavel</span>
+<span class="font-label-md text-label-md">Content Moderation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-secondary-container rounded-xl font-bold scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="font-label-md text-label-md">Manage Blog</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/30 pt-4 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of an administrative professional in a bright, modern office. Soft natural light illuminates her friendly face, set against a background of minimalist healthcare design. High-end editorial photography style with soft focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgXIau5gAFQ85PFQ4gDPBXs_uyEWuE5I3nvKMaMLp_Vne-w_DG-SeJ4bSdR6VyOgBA40gFq6iwDNVfjg5UApKJNKJWrqKE5ibokasm8nTN_mHhpvPzKretKB2uq12dSizonRGHRkJiRT38NT5fhloYZ1-A4cP2dIfCSbxkRpSI9YnledMleaznlx67_6-M6yeHT7N5BT4nS_FTlWfI_ywBDFpaqB6PDGVH8i7fjV-B4orAtnOhb060KvGCypxQumQYf7O-ThbURNQ"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold">Admin Sarah</span>
+<span class="text-[12px] text-on-surface-variant">Super Admin</span>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-error transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Anchor -->
+<header class="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-primary">Manage Blogs</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search posts..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-secondary-container/50 text-on-surface-variant transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-secondary-container/50 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<section class="p-8 max-w-[1400px] mx-auto w-full">
+<!-- Action Bar -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+<div class="space-y-1">
+<h3 class="font-headline-md text-headline-md">Post Library</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Organize and curate your platform's editorial content.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-6 py-3 bg-secondary-container text-primary font-button text-button rounded-xl hover:bg-secondary-container/80 transition-all active:scale-95">
+<span class="material-symbols-outlined">filter_list</span>
+                        Filters
+                    </button>
+<button class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary font-button text-button rounded-xl hover:bg-primary/90 transition-all shadow-md hover:shadow-lg active:scale-95">
+<span class="material-symbols-outlined">add</span>
+                        Create New Post
+                    </button>
+</div>
+</div>
+<!-- Wireframe Context Reference -->
+<div class="mb-10 rounded-2xl overflow-hidden border border-outline-variant/30 glass-card">
+<div class="p-4 bg-surface-container-low flex items-center justify-between">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Layout Overview</span>
+<span class="material-symbols-outlined text-outline">info</span>
+</div>
+<img alt="Layout wireframe visualization" class="w-full object-cover max-h-48 opacity-60 mix-blend-multiply" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9Fr8K2wjXyy66o59Oy8_fATI-2ARWKYO_NJ40LuslFCkmfSiXNv4GVrEmPjadNJzS8LCE03CsuCOgW4coMZY42Q1GjLzI4jiHVAYbdtcdvMoXYXDuYLhAv8jD3GajbeL92utdkN-e3Y-Zq1n1UpkmwvZI8TR28JhF1p8fPOw4TkSCRJ8Nr4z-Eo7Rw3sH4fcDOhXQkOZ-wh2ML8qjUkf3Rx29K0whFj-svqC66VMQddd3dxTKSnRiwqon5F2-j7Ze8bj0B7ktYMI"/>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-3 mb-6 overflow-x-auto scrollbar-hide pb-2">
+<button class="px-5 py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md whitespace-nowrap">All Posts</button>
+<button class="px-5 py-2 bg-surface-container-highest text-on-surface rounded-full text-label-md font-label-md hover:bg-secondary-container transition-colors whitespace-nowrap">Anxiety</button>
+<button class="px-5 py-2 bg-surface-container-highest text-on-surface rounded-full text-label-md font-label-md hover:bg-secondary-container transition-colors whitespace-nowrap">Stress Management</button>
+<button class="px-5 py-2 bg-surface-container-highest text-on-surface rounded-full text-label-md font-label-md hover:bg-secondary-container transition-colors whitespace-nowrap">Wellness</button>
+<button class="px-5 py-2 bg-surface-container-highest text-on-surface rounded-full text-label-md font-label-md hover:bg-secondary-container transition-colors whitespace-nowrap">Clinical Research</button>
+</div>
+<!-- Data Table Container -->
+<div class="glass-card rounded-2xl overflow-hidden border border-outline-variant/20">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/30">
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Post Title</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Author</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Category</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Date Published</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Status</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A calming image of a Zen garden with smooth stones and raked sand, symbolizing peace and mental clarity. Soft morning light, pastel greens and grays, minimalist healthcare aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw-C4ZFn6-1ao03ZmG_pIsQLMPKH94kzpXtdKVfVAimz8hXNS0WnuFNAlbu3xrTrpsTN4YRLnqm_CXxqWDSE02P1bGw3-JyfHFx535aF9AZxO3J-F_3-3TzwFuul9xXwjnxPEp_6hsmT7AWEy2nH5_IhJ4_8wmMd1A0p8pFrgGm_ORdm6XU8NABbmuhlGrqmrlPFjPv-Y1ugR_IC3YfSshLUff4oC4zLGuKfjcuIxaNiE7jlPqdh6-qrc1S7-5E0csCaJ80Khfa2U"/>
+</div>
+<span class="font-body-md text-body-md font-semibold text-primary group-hover:underline cursor-pointer">Understanding Anxiety in Young Adults</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container">
+<img class="w-full h-full object-cover rounded-full" data-alt="A warm, professional portrait of a male doctor in his 40s. He wears a clean white coat and a friendly smile, set against a blurred medical facility background with soft blue tones. Professional lighting, high-end commercial photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCN6-EyYbrDWHy2HM1PIcqM3dREEWyd2XK_tnCa6C-5SAljh1ueqPqRWaEP9xwPlQams3T7j78Wcf8N5JMHMrTZb0Rt55XvCLbGvYKaBWGawslDDFom1CVuNiJUkQBBq06f1vQLczdf9XAabmd6z8XDktQtFaIIBUo6hcUKzREqOwrqCLAI1Banzv54-StkJJmsx44q9BoapQ3-Nw9cvCl8TTwNLeH5CVjTn-3KtOKfLorzku8xI73t_C2TEokJixkZVuCyrBiTQww"/>
+</div>
+<span class="font-body-sm text-body-sm">Dr. Marcus Chen</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container/50 text-on-secondary-container rounded-full text-[12px] font-bold">Anxiety</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 12, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-tertiary-fixed/30 text-tertiary rounded-full text-[12px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                        Published
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-surface-container-highest rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up of a person meditating in a bright, airy sunlit room. Soft textiles, a small plant in the background, warm golden hour lighting creating a feeling of serenity and wellness. Minimalist and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLCuiFoEDHpB4EOX54pCyUxVGAFEDA3_QottE7LN895BMsbNK7bO5sriUMLnwaleei2O4vnq55gnDRqncxhxMWgFs8zWsaI8ounsp29bC9v7uDIElHVNaN4IlHdNakk6Bq5qffKKcNsOD8cfra9EnxPGMXZbzPc0lxjyvwlZcDxscmy3XWd42HiZk1YS9Irq6dFmaulobEspVVBnVCEKDPS-DbmMrZiS6jt6Y1y5pv6lVY6ek4kHA52twlNc3gI40Hg0CFgsxQInA"/>
+</div>
+<span class="font-body-md text-body-md font-semibold text-primary group-hover:underline cursor-pointer">5 Daily Habits for Better Mental Wellness</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container">
+<img class="w-full h-full object-cover rounded-full" data-alt="Professional headshot of a female therapist in her 30s. Soft lighting, neutral background, wearing a professional green blazer. Clear, high-resolution photography with a compassionate and trustworthy vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdVeVSZiuu3zURH-rHAUVyRMG0d_c6kNt0q5CyQdBGnWGbWSdvoETcM5RITizbcawcq3osiqJkhcxL8UyRYgWZjPZ0zKbPZc8JgYeZcrsD4L4rlStgVHRYWUgE8kTrGbcZqrNY7sFK5H6JyckOhqnhgT94x9pP6xPv0GDtbpFhUXVxaMu28LyYnK9HxEzAfRUzP46J3o1r9rwgLSsjtJRVM_oeuq80NiD-byqQPTbQoqsX_L4P4C4TVNm7dvwnUJDtPsewnzX0Q3U"/>
+</div>
+<span class="font-body-sm text-body-sm">Sarah Jenkins</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container/50 text-on-secondary-container rounded-full text-[12px] font-bold">Wellness</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 14, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-outline-variant/30 text-outline rounded-full text-[12px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                        Draft
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-surface-container-highest rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A stylized digital illustration of a brain with glowing nodes, representing neuroplasticity and cognitive health. Deep teal and mint green color palette, soft glowing effects on a clean light background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRQgdOBWRpSYdcmGBpp7xwVHPE00-yuhg5zp71oQiyboHrZ24r3_RtqMvCiI236ZATXsFTlpcbs4DI5TRCMHYOYlGJASS-ztbZQn8zzaWIyr3yEZ7uJsKYCZldNlO-W5V7F2RyzvZBLPiq9JUBmCWh8zR1LfGbzSF2KZHt7EBihkFQtq_4ivdgDzmTIW5t1Z0gLK524a__VJTIc1lcjAlhfcTl2R-ILcfxlK8qy4IIvyWuawQxe78canfzmbEN4ujQv8w7HGGijXI"/>
+</div>
+<span class="font-body-md text-body-md font-semibold text-primary group-hover:underline cursor-pointer">The Science of Stress and Resilience</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-[10px] font-bold">AL</div>
+<span class="font-body-sm text-body-sm">Alex Lomax</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container/50 text-on-secondary-container rounded-full text-[12px] font-bold">Stress</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Scheduled: Oct 20</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-fixed-dim/30 text-primary rounded-full text-[12px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim"></span>
+                                        Scheduled
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-surface-container-highest rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Modern workspace with ergonomic chair and a laptop, very clean and bright. A small succulent plant sits on the desk. Minimalist style, high key lighting, healthcare office aesthetics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIyrloIs3vTI-yzCrzYpxEyytKHK4Ob-ARRD54O-6WsOYa85FPzDBpBy-uoRMsu8VexzPUNbgdpUheA3nk65fEmIkFcxOpczau-dzq5USh178PpqPVTR2J487AtE7EA2YnFM4igVYRsagWWUZLCuD84m58nqhkAtmED6mAfn8qWf16NPGx8RJ4yKSV_0S_nB0wX-60D1Ru1pHI1kWMYZ_bbMr8gGljtfyg3NXPHkvAGKh28pyAGwozsfmR1Y0ad4XKNkzAnlQ5rFo"/>
+</div>
+<span class="font-body-md text-body-md font-semibold text-primary group-hover:underline cursor-pointer">Work-Life Balance: Tips for Remote Workers</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-[10px] font-bold">RW</div>
+<span class="font-body-sm text-body-sm">Rita Wong</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container/50 text-on-secondary-container rounded-full text-[12px] font-bold">Wellness</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Sep 28, 2023</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-tertiary-fixed/30 text-tertiary rounded-full text-[12px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                        Published
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-surface-container-highest rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing 1 to 10 of 42 posts</span>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 hover:bg-surface-container-highest transition-colors disabled:opacity-50">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold text-sm">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors font-bold text-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors font-bold text-sm">3</button>
+<span class="text-on-surface-variant px-1">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors font-bold text-sm">5</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Dashboard Stats Summary -->
+<div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="p-6 glass-card rounded-2xl border border-outline-variant/20 flex flex-col gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Total Published</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-lg text-headline-lg">128</span>
+<span class="text-primary font-bold text-sm mb-1">+4 this month</span>
+</div>
+</div>
+<div class="p-6 glass-card rounded-2xl border border-outline-variant/20 flex flex-col gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Drafts</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-lg text-headline-lg">14</span>
+</div>
+</div>
+<div class="p-6 glass-card rounded-2xl border border-outline-variant/20 flex flex-col gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Pending Review</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-lg text-headline-lg text-error">3</span>
+</div>
+</div>
+<div class="p-6 glass-card rounded-2xl border border-outline-variant/20 flex flex-col gap-2">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Scheduled</span>
+<div class="flex items-end gap-2">
+<span class="font-headline-lg text-headline-lg text-tertiary">8</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Toast Notification Area (Micro-interaction example) -->
+<div class="fixed bottom-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none" id="toast-container"></div>
+</main>
+<script>
+        // Simple Micro-interaction: Toast notification for demo
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto bg-on-surface text-surface px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce-in';
+            toast.innerHTML = `
+                <span class="material-symbols-outlined text-tertiary-fixed">check_circle</span>
+                <span class="font-body-sm font-semibold">${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // Add bounce-in animation
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bounce-in {
+                0% { transform: translateY(100%) scale(0.9); opacity: 0; }
+                50% { transform: translateY(-10%) scale(1.05); opacity: 1; }
+                100% { transform: translateY(0) scale(1); opacity: 1; }
+            }
+            .animate-bounce-in {
+                animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Dummy action for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            if (btn.innerText.includes('Create New Post')) {
+                btn.addEventListener('click', () => showToast('Opening post editor...'));
+            }
+        });
+    </script>
+</body></html>

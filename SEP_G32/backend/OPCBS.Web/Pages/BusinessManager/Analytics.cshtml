@@ -1,0 +1,104 @@
+@page
+@model OPCBS.Web.Pages.BusinessManager.AnalyticsModel
+@{
+    ViewData["Title"] = "Analytics";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header"><h1><i class="bi bi-graph-up me-2" style="color:var(--mb-primary);"></i>Analytics Overview</h1></div>
+@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
+            <i class="bi bi-currency-dollar fs-3 text-success d-block mb-1"></i>
+            <small class="text-muted d-block">Total Revenue</small>
+            <h4 class="mb-0 fw-bold">@Model.Stats.TotalRevenue.ToString("N0")</h4>
+            <small class="text-muted">VND</small>
+        </div></div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
+            <i class="bi bi-people fs-3 d-block mb-1" style="color:var(--mb-primary);"></i>
+            <small class="text-muted d-block">Total Users</small>
+            <h4 class="mb-0 fw-bold">@Model.Stats.TotalUsers</h4>
+        </div></div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
+            <i class="bi bi-calendar-check fs-3 d-block mb-1" style="color:#6366f1;"></i>
+            <small class="text-muted d-block">Appointments</small>
+            <h4 class="mb-0 fw-bold">@Model.Stats.TotalAppointments</h4>
+        </div></div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body text-center py-3">
+            <i class="bi bi-credit-card fs-3 d-block mb-1" style="color:#ec4899;"></i>
+            <small class="text-muted d-block">Subscriptions</small>
+            <h4 class="mb-0 fw-bold">@Model.Stats.ActiveSubscriptions</h4>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Revenue Chart Placeholder -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-1"></i>Revenue Trend</h6></div>
+            <div class="card-body text-center py-5">
+                <div style="height:200px;display:flex;align-items:flex-end;justify-content:center;gap:12px;">
+                    @{ var bars = new[] { 45, 60, 35, 80, 65, 90, 75, 55, 85, 70, 95, 60 }; var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }; }
+                    @for (int i = 0; i < 12; i++)
+                    {
+                        <div class="text-center">
+                            <div style="width:28px;height:@(bars[i] * 2)px;background:linear-gradient(to top,var(--mb-primary),rgba(78,139,112,0.5));border-radius:4px 4px 0 0;" title="@months[i]"></div>
+                            <small class="text-muted d-block mt-1" style="font-size:0.65rem;">@months[i]</small>
+                        </div>
+                    }
+                </div>
+                <small class="text-muted mt-3 d-block"><i class="bi bi-info-circle me-1"></i>Sample visualization. Connect to analytics API for real data.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Packages -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-semibold"><i class="bi bi-gem me-1"></i>Top Packages</h6></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @foreach (var pkg in Model.Packages.OrderByDescending(p => p.Price).Take(5))
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                            <div>
+                                <span class="fw-medium small">@pkg.Name</span>
+                                <small class="text-muted d-block">@pkg.DurationDays days</small>
+                            </div>
+                            <span class="fw-bold small" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") VND</span>
+                        </li>
+                    }
+                    @if (!Model.Packages.Any()) { <li class="list-group-item text-center text-muted py-3">No data</li> }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Specialization Distribution -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white"><h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-1"></i>Specialization Distribution</h6></div>
+    <div class="card-body">
+        <div class="row g-3">
+            @foreach (var spec in Model.Specializations)
+            {
+                var pct = Model.Stats.TotalDoctors > 0 ? (int)((double)spec.DoctorCount / Model.Stats.TotalDoctors * 100) : 0;
+                <div class="col-md-6 col-xl-4">
+                    <div class="d-flex justify-content-between small mb-1"><span class="fw-medium">@spec.Name</span><span class="text-muted">@spec.DoctorCount doctors (@pct%)</span></div>
+                    <div class="progress" style="height:6px;"><div class="progress-bar" style="width:@(Math.Max(pct, 5))%;background:var(--mb-primary);"></div></div>
+                </div>
+            }
+            @if (!Model.Specializations.Any()) { <div class="col-12 text-center text-muted py-3">No specializations data</div> }
+        </div>
+    </div>
+</div>
