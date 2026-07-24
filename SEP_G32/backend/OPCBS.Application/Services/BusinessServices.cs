@@ -291,8 +291,12 @@ public class ReviewService : IReviewService
 
     public async Task<ApiResponse<List<ReviewDto>>> GetDoctorReviewsAsync(Guid doctorProfileId, int page, int pageSize, CancellationToken ct)
     {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == doctorProfileId || d.UserId == doctorProfileId);
+        var docId = doctor?.Id ?? doctorProfileId;
+
         var all = await _reviewRepo.GetAllAsync(ct);
-        var reviews = all.Where(r => r.DoctorId == doctorProfileId && r.IsVisible).ToList();
+        var reviews = all.Where(r => r.DoctorId == docId && r.IsVisible).ToList();
         var total = reviews.Count;
         var items = reviews.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return ApiResponse<List<ReviewDto>>.SuccessResponse(_mapper.Map<List<ReviewDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
@@ -1065,7 +1069,8 @@ public class TreatmentPackageService : ITreatmentPackageService
         PatientProfile? patient = null;
         if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
         {
-            patient = await _patientRepo.GetByIdAsync(dto.PatientId.Value, ct);
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            patient = allPatients.FirstOrDefault(p => p.Id == dto.PatientId.Value || p.UserId == dto.PatientId.Value);
             if (patient == null)
                 return ApiResponse<TreatmentPackageDto>.ErrorResponse("Patient not found");
 

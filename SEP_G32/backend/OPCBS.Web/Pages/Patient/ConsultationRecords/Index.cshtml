@@ -177,11 +177,28 @@
     }
 }
 
-<!-- Search bar -->
-<div class="search-filter-bar">
-    <div class="search-wrapper">
+<!-- Search bar & Filters -->
+<div class="search-filter-bar d-flex gap-3 align-items-center flex-wrap">
+    <div class="search-wrapper" style="flex: 2; min-width: 250px;">
         <i class="bi bi-search"></i>
         <input type="text" class="search-input" placeholder="Search by doctor name, diagnosis, notes..." id="crSearch" oninput="filterConsultationNotes()" />
+    </div>
+    <div style="flex: 1.2; min-width: 180px;">
+        <select id="doctorFilter" class="form-select" onchange="filterConsultationNotes()" style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
+            <option value="">All Doctors</option>
+            @foreach (var docName in Model.Records.Select(r => r.DoctorName).Distinct().Where(n => !string.IsNullOrEmpty(n)))
+            {
+                <option value="@docName">@docName</option>
+            }
+        </select>
+    </div>
+    <div style="flex: 1; min-width: 150px;">
+        <input type="date" id="dateFilter" class="form-control" onchange="filterConsultationNotes()" style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
+    </div>
+    <div>
+        <button onclick="clearFilters()" class="btn btn-outline-secondary" style="height: 44px; border-radius: 10px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; font-weight: 500;">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+        </button>
     </div>
 </div>
 
@@ -195,7 +212,7 @@
             var diagLower = (record.Diagnosis ?? "").ToLower();
             var summaryLower = (record.ConsultationSummary ?? "").ToLower();
 
-            <div class="col-12 cr-card-item animate__animated animate__fadeIn" data-doctor="@docNameLower" data-diagnosis="@diagLower" data-summary="@summaryLower">
+            <div class="col-12 cr-card-item animate__animated animate__fadeIn" data-doctor="@docNameLower" data-diagnosis="@diagLower" data-summary="@summaryLower" data-date="@record.CreatedAt.ToString("yyyy-MM-dd")">
                 <div class="card border-0 shadow-sm record-card">
                     <div class="card-body p-4 p-md-4">
                         
@@ -290,6 +307,14 @@
             </div>
         }
     </div>
+    
+    <div class="card border-0 shadow-sm text-center py-5" id="noFilteredRecordContainer" style="border-radius: 16px; display: none; margin-top: 1rem;">
+        <div class="card-body p-4">
+            <i class="bi bi-filter-circle text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
+            <h5 class="fw-bold text-dark">No Matching Records</h5>
+            <p class="text-muted small mb-0">Try adjusting your search query, selected doctor, or date filter.</p>
+        </div>
+    </div>
 }
 else
 {
@@ -308,19 +333,43 @@ else
 <script>
 function filterConsultationNotes() {
     const query = document.getElementById('crSearch').value.trim().toLowerCase();
+    const selectedDoctor = document.getElementById('doctorFilter').value.trim().toLowerCase();
+    const selectedDate = document.getElementById('dateFilter').value; // yyyy-MM-dd
+
     let visibleCount = 0;
     
     document.querySelectorAll('.cr-card-item').forEach(item => {
         const doc = item.dataset.doctor || '';
         const diag = item.dataset.diagnosis || '';
         const summary = item.dataset.summary || '';
+        const date = item.dataset.date || ''; // yyyy-MM-dd
         
-        if (!query || doc.includes(query) || diag.includes(query) || summary.includes(query)) {
+        const matchesQuery = !query || doc.includes(query) || diag.includes(query) || summary.includes(query);
+        const matchesDoctor = !selectedDoctor || doc === selectedDoctor;
+        const matchesDate = !selectedDate || date === selectedDate;
+        
+        if (matchesQuery && matchesDoctor && matchesDate) {
             item.style.display = 'block';
             visibleCount++;
         } else {
             item.style.display = 'none';
         }
     });
+
+    const noFilteredAlert = document.getElementById('noFilteredRecordContainer');
+    if (noFilteredAlert) {
+        if (visibleCount === 0) {
+            noFilteredAlert.style.display = 'block';
+        } else {
+            noFilteredAlert.style.display = 'none';
+        }
+    }
+}
+
+function clearFilters() {
+    document.getElementById('crSearch').value = '';
+    document.getElementById('doctorFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    filterConsultationNotes();
 }
 </script>

@@ -100,7 +100,8 @@ public class DoctorService : IDoctorService
 
     public async Task<ApiResponse<DoctorProfileDto>> GetDoctorByIdAsync(Guid doctorProfileId, CancellationToken ct = default)
     {
-        var doctor = await _doctorRepo.GetByIdAsync(doctorProfileId, ct);
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == doctorProfileId || d.UserId == doctorProfileId);
         if (doctor == null)
             return ApiResponse<DoctorProfileDto>.ErrorResponse("Doctor not found");
 
@@ -1468,9 +1469,12 @@ public class ScheduleService : IScheduleService
 
     public async Task<ApiResponse<AvailableSlotsDto>> GetAvailableSlotsAsync(Guid doctorProfileId, DateOnly? date, CancellationToken ct = default)
     {
-        var doctor = await _doctorRepo.GetByIdAsync(doctorProfileId, ct);
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == doctorProfileId || d.UserId == doctorProfileId);
         if (doctor == null)
             return ApiResponse<AvailableSlotsDto>.ErrorResponse("Doctor not found");
+
+        var docId = doctor.Id;
 
         // Get user name
         var allUsers = await _userRepo.GetAllAsync(ct);
@@ -1479,7 +1483,7 @@ public class ScheduleService : IScheduleService
         var allSlots = await _slotRepo.GetAllAsync(ct);
         // Return Available + Booked slots so calendar shows booked as locked; exclude Blocked
         var doctorSlots = allSlots
-            .Where(s => s.DoctorProfileId == doctorProfileId && s.Status != AppointmentSlotStatus.Blocked)
+            .Where(s => s.DoctorProfileId == docId && s.Status != AppointmentSlotStatus.Blocked)
             .ToList();
 
         if (date.HasValue)

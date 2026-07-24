@@ -107,53 +107,37 @@
     <div class="card create-form-card">
         <div class="card-body p-4">
             <form method="post">
-                <!-- Target Patient Section -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-person-fill"></i>
-                        Assign to Patient
-                    </label>
-
                     @if (Model.PrefilledPatient != null)
                     {
-                        <input type="hidden" asp-for="Input.PatientId" value="@Model.PrefilledPatient.PatientId" />
-                        <div class="patient-profile-card">
-                            <div class="avatar">
-                                @((Model.PrefilledPatient.DisplayName ?? "?").Substring(0, 1).ToUpper())
-                            </div>
-                            <div style="flex:1;">
-                                <div class="fw-bold text-dark" style="font-size:0.95rem;">@Model.PrefilledPatient.DisplayName
+                        <!-- Target Patient Section -->
+                        <div class="form-field">
+                            <label class="form-field-label">
+                                <i class="bi bi-person-fill"></i>
+                                Assign to Patient
+                            </label>
+                            <input type="hidden" asp-for="Input.PatientId" value="@Model.PrefilledPatient.PatientId" />
+                            <div class="patient-profile-card">
+                                <div class="avatar">
+                                    @((Model.PrefilledPatient.DisplayName ?? "?").Substring(0, 1).ToUpper())
                                 </div>
-                                <div class="small text-muted d-flex gap-3 mt-1">
-                                    @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayEmail))
-                                    {
-                                        <span><i class="bi bi-envelope me-1"></i>@Model.PrefilledPatient.DisplayEmail</span>
-                                    }
-                                    @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayPhone))
-                                    {
-                                        <span><i class="bi bi-telephone me-1"></i>@Model.PrefilledPatient.DisplayPhone</span>
-                                    }
+                                <div style="flex:1;">
+                                    <div class="fw-bold text-dark" style="font-size:0.95rem;">@Model.PrefilledPatient.DisplayName
+                                    </div>
+                                    <div class="small text-muted d-flex gap-3 mt-1">
+                                        @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayEmail))
+                                        {
+                                            <span><i class="bi bi-envelope me-1"></i>@Model.PrefilledPatient.DisplayEmail</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayPhone))
+                                        {
+                                            <span><i class="bi bi-telephone me-1"></i>@Model.PrefilledPatient.DisplayPhone</span>
+                                        }
+                                    </div>
                                 </div>
+                                <span class="badge bg-success" style="font-size:0.7rem;">Assigned from Patient Profile</span>
                             </div>
-                            <span class="badge bg-success" style="font-size:0.7rem;">Assigned from Patient Profile</span>
                         </div>
                     }
-                    else
-                    {
-                        <select asp-for="Input.PatientId" class="form-select">
-                            <option value="">-- Template Package (Unassigned / Gói điều trị mẫu) --</option>
-                            @foreach (var p in Model.DoctorPatients)
-                            {
-                                <option value="@p.PatientId">@p.DisplayName (@(p.DisplayPhone ?? p.DisplayEmail ?? "System User"))
-                                </option>
-                            }
-                        </select>
-                        <small class="text-muted mt-1 d-block">
-                            <i class="bi bi-info-circle me-1"></i>Leave unassigned to create a re-usable treatment package
-                            template, or select a patient to assign directly.
-                        </small>
-                    }
-                </div>
 
                 <!-- Package Name -->
                 <div class="form-field">

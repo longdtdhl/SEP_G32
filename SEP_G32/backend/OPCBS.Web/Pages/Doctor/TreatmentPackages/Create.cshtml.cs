@@ -29,14 +29,29 @@ public class CreateModel : PageModel
 
         if (patientId.HasValue)
         {
-            PrefilledPatient = DoctorPatients.FirstOrDefault(p => p.PatientId == patientId.Value || p.Id == patientId.Value);
-            if (PrefilledPatient != null && PrefilledPatient.PatientId.HasValue)
+            var (record, _) = await _patientApi.GetByIdAsync(patientId.Value);
+            if (record == null)
             {
-                Input.PatientId = PrefilledPatient.PatientId.Value;
+                var (recordByUserId, _) = await _patientApi.GetByUserIdAsync(patientId.Value);
+                record = recordByUserId;
             }
-            else if (patientId.HasValue)
+
+            if (record != null)
             {
-                Input.PatientId = patientId.Value;
+                PrefilledPatient = record;
+                Input.PatientId = record.PatientId;
+            }
+            else
+            {
+                PrefilledPatient = DoctorPatients.FirstOrDefault(p => p.PatientId == patientId.Value || p.Id == patientId.Value);
+                if (PrefilledPatient != null)
+                {
+                    Input.PatientId = PrefilledPatient.PatientId;
+                }
+                else
+                {
+                    Input.PatientId = patientId.Value;
+                }
             }
         }
     }
@@ -56,7 +71,8 @@ public class CreateModel : PageModel
             await LoadPatientsAsync();
             if (Input.PatientId.HasValue)
             {
-                PrefilledPatient = DoctorPatients.FirstOrDefault(p => p.PatientId == Input.PatientId.Value);
+                var (record, _) = await _patientApi.GetByUserIdAsync(Input.PatientId.Value);
+                PrefilledPatient = record ?? DoctorPatients.FirstOrDefault(p => p.PatientId == Input.PatientId.Value);
             }
             return Page();
         }

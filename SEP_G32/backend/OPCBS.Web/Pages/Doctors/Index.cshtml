@@ -99,9 +99,9 @@
 
 <div class="mb-page-header mb-4">
     <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search specialist therapy
+        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search Specialist Therapy
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lựa select doctor and specialist psyforlogy matching with tình trạng your</p>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Select a doctor and psychological specialist that matches your needs</p>
 </div>
 
 <!-- Search & Filter Block -->
@@ -111,7 +111,7 @@
             <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
                 <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
                 <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
-                       placeholder="Find theo tên doctor hoặc chuyên khoa..." 
+                       placeholder="Search by doctor name or specialization..." 
                        style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
                 <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
             </form>
@@ -122,7 +122,7 @@
                 <select name="specialization" class="form-select" 
                         style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
                         onchange="this.form.submit()">
-                    <option value="">All chuyên khoa</option>
+                    <option value="">All Specializations</option>
                     @foreach (var s in Model.Specializations)
                     {
                         <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
@@ -176,6 +176,20 @@
                         <span class="doctor-spec-modern">@(doc.Specialization ?? "Therapist")</span>
                     </div>
 
+                    @if (doc.Specializations != null && doc.Specializations.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-1 justify-content-center mb-2" style="max-height: 48px; overflow: hidden;">
+                            @foreach (var s in doc.Specializations.Take(2))
+                            {
+                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">@s</span>
+                            }
+                            @if (doc.Specializations.Count > 2)
+                            {
+                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">+@(doc.Specializations.Count - 2)</span>
+                            }
+                        </div>
+                    }
+
                     <!-- Rating -->
                     <div class="d-flex align-items-center gap-1 justify-content-center mb-3">
                         @{
@@ -206,7 +220,7 @@
 
                     <!-- Experience & Fee Meta -->
                     <div class="mt-auto d-flex justify-content-between w-100 border-top pt-3" style="font-size:0.8rem; color:#64748b;">
-                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years KN</span>
+                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years experience</span>
                         @if (doc.ConsultationFee > 0)
                         {
                             <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
@@ -227,8 +241,8 @@ else
     <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px;">
         <div class="card-body">
             <i class="bi bi-search text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold">Not found doctor nào</h5>
-            <p class="text-muted small mb-0">Thử thay đổi keyword search hoặc chuyên khoa your.</p>
+            <h5 class="fw-bold">No Doctors Found</h5>
+            <p class="text-muted small mb-0">Try changing your search keywords or selected specialization.</p>
         </div>
     </div>
 }
