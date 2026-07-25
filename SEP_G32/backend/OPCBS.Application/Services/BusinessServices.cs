@@ -377,6 +377,11 @@ public class ConsultationNoteService : IConsultationNoteService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Doctor not found");
 
+        if (dto.NextAppointmentRecommendedDate.HasValue && dto.NextAppointmentRecommendedDate.Value.Date < DateTime.Today)
+        {
+            return ApiResponse<ConsultationNoteDto>.ErrorResponse("Recommended follow-up date cannot be in the past.");
+        }
+
         PatientRecord? patientRecord = null;
         if (dto.PatientRecordId != Guid.Empty)
         {
@@ -1149,6 +1154,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         {
             if (doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId))
             {
+                dto.DoctorProfileId = dto.DoctorId;
                 dto.DoctorId = docUserId;
                 if (string.IsNullOrEmpty(dto.DoctorName) && userDict.TryGetValue(docUserId, out var docName))
                     dto.DoctorName = docName;

@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Doctor.Appointments;
 
+[Authorize(Roles = RoleConstants.Doctor)]
 public class IndexModel : PageModel
 {
     private readonly IAppointmentApiService _api;
@@ -84,6 +87,22 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _api.CancelAsync(id, new CancelAppointmentDto { Reason = reason });
         if (!success) TempData["Error"] = error ?? "Failed to cancel appointment.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostApproveRescheduleAsync(Guid id)
+    {
+        var (success, error) = await _api.ApproveRescheduleAsync(id);
+        if (!success) TempData["Error"] = error ?? "Failed to approve reschedule request.";
+        else TempData["Success"] = "Reschedule request approved successfully.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRejectRescheduleAsync(Guid id, string? reason)
+    {
+        var (success, error) = await _api.RejectRescheduleAsync(id, reason);
+        if (!success) TempData["Error"] = error ?? "Failed to decline reschedule request.";
+        else TempData["Success"] = "Reschedule request declined.";
         return RedirectToPage();
     }
 }

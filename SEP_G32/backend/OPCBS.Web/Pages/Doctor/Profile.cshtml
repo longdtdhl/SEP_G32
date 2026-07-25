@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Doctor.ProfileModel
 @{
     ViewData["Title"] = "Personal Profile";
@@ -211,8 +211,7 @@ else
 
                     <div class="col-12">
                         <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" role="switch" name="DoctorInput.IsVisible" value="true" id="isVisibleSwitch" @(Model.DoctorInput.IsVisible == true ? "checked" : "") />
-                            <input type="hidden" name="DoctorInput.IsVisible" value="false" />
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="DoctorInput.IsVisible" id="isVisibleSwitch" />
                             <label class="form-check-label fw-medium small text-dark" for="isVisibleSwitch">Agree to display this profile on the doctor search page for patients</label>
                         </div>
                     </div>

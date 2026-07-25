@@ -90,9 +90,13 @@
                 <!-- Mini Month Calendar -->
                 <div class="mini-calendar">
                     <div class="mc-header">
-                        <button class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-left"></i></button>
+                        @{
+                            var prevMonthWeek = Model.WeekStart.AddDays(-28).ToString("yyyy-MM-dd");
+                            var nextMonthWeek = Model.WeekStart.AddDays(28).ToString("yyyy-MM-dd");
+                        }
+                        <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@prevMonthWeek" asp-route-treatmentPackageId="@Model.TreatmentPackageId" asp-route-returning="@Model.Returning" class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-left"></i></a>
                         <span class="mc-title">@firstOfMonth.ToString("MMMM yyyy").ToUpper()</span>
-                        <button class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-right"></i></button>
+                        <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@nextMonthWeek" asp-route-treatmentPackageId="@Model.TreatmentPackageId" asp-route-returning="@Model.Returning" class="btn btn-sm btn-link p-0 text-muted"><i class="bi bi-chevron-right"></i></a>
                     </div>
                     <div class="mc-grid">
                         <div class="mc-day-header">S</div><div class="mc-day-header">M</div><div class="mc-day-header">T</div>
@@ -109,7 +113,8 @@
                             var thisDay = new DateTime(calMonth.Year, calMonth.Month, d);
                             var isToday = thisDay.Date == today;
                             var isSelected = thisDay.Date >= Model.WeekStart && thisDay.Date <= Model.WeekEnd;
-                            <div class="mc-day @(isToday ? "today" : "") @(isSelected ? "selected" : "")">@d</div>
+                            var dayWeekStr = thisDay.ToString("yyyy-MM-dd");
+                            <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@dayWeekStr" asp-route-treatmentPackageId="@Model.TreatmentPackageId" asp-route-returning="@Model.Returning" class="mc-day @(isToday ? "today" : "") @(isSelected ? "selected" : "")" style="text-decoration:none;color:inherit;">@d</a>
                         }
                     </div>
                 </div>
@@ -173,8 +178,8 @@
                     <div class="wc-nav">
                         <div class="d-flex align-items-center gap-2">
                             <div class="btn-group btn-group-sm">
-                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@prevWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
-                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@nextWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@prevWeek" asp-route-treatmentPackageId="@Model.TreatmentPackageId" asp-route-returning="@Model.Returning" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                                <a asp-page="Book" asp-route-doctorId="@Model.DoctorId" asp-route-week="@nextWeek" asp-route-treatmentPackageId="@Model.TreatmentPackageId" asp-route-returning="@Model.Returning" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
                             </div>
                         </div>
                         <span class="wc-title">@Model.WeekStart.ToString("MMM dd") — @Model.WeekEnd.ToString("MMM dd, yyyy")</span>
@@ -339,8 +344,8 @@
                         <p class="text-muted mb-3" style="font-size:0.8rem;">Please fill in to help the doctor prepare for your consultation.</p>
 
                         <div class="mb-3">
-                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">CURRENT SYMPTOMS <span class="text-danger">*</span></label>
-                            <textarea asp-for="Input.Symptoms" class="form-control" rows="3" placeholder="Describe your current symptoms, their duration, and severity..." style="border-radius:12px;padding:10px 14px;resize:vertical;" required></textarea>
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">CURRENT SYMPTOMS</label>
+                            <textarea asp-for="Input.Symptoms" class="form-control" rows="3" placeholder="Describe your current symptoms, their duration, and severity..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">MEDICAL HISTORY</label>

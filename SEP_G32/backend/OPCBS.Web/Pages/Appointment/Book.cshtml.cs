@@ -83,7 +83,7 @@ public class BookModel : PageModel
                 {
                     var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
                     var activePkg = pkgs.FirstOrDefault(p =>
-                        p.DoctorId == DoctorId.Value &&
+                        p.DoctorProfileId == DoctorId.Value &&
                         (p.Status == "Active" || p.Status == "Accepted") &&
                         !p.IsExpired &&
                         p.RemainingSessions > 0);
@@ -98,21 +98,21 @@ public class BookModel : PageModel
             }
 
             // Check if returning patient (skip pre-evaluation)
-            if (!IsGuest && DoctorId.HasValue)
+            if (DoctorId.HasValue)
             {
-                try
+                if (Returning)
                 {
-                    if (Returning)
-                    {
-                        IsReturningPatient = true;
-                    }
-                    else
+                    IsReturningPatient = true;
+                }
+                else if (!IsGuest)
+                {
+                    try
                     {
                         var (isReturning, _) = await _appointmentService.IsReturningAsync(DoctorId.Value);
                         IsReturningPatient = isReturning;
                     }
+                    catch { }
                 }
-                catch { }
             }
 
             // Load doctor info

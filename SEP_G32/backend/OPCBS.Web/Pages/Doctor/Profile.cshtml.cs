@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Doctor;
 
+[Authorize(Roles = RoleConstants.Doctor)]
 public class ProfileModel : PageModel
 {
     private readonly IAuthApiService _auth;
@@ -28,33 +31,48 @@ public class ProfileModel : PageModel
     public string? Error { get; set; }
     public string? Success { get; set; }
 
-    public async Task OnGetAsync(bool edit = false)
+    public async Task<IActionResult> OnGetAsync(bool edit = false)
     {
         IsEditing = edit;
         Success = TempData["Success"] as string;
         Error = TempData["Error"] as string;
 
         var (userData, userErr) = await _auth.GetProfileAsync();
-        if (userData == null) { Error = userErr ?? "Unable to retrieve user information."; return; }
+        if (userData == null)
+        {
+            if (userErr != null && (userErr.Contains("401") || userErr.Contains("Unauthorized")))
+            {
+                return RedirectToPage("/Account/Login");
+            }
+            Error = userErr ?? "Unable to retrieve user information.";
+            return Page();
+        }
         Profile = userData;
 
         var (docData, docErr) = await _doctorApi.GetMyProfileAsync();
+        if (docErr != null && (docErr.Contains("401") || docErr.Contains("Unauthorized")))
+        {
+            return RedirectToPage("/Account/Login");
+        }
         DoctorProfile = docData;
 
         Specializations = await _doctorApi.GetSpecializationDtosAsync();
 
-        // Bind General Info
-        Input = new UpdateProfileDto
+        // Bind General Info if not posting
+        if (string.IsNullOrEmpty(Input.FullName))
         {
-            FullName = userData.FullName,
-            PhoneNumber = userData.PhoneNumber,
-            Gender = userData.Gender,
-            Address = userData.Address,
-            DateOfBirth = userData.DateOfBirth
-        };
+            Input = new UpdateProfileDto
+            {
+                FullName = userData.FullName,
+                PhoneNumber = userData.PhoneNumber,
+                Gender = userData.Gender,
+                Address = userData.Address,
+                DateOfBirth = userData.DateOfBirth
+            };
+        }
 
         // Bind Doctor Professional Info
-        if (DoctorProfile != null)
+        if (DoctorProfile != null && string.IsNullOrEmpty(DoctorInput.ProfessionalTitle))
         {
             DoctorInput = new UpdateDoctorProfileDto
             {
@@ -70,13 +88,15 @@ public class ProfileModel : PageModel
                 foreach (var specName in DoctorProfile.Specializations)
                 {
                     var spec = Specializations.FirstOrDefault(s => string.Equals(s.Name, specName, StringComparison.OrdinalIgnoreCase));
-                    if (spec != null)
+                    if (spec != null && !SelectedSpecializations.Contains(spec.Id))
                     {
                         SelectedSpecializations.Add(spec.Id);
                     }
                 }
             }
         }
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -85,9 +105,13 @@ public class ProfileModel : PageModel
         var (userOk, userErr) = await _auth.UpdateProfileAsync(Input);
         if (!userOk)
         {
+            if (userErr != null && (userErr.Contains("401") || userErr.Contains("Unauthorized")))
+            {
+                return RedirectToPage("/Account/Login");
+            }
             Error = userErr ?? "Failed to update basic information.";
             IsEditing = true;
-            Specializations = await _doctorApi.GetSpecializationDtosAsync();
+            await OnGetAsync(edit: true);
             return Page();
         }
 
@@ -96,9 +120,13 @@ public class ProfileModel : PageModel
         var (docOk, docErr) = await _doctorApi.UpdateMyProfileAsync(DoctorInput);
         if (!docOk)
         {
+            if (docErr != null && (docErr.Contains("401") || docErr.Contains("Unauthorized")))
+            {
+                return RedirectToPage("/Account/Login");
+            }
             Error = docErr ?? "Failed to update professional information.";
             IsEditing = true;
-            Specializations = await _doctorApi.GetSpecializationDtosAsync();
+            await OnGetAsync(edit: true);
             return Page();
         }
 

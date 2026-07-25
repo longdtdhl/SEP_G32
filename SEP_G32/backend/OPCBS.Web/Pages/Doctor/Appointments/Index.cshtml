@@ -126,6 +126,7 @@
                     <option value="">All Statuses</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
+                    <option value="RescheduleRequested">Reschedule Requested</option>
                     <option value="Completed">Completed</option>
                     <option value="Cancelled">Cancelled</option>
                 </select>
@@ -192,6 +193,7 @@
                         4 => "status-completed",
                         5 => "status-cancelled",
                         2 => "status-rejected",
+                        6 => "status-pending",
                         _ => ""
                     };
                     var badgeClass = apt.Status switch
@@ -202,6 +204,7 @@
                         4 => "bg-success text-white",
                         5 => "bg-danger text-white",
                         2 => "bg-secondary text-white",
+                        6 => "bg-warning text-dark",
                         _ => "bg-secondary"
                     };
                     var initials = string.IsNullOrEmpty(apt.PatientName) ? "?" :
@@ -223,6 +226,10 @@
                                         @if (!string.IsNullOrEmpty(apt.BookingCode))
                                         {
                                             <div><small class="text-muted font-monospace">#@apt.BookingCode</small></div>
+                                        }
+                                        @if (apt.Status == 6 && !string.IsNullOrEmpty(apt.ProposedSlotDate))
+                                        {
+                                            <div class="mt-1"><span class="badge bg-warning bg-opacity-10 text-dark border border-warning-subtle small"><i class="bi bi-arrow-repeat me-1"></i>New slot requested: @apt.ProposedSlotDate @apt.ProposedSlotStartTime</span></div>
                                         }
                                     </div>
                                 </div>
@@ -259,10 +266,25 @@
                                 </div>
 
                                 <!-- Actions -->
-                                <div class="d-flex gap-1 ms-auto" style="min-width: 140px; justify-content: flex-end;">
+                                <div class="d-flex gap-1 ms-auto align-items-center" style="min-width: 140px; justify-content: flex-end;">
                                     <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-primary" title="View Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    @if (apt.Status == 6)
+                                    {
+                                        <form method="post" asp-page-handler="ApproveReschedule" class="d-inline">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="btn btn-success btn-sm px-2.5 rounded-2 fw-semibold" title="Approve Reschedule Request">
+                                                <i class="bi bi-check-lg me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="RejectReschedule" class="d-inline">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm px-2 rounded-2" title="Decline Reschedule Request" onclick="return confirm('Decline reschedule request and keep current slot?')">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
                                     @if (apt.Status is 1 or 3 && apt.PatientId.HasValue)
                                     {
                                         <a asp-page="/Doctor/Messages/Index" asp-route-patientId="@apt.PatientId" class="action-btn btn btn-outline-info" title="Chat with Patient">

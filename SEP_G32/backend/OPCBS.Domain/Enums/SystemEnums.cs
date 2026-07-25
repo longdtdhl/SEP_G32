@@ -36,7 +36,10 @@ public enum AppointmentStatus
     Completed = 4,
     
     /// <summary>Appointment cancelled</summary>
-    Cancelled = 5
+    Cancelled = 5,
+    
+    /// <summary>Reschedule requested by patient, pending doctor approval</summary>
+    RescheduleRequested = 6
 }
 
 /// <summary>

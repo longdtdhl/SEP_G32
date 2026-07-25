@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 using System;
@@ -9,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace OPCBS.Web.Pages.Patient.Appointments;
 
+[Authorize(Roles = RoleConstants.Patient)]
 public class IndexModel : PageModel
 {
     private readonly IAppointmentApiService _service;

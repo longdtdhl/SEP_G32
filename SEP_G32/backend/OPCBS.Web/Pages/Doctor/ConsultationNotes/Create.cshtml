@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.CreateModel
 @{
     ViewData["Title"] = "Create profile consultation";
@@ -179,7 +179,7 @@
                         <div class="form-section-title">
                             <i class="bi bi-calendar"></i>Expected Follow-up Date
                         </div>
-                        <input asp-for="Input.NextAppointmentRecommendedDate" class="form-control" type="date" style="border-radius:10px;" />
+                        <input asp-for="Input.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" />
                     </div>
 
                     <!-- Action Buttons -->

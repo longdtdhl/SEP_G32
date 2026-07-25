@@ -377,6 +377,10 @@ public class OpcbsDbContext : DbContext
                 .WithMany(tp => tp.Appointments)
                 .HasForeignKey(e => e.TreatmentPackageId)
                 .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.ProposedSlot)
+                .WithMany()
+                .HasForeignKey(e => e.ProposedSlotId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // AppointmentHistory

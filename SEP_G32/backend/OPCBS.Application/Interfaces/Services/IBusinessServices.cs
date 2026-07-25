@@ -147,6 +147,7 @@ public class TreatmentPackageDto
     public string? RecommendedExercises { get; set; }
     public string? Instructions { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public string? DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }

@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 using System;
@@ -7,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace OPCBS.Web.Pages.Doctor.Appointments;
 
+[Authorize(Roles = RoleConstants.Doctor)]
 public class DetailsModel : PageModel
 {
     private readonly IAppointmentApiService _api;
@@ -30,6 +33,7 @@ public class DetailsModel : PageModel
     public ConsultationNoteDto? AssociatedRecord { get; set; }
     public PatientRecordDto? PatientRecord { get; set; }
     public PsychometricSubmissionDto? PsychometricSubmission { get; set; }
+    public bool IsUsingFallbackPsych { get; set; }
     public ConsultationNoteDto? LatestConsultationNote { get; set; }
     public TreatmentPackageDto? ActiveTreatmentPackage { get; set; }
     public bool HasConsultationNote => AssociatedRecord != null;
@@ -72,6 +76,19 @@ public class DetailsModel : PageModel
 
         var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(id);
         PsychometricSubmission = subData;
+        if (PsychometricSubmission == null)
+        {
+            try
+            {
+                var (allSubs, _) = await _psychService.GetMySubmissionsAsync();
+                if (allSubs != null && allSubs.Count > 0)
+                {
+                    PsychometricSubmission = allSubs.OrderByDescending(s => s.SubmittedAt).FirstOrDefault();
+                    if (PsychometricSubmission != null) IsUsingFallbackPsych = true;
+                }
+            }
+            catch { }
+        }
 
         // Fetch latest consultation note from previous visits (for returning patients)
         if (PatientRecord != null)
@@ -158,6 +175,22 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.CancelAsync(id, new CancelAppointmentDto { Reason = reason });
         if (!success) TempData["Error"] = error ?? "Failed to cancel appointment.";
         else TempData["Success"] = "Appointment cancelled successfully.";
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostApproveRescheduleAsync(Guid id)
+    {
+        var (success, error) = await _api.ApproveRescheduleAsync(id);
+        if (!success) TempData["Error"] = error ?? "Failed to approve reschedule request.";
+        else TempData["Success"] = "Reschedule request approved! Appointment moved to new slot.";
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostRejectRescheduleAsync(Guid id, string? reason)
+    {
+        var (success, error) = await _api.RejectRescheduleAsync(id, reason);
+        if (!success) TempData["Error"] = error ?? "Failed to decline reschedule request.";
+        else TempData["Success"] = "Reschedule request declined. Original appointment time retained.";
         return RedirectToPage(new { id });
     }
 }

@@ -623,23 +623,23 @@ public static class SeedData
         // 1. Seed PHQ-9
         var phq9 = new PsychometricTest
         {
-            Title = "Bảng đánh giá sức khỏe bệnh nhân (PHQ-9)",
-            Description = "Thang đo 9 câu hỏi giúp đánh giá mức độ trầm cảm của bạn trong 2 tuần gần nhất.",
+            Title = "Patient Health Questionnaire (PHQ-9)",
+            Description = "A 9-question scale that helps assess the severity of your depression over the past 2 weeks.",
             TestType = "PHQ9"
         };
         context.PsychometricTests.Add(phq9);
 
         var phq9Questions = new[]
         {
-            "Ít hứng thú hoặc không có niềm vui trong các hoạt động.",
-            "Cảm thấy chán nản, u uất hoặc thất vọng.",
-            "Gặp khó khăn về giấc ngủ (khó vào giấc, ngủ không sâu hoặc ngủ quá nhiều).",
-            "Cảm thấy mệt mỏi hoặc thiếu năng lượng.",
-            "Ăn mất ngon hoặc ăn quá nhiều.",
-            "Cảm thấy tồi tệ về bản thân – nghĩ mình thất bại, hoặc làm cho bản thân và gia đình thất vọng.",
-            "Gặp khó khăn trong tập trung (khi đọc báo, xem tivi, v.v.).",
-            "Nói năng hoặc đi lại chậm chạp đến mức người khác nhận thấy, hoặc ngược lại, bồn chồn đến mức không thể ngồi yên.",
-            "Có suy nghĩ muốn tự hại hoặc nghĩ rằng mình chết đi sẽ tốt hơn."
+            "Little interest or pleasure in doing things.",
+            "Feeling down, depressed, or hopeless.",
+            "Trouble falling or staying asleep, or sleeping too much.",
+            "Feeling tired or having little energy.",
+            "Poor appetite or overeating.",
+            "Feeling bad about yourself — or that you are a failure or have let yourself or your family down.",
+            "Trouble concentrating on things, such as reading the newspaper or watching television.",
+            "Moving or speaking so slowly that other people could have noticed. Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual.",
+            "Thoughts that you would be better off dead, or of hurting yourself in some way."
         };
 
         for (int i = 0; i < phq9Questions.Length; i++)
@@ -656,35 +656,35 @@ public static class SeedData
         // 2. Seed DASS-21
         var dass21 = new PsychometricTest
         {
-            Title = "Thang đo Trầm cảm, Lo âu, Căng thẳng (DASS-21)",
-            Description = "Bộ trắc nghiệm gồm 21 câu hỏi giúp đánh giá trạng thái cảm xúc của bạn trong tuần qua.",
+            Title = "Depression, Anxiety and Stress Scale (DASS-21)",
+            Description = "A 21-question assessment that helps evaluate your emotional state over the past week.",
             TestType = "DASS21"
         };
         context.PsychometricTests.Add(dass21);
 
         var dass21Questions = new[]
         {
-            new { Text = "Tôi cảm thấy khó khăn để thư giãn.", Cat = "Stress" },
-            new { Text = "Tôi bị khô miệng.", Cat = "Anxiety" },
-            new { Text = "Tôi dường như không có chút cảm xúc tích cực nào.", Cat = "Depression" },
-            new { Text = "Tôi bị khó thở (ví dụ: thở nhanh, hụt hơi mặc dù không làm việc nặng).", Cat = "Anxiety" },
-            new { Text = "Tôi cảm thấy khó khăn để bắt đầu làm một việc gì đó.", Cat = "Depression" },
-            new { Text = "Tôi có xu hướng phản ứng thái quá với các tình huống.", Cat = "Stress" },
-            new { Text = "Tôi bị run rẩy (ví dụ: chân tay run).", Cat = "Anxiety" },
-            new { Text = "Tôi cảm thấy mình đang tiêu phí nhiều năng lượng thần kinh.", Cat = "Stress" },
-            new { Text = "Tôi lo lắng về những tình huống có thể làm tôi hoảng loạn hoặc làm trò cười.", Cat = "Anxiety" },
-            new { Text = "Tôi cảm thấy mình không có gì để mong đợi phía trước.", Cat = "Depression" },
-            new { Text = "Tôi thấy mình dễ bị kích động.", Cat = "Stress" },
-            new { Text = "Tôi cảm thấy khó thư giãn hoàn toàn.", Cat = "Stress" },
-            new { Text = "Tôi cảm thấy buồn chán và u uất.", Cat = "Depression" },
-            new { Text = "Tôi không khoan dung với bất kỳ điều gì cản trở tôi làm việc.", Cat = "Stress" },
-            new { Text = "Tôi cảm thấy mình gần như hoảng loạn.", Cat = "Anxiety" },
-            new { Text = "Tôi không thể cảm thấy hào hứng với bất kỳ điều gì.", Cat = "Depression" },
-            new { Text = "Tôi cảm thấy mình không có giá trị.", Cat = "Depression" },
-            new { Text = "Tôi thấy mình khá nhạy cảm và dễ xúc động.", Cat = "Stress" },
-            new { Text = "Tôi nghe thấy tiếng nhịp tim dù không vận động nặng (tim đập thình thịch).", Cat = "Anxiety" },
-            new { Text = "Tôi cảm thấy sợ hãi vô cớ.", Cat = "Anxiety" },
-            new { Text = "Tôi cảm thấy cuộc sống vô nghĩa.", Cat = "Depression" }
+            new { Text = "I found it hard to wind down.", Cat = "Stress" },
+            new { Text = "I was aware of dryness of my mouth.", Cat = "Anxiety" },
+            new { Text = "I couldn't seem to experience any positive feeling at all.", Cat = "Depression" },
+            new { Text = "I experienced breathing difficulty (e.g., excessively rapid breathing, breathlessness in the absence of physical exertion).", Cat = "Anxiety" },
+            new { Text = "I found it difficult to work up the initiative to do things.", Cat = "Depression" },
+            new { Text = "I tended to over-react to situations.", Cat = "Stress" },
+            new { Text = "I experienced trembling (e.g., in the hands).", Cat = "Anxiety" },
+            new { Text = "I felt that I was using a lot of nervous energy.", Cat = "Stress" },
+            new { Text = "I was worried about situations in which I might panic and make a fool of myself.", Cat = "Anxiety" },
+            new { Text = "I felt that I had nothing to look forward to.", Cat = "Depression" },
+            new { Text = "I found myself getting agitated.", Cat = "Stress" },
+            new { Text = "I found it difficult to relax.", Cat = "Stress" },
+            new { Text = "I felt down-hearted and blue.", Cat = "Depression" },
+            new { Text = "I was intolerant of anything that kept me from getting on with what I was doing.", Cat = "Stress" },
+            new { Text = "I felt I was close to panic.", Cat = "Anxiety" },
+            new { Text = "I was unable to become enthusiastic about anything.", Cat = "Depression" },
+            new { Text = "I felt I wasn't worth much as a person.", Cat = "Depression" },
+            new { Text = "I felt that I was rather touchy.", Cat = "Stress" },
+            new { Text = "I was aware of the action of my heart in the absence of physical exertion (e.g., sense of heart rate increase, heart missing a beat).", Cat = "Anxiety" },
+            new { Text = "I felt scared without any good reason.", Cat = "Anxiety" },
+            new { Text = "I felt that life was meaningless.", Cat = "Depression" }
         };
 
         for (int i = 0; i < dass21Questions.Length; i++)

@@ -31,6 +31,7 @@ public class AppointmentDto
     public Guid Id { get; set; }
     public required string BookingCode { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public required string DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
@@ -49,6 +50,12 @@ public class AppointmentDto
     public int VisitCount { get; set; }
     public string? Specialization { get; set; }
     public string? CancellationReason { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public string? RescheduleReason { get; set; }
+    public bool CanReschedule { get; set; }
 }
 
 /// <summary>
@@ -59,6 +66,7 @@ public class AppointmentListItemDto
     public Guid Id { get; set; }
     public required string BookingCode { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public required string DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
@@ -69,6 +77,11 @@ public class AppointmentListItemDto
     public AppointmentStatus Status { get; set; }
     public decimal? Fee { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public bool CanReschedule { get; set; }
 }
 
 /// <summary>

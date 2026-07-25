@@ -209,10 +209,20 @@
     var isInProgress = apt.Status == 3;
     var isCompleted = apt.Status == 4;
     var isCancelled = apt.Status == 5;
+    var isRescheduleRequested = apt.Status == 6;
     var canCancel = isPending || isApproved;
 
     <!-- Status Banner -->
-    @if (isPending)
+    @if (isRescheduleRequested)
+    {
+        <div class="apt-banner b-pending" style="background:#fff7ed; border-color:#ffedd5; color:#9a3412;">
+            <div class="banner-text">
+                <i class="bi bi-arrow-repeat fs-5"></i>
+                <span><strong>Reschedule Pending</strong> — You requested a new slot (@(apt.ProposedSlotDate ?? "New date") @(apt.ProposedSlotStartTime ?? "")). Your original slot is reserved until your doctor responds.</span>
+            </div>
+        </div>
+    }
+    else if (isPending)
     {
         <div class="apt-banner b-pending">
             <div class="banner-text">
@@ -253,14 +263,8 @@
                 <span><strong>Completed</strong> — Your consultation session has ended.</span>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                @if (Model.IsReturningPatient)
-                {
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:10px;">
-                        <i class="bi bi-arrow-repeat me-1"></i>Book Follow-up
-                    </a>
-                }
-                <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-sm btn-warning" style="border-radius:10px;">
-                    <i class="bi bi-star me-1"></i>Write Review
+                <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                    <i class="bi bi-arrow-repeat me-1"></i>Book Again
                 </a>
             </div>
         </div>
@@ -272,6 +276,9 @@
                 <i class="bi bi-x-circle-fill"></i>
                 <span><strong>Cancelled</strong> — This appointment has been cancelled.</span>
             </div>
+            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-danger" style="border-radius:10px;">
+                <i class="bi bi-arrow-repeat me-1"></i>Book Again
+            </a>
         </div>
     }
     else if (isRejected)
@@ -281,6 +288,9 @@
                 <i class="bi bi-x-octagon-fill"></i>
                 <span><strong>Rejected</strong> — The doctor has declined this appointment request.</span>
             </div>
+            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;">
+                <i class="bi bi-arrow-repeat me-1"></i>Book Again
+            </a>
         </div>
     }
 
@@ -368,42 +378,58 @@
             </div>
 
             <!-- Pre-Evaluation / Notes Section -->
-            @if (!string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations) || !string.IsNullOrEmpty(apt.Notes))
-            {
-                <div class="detail-card">
-                    <div class="section-hdr">
-                        <i class="bi bi-journal-medical" style="color:#8b5cf6;"></i>Pre-Evaluation Information
-                    </div>
-                    @if (!string.IsNullOrEmpty(apt.Symptoms))
+            <div class="detail-card">
+                <div class="section-hdr">
+                    <i class="bi bi-journal-medical" style="color:#8b5cf6;"></i>Pre-Evaluation Information
+                </div>
+                @{
+                    var hasCurrentEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                    var evalSource = hasCurrentEval ? apt : Model.LatestEvalAppointment;
+                    var hasAnyEval = evalSource != null && (!string.IsNullOrEmpty(evalSource.Symptoms) || !string.IsNullOrEmpty(evalSource.MedicalHistory) || !string.IsNullOrEmpty(evalSource.Expectations));
+                }
+                @if (hasAnyEval)
+                {
+                    @if (Model.IsUsingFallbackEval)
+                    {
+                        <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Showing evaluation from your previous visit on <strong>@evalSource!.AppointmentDate</strong> (follow-up appointment)</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(evalSource!.Symptoms))
                     {
                         <div class="note-block">
                             <div class="note-label">Symptoms</div>
-                            @apt.Symptoms
+                            @evalSource.Symptoms
                         </div>
                     }
-                    @if (!string.IsNullOrEmpty(apt.MedicalHistory))
+                    @if (!string.IsNullOrEmpty(evalSource.MedicalHistory))
                     {
                         <div class="note-block">
                             <div class="note-label">Medical History</div>
-                            @apt.MedicalHistory
+                            @evalSource.MedicalHistory
                         </div>
                     }
-                    @if (!string.IsNullOrEmpty(apt.Expectations))
+                    @if (!string.IsNullOrEmpty(evalSource.Expectations))
                     {
                         <div class="note-block">
                             <div class="note-label">Expectations</div>
-                            @apt.Expectations
+                            @evalSource.Expectations
                         </div>
                     }
-                    @if (!string.IsNullOrEmpty(apt.Notes))
-                    {
-                        <div class="note-block">
-                            <div class="note-label">Notes</div>
-                            @apt.Notes
-                        </div>
-                    }
-                </div>
-            }
+                }
+                @if (!string.IsNullOrEmpty(apt.Notes))
+                {
+                    <div class="note-block">
+                        <div class="note-label">Notes</div>
+                        @apt.Notes
+                    </div>
+                }
+                @if (!hasAnyEval && string.IsNullOrEmpty(apt.Notes))
+                {
+                    <p style="color:#94a3b8; font-size:0.85rem; margin:0;">No pre-evaluation information was recorded for this appointment.</p>
+                }
+            </div>
 
             <!-- Psychometric Test Section -->
             <div class="detail-card">
@@ -412,6 +438,13 @@
                 </div>
                 @if (Model.PsychometricSubmission != null)
                 {
+                    @if (Model.IsUsingFallbackPsych)
+                    {
+                        <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Showing your most recent assessment result (not linked to this appointment)</span>
+                        </div>
+                    }
                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:1rem 1.25rem;">
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                             <div>
@@ -430,20 +463,17 @@
                                 <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary" style="border-radius:10px;">
                                     <i class="bi bi-bar-chart-fill me-1"></i>View Results
                                 </a>
-                                @if (isApproved || isPending)
+                                @foreach (var test in Model.AvailableTests)
                                 {
-                                    @foreach (var test in Model.AvailableTests)
-                                    {
-                                        <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-outline-warning" style="border-radius:10px;">
-                                            <i class="bi bi-arrow-repeat me-1"></i>Retake: @test.Title
-                                        </a>
-                                    }
+                                    <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-outline-warning" style="border-radius:10px;">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Retake: @test.Title
+                                    </a>
                                 }
                             </div>
                         </div>
                     </div>
                 }
-                else if (isApproved || isPending)
+                else
                 {
                     <div style="background:#fefce8; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.25rem;">
                         <div class="d-flex align-items-start gap-2 mb-2">
@@ -462,10 +492,6 @@
                             }
                         </div>
                     </div>
-                }
-                else
-                {
-                    <p style="color:#94a3b8; font-size:0.85rem; margin:0;">No mental health assessments were completed for this appointment.</p>
                 }
             </div>
 
@@ -503,21 +529,24 @@
                     }
                     @if (isApproved || isInProgress)
                     {
-                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId" class="action-btn a-chat">
+                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-chat">
                             <i class="bi bi-chat-dots-fill"></i> Chat with Doctor
+                        </a>
+                    }
+                    @if (apt.CanReschedule)
+                    {
+                        <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="action-btn a-warning" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Request Reschedule
                         </a>
                     }
                     @if (canCancel)
                     {
-                        <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="action-btn a-outline">
-                            <i class="bi bi-arrow-repeat"></i> Reschedule
-                        </a>
                         <button type="button" class="action-btn a-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                            <i class="bi bi-x-circle"></i> Cancel Appointment
+                            <i class="bi bi-x-circle me-1"></i> Cancel Appointment
                         </button>
                     }
                     <hr style="margin:4px 0; border-color:#f1f5f9;" />
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorId" class="action-btn a-outline">
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-outline">
                         <i class="bi bi-calendar-plus"></i> Book Again
                     </a>
                 </div>

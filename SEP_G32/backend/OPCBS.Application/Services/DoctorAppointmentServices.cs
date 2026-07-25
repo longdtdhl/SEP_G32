@@ -277,7 +277,7 @@ public class AppointmentService : IAppointmentService
 
         var allAppts = await _apptRepo.GetAllAsync(ct);
         var allSlots = await _slotRepo.GetAllAsync(ct);
-        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+        var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
 
         // 1. Ensure the patient hasn't already booked this specific slot
         var isSlotBookedByPatient = allAppts.Any(a =>
@@ -348,6 +348,22 @@ public class AppointmentService : IAppointmentService
             _slotRepo.Update(slot);
 
             var bookingCode = $"OPCBS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+
+            // If pre-evaluation fields are empty (e.g. for returning patients), auto-inherit from previous appointment
+            if (patientProfileId.HasValue)
+            {
+                var prevAppt = allAppts
+                    .Where(a => a.PatientId == patientProfileId.Value && (!string.IsNullOrEmpty(a.Symptoms) || !string.IsNullOrEmpty(a.MedicalHistory)))
+                    .OrderByDescending(a => a.CreatedAt)
+                    .FirstOrDefault();
+
+                if (prevAppt != null)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.Symptoms)) dto.Symptoms = prevAppt.Symptoms;
+                    if (string.IsNullOrWhiteSpace(dto.MedicalHistory)) dto.MedicalHistory = prevAppt.MedicalHistory;
+                    if (string.IsNullOrWhiteSpace(dto.Expectations)) dto.Expectations = prevAppt.Expectations;
+                }
+            }
 
             var appointment = new Appointment
             {
@@ -442,10 +458,10 @@ public class AppointmentService : IAppointmentService
         var allUsers = await _userRepo.GetAllAsync(ct);
         var allSlots = await _slotRepo.GetAllAsync(ct);
 
-        var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
-        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
-        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
-        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+        var userDict = allUsers.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
+        var doctorUserMap = allDoctors.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First().UserId);
+        var patientUserMap = allPatients.GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First().UserId);
+        var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
 
         foreach (var dto in dtos)
         {
@@ -455,6 +471,7 @@ public class AppointmentService : IAppointmentService
             // Set DoctorId (UserId, not ProfileId)
             if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId))
             {
+                dto.DoctorProfileId = appt.DoctorId;
                 dto.DoctorId = docUserId;
                 if (userDict.TryGetValue(docUserId, out var docName))
                     dto.DoctorName = docName;
@@ -487,6 +504,19 @@ public class AppointmentService : IAppointmentService
                 dto.StartTime = slot.StartTime.ToString("HH:mm");
                 dto.EndTime = slot.EndTime.ToString("HH:mm");
                 dto.Fee = slot.Price;
+
+                var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
+                dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
+                                    (slotDateTime - DateTime.UtcNow).TotalHours >= 24 &&
+                                    appt.Status != AppointmentStatus.RescheduleRequested;
+            }
+
+            dto.ProposedSlotId = appt.ProposedSlotId;
+            if (appt.ProposedSlotId.HasValue && slotDict.TryGetValue(appt.ProposedSlotId.Value, out var propSlot))
+            {
+                dto.ProposedSlotDate = propSlot.SlotDate.ToString("yyyy-MM-dd");
+                dto.ProposedSlotStartTime = propSlot.StartTime.ToString("HH:mm");
+                dto.ProposedSlotEndTime = propSlot.EndTime.ToString("HH:mm");
             }
 
             dto.TreatmentPackageId = appt.TreatmentPackageId;
@@ -500,13 +530,14 @@ public class AppointmentService : IAppointmentService
         var allUsers = await _userRepo.GetAllAsync(ct);
         var allSlots = await _slotRepo.GetAllAsync(ct);
 
-        var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
-        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
-        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
-        var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+        var userDict = allUsers.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
+        var doctorUserMap = allDoctors.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First().UserId);
+        var patientUserMap = allPatients.GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First().UserId);
+        var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
 
         if (doctorUserMap.TryGetValue(appt.DoctorId, out var docUserId))
         {
+            dto.DoctorProfileId = appt.DoctorId;
             dto.DoctorId = docUserId;
             if (userDict.TryGetValue(docUserId, out var docName))
                 dto.DoctorName = docName;
@@ -538,6 +569,20 @@ public class AppointmentService : IAppointmentService
             dto.StartTime = slot.StartTime.ToString("HH:mm");
             dto.EndTime = slot.EndTime.ToString("HH:mm");
             dto.Fee = slot.Price;
+
+            var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
+            dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
+                                (slotDateTime - DateTime.UtcNow).TotalHours >= 24 &&
+                                appt.Status != AppointmentStatus.RescheduleRequested;
+        }
+
+        dto.ProposedSlotId = appt.ProposedSlotId;
+        dto.RescheduleReason = appt.RescheduleReason;
+        if (appt.ProposedSlotId.HasValue && slotDict.TryGetValue(appt.ProposedSlotId.Value, out var proposedSlot))
+        {
+            dto.ProposedSlotDate = proposedSlot.SlotDate.ToString("yyyy-MM-dd");
+            dto.ProposedSlotStartTime = proposedSlot.StartTime.ToString("HH:mm");
+            dto.ProposedSlotEndTime = proposedSlot.EndTime.ToString("HH:mm");
         }
 
         // Enrich with TreatmentPackage info
@@ -782,6 +827,231 @@ public class AppointmentService : IAppointmentService
         return ApiResponse.SuccessResponse("Appointment cancelled successfully");
     }
 
+    public async Task<ApiResponse> RescheduleAppointmentAsync(Guid appointmentId, Guid userId, RescheduleAppointmentDto dto, CancellationToken ct = default)
+    {
+        return await RequestRescheduleAsync(appointmentId, userId, dto, ct);
+    }
+
+    public async Task<ApiResponse> RequestRescheduleAsync(Guid appointmentId, Guid patientUserId, RescheduleAppointmentDto dto, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Appointment not found");
+
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        if (patient == null || appointment.PatientId != patient.Id)
+            return ApiResponse.ErrorResponse("You are not authorized to request a reschedule for this appointment.");
+
+        if (appointment.Status != AppointmentStatus.Approved)
+            return ApiResponse.ErrorResponse("Only approved appointments can be rescheduled.");
+
+        if (appointment.Status == AppointmentStatus.RescheduleRequested)
+            return ApiResponse.ErrorResponse("A reschedule request is already pending for this appointment.");
+
+        var currentSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (currentSlot != null)
+        {
+            var slotStartDateTime = currentSlot.SlotDate.ToDateTime(currentSlot.StartTime);
+            if ((slotStartDateTime - DateTime.UtcNow).TotalHours < 24)
+            {
+                return ApiResponse.ErrorResponse("Reschedule requests must be made at least 24 hours prior to appointment start time.");
+            }
+        }
+
+        var newSlot = await _slotRepo.GetByIdAsync(dto.NewSlotId, ct);
+        if (newSlot == null)
+            return ApiResponse.ErrorResponse("The selected time slot does not exist.");
+
+        if (newSlot.Status != AppointmentSlotStatus.Available)
+            return ApiResponse.ErrorResponse("The selected time slot is no longer available.");
+
+        if (newSlot.DoctorProfileId != appointment.DoctorId)
+            return ApiResponse.ErrorResponse("The selected time slot belongs to a different doctor.");
+
+        var prevStatus = appointment.Status;
+        appointment.Status = AppointmentStatus.RescheduleRequested;
+        appointment.ProposedSlotId = dto.NewSlotId;
+        appointment.RescheduleReason = dto.Reason;
+        appointment.UpdatedAt = DateTime.UtcNow;
+
+        _apptRepo.Update(appointment);
+        await _historyRepo.AddAsync(new AppointmentHistory
+        {
+            AppointmentId = appointmentId,
+            PreviousStatus = prevStatus,
+            NewStatus = AppointmentStatus.RescheduleRequested,
+            Reason = dto.Reason ?? "Reschedule requested by patient",
+            Appointment = appointment
+        }, ct);
+
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify Doctor
+        try
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doctor = allDoctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+            if (doctor != null)
+            {
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var patientUser = allUsers.FirstOrDefault(u => u.Id == patientUserId);
+                var patName = patientUser?.FullName ?? "Patient";
+                await _notificationService.CreateNotificationAsync(
+                    doctor.UserId,
+                    "🔄 Reschedule Requested",
+                    $"{patName} requested to reschedule appointment {appointment.BookingCode} to {newSlot.SlotDate:MM/dd/yyyy} at {newSlot.StartTime:HH:mm}.",
+                    NotificationType.Appointment,
+                    appointmentId,
+                    "Appointment",
+                    ct);
+            }
+        }
+        catch { }
+
+        return ApiResponse.SuccessResponse("Reschedule request submitted successfully. Awaiting doctor approval.");
+    }
+
+    public async Task<ApiResponse> ApproveRescheduleAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Appointment not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || appointment.DoctorId != doctor.Id)
+            return ApiResponse.ErrorResponse("You are not authorized to approve this reschedule request.");
+
+        if (appointment.Status != AppointmentStatus.RescheduleRequested)
+            return ApiResponse.ErrorResponse("No pending reschedule request found for this appointment.");
+
+        if (!appointment.ProposedSlotId.HasValue)
+            return ApiResponse.ErrorResponse("No proposed slot specified for reschedule.");
+
+        var newSlot = await _slotRepo.GetByIdAsync(appointment.ProposedSlotId.Value, ct);
+        if (newSlot == null)
+            return ApiResponse.ErrorResponse("Proposed time slot no longer exists.");
+
+        if (newSlot.Status != AppointmentSlotStatus.Available)
+            return ApiResponse.ErrorResponse("Proposed time slot is no longer available.");
+
+        // Release old slot
+        var oldSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (oldSlot != null)
+        {
+            oldSlot.CurrentBookings = Math.Max(0, oldSlot.CurrentBookings - 1);
+            if (oldSlot.CurrentBookings < oldSlot.MaxPatients)
+                oldSlot.Status = AppointmentSlotStatus.Available;
+            _slotRepo.Update(oldSlot);
+        }
+
+        // Lock new slot
+        newSlot.CurrentBookings++;
+        newSlot.Status = AppointmentSlotStatus.Booked;
+        _slotRepo.Update(newSlot);
+
+        var prevStatus = appointment.Status;
+        appointment.AppointmentSlotId = newSlot.Id;
+        appointment.ProposedSlotId = null;
+        appointment.AppointmentDate = newSlot.SlotDate.ToDateTime(newSlot.StartTime);
+        appointment.Status = AppointmentStatus.Approved;
+        appointment.ApprovedAt = DateTime.UtcNow;
+        appointment.UpdatedAt = DateTime.UtcNow;
+
+        _apptRepo.Update(appointment);
+        await _historyRepo.AddAsync(new AppointmentHistory
+        {
+            AppointmentId = appointmentId,
+            PreviousStatus = prevStatus,
+            NewStatus = AppointmentStatus.Approved,
+            Reason = "Reschedule request approved by doctor",
+            Appointment = appointment
+        }, ct);
+
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify Patient
+        try
+        {
+            if (appointment.PatientId.HasValue)
+            {
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var patient = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                if (patient != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        patient.UserId,
+                        "✅ Reschedule Approved",
+                        $"Your reschedule request for appointment {appointment.BookingCode} has been approved. New time: {newSlot.SlotDate:MM/dd/yyyy} at {newSlot.StartTime:HH:mm}.",
+                        NotificationType.Appointment,
+                        appointmentId,
+                        "Appointment",
+                        ct);
+                }
+            }
+        }
+        catch { }
+
+        return ApiResponse.SuccessResponse("Reschedule request approved successfully.");
+    }
+
+    public async Task<ApiResponse> RejectRescheduleAsync(Guid appointmentId, Guid doctorUserId, RejectAppointmentDto? dto = null, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Appointment not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || appointment.DoctorId != doctor.Id)
+            return ApiResponse.ErrorResponse("You are not authorized to reject this reschedule request.");
+
+        if (appointment.Status != AppointmentStatus.RescheduleRequested)
+            return ApiResponse.ErrorResponse("No pending reschedule request found for this appointment.");
+
+        var prevStatus = appointment.Status;
+        appointment.ProposedSlotId = null;
+        appointment.Status = AppointmentStatus.Approved;
+        appointment.UpdatedAt = DateTime.UtcNow;
+
+        _apptRepo.Update(appointment);
+        await _historyRepo.AddAsync(new AppointmentHistory
+        {
+            AppointmentId = appointmentId,
+            PreviousStatus = prevStatus,
+            NewStatus = AppointmentStatus.Approved,
+            Reason = dto?.Reason ?? "Reschedule request declined by doctor",
+            Appointment = appointment
+        }, ct);
+
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify Patient
+        try
+        {
+            if (appointment.PatientId.HasValue)
+            {
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var patient = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                if (patient != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        patient.UserId,
+                        "❌ Reschedule Request Declined",
+                        $"Your reschedule request for appointment {appointment.BookingCode} was declined. Your original appointment time remains unchanged.",
+                        NotificationType.Appointment,
+                        appointmentId,
+                        "Appointment",
+                        ct);
+                }
+            }
+        }
+        catch { }
+
+        return ApiResponse.SuccessResponse("Reschedule request declined. Original schedule retained.");
+    }
+
 
     public async Task<ApiResponse<List<AppointmentListItemDto>>> GetDoctorAppointmentsAsync(
         Guid doctorUserId, 
@@ -834,7 +1104,7 @@ public class AppointmentService : IAppointmentService
         if (fromDate.HasValue || toDate.HasValue)
         {
             var allSlots = await _slotRepo.GetAllAsync(ct);
-            var slotDict = allSlots.ToDictionary(s => s.Id, s => s);
+            var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
 
             if (fromDate.HasValue)
             {
@@ -1129,95 +1399,6 @@ public class AppointmentService : IAppointmentService
         return ApiResponse.SuccessResponse("Appointment completed");
     }
 
-    public async Task<ApiResponse> RescheduleAppointmentAsync(Guid appointmentId, Guid userId, RescheduleAppointmentDto dto, CancellationToken ct = default)
-    {
-        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
-        if (appointment == null)
-            return ApiResponse.ErrorResponse("Appointment not found");
-
-        // Only pending or approved appointments can be rescheduled (APPT-06, APPT-08)
-        if (appointment.Status != AppointmentStatus.Pending && appointment.Status != AppointmentStatus.Approved)
-            return ApiResponse.ErrorResponse("Only pending or approved appointments can be rescheduled");
-
-        var oldSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
-
-        var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
-        var doctorUserId = doctor?.UserId;
-
-        Guid? patientUserId = null;
-        if (appointment.PatientId.HasValue)
-        {
-            var allPatients = await _patientRepo.GetAllAsync(ct);
-            var patient = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
-            patientUserId = patient?.UserId;
-        }
-
-        if (appointment.PatientId.HasValue && userId != doctorUserId && userId != patientUserId)
-        {
-            return ApiResponse.ErrorResponse("You are not authorized to reschedule this appointment");
-        }
-
-        var isPatientReschedule = appointment.PatientId.HasValue && patientUserId == userId;
-        if (isPatientReschedule)
-        {
-            if (oldSlot != null)
-            {
-                var oldSlotDateTime = oldSlot.SlotDate.ToDateTime(oldSlot.StartTime);
-                if (oldSlotDateTime - DateTime.UtcNow < TimeSpan.FromHours(24))
-                    return ApiResponse.ErrorResponse("Cannot reschedule an appointment less than 24 hours before the scheduled time");
-            }
-        }
-
-        // Verify the new slot is available
-        var newSlot = await _slotRepo.GetByIdAsync(dto.NewSlotId, ct);
-        if (newSlot == null || (newSlot.Status != AppointmentSlotStatus.Available && newSlot.CurrentBookings >= newSlot.MaxPatients))
-            return ApiResponse.ErrorResponse("New slot is not available or is fully booked");
-
-        // New slot must belong to the same doctor
-        if (newSlot.DoctorProfileId != appointment.DoctorId)
-            return ApiResponse.ErrorResponse("New slot must belong to the same doctor");
-
-        // BOOK-03: Cannot reschedule to a past slot
-        var newSlotDateTime = newSlot.SlotDate.ToDateTime(newSlot.StartTime);
-        if (newSlotDateTime < DateTime.UtcNow)
-            return ApiResponse.ErrorResponse("Cannot reschedule to a past time slot");
-
-        var prevStatus = appointment.Status;
-
-        // Release old slot
-        if (oldSlot != null)
-        {
-            oldSlot.CurrentBookings = Math.Max(0, oldSlot.CurrentBookings - 1);
-            if (oldSlot.CurrentBookings < oldSlot.MaxPatients)
-                oldSlot.Status = AppointmentSlotStatus.Available;
-            _slotRepo.Update(oldSlot);
-        }
-
-        // Book new slot
-        newSlot.CurrentBookings++;
-        if (newSlot.CurrentBookings >= newSlot.MaxPatients)
-            newSlot.Status = AppointmentSlotStatus.Booked;
-        _slotRepo.Update(newSlot);
-
-        appointment.AppointmentSlotId = dto.NewSlotId;
-        appointment.AppointmentDate = newSlotDateTime;
-        appointment.UpdatedAt = DateTime.UtcNow;
-        _apptRepo.Update(appointment);
-
-        await _historyRepo.AddAsync(new AppointmentHistory
-        {
-            AppointmentId = appointmentId,
-            PreviousStatus = prevStatus,
-            NewStatus = prevStatus, // Status unchanged, only slot changed
-            Reason = dto.Reason ?? "Rescheduled by patient",
-            Appointment = appointment
-        }, ct);
-
-        await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("Appointment rescheduled successfully");
-    }
-
     public async Task<ApiResponse<int>> GetVisitCountAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default)
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
@@ -1237,8 +1418,18 @@ public class AppointmentService : IAppointmentService
 
     public async Task<ApiResponse<bool>> IsReturningPatientAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default)
     {
-        var result = await GetVisitCountAsync(patientUserId, doctorProfileId, ct);
-        return ApiResponse<bool>.SuccessResponse(result.Data > 0);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        if (patient == null)
+            return ApiResponse<bool>.SuccessResponse(false);
+
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+        var isReturning = allAppts.Any(a =>
+            a.PatientId == patient.Id &&
+            a.DoctorId == doctorProfileId &&
+            !a.IsDeleted);
+
+        return ApiResponse<bool>.SuccessResponse(isReturning);
     }
 }
 

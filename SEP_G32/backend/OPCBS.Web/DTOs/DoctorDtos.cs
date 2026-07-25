@@ -94,5 +94,5 @@ public class UpdateDoctorProfileDto
     public List<Guid>? SpecializationIds { get; set; }
 
     [JsonPropertyName("isVisible")]
-    public bool? IsVisible { get; set; }
+    public bool IsVisible { get; set; }
 }

@@ -152,8 +152,17 @@ public class Appointment : BaseEntity
     /// <summary>Reason for cancellation</summary>
     public string? CancellationReason { get; set; }
 
+    /// <summary>Foreign key to proposed AppointmentSlot when patient requests a reschedule</summary>
+    public Guid? ProposedSlotId { get; set; }
+
+    /// <summary>Reason provided by patient for rescheduling</summary>
+    public string? RescheduleReason { get; set; }
+
     /// <summary>Navigation property to AppointmentSlot</summary>
     public virtual required AppointmentSlot AppointmentSlot { get; set; }
+
+    /// <summary>Navigation property to proposed AppointmentSlot for reschedule</summary>
+    public virtual AppointmentSlot? ProposedSlot { get; set; }
 
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }

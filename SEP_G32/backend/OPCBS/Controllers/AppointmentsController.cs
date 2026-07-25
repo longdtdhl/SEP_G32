@@ -38,8 +38,9 @@ public class AppointmentsController : ControllerBase
     /// <summary>POST /api/v1/appointments - Create appointment (Guest or Patient)</summary>
     [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto dto)
+    public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto? dto)
     {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Appointment payload is required."));
         var validation = await _createValidator.ValidateAsync(dto);
         if (!validation.IsValid)
             return BadRequest(ApiResponse.ErrorResponse(
@@ -88,8 +89,9 @@ public class AppointmentsController : ControllerBase
     /// <summary>PUT /api/v1/appointments/cancel/{id} - Cancel appointment</summary>
     [Authorize]
     [HttpPut("cancel/{appointmentId:guid}")]
-    public async Task<IActionResult> CancelAppointment(Guid appointmentId, [FromBody] CancelAppointmentDto dto)
+    public async Task<IActionResult> CancelAppointment(Guid appointmentId, [FromBody] CancelAppointmentDto? dto)
     {
+        dto ??= new CancelAppointmentDto();
         var validation = await _cancelValidator.ValidateAsync(dto);
         if (!validation.IsValid)
             return BadRequest(ApiResponse.ErrorResponse(validation.Errors.First().ErrorMessage));
@@ -103,11 +105,46 @@ public class AppointmentsController : ControllerBase
     /// <summary>PUT /api/v1/appointments/reschedule/{id} - Reschedule appointment (Patient)</summary>
     [Authorize(Roles = RoleConstants.Patient)]
     [HttpPut("reschedule/{appointmentId:guid}")]
-    public async Task<IActionResult> RescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto dto)
+    public async Task<IActionResult> RescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
+    {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/{id}/request-reschedule - Request appointment reschedule (Patient)</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPost("{appointmentId:guid}/request-reschedule")]
+    public async Task<IActionResult> RequestReschedule(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
+    {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/approve-reschedule - Doctor approves reschedule request</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("{appointmentId:guid}/approve-reschedule")]
+    public async Task<IActionResult> ApproveReschedule(Guid appointmentId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _apptService.RescheduleAppointmentAsync(appointmentId, userId.Value, dto);
+        var result = await _apptService.ApproveRescheduleAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/reject-reschedule - Doctor rejects reschedule request</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("{appointmentId:guid}/reject-reschedule")]
+    public async Task<IActionResult> RejectReschedule(Guid appointmentId, [FromBody] RejectAppointmentDto? dto = null)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.RejectRescheduleAsync(appointmentId, userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

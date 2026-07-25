@@ -152,6 +152,7 @@
         4 => "bg-success text-white",
         5 => "bg-danger text-white",
         2 => "bg-secondary text-white",
+        6 => "bg-warning text-dark",
         _ => "bg-secondary"
     };
 
@@ -163,6 +164,7 @@
         4 => "status-completed",
         5 => "status-cancelled",
         2 => "status-rejected",
+        6 => "status-pending",
         _ => "status-rejected"
     };
 
@@ -211,6 +213,17 @@
             {
                 <i class="bi bi-x-octagon-fill"></i>
                 <span><strong>Rejected</strong> — You have declined this booking request.</span>
+            }
+            else if (apt.Status == 6)
+            {
+                <i class="bi bi-arrow-repeat text-warning fs-4 me-2"></i>
+                <div>
+                    <strong>Reschedule Requested</strong> — Patient requested to move appointment to <strong>@(apt.ProposedSlotDate ?? "New date") (@(apt.ProposedSlotStartTime ?? "") - @(apt.ProposedSlotEndTime ?? ""))</strong>.
+                    @if (!string.IsNullOrEmpty(apt.RescheduleReason))
+                    {
+                        <div class="small opacity-75 mt-1">Reason: "@apt.RescheduleReason"</div>
+                    }
+                </div>
             }
             else if (apt.Status == 5)
             {
@@ -298,46 +311,99 @@
                         </div>
                     }
 
-                    @if (!string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations))
-                    {
-                        <div class="evaluation-section">
-                            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-                                <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
-                            </h5>
-                            
+                    <!-- Pre-Appointment Evaluation -->
+                    @{
+                        var hasAptEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                        var pRec = Model.PatientRecord;
+                        var hasProfileEval = pRec != null && (!string.IsNullOrEmpty(pRec.CurrentSymptoms) || !string.IsNullOrEmpty(pRec.PsychologicalHistory) || !string.IsNullOrEmpty(pRec.StressFactors));
+                    }
+                    <div class="evaluation-section mb-4 p-4 rounded-4 border shadow-sm bg-white">
+                        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                            <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
+                        </h5>
+                        
+                        @if (hasAptEval)
+                        {
                             @if (!string.IsNullOrEmpty(apt.Symptoms))
                             {
-                                <div class="evaluation-item">
+                                <div class="evaluation-item mb-3">
                                     <div class="small fw-semibold text-muted mb-1"><i class="bi bi-activity text-danger me-1"></i>Current Symptoms</div>
                                     <div class="evaluation-bubble bubble-symptoms">@apt.Symptoms</div>
                                 </div>
                             }
                             @if (!string.IsNullOrEmpty(apt.MedicalHistory))
                             {
-                                <div class="evaluation-item">
+                                <div class="evaluation-item mb-3">
                                     <div class="small fw-semibold text-muted mb-1"><i class="bi bi-journal-medical text-primary me-1"></i>Medical History</div>
                                     <div class="evaluation-bubble bubble-history">@apt.MedicalHistory</div>
                                 </div>
                             }
                             @if (!string.IsNullOrEmpty(apt.Expectations))
                             {
-                                <div class="evaluation-item">
+                                <div class="evaluation-item mb-3">
                                     <div class="small fw-semibold text-muted mb-1"><i class="bi bi-bullseye text-success me-1"></i>Expectations</div>
                                     <div class="evaluation-bubble bubble-expectations">@apt.Expectations</div>
                                 </div>
                             }
-                        </div>
-                    }
+                        }
+                        else if (hasProfileEval)
+                        {
+                            <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>Patient Profile Clinical Data (Returning Patient)</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(pRec!.CurrentSymptoms))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-activity text-danger me-1"></i>Recorded Symptoms</div>
+                                    <div class="evaluation-bubble bubble-symptoms">@pRec.CurrentSymptoms</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(pRec.PsychologicalHistory))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-journal-medical text-primary me-1"></i>Psychological History</div>
+                                    <div class="evaluation-bubble bubble-history">@pRec.PsychologicalHistory</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(pRec.StressFactors))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-lightning text-warning me-1"></i>Stress Factors</div>
+                                    <div class="evaluation-bubble bubble-expectations">@pRec.StressFactors</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No pre-appointment evaluation was submitted for this appointment (Follow-up visit or skipped during booking).</p>
+                        }
+                    </div>
 
                     <!-- Psychometric Test Result -->
-                    @if (Model.PsychometricSubmission != null)
-                    {
-                        <div class="mb-4 p-4 rounded-4 border shadow-sm bg-white">
-                            <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
-                                <i class="bi bi-clipboard-data text-primary fs-4"></i>
-                                <h5 class="mb-0 fw-bold">Patient Assessment Screening</h5>
+                    <div class="mb-4 p-4 rounded-4 border shadow-sm bg-white">
+                        <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
+                            <i class="bi bi-clipboard-data text-primary fs-4"></i>
+                            <h5 class="mb-0 fw-bold">Patient Assessment Screening</h5>
+                            @if (Model.PsychometricSubmission != null)
+                            {
                                 <span class="badge bg-success text-white ms-auto px-3 py-1.5 rounded-pill">Completed</span>
-                            </div>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary text-white ms-auto px-3 py-1.5 rounded-pill">Not Taken</span>
+                            }
+                        </div>
+
+                        @if (Model.PsychometricSubmission != null)
+                        {
+                            @if (Model.IsUsingFallbackPsych)
+                            {
+                                <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>Showing the patient's most recent assessment (not linked to this appointment)</span>
+                                </div>
+                            }
                             <div class="p-3 bg-light rounded-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <strong class="text-primary fs-5">@Model.PsychometricSubmission.TestTitle</strong>
@@ -386,8 +452,12 @@
                                     </div>
                                 </div>
                             }
-                        </div>
-                    }
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No mental health psychometric assessment was completed for this appointment.</p>
+                        }
+                    </div>
 
                     @* Previous Consultation Summary (from earlier visits) *@
                     @if (Model.LatestConsultationNote != null)
@@ -497,6 +567,31 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold">Session Actions</h5></div>
                 <div class="card-body d-grid gap-2">
+                    <!-- Reschedule Request Approval/Decline -->
+                    @if (apt.Status == 6)
+                    {
+                        <div class="p-3 bg-warning bg-opacity-10 border border-warning-subtle rounded-3 mb-2">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-arrow-repeat text-warning me-1"></i>Reschedule Requested</h6>
+                            <div class="small text-muted mb-1">Proposed New Slot:</div>
+                            <div class="fw-bold text-dark mb-2">@(apt.ProposedSlotDate ?? "New date") (@(apt.ProposedSlotStartTime ?? "") - @(apt.ProposedSlotEndTime ?? ""))</div>
+                            @if (!string.IsNullOrEmpty(apt.RescheduleReason))
+                            {
+                                <div class="small text-muted mb-3">Reason: <em>"@apt.RescheduleReason"</em></div>
+                            }
+                            <div class="d-flex gap-2">
+                                <form method="post" asp-page-handler="ApproveReschedule" class="flex-grow-1">
+                                    <input type="hidden" name="id" value="@apt.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm w-100 py-2 rounded-2 fw-semibold">
+                                        <i class="bi bi-check-lg me-1"></i>Approve
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-outline-danger btn-sm flex-grow-1 py-2 rounded-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal">
+                                    <i class="bi bi-x-lg me-1"></i>Decline
+                                </button>
+                            </div>
+                        </div>
+                    }
+
                     <!-- Confirm/Approve -->
                     @if (apt.Status == 0)
                     {
@@ -649,7 +744,7 @@
                             @* Issue 1: Follow-up date field *@
                             <div class="mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
                                 <label class="form-label fw-semibold"><i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date</label>
-                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" class="form-control" style="border-radius:10px;" />
+                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" style="border-radius:10px;" />
                                 <div class="form-text">Set a recommended date for the patient's next visit. An email reminder will be sent 1 day before.</div>
                             </div>
                         </div>
@@ -697,6 +792,34 @@
                         <div class="modal-footer border-0 pt-0">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                             <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Confirm Cancellation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (apt.Status == 6)
+    {
+        <!-- Reject Reschedule Modal -->
+        <div class="modal fade" id="rejectRescheduleModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0">
+                    <form method="post" asp-page-handler="RejectReschedule" asp-route-id="@apt.Id">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Decline Reschedule Request</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">Declining this request will retain the patient's appointment at the originally scheduled date and time.</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-dark">Reason for declining (Optional)</label>
+                                <textarea name="reason" class="form-control rounded-3" rows="3" placeholder="Explain why you cannot accommodate this new slot..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light rounded-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger rounded-2"><i class="bi bi-x-lg me-1"></i>Decline Request</button>
                         </div>
                     </form>
                 </div>
