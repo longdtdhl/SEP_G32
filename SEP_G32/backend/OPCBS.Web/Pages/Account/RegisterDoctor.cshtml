@@ -1,4 +1,107 @@
 ﻿@page
 @model OPCBS.Web.Pages.Account.RegisterDoctorModel
 @{
+    ViewData["Title"] = "Become a Doctor";
+    Layout = "_AuthLayout";
 }
+
+<div class="mb-auth-card" style="max-width:600px;">
+    <div class="text-center mb-3">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:linear-gradient(135deg, var(--mb-primary), #6366f1);">
+            <i class="bi bi-heart-pulse-fill text-white" style="font-size:1.5rem;"></i>
+        </div>
+    </div>
+    <h2 class="text-center">Become a Doctor</h2>
+    <p class="auth-subtitle text-center">Register a doctor consulting account on MindBridge</p>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i>@Model.ErrorMessage</div>
+    }
+    <form method="post">
+        <!-- Step 1: Account Info -->
+        <h6 class="fw-bold text-muted mb-3"><i class="bi bi-1-circle me-1"></i>Account Info</h6>
+        <div class="mb-3">
+            <label asp-for="Input.FullName" class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input asp-for="Input.FullName" class="form-control" placeholder="E.g., Dr. John Smith" />
+            <span asp-validation-for="Input.FullName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.Email" class="form-label">Email <span class="text-danger">*</span></label>
+            <input asp-for="Input.Email" type="email" class="form-control" placeholder="example@email.com" />
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.PhoneNumber" class="form-label">Phone Number <span class="text-danger">*</span></label>
+            <input asp-for="Input.PhoneNumber" class="form-control" placeholder="0912345678" />
+            <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="Input.Password" class="form-label">Password <span class="text-danger">*</span></label>
+                <input asp-for="Input.Password" type="password" class="form-control" placeholder="At least 8 characters" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Re-enter password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Step 2: Professional Info (skippable) -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-muted mb-0"><i class="bi bi-2-circle me-1"></i>Professional Info</h6>
+            <span class="badge bg-light text-muted border" style="font-size:0.75rem;">Optional</span>
+        </div>
+        <div class="alert alert-info py-2 px-3" style="font-size:0.85rem;">
+            <i class="bi bi-info-circle me-1"></i>You can fill this in later in your <strong>Doctor Profile</strong> after logging in.
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.ProfessionalTitle" class="form-label">Professional Title</label>
+            <input asp-for="Input.ProfessionalTitle" class="form-control" placeholder="E.g., MSc in Psychotherapy" />
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-8">
+                <label asp-for="Input.Biography" class="form-label">Biography</label>
+                <textarea asp-for="Input.Biography" class="form-control" rows="3" placeholder="Brief description of your experience, specializations..."></textarea>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Input.ExperienceYears" class="form-label">Years of Exp</label>
+                <input type="number" asp-for="Input.ExperienceYears" class="form-control" min="0" value="0" />
+            </div>
+        </div>
+
+        <!-- Specializations -->
+        @if (Model.AvailableSpecializations.Any())
+        {
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Specializations <small class="text-muted fw-normal">(select one or more)</small></label>
+                <div class="row g-2">
+                    @for (int i = 0; i < Model.AvailableSpecializations.Count; i++)
+                    {
+                        var spec = Model.AvailableSpecializations[i];
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SelectedSpecializations" value="@spec.Id" id="spec_@i"
+                                       @(Model.SelectedSpecializations.Contains(spec.Id) ? "checked" : "") />
+                                <label class="form-check-label" for="spec_@i">@spec.Name</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100 btn-lg mt-2" style="background:var(--mb-primary); border-color:var(--mb-primary);">
+            <i class="bi bi-person-plus me-1"></i>Register Doctor Account
+        </button>
+    </form>
+    <div class="auth-footer">
+        Already have an account? <a asp-page="/Account/Login">Log In</a>
+        <br />
+        <small>Want to register as a patient? <a asp-page="/Account/Register">Register here</a></small>
+    </div>
+</div>

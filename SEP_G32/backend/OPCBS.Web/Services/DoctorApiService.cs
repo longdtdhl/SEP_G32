@@ -14,7 +14,7 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
         if (filter != null)
         {
             var parts = new List<string>();
-            if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
+            if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"keyword={Uri.EscapeDataString(filter.Search)}");
             if (!string.IsNullOrEmpty(filter.Specialization)) parts.Add($"specialization={Uri.EscapeDataString(filter.Specialization)}");
             if (filter.MinRating.HasValue) parts.Add($"minRating={filter.MinRating}");
             if (filter.MaxFee.HasValue) parts.Add($"maxFee={filter.MaxFee}");
@@ -44,4 +44,25 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
         var (data, _, error) = await GetAsync<List<TimeSlotDto>>($"{ApiRoutes.Doctors}/{doctorId}/slots?date={date:yyyy-MM-dd}");
         return (data ?? new List<TimeSlotDto>(), error);
     }
+
+    public async Task<List<string>> GetSpecializationsAsync()
+    {
+        var (data, _, _) = await GetAsync<List<SpecializationDto>>($"{ApiRoutes.Doctors}/specializations");
+        return data?.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList() ?? new List<string>();
+    }
+
+    public async Task<List<SpecializationDto>> GetSpecializationDtosAsync()
+    {
+        var (data, _, _) = await GetAsync<List<SpecializationDto>>($"{ApiRoutes.Doctors}/specializations");
+        return data ?? new List<SpecializationDto>();
+    }
+
+    public async Task<(DoctorDto? Data, string? Error)> GetMyProfileAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorDto>("api/v1/doctor-profile");
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateMyProfileAsync(UpdateDoctorProfileDto dto) =>
+        await PutAsync("api/v1/doctor-profile", dto);
 }
