@@ -525,4 +525,181 @@ Controller: `TreatmentCaseController` (`api/v1/treatment-cases`)
 * `OPCBS.Web/Pages/Patient/TreatmentCases/Details.cshtml[.cs]` [NEW]
 * `OPCBS.Web/Pages/Shared/_Header.cshtml` (nav links)
 
+---
+
+## 20. Hệ thống Tin nhắn Trực tiếp Real-time (Live Chat & Messaging System)
+
+### Ngữ cảnh & Nghiệp vụ
+* Hỗ trợ trò chuyện trực tuyến giữa Bác sĩ và Bệnh nhân nhằm trao đổi nhanh về tình hình sức khỏe hoặc giải đáp thắc mắc liên quan ngoài giờ hẹn khám.
+* Mỗi người dùng (Bác sĩ hoặc Bệnh nhân) có thể xem danh sách các cuộc hội thoại gần đây kèm tin nhắn cuối cùng, trạng thái chưa đọc, và tham gia nhắn tin trực tiếp thời gian thực.
+
+### Thiết kế Kỹ thuật
+* **Entity:** `ChatMessage` (`OPCBS.Domain/Entities/MessagingEntities.cs`)
+  - Lưu trữ tin nhắn giữa người gửi (`SenderId`) và người nhận (`ReceiverId`).
+  - Có các thuộc tính: `MessageText`, `SentAt` (thời gian gửi), `IsRead` (trạng thái đọc).
+* **SignalR Hub (`ChatHub.cs`):**
+  - Quản lý các kết nối thời gian thực theo ID người dùng (`UserId`).
+  - Phương thức `SendMessage(string receiverId, string message)` để định tuyến và chuyển tiếp tin nhắn tức thời cho người nhận nếu họ đang trực tuyến.
+* **API Endpoints (`MessagesController`):**
+  - `GET api/v1/messages/conversations`: Lấy danh sách các cuộc hội thoại hiện có của người dùng hiện tại kèm theo tin nhắn mới nhất và số lượng tin nhắn chưa đọc.
+  - `GET api/v1/messages/conversation/{otherUserId}`: Lấy lịch sử tin nhắn chi tiết giữa hai người dùng (hỗ trợ phân trang).
+  - `POST api/v1/messages/mark-read/{senderId}`: Đánh dấu đã đọc toàn bộ tin nhắn nhận được từ người dùng cụ thể.
+* **Web UI Pages:**
+  - Bác sĩ truy cập qua `/Doctor/Messages/Index`.
+  - Bệnh nhân truy cập qua `/Patient/Messages/Index`.
+  - Thiết kế card layout, có sidebar danh sách bạn chat bên trái và khung chat trực quan bên phải, tự động cuộn xuống dưới khi có tin nhắn mới.
+
+### Các file liên quan
+* `OPCBS.Domain/Entities/MessagingEntities.cs` [NEW]
+* `OPCBS.Application/Interfaces/Services/IMessagingService.cs` [NEW]
+* `OPCBS.Application/Services/MessagingService.cs` [NEW]
+* `OPCBS/Controllers/MessagesController.cs` [NEW]
+* `OPCBS/Hubs/ChatHub.cs` [NEW]
+* `OPCBS.Web/DTOs/MessagingDtos.cs` [NEW]
+* `OPCBS.Web/Pages/Doctor/Messages/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/Messages/Index.cshtml[.cs]` [NEW]
+
+---
+
+## 21. Tính năng Bác sĩ yêu thích (Favorite Doctors)
+
+### Ngữ cảnh & Nghiệp vụ
+* Bệnh nhân có thể thêm các bác sĩ/chuyên gia vào danh sách yêu thích để dễ dàng theo dõi, tìm kiếm và đặt lịch hẹn khám sau này.
+
+### Thiết kế Kỹ thuật
+* **Entity:** `FavoriteDoctor` (`OPCBS.Domain/Entities/IdentityEntities.cs`)
+  - Chứa khóa ngoại kép: `PatientId` (tham chiếu tới PatientProfile) và `DoctorId` (tham chiếu tới DoctorProfile).
+* **API Endpoints (`FavoritesController`):**
+  - `POST api/v1/favorites/{doctorId}`: Thêm bác sĩ vào danh sách yêu thích.
+  - `DELETE api/v1/favorites/{doctorId}`: Xóa bác sĩ khỏi danh sách yêu thích.
+  - `GET api/v1/favorites`: Lấy danh sách toàn bộ bác sĩ yêu thích của bệnh nhân hiện tại.
+  - `GET api/v1/favorites/check/{doctorId}`: Kiểm tra nhanh trạng thái yêu thích của bác sĩ được chỉ định.
+* **Web UI Pages:**
+  - Bệnh nhân quản lý tại `/Patient/Favorites/Index` dạng card lưới trực quan.
+  - Tích hợp nút Trái tim (Heart toggle button) tại trang chi tiết bác sĩ `/Doctors/Details` để bệnh nhân có thể thích hoặc bỏ thích ngay tại chỗ.
+
+### Các file liên quan
+* `OPCBS.Application/Interfaces/Services/IFavoriteDoctorService.cs` [NEW]
+* `OPCBS.Application/Services/FavoriteDoctorService.cs` [NEW]
+* `OPCBS/Controllers/FavoritesController.cs` [NEW]
+* `OPCBS.Web/DTOs/FavoriteDtos.cs` [NEW]
+* `OPCBS.Web/Pages/Patient/Favorites/Index.cshtml[.cs]` [NEW]
+
+---
+
+## 22. Kênh thông báo Real-time qua SignalR (Real-time Notification Hub)
+
+### Ngữ cảnh & Nghiệp vụ
+* Các sự kiện quan trọng trong hệ thống (như khi lịch hẹn được duyệt/hủy, khi có bài tập trị liệu mới được giao/nộp, hay có tin nhắn mới) cần được thông báo tức thời tới người dùng mà không cần họ phải F5/reload trang.
+
+### Thiết kế Kỹ thuật
+* **SignalR Hub (`NotificationHub.cs`):**
+  - Được đăng ký tại `Program.cs` đường dẫn `/hubs/notifications`.
+  - Quản lý các kết nối của người dùng theo nhóm `UserId`.
+* **Phát thông báo từ Backend (`BusinessServices.cs` -> `CreateNotificationAsync`):**
+  - Khi lưu thông báo vào database, hệ thống đồng thời gọi `IHubContext<NotificationHub>` để gửi tin nhắn `ReceiveNotification` kèm theo thông tin chi tiết của thông báo đó.
+  - Client-side Razor Pages sử dụng thư viện JS SignalR lắng nghe sự kiện `ReceiveNotification` để hiển thị toast notification và cập nhật badge đếm số thông báo chưa đọc trên Header.
+
+### Các file liên quan
+* `OPCBS/Hubs/NotificationHub.cs` [NEW]
+* `OPCBS.Application/Services/BusinessServices.cs` (tích hợp SignalR HubContext vào `CreateNotificationAsync`)
+* `OPCBS.Web/Pages/Shared/_Header.cshtml` (tích hợp JS SignalR client)
+
+---
+
+## 23. Luồng Thay đổi Lịch hẹn (Appointment Rescheduling Flow)
+
+### Ngữ cảnh & Nghiệp vụ
+* Bệnh nhân có nhu cầu đổi cuộc hẹn đã đặt sang một khung giờ rảnh khác của cùng một bác sĩ.
+* **Chính sách 24h (24-Hour Policy):** Để bảo vệ lịch làm việc của bác sĩ, bệnh nhân chỉ được phép đổi lịch hẹn trước giờ bắt đầu của lịch cũ ít nhất 24 tiếng. Khung giờ mới chọn phải ở trạng thái trống (`Available`).
+
+### Thiết kế Kỹ thuật
+* **API Endpoint:** `PUT api/v1/appointments/{appointmentId}/reschedule`
+* **Xử lý Backend (`DoctorAppointmentServices.cs` -> `RescheduleAppointmentAsync`):**
+  - Kiểm tra xem thời gian bắt đầu của lịch cũ có cách thời điểm hiện tại từ 24 giờ trở lên hay không.
+  - Giải phóng khung giờ cũ: Cập nhật trạng thái slot cũ của lịch hẹn đó thành `Available`.
+  - Đặt trước khung giờ mới: Kiểm tra và khóa slot mới được chọn thành `Booked`.
+  - Cập nhật thông tin cuộc hẹn: Thay đổi ID slot tham chiếu, giờ bắt đầu/kết thúc, và reset trạng thái lịch hẹn về `Pending` (chờ bác sĩ phê duyệt lại).
+  - Ghi nhận lịch sử thay đổi vào bảng `AppointmentHistory`.
+* **Web UI Pages:**
+  - Bệnh nhân thực hiện đổi lịch tại `/Patient/Appointments/Reschedule?id={appointmentId}`.
+  - Giao diện cung cấp lịch biểu chọn ngày và hiển thị danh sách các slot trống (Available Slots) của bác sĩ đó.
+
+### Các file liên quan
+* `OPCBS.Domain/Entities/AppointmentEntities.cs` (Cập nhật lịch sử thay đổi)
+* `OPCBS.Application/Services/DoctorAppointmentServices.cs` (Phương thức `RescheduleAppointmentAsync`)
+* `OPCBS/Controllers/AppointmentsController.cs` (Định tuyến API đổi lịch)
+* `OPCBS.Web/Pages/Patient/Appointments/Reschedule.cshtml[.cs]` [NEW]
+
+---
+
+## 24. Quyền riêng tư & Ngày tư vấn tùy chỉnh cho Ghi chú tư vấn (Consultation Note Visibility & Custom Date)
+
+### Ngữ cảnh & Nghiệp vụ
+* **Quyền riêng tư (Note Visibility):** Ghi chú tư vấn của bác sĩ có thể chứa các chẩn đoán nhạy cảm hoặc giả thuyết lâm sàng chỉ nên lưu trữ nội bộ (`Doctor Only`), hoặc các lời khuyên, tóm tắt cần chia sẻ cho bệnh nhân xem (`Patient Visible`).
+* **Ngày tư vấn tùy chỉnh (Custom Consultation Date):** Đối với các ghi chú tạo độc lập (Walk-in / Không qua lịch hẹn hệ thống), bác sĩ cần được ghi nhận ngày thực hiện thực tế thay vì mặc định lấy ngày tạo bản ghi. Nếu ghi chú gắn liền với lịch hẹn, ngày tư vấn được tự động khóa theo ngày của lịch hẹn đó.
+
+### Thiết kế Kỹ thuật
+* **Trường dữ liệu mới:** Thực thể `ConsultationNote` được bổ sung hai thuộc tính mới:
+  - `Visibility` (`NoteVisibility` enum: `0 = DoctorOnly`, `1 = PatientVisible`).
+  - `ConsultationDate` (DateTime, cho phép lưu ngày diễn ra buổi tư vấn thực tế).
+* **Quy tắc Kiểm tra & Ánh xạ:**
+  - Bác sĩ khi tạo/chỉnh sửa bệnh án được chọn mức độ hiển thị và ngày tư vấn.
+  - Nếu ghi chú tư vấn liên kết với `AppointmentId`, trường `ConsultationDate` sẽ tự động lấy giá trị từ ngày hẹn (`AppointmentDate`) và khóa không cho phép sửa đổi ở Frontend.
+* **Web UI Pages:**
+  - Màn hình của Bác sĩ (`Doctor/ConsultationNotes/Create.cshtml`, `Edit.cshtml`) hiển thị dropdown chọn quyền riêng tư và ô chọn ngày tư vấn.
+  - Giao diện xem của bệnh nhân (`Patient/ConsultationRecords/Index.cshtml`) và các API lấy dữ liệu của bệnh nhân sẽ chỉ hiển thị các bệnh án có trạng thái `PatientVisible` (1).
+
+### Các file liên quan
+* `OPCBS.Domain/Enums/SystemEnums.cs` (Thêm enum `NoteVisibility`)
+* `OPCBS.Infrastructure/Migrations/20260726142232_AddConsultationNoteVisibilityAndDate.cs` [NEW]
+* `OPCBS.Application/Services/BusinessServices.cs` (Cập nhật `CreateAsync`, `UpdateAsync`, `EnrichRecordsAsync`)
+* `OPCBS.Web/DTOs/ConsultationRecordDtos.cs` (Cập nhật các thuộc tính hiển thị)
+* `OPCBS.Web/Pages/Doctor/ConsultationNotes/Create.cshtml` & `Edit.cshtml` (Thêm các trường input)
+
+---
+
+## 25. Tự động khởi tạo Ca điều trị khi Chấp nhận Gói (Auto-create Treatment Case on Package Acceptance)
+
+### Ngữ cảnh & Nghiệp vụ
+* Gói điều trị (`TreatmentPackage`) hoạt động như một template mẫu. Khi bệnh nhân đồng ý trị liệu và bấm chấp nhận gói khám đề xuất, hệ thống cần tự động tạo ra một Ca điều trị thực tế (`TreatmentCase`) làm trung tâm quản lý tiến trình, các buổi trị liệu cụ thể, mục tiêu và bài tập về nhà của bệnh nhân đó.
+
+### Thiết kế Kỹ thuật
+* **Tích hợp Quy trình (`TreatmentPackageService.cs` -> `AcceptPackageAsync`):**
+  - Khi bệnh nhân bấm chấp nhận gói điều trị, trạng thái gói được cập nhật thành `Active` (hoặc `Accepted`).
+  - Hệ thống kiểm tra xem đã có `TreatmentCase` nào liên kết với Gói điều trị, Bác sĩ và Bệnh nhân này chưa.
+  - Nếu chưa, tự động tạo mới một thực thể `TreatmentCase` với các thông số kế thừa từ gói template:
+    - `CaseName` = `Package.Name`
+    - `CaseDescription` = `Package.Description`
+    - `PrimaryConcern` = `Package.TargetOutcome`
+    - `TotalSessions` = `Package.SessionQuantity`
+    - `RemainingSessions` = `Package.SessionQuantity`
+    - `StartDate` = Thời gian hiện tại.
+    - `ExpectedEndDate` = Thời gian hiện tại cộng thêm số ngày hiệu lực của gói (`ValidityDays`).
+    - `Status` = `TreatmentCaseStatus.Active`.
+  - Thực thể mới được lưu xuống database trong cùng một transaction.
+
+### Các file liên quan
+* `OPCBS.Application/Services/BusinessServices.cs` (Phương thức `AcceptPackageAsync` xử lý tạo Case tự động)
+
+---
+
+## 26. Ràng buộc số lượng Gói điều trị hoạt động & Tính bất biến của gói đã gán (Treatment Package Active Count & Immutability Rules)
+
+### Ngữ cảnh & Nghiệp vụ
+* **Giới hạn số gói hoạt động:** Để tránh xung đột dữ liệu và luồng đặt lịch, một bệnh nhân và một bác sĩ chỉ được phép có tối đa **1 gói điều trị đang hoạt động** ở các trạng thái chưa kết thúc (`Active`, `Accepted`, `Created`, hoặc `Assigned`).
+* **Tính bất biến của gói đã gán (Immutability):** Gói điều trị sau khi đã được gán cho một bệnh nhân cụ thể (`PatientId` hợp lệ) thì trở thành **bất biến**. Bác sĩ không được phép chỉnh sửa các thông số của gói này để đảm bảo tính cam kết về giá và số buổi. Chỉ có các gói template dùng chung (chưa gán cho ai) mới có thể sửa đổi.
+
+### Thiết kế Kỹ thuật
+* **Kiểm tra giới hạn khi tạo (`TreatmentPackagesController` -> `Create`):**
+  - Quét toàn bộ danh sách gói điều trị hiện tại giữa Bác sĩ và Bệnh nhân.
+  - Nếu tồn tại bất kỳ gói nào có trạng thái `Active`, `Accepted`, `Created`, hoặc `Assigned`, API từ chối tạo và trả về mã lỗi `400 BadRequest`.
+* **Chặn chỉnh sửa gói đã gán (`TreatmentPackagesController` -> `Update`):**
+  - Trước khi thực hiện cập nhật gói điều trị, hệ thống kiểm tra trường `PatientId`.
+  - Nếu `PatientId` khác rỗng (đã được gán cho một bệnh nhân), hệ thống sẽ từ chối cập nhật và yêu cầu bác sĩ tạo một gói mới nếu muốn thay đổi thông tin.
+
+### Các file liên quan
+* `OPCBS/Controllers/BlogsReviewsController.cs` (Kiểm tra nghiệp vụ trong `Create` và `Update` thuộc `TreatmentPackagesController`)
+
+
 
