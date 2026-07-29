@@ -180,6 +180,28 @@ Chịu trách nhiệm kiểm duyệt nội dung (duyệt bác sĩ, duyệt blog)
 
 ---
 
+### 6. Các tệp tin hệ thống và Giao diện dùng chung (Shared & System Files)
+Đây là các tệp tin cấu hình nền tảng, Hubs kết nối, layout dùng chung của toàn bộ ứng dụng và được bảo trì bởi cả nhóm hoặc được phân công cho người phụ trách chính khi có nâng cấp lớn.
+
+* **Razor Pages & Layouts (Dùng chung):**
+  * [Index.cshtml[.cs]](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Index.cshtml) - Trang chủ công cộng của hệ thống (Đức Anh phụ trách chính).
+  * [Notifications/Index.cshtml[.cs]](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Notifications/Index.cshtml) - Trang danh sách thông báo chung của mọi user (Quang & Việt phối hợp).
+  * [Shared/_Layout.cshtml](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Shared/_Layout.cshtml) - Layout tổng quát của website.
+  * [Shared/_Header.cshtml](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Shared/_Header.cshtml) - Thanh Header & Dropdown menu điều hướng chính.
+  * [Shared/_Footer.cshtml](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Shared/_Footer.cshtml) - Chân trang hệ thống.
+  * [Shared/_Pagination.cshtml](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Shared/_Pagination.cshtml) - Partial view phân trang tự động bảo toàn bộ lọc.
+  * [Shared/_ValidationScriptsPartial.cshtml](file:///c:/SEP_G32/SEP_G32/backend/OPCBS.Web/Pages/Shared/_ValidationScriptsPartial.cshtml) - Thư viện validate phía Client.
+  * `_ViewImports.cshtml`, `_ViewStart.cshtml`, `Error.cshtml[.cs]`, `Privacy.cshtml[.cs]`.
+* **Hubs & Services hệ thống (Backend):**
+  * `ChatHub.cs` - SignalR Hub điều hướng tin nhắn live chat (Minh & Việt quản lý).
+  * `NotificationHub.cs` - SignalR Hub đẩy thông báo thời gian thực (Quang phụ trách).
+  * `SmtpEmailService.cs`, `IEmailService.cs`, `MockExternalServices.cs` - Dịch vụ gửi email đăng ký, đặt lịch, nhắc tái khám (Long phụ trách chính).
+  * `SeedData.cs` - Lớp khởi tạo dữ liệu ban đầu cho database (Long & Quang phối hợp).
+  * `OpcbsDbContext.cs` - Database Context kết nối thực thể và cấu hình Fluent API (Cả nhóm phối hợp theo quy tắc).
+  * `MappingProfile.cs` - Cấu hình AutoMapper chuyển đổi thực thể sang DTO (Cả nhóm phối hợp).
+
+---
+
 ## IV. NGUYÊN TẮC LÀM VIỆC CHUNG TRÁNH XUNG ĐỘT (GIT & CODE CONFLICT)
 
 Do một số tệp tin chứa cấu hình dùng chung cho toàn bộ dự án, các thành viên cần tuân thủ các nguyên tắc sau để tránh đè code (overwrite):
