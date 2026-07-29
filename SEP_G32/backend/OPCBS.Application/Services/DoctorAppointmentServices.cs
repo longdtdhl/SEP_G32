@@ -231,14 +231,24 @@ public class AppointmentService : IAppointmentService
     public async Task<ApiResponse<AppointmentDto>> CreateAppointmentAsync(CreateAppointmentDto dto, Guid? patientUserId, CancellationToken ct = default)
     {
         // Validate doctor exists and is verified (BOOK-04)
+        // DoctorId may be either DoctorProfile.Id (PK) or User.Id (from enriched DTOs)
         var doctor = await _doctorRepo.GetByIdAsync(dto.DoctorId, ct);
+        if (doctor == null)
+        {
+            // Fallback: DoctorId might be User.Id (EnrichNamesAsync swaps DoctorId to UserId)
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            doctor = allDoctors.FirstOrDefault(d => d.UserId == dto.DoctorId);
+        }
         if (doctor == null || doctor.VerificationStatus != VerificationStatus.Approved)
             return ApiResponse<AppointmentDto>.ErrorResponse("Doctor not found or not verified");
+
+        // Normalize: ensure we use DoctorProfile.Id for all downstream operations
+        dto.DoctorId = doctor.Id;
 
         // BOOK-04 / DOC-12 / SP-01: Doctor must have active subscription
         var allSubs = await _subscriptionRepo.GetAllAsync(ct);
         var hasActiveSub = allSubs.Any(s =>
-            s.DoctorProfileId == dto.DoctorId &&
+            s.DoctorProfileId == doctor.Id &&
             s.Status == SubscriptionStatus.Active &&
             s.ExpirationDate > DateTime.UtcNow);
         if (!hasActiveSub)
@@ -483,19 +493,23 @@ public class AppointmentService : IAppointmentService
                 dto.DoctorName = "Doctor";
             }
 
-            // Set PatientId (UserId, not ProfileId)
-            if (appt.PatientId.HasValue)
+            // Set PatientId & PatientName
+            if (appt.PatientId.HasValue && patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId))
             {
-                if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId))
-                {
-                    dto.PatientId = patUserId;
-                    if (userDict.TryGetValue(patUserId, out var patName))
-                        dto.PatientName = patName;
-                }
+                dto.PatientId = patUserId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(appt.GuestName))
+            {
+                dto.PatientName = appt.GuestName;
+            }
+            else if (dto.PatientId.HasValue && userDict.TryGetValue(dto.PatientId.Value, out var patName) && !string.IsNullOrWhiteSpace(patName))
+            {
+                dto.PatientName = patName;
             }
             else
             {
-                dto.PatientName = appt.GuestName ?? "Guest";
+                dto.PatientName = "Guest";
             }
 
             if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
@@ -549,18 +563,23 @@ public class AppointmentService : IAppointmentService
             dto.DoctorName = "Doctor";
         }
 
-        if (appt.PatientId.HasValue)
+        // Set PatientId & PatientName
+        if (appt.PatientId.HasValue && patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId2))
         {
-            if (patientUserMap.TryGetValue(appt.PatientId.Value, out var patUserId))
-            {
-                dto.PatientId = patUserId;
-                if (userDict.TryGetValue(patUserId, out var patName))
-                    dto.PatientName = patName;
-            }
+            dto.PatientId = patUserId2;
+        }
+
+        if (!string.IsNullOrWhiteSpace(appt.GuestName))
+        {
+            dto.PatientName = appt.GuestName;
+        }
+        else if (dto.PatientId.HasValue && userDict.TryGetValue(dto.PatientId.Value, out var patName2) && !string.IsNullOrWhiteSpace(patName2))
+        {
+            dto.PatientName = patName2;
         }
         else
         {
-            dto.PatientName = appt.GuestName ?? "Guest";
+            dto.PatientName = "Guest";
         }
 
         if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
@@ -1423,10 +1442,21 @@ public class AppointmentService : IAppointmentService
         if (patient == null)
             return ApiResponse<bool>.SuccessResponse(false);
 
+        // Resolve doctorProfileId: may be DoctorProfile.Id (PK) or User.Id (from enriched DTOs)
+        var resolvedDoctorProfileId = doctorProfileId;
+        var doctorById = await _doctorRepo.GetByIdAsync(doctorProfileId, ct);
+        if (doctorById == null)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doctorByUserId = allDoctors.FirstOrDefault(d => d.UserId == doctorProfileId);
+            if (doctorByUserId != null)
+                resolvedDoctorProfileId = doctorByUserId.Id;
+        }
+
         var allAppts = await _apptRepo.GetAllAsync(ct);
         var isReturning = allAppts.Any(a =>
             a.PatientId == patient.Id &&
-            a.DoctorId == doctorProfileId &&
+            a.DoctorId == resolvedDoctorProfileId &&
             !a.IsDeleted);
 
         return ApiResponse<bool>.SuccessResponse(isReturning);

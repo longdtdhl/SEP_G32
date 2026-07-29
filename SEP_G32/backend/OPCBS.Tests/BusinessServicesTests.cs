@@ -66,7 +66,9 @@ public class BusinessServicesTests
                 }
             });
         var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var pkgRepo = new Mock<IRepository<TreatmentPackage>>();
+        pkgRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, pkgRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var result = await service.GetByPatientAsync(patientId, 1, 10, default);
 
@@ -107,7 +109,9 @@ public class BusinessServicesTests
             .Returns(new List<TreatmentPackageDto> { new() { Id = package.Id, Name = package.Name, DoctorName = "Doctor", PatientName = "Patient", Status = "Assigned" } });
 
         var notifService = new Mock<OPCBS.Application.Interfaces.Services.INotificationService>();
-        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var caseRepo = new Mock<IRepository<TreatmentCase>>();
+        caseRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentCase>());
+        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object, userRepo.Object, caseRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var result = await service.GetByPatientAsync(patientId, 1, 10, default);
 
@@ -135,7 +139,7 @@ public class BusinessServicesTests
 
         doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile>());
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         var result = await service.CreateAsync(Guid.NewGuid(), new CreateConsultationNoteDto { PatientRecordId = Guid.NewGuid(), ConsultationSummary = "Summary" }, default);
 
         Assert.False(result.Success);
@@ -160,7 +164,7 @@ public class BusinessServicesTests
         doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
         patientRecordRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((PatientRecord?)null);
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         var result = await service.CreateAsync(doctorUserId, new CreateConsultationNoteDto { PatientRecordId = Guid.NewGuid(), ConsultationSummary = "Summary" }, default);
 
         Assert.False(result.Success);
@@ -197,7 +201,7 @@ public class BusinessServicesTests
         mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
             .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Test Summary" });
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         var result = await service.CreateAsync(doctorUserId, dto, default);
 
         Assert.True(result.Success);
@@ -248,7 +252,7 @@ public class BusinessServicesTests
         mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
             .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Test Summary" });
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         var result = await service.CreateAsync(doctorUserId, dto, default);
 
         Assert.True(result.Success);
@@ -297,7 +301,7 @@ public class BusinessServicesTests
         mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>()))
             .Returns(new ConsultationNoteDto { Id = Guid.NewGuid(), PatientRecordId = patientRecordId, ConsultationSummary = "Summary" });
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         await service.CreateAsync(doctorUserId, dto, default);
 
         Assert.NotNull(savedNote);
@@ -331,7 +335,7 @@ public class BusinessServicesTests
 
         uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB Save Error"));
 
-        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, notifService.Object, uow.Object, mapper.Object);
+        var service = new ConsultationNoteService(recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object, patientRecordRepo.Object, userRepo.Object, new Mock<IRepository<TreatmentPackage>>().Object, notifService.Object, uow.Object, mapper.Object);
         var dto = new CreateConsultationNoteDto { PatientRecordId = patientRecordId, ConsultationSummary = "Summary" };
 
         await Assert.ThrowsAsync<Exception>(() => service.CreateAsync(doctorUserId, dto, default));

@@ -576,3 +576,75 @@ public class MessagingApiService : ApiServiceBase, IMessagingApiService
         return (data, error);
     }
 }
+
+// --- Treatment Cases ---
+public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
+{
+    public TreatmentCaseApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByDoctorAsync(Guid doctorUserId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/doctor/{doctorUserId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/patient/{patientUserId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(TreatmentCaseWebDto? Data, string? Error)> GetByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<TreatmentCaseWebDto>($"{ApiRoutes.TreatmentCases}/{id}");
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateAsync(object dto) =>
+        await PostAsync(ApiRoutes.TreatmentCases, dto);
+
+    public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/{id}", dto);
+
+    public async Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/close", dto);
+
+    // Sessions
+    public async Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentSessionWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/sessions");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateSessionAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/sessions", dto);
+
+    public async Task<(bool Success, string? Error)> CompleteSessionAsync(Guid sessionId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}/complete", dto);
+
+    // Goals
+    public async Task<(List<TreatmentGoalWebDto> Data, string? Error)> GetGoalsAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentGoalWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/goals");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateGoalAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}", dto);
+
+    // Progress & Timeline
+    public async Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<TreatmentProgressWebDto>($"{ApiRoutes.TreatmentCases}/{caseId}/progress");
+        return (data, error);
+    }
+
+    public async Task<(List<TreatmentTimelineWebDto> Data, string? Error)> GetTimelineAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentTimelineWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/timeline");
+        return (data ?? new(), error);
+    }
+}

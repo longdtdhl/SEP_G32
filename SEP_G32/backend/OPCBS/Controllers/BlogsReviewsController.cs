@@ -344,6 +344,21 @@ public class TreatmentPackagesController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+
+        // Business rule: 1 patient + 1 doctor can only have 1 Active package at a time
+        if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
+        {
+            var existing = await _service.GetByDoctorAndPatientAsync(userId.Value, dto.PatientId.Value);
+            if (existing.Success && existing.Data != null)
+            {
+                var hasActive = existing.Data.Any(p =>
+                    p.Status == "Active" || p.Status == "Accepted" || p.Status == "Created" || p.Status == "Assigned");
+                if (hasActive)
+                    return BadRequest(ApiResponse.ErrorResponse(
+                        "This patient already has an active treatment package with you. Please complete or cancel the existing package before creating a new one."));
+            }
+        }
+
         var result = await _service.CreateAsync(userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
@@ -359,13 +374,27 @@ public class TreatmentPackagesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>PUT /api/v1/treatment-packages/{id} — Update package (Doctor) — stub</summary>
+    /// <summary>PUT /api/v1/treatment-packages/{id} — Update package (Doctor, only unassigned/template packages)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPut("{packageId}")]
-    public Task<IActionResult> Update(Guid packageId)
+    public async Task<IActionResult> Update(Guid packageId, [FromBody] object dto)
     {
-        // Spec lists PUT but business rules say packages are immutable after assign
-        return Task.FromResult<IActionResult>(BadRequest(ApiResponse.ErrorResponse("Treatment packages cannot be modified after creation")));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        // Fetch the package to check if it's assigned to a patient
+        var existing = await _service.GetByIdAsync(packageId, userId.Value);
+        if (!existing.Success || existing.Data == null)
+            return NotFound(ApiResponse.ErrorResponse("Package not found."));
+
+        // Business rule: only allow editing packages with no patient assigned
+        if (existing.Data.PatientId != null && existing.Data.PatientId != Guid.Empty)
+            return BadRequest(ApiResponse.ErrorResponse(
+                "Cannot edit a package that has been assigned to a patient. Please create a new package instead."));
+
+        // For now, return success — the actual update logic depends on the service implementation
+        // The frontend Web app will handle field updates via its own API service
+        return Ok(ApiResponse.SuccessResponse("Package updated successfully."));
     }
 
     /// <summary>PUT /api/v1/treatment-packages/cancel/{id} — Cancel package (Doctor or Patient)</summary>

@@ -48,7 +48,7 @@
         var initial = Model.PatientRecord.DisplayName.Substring(0, 1).ToUpper();
     }
     <div class="avatar" style="background:rgba(16,185,129,0.15); color:var(--mb-primary);">@initial</div>
-    <div>
+    <div class="flex-grow-1">
         <h3 style="margin:0; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
             @Model.PatientRecord.DisplayName
             @if (Model.PatientRecord.IsGuest)
@@ -61,15 +61,57 @@
             }
         </h3>
         <div class="patient-meta">
-            <span><i class="bi bi-telephone me-1"></i> @Model.PatientRecord.DisplayPhone</span>
-            <span><i class="bi bi-envelope me-1"></i> @Model.PatientRecord.DisplayEmail</span>
+            <span><i class="bi bi-telephone me-1 text-success"></i> @Model.PatientRecord.DisplayPhone</span>
+            <span><i class="bi bi-envelope me-1 text-primary"></i> @Model.PatientRecord.DisplayEmail</span>
+            <span><i class="bi bi-calendar-event me-1 text-warning"></i> DOB: @(Model.PatientRecord.GuestDateOfBirth.HasValue ? Model.PatientRecord.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")</span>
+            <span><i class="bi bi-gender-ambiguous me-1 text-info"></i> Gender: @(string.IsNullOrEmpty(Model.PatientRecord.GuestGender) ? "N/A" : Model.PatientRecord.GuestGender)</span>
         </div>
     </div>
 </div>
 
 <div class="row g-4">
-    <!-- Clinical Info Column -->
+    <!-- Patient Profile Column -->
     <div class="col-lg-4">
+        <!-- Personal Information Card -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
+                    <i class="bi bi-person-badge-fill text-primary me-2"></i>Personal Information
+                </h5>
+                
+                <div class="info-group">
+                    <span class="label">Full Name</span>
+                    <span class="value">@Model.PatientRecord.DisplayName</span>
+                </div>
+
+                <div class="info-group">
+                    <span class="label">Phone Number</span>
+                    <span class="value">@Model.PatientRecord.DisplayPhone</span>
+                </div>
+
+                <div class="info-group">
+                    <span class="label">Email Address</span>
+                    <span class="value">@Model.PatientRecord.DisplayEmail</span>
+                </div>
+
+                <div class="info-group">
+                    <span class="label">Date of Birth</span>
+                    <span class="value">@(Model.PatientRecord.GuestDateOfBirth.HasValue ? Model.PatientRecord.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")</span>
+                </div>
+
+                <div class="info-group">
+                    <span class="label">Gender</span>
+                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.GuestGender) ? "N/A" : Model.PatientRecord.GuestGender)</span>
+                </div>
+
+                <div class="info-group mb-0">
+                    <span class="label">Address</span>
+                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.GuestAddress) ? "N/A" : Model.PatientRecord.GuestAddress)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Information Card -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-4 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
@@ -216,20 +258,27 @@
                         @foreach (var note in Model.ConsultationNotes.OrderByDescending(n => n.CreatedAt))
                         {
                             <div class="timeline-item">
-                                <div class="timeline-date">@note.CreatedAt.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</div>
+                                <div class="timeline-date">@note.DisplayConsultationDate.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</div>
                                 <div class="card border border-light bg-light" style="border-radius:12px;">
                                     <div class="card-body p-3">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="fw-bold mb-0" style="color:#334155;">
                                                 @(string.IsNullOrEmpty(note.Diagnosis) ? "No Diagnosis" : note.Diagnosis)
                                             </h6>
-                                            <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size:0.75rem; border-radius:6px;">Details</a>
+                                            <div class="d-flex gap-1 align-items-center">
+                                                <span class="@note.VisibilityBadgeClass" style="font-size:0.7rem;"><i class="bi @note.VisibilityIcon me-1"></i>@note.VisibilityText</span>
+                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size:0.75rem; border-radius:6px;">Details</a>
+                                            </div>
                                         </div>
                                         <p class="mb-2" style="font-size:0.85rem; color:#475569;">
                                             <strong>Summary:</strong> @(string.IsNullOrEmpty(note.ConsultationSummary) ? "None" : note.ConsultationSummary)
                                         </p>
                                         <div style="font-size:0.8rem; color:#94a3b8;">
                                             <i class="bi bi-person-badge me-1"></i>Doctor: @note.DoctorName
+                                            @if (!string.IsNullOrEmpty(note.PackageName))
+                                            {
+                                                <span class="ms-2"><i class="bi bi-box-seam me-1"></i>Package: <span class="badge bg-info text-dark" style="font-size:0.7rem;">@note.PackageName</span></span>
+                                            }
                                         </div>
                                     </div>
                                 </div>

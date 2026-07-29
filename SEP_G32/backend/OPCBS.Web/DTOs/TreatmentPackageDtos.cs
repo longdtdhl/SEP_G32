@@ -58,6 +58,7 @@ public class UpdateTreatmentPackageDto
     public string? RecommendedExercises { get; set; }
     public string? Instructions { get; set; }
     public int SessionQuantity { get; set; }
+    public int ValidityDays { get; set; } = 90;
     public decimal Price { get; set; }
 
     // Read-write aliases for Razor form binding

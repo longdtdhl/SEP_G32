@@ -170,6 +170,9 @@ public class PatientProfile : BaseEntity
     /// <summary>Navigation property: treatment packages assigned to patient</summary>
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
 
+    /// <summary>Navigation property: treatment cases for this patient</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
+
     /// <summary>Navigation property: consultation records for this patient</summary>
     public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
 
@@ -280,6 +283,9 @@ public class DoctorProfile : BaseEntity
 
     /// <summary>Navigation property: treatment packages created by doctor</summary>
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
+
+    /// <summary>Navigation property: treatment cases managed by doctor</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
 
     /// <summary>Navigation property: consultation records created by doctor</summary>
     public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }

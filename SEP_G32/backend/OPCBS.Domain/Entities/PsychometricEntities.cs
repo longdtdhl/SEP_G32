@@ -38,6 +38,9 @@ public class PsychometricSubmission : BaseEntity
     public Guid PatientId { get; set; }
     public Guid? AppointmentId { get; set; }
 
+    /// <summary>FK to TreatmentCase (nullable - submission may exist without a case)</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
     public int TotalScore { get; set; }
     public required string ScoreDataJson { get; set; } // Store segmented scores (e.g. {"Depression": 14, "Anxiety": 8, "Stress": 12})
     public required string Interpretation { get; set; } // Clinical interpretation (e.g., "Mild Anxiety, Moderate Depression")
@@ -45,6 +48,10 @@ public class PsychometricSubmission : BaseEntity
     public virtual required PsychometricTest Test { get; set; }
     public virtual required PatientProfile Patient { get; set; }
     public virtual Appointment? Appointment { get; set; }
+
+    /// <summary>Navigation to TreatmentCase (optional)</summary>
+    public virtual TreatmentCase? TreatmentCase { get; set; }
+
     public virtual ICollection<PsychometricAnswer> Answers { get; set; } = new List<PsychometricAnswer>();
 }
 

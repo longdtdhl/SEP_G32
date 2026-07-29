@@ -17,6 +17,10 @@
     .instruction-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; font-size:0.83rem; color:#334155; }
     .resource-link-btn { display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; padding:4px 12px; border-radius:8px; background:#f0f9ff; color:#0284c7; text-decoration:none; border:1px solid #bae6fd; }
     .resource-link-btn:hover { background:#e0f2fe; color:#0369a1; }
+    .pkg-status-badge.finished { background:#f0e7ff; color:#6d28d9; }
+    .congrats-card { background: linear-gradient(135deg, #f0e7ff 0%, #e0d4ff 100%); border: 1px solid #c4b5fd; border-radius: 14px; padding: 1.5rem; text-align: center; }
+    .congrats-card h5 { color: #6d28d9; font-weight: 800; }
+    .congrats-card p { color: #7c3aed; font-size: 0.85rem; }
 </style>
 
 <!-- Page Header -->
@@ -51,6 +55,7 @@
 {
     var pkg = Model.Package;
     var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+    var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && pkg.Status == "Active";
     var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
 
     <div class="row g-4">
@@ -125,8 +130,59 @@
                 </div>
             </div>
 
-            <!-- Create New Assignment Form -->
+            <!-- Treatment Case Management -->
+            <div class="dt-sidebar mb-3">
+                <div class="dt-sidebar-header"><i class="bi bi-heart-pulse"></i>Treatment Case</div>
+                <div style="padding:1rem 1.25rem;">
+                    @if (Model.HasTreatmentCase)
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span style="font-size:0.82rem; font-weight:600; color:#16a34a;">Treatment Case Active</span>
+                        </div>
+                        <a href="/Doctor/TreatmentCases/Details?id=@Model.TreatmentCaseId" class="btn btn-outline-primary btn-sm w-100" style="border-radius:10px;">
+                            <i class="bi bi-eye me-1"></i>View Treatment Case
+                        </a>
+                    }
+                    else if (pkg.Status == "Active" && !pkg.IsTemplate)
+                    {
+                        <p style="font-size:0.82rem; color:#64748b;" class="mb-2">Start a treatment case to track sessions, goals, and progress for this patient.</p>
+                        <form method="post" asp-page-handler="CreateTreatmentCase" asp-route-id="@pkg.Id">
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold text-dark">Primary Concern (Optional)</label>
+                                <textarea name="primaryConcern" class="form-control form-control-sm" rows="2" placeholder="e.g. Anxiety management, Stress reduction..." style="border-radius:8px;"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm w-100" style="border-radius:10px;">
+                                <i class="bi bi-heart-pulse me-1"></i>Start Treatment Case
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.82rem; color:#94a3b8;" class="mb-0">Package must be Active and assigned to a patient to start a treatment case.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Create New Assignment / Finished Notice -->
             <div class="dt-sidebar">
+                @if (isFinished)
+                {
+                    <div class="dt-sidebar-header"><i class="bi bi-trophy-fill"></i>Package Completed</div>
+                    <div style="padding:1.25rem;">
+                        <div class="congrats-card">
+                            <i class="bi bi-trophy-fill d-block mb-2" style="font-size:2.5rem; color:#6d28d9;"></i>
+                            <h5>Congratulations!</h5>
+                            <p class="mb-3">All @pkg.TotalSessions sessions in this package have been booked. The treatment package is now finished.</p>
+                            <a asp-page="Create" asp-route-patientId="@pkg.PatientId"
+                               class="btn btn-primary btn-sm px-3" style="border-radius:10px; background:#6d28d9; border-color:#6d28d9;">
+                                <i class="bi bi-plus-lg me-1"></i>Create New Package for This Patient
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
                 <div class="dt-sidebar-header"><i class="bi bi-plus-circle-fill"></i>Create New Assignment</div>
                 <div style="padding:1.25rem;">
                     <form method="post" asp-page-handler="CreateAssignment" asp-route-id="@pkg.Id">
@@ -139,22 +195,23 @@
                             <textarea asp-for="AssignmentDescription" class="form-control form-control-sm" rows="2" placeholder="Summary of what the patient needs to do..." style="border-radius:8px;"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark">Detailed Instructions (Hướng dẫn chi tiết)</label>
+                            <label class="form-label small fw-bold text-dark">Detailed Instructions</label>
                             <textarea asp-for="AssignmentDetailedInstructions" class="form-control form-control-sm" rows="3" placeholder="Step-by-step guidance, instructions, or notes for the patient..." style="border-radius:8px;"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-dark">Resource File / Video URL (Link tài liệu/video)</label>
+                            <label class="form-label small fw-bold text-dark">Resource File / Video URL</label>
                             <input asp-for="AssignmentResourceUrl" type="url" class="form-control form-control-sm" placeholder="https://example.com/guide.pdf or video link" style="border-radius:8px;" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-dark">Due Date (Optional)</label>
-                            <input asp-for="AssignmentDueDate" type="date" class="form-control form-control-sm" style="border-radius:8px;" />
+                            <input asp-for="AssignmentDueDate" type="date" class="form-control form-control-sm" style="border-radius:8px;" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary);">
                             <i class="bi bi-send me-1"></i>Create &amp; Assign Exercise
                         </button>
                     </form>
                 </div>
+                }
             </div>
         </div>
 

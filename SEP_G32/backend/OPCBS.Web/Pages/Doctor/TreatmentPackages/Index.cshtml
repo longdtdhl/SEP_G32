@@ -127,6 +127,11 @@
         color: #64748b;
     }
 
+    .pkg-status.finished {
+        background: #f0e7ff;
+        color: #6d28d9;
+    }
+
     .pkg-meta-row {
         display: flex;
         align-items: center;
@@ -247,6 +252,7 @@
            oninput="filterPackages()" />
     <span class="filter-chip active" data-filter="all" onclick="setFilter(this, 'all')">All</span>
     <span class="filter-chip" data-filter="Active" onclick="setFilter(this, 'Active')">Active</span>
+    <span class="filter-chip" data-filter="Finished" onclick="setFilter(this, 'Finished')">Finished</span>
     <span class="filter-chip" data-filter="Created" onclick="setFilter(this, 'Created')">Created</span>
     <span class="filter-chip" data-filter="Completed" onclick="setFilter(this, 'Completed')">Completed</span>
 </div>
@@ -282,10 +288,16 @@
                 "Cancelled" => "Cancelled",
                 _ => pkg.Status
             };
-            if (pkg.IsExpired && pkg.Status == "Active")
+
+            // Finished: all sessions used up
+            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && pkg.Status == "Active";
+            if (isFinished)
             {
-                statusClass = "expired"; statusLabel = "Expired"; statusIcon =
- "bi-exclamation-triangle-fill";
+                statusClass = "finished"; statusLabel = "Finished"; statusIcon = "bi-trophy-fill";
+            }
+            else if (pkg.IsExpired && pkg.Status == "Active")
+            {
+                statusClass = "expired"; statusLabel = "Expired"; statusIcon = "bi-exclamation-triangle-fill";
             }
 
             var initial = pkg.DisplayPatientName.Substring(0, 1).ToUpper();
@@ -293,7 +305,7 @@
             var color = colors[Math.Abs(pkg.DisplayPatientName.GetHashCode()) % colors.Length];
             var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
 
-            <div class="col-md-6 col-xl-4 pkg-item" data-status="@pkg.Status" data-name="@pkg.Title.ToLower()"
+            <div class="col-md-6 col-xl-4 pkg-item" data-status="@(isFinished ? "Finished" : pkg.Status)" data-name="@pkg.Title.ToLower()"
                  data-patient="@pkg.DisplayPatientName.ToLower()">
                 <div class="pkg-card h-100">
                     <!-- Header -->

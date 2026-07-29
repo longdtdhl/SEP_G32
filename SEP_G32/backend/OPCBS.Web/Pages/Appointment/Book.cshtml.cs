@@ -62,9 +62,39 @@ public class BookModel : PageModel
         WeekEnd = WeekStart.AddDays(6);
         WeekDays = Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).ToList();
 
+        // Pre-fill user profile if logged in
+        if (!IsGuest)
+        {
+            try
+            {
+                var (profile, _) = await _authService.GetProfileAsync();
+                if (profile != null)
+                {
+                    if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
+                    if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
+                    if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                }
+            }
+            catch { }
+        }
+
         if (DoctorId.HasValue)
         {
             Input.DoctorId = DoctorId.Value;
+
+            // Resolve DoctorId: backend API handles both DoctorProfile.Id and User.Id
+            Guid resolvedDoctorProfileId = DoctorId.Value;
+            try
+            {
+                var (doc, _) = await _doctorService.GetByIdAsync(DoctorId.Value);
+                if (doc != null)
+                {
+                    Doctor = doc;
+                    resolvedDoctorProfileId = doc.Id;
+                    Input.DoctorId = doc.Id; // Normalize to DoctorProfile.Id for downstream API calls
+                }
+            }
+            catch { }
 
             // Load treatment package if specified
             if (TreatmentPackageId.HasValue)
@@ -83,7 +113,7 @@ public class BookModel : PageModel
                 {
                     var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
                     var activePkg = pkgs.FirstOrDefault(p =>
-                        p.DoctorProfileId == DoctorId.Value &&
+                        (p.DoctorProfileId == resolvedDoctorProfileId || p.DoctorId == DoctorId.Value) &&
                         (p.Status == "Active" || p.Status == "Accepted") &&
                         !p.IsExpired &&
                         p.RemainingSessions > 0);
@@ -97,7 +127,7 @@ public class BookModel : PageModel
                 catch { }
             }
 
-            // Check if returning patient (skip pre-evaluation)
+            // Check if returning patient (skip pre-evaluation & lock contact info)
             if (DoctorId.HasValue)
             {
                 if (Returning)
@@ -108,20 +138,28 @@ public class BookModel : PageModel
                 {
                     try
                     {
-                        var (isReturning, _) = await _appointmentService.IsReturningAsync(DoctorId.Value);
+                        var (isReturning, _) = await _appointmentService.IsReturningAsync(resolvedDoctorProfileId);
                         IsReturningPatient = isReturning;
                     }
                     catch { }
                 }
-            }
 
-            // Load doctor info
-            try
-            {
-                var (doc, _) = await _doctorService.GetByIdAsync(DoctorId.Value);
-                Doctor = doc;
+                // If returning patient, load previous appointment info for contact pre-fill
+                if (IsReturningPatient && !IsGuest)
+                {
+                    try
+                    {
+                        var (myAppts, _, _) = await _appointmentService.GetMyAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 100 });
+                        var prevAppt = myAppts?.FirstOrDefault(a => a.DoctorProfileId == resolvedDoctorProfileId || a.DoctorId == DoctorId.Value);
+                        if (prevAppt != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(prevAppt.PatientName))
+                                Input.GuestName = prevAppt.PatientName;
+                        }
+                    }
+                    catch { }
+                }
             }
-            catch { }
 
             // Load slots for each day in the week
             foreach (var day in WeekDays)
@@ -164,8 +202,22 @@ public class BookModel : PageModel
         if (Input.DoctorId == Guid.Empty) { Error = "Please select a doctor."; await OnGetAsync(); return Page(); }
         if (Input.AppointmentSlotId == Guid.Empty) { Error = "Please select a time slot."; await OnGetAsync(); return Page(); }
 
-        // Guest validation
-        if (IsGuest)
+        // Guest validation or logged-in fallback
+        if (!IsGuest)
+        {
+            try
+            {
+                var (profile, _) = await _authService.GetProfileAsync();
+                if (profile != null)
+                {
+                    if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
+                    if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
+                    if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                }
+            }
+            catch { }
+        }
+        else
         {
             if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Please enter your full name."; await OnGetAsync(); return Page(); }
             if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Please enter your email."; await OnGetAsync(); return Page(); }

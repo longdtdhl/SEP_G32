@@ -176,6 +176,9 @@ public class ConsultationNoteDto
     public string? TherapyPlan { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public string? PackageName { get; set; }
 
     // Walk-in patient fields
     public string? WalkInPatientName { get; set; }
@@ -238,6 +241,8 @@ public class CreateConsultationNoteDto
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 }
 
 /// <summary>
@@ -250,5 +255,7 @@ public class UpdateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 }
 

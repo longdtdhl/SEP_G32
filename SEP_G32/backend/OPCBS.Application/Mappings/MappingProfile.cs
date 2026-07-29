@@ -31,7 +31,7 @@ public class MappingProfile : Profile
         CreateMap<Appointment, AppointmentDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
             .ForMember(d => d.PatientName, opt => opt.MapFrom(s =>
-                s.Patient != null ? s.Patient.User.FullName : s.GuestName))
+                !string.IsNullOrWhiteSpace(s.GuestName) ? s.GuestName : (s.Patient != null ? s.Patient.User.FullName : "Guest")))
             .ForMember(d => d.AppointmentDate, opt => opt.MapFrom(s => s.AppointmentSlot.SlotDate.ToString("yyyy-MM-dd")))
             .ForMember(d => d.StartTime, opt => opt.MapFrom(s => s.AppointmentSlot.StartTime.ToString("HH:mm")))
             .ForMember(d => d.EndTime, opt => opt.MapFrom(s => s.AppointmentSlot.EndTime.ToString("HH:mm")));
@@ -40,7 +40,7 @@ public class MappingProfile : Profile
         CreateMap<Appointment, AppointmentListItemDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
             .ForMember(d => d.PatientName, opt => opt.MapFrom(s =>
-                s.Patient != null ? s.Patient.User.FullName : s.GuestName))
+                !string.IsNullOrWhiteSpace(s.GuestName) ? s.GuestName : (s.Patient != null ? s.Patient.User.FullName : "Guest")))
             .ForMember(d => d.AppointmentDate, opt => opt.MapFrom(s => s.AppointmentSlot.SlotDate.ToString("yyyy-MM-dd")))
             .ForMember(d => d.StartTime, opt => opt.MapFrom(s => s.AppointmentSlot.StartTime.ToString("HH:mm")))
             .ForMember(d => d.EndTime, opt => opt.MapFrom(s => s.AppointmentSlot.EndTime.ToString("HH:mm")));

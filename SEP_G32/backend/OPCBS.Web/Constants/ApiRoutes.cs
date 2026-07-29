@@ -89,4 +89,7 @@ public static class ApiRoutes
 
     // Messages
     public const string Messages = $"{Base}/messages";
+
+    // Treatment Cases
+    public const string TreatmentCases = $"{Base}/treatment-cases";
 }

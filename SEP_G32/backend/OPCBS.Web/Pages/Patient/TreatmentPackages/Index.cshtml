@@ -36,6 +36,7 @@
     .pt-status.expired { background: #fee2e2; color: #991b1b; }
     .pt-status.cancelled { background: #f1f5f9; color: #64748b; }
     .pt-status.pending { background: #fff7ed; color: #c2410c; }
+    .pt-status.finished { background: #f0e7ff; color: #6d28d9; }
 
     .pt-meta-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #64748b; margin-bottom: 6px; }
     .pt-meta-row i { color: var(--mb-primary); font-size: 0.85rem; width: 16px; text-align: center; }
@@ -107,6 +108,10 @@
             if (pkg.IsExpired && (pkg.Status == "Active" || pkg.Status == "Accepted")) { statusClass = "expired"; statusLabel = "Expired"; }
             var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
             var isPending = pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned" || pkg.Status == "0" || pkg.Status == "1";
+            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && (pkg.Status == "Active" || pkg.Status == "Accepted");
+
+            // Override status display for Finished packages
+            if (isFinished) { statusClass = "finished"; statusLabel = "Finished"; }
 
             <div class="col-md-6 col-xl-4">
                 <div class="pt-card h-100">
@@ -151,7 +156,14 @@
                         <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
                             <i class="bi bi-eye"></i>Details
                         </a>
-                        @if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
+                        @if (isFinished)
+                        {
+                            <span class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
+                               style="border-radius:8px; font-size:0.78rem; font-weight:600; background:#f0e7ff; color:#6d28d9; border:1px solid #c4b5fd;">
+                                <i class="bi bi-trophy-fill"></i>All Sessions Completed!
+                            </span>
+                        }
+                        else if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
                         {
                             <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
                                class="btn btn-sm btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"

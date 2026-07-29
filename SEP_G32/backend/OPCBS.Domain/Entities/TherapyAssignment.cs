@@ -44,6 +44,12 @@ public class TherapyAssignment : BaseEntity
     /// <summary>Thời điểm bác sĩ nhận xét</summary>
     public DateTime? FeedbackAt { get; set; }
 
+    /// <summary>FK to TreatmentCase (nullable for backward compatibility with legacy assignments)</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
     // Navigation
     public virtual required TreatmentPackage TreatmentPackage { get; set; }
+
+    /// <summary>Navigation to TreatmentCase (optional)</summary>
+    public virtual TreatmentCase? TreatmentCase { get; set; }
 }

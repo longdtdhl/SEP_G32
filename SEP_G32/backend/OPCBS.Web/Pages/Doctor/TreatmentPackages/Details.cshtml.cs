@@ -10,20 +10,25 @@ public class DetailsModel : PageModel
     private readonly ITreatmentPackageApiService _pkgService;
     private readonly ITherapyApiService _therapyService;
     private readonly IPsychometricApiService _psychService;
+    private readonly ITreatmentCaseApiService _caseService;
 
     public DetailsModel(
         ITreatmentPackageApiService pkgService,
         ITherapyApiService therapyService,
-        IPsychometricApiService psychService)
+        IPsychometricApiService psychService,
+        ITreatmentCaseApiService caseService)
     {
         _pkgService = pkgService;
         _therapyService = therapyService;
         _psychService = psychService;
+        _caseService = caseService;
     }
 
     public TreatmentPackageDto? Package { get; set; }
     public List<TherapyAssignmentDto> Assignments { get; set; } = new();
     public List<EmotionJournalDto> PatientJournals { get; set; } = new();
+    public bool HasTreatmentCase { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
     public string? Error { get; set; }
 
     // Create assignment
@@ -61,6 +66,19 @@ public class DetailsModel : PageModel
                 }
             }
             catch { }
+
+            // Check if a Treatment Case already exists for this package
+            try
+            {
+                var (cases, _) = await _caseService.GetByDoctorAsync(Guid.Empty);
+                var existingCase = cases?.FirstOrDefault(c => c.TreatmentPackageId == id);
+                if (existingCase != null)
+                {
+                    HasTreatmentCase = true;
+                    TreatmentCaseId = existingCase.Id;
+                }
+            }
+            catch { }
         }
 
         return Page();
@@ -70,7 +88,7 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(AssignmentTitle))
         {
-            Error = "Please nhập tiêu đề bài tập.";
+            Error = "Please enter an assignment title.";
             return await OnGetAsync(id);
         }
 
@@ -86,7 +104,7 @@ public class DetailsModel : PageModel
 
         var (result, error) = await _therapyService.CreateAssignmentAsync(dto);
         if (result == null) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Đã giao bài tập successfully!";
+        TempData["SuccessMessage"] = "Assignment created and assigned successfully!";
         return RedirectToPage(new { id });
     }
 
@@ -94,14 +112,14 @@ public class DetailsModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(FeedbackText))
         {
-            Error = "Please nhập nhận xét.";
+            Error = "Please enter your feedback.";
             return await OnGetAsync(id);
         }
 
         var dto = new FeedbackAssignmentDto { DoctorFeedback = FeedbackText };
         var (success, error) = await _therapyService.FeedbackAssignmentAsync(assignmentId, dto);
         if (!success) { Error = error; return await OnGetAsync(id); }
-        TempData["SuccessMessage"] = "Submitted nhận xét cho bệnh nhân.";
+        TempData["SuccessMessage"] = "Feedback submitted to patient.";
         return RedirectToPage(new { id });
     }
 
@@ -109,7 +127,27 @@ public class DetailsModel : PageModel
     {
         var (success, error) = await _therapyService.DeleteAssignmentAsync(assignmentId);
         if (!success) { Error = error; }
-        else TempData["SuccessMessage"] = "Deleted bài tập.";
+        else TempData["SuccessMessage"] = "Assignment deleted.";
+        return RedirectToPage(new { id });
+    }
+
+    // Manual: Doctor creates Treatment Case from Active package
+    public async Task<IActionResult> OnPostCreateTreatmentCaseAsync(Guid id, string? primaryConcern)
+    {
+        var (data, _) = await _pkgService.GetByIdAsync(id);
+        if (data == null) { Error = "Package not found."; return await OnGetAsync(id); }
+
+        var dto = new
+        {
+            TreatmentPackageId = id,
+            DoctorId = data.DoctorProfileId,
+            PatientId = data.PatientId,
+            PrimaryConcern = primaryConcern
+        };
+
+        var (success, error) = await _caseService.CreateAsync(dto);
+        if (!success) { Error = error ?? "Failed to create treatment case."; return await OnGetAsync(id); }
+        TempData["SuccessMessage"] = "Treatment Case created successfully!";
         return RedirectToPage(new { id });
     }
 }

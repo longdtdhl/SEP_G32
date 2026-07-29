@@ -311,6 +311,7 @@ public class ConsultationNoteService : IConsultationNoteService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<PatientRecord> _patientRecordRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<TreatmentPackage> _packageRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
@@ -322,6 +323,7 @@ public class ConsultationNoteService : IConsultationNoteService
         IRepository<PatientProfile> patientRepo,
         IRepository<PatientRecord> patientRecordRepo,
         IRepository<User> userRepo,
+        IRepository<TreatmentPackage> packageRepo,
         INotificationService notificationService,
         IUnitOfWork uow,
         IMapper mapper)
@@ -332,6 +334,7 @@ public class ConsultationNoteService : IConsultationNoteService
         _patientRepo = patientRepo;
         _patientRecordRepo = patientRecordRepo;
         _userRepo = userRepo;
+        _packageRepo = packageRepo;
         _notificationService = notificationService;
         _uow = uow;
         _mapper = mapper;
@@ -344,14 +347,38 @@ public class ConsultationNoteService : IConsultationNoteService
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var allUsers = await _userRepo.GetAllAsync(ct);
         var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+        var allNotes = await _recordRepo.GetAllAsync(ct);
 
         var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
         var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
         var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
         var patientRecordMap = allPatientRecords.ToDictionary(pr => pr.Id);
 
+        // Build appointment → package name lookup
+        Dictionary<Guid, string> apptPackageMap = new();
+        try
+        {
+            var allAppts = await _apptRepo.GetAllAsync(ct);
+            var allPackages = await _packageRepo.GetAllAsync(ct);
+            var packageDict = allPackages.ToDictionary(p => p.Id, p => p.Name);
+            foreach (var appt in allAppts.Where(a => a.TreatmentPackageId.HasValue))
+            {
+                if (appt.TreatmentPackageId.HasValue && packageDict.TryGetValue(appt.TreatmentPackageId.Value, out var pkgName))
+                    apptPackageMap[appt.Id] = pkgName;
+            }
+        }
+        catch { }
+
         foreach (var dto in dtos)
         {
+            // Enrich from entity for fields AutoMapper may miss
+            var entity = allNotes.FirstOrDefault(n => n.Id == dto.Id);
+            if (entity != null)
+            {
+                dto.ConsultationDate = entity.ConsultationDate;
+                dto.Visibility = (int)entity.Visibility;
+            }
+
             if (string.IsNullOrEmpty(dto.DoctorName) && doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
                 dto.DoctorName = docName;
                 
@@ -368,6 +395,10 @@ public class ConsultationNoteService : IConsultationNoteService
                     dto.WalkInPatientEmail = pr.GuestEmail;
                 }
             }
+
+            // Enrich package name from appointment
+            if (dto.AppointmentId.HasValue && apptPackageMap.TryGetValue(dto.AppointmentId.Value, out var packageName))
+                dto.PackageName = packageName;
         }
     }
 
@@ -438,6 +469,8 @@ public class ConsultationNoteService : IConsultationNoteService
             FollowUpNotes = dto.FollowUpNotes,
             TherapyPlan = dto.TherapyPlan,
             NextAppointmentRecommendedDate = dto.NextAppointmentRecommendedDate,
+            ConsultationDate = dto.ConsultationDate,
+            Visibility = (NoteVisibility)dto.Visibility,
             Doctor = doctor,
             PatientRecord = patientRecord
         };
@@ -447,6 +480,9 @@ public class ConsultationNoteService : IConsultationNoteService
             if (appointment != null)
             {
                 record.Appointment = appointment;
+                // Auto-fill ConsultationDate from appointment date if not set
+                if (!record.ConsultationDate.HasValue)
+                    record.ConsultationDate = appointment.AppointmentDate;
                 if (appointment.PatientId.HasValue)
                 {
                     try
@@ -488,6 +524,10 @@ public class ConsultationNoteService : IConsultationNoteService
         record.Recommendation = dto.Recommendation;
         record.FollowUpNotes = dto.FollowUpNotes;
         record.TherapyPlan = dto.TherapyPlan;
+        record.Visibility = (NoteVisibility)dto.Visibility;
+        // Only allow updating ConsultationDate if not linked to an appointment
+        if (!record.AppointmentId.HasValue && dto.ConsultationDate.HasValue)
+            record.ConsultationDate = dto.ConsultationDate;
         record.UpdatedAt = DateTime.UtcNow;
         _recordRepo.Update(record);
         await _uow.SaveChangesAsync(ct);
@@ -1042,6 +1082,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<TreatmentCase> _caseRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
@@ -1051,6 +1092,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         IRepository<DoctorProfile> doctorRepo,
         IRepository<PatientProfile> patientRepo,
         IRepository<User> userRepo,
+        IRepository<TreatmentCase> caseRepo,
         INotificationService notificationService,
         IUnitOfWork uow,
         IMapper mapper)
@@ -1059,6 +1101,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         _doctorRepo = doctorRepo;
         _patientRepo = patientRepo;
         _userRepo = userRepo;
+        _caseRepo = caseRepo;
         _notificationService = notificationService;
         _uow = uow;
         _mapper = mapper;
@@ -1250,8 +1293,39 @@ public class TreatmentPackageService : ITreatmentPackageService
         package.ActiveDate = DateTime.UtcNow;
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
+
+        // Auto-create Treatment Case when package becomes Active
+        var allCases = await _caseRepo.GetAllAsync(ct);
+        var existingCase = allCases.FirstOrDefault(c =>
+            c.TreatmentPackageId == package.Id &&
+            c.DoctorId == package.DoctorId &&
+            c.PatientId == patient.Id &&
+            !c.IsDeleted);
+
+        if (existingCase == null)
+        {
+            var treatmentCase = new TreatmentCase
+            {
+                TreatmentPackageId = package.Id,
+                DoctorId = package.DoctorId,
+                PatientId = patient.Id,
+                CaseName = package.Name,
+                CaseDescription = package.Description,
+                PrimaryConcern = package.TargetOutcome,
+                TotalSessions = package.SessionQuantity,
+                RemainingSessions = package.SessionQuantity,
+                StartDate = DateTime.UtcNow,
+                ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays),
+                Status = TreatmentCaseStatus.Active,
+                TreatmentPackage = package,
+                Doctor = (await _doctorRepo.GetByIdAsync(package.DoctorId, ct))!,
+                Patient = patient
+            };
+            await _caseRepo.AddAsync(treatmentCase, ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("Treatment package accepted and is now active");
+        return ApiResponse.SuccessResponse("Treatment package accepted and treatment case created.");
     }
 
     public async Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct)

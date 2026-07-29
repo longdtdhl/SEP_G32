@@ -1,0 +1,92 @@
+@page
+@model OPCBS.Web.Pages.Doctor.TreatmentCases.IndexModel
+@{ ViewData["Title"] = "Treatment Cases"; }
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-heart-pulse me-2"></i>Treatment Cases</h2>
+            <p class="text-muted mb-0">Manage your active and completed treatment cases</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage</div>
+    }
+
+    @if (!Model.Cases.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-heart-pulse display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No Treatment Cases Yet</h4>
+            <p class="text-muted">Treatment cases will appear here when you activate a treatment package for a patient.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Filter Tabs -->
+        <ul class="nav nav-pills mb-4" id="caseFilterTabs">
+            <li class="nav-item"><a class="nav-link active" data-filter="all" href="#">All (@Model.Cases.Count)</a></li>
+            <li class="nav-item"><a class="nav-link" data-filter="0" href="#">Active (@Model.Cases.Count(c => c.Status == 0))</a></li>
+            <li class="nav-item"><a class="nav-link" data-filter="2" href="#">Completed (@Model.Cases.Count(c => c.Status == 2))</a></li>
+            <li class="nav-item"><a class="nav-link" data-filter="1" href="#">On Hold (@Model.Cases.Count(c => c.Status == 1))</a></li>
+        </ul>
+
+        <div class="row g-4" id="casesList">
+            @foreach (var c in Model.Cases)
+            {
+                <div class="col-md-6 col-lg-4 case-card" data-status="@c.Status">
+                    <div class="card h-100 shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title fw-bold mb-0" style="max-width: 75%;">@c.CaseName</h5>
+                                <span class="@c.StatusBadgeClass" style="font-size: 0.75rem;">@c.StatusText</span>
+                            </div>
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-person me-1"></i>@(c.PatientName ?? "Unknown Patient")
+                            </p>
+
+                            <!-- Progress Bar -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Treatment Progress</span>
+                                    <span class="fw-bold">@c.OverallProgressPercent%</span>
+                                </div>
+                                <div class="progress" style="height: 8px; border-radius: 4px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: @c.OverallProgressPercent%; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Session Counter -->
+                            <div class="d-flex justify-content-between small text-muted mb-3">
+                                <span><i class="bi bi-camera-video me-1"></i>Sessions: @c.CompletedSessions / @c.TotalSessions</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>@c.StartDate.ToString("MMM dd, yyyy")</span>
+                            </div>
+
+                            <a href="/Doctor/TreatmentCases/Details?id=@c.Id" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="bi bi-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+document.querySelectorAll('#caseFilterTabs .nav-link').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('#caseFilterTabs .nav-link').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.case-card').forEach(card => {
+            card.style.display = (filter === 'all' || card.dataset.status === filter) ? '' : 'none';
+        });
+    });
+});
+</script>
+}

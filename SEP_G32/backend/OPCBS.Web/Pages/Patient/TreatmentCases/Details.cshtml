@@ -1,0 +1,157 @@
+@page
+@model OPCBS.Web.Pages.Patient.TreatmentCases.DetailsModel
+@{ ViewData["Title"] = Model.Case?.CaseName ?? "Treatment Progress"; }
+
+<div class="container py-4">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        return;
+    }
+    @if (Model.Case == null) { <div class="alert alert-warning">Case not found.</div> return; }
+
+    <a href="/Patient/TreatmentCases" class="text-decoration-none text-muted mb-2 d-inline-block"><i class="bi bi-arrow-left me-1"></i>Back to Cases</a>
+    <h2 class="fw-bold mb-1">@Model.Case.CaseName</h2>
+    <p class="text-muted mb-4">
+        <i class="bi bi-person-badge me-1"></i>Dr. @(Model.Case.DoctorName ?? "Unknown") &middot;
+        <span class="@Model.Case.StatusBadgeClass">@Model.Case.StatusText</span>
+    </p>
+
+    <!-- Progress Dashboard -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;">
+                <div class="display-6 fw-bold">@(Model.Progress?.OverallProgressPercent ?? 0)%</div>
+                <small>Overall</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
+                <div class="display-6 fw-bold text-primary">@Model.Case.CompletedSessions/@Model.Case.TotalSessions</div>
+                <small class="text-muted">Sessions</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
+                <div class="display-6 fw-bold text-success">@Model.Case.AchievedGoalCount/@Model.Case.GoalCount</div>
+                <small class="text-muted">Goals</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
+                <div class="display-6 fw-bold text-warning">@(Model.Progress?.DaysRemaining?.ToString() ?? "∞")</div>
+                <small class="text-muted">Days Left</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-goals"><i class="bi bi-bullseye me-1"></i>My Goals</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sessions"><i class="bi bi-camera-video me-1"></i>Sessions</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-timeline"><i class="bi bi-clock-history me-1"></i>Activity</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Goals Tab -->
+        <div class="tab-pane fade show active" id="tab-goals">
+            @if (!Model.Goals.Any())
+            {
+                <p class="text-muted">Your therapist hasn't set any goals yet.</p>
+            }
+            else
+            {
+                @foreach (var g in Model.Goals)
+                {
+                    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 10px;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="fw-bold">@g.Title</h6>
+                                <span class="@g.StatusBadgeClass">@g.StatusText</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(g.Description))
+                            {
+                                <p class="text-muted small mb-2">@g.Description</p>
+                            }
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: @g.ProgressPercent%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">@g.ProgressPercent% complete</small>
+                                @if (g.TargetDate.HasValue)
+                                {
+                                    <small class="text-muted">Target: @g.TargetDate.Value.ToString("MMM dd, yyyy")</small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Sessions Tab -->
+        <div class="tab-pane fade" id="tab-sessions">
+            @if (!Model.Sessions.Any())
+            {
+                <p class="text-muted">No sessions recorded yet.</p>
+            }
+            else
+            {
+                @foreach (var s in Model.Sessions)
+                {
+                    <div class="card mb-2 border-0 shadow-sm" style="border-radius: 10px;">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Session #@s.SessionNumber</strong>
+                                    <span class="@s.StatusBadgeClass ms-2">@s.StatusText</span>
+                                </div>
+                                <small class="text-muted">@s.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            @if (!string.IsNullOrEmpty(s.SessionSummary))
+                            {
+                                <p class="text-muted small mt-2 mb-0">@s.SessionSummary</p>
+                            }
+                            @if (s.MoodBefore.HasValue && s.MoodAfter.HasValue)
+                            {
+                                <p class="small mt-1 mb-0">
+                                    <span class="text-muted">Mood:</span> @s.MoodBefore <i class="bi bi-arrow-right"></i> @s.MoodAfter
+                                    @if (s.MoodAfter > s.MoodBefore) { <span class="text-success">↑</span> }
+                                    else if (s.MoodAfter < s.MoodBefore) { <span class="text-danger">↓</span> }
+                                </p>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Activity Timeline Tab -->
+        <div class="tab-pane fade" id="tab-timeline">
+            @if (!Model.Timeline.Any())
+            {
+                <p class="text-muted">No activity yet.</p>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var t in Model.Timeline)
+                    {
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3"><i class="bi @t.IconCss fs-5 text-primary"></i></div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="small">@t.Title</strong>
+                                        <small class="text-muted">@t.EventDate.ToString("MMM dd")</small>
+                                    </div>
+                                    <p class="text-muted small mb-0">@t.Description</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

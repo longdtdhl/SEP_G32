@@ -50,8 +50,17 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!ModelState.IsValid)
-            return Page();
+        // Re-fetch original record to preserve Personal Information fields (Doctor cannot edit Personal Info)
+        var (data, _) = await _apiService.GetByIdAsync(Id);
+        if (data != null)
+        {
+            Input.GuestName = data.GuestName;
+            Input.GuestPhone = data.GuestPhone;
+            Input.GuestEmail = data.GuestEmail;
+            Input.GuestDateOfBirth = data.GuestDateOfBirth;
+            Input.GuestGender = data.GuestGender;
+            Input.GuestAddress = data.GuestAddress;
+        }
 
         var (success, error) = await _apiService.UpdateAsync(Id, Input);
         if (success)

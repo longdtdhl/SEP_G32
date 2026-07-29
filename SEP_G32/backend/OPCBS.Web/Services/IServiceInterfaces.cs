@@ -182,3 +182,25 @@ public interface IMessagingApiService
     Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationByPatientAsync(Guid patientUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null);
     Task<(int Count, string? Error)> GetUnreadCountAsync();
 }
+
+public interface ITreatmentCaseApiService
+{
+    // Case CRUD
+    Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByDoctorAsync(Guid doctorUserId);
+    Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId);
+    Task<(TreatmentCaseWebDto? Data, string? Error)> GetByIdAsync(Guid id);
+    Task<(bool Success, string? Error)> CreateAsync(object dto);
+    Task<(bool Success, string? Error)> UpdateAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto);
+    // Sessions
+    Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId);
+    Task<(bool Success, string? Error)> CreateSessionAsync(object dto);
+    Task<(bool Success, string? Error)> CompleteSessionAsync(Guid sessionId, object dto);
+    // Goals
+    Task<(List<TreatmentGoalWebDto> Data, string? Error)> GetGoalsAsync(Guid caseId);
+    Task<(bool Success, string? Error)> CreateGoalAsync(object dto);
+    Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto);
+    // Progress & Timeline
+    Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId);
+    Task<(List<TreatmentTimelineWebDto> Data, string? Error)> GetTimelineAsync(Guid caseId);
+}

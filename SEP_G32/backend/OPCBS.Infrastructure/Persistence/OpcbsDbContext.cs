@@ -76,6 +76,11 @@ public class OpcbsDbContext : DbContext
     public DbSet<TherapyAssignment> TherapyAssignments => Set<TherapyAssignment>();
     public DbSet<EmotionJournal> EmotionJournals => Set<EmotionJournal>();
 
+    // Treatment Management
+    public DbSet<TreatmentCase> TreatmentCases => Set<TreatmentCase>();
+    public DbSet<TreatmentSession> TreatmentSessions => Set<TreatmentSession>();
+    public DbSet<TreatmentGoal> TreatmentGoals => Set<TreatmentGoal>();
+
     // Favorites
     public DbSet<FavoriteDoctor> FavoriteDoctors => Set<FavoriteDoctor>();
 
@@ -99,6 +104,7 @@ public class OpcbsDbContext : DbContext
         ConfigurePsychometricEntities(modelBuilder);
         ConfigureFavoriteEntities(modelBuilder);
         ConfigureMessagingEntities(modelBuilder);
+        ConfigureTreatmentCaseEntities(modelBuilder);
 
         // Targeted query filters: exclude soft-deleted slots and appointments
         // (Not applied globally to avoid breaking required navigation properties
@@ -777,6 +783,109 @@ public class OpcbsDbContext : DbContext
                 .WithMany(c => c.Messages)
                 .HasForeignKey(e => e.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureTreatmentCaseEntities(ModelBuilder modelBuilder)
+    {
+        // TreatmentCase
+        modelBuilder.Entity<TreatmentCase>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.DoctorId, e.PatientId, e.Status });
+            entity.HasIndex(e => e.TreatmentPackageId);
+
+            entity.Property(e => e.CaseName)
+                .IsRequired()
+                .HasMaxLength(200);
+            entity.Property(e => e.CaseDescription).HasMaxLength(2000);
+            entity.Property(e => e.PrimaryConcern).HasMaxLength(1000);
+            entity.Property(e => e.ClosureNote).HasMaxLength(2000);
+
+            entity.HasOne(e => e.TreatmentPackage)
+                .WithMany(tp => tp.TreatmentCases)
+                .HasForeignKey(e => e.TreatmentPackageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Doctor)
+                .WithMany(d => d.TreatmentCases)
+                .HasForeignKey(e => e.DoctorId)
+                .HasPrincipalKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Patient)
+                .WithMany(p => p.TreatmentCases)
+                .HasForeignKey(e => e.PatientId)
+                .HasPrincipalKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TreatmentSession
+        modelBuilder.Entity<TreatmentSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TreatmentCaseId);
+            entity.HasIndex(e => e.AppointmentId).IsUnique().HasFilter("[AppointmentId] IS NOT NULL");
+
+            entity.Property(e => e.SessionSummary).HasMaxLength(4000);
+            entity.Property(e => e.TherapistNotes).HasMaxLength(4000);
+            entity.Property(e => e.PatientFeedback).HasMaxLength(2000);
+            entity.Property(e => e.HomeworkAssigned).HasMaxLength(2000);
+
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany(tc => tc.Sessions)
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Appointment)
+                .WithMany()
+                .HasForeignKey(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // TreatmentGoal
+        modelBuilder.Entity<TreatmentGoal>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TreatmentCaseId);
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(300);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.DoctorNotes).HasMaxLength(2000);
+
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany(tc => tc.Goals)
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TherapyAssignment -> TreatmentCase (optional FK)
+        modelBuilder.Entity<TherapyAssignment>(entity =>
+        {
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany(tc => tc.Assignments)
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // EmotionJournal -> TreatmentCase (optional FK)
+        modelBuilder.Entity<EmotionJournal>(entity =>
+        {
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // PsychometricSubmission -> TreatmentCase (optional FK)
+        modelBuilder.Entity<PsychometricSubmission>(entity =>
+        {
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

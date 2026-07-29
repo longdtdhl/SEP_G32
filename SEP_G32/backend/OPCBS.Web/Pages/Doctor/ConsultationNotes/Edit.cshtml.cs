@@ -29,7 +29,15 @@ public class EditModel : PageModel
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Not found."; return Page(); }
         Record = data;
-        Input = new UpdateConsultationNoteDto { Diagnosis = data.Diagnosis, Notes = data.Notes, TherapyPlan = data.TherapyPlan, Recommendations = data.Recommendations };
+        Input = new UpdateConsultationNoteDto
+        {
+            Diagnosis = data.Diagnosis,
+            Notes = data.Notes,
+            TherapyPlan = data.TherapyPlan,
+            Recommendations = data.Recommendations,
+            Visibility = data.Visibility,
+            ConsultationDate = data.ConsultationDate
+        };
 
         // Load treatment packages for the patient (filter doctor's packages by patient name)
         var (packages, _, _) = await _packageApi.GetAllAsync(1, 50);

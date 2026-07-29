@@ -40,6 +40,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IEmotionJournalService, EmotionJournalService>();
         services.AddScoped<IFavoriteDoctorService, FavoriteDoctorService>();
         services.AddScoped<IMessagingService, MessagingService>();
+        services.AddScoped<ITreatmentCaseService, TreatmentCaseService>();
 
         return services;
     }

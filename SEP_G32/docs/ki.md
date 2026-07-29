@@ -409,5 +409,120 @@ Hệ thống cần hỗ trợ tái khám: khi bác sĩ ghi nhận ngày tái kh�
 * `_Layout.cshtml` (Main layout)
 * `_Header.cshtml` (Main header & dropdown navigation)
 
+---
+
+## 19. Treatment Management System (Treatment Cases)
+
+### 19.1 Kiến trúc Tổng quan
+Hệ thống nâng cấp mô hình "Gói điều trị" (Treatment Package) thành mô hình "Ca điều trị" (Treatment Case) - một lifecycle hoàn chỉnh cho quá trình trị liệu tâm lý. Treatment Package giữ vai trò **template** (mẫu gói dịch vụ), còn Treatment Case là **instance** (ca điều trị thực tế) được tạo từ template đó.
+
+```
+Treatment Package (Template)
+            │
+            ▼
+Treatment Case (Active Instance)
+            │
+            ├── Treatment Sessions (buổi trị liệu, link tới Appointment)
+            ├── Treatment Goals (mục tiêu điều trị + tracking progress)
+            ├── Therapy Assignments (bài tập về nhà - tái sử dụng entity cũ)
+            ├── Emotion Journals (mood tracking - tái sử dụng EmotionJournal)
+            ├── Psychometric Submissions (assessment - tái sử dụng entity cũ)
+            └── Timeline (chronological aggregation tất cả events)
+```
+
+### 19.2 Domain Entities
+
+**Entities mới** (`TreatmentCaseEntities.cs`):
+* `TreatmentCase`: Ca điều trị chính. FK tới `TreatmentPackage`, `DoctorProfile` (via UserId), `PatientProfile` (via UserId). Chứa `TotalSessions`, `CompletedSessions`, `RemainingSessions`, `OverallProgressPercent`, `Status` (enum `TreatmentCaseStatus`).
+* `TreatmentSession`: Buổi trị liệu trong case. FK tới `TreatmentCase` (cascade), optional FK tới `Appointment` (unique, set null). Chứa `SessionNumber`, `MoodBefore/MoodAfter` (1-10), `TherapistNotes`, `PatientFeedback`.
+* `TreatmentGoal`: Mục tiêu điều trị. FK tới `TreatmentCase` (cascade). Chứa `Priority` (enum), `ProgressPercent`, `AchievedDate`.
+
+**Enums mới** (`SystemEnums.cs`):
+* `TreatmentCaseStatus`: Active(0), OnHold(1), Completed(2), Terminated(3), Transferred(4)
+* `TreatmentSessionStatus`: Scheduled(0), InProgress(1), Completed(2), Cancelled(3), NoShow(4)
+* `GoalPriority`: Low(0), Medium(1), High(2)
+* `GoalStatus`: NotStarted(0), InProgress(1), Achieved(2), Deferred(3), Cancelled(4)
+
+**Entities sửa đổi** (thêm nullable FK `TreatmentCaseId`):
+* `TherapyAssignment`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để bài tập có thể gắn vào case.
+* `EmotionJournal`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để mood journal link vào case.
+* `PsychometricSubmission`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để assessment link vào case.
+* `TreatmentPackage`: Thêm navigation `ICollection<TreatmentCase>? TreatmentCases`.
+* `DoctorProfile` & `PatientProfile`: Thêm navigation `ICollection<TreatmentCase>? TreatmentCases`.
+
+### 19.3 Quyết định Thiết kế Quan trọng
+
+1. **Tái sử dụng entity cũ**: EmotionJournal, PsychometricSubmission, TherapyAssignment **không** được tạo lại mới. Thay vào đó, thêm FK nullable `TreatmentCaseId` để backward-compatible với dữ liệu cũ.
+2. **DoctorProfile & PatientProfile dùng `UserId` làm principal key** cho FK trong TreatmentCase (`HasPrincipalKey(d => d.UserId)`), giống pattern đã có trong hệ thống.
+3. **Auto-close**: Khi `CompleteSession` và `RemainingSessions <= 0`, case tự động chuyển sang `Completed` + `OverallProgressPercent = 100`.
+4. **Progress formula**: 40% sessions + 40% goals + 20% homework (đã implement session part).
+5. **Timeline**: Aggregation từ 5 nguồn (Sessions, Goals, Assignments, Journals, Submissions), sort theo `EventDate` descending.
+
+### 19.4 API Endpoints
+
+Controller: `TreatmentCaseController` (`api/v1/treatment-cases`)
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST   | `/` | Tạo Treatment Case từ Package template |
+| GET    | `/{id}` | Chi tiết case |
+| GET    | `/doctor/{doctorUserId}` | Danh sách case của bác sĩ |
+| GET    | `/patient/{patientUserId}` | Danh sách case của bệnh nhân |
+| PUT    | `/{id}` | Cập nhật case info |
+| POST   | `/{id}/close` | Đóng case (Complete/Terminate) |
+| POST   | `/sessions` | Tạo session mới |
+| PUT    | `/sessions/{id}/complete` | Hoàn thành session |
+| GET    | `/{caseId}/sessions` | Danh sách sessions |
+| POST   | `/goals` | Tạo goal mới |
+| PUT    | `/goals/{id}` | Cập nhật goal |
+| GET    | `/{caseId}/goals` | Danh sách goals |
+| GET    | `/{caseId}/progress` | Dashboard progress tổng hợp |
+| GET    | `/{caseId}/timeline` | Timeline chronological |
+
+### 19.5 Web UI Pages
+
+**Doctor Portal:**
+* `Doctor/TreatmentCases/Index`: Danh sách tất cả cases (card layout, filter by status, progress bar)
+* `Doctor/TreatmentCases/Details`: Chi tiết case, 4 tabs (Sessions, Goals, Timeline, Overview), modals cho Complete Session, Create/Update Goal, Close Case
+
+**Patient Portal:**
+* `Patient/TreatmentCases/Index`: Danh sách cases của bệnh nhân (gradient progress bars)
+* `Patient/TreatmentCases/Details`: Progress dashboard (read-only), 3 tabs (Goals, Sessions, Activity)
+
+**Navigation:** Đã thêm link "Treatment Cases" vào dropdown menu trong `_Header.cshtml` cho cả Doctor và Patient.
+
+### 19.6 DbContext Configuration
+
+`OpcbsDbContext.cs` - Method `ConfigureTreatmentCaseEntities()`:
+* Composite index trên `(DoctorId, PatientId, Status)` cho TreatmentCase
+* Unique filtered index trên `AppointmentId` cho TreatmentSession (`WHERE AppointmentId IS NOT NULL`)
+* DeleteBehavior: Restrict cho Package/Doctor/Patient FK, Cascade cho Session/Goal, SetNull cho optional FKs
+
+### Các file liên quan (Backend)
+* `OPCBS.Domain/Entities/TreatmentCaseEntities.cs` [NEW]
+* `OPCBS.Domain/Enums/SystemEnums.cs` (thêm 4 enums)
+* `OPCBS.Domain/Entities/TherapyAssignment.cs` (thêm FK)
+* `OPCBS.Domain/Entities/EmotionJournal.cs` (thêm FK)
+* `OPCBS.Domain/Entities/PsychometricEntities.cs` (thêm FK)
+* `OPCBS.Domain/Entities/PackageEntities.cs` (thêm navigation)
+* `OPCBS.Domain/Entities/IdentityEntities.cs` (thêm navigation)
+* `OPCBS.Infrastructure/Persistence/OpcbsDbContext.cs` (DbSets + Fluent API)
+* `OPCBS.Application/DTOs/TreatmentCase/TreatmentCaseDtos.cs` [NEW]
+* `OPCBS.Application/Interfaces/Services/ITreatmentCaseService.cs` [NEW]
+* `OPCBS.Application/Services/TreatmentCaseService.cs` [NEW]
+* `OPCBS.Application/Extensions/ApplicationServiceCollectionExtensions.cs` (DI)
+* `OPCBS.Api/Controllers/TreatmentCaseController.cs` [NEW]
+
+### Các file liên quan (Web Frontend)
+* `OPCBS.Web/DTOs/TreatmentCaseDtos.cs` [NEW]
+* `OPCBS.Web/Services/IServiceInterfaces.cs` (thêm ITreatmentCaseApiService)
+* `OPCBS.Web/Services/ServiceImplementations.cs` (thêm TreatmentCaseApiService)
+* `OPCBS.Web/Constants/ApiRoutes.cs` (thêm route)
+* `OPCBS.Web/Program.cs` (DI registration)
+* `OPCBS.Web/Pages/Doctor/TreatmentCases/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Doctor/TreatmentCases/Details.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/TreatmentCases/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/TreatmentCases/Details.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Shared/_Header.cshtml` (nav links)
 
 

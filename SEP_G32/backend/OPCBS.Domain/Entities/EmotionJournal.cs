@@ -26,6 +26,12 @@ public class EmotionJournal : BaseEntity
     /// <summary>Có chia sẻ nhật ký này với bác sĩ trị liệu hay không</summary>
     public bool IsShared { get; set; } = false;
 
+    /// <summary>FK to TreatmentCase (nullable - journal may exist without a case)</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
     // Navigation
     public virtual required PatientProfile Patient { get; set; }
+
+    /// <summary>Navigation to TreatmentCase (optional)</summary>
+    public virtual TreatmentCase? TreatmentCase { get; set; }
 }

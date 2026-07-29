@@ -79,6 +79,12 @@ public class ConsultationNote : BaseEntity
     /// <summary>Next appointment recommendation date (if applicable)</summary>
     public DateTime? NextAppointmentRecommendedDate { get; set; }
 
+    /// <summary>Date of the consultation. Auto-filled from appointment if linked, otherwise doctor inputs manually.</summary>
+    public DateTime? ConsultationDate { get; set; }
+
+    /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
+    public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
+
     /// <summary>Navigation property to Appointment</summary>
     public virtual Appointment? Appointment { get; set; }
 
@@ -150,6 +156,9 @@ public class TreatmentPackage : BaseEntity
 
     /// <summary>Navigation property to Patient</summary>
     public virtual PatientProfile? Patient { get; set; }
+
+    /// <summary>Navigation property: treatment cases created from this package template</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
 
     /// <summary>Navigation property: appointments using this package</summary>
     public virtual ICollection<Appointment>? Appointments { get; set; }

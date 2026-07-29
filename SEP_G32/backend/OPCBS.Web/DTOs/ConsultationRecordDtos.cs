@@ -15,6 +15,9 @@ public class ConsultationNoteDto
     public string? TherapyPlan { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public string? PackageName { get; set; }
 
     // Walk-in fields
     public string? WalkInPatientName { get; set; }
@@ -22,13 +25,35 @@ public class ConsultationNoteDto
     public string? WalkInPatientEmail { get; set; }
 
     // Aliases for views
-    public DateTime ConsultationDate => CreatedAt;
+    public DateTime DisplayConsultationDate => ConsultationDate ?? CreatedAt;
     public string? Notes => ConsultationSummary;
     public string? Recommendations => Recommendation;
 
     /// <summary>Display name: system patient name or walk-in name</summary>
     public string DisplayPatientName => PatientName ?? WalkInPatientName ?? "Không xác định";
     public bool IsWalkIn => AppointmentId == null;
+    public bool IsFromAppointment => AppointmentId.HasValue;
+
+    public string VisibilityText => Visibility switch
+    {
+        0 => "Doctor Only",
+        1 => "Patient Visible",
+        _ => "Unknown"
+    };
+
+    public string VisibilityBadgeClass => Visibility switch
+    {
+        0 => "badge bg-warning text-dark",
+        1 => "badge bg-success",
+        _ => "badge bg-secondary"
+    };
+
+    public string VisibilityIcon => Visibility switch
+    {
+        0 => "bi-eye-slash",
+        1 => "bi-eye",
+        _ => "bi-question-circle"
+    };
 }
 
 public class CreateConsultationNoteDto
@@ -46,6 +71,8 @@ public class CreateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 
     // Walk-in patient fields
     public string? WalkInPatientName { get; set; }
@@ -64,6 +91,8 @@ public class UpdateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 
     // Read-write aliases for Razor form binding
     public string? Notes { get => ConsultationSummary; set => ConsultationSummary = value ?? ""; }
