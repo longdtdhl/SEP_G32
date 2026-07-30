@@ -16,3 +16,4 @@ public class VerificationStatusModel : PageModel
         Verification = data;
     }
 }
+
