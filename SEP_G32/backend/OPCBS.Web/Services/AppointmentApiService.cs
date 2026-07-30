@@ -28,11 +28,20 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         return (data, error);
     }
 
-    public async Task<(bool Success, string? Error)> BookAsync(CreateAppointmentDto dto)
-        => await PostAsync(ApiRoutes.Appointments, dto);
+    public async Task<(AppointmentDto? Data, string? Error)> BookAsync(CreateAppointmentDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentDto>(ApiRoutes.Appointments, dto);
+        return (data, error);
+    }
 
     public async Task<(bool Success, string? Error)> RescheduleAsync(Guid id, RescheduleAppointmentDto dto)
         => await PutAsync($"{ApiRoutes.Appointments}/reschedule/{id}", dto);
+
+    public async Task<(bool Success, string? Error)> ApproveRescheduleAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/approve-reschedule");
+
+    public async Task<(bool Success, string? Error)> RejectRescheduleAsync(Guid id, string? reason = null)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/reject-reschedule", new { reason });
 
     public async Task<(bool Success, string? Error)> CancelAsync(Guid id, CancelAppointmentDto dto)
         => await PutAsync($"{ApiRoutes.Appointments}/cancel/{id}", dto);
@@ -40,13 +49,34 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Error)> ConfirmAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/approve/{id}");
 
+    public async Task<(bool Success, string? Error)> StartAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Appointments}/start/{id}");
+
     public async Task<(bool Success, string? Error)> CompleteAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/complete/{id}");
 
     public async Task<(List<AppointmentListItemDto> Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
     {
-        var (data, error) = await PostAsync<List<AppointmentListItemDto>>(ApiRoutes.AppointmentTrack, dto);
-        return (data ?? new(), error);
+        // Backend: GET /api/v1/appointments/track/{bookingCode}?email={email}
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
+        {
+            // Search by email only - use a placeholder code or the email-based search
+            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.Email)}?email={Uri.EscapeDataString(dto.Email)}";
+            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
+            return (data ?? new(), error);
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
+        {
+            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.BookingCode)}?email={Uri.EscapeDataString(dto.Email)}";
+            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
+            return (data ?? new(), error);
+        }
+        else
+        {
+            // Fallback: try POST
+            var (data, error) = await PostAsync<List<AppointmentListItemDto>>(ApiRoutes.AppointmentTrack, dto);
+            return (data ?? new(), error);
+        }
     }
 
     public async Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null)
@@ -54,6 +84,18 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         var url = $"{ApiRoutes.Doctors}/{doctorId}/schedule";
         if (!string.IsNullOrEmpty(date)) url += $"?date={date}";
         var (data, _, error) = await GetAsync<AvailableSlotsDto>(url);
+        return (data, error);
+    }
+
+    public async Task<(int Count, string? Error)> GetVisitCountAsync(Guid doctorId)
+    {
+        var (data, _, error) = await GetAsync<int>($"{ApiRoutes.Appointments}/visit-count/{doctorId}");
+        return (data, error);
+    }
+
+    public async Task<(bool IsReturning, string? Error)> IsReturningAsync(Guid doctorId)
+    {
+        var (data, _, error) = await GetAsync<bool>($"{ApiRoutes.Appointments}/is-returning/{doctorId}");
         return (data, error);
     }
 

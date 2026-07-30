@@ -1,116 +1,573 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Patient.Appointments.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết lịch hẹn";
+    ViewData["Title"] = "Appointment Details";
     ViewData["UseDashboardLayout"] = true;
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1><i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Chi tiết lịch hẹn</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+<style>
+    /* ── Detail Info Rows ── */
+    .detail-info-container {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .detail-info-row {
+        display: flex;
+        align-items: center;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .detail-info-row:last-child { border-bottom: none; }
+    .detail-info-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    .detail-info-icon.ic-blue    { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .detail-info-icon.ic-purple  { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .detail-info-icon.ic-green   { background: rgba(16,185,129,0.12); color: #10b981; }
+    .detail-info-icon.ic-amber   { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .detail-info-icon.ic-cyan    { background: rgba(6,182,212,0.12); color: #06b6d4; }
+    .detail-info-icon.ic-rose    { background: rgba(244,63,94,0.12); color: #f43f5e; }
+    .detail-info-icon.ic-teal    { background: rgba(20,184,166,0.12); color: #14b8a6; }
+    .detail-info-label {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 1px;
+    }
+    .detail-info-val {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* ── Status Banners ── */
+    .apt-banner {
+        border-radius: 14px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .apt-banner .banner-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+    .apt-banner.b-pending    { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+    .apt-banner.b-approved   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .apt-banner.b-inprogress { background: #faf5ff; border: 1px solid #e9d5ff; color: #6b21a8; }
+    .apt-banner.b-completed  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .apt-banner.b-cancelled  { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .apt-banner.b-rejected   { background: #f9fafb; border: 1px solid #e5e7eb; color: #374151; }
+
+    /* ── Section Header ── */
+    .section-hdr {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .section-hdr i { margin-right: 8px; }
+
+    /* ── Cards ── */
+    .detail-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    /* ── Action Buttons ── */
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid;
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .action-btn.a-primary    { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+    .action-btn.a-primary:hover { background: #2563eb; color: #fff; }
+    .action-btn.a-warning    { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+    .action-btn.a-warning:hover { background: #d97706; color: #fff; }
+    .action-btn.a-outline    { background: #fff; border-color: #e2e8f0; color: #475569; }
+    .action-btn.a-outline:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    .action-btn.a-danger     { background: #fff; border-color: #fca5a5; color: #dc2626; }
+    .action-btn.a-danger:hover { background: #fef2f2; }
+    .action-btn.a-chat       { background: #fff; border-color: #a5f3fc; color: #0891b2; }
+    .action-btn.a-chat:hover { background: #ecfeff; }
+
+    /* ── Notes Section ── */
+    .note-block {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        border: 1px solid #f1f5f9;
+        color: #475569;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        margin-bottom: 0.75rem;
+    }
+    .note-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-bottom: 6px;
+    }
+
+    /* ── Doctor Header ── */
+    .doctor-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .doctor-avatar {
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #eff6ff;
+        flex-shrink: 0;
+    }
+    .doctor-avatar-placeholder {
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        background: #eff6ff;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .doc-spec-chip {
+        display: inline-block;
+        background: #eff6ff;
+        color: #2563eb;
+        padding: 2px 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.72rem;
+    }
+
+    /* ── Tips ── */
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+    .tip-item:last-child { margin-bottom: 0; }
+    .tip-item i { color: #3b82f6; margin-top: 2px; flex-shrink: 0; }
+</style>
+
+<!-- Page Header -->
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1><i class="bi bi-calendar-event me-2" style="color:var(--mb-primary);"></i>Appointment Details</h1>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px; padding:6px 16px;">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+    </div>
+}
 
 @if (Model.Appointment != null)
 {
     var apt = Model.Appointment;
-    var isPending = apt.Status == "Pending" || apt.Status == "0";
-    var isApproved = apt.Status == "Approved" || apt.Status == "1";
-    var isCompleted = apt.Status == "Completed" || apt.Status == "4";
-    var isCancelled = apt.Status == "Cancelled" || apt.Status == "5";
+    var isPending = apt.Status == 0;
+    var isApproved = apt.Status == 1;
+    var isRejected = apt.Status == 2;
+    var isInProgress = apt.Status == 3;
+    var isCompleted = apt.Status == 4;
+    var isCancelled = apt.Status == 5;
+    var isRescheduleRequested = apt.Status == 6;
     var canCancel = isPending || isApproved;
 
+    <!-- Status Banner -->
+    @if (isRescheduleRequested)
+    {
+        <div class="apt-banner b-pending" style="background:#fff7ed; border-color:#ffedd5; color:#9a3412;">
+            <div class="banner-text">
+                <i class="bi bi-arrow-repeat fs-5"></i>
+                <span><strong>Reschedule Pending</strong> — You requested a new slot (@(apt.ProposedSlotDate ?? "New date") @(apt.ProposedSlotStartTime ?? "")). Your original slot is reserved until your doctor responds.</span>
+            </div>
+        </div>
+    }
+    else if (isPending)
+    {
+        <div class="apt-banner b-pending">
+            <div class="banner-text">
+                <i class="bi bi-hourglass-split"></i>
+                <span><strong>Pending Confirmation</strong> — The doctor will review and respond shortly.</span>
+            </div>
+        </div>
+    }
+    else if (isApproved)
+    {
+        <div class="apt-banner b-approved">
+            <div class="banner-text">
+                <i class="bi bi-check-circle-fill"></i>
+                <span><strong>Confirmed</strong> — Your appointment has been confirmed by the doctor.</span>
+            </div>
+            <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                <i class="bi bi-chat-dots-fill me-1"></i>Chat with Doctor
+            </a>
+        </div>
+    }
+    else if (isInProgress)
+    {
+        <div class="apt-banner b-inprogress">
+            <div class="banner-text">
+                <i class="bi bi-play-circle-fill"></i>
+                <span><strong>In Progress</strong> — Your consultation is currently ongoing.</span>
+            </div>
+            <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                <i class="bi bi-chat-dots-fill me-1"></i>Chat with Doctor
+            </a>
+        </div>
+    }
+    else if (isCompleted)
+    {
+        <div class="apt-banner b-completed">
+            <div class="banner-text">
+                <i class="bi bi-patch-check-fill"></i>
+                <span><strong>Completed</strong> — Your consultation session has ended.</span>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                    <i class="bi bi-arrow-repeat me-1"></i>Book Again
+                </a>
+            </div>
+        </div>
+    }
+    else if (isCancelled)
+    {
+        <div class="apt-banner b-cancelled">
+            <div class="banner-text">
+                <i class="bi bi-x-circle-fill"></i>
+                <span><strong>Cancelled</strong> — This appointment has been cancelled.</span>
+            </div>
+            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-danger" style="border-radius:10px;">
+                <i class="bi bi-arrow-repeat me-1"></i>Book Again
+            </a>
+        </div>
+    }
+    else if (isRejected)
+    {
+        <div class="apt-banner b-rejected">
+            <div class="banner-text">
+                <i class="bi bi-x-octagon-fill"></i>
+                <span><strong>Rejected</strong> — The doctor has declined this appointment request.</span>
+            </div>
+            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;">
+                <i class="bi bi-arrow-repeat me-1"></i>Book Again
+            </a>
+        </div>
+    }
+
     <div class="row g-4">
+        <!-- Main Content -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h4 class="mb-1">@apt.DoctorName</h4>
-                            @if (!string.IsNullOrEmpty(apt.Specialization))
-                            {
-                                <span class="badge bg-light text-primary">@apt.Specialization</span>
-                            }
-                        </div>
-                        <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="p-3 rounded" style="background:var(--mb-surface);">
-                                <small class="text-muted d-block"><i class="bi bi-calendar3 me-1"></i>Ngày hẹn</small>
-                                <strong>@apt.AppointmentDate</strong>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 rounded" style="background:var(--mb-surface);">
-                                <small class="text-muted d-block"><i class="bi bi-clock me-1"></i>Thời gian</small>
-                                <strong>@apt.StartTime — @apt.EndTime</strong>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(apt.BookingCode))
-                        {
-                            <div class="col-sm-6">
-                                <div class="p-3 rounded" style="background:var(--mb-surface);">
-                                    <small class="text-muted d-block"><i class="bi bi-upc me-1"></i>Mã đặt lịch</small>
-                                    <strong class="font-monospace">@apt.BookingCode</strong>
-                                </div>
-                            </div>
-                        }
-                        @if (apt.Fee.HasValue)
-                        {
-                            <div class="col-sm-6">
-                                <div class="p-3 rounded" style="background:var(--mb-surface);">
-                                    <small class="text-muted d-block"><i class="bi bi-wallet2 me-1"></i>Phí tư vấn</small>
-                                    <strong>@apt.Fee?.ToString("N0") VND</strong>
-                                </div>
-                            </div>
-                        }
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(apt.Notes))
+            <!-- Doctor Info + Appointment Details -->
+            <div class="detail-card">
+                <!-- Doctor Header -->
+                <div class="doctor-header">
+                    @if (!string.IsNullOrEmpty(apt.DoctorAvatarUrl))
                     {
-                        <div class="mt-4">
-                            <h6><i class="bi bi-chat-left-text me-1"></i>Ghi chú</h6>
-                            <p class="mb-0 text-muted">@apt.Notes</p>
+                        <img src="@apt.DoctorAvatarUrl" alt="@apt.DoctorName" class="doctor-avatar" />
+                    }
+                    else
+                    {
+                        <div class="doctor-avatar-placeholder">
+                            <i class="bi bi-person-fill" style="font-size:1.5rem; color:#3b82f6;"></i>
                         </div>
                     }
+                    <div style="flex:1;">
+                        <h4 class="mb-1" style="font-size:1.15rem; font-weight:700; color:#1e293b;">@apt.DoctorName</h4>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            @if (!string.IsNullOrEmpty(apt.Specialization))
+                            {
+                                <span class="doc-spec-chip">@apt.Specialization</span>
+                            }
+                            @if (Model.VisitCount > 0)
+                            {
+                                <span style="display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#16a34a; padding:2px 10px; border-radius:8px; font-size:0.72rem; font-weight:600;">
+                                    <i class="bi bi-arrow-repeat"></i> Visit: @Model.VisitCount times
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
 
-                    @if (!string.IsNullOrEmpty(apt.CancellationReason))
+                <!-- Info Grid (Row-based) -->
+                <div class="detail-info-container" style="border:none; margin-bottom:0;">
+                    <div class="detail-info-row">
+                        <div class="detail-info-icon ic-blue"><i class="bi bi-calendar3"></i></div>
+                        <div style="flex:1;">
+                            <div class="detail-info-label">Appointment Date</div>
+                            <div class="detail-info-val">@apt.AppointmentDate</div>
+                        </div>
+                    </div>
+                    <div class="detail-info-row">
+                        <div class="detail-info-icon ic-purple"><i class="bi bi-clock-fill"></i></div>
+                        <div style="flex:1;">
+                            <div class="detail-info-label">Time</div>
+                            <div class="detail-info-val">@apt.StartTime — @apt.EndTime</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(apt.BookingCode))
                     {
-                        <div class="alert alert-warning mt-4 mb-0">
-                            <i class="bi bi-exclamation-triangle me-1"></i><strong>Lý do hủy:</strong> @apt.CancellationReason
+                        <div class="detail-info-row">
+                            <div class="detail-info-icon ic-cyan"><i class="bi bi-upc-scan"></i></div>
+                            <div style="flex:1;">
+                                <div class="detail-info-label">Booking Code</div>
+                                <div class="detail-info-val" style="font-family:monospace; color:#3b82f6;">@apt.BookingCode</div>
+                            </div>
+                        </div>
+                    }
+                    @if (apt.Fee.HasValue && apt.Fee > 0)
+                    {
+                        <div class="detail-info-row">
+                            <div class="detail-info-icon ic-green"><i class="bi bi-wallet2"></i></div>
+                            <div style="flex:1;">
+                                <div class="detail-info-label">Consultation Fee</div>
+                                <div class="detail-info-val">@apt.Fee?.ToString("N0") VND</div>
+                            </div>
+                        </div>
+                    }
+                    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
+                    {
+                        <div class="detail-info-row">
+                            <div class="detail-info-icon ic-teal"><i class="bi bi-box-seam-fill"></i></div>
+                            <div style="flex:1;">
+                                <div class="detail-info-label">Treatment Package</div>
+                                <div class="detail-info-val">@apt.TreatmentPackageName</div>
+                            </div>
                         </div>
                     }
                 </div>
             </div>
+
+            <!-- Pre-Evaluation / Notes Section -->
+            <div class="detail-card">
+                <div class="section-hdr">
+                    <i class="bi bi-journal-medical" style="color:#8b5cf6;"></i>Pre-Evaluation Information
+                </div>
+                @{
+                    var hasCurrentEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                    var evalSource = hasCurrentEval ? apt : Model.LatestEvalAppointment;
+                    var hasAnyEval = evalSource != null && (!string.IsNullOrEmpty(evalSource.Symptoms) || !string.IsNullOrEmpty(evalSource.MedicalHistory) || !string.IsNullOrEmpty(evalSource.Expectations));
+                }
+                @if (hasAnyEval)
+                {
+                    @if (Model.IsUsingFallbackEval)
+                    {
+                        <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Showing evaluation from your previous visit on <strong>@evalSource!.AppointmentDate</strong> (follow-up appointment)</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(evalSource!.Symptoms))
+                    {
+                        <div class="note-block">
+                            <div class="note-label">Symptoms</div>
+                            @evalSource.Symptoms
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(evalSource.MedicalHistory))
+                    {
+                        <div class="note-block">
+                            <div class="note-label">Medical History</div>
+                            @evalSource.MedicalHistory
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(evalSource.Expectations))
+                    {
+                        <div class="note-block">
+                            <div class="note-label">Expectations</div>
+                            @evalSource.Expectations
+                        </div>
+                    }
+                }
+                @if (!string.IsNullOrEmpty(apt.Notes))
+                {
+                    <div class="note-block">
+                        <div class="note-label">Notes</div>
+                        @apt.Notes
+                    </div>
+                }
+                @if (!hasAnyEval && string.IsNullOrEmpty(apt.Notes))
+                {
+                    <p style="color:#94a3b8; font-size:0.85rem; margin:0;">No pre-evaluation information was recorded for this appointment.</p>
+                }
+            </div>
+
+            <!-- Psychometric Test Section -->
+            <div class="detail-card">
+                <div class="section-hdr">
+                    <i class="bi bi-clipboard2-pulse" style="color:#3b82f6;"></i>Mental Health Assessment
+                </div>
+                @if (Model.PsychometricSubmission != null)
+                {
+                    @if (Model.IsUsingFallbackPsych)
+                    {
+                        <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>Showing your most recent assessment result (not linked to this appointment)</span>
+                        </div>
+                    }
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:1rem 1.25rem;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span style="display:inline-block; background:#d1fae5; color:#065f46; padding:2px 10px; border-radius:6px; font-size:0.7rem; font-weight:700;">Completed</span>
+                                    <strong style="color:#1e293b;">@Model.PsychometricSubmission.TestTitle</strong>
+                                </div>
+                                <div style="font-size:0.8rem; color:#64748b;">
+                                    Completed at: @Model.PsychometricSubmission.SubmittedAt.ToString("HH:mm MM/dd/yyyy")
+                                </div>
+                                <div style="font-size:0.85rem; color:#475569; margin-top:4px;">
+                                    Result: <strong>@Model.PsychometricSubmission.Interpretation</strong> (Total Score: @Model.PsychometricSubmission.TotalScore)
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a asp-page="/Patient/Psychometrics/Result" asp-route-submissionId="@Model.PsychometricSubmission.Id" class="btn btn-sm btn-outline-primary" style="border-radius:10px;">
+                                    <i class="bi bi-bar-chart-fill me-1"></i>View Results
+                                </a>
+                                @foreach (var test in Model.AvailableTests)
+                                {
+                                    <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-outline-warning" style="border-radius:10px;">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Retake: @test.Title
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="background:#fefce8; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.25rem;">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-info-circle-fill" style="color:#f59e0b; margin-top:2px;"></i>
+                            <div>
+                                <strong style="color:#92400e;">We recommend completing a mental health assessment before your session</strong>
+                                <p class="mb-0" style="color:#a16207; font-size:0.8rem; margin-top:4px;">This helps your doctor better understand your current mental health status before the consultation.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap mt-2">
+                            @foreach (var test in Model.AvailableTests)
+                            {
+                                <a asp-page="/Patient/Psychometrics/TakeTest" asp-route-testId="@test.Id" asp-route-appointmentId="@Model.Appointment.Id" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                                    <i class="bi bi-pencil-square me-1"></i>Take Test: @test.Title
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Cancellation Reason -->
+            @if (!string.IsNullOrEmpty(apt.CancellationReason))
+            {
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:1rem 1.25rem; margin-bottom:1.25rem;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill" style="color:#dc2626; margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:#991b1b;">Cancellation Reason</strong><br/>
+                            <span style="color:#7f1d1d; font-size:0.875rem;">@apt.CancellationReason</span>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
 
+        <!-- Sidebar -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white"><h6 class="mb-0">Hành động</h6></div>
-                <div class="card-body d-grid gap-2">
+            <!-- Actions -->
+            <div class="detail-card">
+                <div class="section-hdr" style="border-bottom:none; padding-bottom:0; margin-bottom:0.75rem;">
+                    <i class="bi bi-lightning-charge" style="color:#f59e0b;"></i>Actions
+                </div>
+                <div class="d-grid gap-2">
                     @if (isCompleted)
                     {
-                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="btn btn-primary">
-                            <i class="bi bi-star me-1"></i>Đánh giá bác sĩ
+                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="action-btn a-warning">
+                            <i class="bi bi-star"></i> Rate Doctor
                         </a>
-                        <a asp-page="/Patient/ConsultationRecords/Index" class="btn btn-outline-primary">
-                            <i class="bi bi-file-medical me-1"></i>Xem hồ sơ tư vấn
+                        <a asp-page="/Patient/ConsultationRecords/Index" class="action-btn a-outline">
+                            <i class="bi bi-file-medical"></i> View Consultation Records
                         </a>
                     }
-
+                    @if (isApproved || isInProgress)
+                    {
+                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-chat">
+                            <i class="bi bi-chat-dots-fill"></i> Chat with Doctor
+                        </a>
+                    }
+                    @if (apt.CanReschedule)
+                    {
+                        <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="action-btn a-warning" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Request Reschedule
+                        </a>
+                    }
                     @if (canCancel)
                     {
-                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                            <i class="bi bi-x-circle me-1"></i>Hủy lịch hẹn
+                        <button type="button" class="action-btn a-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i> Cancel Appointment
                         </button>
                     }
-
-                    <a asp-page="/Doctors/Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-search-heart me-1"></i>Đặt lịch mới
+                    <hr style="margin:4px 0; border-color:#f1f5f9;" />
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-outline">
+                        <i class="bi bi-calendar-plus"></i> Book Again
                     </a>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="detail-card">
+                <div class="section-hdr" style="border-bottom:none; padding-bottom:0; margin-bottom:0.75rem;">
+                    <i class="bi bi-lightbulb" style="color:#f59e0b;"></i>Tips
+                </div>
+                <div class="tip-item">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Arrive on time for an effective consultation</span>
+                </div>
+                <div class="tip-item">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Prepare your questions in advance</span>
+                </div>
+                <div class="tip-item">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Cancel at least 24 hours before if you cannot attend</span>
                 </div>
             </div>
         </div>
@@ -120,33 +577,50 @@
     {
         <!-- Cancel Modal -->
         <div class="modal fade" id="cancelModal" tabindex="-1">
-            <div class="modal-dialog"><div class="modal-content">
-                <form method="post" asp-page-handler="Cancel" asp-route-id="@apt.Id">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Hủy lịch hẹn</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn hủy lịch hẹn này?</p>
-                        <div class="mb-3">
-                            <label class="form-label">Lý do hủy (tùy chọn)</label>
-                            <textarea asp-for="CancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy..."></textarea>
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:16px; border:none;">
+                    <form method="post" asp-page-handler="Cancel" asp-route-id="@apt.Id">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                        <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
-                    </div>
-                </form>
-            </div></div>
+                        <div class="modal-body">
+                            <p class="text-muted">Are you sure you want to cancel the appointment with <strong>@apt.DoctorName</strong> on <strong>@apt.AppointmentDate</strong>?</p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Cancellation Reason</label>
+                                <select class="form-select mb-2" id="cancelCategory" style="border-radius:10px;" onchange="document.getElementById('cancelReasonText').placeholder = this.value === 'Other' ? 'Please specify your reason...' : 'Additional details (optional)';">
+                                    <option value="" disabled selected>Select a reason...</option>
+                                    <option value="Schedule Conflict">Schedule Conflict</option>
+                                    <option value="Feeling Better">Feeling Better</option>
+                                    <option value="Financial Reasons">Financial Reasons</option>
+                                    <option value="Found Another Doctor">Found Another Doctor</option>
+                                    <option value="Personal Emergency">Personal Emergency</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <textarea asp-for="CancelReason" id="cancelReasonText" class="form-control" rows="3" placeholder="Additional details (optional)" style="border-radius:10px;"></textarea>
+                            </div>
+                            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 14px; font-size:0.8rem; color:#1e40af;">
+                                <i class="bi bi-info-circle me-1"></i>Cancellations must be made at least 24 hours before the scheduled appointment time.
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-outline-secondary" style="border-radius:10px;" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i class="bi bi-x-circle me-1"></i>Confirm Cancellation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     }
 }
 else
 {
     <div class="text-center py-5">
-        <i class="bi bi-calendar-x d-block mb-2" style="font-size:3rem;color:var(--mb-text-muted);"></i>
-        <h5>Không tìm thấy lịch hẹn</h5>
-        <a asp-page="Index" class="btn btn-primary mt-2">Quay lại danh sách</a>
+        <div class="mb-3">
+            <i class="bi bi-calendar-x" style="font-size:3rem; color:#94a3b8;"></i>
+        </div>
+        <h5 style="color:#475569;">Appointment Not Found</h5>
+        <p class="text-muted">This appointment does not exist or has been removed.</p>
+        <a asp-page="Index" class="btn btn-primary mt-2" style="border-radius:12px;"><i class="bi bi-arrow-left me-1"></i>Back to Appointments</a>
     </div>
 }
