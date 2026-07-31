@@ -35,66 +35,6 @@ public class CreateAppointmentDtoValidator : AbstractValidator<CreateAppointment
     }
 }
 
-/// <summary>
-/// Validator for creating consultation records
-/// </summary>
-public class CreateConsultationRecordDtoValidator : AbstractValidator<CreateConsultationRecordDto>
-{
-    public CreateConsultationRecordDtoValidator()
-    {
-        RuleFor(x => x.AppointmentId)
-            .NotEmpty().WithMessage("Appointment ID is required");
-
-        RuleFor(x => x.ConsultationSummary)
-            .NotEmpty().WithMessage("Consultation summary is required")
-            .MaximumLength(5000).WithMessage("Consultation summary cannot exceed 5000 characters");
-
-        RuleFor(x => x.Diagnosis)
-            .MaximumLength(2000).WithMessage("Diagnosis cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Diagnosis));
-
-        RuleFor(x => x.Recommendation)
-            .MaximumLength(5000).WithMessage("Recommendation cannot exceed 5000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Recommendation));
-
-        RuleFor(x => x.FollowUpNotes)
-            .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
-            .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
-
-        RuleFor(x => x.Prescription)
-            .MaximumLength(2000).WithMessage("Prescription cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Prescription));
-    }
-}
-
-/// <summary>
-/// Validator for updating consultation records
-/// </summary>
-public class UpdateConsultationRecordDtoValidator : AbstractValidator<UpdateConsultationRecordDto>
-{
-    public UpdateConsultationRecordDtoValidator()
-    {
-        RuleFor(x => x.ConsultationSummary)
-            .NotEmpty().WithMessage("Consultation summary is required")
-            .MaximumLength(5000).WithMessage("Consultation summary cannot exceed 5000 characters");
-
-        RuleFor(x => x.Diagnosis)
-            .MaximumLength(2000).WithMessage("Diagnosis cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Diagnosis));
-
-        RuleFor(x => x.Recommendation)
-            .MaximumLength(5000).WithMessage("Recommendation cannot exceed 5000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Recommendation));
-
-        RuleFor(x => x.FollowUpNotes)
-            .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
-            .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
-
-        RuleFor(x => x.Prescription)
-            .MaximumLength(2000).WithMessage("Prescription cannot exceed 2000 characters")
-            .When(x => !string.IsNullOrEmpty(x.Prescription));
-    }
-}
 
 /// <summary>
 /// Validator for canceling appointments

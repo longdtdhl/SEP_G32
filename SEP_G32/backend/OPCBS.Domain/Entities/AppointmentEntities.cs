@@ -77,6 +77,9 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Price/consultation fee for this slot (if not using packages)</summary>
     public decimal? Price { get; set; }
 
+    /// <summary>Optional notes/description for the slot</summary>
+    public string? Notes { get; set; }
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 
@@ -113,6 +116,15 @@ public class Appointment : BaseEntity
     /// <summary>Optional appointment notes/reason</summary>
     public string? Notes { get; set; }
 
+    /// <summary>Symptoms or current condition described by patient</summary>
+    public string? Symptoms { get; set; }
+
+    /// <summary>Medical history / past treatments</summary>
+    public string? MedicalHistory { get; set; }
+
+    /// <summary>Expectations/goals for the consultation session</summary>
+    public string? Expectations { get; set; }
+
     /// <summary>Current appointment status (Pending, Approved, Rejected, etc.)</summary>
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
 
@@ -146,8 +158,8 @@ public class Appointment : BaseEntity
     /// <summary>Navigation property to TreatmentPackage (if applicable)</summary>
     public virtual TreatmentPackage? TreatmentPackage { get; set; }
 
-    /// <summary>Navigation property: consultation record for this appointment</summary>
-    public virtual ConsultationRecord? ConsultationRecord { get; set; }
+    /// <summary>Navigation property: consultation note for this appointment</summary>
+    public virtual ConsultationNote? ConsultationNote { get; set; }
 
     /// <summary>Navigation property: review for this appointment (one per appointment)</summary>
     public virtual Review? Review { get; set; }
@@ -180,4 +192,45 @@ public class AppointmentHistory : ImmutableEntity
 
     /// <summary>Navigation property to Appointment</summary>
     public virtual required Appointment Appointment { get; set; }
+    /// <summary>
+    /// Consultation note entity - medical notes and outcomes from completed appointments
+    /// </summary>
+    public class ConsultationNote : BaseEntity
+    {
+        /// <summary>Foreign key to Appointment (nullable for walk-in patients)</summary>
+        public Guid? AppointmentId { get; set; }
+
+        /// <summary>Foreign key to DoctorProfile who conducted consultation</summary>
+        public Guid DoctorId { get; set; }
+
+        /// <summary>Foreign key to PatientRecord</summary>
+        public Guid PatientRecordId { get; set; }
+
+        /// <summary>Summary of the consultation session</summary>
+        public required string ConsultationSummary { get; set; }
+
+        /// <summary>Diagnosis or assessment findings</summary>
+        public string? Diagnosis { get; set; }
+
+        /// <summary>Treatment recommendations</summary>
+        public string? Recommendation { get; set; }
+
+        /// <summary>Follow-up notes or action items</summary>
+        public string? FollowUpNotes { get; set; }
+
+        /// <summary>Therapy plan or psychological intervention</summary>
+        public string? TherapyPlan { get; set; }
+
+        /// <summary>Next appointment recommendation date (if applicable)</summary>
+        public DateTime? NextAppointmentRecommendedDate { get; set; }
+
+        /// <summary>Navigation property to Appointment</summary>
+        public virtual Appointment? Appointment { get; set; }
+
+        /// <summary>Navigation property to Doctor</summary>
+        public virtual required DoctorProfile Doctor { get; set; }
+
+        /// <summary>Navigation property to PatientRecord</summary>
+        public virtual required PatientRecord PatientRecord { get; set; }
+    }
 }

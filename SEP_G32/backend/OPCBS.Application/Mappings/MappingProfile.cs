@@ -54,9 +54,9 @@ public class MappingProfile : Profile
             .ForMember(d => d.EndTime, opt => opt.MapFrom(s => s.EndTime.ToString("HH:mm")));
 
         // ConsultationRecord → ConsultationRecordDto
-        CreateMap<ConsultationRecord, ConsultationRecordDto>()
+        CreateMap<ConsultationNote, ConsultationNoteDto>()
             .ForMember(d => d.DoctorName, opt => opt.MapFrom(s => s.Doctor.User.FullName))
-            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.Patient.User.FullName));
+            .ForMember(d => d.PatientName, opt => opt.MapFrom(s => s.PatientRecord.Patient != null ? s.PatientRecord.Patient.User.FullName : s.PatientRecord.GuestName));
 
         // BlogPost → BlogPostDto
         CreateMap<BlogPost, BlogPostDto>()
