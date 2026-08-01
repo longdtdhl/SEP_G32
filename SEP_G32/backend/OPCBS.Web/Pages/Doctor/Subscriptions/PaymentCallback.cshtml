@@ -1,0 +1,45 @@
+﻿@page
+@model OPCBS.Web.Pages.Doctor.Subscriptions.PaymentCallbackModel
+@{
+    ViewData["Title"] = "Payment Callback";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg text-center p-5" style="border-radius:24px;">
+                <div class="card-body">
+                    @if (Model.IsSuccess)
+                    {
+                        <div class="mb-4">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle text-success shadow-sm" style="width: 80px; height: 80px;">
+                                <i class="bi bi-shield-check" style="font-size: 3rem;"></i>
+                            </div>
+                        </div>
+                        <h2 class="fw-bold text-success mb-3">Payment Successful</h2>
+                        <p class="text-muted mb-4">@Model.Message</p>
+                        <div class="d-grid gap-2">
+                            <a asp-page="Status" class="btn btn-primary btn-lg rounded-pill fw-bold"><i class="bi bi-check-circle me-2"></i>Go to My Subscription</a>
+                            <a asp-page="/Doctor/Dashboard" class="btn btn-outline-secondary rounded-pill fw-bold">Back to Dashboard</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-4">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 rounded-circle text-danger shadow-sm" style="width: 80px; height: 80px;">
+                                <i class="bi bi-x-circle" style="font-size: 3rem;"></i>
+                            </div>
+                        </div>
+                        <h2 class="fw-bold text-danger mb-3">Payment Failed</h2>
+                        <p class="text-muted mb-4">@Model.Message</p>
+                        <div class="d-grid gap-2">
+                            <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-danger btn-lg rounded-pill fw-bold"><i class="bi bi-arrow-counterclockwise me-2"></i>Try Again</a>
+                            <a asp-page="/Doctor/Dashboard" class="btn btn-outline-secondary rounded-pill fw-bold">Back to Dashboard</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
