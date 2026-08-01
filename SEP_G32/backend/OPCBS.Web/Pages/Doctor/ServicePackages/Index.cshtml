@@ -1,60 +1,146 @@
 @page
 @model OPCBS.Web.Pages.Doctor.ServicePackages.IndexModel
-@{ ViewData["Title"] = "Gói dịch vụ"; ViewData["UseDashboardLayout"] = true; }
+@{
+    ViewData["Title"] = "Service Packages";
+    ViewData["UseDashboardLayout"] = true;
+}
 
-<div class="mb-page-header"><h1>Gói dịch vụ</h1>
-    <p class="text-muted">Chọn gói phù hợp để sử dụng các tính năng của hệ thống</p>
+<style>
+    .package-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 16px !important;
+        overflow: hidden;
+    }
+
+        .package-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;
+        }
+
+    .package-header {
+        padding: 2.5rem 1.5rem 1.5rem;
+        background: linear-gradient(135deg, rgba(78,139,112,0.03) 0%, rgba(78,139,112,0.08) 100%);
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .package-popular {
+        position: relative;
+        border: 2px solid var(--mb-primary) !important;
+    }
+
+    .popular-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: var(--mb-primary);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 20px;
+        box-shadow: 0 4px 8px rgba(78,139,112,0.2);
+    }
+</style>
+
+<div class="mb-page-header">
+    <h1><i class="bi bi-box-seam me-2 text-primary"></i>Service Packages</h1>
+    <p class="text-muted">Subscribe or renew your service package to access patient care and consultation tools</p>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
-@if (Model.Success != null) { <div class="alert alert-success">@Model.Success</div> }
-
-@if (Model.CurrentSubscription != null)
+@if (Model.Error != null)
 {
-    <div class="alert alert-info mb-4">
-        <i class="bi bi-check-circle me-1"></i>
-        Bạn đang sử dụng gói <strong>@(Model.CurrentSubscription.PackageName ?? "N/A")</strong>
-        (hết hạn: @Model.CurrentSubscription.EndDate.ToString("dd/MM/yyyy"))
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-octagon-fill me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.Success != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill me-1"></i>@Model.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<div class="row g-4">
+@if (Model.CurrentSubscription != null)
+{
+    <div class="card border-0 shadow-sm mb-4 bg-primary bg-opacity-10 border-start border-4 border-primary">
+        <div class="card-body py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px;">
+                    <i class="bi bi-check2-circle fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark">You have an active service package</h6>
+                    <small class="text-muted">Current Plan: <strong class="text-primary">@Model.CurrentSubscription.PackageName</strong> — Expires on: <strong>@Model.CurrentSubscription.EndDate.ToString("MM/dd/yyyy")</strong></small>
+                </div>
+            </div>
+            <a asp-page="/Doctor/Subscriptions/History" class="btn btn-sm btn-outline-primary rounded-pill"><i class="bi bi-clock-history me-1"></i>Subscription History</a>
+        </div>
+    </div>
+}
+
+<div class="row g-4 justify-content-center mt-2">
     @foreach (var pkg in Model.Packages.Where(p => p.IsActive))
     {
         var isCurrentPkg = Model.CurrentSubscription?.ServicePackageId == pkg.Id;
+        var isPopular = pkg.Name.Contains("Premium") || pkg.Name.Contains("Vip") || pkg.Name.Contains("Pro");
+
         <div class="col-md-6 col-lg-4">
-            <div class="card border-0 shadow-sm h-100 @(isCurrentPkg ? "border-primary border-2" : "")">
-                <div class="card-body text-center">
-                    @if (isCurrentPkg)
-                    {
-                        <span class="badge bg-primary mb-2">Đang sử dụng</span>
-                    }
-                    <h4 class="card-title">@pkg.Name</h4>
+            <div class="card border-0 shadow-sm h-100 package-card @(isCurrentPkg ? "package-popular" : "")">
+                @if (isCurrentPkg)
+                {
+                    <div class="popular-badge"><i class="bi bi-award-fill me-1"></i>Current Plan</div>
+                }
+                else if (isPopular)
+                {
+                    <div class="popular-badge" style="background:#ff9800; box-shadow: 0 4px 8px rgba(255,152,0,0.2);"><i class="bi bi-fire me-1"></i>Popular</div>
+                }
+
+                <div class="package-header text-center">
+                    <h5 class="fw-bold text-dark mb-1">@pkg.Name</h5>
                     <div class="my-3">
-                        <span style="font-size:2rem;font-weight:700;color:var(--mb-primary)">@pkg.Price.ToString("N0")</span>
-                        <span class="text-muted"> ₫</span>
+                        <span class="fs-1 fw-bold text-primary">@pkg.Price.ToString("N0")</span>
+                        <span class="text-muted small">₫ / @pkg.DurationDays days</span>
                     </div>
-                    <p class="text-muted small">@(pkg.Description ?? "")</p>
-                    <ul class="list-unstyled text-start mb-3">
-                        <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>@pkg.DurationDays ngày sử dụng</li>
-                        <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>@pkg.MaxAppointments lịch hẹn</li>
-                        @foreach (var f in pkg.Features)
+                    <p class="text-muted small mb-0 px-2">@(pkg.Description ?? "Enjoy all features and maximum limits.")</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-dark mb-3 small text-uppercase letter-spacing-1">Included Features:</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2 d-flex align-items-start gap-2 small">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div><strong>@pkg.DurationDays days</strong> of service validity</div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-start gap-2 small">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>Up to <strong>@pkg.MaxAppointments appointments</strong> per period</div>
+                        </li>
+                        @if (pkg.Features != null)
                         {
-                            <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>@f</li>
+                            @foreach (var feature in pkg.Features)
+                            {
+                                <li class="mb-2 d-flex align-items-start gap-2 small">
+                                    <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                                    <div>@feature</div>
+                                </li>
+                            }
                         }
                     </ul>
                 </div>
-                <div class="card-footer bg-white border-0 text-center pb-3">
+
+                <div class="card-footer bg-white border-0 p-4 pt-0">
                     @if (!isCurrentPkg)
                     {
                         <form method="post" asp-page-handler="Subscribe">
                             <input type="hidden" name="packageId" value="@pkg.Id" />
-                            <button type="submit" class="btn btn-primary w-100">Đăng ký ngay</button>
+                            <button type="submit" class="btn btn-primary w-100 py-2.5 rounded-3 fw-bold"><i class="bi bi-credit-card me-1"></i>Subscribe Now</button>
                         </form>
                     }
                     else
                     {
-                        <button class="btn btn-outline-secondary w-100" disabled>Đang sử dụng</button>
+                        <button class="btn btn-light w-100 py-2.5 rounded-3 fw-bold text-muted border" disabled><i class="bi bi-shield-check me-1"></i>Your Current Plan</button>
                     }
                 </div>
             </div>

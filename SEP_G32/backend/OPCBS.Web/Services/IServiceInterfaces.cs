@@ -64,6 +64,8 @@ public interface ISubscriptionApiService
     Task<(SubscriptionDto? Data, string? Error)> GetCurrentAsync();
     Task<(List<SubscriptionDto> Data, string? Error)> GetHistoryAsync();
     Task<(bool Success, string? Error)> SubscribeAsync(CreateSubscriptionDto dto);
+    Task<(SubscriptionDto? Data, string? Error)> PurchaseAsync(Guid packageId, string returnUrl);
+    Task<(bool Success, string? Error)> ProcessCallbackAsync(IDictionary<string, string> queryParams);
 }
 
 public interface IAdminApiService
