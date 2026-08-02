@@ -1,27 +1,125 @@
-@page
+﻿@page
 @model OPCBS.Web.Pages.Doctors.IndexModel
-@{ ViewData["Title"] = "Find a Therapist"; }
+@{
+    ViewData["Title"] = "Search specialist";
+}
 
-<section class="mb-section">
-    <div class="mb-page-header">
-        <h1>Find a Therapist</h1>
-    </div>
+<style>
+    .search-section {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid rgba(16,185,129,0.12);
+        box-shadow: 0 4px 20px rgba(16,185,129,0.04);
+    }
 
-    <!-- Search & Filter -->
-    <div class="row g-4 mb-4">
+    .doctor-card-modern {
+        background: white;
+        border-radius: 18px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+        padding: 1.75rem 1.25rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        text-decoration: none;
+    }
+
+        .doctor-card-modern:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            border-color: rgba(78,139,112,0.25);
+        }
+
+    .avatar-wrapper {
+        position: relative;
+        margin-bottom: 1.25rem;
+    }
+
+    .avatar-img-modern {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #f1f5f9;
+        transition: border-color 0.3s;
+    }
+
+    .doctor-card-modern:hover .avatar-img-modern {
+        border-color: var(--mb-primary);
+    }
+
+    .doctor-avatar-initials {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--mb-primary-light);
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        border: 3px solid #f1f5f9;
+    }
+
+    .doctor-name-modern {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+
+    .doctor-spec-modern {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--mb-primary);
+        background: rgba(78,139,112,0.1);
+        padding: 3px 10px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+    }
+
+    .star-filled {
+        color: #f59e0b;
+    }
+
+    .star-empty {
+        color: #cbd5e1;
+    }
+</style>
+
+<div class="mb-page-header mb-4">
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search specialist therapy
+    </h1>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lựa select doctor and specialist psyforlogy matching with tình trạng your</p>
+</div>
+
+<!-- Search & Filter Block -->
+<div class="search-section shadow-sm">
+    <div class="row g-3">
         <div class="col-lg-8">
-            <form method="get" class="mb-search-bar">
-                <i class="bi bi-search"></i>
-                <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Search by name or specialization..." />
+            <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
+                <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
+                <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
+                       placeholder="Find theo tên doctor hoặc chuyên khoa..."
+                       style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
                 <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
             </form>
         </div>
         <div class="col-lg-4">
             <form method="get">
                 <input type="hidden" name="search" value="@Model.Filter.Search" />
-                <select name="specialization" class="form-select" onchange="this.form.submit()">
-                    <option value="">All Specializations</option>
-                    @foreach (var s in new[] { "Anxiety & Stress", "Depression", "Relationships", "Family Issues", "Trauma", "Burnout", "Addiction", "Career Counseling" })
+                <select name="specialization" class="form-select"
+                        style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
+                        onchange="this.form.submit()">
+                    <option value="">All chuyên khoa</option>
+                    @foreach (var s in Model.Specializations)
                     {
                         <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
                     }
@@ -29,60 +127,98 @@
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Doctor Cards Grid -->
-    @if (Model.Doctors.Any())
+<!-- Doctor Grid -->
+@if (Model.Doctors.Any())
+{
+    <div class="row g-4 mb-4">
+        @foreach (var doc in Model.Doctors)
+        {
+            var initials = string.Join("", (doc.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
+
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <a asp-page="Details" asp-route-id="@doc.Id" class="doctor-card-modern">
+                    <!-- Avatar -->
+                    <div class="avatar-wrapper">
+                        @if (!string.IsNullOrEmpty(doc.AvatarUrl))
+                        {
+                            <img src="@doc.AvatarUrl" alt="@doc.FullName" class="avatar-img-modern" />
+                        }
+                        else
+                        {
+                            <div class="doctor-avatar-initials">
+                                @initials
+                            </div>
+                        }
+                        @if (doc.IsVerified)
+                        {
+                            <div class="mb-verified-badge"
+                                 style="position: absolute; bottom: 2px; right: 2px; width: 24px; height: 24px; background: #00ba7c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 2px solid white;">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Name & Spec -->
+                    <div class="doctor-name-modern">@doc.FullName</div>
+                    <div class="d-inline-block">
+                        <span class="doctor-spec-modern">@(doc.Specialization ?? "Therapist")</span>
+                    </div>
+
+                    <!-- Rating -->
+                    <div class="d-flex align-items-center gap-1 justify-content-center mb-3">
+                        @{
+                            var rating = doc.Rating;
+                            var stars = (int)Math.Floor(rating);
+                            var half = (rating - stars) >= 0.25;
+                        }
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            if (i <= stars)
+                            {
+                                <i class="bi bi-star-fill star-filled" style="font-size:0.85rem;"></i>
+                            }
+                            else if (i == stars + 1 && half)
+                            {
+                                <i class="bi bi-star-half star-filled" style="font-size:0.85rem;"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-star star-empty" style="font-size:0.85rem;"></i>
+                            }
+                        }
+                        @if (doc.ReviewCount > 0)
+                        {
+                            <span style="font-size:0.75rem; color:#64748b; margin-left:4px;">(@doc.ReviewCount reviews)</span>
+                        }
+                    </div>
+
+                    <!-- Experience & Fee Meta -->
+                    <div class="mt-auto d-flex justify-content-between w-100 border-top pt-3" style="font-size:0.8rem; color:#64748b;">
+                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years KN</span>
+                        @if (doc.ConsultationFee > 0)
+                        {
+                            <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
+                        }
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (Model.Pagination != null)
     {
-        <div class="row g-4">
-            @foreach (var doc in Model.Doctors)
-            {
-                <div class="col-sm-6 col-lg-4 col-xl-3">
-                    <a asp-page="Details" asp-route-id="@doc.Id" class="text-decoration-none">
-                        <div class="mb-doctor-card h-100">
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div>
-                                    @if (!string.IsNullOrEmpty(doc.AvatarUrl))
-                                    {
-                                        <img src="@doc.AvatarUrl" alt="@doc.FullName" class="doctor-avatar" />
-                                    }
-                                    else
-                                    {
-                                        <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background-color:var(--mb-secondary);">
-                                            <i class="bi bi-person-fill" style="font-size:1.5rem;color:var(--mb-primary);"></i>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="doctor-name mb-0">@doc.FullName</h5>
-                                    <p class="doctor-specialization mb-0">@doc.Specialization</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", doc.Rating }, { "ReviewCount", doc.ReviewCount } })' />
-                                @if (doc.IsVerified)
-                                {
-                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">
-                                        <i class="bi bi-patch-check-fill me-1"></i>Verified
-                                    </span>
-                                }
-                            </div>
-                            <div class="d-flex justify-content-between" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
-                                <span><i class="bi bi-briefcase me-1"></i>@doc.ExperienceYears yrs exp.</span>
-                                @if (doc.ConsultationFee > 0)
-                                {
-                                    <span class="fw-semibold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0") VND</span>
-                                }
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            }
-        </div>
-
         <partial name="_Pagination" view-data='@(new ViewDataDictionary(ViewData) { { "Pagination", Model.Pagination }, { "PageUrl", "/Doctors" } })' />
     }
-    else
-    {
-        <partial name="_EmptyState" view-data='@(new ViewDataDictionary(ViewData) { { "EmptyIcon", "bi-search" }, { "EmptyTitle", "No therapists found" }, { "EmptyMessage", "Try adjusting your search filters." } })' />
-    }
-</section>
+}
+else
+{
+    <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px;">
+        <div class="card-body">
+            <i class="bi bi-search text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
+            <h5 class="fw-bold">Not found doctor nào</h5>
+            <p class="text-muted small mb-0">Thử thay đổi keyword search hoặc chuyên khoa your.</p>
+        </div>
+    </div>
+}
