@@ -418,4 +418,194 @@ public class BusinessServicesTests
         Assert.Equal("Draft", result.Data!.Status);
         Assert.Equal("Dr. Test", result.Data.DoctorName);
     }
+
+    [Fact]
+    public async Task ConsultationNoteService_UpdateAsync_WhenConfirmed_ReturnsError()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+        var notifService = new Mock<INotificationService>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var recordId = Guid.NewGuid();
+
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        var note = new ConsultationNote
+        {
+            Id = recordId,
+            DoctorId = doctorId,
+            PatientRecordId = Guid.NewGuid(),
+            ConsultationSummary = "Original summary",
+            Diagnosis = "Original diagnosis",
+            IsPatientConfirmed = true, // ALREADY CONFIRMED BY PATIENT
+            PatientConfirmedAt = DateTime.UtcNow,
+            Doctor = doctor,
+            PatientRecord = new PatientRecord { Id = Guid.NewGuid(), DoctorId = doctorId, Doctor = doctor }
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        recordRepo.Setup(r => r.GetByIdAsync(recordId, It.IsAny<CancellationToken>())).ReturnsAsync(note);
+
+        var service = new ConsultationNoteService(
+            recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object,
+            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object);
+
+        var updateDto = new UpdateConsultationNoteDto
+        {
+            Diagnosis = "New Diagnosis Attempt",
+            ConsultationSummary = "New Notes Attempt"
+        };
+
+        var result = await service.UpdateAsync(recordId, doctorUserId, updateDto, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("confirmed by the patient and can no longer be edited", result.Message);
+    }
+
+    [Fact]
+    public async Task ConsultationNoteService_UpdateAsync_WhenUnconfirmed_UpdatesRecord()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+        var notifService = new Mock<INotificationService>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var recordId = Guid.NewGuid();
+
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        var note = new ConsultationNote
+        {
+            Id = recordId,
+            DoctorId = doctorId,
+            PatientRecordId = Guid.NewGuid(),
+            ConsultationSummary = "Original summary",
+            Diagnosis = "Original diagnosis",
+            IsPatientConfirmed = false, // UNCONFIRMED
+            Doctor = doctor,
+            PatientRecord = new PatientRecord { Id = Guid.NewGuid(), DoctorId = doctorId, Doctor = doctor }
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        recordRepo.Setup(r => r.GetByIdAsync(recordId, It.IsAny<CancellationToken>())).ReturnsAsync(note);
+        recordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { note });
+        patientRecordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientRecord>());
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User>());
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile>());
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
+        packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
+        mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>())).Returns((ConsultationNote src) => new ConsultationNoteDto { Id = src.Id, Diagnosis = src.Diagnosis });
+
+        var service = new ConsultationNoteService(
+            recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object,
+            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object);
+
+        var updateDto = new UpdateConsultationNoteDto
+        {
+            Diagnosis = "Updated Diagnosis",
+            ConsultationSummary = "Updated Notes"
+        };
+
+        var result = await service.UpdateAsync(recordId, doctorUserId, updateDto, default);
+
+        Assert.True(result.Success);
+        Assert.Equal("Updated Diagnosis", note.Diagnosis);
+        Assert.Equal("Updated Notes", note.ConsultationSummary);
+        Assert.Equal(doctorUserId, note.LastEditedByDoctorId != null ? doctorUserId : (Guid?)null);
+    }
+
+    [Fact]
+    public async Task ConsultationNoteService_ConfirmByPatientAsync_WhenAuthorized_ConfirmsRecord()
+    {
+        var recordRepo = new Mock<IRepository<ConsultationNote>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientRecordRepo = new Mock<IRepository<PatientRecord>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+        var notifService = new Mock<INotificationService>();
+
+        var patientUserId = Guid.NewGuid();
+        var patientId = Guid.NewGuid();
+        var recordId = Guid.NewGuid();
+        var patientRecordId = Guid.NewGuid();
+
+        var patient = new PatientProfile
+        {
+            Id = patientId,
+            UserId = patientUserId,
+            User = new User { Id = patientUserId, Email = "patient@test.com", FullName = "Patient Name", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } }
+        };
+
+        var patientRecord = new PatientRecord
+        {
+            Id = patientRecordId,
+            PatientId = patientId,
+            DoctorId = Guid.NewGuid(),
+            Doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doc", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } }
+        };
+
+        var note = new ConsultationNote
+        {
+            Id = recordId,
+            DoctorId = patientRecord.DoctorId,
+            PatientRecordId = patientRecordId,
+            ConsultationSummary = "Summary",
+            IsPatientConfirmed = false,
+            Doctor = patientRecord.Doctor,
+            PatientRecord = patientRecord
+        };
+
+        recordRepo.Setup(r => r.GetByIdAsync(recordId, It.IsAny<CancellationToken>())).ReturnsAsync(note);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecordId, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+        recordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { note });
+        patientRecordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientRecord> { patientRecord });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { patient.User });
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
+        packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
+        mapper.Setup(m => m.Map<ConsultationNoteDto>(It.IsAny<ConsultationNote>())).Returns((ConsultationNote src) => new ConsultationNoteDto { Id = src.Id, IsPatientConfirmed = src.IsPatientConfirmed });
+
+        var service = new ConsultationNoteService(
+            recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object,
+            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object);
+
+        var result = await service.ConfirmByPatientAsync(recordId, patientUserId, default);
+
+        Assert.True(result.Success);
+        Assert.True(note.IsPatientConfirmed);
+        Assert.NotNull(note.PatientConfirmedAt);
+        Assert.Equal(patientUserId, note.PatientConfirmedById);
+    }
 }
+

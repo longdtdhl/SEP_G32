@@ -133,6 +133,7 @@ public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiSe
     }
     public async Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto) => await PostAsync(ApiRoutes.ConsultationNotes, dto);
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto) => await PutAsync($"{ApiRoutes.ConsultationNotes}/{id}", dto);
+    public async Task<(bool Success, string? Error)> ConfirmAsync(Guid recordId) => await PostAsync($"{ApiRoutes.ConsultationNotes}/{recordId}/confirm", new { });
 }
 
 // --- Treatment Package ---

@@ -64,9 +64,6 @@
         @* ============================== PATIENT ============================== *@
         @if (isPatient)
         {
-            <a class="sb-link @(currentPath == "/patient/dashboard" ? "active" : "")" asp-page="/Patient/Dashboard">
-                <i class="bi bi-house"></i><span>Dashboard</span>
-            </a>
             <a class="sb-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
                 <i class="bi bi-calendar-check"></i><span>My Appointments</span>
             </a>
@@ -108,14 +105,6 @@
             </a>
 
             <div class="sb-divider"></div>
-
-            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
-                <i class="bi bi-person"></i><span>Profile</span>
-            </a>
-            <a class="sb-link @(currentPath == "/account/changepassword" ? "active" : "")" asp-page="/Account/ChangePassword">
-                <i class="bi bi-shield-lock"></i><span>Security</span>
-            </a>
-            <div class="sb-divider"></div>
             <form method="post" asp-page="/Account/Logout" class="m-0">
                 <button type="submit" class="sb-link sb-logout">
                     <i class="bi bi-box-arrow-right"></i><span>Logout</span>
@@ -149,9 +138,6 @@
                 <a class="sb-link @(currentPath.StartsWith("/doctor/patients") ? "active" : "")" asp-page="/Doctor/Patients/Index">
                     <i class="bi bi-people"></i><span>Patients</span>
                 </a>
-                <a class="sb-link @(currentPath.StartsWith("/doctor/consultationnotes") ? "active" : "")" asp-page="/Doctor/ConsultationNotes/Index">
-                    <i class="bi bi-file-medical"></i><span>Consultation Notes</span>
-                </a>
                 <a class="sb-link @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index">
                     <i class="bi bi-heart-pulse"></i><span>Treatment Progress</span>
                 </a>
@@ -179,7 +165,6 @@
                 <span class="sb-link sb-disabled"><i class="bi bi-clock"></i><span>Schedule Management</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <div class="sb-divider"></div>
                 <span class="sb-link sb-disabled"><i class="bi bi-people"></i><span>Patients</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
-                <span class="sb-link sb-disabled"><i class="bi bi-file-medical"></i><span>Consultation Notes</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <span class="sb-link sb-disabled"><i class="bi bi-heart-pulse"></i><span>Treatment Progress</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <div class="sb-divider"></div>
                 <span class="sb-link sb-disabled"><i class="bi bi-box-seam"></i><span>Treatment Packages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
@@ -219,9 +204,6 @@
 
             <div class="sb-divider"></div>
 
-            <a class="sb-link @(currentPath == "/doctor/profile" ? "active" : "")" asp-page="/Doctor/Profile">
-                <i class="bi bi-person"></i><span>My Profile</span>
-            </a>
             <form method="post" asp-page="/Account/Logout" class="m-0">
                 <button type="submit" class="sb-link sb-logout">
                     <i class="bi bi-box-arrow-right"></i><span>Logout</span>
@@ -246,9 +228,6 @@
 
             <div class="sb-divider"></div>
 
-            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
-                <i class="bi bi-person"></i><span>Profile</span>
-            </a>
             <form method="post" asp-page="/Account/Logout" class="m-0">
                 <button type="submit" class="sb-link sb-logout">
                     <i class="bi bi-box-arrow-right"></i><span>Logout</span>
@@ -277,9 +256,6 @@
 
             <div class="sb-divider"></div>
 
-            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
-                <i class="bi bi-person"></i><span>Profile</span>
-            </a>
             <form method="post" asp-page="/Account/Logout" class="m-0">
                 <button type="submit" class="sb-link sb-logout">
                     <i class="bi bi-box-arrow-right"></i><span>Logout</span>
@@ -314,9 +290,6 @@
 
             <div class="sb-divider"></div>
 
-            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
-                <i class="bi bi-person"></i><span>Profile</span>
-            </a>
             <form method="post" asp-page="/Account/Logout" class="m-0">
                 <button type="submit" class="sb-link sb-logout">
                     <i class="bi bi-box-arrow-right"></i><span>Logout</span>

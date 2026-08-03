@@ -46,9 +46,18 @@ public class CreateModel : PageModel
     {
         if (!string.IsNullOrEmpty(TagsInput))
             Input.Tags = TagsInput.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
-        // Sync ImageUrl to ThumbnailUrl for backend compatibility
-        if (!string.IsNullOrEmpty(Input.ImageUrl) && string.IsNullOrEmpty(Input.ThumbnailUrl))
-            Input.ThumbnailUrl = Input.ImageUrl;
+
+        // Sync ImageUrl and ThumbnailUrl, providing default fallback if both are empty
+        if (string.IsNullOrWhiteSpace(Input.ThumbnailUrl))
+        {
+            if (!string.IsNullOrWhiteSpace(Input.ImageUrl))
+                Input.ThumbnailUrl = Input.ImageUrl;
+            else
+                Input.ThumbnailUrl = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800";
+        }
+        if (string.IsNullOrWhiteSpace(Input.ImageUrl))
+            Input.ImageUrl = Input.ThumbnailUrl;
+
         // Sync Summary to Excerpt for backend compatibility
         if (!string.IsNullOrEmpty(Input.Summary) && string.IsNullOrEmpty(Input.Excerpt))
             Input.Excerpt = Input.Summary;

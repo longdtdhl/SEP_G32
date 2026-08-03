@@ -4,6 +4,7 @@
     var fullName = JwtService.GetFullName() ?? "User";
     var role = JwtService.GetRole();
     var email = JwtService.GetEmail() ?? "";
+    var avatarUrl = JwtService.GetAvatarUrl();
     var initials = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "U";
     
     var roleBadge = role switch
@@ -25,15 +26,36 @@
         "SystemAdmin" => "#ef4444",
         _ => "#64748b"
     };
+
+    var dashboardUrl = role switch
+    {
+        "Doctor" => "/Doctor/Dashboard",
+        "Patient" => "/Patient/Appointments/Index",
+        "CustomerSupport" => "/CustomerSupport/Dashboard",
+        "BusinessManager" => "/BusinessManager/Dashboard",
+        "SystemAdmin" => "/Admin/Dashboard",
+        _ => "/"
+    };
+
+    var profileUrl = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
+        ? "/Doctor/Profile"
+        : "/Account/Profile";
 }
 
 <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-0" href="#" role="button" 
        data-bs-toggle="dropdown" aria-expanded="false" style="line-height:1;">
-        <div class="rounded-circle d-flex align-items-center justify-content-center" 
-             style="width:36px;height:36px;background:var(--mb-primary);color:#fff;font-weight:600;font-size:0.8rem;flex-shrink:0;">
-            @initials
-        </div>
+        @if (!string.IsNullOrEmpty(avatarUrl))
+        {
+            <img src="@avatarUrl" alt="@fullName" class="rounded-circle shadow-sm" style="width:36px;height:36px;object-fit:cover;flex-shrink:0;" />
+        }
+        else
+        {
+            <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
+                 style="width:36px;height:36px;background:var(--mb-primary);color:#fff;font-weight:600;font-size:0.8rem;flex-shrink:0;">
+                @initials
+            </div>
+        }
         <div class="d-none d-lg-flex flex-column" style="line-height:1.2;">
             <span style="font-size:0.82rem;font-weight:600;color:#1e293b;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@fullName</span>
             @if (!string.IsNullOrEmpty(roleBadge))
@@ -51,7 +73,13 @@
                 <div class="text-muted" style="font-size:0.75rem;">@email</div>
             }
         </li>
-        <li><a class="dropdown-item py-2" asp-page="/Account/Profile"><i class="bi bi-person me-2" style="color:#64748b;"></i>My Profile</a></li>
+        <li>
+            <a class="dropdown-item py-2 fw-semibold text-primary" href="@dashboardUrl">
+                <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+            </a>
+        </li>
+        <li><hr class="dropdown-divider my-1" /></li>
+        <li><a class="dropdown-item py-2" href="@profileUrl"><i class="bi bi-person me-2" style="color:#64748b;"></i>My Profile</a></li>
         <li><a class="dropdown-item py-2" asp-page="/Account/ChangePassword"><i class="bi bi-shield-lock me-2" style="color:#64748b;"></i>Security</a></li>
         <li><hr class="dropdown-divider my-1" /></li>
         <li>

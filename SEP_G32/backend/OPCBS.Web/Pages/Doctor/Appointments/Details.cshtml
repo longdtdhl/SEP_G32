@@ -67,14 +67,14 @@
         font-weight: 600;
         color: #1e293b;
     }
-    .bg-icon-primary { background: rgba(66, 153, 225, 0.15); color: #3182ce; }
-    .bg-icon-success { background: rgba(72, 187, 120, 0.15); color: #38a169; }
-    .bg-icon-info { background: rgba(0, 180, 216, 0.15); color: #0077b6; }
-    .bg-icon-purple { background: rgba(159, 122, 234, 0.15); color: #805ad5; }
-    .bg-icon-orange { background: rgba(237, 137, 54, 0.15); color: #dd6b20; }
-    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.08); }
-    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1); }
-    .bg-soft-info { background-color: rgba(13, 202, 240, 0.08); }
+    .bg-icon-primary { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+    .bg-icon-success { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    .bg-icon-info { background: rgba(14, 165, 233, 0.1); color: #0284c7; }
+    .bg-icon-purple { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+    .bg-icon-orange { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    .bg-soft-danger { background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; }
+    .bg-soft-warning { background-color: #fffbeb; border: 1px solid #fef3c7; color: #92400e; }
+    .bg-soft-info { background-color: #ecfeff; border: 1px solid #cff4fc; color: #155e75; }
     
     .evaluation-section {
         background: #fff;
@@ -92,13 +92,13 @@
     .evaluation-bubble {
         padding: 1rem;
         border-radius: 12px;
-        font-size: 0.95rem;
+        font-size: 0.925rem;
         border: 1px solid transparent;
         line-height: 1.6;
     }
-    .bubble-symptoms { background-color: #fff5f5; border-color: #feb2b2; color: #9b2c2c; }
-    .bubble-history { background-color: #ebf8ff; border-color: #90cdf4; color: #2b6cb0; }
-    .bubble-expectations { background-color: #f0fff4; border-color: #9ae6b4; color: #22543d; }
+    .bubble-symptoms { background-color: #fef2f2; border-color: #fee2e2; color: #991b1b; }
+    .bubble-history { background-color: #f0f9ff; border-color: #e0f2fe; color: #0369a1; }
+    .bubble-expectations { background-color: #f0fdf4; border-color: #dcfce7; color: #15803d; }
     
     .progress-bar-custom {
         height: 8px;
@@ -112,11 +112,50 @@
     }
     
     .dass-badge {
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
         font-weight: 600;
         text-align: center;
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        border: 1px solid transparent;
+    }
+
+    /* Sticky Sidebar & Back to Top Button */
+    .sticky-sidebar {
+        position: sticky;
+        top: 90px;
+        z-index: 100;
+        transition: top 0.2s ease;
+    }
+    #btnBackToTop {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        cursor: pointer;
+        z-index: 1050;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #btnBackToTop:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-4px) scale(1.06);
+        box-shadow: 0 8px 22px rgba(16, 185, 129, 0.55);
+        color: #ffffff;
+    }
+    #btnBackToTop.show {
+        opacity: 1;
+        visibility: visible;
     }
 </style>
 
@@ -246,68 +285,69 @@
                 <div class="detail-card-body">
                     
                     <!-- Information Grid -->
-                    <!-- Appointment Info Rows -->
-                    <div class="bg-white rounded-3 border mb-4" style="overflow:hidden;">
-                        <div class="info-row">
-                            <div class="info-row-icon bg-icon-primary"><i class="bi bi-person-fill"></i></div>
-                            <div style="flex:1;">
-                                <div class="info-row-label">Patient Name</div>
-                                <div class="info-row-val">@(apt.PatientName ?? "N/A")</div>
+                    <!-- Appointment Info Grid -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-person-fill fs-5"></i></div>
+                                <div>
+                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Patient Name</div>
+                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">@(apt.PatientName ?? "N/A")</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="info-row">
-                            <div class="info-row-icon bg-icon-purple"><i class="bi bi-clock-fill"></i></div>
-                            <div style="flex:1;">
-                                <div class="info-row-label">Schedule Time</div>
-                                <div class="info-row-val">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy") &nbsp; <span style="color:#4f46e5; font-weight:500;">@apt.StartAt.LocalDateTime.ToString("HH:mm") – @apt.EndAt.LocalDateTime.ToString("HH:mm")</span></div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-clock-fill fs-5"></i></div>
+                                <div>
+                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Schedule Time</div>
+                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">
+                                        @apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy") 
+                                        <span class="ms-1 px-2 py-0.5 rounded text-secondary small fw-medium" style="font-size: 0.85rem; background: #e2e8f0;">
+                                            @apt.StartAt.LocalDateTime.ToString("HH:mm") – @apt.EndAt.LocalDateTime.ToString("HH:mm")
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="info-row">
-                            <div class="info-row-icon bg-icon-success"><i class="bi bi-activity"></i></div>
-                            <div style="flex:1;">
-                                <div class="info-row-label">Specialization</div>
-                                <div class="info-row-val">@(apt.Specialization ?? "-")</div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-activity fs-5"></i></div>
+                                <div>
+                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Specialization</div>
+                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">@(apt.Specialization ?? "-")</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="info-row">
-                            <div class="info-row-icon bg-icon-info"><i class="bi bi-arrow-repeat"></i></div>
-                            <div style="flex:1;">
-                                <div class="info-row-label">Visit History</div>
-                                <div class="info-row-val">
-                                    @if (apt.VisitCount == 0)
-                                    {
-                                        <i class="bi bi-person-plus" style="color:#0d9488; margin-right:4px;"></i>
-                                        <text>First Consultation</text>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-arrow-repeat" style="color:#a5ca38; margin-right:4px;"></i>
-                                        <text>Visit :@apt.VisitCount times</text>
-                                    }
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-arrow-repeat fs-5"></i></div>
+                                <div>
+                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Visit History</div>
+                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">
+                                        @if (apt.VisitCount == 0)
+                                        {
+                                            <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; font-size:0.75rem;">
+                                                <i class="bi bi-person-plus me-1"></i>First Consultation
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:0.75rem;">
+                                                <i class="bi bi-arrow-repeat me-1"></i>Visit: @apt.VisitCount times
+                                            </span>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    @* Associated Treatment Package *@
-                    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
-                    {
-                        <div class="p-3 mb-4 rounded-3 border d-flex align-items-center gap-3" style="background:#f0fdf4; border-color:#bbf7d0;">
-                            <div class="bg-icon-success p-2 rounded-3 text-success d-flex align-items-center justify-content-center" style="width:45px; height:45px; font-size:1.5rem; background: rgba(72, 187, 120, 0.15);">
-                                <i class="bi bi-box-seam"></i>
-                            </div>
-                            <div>
-                                <div class="text-muted small uppercase fw-semibold" style="font-size:0.8rem;">Associated Treatment Package</div>
-                                <strong class="text-success fs-5">@apt.TreatmentPackageName</strong>
-                            </div>
-                        </div>
-                    }
-
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
-                        <div class="mb-4">
-                            <div class="fw-semibold text-muted mb-2"><i class="bi bi-chat-left-text me-2 text-primary"></i>Booking Notes</div>
-                            <div class="bg-light p-3 rounded-3 text-secondary" style="font-size:0.95rem; border: 1px solid #edf2f7;">@apt.Notes</div>
+                        <div class="mb-4 p-3.5 rounded-3 border bg-light bg-opacity-40">
+                            <div class="fw-semibold text-dark mb-1.5 d-flex align-items-center gap-2" style="font-size:0.9rem;"><i class="bi bi-chat-left-text text-primary"></i>Booking Notes</div>
+                            <div class="bg-white p-3 rounded-3 text-secondary border" style="font-size:0.925rem; line-height: 1.5;">@apt.Notes</div>
                         </div>
                     }
 
@@ -490,9 +530,9 @@
                     </div>
 
                     @* Recent Consultation Records *@
-                    <div class="mb-4 p-4 rounded-4 border bg-white shadow-sm" style="border-left: 5px solid #6366f1 !important;">
-                        <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-clock-history text-indigo"></i>
+                    <div class="mb-4 p-4 rounded-3 border bg-white" style="border-left: 3px solid #10b981 !important;">
+                        <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2 border-bottom pb-2" style="font-size:1.05rem;">
+                            <i class="bi bi-clock-history text-primary"></i>
                             <span>Recent Consultation Records</span>
                         </h5>
 
@@ -501,31 +541,92 @@
                             <div class="d-flex flex-column gap-3">
                                 @foreach (var note in Model.ClinicalContext.RecentConsultations)
                                 {
-                                    <div class="p-3 rounded-3 border" style="background:#f5f3ff;">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <strong class="text-dark fs-6"><i class="bi bi-person-badge me-1 text-indigo"></i>@(note.DoctorName ?? "Attending Doctor")</strong>
-                                            <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>@note.ConsultationDate.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <div class="p-3.5 rounded-3 border bg-white" style="border-color:#e5e7eb !important;">
+                                        <!-- Card Header: Title & Responsive Actions -->
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color:#f1f5f9 !important;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary" style="width:32px;height:32px;flex-shrink:0;">
+                                                    <i class="bi bi-person-badge-fill" style="font-size:0.9rem;"></i>
+                                                </div>
+                                                <strong class="text-dark" style="font-size:0.925rem; word-break:break-word;">
+                                                    @(note.DoctorName ?? "Attending Doctor")
+                                                </strong>
+                                            </div>
+                                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                                @if (note.IsPatientConfirmed)
+                                                {
+                                                    <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; font-size:0.75rem;">
+                                                        <i class="bi bi-check-circle-fill me-1" style="color:#10b981;"></i>Confirmed
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;">
+                                                        <i class="bi bi-hourglass-split me-1" style="color:#d97706;"></i>Unconfirmed
+                                                    </span>
+                                                }
+                                                <span class="text-muted small d-flex align-items-center gap-1" style="font-size:0.8rem;">
+                                                    <i class="bi bi-calendar3 text-secondary"></i>@note.ConsultationDate.ToString("dd/MM/yyyy HH:mm")
+                                                </span>
+                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-2 fw-medium flex-shrink-0" style="font-size:0.78rem;">
+                                                    <i class="bi bi-eye me-1"></i>View Record
+                                                </a>
+                                            </div>
                                         </div>
-                                        @if (!string.IsNullOrEmpty(note.Diagnosis))
-                                        {
-                                            <div class="mb-1 text-dark"><strong>Diagnosis:</strong> @note.Diagnosis</div>
-                                        }
-                                        @if (!string.IsNullOrEmpty(note.ConsultationSummary))
-                                        {
-                                            <div class="mb-1 text-secondary small bg-white p-2 rounded border"><strong>Session Notes:</strong> @note.ConsultationSummary</div>
-                                        }
-                                        @if (!string.IsNullOrEmpty(note.Recommendation))
-                                        {
-                                            <div class="mb-1 text-dark small"><strong>Recommendations:</strong> @note.Recommendation</div>
-                                        }
-                                        @if (!string.IsNullOrEmpty(note.TherapyPlan))
-                                        {
-                                            <div class="mb-0 text-dark small"><strong>Therapy Plan:</strong> @note.TherapyPlan</div>
-                                        }
-                                        <div class="mt-2 text-end">
-                                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@note.Id" class="btn btn-sm btn-outline-indigo px-3" style="border-radius:8px; font-weight:600; font-size:0.75rem;">
-                                                <i class="bi bi-eye me-1"></i>View Full Record
-                                            </a>
+
+                                        <!-- Read-Only Clinical Summary Grid -->
+                                        <div class="d-flex flex-column gap-3">
+                                            @if (!string.IsNullOrEmpty(note.Diagnosis))
+                                            {
+                                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                        <i class="bi bi-journal-medical text-primary"></i>
+                                                        <span>Diagnosis / Findings</span>
+                                                    </div>
+                                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.Diagnosis</div>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(note.ConsultationSummary))
+                                            {
+                                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                        <i class="bi bi-chat-left-text text-secondary"></i>
+                                                        <span>Session Notes</span>
+                                                    </div>
+                                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.ConsultationSummary</div>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(note.Recommendation) || !string.IsNullOrEmpty(note.TherapyPlan))
+                                            {
+                                                <div class="row g-3">
+                                                    @if (!string.IsNullOrEmpty(note.Recommendation))
+                                                    {
+                                                        <div class="@(!string.IsNullOrEmpty(note.TherapyPlan) ? "col-md-6" : "col-12")">
+                                                            <div class="p-3 rounded-3 h-100" style="background:#f0fdf4; border:1px solid #dcfce7;">
+                                                                <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#166534; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                                    <i class="bi bi-lightbulb text-success"></i>
+                                                                    <span>Recommendations</span>
+                                                                </div>
+                                                                <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.Recommendation</div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(note.TherapyPlan))
+                                                    {
+                                                        <div class="@(!string.IsNullOrEmpty(note.Recommendation) ? "col-md-6" : "col-12")">
+                                                            <div class="p-3 rounded-3 h-100" style="background:#f0fdfa; border:1px solid #ccfbf1;">
+                                                                <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#0f766e; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                                    <i class="bi bi-compass" style="color:#0d9488;"></i>
+                                                                    <span>Therapy Plan</span>
+                                                                </div>
+                                                                <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.TherapyPlan</div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
                                         </div>
                                     </div>
                                 }
@@ -533,27 +634,82 @@
                         }
                         else if (Model.LatestConsultationNote != null)
                         {
-                            <div class="p-3 rounded-3 border" style="background:#f5f3ff;">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong class="text-dark fs-6">Previous Visit Note</strong>
-                                    <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>@Model.LatestConsultationNote.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            var note = Model.LatestConsultationNote;
+                            <div class="p-3.5 rounded-3 border bg-white" style="border-color:#e5e7eb !important;">
+                                <!-- Card Header: Title & Responsive Actions -->
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color:#f1f5f9 !important;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary" style="width:32px;height:32px;flex-shrink:0;">
+                                            <i class="bi bi-clock-history" style="font-size:0.9rem;"></i>
+                                        </div>
+                                        <strong class="text-dark" style="font-size:0.925rem; word-break:break-word;">
+                                            Previous Visit Note
+                                        </strong>
+                                    </div>
+                                    <div class="d-flex align-items-center flex-wrap gap-2">
+                                        <span class="text-muted small d-flex align-items-center gap-1" style="font-size:0.8rem;">
+                                            <i class="bi bi-calendar3 text-secondary"></i>@note.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </span>
+                                        <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-2 fw-medium flex-shrink-0" style="font-size:0.78rem;">
+                                            <i class="bi bi-eye me-1"></i>View Record
+                                        </a>
+                                    </div>
                                 </div>
-                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Diagnosis))
-                                {
-                                    <div class="mb-1 text-dark"><strong>Diagnosis:</strong> @Model.LatestConsultationNote.Diagnosis</div>
-                                }
-                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.ConsultationSummary))
-                                {
-                                    <div class="mb-1 text-secondary small bg-white p-2 rounded border"><strong>Session Notes:</strong> @Model.LatestConsultationNote.ConsultationSummary</div>
-                                }
-                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Recommendation))
-                                {
-                                    <div class="mb-1 text-dark small"><strong>Recommendations:</strong> @Model.LatestConsultationNote.Recommendation</div>
-                                }
-                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.TherapyPlan))
-                                {
-                                    <div class="mb-0 text-dark small"><strong>Therapy Plan:</strong> @Model.LatestConsultationNote.TherapyPlan</div>
-                                }
+
+                                <!-- Read-Only Clinical Summary Grid -->
+                                <div class="d-flex flex-column gap-3">
+                                    @if (!string.IsNullOrEmpty(note.Diagnosis))
+                                    {
+                                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                <i class="bi bi-journal-medical text-primary"></i>
+                                                <span>Diagnosis / Findings</span>
+                                            </div>
+                                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.Diagnosis</div>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(note.ConsultationSummary))
+                                    {
+                                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                <i class="bi bi-chat-left-text text-secondary"></i>
+                                                <span>Session Notes</span>
+                                            </div>
+                                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.ConsultationSummary</div>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(note.Recommendation) || !string.IsNullOrEmpty(note.TherapyPlan))
+                                    {
+                                        <div class="row g-3">
+                                            @if (!string.IsNullOrEmpty(note.Recommendation))
+                                            {
+                                                <div class="@(!string.IsNullOrEmpty(note.TherapyPlan) ? "col-md-6" : "col-12")">
+                                                    <div class="p-3 rounded-3 h-100" style="background:#f0fdf4; border:1px solid #dcfce7;">
+                                                        <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#166534; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                            <i class="bi bi-lightbulb text-success"></i>
+                                                            <span>Recommendations</span>
+                                                        </div>
+                                                        <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.Recommendation</div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(note.TherapyPlan))
+                                            {
+                                                <div class="@(!string.IsNullOrEmpty(note.Recommendation) ? "col-md-6" : "col-12")">
+                                                    <div class="p-3 rounded-3 h-100" style="background:#f0fdfa; border:1px solid #ccfbf1;">
+                                                        <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#0f766e; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                            <i class="bi bi-compass" style="color:#0d9488;"></i>
+                                                            <span>Therapy Plan</span>
+                                                        </div>
+                                                        <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@note.TherapyPlan</div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                         else
@@ -588,8 +744,8 @@
                                         <span>Overall Case Progress</span>
                                         <strong>@tc.CompletedSessions / @tc.TotalSessions Sessions (@tc.OverallProgressPercent%)</strong>
                                     </div>
-                                    <div class="progress-bar-custom">
-                                        <div class="progress-fill" style="width: @(tc.OverallProgressPercent)%"></div>
+                                    <div class="progress rounded-pill mt-1" style="height: 8px; background-color: #e2e8f0;">
+                                        <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: @(tc.OverallProgressPercent)%;" aria-valuenow="@tc.OverallProgressPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </div>
 
@@ -681,17 +837,103 @@
                     
                     @if (Model.AssociatedRecord != null)
                     {
-                        <div class="p-4 rounded-4 border bg-white shadow-sm mb-0">
-                            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical-fill text-primary me-2"></i>Consultation Summary</h5>
-                            <div class="p-3 bg-light rounded-3">
-                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Diagnosis / Findings:</h6>
-                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Diagnosis ?? "No diagnosis recorded")</p>
-                                
-                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Session Notes:</h6>
-                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.ConsultationSummary ?? "No summary recorded")</p>
-                                
-                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Recommendations:</h6>
-                                <p class="mb-0 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Recommendation ?? "No recommendation recorded")</p>
+                        <div class="p-4 rounded-3 border bg-white mb-0" style="border-left: 3px solid #3b82f6 !important; border-color: #e5e7eb !important;">
+                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style="border-color: #f1f5f9 !important;">
+                                <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-size:1.05rem;">
+                                    <i class="bi bi-file-earmark-medical-fill text-primary"></i>
+                                    <span>Consultation Record</span>
+                                </h5>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    @if (Model.AssociatedRecord.IsPatientConfirmed)
+                                    {
+                                        <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; font-size:0.75rem;">
+                                            <i class="bi bi-lock-fill me-1" style="color:#10b981;"></i>Patient Confirmed (@(Model.AssociatedRecord.PatientConfirmedAt?.ToString("dd/MM/yyyy HH:mm")))
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;">
+                                            <i class="bi bi-hourglass-split me-1" style="color:#d97706;"></i>Awaiting Confirmation
+                                        </span>
+                                        <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-sm btn-outline-primary px-2.5 py-1 rounded-2 fw-medium flex-shrink-0" style="font-size:0.78rem;">
+                                            <i class="bi bi-pencil-square me-1"></i>Edit Note
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column gap-3">
+                                <!-- Diagnosis / Findings -->
+                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                        <i class="bi bi-journal-medical text-primary"></i>
+                                        <span>Diagnosis / Findings</span>
+                                    </div>
+                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                        @(string.IsNullOrWhiteSpace(Model.AssociatedRecord.Diagnosis) ? "No diagnosis recorded" : Model.AssociatedRecord.Diagnosis)
+                                    </div>
+                                </div>
+
+                                <!-- Session Notes -->
+                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                        <i class="bi bi-chat-left-text text-secondary"></i>
+                                        <span>Chief Complaints & Session Notes</span>
+                                    </div>
+                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                        @(string.IsNullOrWhiteSpace(Model.AssociatedRecord.ConsultationSummary) ? "No summary recorded" : Model.AssociatedRecord.ConsultationSummary)
+                                    </div>
+                                </div>
+
+                                <!-- Recommendations & Therapy Plan -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-3 h-100" style="background:#f0fdf4; border:1px solid #dcfce7;">
+                                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#166534; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                <i class="bi bi-lightbulb text-success"></i>
+                                                <span>Recommendations</span>
+                                            </div>
+                                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                                @(string.IsNullOrWhiteSpace(Model.AssociatedRecord.Recommendation) ? "No recommendation recorded" : Model.AssociatedRecord.Recommendation)
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-3 h-100" style="background:#f0fdfa; border:1px solid #ccfbf1;">
+                                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-1.5" style="color:#0f766e; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                <i class="bi bi-compass" style="color:#0d9488;"></i>
+                                                <span>Therapy Plan</span>
+                                            </div>
+                                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                                @(string.IsNullOrWhiteSpace(Model.AssociatedRecord.TherapyPlan) ? "No therapy plan recorded" : Model.AssociatedRecord.TherapyPlan)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.AssociatedRecord.FollowUpNotes) || Model.AssociatedRecord.NextAppointmentRecommendedDate.HasValue)
+                                {
+                                    <div class="p-3 rounded-3" style="background:#fffbeb; border:1px solid #fef3c7;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-2">
+                                            <div class="fw-semibold mb-0 d-flex align-items-center gap-1.5" style="color:#92400e; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                                <i class="bi bi-calendar-event text-warning"></i>
+                                                <span>Follow-up & Next Visit</span>
+                                            </div>
+                                            @if (Model.AssociatedRecord.NextAppointmentRecommendedDate.HasValue)
+                                            {
+                                                <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;">
+                                                    <i class="bi bi-calendar-check me-1"></i>Next Visit: @Model.AssociatedRecord.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy")
+                                                </span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(Model.AssociatedRecord.FollowUpNotes))
+                                        {
+                                            <div class="text-dark mt-1" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                                @Model.AssociatedRecord.FollowUpNotes
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </div>
                         </div>
                     }
@@ -701,7 +943,7 @@
 
         <!-- Sidebar Actions -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm sticky-sidebar">
                 <div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold">Session Actions</h5></div>
                 <div class="card-body d-grid gap-2">
                     <!-- Reschedule Request Approval/Decline -->
@@ -747,42 +989,82 @@
                         </form>
                     }
 
-                    <!-- In Progress Flow -->
+                    <!-- In Progress Flow (Inline Form without Modal Popup) -->
                     @if (apt.Status == 3)
                     {
                         @if (Model.HasConsultationNote)
                         {
-                            <div class="alert alert-success py-2 mb-2 small d-flex align-items-center gap-2">
-                                <i class="bi bi-check-circle-fill"></i>
-                                <span>Consultation note created!</span>
+                            <div class="alert alert-success py-2.5 px-3 mb-3 small d-flex align-items-center gap-2 rounded-3 border border-success-subtle">
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <span class="fw-medium text-dark">Consultation note has been recorded.</span>
                             </div>
-                            <form method="post" asp-page-handler="Complete">
+                            
+                            <form method="post" asp-page-handler="Complete" class="mb-2">
                                 <input type="hidden" name="id" value="@apt.Id" />
-                                <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold mb-2"><i class="bi bi-check-all me-1"></i>Complete Appointment</button>
+                                <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold shadow-sm">
+                                    <i class="bi bi-check-all me-1"></i>Complete Appointment
+                                </button>
                             </form>
-                        }
-                        else
-                        {
-                            <div class="alert alert-warning py-2 mb-2 small d-flex align-items-center gap-2">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                <span>Note required before completion.</span>
-                            </div>
-                            <button class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold mb-2" data-bs-toggle="modal" data-bs-target="#createNoteModal">
-                                <i class="bi bi-check-all me-1"></i>Complete Appointment
-                            </button>
-                        }
 
-                        @if (Model.AssociatedRecord != null)
-                        {
-                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success w-100 rounded-3">
-                                <i class="bi bi-file-earmark-medical me-1"></i>View/Edit Note
-                            </a>
+                            @if (Model.AssociatedRecord != null)
+                            {
+                                <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success w-100 py-2.5 rounded-3 fw-semibold">
+                                    <i class="bi bi-file-earmark-medical me-1"></i>View / Edit Note
+                                </a>
+                            }
                         }
                         else
                         {
-                            <button type="button" class="btn btn-outline-primary w-100 rounded-3" data-bs-toggle="modal" data-bs-target="#createNoteModal">
-                                <i class="bi bi-file-earmark-medical me-1"></i>Write Consultation Note
-                            </button>
+                            <div class="p-3 bg-light rounded-3 border mb-2">
+                                <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom">
+                                    <i class="bi bi-file-earmark-medical-fill text-primary fs-5"></i>
+                                    <h6 class="mb-0 fw-bold text-dark">Consultation Note & Completion</h6>
+                                </div>
+                                <p class="text-muted small mb-3">Record session notes and diagnosis to complete the appointment.</p>
+
+                                <form method="post" asp-page-handler="CreateNoteAndComplete">
+                                    <input type="hidden" name="id" value="@apt.Id" />
+                                    <input type="hidden" asp-for="NoteInput.PatientRecordId" />
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                            Consultation Summary / Notes <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea asp-for="NoteInput.ConsultationSummary" class="form-control form-control-sm" rows="3" required placeholder="Session summary, chief complaints, counselling notes..." style="border-radius:10px; font-size:0.875rem;"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Diagnosis / Assessment Findings</label>
+                                        <textarea asp-for="NoteInput.Diagnosis" class="form-control form-control-sm" rows="2" placeholder="Diagnosis or findings..." style="border-radius:10px; font-size:0.875rem;"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Recommendations</label>
+                                        <textarea asp-for="NoteInput.Recommendation" class="form-control form-control-sm" rows="2" placeholder="Treatment recommendations..." style="border-radius:10px; font-size:0.875rem;"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Therapy Intervention Plan</label>
+                                        <textarea asp-for="NoteInput.TherapyPlan" class="form-control form-control-sm" rows="2" placeholder="Intervention plan..." style="border-radius:10px; font-size:0.875rem;"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Follow-up Notes</label>
+                                        <textarea asp-for="NoteInput.FollowUpNotes" class="form-control form-control-sm" rows="2" placeholder="Follow-up instructions..." style="border-radius:10px; font-size:0.875rem;"></textarea>
+                                    </div>
+
+                                    <div class="mb-3 pt-2 border-top">
+                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                            <i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date
+                                        </label>
+                                        <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" style="border-radius:10px; font-size:0.875rem;" />
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-bold shadow-sm">
+                                        <i class="bi bi-check-all me-1"></i>Save Note & Complete
+                                    </button>
+                                </form>
+                            </div>
                         }
                     }
 
@@ -832,69 +1114,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Create Note & Complete Modal -->
-    @if (apt.Status == 3)
-    {
-        <div class="modal fade" id="createNoteModal" tabindex="-1" aria-labelledby="createNoteModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content" style="border-radius:18px; border:none;">
-                    <form method="post" asp-page-handler="CreateNoteAndComplete">
-                        <input type="hidden" name="id" value="@apt.Id" />
-                        <input type="hidden" asp-for="NoteInput.PatientRecordId" />
-                        
-                        <div class="modal-header border-0 pb-0 px-4 pt-4">
-                            <h5 class="modal-title fw-bold" id="createNoteModalLabel"><i class="bi bi-file-earmark-medical text-primary me-2"></i>Consultation Note & Completion</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        
-                        <div class="modal-body px-4">
-                            <p class="text-muted small mb-3">Please fill in the consultation note below to complete and finalize the appointment record.</p>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Consultation Summary (Chief Complaint & Session Notes) <span class="text-danger">*</span></label>
-                                <textarea asp-for="NoteInput.ConsultationSummary" class="form-control" rows="4" required placeholder="Write a summary of the patient's complaints and counselling session..." style="border-radius:10px;"></textarea>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold">Diagnosis / Assessment findings</label>
-                                    <textarea asp-for="NoteInput.Diagnosis" class="form-control" rows="3" placeholder="Enter counselling diagnosis or assessment findings..." style="border-radius:10px;"></textarea>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold">Recommendations</label>
-                                    <textarea asp-for="NoteInput.Recommendation" class="form-control" rows="3" placeholder="Enter treatment recommendations..." style="border-radius:10px;"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold">Therapy Plan</label>
-                                    <textarea asp-for="NoteInput.TherapyPlan" class="form-control" rows="3" placeholder="Enter therapy intervention plan..." style="border-radius:10px;"></textarea>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-semibold">Follow-up Notes</label>
-                                    <textarea asp-for="NoteInput.FollowUpNotes" class="form-control" rows="3" placeholder="Enter follow-up instructions..." style="border-radius:10px;"></textarea>
-                                </div>
-                            </div>
-
-                            @* Issue 1: Follow-up date field *@
-                            <div class="mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
-                                <label class="form-label fw-semibold"><i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date</label>
-                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" style="border-radius:10px;" />
-                                <div class="form-text">Set a recommended date for the patient's next visit. An email reminder will be sent 1 day before.</div>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer border-0 pt-0 px-4 pb-4">
-                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold"><i class="bi bi-check-all me-1"></i>Save & Complete</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    }
 
     @if (apt.Status is 0 or 1)
     {
@@ -964,3 +1183,26 @@
         </div>
     }
 }
+
+<!-- Back to Top Green Floating Button -->
+<button id="btnBackToTop" type="button" title="Back to top" aria-label="Back to top">
+    <i class="bi bi-arrow-up-lg"></i>
+</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('btnBackToTop');
+        if (btn) {
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 200) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            });
+            btn.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>

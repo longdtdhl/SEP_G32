@@ -72,8 +72,17 @@ public class EditModel : PageModel
     {
         if (!string.IsNullOrEmpty(TagsInput))
             Input.Tags = TagsInput.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
-        if (!string.IsNullOrEmpty(Input.ImageUrl) && string.IsNullOrEmpty(Input.ThumbnailUrl))
-            Input.ThumbnailUrl = Input.ImageUrl;
+
+        if (string.IsNullOrWhiteSpace(Input.ThumbnailUrl))
+        {
+            if (!string.IsNullOrWhiteSpace(Input.ImageUrl))
+                Input.ThumbnailUrl = Input.ImageUrl;
+            else
+                Input.ThumbnailUrl = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800";
+        }
+        if (string.IsNullOrWhiteSpace(Input.ImageUrl))
+            Input.ImageUrl = Input.ThumbnailUrl;
+
         if (!string.IsNullOrEmpty(Input.Summary) && string.IsNullOrEmpty(Input.Excerpt))
             Input.Excerpt = Input.Summary;
     }

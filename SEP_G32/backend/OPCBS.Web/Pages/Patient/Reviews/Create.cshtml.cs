@@ -24,7 +24,7 @@ public class CreateModel : PageModel
         if (Input.Rating < 1 || Input.Rating > 5) { Error = "Please chọn từ 1 đến 5 sao."; return Page(); }
         var (success, error) = await _service.CreateAsync(Input);
         if (!success) { Error = error; return Page(); }
-        TempData["SuccessMessage"] = "Cảm ơn bạn đã đánh giá!";
-        return RedirectToPage("/Patient/Dashboard");
+        TempData["SuccessMessage"] = "Thank you for your review!";
+        return RedirectToPage("/Patient/Appointments/Index");
     }
 }

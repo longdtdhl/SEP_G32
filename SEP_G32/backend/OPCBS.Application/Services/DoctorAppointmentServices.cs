@@ -1657,7 +1657,9 @@ public class AppointmentService : IAppointmentService
                 Diagnosis = n.Diagnosis,
                 ConsultationSummary = n.ConsultationSummary,
                 Recommendation = n.Recommendation,
-                TherapyPlan = n.TherapyPlan
+                TherapyPlan = n.TherapyPlan,
+                IsPatientConfirmed = n.IsPatientConfirmed,
+                PatientConfirmedAt = n.PatientConfirmedAt
             }).ToList();
         }
 
@@ -1769,6 +1771,16 @@ public class AppointmentService : IAppointmentService
                     })
                     .ToList();
 
+                double progressPercent = tCase.OverallProgressPercent;
+                if (tCase.TotalSessions > 0)
+                {
+                    progressPercent = Math.Round((double)tCase.CompletedSessions / tCase.TotalSessions * 100, 1);
+                }
+                else if (goals.Count > 0)
+                {
+                    progressPercent = Math.Round((double)goals.Count(g => g.Status == GoalStatus.Achieved) / goals.Count * 100, 1);
+                }
+
                 result.TreatmentCaseContext = new AppointmentTreatmentCaseContextDto
                 {
                     TreatmentCaseId = tCase.Id,
@@ -1778,7 +1790,7 @@ public class AppointmentService : IAppointmentService
                     TotalSessions = tCase.TotalSessions,
                     CurrentSessionNumber = currentSession?.SessionNumber ?? (tCase.CompletedSessions + 1),
                     NextPlannedSessionDate = nextSession?.PlannedStartTime,
-                    OverallProgressPercent = tCase.TotalSessions > 0 ? Math.Round((double)tCase.CompletedSessions / tCase.TotalSessions * 100, 1) : tCase.OverallProgressPercent,
+                    OverallProgressPercent = progressPercent,
                     GoalsAchieved = goals.Count(g => g.Status == GoalStatus.Achieved),
                     TotalGoals = goals.Count,
                     HomeworkCompleted = assignments.Count(a => a.Status == HomeworkStatus.Submitted || a.Status == HomeworkStatus.Reviewed),

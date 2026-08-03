@@ -19,6 +19,14 @@ public class ConsultationNoteDto
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
     public string? PackageName { get; set; }
 
+    // Patient confirmation & audit fields
+    public bool IsPatientConfirmed { get; set; }
+    public DateTime? PatientConfirmedAt { get; set; }
+    public Guid? PatientConfirmedById { get; set; }
+    public string? PatientConfirmedByName { get; set; }
+    public DateTime? LastEditedAt { get; set; }
+    public Guid? LastEditedByDoctorId { get; set; }
+
     // Walk-in fields
     public string? WalkInPatientName { get; set; }
     public string? WalkInPatientPhone { get; set; }

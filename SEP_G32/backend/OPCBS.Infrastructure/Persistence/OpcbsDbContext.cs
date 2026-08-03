@@ -440,6 +440,16 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(5000);
             entity.Property(e => e.TherapyPlan)
                 .HasMaxLength(2000);
+            entity.Property(e => e.IsPatientConfirmed)
+                .HasDefaultValue(false);
+            entity.Property(e => e.PatientConfirmedAt)
+                .IsRequired(false);
+            entity.Property(e => e.PatientConfirmedById)
+                .IsRequired(false);
+            entity.Property(e => e.LastEditedAt)
+                .IsRequired(false);
+            entity.Property(e => e.LastEditedByDoctorId)
+                .IsRequired(false);
         });
 
         // PatientRecord
@@ -556,7 +566,6 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.Content)
                 .IsRequired();
             entity.Property(e => e.ThumbnailUrl)
-                .IsRequired()
                 .HasMaxLength(500);
             entity.Property(e => e.Excerpt)
                 .HasMaxLength(1000);

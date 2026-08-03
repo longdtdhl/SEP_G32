@@ -85,6 +85,21 @@ public class ConsultationNote : BaseEntity
     /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
     public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
 
+    /// <summary>Whether patient has confirmed reviewing these consultation notes</summary>
+    public bool IsPatientConfirmed { get; set; } = false;
+
+    /// <summary>Timestamp when patient confirmed the consultation notes</summary>
+    public DateTime? PatientConfirmedAt { get; set; }
+
+    /// <summary>User ID of the patient who confirmed</summary>
+    public Guid? PatientConfirmedById { get; set; }
+
+    /// <summary>Timestamp when notes were last edited by doctor</summary>
+    public DateTime? LastEditedAt { get; set; }
+
+    /// <summary>Doctor Profile ID of the doctor who last edited</summary>
+    public Guid? LastEditedByDoctorId { get; set; }
+
     /// <summary>Navigation property to Appointment</summary>
     public virtual Appointment? Appointment { get; set; }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,6 +19,9 @@ public class PaymentCallbackModel : PageModel
 
     public bool IsSuccess { get; set; }
     public string? Message { get; set; }
+    public string? TransactionNo { get; set; }
+    public decimal? Amount { get; set; }
+    public string? OrderInfo { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -25,8 +29,19 @@ public class PaymentCallbackModel : PageModel
         
         var (success, error) = await _subscriptions.ProcessCallbackAsync(queryParams);
         IsSuccess = success;
-        Message = success ? "Your service package subscription has been activated successfully!" : (error ?? "Payment verification failed.");
-        
+        Message = success 
+            ? "Your service package subscription has been activated successfully!" 
+            : (error ?? "Payment verification failed or was cancelled.");
+
+        if (queryParams.TryGetValue("vnp_TransactionNo", out var txnNo))
+            TransactionNo = txnNo;
+
+        if (queryParams.TryGetValue("vnp_Amount", out var amtStr) && decimal.TryParse(amtStr, out var rawAmt))
+            Amount = rawAmt / 100m;
+
+        if (queryParams.TryGetValue("vnp_OrderInfo", out var info))
+            OrderInfo = info;
+
         return Page();
     }
 }

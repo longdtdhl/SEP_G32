@@ -256,6 +256,17 @@ public class ConsultationNotesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>POST /api/v1/consultation-notes/{recordId}/confirm — Confirm notes (Patient)</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPost("{recordId}/confirm")]
+    public async Task<IActionResult> Confirm(Guid recordId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.ConfirmByPatientAsync(recordId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>GET /api/v1/consultation-notes/patient/{patientId} — Get records for patient (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("patient/{patientId}")]

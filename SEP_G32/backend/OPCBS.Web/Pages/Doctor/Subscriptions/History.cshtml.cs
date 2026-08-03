@@ -14,6 +14,7 @@ public class HistoryModel : PageModel
     public async Task OnGetAsync()
     {
         var (data, error) = await _api.GetHistoryAsync();
-        History = data; Error = error;
+        History = data != null ? data.OrderByDescending(s => s.CreatedAt).ToList() : new();
+        Error = error;
     }
 }

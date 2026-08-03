@@ -56,12 +56,14 @@
                     <!-- Notification Bell -->
                     <partial name="_NotificationBell" />
 
-                    <!-- Go to Dashboard + simple dropdown -->
-                    <li class="nav-item">
-                        <a class="btn btn-get-started btn-sm" href="@dashboardUrl">
-                            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
-                        </a>
-                    </li>
+                    @if (!isPatient && !string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <li class="nav-item">
+                            <a class="btn btn-get-started btn-sm" href="@dashboardUrl">
+                                <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+                            </a>
+                        </li>
+                    }
 
                     <!-- User Dropdown (simplified) -->
                     <partial name="_UserDropdown" />

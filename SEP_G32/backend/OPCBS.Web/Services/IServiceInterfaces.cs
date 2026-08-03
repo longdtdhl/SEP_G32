@@ -41,6 +41,7 @@ public interface IConsultationNoteApiService
     Task<(ConsultationNoteDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId);
     Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto);
+    Task<(bool Success, string? Error)> ConfirmAsync(Guid recordId);
 }
 
 public interface ITreatmentPackageApiService

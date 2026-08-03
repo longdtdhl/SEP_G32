@@ -70,9 +70,14 @@ public class JwtCookieService
     public bool IsLoggedIn => !string.IsNullOrEmpty(GetToken());
 
     /// <summary>
+    /// Get the user's avatar URL from JWT claims if available
+    /// </summary>
+    public string? GetAvatarUrl() => GetClaim("avatar") ?? GetClaim("avatar_url") ?? GetClaim("picture");
+
+    /// <summary>
     /// Extract a specific claim from the JWT token payload (no signature validation, just decode)
     /// </summary>
-    private string? GetClaim(string claimType)
+    public string? GetClaim(string claimType)
     {
         var token = GetToken();
         if (string.IsNullOrEmpty(token)) return null;

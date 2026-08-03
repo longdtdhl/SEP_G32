@@ -119,16 +119,18 @@
             <!-- Treatment Packages -->
             @if (!isWalkIn)
             {
+                var activePkgs = Model.PatientPackages.Where(p => !string.Equals(p.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)).ToList();
                 <div class="sidebar-card bg-white mb-3">
                     <div class="card-header-custom">
-                        <i class="bi bi-box-seam"></i>Package                                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientRecordId="@Model.Record.PatientRecordId" class="btn btn-sm btn-outline-primary w-100" style="border-radius:8px;">
-                                            <i class="bi bi-plus-circle me-1"></i>Create New Package
+                        <i class="bi bi-box-seam"></i>Package
+                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientRecordId="@Model.Record.PatientRecordId" class="btn btn-sm btn-outline-primary w-100" style="border-radius:8px;">
+                            <i class="bi bi-plus-circle me-1"></i>Create New Package
                         </a>
                     </div>
                     <div style="padding:1rem;">
-                        @if (Model.PatientPackages.Any())
+                        @if (activePkgs.Any())
                         {
-                            @foreach (var pkg in Model.PatientPackages)
+                            @foreach (var pkg in activePkgs)
                             {
                                 var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
                                 var statusColor = pkg.Status == "Active" ? "#10b981" : "#f59e0b";
@@ -147,8 +149,8 @@
                         else
                         {
                             <div style="text-align:center; padding:1.5rem; color:#94a3b8; font-size:0.82rem;">
-                                <i class="bi bi-clipboard-x d-block mb-1" style="font-size:1.3rem; opacity:0.4;"></i>
-                                No treatment packages yet
+                                <i class="bi bi-box-seam d-block mb-1" style="font-size:1.3rem; opacity:0.4;"></i>
+                                No active treatment packages.
                             </div>
                         }
                     </div>

@@ -116,6 +116,45 @@
     .action-btn.a-chat       { background: #fff; border-color: #a5f3fc; color: #0891b2; }
     .action-btn.a-chat:hover { background: #ecfeff; }
 
+    /* Sticky Sidebar & Back to Top Button */
+    .sticky-sidebar {
+        position: sticky;
+        top: 90px;
+        z-index: 100;
+        transition: top 0.2s ease;
+    }
+    #btnBackToTop {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        cursor: pointer;
+        z-index: 1050;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #btnBackToTop:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-4px) scale(1.06);
+        box-shadow: 0 8px 22px rgba(16, 185, 129, 0.55);
+        color: #ffffff;
+    }
+    #btnBackToTop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
     /* ── Notes Section ── */
     .note-block {
         background: #f8fafc;
@@ -511,7 +550,7 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 sticky-sidebar">
             <!-- Actions -->
             <div class="detail-card">
                 <div class="section-hdr" style="border-bottom:none; padding-bottom:0; margin-bottom:0.75rem;">
@@ -624,3 +663,26 @@ else
         <a asp-page="Index" class="btn btn-primary mt-2" style="border-radius:12px;"><i class="bi bi-arrow-left me-1"></i>Back to Appointments</a>
     </div>
 }
+
+<!-- Back to Top Green Floating Button -->
+<button id="btnBackToTop" type="button" title="Back to top" aria-label="Back to top">
+    <i class="bi bi-arrow-up-lg"></i>
+</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('btnBackToTop');
+        if (btn) {
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 200) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            });
+            btn.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>

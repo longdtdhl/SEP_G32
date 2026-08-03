@@ -29,6 +29,12 @@ public class EditModel : PageModel
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Not found."; return Page(); }
         Record = data;
+
+        if (data.IsPatientConfirmed)
+        {
+            Error = "This consultation record has been confirmed by the patient and can no longer be edited.";
+        }
+
         Input = new UpdateConsultationNoteDto
         {
             Diagnosis = data.Diagnosis,
@@ -49,9 +55,22 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
         RecordId = id;
+        var (data, _) = await _api.GetByIdAsync(id);
+        if (data != null && data.IsPatientConfirmed)
+        {
+            Error = "This consultation record has been confirmed by the patient and can no longer be edited.";
+            Record = data;
+            return Page();
+        }
+
         var (success, error) = await _api.UpdateAsync(id, Input);
-        if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Updated hồ sơ tư vấn.";
+        if (!success)
+        {
+            Error = error;
+            Record = data;
+            return Page();
+        }
+        TempData["Success"] = "Updated consultation record.";
         return RedirectToPage("./Details", new { id });
     }
 }

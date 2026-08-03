@@ -58,4 +58,5 @@ public interface IConsultationNoteService
     Task<ApiResponse<List<ConsultationNoteDto>>> GetByAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse<List<ConsultationNoteDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<ConsultationNoteDto>> ConfirmByPatientAsync(Guid recordId, Guid patientUserId, CancellationToken ct = default);
 }

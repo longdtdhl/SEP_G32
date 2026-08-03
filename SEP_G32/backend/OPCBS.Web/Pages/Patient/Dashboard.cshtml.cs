@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
@@ -27,29 +28,8 @@ public class DashboardModel : PageModel
     public List<TreatmentPackageDto> ActivePackages { get; set; } = new();
     public string PatientName { get; set; } = "Bệnh nhân";
 
-    public async Task OnGetAsync()
+    public IActionResult OnGet()
     {
-        PatientName = _jwt.GetFullName() ?? "Bệnh nhân";
-
-        try
-        {
-            var (apts, _, _) = await _appointments.GetMyAppointmentsAsync();
-            Appointments = apts;
-            TotalAppointments = apts.Count;
-            CompletedCount = apts.Count(a => a.Status == 4);
-            PendingCount = apts.Count(a => a.Status == 0 || a.Status == 1);
-            UpcomingAppointments = apts
-                .Where(a => a.Status != 4 && a.Status != 3 && a.Status != 2)
-                .Take(5).ToList();
-        }
-        catch { }
-
-        try
-        {
-            var (pkgs, _, _) = await _packages.GetMyPackagesAsync();
-            ActivePackages = pkgs.Where(p => p.Status == "Active" && !p.IsExpired).ToList();
-            PackageCount = pkgs.Count;
-        }
-        catch { }
+        return RedirectToPage("/Patient/Appointments/Index");
     }
 }

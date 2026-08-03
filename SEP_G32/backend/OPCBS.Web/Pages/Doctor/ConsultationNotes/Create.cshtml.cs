@@ -36,56 +36,61 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
+        if (!AppointmentId.HasValue || AppointmentId == Guid.Empty)
+        {
+            TempData["ErrorMessage"] = "Consultation records must be created within an active appointment session.";
+            return RedirectToPage("/Doctor/Appointments/Index");
+        }
+
         if (PatientRecordId == Guid.Empty)
         {
-            TempData["ErrorMessage"] = "Please select a patient record to create a note.";
-            return RedirectToPage("/Doctor/Patients/Index");
+            TempData["ErrorMessage"] = "Please select a valid patient record to create a note.";
+            return RedirectToPage("/Doctor/Appointments/Index");
         }
 
         var (patient, err) = await _patientApi.GetByIdAsync(PatientRecordId);
         if (patient == null)
         {
             TempData["ErrorMessage"] = "Patient record not found.";
-            return RedirectToPage("/Doctor/Patients/Index");
+            return RedirectToPage("/Doctor/Appointments/Index");
         }
         
         PatientRecord = patient;
         Input.PatientRecordId = PatientRecordId;
+        Input.AppointmentId = AppointmentId.Value;
 
-        if (AppointmentId.HasValue)
-        {
-            Input.AppointmentId = AppointmentId.Value;
-            var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
-            SelectedAppointment = appt;
+        var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
+        SelectedAppointment = appt;
 
-            var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(AppointmentId.Value);
-            PsychometricSubmission = subData;
-        }
+        var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(AppointmentId.Value);
+        PsychometricSubmission = subData;
+
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!AppointmentId.HasValue || AppointmentId == Guid.Empty)
+        {
+            TempData["ErrorMessage"] = "Consultation records must be created within an active appointment session.";
+            return RedirectToPage("/Doctor/Appointments/Index");
+        }
+
         var (patient, _) = await _patientApi.GetByIdAsync(PatientRecordId);
         PatientRecord = patient;
         Input.PatientRecordId = PatientRecordId;
-
-        if (AppointmentId.HasValue)
-            Input.AppointmentId = AppointmentId.Value;
+        Input.AppointmentId = AppointmentId.Value;
 
         var (success, error) = await _api.CreateAsync(Input);
         if (!success)
         {
             Error = error ?? "Failed to create consultation record.";
-            if (AppointmentId.HasValue)
-            {
-                var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
-                SelectedAppointment = appt;
-            }
+            var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
+            SelectedAppointment = appt;
             return Page();
         }
         
         TempData["Success"] = "Consultation record created successfully!";
-        return RedirectToPage("/Doctor/Patients/Details", new { id = PatientRecordId });
+        return RedirectToPage("/Doctor/Appointments/Details", new { id = AppointmentId.Value });
     }
 }

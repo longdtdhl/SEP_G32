@@ -1,100 +1,200 @@
 @page
 @model OPCBS.Web.Pages.CustomerSupport.BlogModeration.IndexModel
 @{
-    ViewData["Title"] = "Blog Post Review";
-
-    Layout = "_DashboardLayout";}
+    ViewData["Title"] = "Blog Moderation Queue";
+    Layout = "_DashboardLayout";
+}
 
 <style>
-    .mod-header h1 { font-size: 1.4rem; font-weight: 700; }
-    .mod-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .mod-stat { background: white; border-radius: 12px; padding: 1rem 1.25rem; border: 1px solid rgba(78,139,112,0.08); display: flex; align-items: center; gap: 1rem; }
-    .mod-stat .icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-    .mod-stat .stat-info .num { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-    .mod-stat .stat-info .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .blog-queue { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-    .queue-item { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); padding: 1.25rem; display: flex; gap: 1.25rem; align-items: flex-start; transition: all 0.25s ease; }
-    .queue-item:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(78,139,112,0.08); }
-    .queue-item .item-thumb { width: 80px; height: 80px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); display: flex; align-items: center; justify-content: center; }
-    .queue-item .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .queue-item .item-thumb .placeholder { color: var(--mb-primary); font-size: 1.5rem; opacity: 0.5; }
-    .queue-item .item-body { flex: 1; min-width: 0; }
-    .queue-item .item-title { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .queue-item .item-excerpt { font-size: 0.78rem; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.5rem; }
-    .queue-item .item-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.72rem; color: #94a3b8; }
-    .queue-item .item-meta span { display: flex; align-items: center; gap: 0.3rem; }
-    .queue-item .item-actions { flex-shrink: 0; display: flex; align-items: center; }
-    .queue-item .item-actions .btn { border-radius: 10px; padding: 0.5rem 1.25rem; font-size: 0.8rem; font-weight: 500; }
-    .empty-queue { text-align: center; padding: 4rem 2rem; background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); }
-    .empty-queue i { font-size: 3.5rem; color: #22c55e; opacity: 0.4; display: block; margin-bottom: 1rem; }
-    .empty-queue h5 { color: #64748b; font-weight: 600; }
-    .empty-queue p { color: #94a3b8; font-size: 0.85rem; }
+    .mod-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .mod-header-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .mod-header-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    /* Table Container */
+    .mod-table-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    .mod-table-card .table {
+        margin-bottom: 0;
+    }
+    .mod-table-card .table th {
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #64748b;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .mod-table-card .table td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.875rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .mod-table-card .table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .mod-thumb-sm {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+    }
+    .mod-thumb-sm img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .mod-empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+    }
 </style>
 
-<div class="mod-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+<!-- Header -->
+<div class="mod-header">
     <div>
-        <h1><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Blog Post Review</h1>
-        <p class="text-muted mb-0" style="font-size:0.82rem;">Review and approve blog posts from doctors</p>
+        <h1 class="mod-header-title"><i class="bi bi-journal-check me-2" style="color:var(--mb-primary);"></i>Blog Moderation Queue</h1>
+        <p class="mod-header-subtitle">Review, verify, and publish submitted articles from medical specialists.</p>
     </div>
 </div>
 
-@if (ViewData["Success"] is string suc) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+<!-- Alerts -->
+@if (ViewData["Success"] is string suc)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" style="border-radius: 6px;">
+        <i class="bi bi-check-circle me-1"></i>@suc
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-3" style="border-radius: 6px;">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-
-<!-- Queue -->
+<!-- Queue Table -->
 @if (Model.Blogs.Any())
 {
-    <div class="blog-queue">
-        @foreach (var blog in Model.Blogs)
-        {
-            <div class="queue-item">
-                <div class="item-thumb">
-                    @if (!string.IsNullOrEmpty(blog.DisplayImage))
+    <div class="mod-table-card">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Cover</th>
+                        <th>Article Information</th>
+                        <th style="width: 150px;">Author</th>
+                        <th style="width: 140px;">Category</th>
+                        <th style="width: 150px;">Submitted Date</th>
+                        <th style="width: 110px;" class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var blog in Model.Blogs)
                     {
-                        <img src="@blog.DisplayImage" alt="" />
+                        <tr>
+                            <td>
+                                <div class="mod-thumb-sm">
+                                    @if (!string.IsNullOrEmpty(blog.DisplayImage))
+                                    {
+                                        <img src="@blog.DisplayImage" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-file-text text-muted"></i>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 400px;" title="@blog.Title">
+                                    @blog.Title
+                                </div>
+                                <div class="text-muted text-xs text-truncate" style="max-width: 400px;">
+                                    @(blog.DisplaySummary ?? "No summary provided")
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark small">@(blog.AuthorName ?? "Anonymous")</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-medium" style="font-size: 0.75rem;">
+                                    @(blog.Category ?? "General")
+                                </span>
+                            </td>
+                            <td class="small text-muted">
+                                @(blog.SubmittedAt?.ToString("MMM dd, yyyy HH:mm") ?? blog.CreatedAt.ToString("MMM dd, yyyy"))
+                            </td>
+                            <td class="text-end">
+                                <a asp-page="Details" asp-route-id="@blog.Id" class="btn btn-sm btn-primary px-3" style="border-radius: 4px; font-weight: 500;">
+                                    Review
+                                </a>
+                            </td>
+                        </tr>
                     }
-                    else
-                    {
-                        <i class="bi bi-journal-richtext placeholder"></i>
-                    }
-                </div>
-                <div class="item-body">
-                    <div class="item-title">@blog.Title</div>
-                    <div class="item-excerpt">@(blog.DisplaySummary ?? "No summary")</div>
-                    <div class="item-meta">
-                        <span><i class="bi bi-person"></i>@(blog.AuthorName ?? "Anonymous")</span>
-                        <span><i class="bi bi-tag"></i>@(blog.Category ?? "Chung")</span>
-                        <span><i class="bi bi-calendar3"></i>@(blog.SubmittedAt?.ToString("MM/dd/yyyy HH:mm") ?? blog.CreatedAt.ToString("MM/dd/yyyy"))</span>
-                    </div>
-                </div>
-                <div class="item-actions">
-                    <a asp-page="Details" asp-route-id="@blog.Id" class="btn btn-primary">
-                        <i class="bi bi-eye me-1"></i>Review
-                    </a>
-                </div>
-            </div>
-        }
+                </tbody>
+            </table>
+        </div>
     </div>
 }
 else
 {
-    <div class="empty-queue">
-        <i class="bi bi-journal-check"></i>
-        <h5>No articles pending approval</h5>
-        <p>All articles have been processed. Check back later!</p>
+    <div class="mod-empty-state">
+        <i class="bi bi-check2-circle text-success display-6 mb-3 d-block" style="opacity: 0.6;"></i>
+        <h5 class="fw-bold text-dark mb-1">No Pending Articles</h5>
+        <p class="text-muted small mb-0">All submitted doctor articles have been moderated and published.</p>
     </div>
 }
 
+<!-- Pagination -->
 @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
 {
-    <div class="d-flex justify-content-between align-items-center mt-3 p-3" style="background:white;border-radius:12px;border:1px solid rgba(78,139,112,0.08);">
-        <small class="text-muted">Trang @Model.Pagination.Page / @Model.Pagination.TotalPages</small>
-        <nav><ul class="pagination pagination-sm mb-0">
-            @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)
-            {
-                <li class="page-item @(i == Model.Pagination.Page ? "active" : "")"><a class="page-link" asp-page="Index" asp-route-page="@i">@i</a></li>
-            }
-        </ul></nav>
+    <div class="d-flex justify-content-between align-items-center p-3" style="background:#ffffff; border-radius:8px; border:1px solid #e5e7eb;">
+        <small class="text-muted">Page @Model.Pagination.Page of @Model.Pagination.TotalPages</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)
+                {
+                    <li class="page-item @(i == Model.Pagination.Page ? "active" : "")">
+                        <a class="page-link" asp-page="Index" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
     </div>
 }

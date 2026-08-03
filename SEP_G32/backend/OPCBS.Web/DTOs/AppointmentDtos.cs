@@ -184,6 +184,8 @@ public class RecentConsultationDto
     public string? ConsultationSummary { get; set; }
     public string? Recommendation { get; set; }
     public string? TherapyPlan { get; set; }
+    public bool IsPatientConfirmed { get; set; }
+    public DateTime? PatientConfirmedAt { get; set; }
 }
 
 public class RecentAssessmentResultDto

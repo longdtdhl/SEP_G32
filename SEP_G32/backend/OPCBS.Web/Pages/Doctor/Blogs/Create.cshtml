@@ -1,121 +1,196 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Blogs.CreateModel
-@{ ViewData["Title"] = "Write New Post"; 
-    Layout = "_DashboardLayout";}
+@{
+    ViewData["Title"] = "Create New Article"; 
+    Layout = "_DashboardLayout";
+}
 
 <style>
-    /* Quill Editor */
-    .ql-toolbar.ql-snow { border-radius: 10px 10px 0 0 !important; border: 1.5px solid #e2e8f0 !important; border-bottom: none !important; }
-    .ql-container.ql-snow { border-radius: 0 0 10px 10px !important; border: 1.5px solid #e2e8f0 !important; font-size: 0.9rem; min-height: 300px; }
-    .ql-editor { min-height: 300px; line-height: 1.8; }
-    .ql-editor.ql-bspreadk::before { font-style: normal; color: #94a3b8; }
-    .create-header { margin-bottom: 1.5rem; }
-    .create-header h1 { font-size: 1.4rem; font-weight: 700; }
-    .editor-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); overflow: hidden; }
-    .editor-card .card-section { padding: 1.5rem; }
-    .editor-card .card-section + .card-section { border-top: 1px solid #f1f5f9; }
-    .editor-card .section-title { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .editor-card .form-label { font-size: 0.82rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem; }
-    .editor-card .form-control, .editor-card .form-select { border-radius: 10px; border: 1.5px solid #e2e8f0; font-size: 0.85rem; transition: border-color 0.2s; }
-    .editor-card .form-control:focus { border-color: var(--mb-primary); box-shadow: 0 0 0 3px rgba(78,139,112,0.1); }
-    .editor-card textarea.form-control { resize: vertical; }
-    .meta-sidebar .meta-card { background: white; border-radius: 14px; border: 1px solid rgba(78,139,112,0.08); padding: 1.25rem; margin-bottom: 1rem; }
-    .meta-sidebar .meta-title { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .img-preview { width: 100%; height: 120px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 0.5rem; border: 2px dashed #e2e8f0; }
-    .img-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .img-preview .placeholder { color: #94a3b8; font-size: 0.8rem; }
-    .btn-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
-    .btn-actions .btn { border-radius: 10px; padding: 0.6rem 1.5rem; font-size: 0.85rem; font-weight: 500; }
-    .tag-input-hint { font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem; }
-    .char-counter { font-size: 0.7rem; color: #94a3b8; text-align: right; margin-top: 0.2rem; }
+    /* Quill Editor Styling */
+    .ql-toolbar.ql-snow {
+        border-radius: 6px 6px 0 0 !important;
+        border: 1px solid #d1d5db !important;
+        border-bottom: none !important;
+        background: #f8fafc;
+    }
+    .ql-container.ql-snow {
+        border-radius: 0 0 6px 6px !important;
+        border: 1px solid #d1d5db !important;
+        font-size: 0.95rem;
+        min-height: 320px;
+        background: #ffffff;
+    }
+    .ql-editor {
+        min-height: 320px;
+        line-height: 1.7;
+    }
+
+    .editor-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .editor-header-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .editor-card {
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .editor-card-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+    .form-control, .form-select {
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        font-size: 0.875rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--mb-primary);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .img-preview-box {
+        width: 100%;
+        height: 140px;
+        border-radius: 6px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-top: 0.5rem;
+        border: 1px dashed #cbd5e1;
+    }
+    .img-preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .publish-box {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.25rem;
+    }
 </style>
 
-<div class="create-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+<!-- Header -->
+<div class="editor-header">
     <div>
-        <h1><i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Write New Post</h1>
-        <p class="text-muted mb-0" style="font-size:0.82rem;">Write professional articles to share with patients</p>
+        <h1 class="editor-header-title"><i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Create New Article</h1>
+        <p class="text-muted small mb-0">Write clinical articles to share healthcare knowledge with patients.</p>
     </div>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: 6px;">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+    </a>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div class="alert alert-danger alert-dismissible fade show mb-3" style="border-radius: 6px;">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 <form method="post">
     <div class="row g-4">
-        <!-- Main Editor -->
+        <!-- Main Form (8 cols) -->
         <div class="col-lg-8">
             <div class="editor-card">
-                <div class="card-section">
-                    <div class="section-title"><i class="bi bi-type-h1"></i>Main Content</div>
-                    <div class="mb-3">
-                        <label class="form-label">Title articles <span class="text-danger">*</span></label>
-                        <input asp-for="Input.Title" class="form-control" placeholder="e.g. 5 effective stress management tips for students" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Summary content</label>
-                        <textarea asp-for="Input.Summary" class="form-control" rows="2" placeholder="Short description about the article (displayed in listings)..."></textarea>
-                    </div>
+                <div class="editor-card-title"><i class="bi bi-type-h1 text-primary"></i>Article Content</div>
+                <div class="mb-3">
+                    <label class="form-label">Article Title <span class="text-danger">*</span></label>
+                    <input asp-for="Input.Title" class="form-control" placeholder="e.g. 5 Evidence-Based Stress Management Techniques" required />
                 </div>
-                <div class="card-section">
-                    <div class="section-title"><i class="bi bi-text-paragraph"></i>Content articles</div>
-                    <div class="mb-0">
-                        <label class="form-label">Content <span class="text-danger">*</span></label>
-                        <div id="quill-editor"></div>
-                        <textarea asp-for="Input.Content" id="hiddenContent" style="display:none;"></textarea>
-                        <div class="char-counter"><span id="contentCount">0</span> characters</div>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">Summary / Excerpt</label>
+                    <textarea asp-for="Input.Summary" class="form-control" rows="2" placeholder="Brief summary of the article (displayed in article cards)..."></textarea>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Main Body <span class="text-danger">*</span></label>
+                    <div id="quill-editor"></div>
+                    <textarea asp-for="Input.Content" id="hiddenContent" style="display:none;"></textarea>
+                    <div class="text-muted text-end text-xs mt-1"><span id="contentCount">0</span> characters</div>
                 </div>
             </div>
         </div>
 
-        <!-- Metadata Sidebar -->
-        <div class="col-lg-4 meta-sidebar">
-            <div class="meta-card">
-                <div class="meta-title"><i class="bi bi-gear"></i>Article Settings</div>
+        <!-- Sidebar (4 cols) -->
+        <div class="col-lg-4">
+            <!-- Settings Card -->
+            <div class="editor-card mb-3">
+                <div class="editor-card-title"><i class="bi bi-gear text-primary"></i>Classification & Tags</div>
                 <div class="mb-3">
                     <label class="form-label">Category</label>
                     <select asp-for="Input.Category" class="form-select">
-                        <option value="">— Select category —</option>
+                        <option value="">— Select Category —</option>
                         <option value="Mental Health">Mental Health</option>
                         <option value="Depression">Depression</option>
                         <option value="Anxiety">Anxiety</option>
-                        <option value="Stress">Stress & Pressure</option>
+                        <option value="Stress">Stress & Burnout</option>
                         <option value="Relationships">Relationships</option>
                         <option value="Children & Adolescents">Children & Adolescents</option>
-                        <option value="Self-care">Self-care yourself</option>
+                        <option value="Self-care">Self-Care</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="mb-0">
                     <label class="form-label">Tags</label>
                     <input asp-for="TagsInput" class="form-control" placeholder="stress, anxiety, mindfulness" />
-                    <div class="tag-input-hint">Separate with commas</div>
+                    <div class="text-muted text-xs mt-1">Separate keywords with commas</div>
                 </div>
             </div>
 
-            <div class="meta-card">
-                <div class="meta-title"><i class="bi bi-image"></i>Cover Image</div>
+            <!-- Cover Image -->
+            <div class="editor-card mb-3">
+                <div class="editor-card-title"><i class="bi bi-image text-primary"></i>Cover Image</div>
                 <div class="mb-0">
-                    <label class="form-label">Cover Image URL</label>
+                    <label class="form-label">Cover Image URL <span class="text-muted font-normal">(Optional)</span></label>
                     <input asp-for="Input.ImageUrl" class="form-control" placeholder="https://example.com/image.jpg" id="imageUrlInput" />
-                    <div class="img-preview" id="imgPreview">
-                        <span class="placeholder"><i class="bi bi-image me-1"></i>Preview Cover Image</span>
+                    <div class="text-muted text-xs mt-1">Provide an optional cover image URL, or leave blank to use the default.</div>
+                    <div class="img-preview-box" id="imgPreview">
+                        <span class="text-muted small"><i class="bi bi-image me-1"></i>Cover Image Preview</span>
                     </div>
                 </div>
             </div>
 
-            <div class="meta-card" style="background:linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: rgba(34,197,94,0.15);">
-                <div class="meta-title" style="color:#16a34a;"><i class="bi bi-rocket-takeoff"></i>Publish</div>
-                <p style="font-size:0.78rem;color:#64748b;margin-bottom:1rem;">Blog posts need Customer Support approval before being published publicly.</p>
-                <div class="btn-actions flex-column">
-                    <button type="submit" asp-page-handler="" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-save me-1"></i>Save Draft
+            <!-- Submission Actions -->
+            <div class="publish-box">
+                <div class="editor-card-title mb-2"><i class="bi bi-send text-primary"></i>Publishing Actions</div>
+                <p class="text-muted text-xs mb-3">Submitted articles are reviewed by our staff team before public publication.</p>
+                <div class="d-flex flex-column gap-2">
+                    <button type="submit" asp-page-handler="" class="btn btn-outline-secondary w-100" style="border-radius: 6px; font-weight: 500; font-size: 0.875rem;">
+                        <i class="bi bi-save me-1"></i>Save as Draft
                     </button>
-                    <button type="submit" asp-page-handler="Submit" class="btn btn-success w-100">
-                        <i class="bi bi-send me-1"></i>Save & Send approved
+                    <button type="submit" asp-page-handler="Submit" class="btn btn-primary w-100" style="border-radius: 6px; font-weight: 600; font-size: 0.875rem;">
+                        <i class="bi bi-send me-1"></i>Submit for Review
                     </button>
                 </div>
             </div>
@@ -126,10 +201,9 @@
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-    // Initialize Quill
     var quill = new Quill('#quill-editor', {
         theme: 'snow',
-        placeholder: 'Write your article content here...',
+        placeholder: 'Write article content here...',
         modules: {
             toolbar: [
                 [{ 'header': [1, 2, 3, false] }],
@@ -144,35 +218,31 @@
         }
     });
 
-    // Load existing content if editing
     var existingContent = document.getElementById('hiddenContent').value;
     if (existingContent) {
         quill.root.innerHTML = existingContent;
     }
 
-    // Character counter
     var counterEl = document.getElementById('contentCount');
     quill.on('text-change', function() {
         counterEl.textContent = quill.getText().trim().length;
     });
 
-    // Sync Quill content to hidden textarea on form submit
     document.querySelectorAll('form').forEach(function(form) {
         form.addEventListener('submit', function() {
             document.getElementById('hiddenContent').value = quill.root.innerHTML;
         });
     });
 
-    // Image preview
     var imgInput = document.getElementById('imageUrlInput');
     var preview = document.getElementById('imgPreview');
     if (imgInput && preview) {
         imgInput.addEventListener('input', function() {
             var url = imgInput.value.trim();
             if (url) {
-                preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentElement.innerHTML=\'<span class=placeholder><i class=bi bi-exclamation-triangle me-1></i>Cannot load image</span>\'" />';
+                preview.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.parentElement.innerHTML=\'<span class=text-danger small><i class=bi bi-exclamation-triangle me-1></i>Invalid Image URL</span>\'" />';
             } else {
-                preview.innerHTML = '<span class="placeholder"><i class="bi bi-image me-1"></i>Preview Cover Image</span>';
+                preview.innerHTML = '<span class="text-muted small"><i class="bi bi-image me-1"></i>Cover Image Preview</span>';
             }
         });
     }

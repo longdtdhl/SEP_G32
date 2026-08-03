@@ -9,7 +9,7 @@ public class BlogPostDto
     public Guid Id { get; set; }
     public required string Title { get; set; }
     public required string Content { get; set; }
-    public required string ThumbnailUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string? Excerpt { get; set; }
     public required string AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }
@@ -23,7 +23,7 @@ public class CreateBlogPostDto
 {
     public required string Title { get; set; }
     public required string Content { get; set; }
-    public required string ThumbnailUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string? Excerpt { get; set; }
 }
 
@@ -179,10 +179,14 @@ public class CreateTreatmentPackageDto
 public class SubscriptionDto
 {
     public Guid Id { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid ServicePackageId { get; set; }
     public required string PackageName { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime ExpirationDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal AmountPaid { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PaymentUrl { get; set; }
 }

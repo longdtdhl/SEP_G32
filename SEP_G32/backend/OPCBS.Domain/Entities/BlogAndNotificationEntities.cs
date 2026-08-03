@@ -19,7 +19,7 @@ public class BlogPost : BaseEntity
     public required string Content { get; set; }
 
     /// <summary>Blog thumbnail image URL from Cloudinary</summary>
-    public required string ThumbnailUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
 
     /// <summary>Short excerpt or summary of blog post</summary>
     public string? Excerpt { get; set; }

@@ -47,7 +47,11 @@ public class BlogService : IBlogService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<BlogPostDto>.ErrorResponse("Doctor not found");
 
-        var blog = new BlogPost { DoctorId = doctor.Id, Title = dto.Title, Content = dto.Content, ThumbnailUrl = dto.ThumbnailUrl, Excerpt = dto.Excerpt, Doctor = doctor };
+        var thumbnailUrl = !string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
+            ? dto.ThumbnailUrl
+            : "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800";
+
+        var blog = new BlogPost { DoctorId = doctor.Id, Title = dto.Title, Content = dto.Content, ThumbnailUrl = thumbnailUrl, Excerpt = dto.Excerpt, Doctor = doctor };
         await _blogRepo.AddAsync(blog, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<BlogPostDto>.SuccessResponse(_mapper.Map<BlogPostDto>(blog), "Blog created");
@@ -59,7 +63,12 @@ public class BlogService : IBlogService
         if (blog == null) return ApiResponse<BlogPostDto>.ErrorResponse("Blog not found");
         if (!string.IsNullOrWhiteSpace(dto.Title)) blog.Title = dto.Title;
         if (!string.IsNullOrWhiteSpace(dto.Content)) blog.Content = dto.Content;
-        if (!string.IsNullOrWhiteSpace(dto.ThumbnailUrl)) blog.ThumbnailUrl = dto.ThumbnailUrl;
+        if (dto.ThumbnailUrl != null)
+        {
+            blog.ThumbnailUrl = !string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
+                ? dto.ThumbnailUrl
+                : "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800";
+        }
         if (dto.Excerpt != null) blog.Excerpt = dto.Excerpt;
         blog.UpdatedAt = DateTime.UtcNow;
         _blogRepo.Update(blog);
@@ -377,6 +386,16 @@ public class ConsultationNoteService : IConsultationNoteService
             {
                 dto.ConsultationDate = entity.ConsultationDate;
                 dto.Visibility = (int)entity.Visibility;
+                dto.IsPatientConfirmed = entity.IsPatientConfirmed;
+                dto.PatientConfirmedAt = entity.PatientConfirmedAt;
+                dto.PatientConfirmedById = entity.PatientConfirmedById;
+                dto.LastEditedAt = entity.LastEditedAt;
+                dto.LastEditedByDoctorId = entity.LastEditedByDoctorId;
+
+                if (entity.PatientConfirmedById.HasValue && userDict.TryGetValue(entity.PatientConfirmedById.Value, out var confName))
+                {
+                    dto.PatientConfirmedByName = confName;
+                }
             }
 
             if (string.IsNullOrEmpty(dto.DoctorName) && doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
@@ -472,7 +491,11 @@ public class ConsultationNoteService : IConsultationNoteService
             ConsultationDate = dto.ConsultationDate,
             Visibility = (NoteVisibility)dto.Visibility,
             Doctor = doctor,
-            PatientRecord = patientRecord
+            PatientRecord = patientRecord,
+            IsPatientConfirmed = false,
+            PatientConfirmedAt = null,
+            LastEditedAt = DateTime.UtcNow,
+            LastEditedByDoctorId = doctor.Id
         };
         if (dto.AppointmentId.HasValue)
         {
@@ -519,21 +542,108 @@ public class ConsultationNoteService : IConsultationNoteService
     {
         var record = await _recordRepo.GetByIdAsync(recordId, ct);
         if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Record not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || record.DoctorId != doctor.Id)
+        {
+            return ApiResponse<ConsultationNoteDto>.ErrorResponse("You are not authorized to update this consultation record.");
+        }
+
+        if (record.IsPatientConfirmed)
+        {
+            return ApiResponse<ConsultationNoteDto>.ErrorResponse("This consultation record has been confirmed by the patient and can no longer be edited.");
+        }
+
         record.ConsultationSummary = dto.ConsultationSummary;
         record.Diagnosis = dto.Diagnosis;
         record.Recommendation = dto.Recommendation;
         record.FollowUpNotes = dto.FollowUpNotes;
         record.TherapyPlan = dto.TherapyPlan;
         record.Visibility = (NoteVisibility)dto.Visibility;
-        // Only allow updating ConsultationDate if not linked to an appointment
         if (!record.AppointmentId.HasValue && dto.ConsultationDate.HasValue)
             record.ConsultationDate = dto.ConsultationDate;
+
+        record.LastEditedAt = DateTime.UtcNow;
+        record.LastEditedByDoctorId = doctor.Id;
         record.UpdatedAt = DateTime.UtcNow;
+
         _recordRepo.Update(record);
         await _uow.SaveChangesAsync(ct);
         var updatedDto = _mapper.Map<ConsultationNoteDto>(record);
         await EnrichRecordsAsync(new List<ConsultationNoteDto> { updatedDto }, ct);
         return ApiResponse<ConsultationNoteDto>.SuccessResponse(updatedDto, "Record updated");
+    }
+
+    public async Task<ApiResponse<ConsultationNoteDto>> ConfirmByPatientAsync(Guid recordId, Guid patientUserId, CancellationToken ct = default)
+    {
+        var record = await _recordRepo.GetByIdAsync(recordId, ct);
+        if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Consultation record not found.");
+
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patientRecord = await _patientRecordRepo.GetByIdAsync(record.PatientRecordId, ct);
+
+        bool isOwnedByPatient = false;
+        if (patient != null)
+        {
+            if (patientRecord != null && patientRecord.PatientId == patient.Id)
+            {
+                isOwnedByPatient = true;
+            }
+            else if (record.AppointmentId.HasValue)
+            {
+                var appointment = await _apptRepo.GetByIdAsync(record.AppointmentId.Value, ct);
+                if (appointment != null && appointment.PatientId == patient.Id)
+                {
+                    isOwnedByPatient = true;
+                }
+            }
+        }
+
+        if (!isOwnedByPatient)
+        {
+            return ApiResponse<ConsultationNoteDto>.ErrorResponse("You are not authorized to confirm this consultation record.");
+        }
+
+        if (record.IsPatientConfirmed)
+        {
+            var existingDto = _mapper.Map<ConsultationNoteDto>(record);
+            await EnrichRecordsAsync(new List<ConsultationNoteDto> { existingDto }, ct);
+            return ApiResponse<ConsultationNoteDto>.SuccessResponse(existingDto, "Consultation notes confirmed successfully.");
+        }
+
+        record.IsPatientConfirmed = true;
+        record.PatientConfirmedAt = DateTime.UtcNow;
+        record.PatientConfirmedById = patientUserId;
+        record.UpdatedAt = DateTime.UtcNow;
+
+        _recordRepo.Update(record);
+        await _uow.SaveChangesAsync(ct);
+
+        var confirmedDto = _mapper.Map<ConsultationNoteDto>(record);
+        await EnrichRecordsAsync(new List<ConsultationNoteDto> { confirmedDto }, ct);
+
+        try
+        {
+            var doctor = await _doctorRepo.GetByIdAsync(record.DoctorId, ct);
+            if (doctor != null)
+            {
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var patientUser = allUsers.FirstOrDefault(u => u.Id == patientUserId);
+                await _notificationService.CreateNotificationAsync(
+                    doctor.UserId,
+                    "✅ Consultation Notes Confirmed",
+                    $"{patientUser?.FullName ?? "The patient"} has reviewed and confirmed the consultation notes.",
+                    Domain.Enums.NotificationType.ConsultationNote,
+                    record.Id,
+                    "ConsultationNote",
+                    ct);
+            }
+        }
+        catch { }
+
+        return ApiResponse<ConsultationNoteDto>.SuccessResponse(confirmedDto, "Consultation notes confirmed successfully.");
     }
 
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default)
@@ -1682,16 +1792,29 @@ public class SubscriptionService : ISubscriptionService
             s.Status == SubscriptionStatus.Active &&
             s.ExpirationDate > DateTime.UtcNow);
 
-        if (activeSub == null) return ApiResponse<SubscriptionDto>.ErrorResponse("No active subscription");
+        if (activeSub == null)
+        {
+            // Fallback: Check for PendingPayment or latest subscription if active is absent
+            activeSub = allSubs.Where(s => s.DoctorProfileId == doctor.Id)
+                               .OrderByDescending(s => s.CreatedAt)
+                               .FirstOrDefault();
+
+            if (activeSub == null)
+                return ApiResponse<SubscriptionDto>.ErrorResponse("No active subscription");
+        }
 
         var pkg = await _pkgRepo.GetByIdAsync(activeSub.ServicePackageId, ct);
         return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
         {
             Id = activeSub.Id,
+            DoctorId = doctor.Id,
+            ServicePackageId = activeSub.ServicePackageId,
             PackageName = pkg?.Name ?? "Unknown",
             Status = activeSub.Status.ToString(),
             StartDate = activeSub.StartDate,
             ExpirationDate = activeSub.ExpirationDate,
+            EndDate = activeSub.ExpirationDate,
+            AmountPaid = pkg?.Price ?? 0,
             CreatedAt = activeSub.CreatedAt
         });
     }
@@ -1712,10 +1835,14 @@ public class SubscriptionService : ISubscriptionService
             dtos.Add(new SubscriptionDto
             {
                 Id = sub.Id,
+                DoctorId = doctor.Id,
+                ServicePackageId = sub.ServicePackageId,
                 PackageName = pkg?.Name ?? "Unknown",
                 Status = sub.Status.ToString(),
                 StartDate = sub.StartDate,
                 ExpirationDate = sub.ExpirationDate,
+                EndDate = sub.ExpirationDate,
+                AmountPaid = pkg?.Price ?? 0,
                 CreatedAt = sub.CreatedAt
             });
         }

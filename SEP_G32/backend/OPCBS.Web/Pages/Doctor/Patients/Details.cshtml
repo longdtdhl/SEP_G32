@@ -247,9 +247,6 @@
                 <h5 class="fw-bold mb-0" style="color:#1e293b; font-size:1rem;">
                     <i class="bi bi-journal-medical me-2" style="color:var(--mb-primary);"></i>Consultation History
                 </h5>
-                <a asp-page="/Doctor/ConsultationNotes/Create" asp-route-patientRecordId="@Model.PatientRecord.Id" class="btn btn-sm btn-primary fw-semibold" style="border-radius:8px;">
-                    <i class="bi bi-plus-lg me-1"></i>Create New
-                </a>
             </div>
             <div class="card-body p-4">
                 @if (Model.ConsultationNotes.Any())
@@ -291,8 +288,8 @@
                     <div class="text-center p-4">
                         <i class="bi bi-inbox d-block mb-3" style="font-size:2.5rem; color:#cbd5e1;"></i>
                         <h6 class="fw-semibold text-muted">No consultations recorded yet</h6>
-                        <p style="font-size:0.85rem; color:#94a3b8;">This patient has no consultation notes recorded.</p>
-                        <a asp-page="/Doctor/ConsultationNotes/Create" asp-route-patientRecordId="@Model.PatientRecord.Id" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:8px;">Start Consultation Now</a>
+                        <p style="font-size:0.85rem; color:#94a3b8;">No consultation history records found for this patient.</p>
+                        <a asp-page="/Doctor/Appointments/Index" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:8px;">View Doctor Appointments</a>
                     </div>
                 }
             </div>
