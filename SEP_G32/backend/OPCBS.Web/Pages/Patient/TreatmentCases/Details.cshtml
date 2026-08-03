@@ -1,157 +1,451 @@
-@page
+﻿@page
 @model OPCBS.Web.Pages.Patient.TreatmentCases.DetailsModel
-@{ ViewData["Title"] = Model.Case?.CaseName ?? "Treatment Progress"; }
+@{
+    ViewData["Title"] = Model.Case?.CaseName ?? "My Treatment Progress";
+    Layout = "_DashboardLayout";
+}
+<style>
+    .tc-detail-card { background: white; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,0.04); overflow: hidden; }
+    .tc-detail-header { padding: 1.1rem 1.25rem; border-bottom: 1px solid #f8fafc; font-weight: 700; font-size: 0.95rem; color: #1e293b; background: #fafbfc; }
+    .tc-nav-pills { background: white; padding: 6px; border-radius: 14px; border: 1px solid #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,0.04); gap: 4px; }
+    .tc-nav-pills .nav-link { border-radius: 10px; font-weight: 600; font-size: 0.84rem; color: #64748b; padding: 8px 16px; }
+    .tc-nav-pills .nav-link.active { background: var(--mb-primary); color: white; }
+    .tc-nav-pills .nav-link:hover:not(.active) { background: #f8fafc; color: #1e293b; }
+</style>
 
-<div class="container py-4">
+<div class="container-fluid py-4">
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        <div class="alert alert-danger shadow-sm rounded-3"><i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage</div>
         return;
     }
-    @if (Model.Case == null) { <div class="alert alert-warning">Case not found.</div> return; }
 
-    <a href="/Patient/TreatmentCases" class="text-decoration-none text-muted mb-2 d-inline-block"><i class="bi bi-arrow-left me-1"></i>Back to Cases</a>
-    <h2 class="fw-bold mb-1">@Model.Case.CaseName</h2>
-    <p class="text-muted mb-4">
-        <i class="bi bi-person-badge me-1"></i>Dr. @(Model.Case.DoctorName ?? "Unknown") &middot;
-        <span class="@Model.Case.StatusBadgeClass">@Model.Case.StatusText</span>
-    </p>
+    @if (Model.Case == null)
+    {
+        <div class="alert alert-warning shadow-sm rounded-3">Treatment case not found.</div>
+        return;
+    }
 
-    <!-- Progress Dashboard -->
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <a href="/Patient/TreatmentCases" class="text-decoration-none text-secondary small mb-1 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i>Back to Treatment Cases
+            </a>
+            <h2 class="fw-bold mb-1 text-dark">@Model.Case.CaseName</h2>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-person-badge me-1"></i>Assigned Doctor: <strong>Dr. @(Model.Case.DoctorName ?? "Unknown")</strong> &middot;
+                <span class="@Model.Case.StatusBadgeClass">@Model.Case.StatusText</span> &middot;
+                Started: @Model.Case.StartDate.ToString("MMM dd, yyyy")
+            </p>
+        </div>
+        <div>
+            <button class="btn btn-warning btn-sm rounded-pill px-3 fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#addMoodModal">
+                <i class="bi bi-emoji-smile me-1"></i>Log Today's Mood
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress Cards -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;">
-                <div class="display-6 fw-bold">@(Model.Progress?.OverallProgressPercent ?? 0)%</div>
-                <small>Overall</small>
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 text-white" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+                <small class="opacity-75 d-block mb-1">Overall Progress</small>
+                <div class="h3 fw-bold mb-0">@(Model.Progress?.OverallProgressPercent ?? Model.Case.OverallProgressPercent)%</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
-                <div class="display-6 fw-bold text-primary">@Model.Case.CompletedSessions/@Model.Case.TotalSessions</div>
-                <small class="text-muted">Sessions</small>
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 bg-white">
+                <small class="text-muted d-block mb-1">Sessions Completed</small>
+                <div class="h3 fw-bold text-primary mb-0">@Model.Case.CompletedSessions / @Model.Case.TotalSessions</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
-                <div class="display-6 fw-bold text-success">@Model.Case.AchievedGoalCount/@Model.Case.GoalCount</div>
-                <small class="text-muted">Goals</small>
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 bg-white">
+                <small class="text-muted d-block mb-1">Goals Achieved</small>
+                <div class="h3 fw-bold text-success mb-0">@Model.Case.AchievedGoalCount / @Model.Case.GoalCount</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center p-3" style="border-radius: 12px;">
-                <div class="display-6 fw-bold text-warning">@(Model.Progress?.DaysRemaining?.ToString() ?? "∞")</div>
-                <small class="text-muted">Days Left</small>
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 bg-white">
+                <small class="text-muted d-block mb-1">Days Remaining</small>
+                <div class="h3 fw-bold text-info mb-0">@(Model.Progress?.DaysRemaining?.ToString() ?? "∞") days</div>
             </div>
         </div>
     </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs mb-4" role="tablist">
-        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-goals"><i class="bi bi-bullseye me-1"></i>My Goals</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sessions"><i class="bi bi-camera-video me-1"></i>Sessions</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-timeline"><i class="bi bi-clock-history me-1"></i>Activity</a></li>
+    <!-- Navigation Tabs -->
+    <ul class="nav tc-nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "overview" ? "active" : "")" href="?id=@Model.Case.Id&tab=overview">
+                <i class="bi bi-info-circle me-1"></i>Case Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "sessions" ? "active" : "")" href="?id=@Model.Case.Id&tab=sessions">
+                <i class="bi bi-camera-video me-1"></i>Sessions (@Model.Sessions.Count)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "goals" ? "active" : "")" href="?id=@Model.Case.Id&tab=goals">
+                <i class="bi bi-bullseye me-1"></i>Goals (@Model.Goals.Count)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "homework" ? "active" : "")" href="?id=@Model.Case.Id&tab=homework">
+                <i class="bi bi-journal-check me-1"></i>Homework (@Model.HomeworkList.Count)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "mood" ? "active" : "")" href="?id=@Model.Case.Id&tab=mood">
+                <i class="bi bi-emoji-smile me-1"></i>Mood Journal (@Model.MoodEntries.Count)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link px-3 @(Model.ActiveTab == "timeline" ? "active" : "")" href="?id=@Model.Case.Id&tab=timeline">
+                <i class="bi bi-clock-history me-1"></i>Activity
+            </a>
+        </li>
     </ul>
 
+    <!-- Tab Contents -->
     <div class="tab-content">
-        <!-- Goals Tab -->
-        <div class="tab-pane fade show active" id="tab-goals">
-            @if (!Model.Goals.Any())
+        <!-- 1. OVERVIEW -->
+        @if (Model.ActiveTab == "overview")
+        {
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-4 bg-white h-100">
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-workspace me-2"></i>Case Information</h5>
+                        <p class="mb-2"><strong>Treatment Description:</strong></p>
+                        <p class="text-secondary small">@(Model.Case.CaseDescription ?? "No description provided.")</p>
+                        <p class="mb-2"><strong>Primary Concern:</strong></p>
+                        <p class="text-secondary small">@(Model.Case.PrimaryConcern ?? "Not specified.")</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-4 bg-white h-100">
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-box-seam me-2"></i>Package Details</h5>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item border-0 px-0 d-flex justify-content-between">
+                                <span class="text-muted">Package:</span>
+                                <strong>@(Model.Case.PackageNameSnapshot ?? Model.Case.CaseName)</strong>
+                            </li>
+                            <li class="list-group-item border-0 px-0 d-flex justify-content-between">
+                                <span class="text-muted">Total Sessions:</span>
+                                <span>@Model.Case.TotalSessionsSnapshot sessions</span>
+                            </li>
+                            <li class="list-group-item border-0 px-0 d-flex justify-content-between">
+                                <span class="text-muted">Doctor Guidance:</span>
+                                <span>@(Model.Case.PatientGuidanceSnapshot ?? "Not specified")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- 2. SESSIONS -->
+        @if (Model.ActiveTab == "sessions")
+        {
+            @if (!Model.Sessions.Any())
             {
-                <p class="text-muted">Your therapist hasn't set any goals yet.</p>
+                <div class="text-center py-5 bg-white rounded-3 shadow-sm">
+                    <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Your doctor has not scheduled any sessions yet.</p>
+                </div>
             }
             else
             {
-                @foreach (var g in Model.Goals)
-                {
-                    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 10px;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="fw-bold">@g.Title</h6>
-                                <span class="@g.StatusBadgeClass">@g.StatusText</span>
-                            </div>
-                            @if (!string.IsNullOrEmpty(g.Description))
-                            {
-                                <p class="text-muted small mb-2">@g.Description</p>
-                            }
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success" style="width: @g.ProgressPercent%;"></div>
-                            </div>
-                            <div class="d-flex justify-content-between mt-1">
-                                <small class="text-muted">@g.ProgressPercent% complete</small>
-                                @if (g.TargetDate.HasValue)
+                <div class="row g-3">
+                    @foreach (var s in Model.Sessions.OrderBy(s => s.SessionNumber))
+                    {
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-light text-primary border border-primary">sessions @s.SessionNumber</span>
+                                    <span class="@s.StatusBadgeClass">@s.StatusText</span>
+                                </div>
+                                <h6 class="fw-bold mb-1">@(s.Title ?? $"sessions {s.SessionNumber}")</h6>
+                                <p class="text-muted small mb-2"><i class="bi bi-clock me-1"></i>@(s.PlannedStartTime?.ToString("MMM dd, yyyy HH:mm") ?? "Not scheduled")</p>
+
+                                @if (!string.IsNullOrEmpty(s.PatientFriendlySummary))
                                 {
-                                    <small class="text-muted">Target: @g.TargetDate.Value.ToString("MMM dd, yyyy")</small>
+                                    <div class="p-3 bg-light rounded-3 mb-2">
+                                        <small class="fw-bold text-dark d-block">Doctor Summary for Patient:</small>
+                                        <small class="text-secondary">@s.PatientFriendlySummary</small>
+                                    </div>
                                 }
                             </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             }
-        </div>
+        }
 
-        <!-- Sessions Tab -->
-        <div class="tab-pane fade" id="tab-sessions">
-            @if (!Model.Sessions.Any())
+        <!-- 3. GOALS -->
+        @if (Model.ActiveTab == "goals")
+        {
+            @if (!Model.Goals.Any())
             {
-                <p class="text-muted">No sessions recorded yet.</p>
+                <div class="text-center py-5 bg-white rounded-3 shadow-sm">
+                    <i class="bi bi-bullseye fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Your doctor has not set any treatment goals yet.</p>
+                </div>
             }
             else
             {
-                @foreach (var s in Model.Sessions)
-                {
-                    <div class="card mb-2 border-0 shadow-sm" style="border-radius: 10px;">
-                        <div class="card-body py-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>Session #@s.SessionNumber</strong>
-                                    <span class="@s.StatusBadgeClass ms-2">@s.StatusText</span>
-                                </div>
-                                <small class="text-muted">@s.CreatedAt.ToString("MMM dd, yyyy")</small>
-                            </div>
-                            @if (!string.IsNullOrEmpty(s.SessionSummary))
-                            {
-                                <p class="text-muted small mt-2 mb-0">@s.SessionSummary</p>
-                            }
-                            @if (s.MoodBefore.HasValue && s.MoodAfter.HasValue)
-                            {
-                                <p class="small mt-1 mb-0">
-                                    <span class="text-muted">Mood:</span> @s.MoodBefore <i class="bi bi-arrow-right"></i> @s.MoodAfter
-                                    @if (s.MoodAfter > s.MoodBefore) { <span class="text-success">↑</span> }
-                                    else if (s.MoodAfter < s.MoodBefore) { <span class="text-danger">↓</span> }
-                                </p>
-                            }
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-
-        <!-- Activity Timeline Tab -->
-        <div class="tab-pane fade" id="tab-timeline">
-            @if (!Model.Timeline.Any())
-            {
-                <p class="text-muted">No activity yet.</p>
-            }
-            else
-            {
-                <div class="list-group list-group-flush">
-                    @foreach (var t in Model.Timeline)
+                <div class="row g-3">
+                    @foreach (var g in Model.Goals)
                     {
-                        <div class="list-group-item border-0 px-0">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3"><i class="bi @t.IconCss fs-5 text-primary"></i></div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <strong class="small">@t.Title</strong>
-                                        <small class="text-muted">@t.EventDate.ToString("MMM dd")</small>
-                                    </div>
-                                    <p class="text-muted small mb-0">@t.Description</p>
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="@g.StatusBadgeClass">@g.StatusText</span>
+                                    <small class="text-muted">Deadline: @(g.TargetDate?.ToString("MMM dd, yyyy") ?? "None")</small>
+                                </div>
+                                <h6 class="fw-bold mb-1">@g.Title</h6>
+                                <p class="text-muted small mb-2">@(g.Description ?? "No description.")</p>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                                    <span>Progress: <strong>@g.ProgressPercent%</strong></span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: @g.ProgressPercent%;"></div>
                                 </div>
                             </div>
                         </div>
                     }
                 </div>
             }
+        }
+
+        <!-- 4. HOMEWORK -->
+        @if (Model.ActiveTab == "homework")
+        {
+            @if (!Model.HomeworkList.Any())
+            {
+                <div class="text-center py-5 bg-white rounded-3 shadow-sm">
+                    <i class="bi bi-journal-x fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No homework assigned yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var h in Model.HomeworkList)
+                    {
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="@h.StatusBadgeClass">@h.StatusText</span>
+                                    <small class="text-muted">Due: @(h.DueDate?.ToString("MMM dd, yyyy") ?? "None")</small>
+                                </div>
+                                <h6 class="fw-bold mb-1">@h.Title</h6>
+                                <p class="text-secondary small mb-2">@(h.Description ?? "No description provided.")</p>
+
+                                @if (!string.IsNullOrEmpty(h.DetailedInstructions))
+                                {
+                                    <div class="p-3 bg-light rounded-3 mb-2 small text-dark">
+                                        <strong>Instructions:</strong> @h.DetailedInstructions
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(h.PatientSubmission))
+                                {
+                                    <div class="p-3 bg-light rounded-3 mb-2 small">
+                                        <strong class="text-success"><i class="bi bi-check-circle me-1"></i>Your Submission:</strong>
+                                        <p class="mb-0 text-muted">@h.PatientSubmission</p>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(h.DoctorFeedback))
+                                {
+                                    <div class="p-3 bg-info bg-opacity-10 rounded-3 mb-2 border-start border-3 border-info small">
+                                        <strong class="text-primary"><i class="bi bi-chat-left-quote me-1"></i>Doctor Feedback:</strong>
+                                        <p class="mb-0 text-dark">@h.DoctorFeedback</p>
+                                    </div>
+                                }
+
+                                @if (h.Status == 0)
+                                {
+                                    <button class="btn btn-primary btn-sm rounded-pill mt-2" data-bs-toggle="modal" data-bs-target="#submitHomeworkModal-@h.Id">
+                                        <i class="bi bi-send me-1"></i>Submit Homework
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Submit Homework Modal -->
+                        <div class="modal fade" id="submitHomeworkModal-@h.Id" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content border-0 shadow">
+                                    <form method="post" asp-page-handler="SubmitHomework">
+                                        <input type="hidden" name="caseId" value="@Model.Case.Id" />
+                                        <input type="hidden" name="homeworkId" value="@h.Id" />
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title"><i class="bi bi-send me-2"></i>Submit Homework: @h.Title</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Your answer / work</label>
+                                                <textarea name="patientSubmission" class="form-control" rows="4" placeholder="Enter your homework response..." required></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Attachment URL (optional)</label>
+                                                <input type="url" name="patientSubmissionUrl" class="form-control" placeholder="https://..." />
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Submit</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        <!-- 5. MOOD -->
+        @if (Model.ActiveTab == "mood")
+        {
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-emoji-smile me-2 text-warning"></i>Mood Journal</h5>
+                    <button class="btn btn-warning btn-sm rounded-pill text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addMoodModal">
+                        <i class="bi bi-plus-lg me-1"></i>Log Today's Entry
+                    </button>
+                </div>
+
+                @if (!Model.MoodEntries.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-emoji-neutral fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">No mood entries logged yet. Log your mood to help your doctor track your progress!</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Mood Score</th>
+                                    <th>Lo âu</th>
+                                    <th>Căng thẳng</th>
+                                    <th>Sleep</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.MoodEntries)
+                                {
+                                    <tr>
+                                        <td>@m.RecordedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                                        <td><span class="badge @(m.MoodScore >= 7 ? "bg-success" : m.MoodScore <= 4 ? "bg-danger" : "bg-warning text-dark") fs-6">@m.MoodScore / 10</span></td>
+                                        <td>@(m.AnxietyScore?.ToString() ?? "-")/10</td>
+                                        <td>@(m.StressScore?.ToString() ?? "-")/10</td>
+                                        <td>@(m.SleepQualityScore?.ToString() ?? "-")/10</td>
+                                        <td><small class="text-muted">@(m.Note ?? "Không Note")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- 6. TIMELINE -->
+        @if (Model.ActiveTab == "timeline")
+        {
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <h5 class="fw-bold mb-4"><i class="bi bi-clock-history me-2 text-primary"></i>Activity Timeline</h5>
+                @if (!Model.Timeline.Any())
+                {
+                    <p class="text-muted">No activities logged yet.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var t in Model.Timeline)
+                        {
+                            <div class="list-group-item border-0 px-0 pb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="bi @t.IconCss fs-3 text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong class="text-dark">@t.Title</strong>
+                                            <small class="text-muted">@t.EventDate.ToString("MMM dd, yyyy HH:mm")</small>
+                                        </div>
+                                        <p class="text-secondary small mb-1">@t.Description</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add Mood Modal -->
+<div class="modal fade" id="addMoodModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="AddMood">
+                <input type="hidden" name="caseId" value="@Model.Case?.Id" />
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-emoji-smile me-2"></i>Log Today's Mood</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mood Score tổng thể (1 = Rất tệ, 10 = Rất tốt)</label>
+                        <input type="number" name="moodScore" class="form-control" min="1" max="10" value="7" required />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Anxiety Level (0-10)</label>
+                            <input type="number" name="anxietyScore" class="form-control" min="0" max="10" value="2" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Stress Level (0-10)</label>
+                            <input type="number" name="stressScore" class="form-control" min="0" max="10" value="3" />
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Chất lượng Sleep (0-10)</label>
+                            <input type="number" name="sleepQualityScore" class="form-control" min="0" max="10" value="7" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Depression Index (0-10)</label>
+                            <input type="number" name="depressionScore" class="form-control" min="0" max="10" value="1" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Note cá nhân</label>
+                        <textarea name="note" class="form-control" rows="3" placeholder="Share your thoughts or events from today..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning text-dark fw-bold">Save Entry</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+
+
+
+

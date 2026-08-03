@@ -1,4 +1,4 @@
-﻿@inject OPCBS.Web.Helpers.JwtCookieService JwtService
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @inject OPCBS.Web.Services.IVerificationApiService VerificationService
 
 @{
@@ -35,11 +35,17 @@
             <a class="nav-link @(currentPath == "/patient/dashboard" ? "active" : "")" asp-page="/Patient/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/appointments") ? "active" : "")" asp-page="/Patient/Appointments/Index">
+            <a class="nav-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
                 <i class="bi bi-calendar-check"></i> My Appointments
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/appointments/history") ? "active" : "")" asp-page="/Patient/Appointments/History">
+                <i class="bi bi-clock-history"></i> Appointment History
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index">
                 <i class="bi bi-file-medical"></i> Consultation Records
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index">
+                <i class="bi bi-heart-pulse"></i> Treatment Progress
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
                 <i class="bi bi-box-seam"></i> Treatment Packages
@@ -72,8 +78,11 @@
 
             @if (isVerified)
             {
-                <a class="nav-link @(currentPath.StartsWith("/doctor/appointments") ? "active" : "")" asp-page="/Doctor/Appointments/Index">
-                    <i class="bi bi-calendar-check"></i> Appointments
+                <a class="nav-link @(currentPath == "/doctor/appointments" || currentPath == "/doctor/appointments/index" ? "active" : "")" asp-page="/Doctor/Appointments/Index">
+                    <i class="bi bi-calendar-check"></i> Appointment Management
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/appointments/history") ? "active" : "")" asp-page="/Doctor/Appointments/History">
+                    <i class="bi bi-clock-history"></i> Appointment History
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
                     <i class="bi bi-clock"></i> Schedules
@@ -83,6 +92,9 @@
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/consultationnotes") ? "active" : "")" asp-page="/Doctor/ConsultationNotes/Index">
                     <i class="bi bi-file-medical"></i> Consultation Notes
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index">
+                    <i class="bi bi-heart-pulse"></i> Treatment Progress
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
                     <i class="bi bi-box-seam"></i> Treatment Packages

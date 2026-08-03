@@ -63,14 +63,25 @@ public class AppointmentsController : ControllerBase
         return result.Success ? Ok(result) : NotFound(result);
     }
 
-    /// <summary>GET /api/v1/appointments/my-appointments - Patient own appointments</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
-    [HttpGet("my-appointments")]
-    public async Task<IActionResult> GetMyAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
+    /// <summary>GET /api/v1/appointments/{id}/clinical-context - Get clinical context for appointment</summary>
+    [Authorize]
+    [HttpGet("{appointmentId:guid}/clinical-context")]
+    public async Task<IActionResult> GetClinicalContext(Guid appointmentId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _apptService.GetMyAppointmentsAsync(userId.Value, page, pageSize, status, search);
+        var result = await _apptService.GetClinicalContextAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/appointments/my-appointments - Patient own appointments</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpGet("my-appointments")]
+    public async Task<IActionResult> GetMyAppointments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null, [FromQuery] string? view = null)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.GetMyAppointmentsAsync(userId.Value, page, pageSize, status, search, view);
         return Ok(result);
     }
 
@@ -157,11 +168,12 @@ public class AppointmentsController : ControllerBase
         [FromQuery] string? status = null, 
         [FromQuery] string? search = null,
         [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null)
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? view = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _apptService.GetDoctorAppointmentsAsync(userId.Value, page, pageSize, status, search, fromDate, toDate);
+        var result = await _apptService.GetDoctorAppointmentsAsync(userId.Value, page, pageSize, status, search, fromDate, toDate, view);
         return Ok(result);
     }
 

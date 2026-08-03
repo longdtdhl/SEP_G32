@@ -340,4 +340,82 @@ public class BusinessServicesTests
 
         await Assert.ThrowsAsync<Exception>(() => service.CreateAsync(doctorUserId, dto, default));
     }
+
+    [Fact]
+    public async Task DoctorVerificationService_SubmitVerification_SavesCertificateUrlAndSubmittedStatus()
+    {
+        var verRepo = new Mock<IRepository<VerificationRequest>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = doctorUserId,
+            VerificationStatus = VerificationStatus.Draft,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        verRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<VerificationRequest>());
+        userRepo.Setup(r => r.GetByIdAsync(doctorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor.User);
+
+        VerificationRequest? savedRequest = null;
+        verRepo.Setup(r => r.AddAsync(It.IsAny<VerificationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<VerificationRequest, CancellationToken>((req, _) => savedRequest = req)
+            .Returns(Task.CompletedTask);
+
+        var service = new VerificationService(verRepo.Object, doctorRepo.Object, userRepo.Object, uow.Object, mapper.Object);
+        var dto = new SubmitVerificationDto
+        {
+            LicenseNumber = "LIC-12345",
+            Specialization = "Clinical Psychologist",
+            ExperienceYears = 8,
+            CertificateUrl = "/uploads/verifications/cert123.pdf"
+        };
+
+        var result = await service.SubmitVerificationAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(savedRequest);
+        Assert.Equal(VerificationStatus.Submitted, savedRequest!.Status);
+        Assert.Equal("/uploads/verifications/cert123.pdf", savedRequest.CertificateUrl);
+        Assert.Equal(VerificationStatus.Submitted, doctor.VerificationStatus);
+        Assert.Equal("/uploads/verifications/cert123.pdf", result.Data!.CertificateUrl);
+    }
+
+    [Fact]
+    public async Task DoctorVerificationService_GetVerificationStatus_NoRequest_ReturnsDraftStatus()
+    {
+        var verRepo = new Mock<IRepository<VerificationRequest>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = doctorUserId,
+            VerificationStatus = VerificationStatus.Draft,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        verRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<VerificationRequest>());
+        userRepo.Setup(r => r.GetByIdAsync(doctorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor.User);
+
+        var service = new VerificationService(verRepo.Object, doctorRepo.Object, userRepo.Object, uow.Object, mapper.Object);
+
+        var result = await service.GetVerificationStatusAsync(doctorUserId, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal("Draft", result.Data!.Status);
+        Assert.Equal("Dr. Test", result.Data.DoctorName);
+    }
 }

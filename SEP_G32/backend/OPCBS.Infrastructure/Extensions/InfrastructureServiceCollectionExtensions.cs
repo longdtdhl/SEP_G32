@@ -46,8 +46,17 @@ public static class InfrastructureServiceCollectionExtensions
             services.AddScoped<IEmailService, MockEmailService>();
         }
 
-        // Register other external service mock implementations
-        services.AddScoped<IFileStorageService, MockFileStorageService>();
+        // Register File Storage — use Cloudinary if configured, otherwise mock
+        var cloudinarySection = configuration?.GetSection("Cloudinary");
+        if (cloudinarySection != null && !string.IsNullOrEmpty(cloudinarySection["CloudName"]))
+        {
+            services.Configure<CloudinarySettings>(cloudinarySection);
+            services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService, MockFileStorageService>();
+        }
         
         var vnpaySection = configuration?.GetSection("VnPay");
         if (vnpaySection != null && !string.IsNullOrEmpty(vnpaySection["TmnCode"]))

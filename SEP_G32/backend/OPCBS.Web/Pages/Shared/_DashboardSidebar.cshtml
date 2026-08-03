@@ -1,0 +1,327 @@
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
+@inject OPCBS.Web.Services.IVerificationApiService VerificationService
+
+@{
+    var role = JwtService.GetRole();
+    var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+
+    var isPatient = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase);
+    var isDoctor = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase);
+    var isCS = string.Equals(role, "CustomerSupport", StringComparison.OrdinalIgnoreCase);
+    var isBM = string.Equals(role, "BusinessManager", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = string.Equals(role, "SystemAdmin", StringComparison.OrdinalIgnoreCase);
+
+    // Doctor verification check
+    var isVerified = false;
+    var verificationStatus = "NotSubmitted";
+    if (isDoctor)
+    {
+        try
+        {
+            var (vData, _) = await VerificationService.GetMyVerificationAsync();
+            if (vData != null)
+            {
+                verificationStatus = vData.Status ?? "NotSubmitted";
+                if (string.Equals(vData.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                    isVerified = true;
+            }
+        }
+        catch { }
+    }
+
+    var portalLabel = role switch
+    {
+        "Patient" => "Patient Portal",
+        "Doctor" => "Doctor Portal",
+        "CustomerSupport" => "Support Portal",
+        "BusinessManager" => "Business Portal",
+        "SystemAdmin" => "Admin Portal",
+        _ => "MindBridge"
+    };
+
+    var portalIcon = role switch
+    {
+        "Patient" => "bi-heart-pulse",
+        "Doctor" => "bi-hospital",
+        "CustomerSupport" => "bi-headset",
+        "BusinessManager" => "bi-briefcase",
+        "SystemAdmin" => "bi-shield-lock",
+        _ => "bi-grid"
+    };
+}
+
+<!-- Sidebar Backdrop (mobile) -->
+<div class="mb-dash-sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<aside class="mb-dash-sidebar" id="dashSidebar">
+    <!-- Portal Brand -->
+    <div class="sidebar-brand">
+        <i class="bi @portalIcon"></i>
+        <span>@portalLabel</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        @* ============================== PATIENT ============================== *@
+        @if (isPatient)
+        {
+            <a class="sb-link @(currentPath == "/patient/dashboard" ? "active" : "")" asp-page="/Patient/Dashboard">
+                <i class="bi bi-house"></i><span>Dashboard</span>
+            </a>
+            <a class="sb-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
+                <i class="bi bi-calendar-check"></i><span>My Appointments</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/appointments/history") ? "active" : "")" asp-page="/Patient/Appointments/History">
+                <i class="bi bi-clock-history"></i><span>Appointment History</span>
+            </a>
+
+            <div class="sb-divider"></div>
+            <div class="sb-section-label">My Treatment</div>
+
+            <a class="sb-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
+                <i class="bi bi-box-seam"></i><span>My Packages</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index">
+                <i class="bi bi-heart-pulse"></i><span>Treatment Progress</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index">
+                <i class="bi bi-file-medical"></i><span>Consultation History</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
+                <i class="bi bi-journal-heart"></i><span>Mood Journal</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
+                <i class="bi bi-clipboard2-pulse"></i><span>Psychological Tests</span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath.StartsWith("/patient/favorites") ? "active" : "")" asp-page="/Patient/Favorites/Index">
+                <i class="bi bi-heart"></i><span>Favorite Doctors</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/patient/messages") ? "active" : "")" asp-page="/Patient/Messages/Index">
+                <i class="bi bi-chat-dots"></i><span>Messages</span>
+                <span class="sb-badge d-none" id="sb-msg-badge"></span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
+                <i class="bi bi-bell"></i><span>Notifications</span>
+                <span class="sb-badge d-none" id="sb-notif-badge"></span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
+                <i class="bi bi-person"></i><span>Profile</span>
+            </a>
+            <a class="sb-link @(currentPath == "/account/changepassword" ? "active" : "")" asp-page="/Account/ChangePassword">
+                <i class="bi bi-shield-lock"></i><span>Security</span>
+            </a>
+            <div class="sb-divider"></div>
+            <form method="post" asp-page="/Account/Logout" class="m-0">
+                <button type="submit" class="sb-link sb-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
+        }
+
+        @* ============================== DOCTOR ============================== *@
+        else if (isDoctor)
+        {
+            <a class="sb-link @(currentPath == "/doctor/dashboard" ? "active" : "")" asp-page="/Doctor/Dashboard">
+                <i class="bi bi-house"></i><span>Dashboard</span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            @if (isVerified)
+            {
+                <a class="sb-link @(currentPath == "/doctor/appointments" || currentPath == "/doctor/appointments/index" ? "active" : "")" asp-page="/Doctor/Appointments/Index">
+                    <i class="bi bi-calendar-check"></i><span>Appointment Management</span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/appointments/history") ? "active" : "")" asp-page="/Doctor/Appointments/History">
+                    <i class="bi bi-clock-history"></i><span>Appointment History</span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
+                    <i class="bi bi-clock"></i><span>Schedule Management</span>
+                </a>
+
+                <div class="sb-divider"></div>
+
+                <a class="sb-link @(currentPath.StartsWith("/doctor/patients") ? "active" : "")" asp-page="/Doctor/Patients/Index">
+                    <i class="bi bi-people"></i><span>Patients</span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/consultationnotes") ? "active" : "")" asp-page="/Doctor/ConsultationNotes/Index">
+                    <i class="bi bi-file-medical"></i><span>Consultation Notes</span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index">
+                    <i class="bi bi-heart-pulse"></i><span>Treatment Progress</span>
+                </a>
+
+                <div class="sb-divider"></div>
+
+                <a class="sb-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
+                    <i class="bi bi-box-seam"></i><span>Treatment Packages</span>
+                </a>
+
+                <div class="sb-divider"></div>
+
+                <a class="sb-link @(currentPath.StartsWith("/doctor/messages") ? "active" : "")" asp-page="/Doctor/Messages/Index">
+                    <i class="bi bi-chat-dots"></i><span>Messages</span>
+                    <span class="sb-badge d-none" id="sb-msg-badge-doc"></span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
+                    <i class="bi bi-journal-text"></i><span>Blog Posts</span>
+                </a>
+            }
+            else
+            {
+                <!-- Locked items for unverified doctors -->
+                <span class="sb-link sb-disabled"><i class="bi bi-calendar-check"></i><span>Appointment Management</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-clock"></i><span>Schedule Management</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <div class="sb-divider"></div>
+                <span class="sb-link sb-disabled"><i class="bi bi-people"></i><span>Patients</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-file-medical"></i><span>Consultation Notes</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-heart-pulse"></i><span>Treatment Progress</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <div class="sb-divider"></div>
+                <span class="sb-link sb-disabled"><i class="bi bi-box-seam"></i><span>Treatment Packages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <div class="sb-divider"></div>
+                <span class="sb-link sb-disabled"><i class="bi bi-chat-dots"></i><span>Messages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-journal-text"></i><span>Blog Posts</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+            }
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/Verification">
+                <i class="bi bi-patch-check"></i><span>Identity Verification</span>
+                @{
+                    var vBadgeClass = verificationStatus switch
+                    {
+                        "Approved" => "sb-status-approved",
+                        "Rejected" => "sb-status-rejected",
+                        _ => "sb-status-pending"
+                    };
+                    var vBadgeLabel = verificationStatus switch
+                    {
+                        "Approved" => "Approved",
+                        "Rejected" => "Rejected",
+                        "Submitted" or "Pending" => "Pending",
+                        _ => "Required"
+                    };
+                }
+                <span class="sb-status @vBadgeClass">@vBadgeLabel</span>
+            </a>
+
+            @if (isVerified)
+            {
+                <a class="sb-link @(currentPath.StartsWith("/doctor/subscriptions") || currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
+                    <i class="bi bi-credit-card"></i><span>Subscription</span>
+                </a>
+            }
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath == "/doctor/profile" ? "active" : "")" asp-page="/Doctor/Profile">
+                <i class="bi bi-person"></i><span>My Profile</span>
+            </a>
+            <form method="post" asp-page="/Account/Logout" class="m-0">
+                <button type="submit" class="sb-link sb-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
+        }
+
+        @* ============================== CUSTOMER SUPPORT ============================== *@
+        else if (isCS)
+        {
+            <a class="sb-link @(currentPath == "/customersupport/dashboard" ? "active" : "")" asp-page="/CustomerSupport/Dashboard">
+                <i class="bi bi-house"></i><span>Dashboard</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/customersupport/doctorapplications") ? "active" : "")" asp-page="/CustomerSupport/DoctorApplications/Index">
+                <i class="bi bi-person-check"></i><span>Doctor Applications</span>
+                <span class="sb-badge d-none" id="sb-apps-badge"></span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/customersupport/blogmoderation") ? "active" : "")" asp-page="/CustomerSupport/BlogModeration/Index">
+                <i class="bi bi-journal-check"></i><span>Blog Moderation</span>
+                <span class="sb-badge d-none" id="sb-blog-badge"></span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
+                <i class="bi bi-person"></i><span>Profile</span>
+            </a>
+            <form method="post" asp-page="/Account/Logout" class="m-0">
+                <button type="submit" class="sb-link sb-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
+        }
+
+        @* ============================== BUSINESS MANAGER ============================== *@
+        else if (isBM)
+        {
+            <a class="sb-link @(currentPath == "/businessmanager/dashboard" ? "active" : "")" asp-page="/BusinessManager/Dashboard">
+                <i class="bi bi-house"></i><span>Dashboard</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/businessmanager/servicepackages") ? "active" : "")" asp-page="/BusinessManager/ServicePackages/Index">
+                <i class="bi bi-gem"></i><span>Service Packages</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/businessmanager/specializations") ? "active" : "")" asp-page="/BusinessManager/Specializations/Index">
+                <i class="bi bi-tags"></i><span>Specializations</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/businessmanager/analytics") ? "active" : "")" asp-page="/BusinessManager/Analytics">
+                <i class="bi bi-graph-up"></i><span>Analytics</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/businessmanager/reports") ? "active" : "")" asp-page="/BusinessManager/Reports">
+                <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
+                <i class="bi bi-person"></i><span>Profile</span>
+            </a>
+            <form method="post" asp-page="/Account/Logout" class="m-0">
+                <button type="submit" class="sb-link sb-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
+        }
+
+        @* ============================== SYSTEM ADMIN ============================== *@
+        else if (isAdmin)
+        {
+            <a class="sb-link @(currentPath == "/admin/dashboard" ? "active" : "")" asp-page="/Admin/Dashboard">
+                <i class="bi bi-house"></i><span>Dashboard</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/users") ? "active" : "")" asp-page="/Admin/Users/Index">
+                <i class="bi bi-people"></i><span>User Management</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/roles") ? "active" : "")" asp-page="/Admin/Roles/Index">
+                <i class="bi bi-shield-check"></i><span>Role Management</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/permissions") ? "active" : "")" asp-page="/Admin/Permissions/Index">
+                <i class="bi bi-key"></i><span>Permission Management</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
+                <i class="bi bi-journal-text"></i><span>Audit Logs</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/settings") ? "active" : "")" asp-page="/Admin/Settings">
+                <i class="bi bi-gear"></i><span>System Settings</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports">
+                <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>
+            </a>
+
+            <div class="sb-divider"></div>
+
+            <a class="sb-link @(currentPath == "/account/profile" ? "active" : "")" asp-page="/Account/Profile">
+                <i class="bi bi-person"></i><span>Profile</span>
+            </a>
+            <form method="post" asp-page="/Account/Logout" class="m-0">
+                <button type="submit" class="sb-link sb-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
+        }
+    </nav>
+</aside>

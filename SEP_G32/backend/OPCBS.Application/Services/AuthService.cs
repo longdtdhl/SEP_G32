@@ -137,18 +137,10 @@ public class AuthService : IAuthService
                 ProfessionalTitle = dto.ProfessionalTitle,
                 Biography = dto.Biography,
                 ExperienceYears = dto.ExperienceYears,
-                VerificationStatus = VerificationStatus.Submitted,
+                VerificationStatus = VerificationStatus.Draft,
                 User = user
             };
             await _doctorRepo.AddAsync(doctorProfile, ct);
-
-            // Auto-create verification request for CS review
-            await _verRepo.AddAsync(new VerificationRequest
-            {
-                DoctorProfileId = doctorProfile.Id,
-                Status = VerificationStatus.Submitted,
-                DoctorProfile = doctorProfile
-            }, ct);
 
             if (dto.SpecializationIds?.Any() == true)
             {

@@ -3,6 +3,7 @@
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
     ViewData["Title"] = "Messages";
+    Layout = "_DashboardLayout";
     var currentUserId = JwtService.GetUserId();
 }
 

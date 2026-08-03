@@ -5,7 +5,7 @@ namespace OPCBS.Application.DTOs.Therapy;
 public class TherapyAssignmentDto
 {
     public Guid Id { get; set; }
-    public Guid TreatmentPackageId { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? DetailedInstructions { get; set; }

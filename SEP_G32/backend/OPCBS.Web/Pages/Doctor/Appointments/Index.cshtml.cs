@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Domain.Constants;
+using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
@@ -22,18 +23,19 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)] public string? DateTo { get; set; }
     public string? Error { get; set; }
 
-    // Status summary counts
+    // Status summary counts for Active appointments
     public int PendingCount { get; set; }
     public int ApprovedCount { get; set; }
-    public int CompletedCount { get; set; }
     public int InProgressCount { get; set; }
+    public int RescheduleRequestedCount { get; set; }
     public int TotalCount { get; set; }
 
     public async Task OnGetAsync()
     {
-        // Build filter
+        // Build filter for Active appointments
         var filter = new AppointmentFilterDto
         {
+            View = "active",
             Status = Status,
             Search = Search,
             Page = CurrentPage,
@@ -47,19 +49,13 @@ public class IndexModel : PageModel
         Pagination = pagination;
         Error = error;
 
-        // Load all appointments (unfiltered) for status counts
-        var (allData, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 9999 });
-        PendingCount = allData?.Count(a => a.Status == 0) ?? 0;
-        ApprovedCount = allData?.Count(a => a.Status == 1) ?? 0;
-        InProgressCount = allData?.Count(a => a.Status == 3) ?? 0;
-        CompletedCount = allData?.Count(a => a.Status == 4) ?? 0;
-        TotalCount = allData?.Count ?? 0;
-
-        // Issue 4: Filter out Cancelled (5) and Rejected (2) from default view
-        if (string.IsNullOrEmpty(Status))
-        {
-            Appointments = Appointments.Where(a => a.Status != 5 && a.Status != 2).ToList();
-        }
+        // Load all active appointments for status counts
+        var (allActive, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { View = "active", Page = 1, PageSize = 9999 });
+        PendingCount = allActive?.Count(a => a.Status == 0) ?? 0;
+        ApprovedCount = allActive?.Count(a => a.Status == 1) ?? 0;
+        InProgressCount = allActive?.Count(a => a.Status == 3) ?? 0;
+        RescheduleRequestedCount = allActive?.Count(a => a.Status == 6) ?? 0;
+        TotalCount = allActive?.Count ?? 0;
     }
 
     public async Task<IActionResult> OnPostConfirmAsync(Guid id)

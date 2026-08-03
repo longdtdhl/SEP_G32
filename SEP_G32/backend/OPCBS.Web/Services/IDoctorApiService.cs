@@ -12,4 +12,6 @@ public interface IDoctorApiService
     Task<List<SpecializationDto>> GetSpecializationDtosAsync();
     Task<(DoctorDto? Data, string? Error)> GetMyProfileAsync();
     Task<(bool Success, string? Error)> UpdateMyProfileAsync(UpdateDoctorProfileDto dto);
+    Task<(string? Url, string? Error)> UploadAvatarAsync(Stream fileStream, string fileName);
+    Task<(string? Url, string? Error)> UploadCertificateAsync(Stream fileStream, string fileName);
 }

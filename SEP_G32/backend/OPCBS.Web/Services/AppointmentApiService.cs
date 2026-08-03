@@ -28,6 +28,12 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         return (data, error);
     }
 
+    public async Task<(AppointmentClinicalContextDto? Data, string? Error)> GetClinicalContextAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<AppointmentClinicalContextDto>($"{ApiRoutes.Appointments}/{id}/clinical-context");
+        return (data, error);
+    }
+
     public async Task<(AppointmentDto? Data, string? Error)> BookAsync(CreateAppointmentDto dto)
     {
         var (data, error) = await PostAsync<AppointmentDto>(ApiRoutes.Appointments, dto);
@@ -104,6 +110,7 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         if (filter == null) return baseUrl;
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(filter.Status)) parts.Add($"status={filter.Status}");
+        if (!string.IsNullOrEmpty(filter.View)) parts.Add($"view={filter.View}");
         if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
         if (filter.FromDate.HasValue) parts.Add($"fromDate={filter.FromDate:yyyy-MM-dd}");
         if (filter.ToDate.HasValue) parts.Add($"toDate={filter.ToDate:yyyy-MM-dd}");

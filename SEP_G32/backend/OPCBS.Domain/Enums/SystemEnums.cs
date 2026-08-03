@@ -110,6 +110,9 @@ public enum BlogStatus
 /// </summary>
 public enum TreatmentPackageStatus
 {
+    /// <summary>Package template in draft state</summary>
+    Draft = -1,
+
     /// <summary>Package created but not assigned</summary>
     Created = 0,
     
@@ -132,7 +135,10 @@ public enum TreatmentPackageStatus
     Rejected = 6,
     
     /// <summary>Package was cancelled</summary>
-    Cancelled = 7
+    Cancelled = 7,
+
+    /// <summary>Package template archived and no longer available for assignment</summary>
+    Archived = 8
 }
 
 /// <summary>
@@ -328,7 +334,10 @@ public enum TreatmentCaseStatus
     Terminated = 3,
 
     /// <summary>Case transferred to another doctor</summary>
-    Transferred = 4
+    Transferred = 4,
+
+    /// <summary>Case was cancelled</summary>
+    Cancelled = 5
 }
 
 /// <summary>
@@ -349,7 +358,10 @@ public enum TreatmentSessionStatus
     Cancelled = 3,
 
     /// <summary>Patient did not attend the session</summary>
-    NoShow = 4
+    NoShow = 4,
+
+    /// <summary>Patient missed the session (alias for NoShow in some contexts)</summary>
+    Missed = 5
 }
 
 /// <summary>
@@ -364,7 +376,10 @@ public enum GoalPriority
     Medium = 1,
 
     /// <summary>High priority goal</summary>
-    High = 2
+    High = 2,
+
+    /// <summary>Critical priority goal — requires urgent attention</summary>
+    Critical = 3
 }
 
 /// <summary>
@@ -398,4 +413,50 @@ public enum NoteVisibility
 
     /// <summary>Both doctor and patient can see this note (session summary, advice, homework)</summary>
     PatientVisible = 1
+}
+
+/// <summary>
+/// Goal category for standardized clinical metrics
+/// </summary>
+public enum GoalCategory
+{
+    /// <summary>Emotional regulation and well-being</summary>
+    Emotion = 0,
+    /// <summary>Sleep quality and patterns</summary>
+    Sleep = 1,
+    /// <summary>Stress management</summary>
+    Stress = 2,
+    /// <summary>Anxiety level (GAD-7: 0-21)</summary>
+    Anxiety = 3,
+    /// <summary>Depression level (PHQ-9: 0-27)</summary>
+    Depression = 4,
+    /// <summary>Communication skills</summary>
+    Communication = 5,
+    /// <summary>Relationship quality</summary>
+    Relationship = 6,
+    /// <summary>Work performance and satisfaction</summary>
+    Work = 7,
+    /// <summary>Academic performance</summary>
+    Study = 8,
+    /// <summary>Self-esteem and confidence</summary>
+    SelfEsteem = 9,
+    /// <summary>Lifestyle habits and health</summary>
+    Lifestyle = 10,
+    /// <summary>Custom / other category</summary>
+    Other = 99
+}
+
+/// <summary>
+/// Status of a homework/therapy assignment
+/// </summary>
+public enum HomeworkStatus
+{
+    /// <summary>Assigned to patient, not yet submitted</summary>
+    Assigned = 0,
+    /// <summary>Patient has submitted their response</summary>
+    Submitted = 1,
+    /// <summary>Doctor has reviewed the submission</summary>
+    Reviewed = 2,
+    /// <summary>Assignment was cancelled</summary>
+    Cancelled = 3
 }

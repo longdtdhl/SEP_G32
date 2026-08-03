@@ -140,6 +140,12 @@ public class Appointment : BaseEntity
     /// <summary>Foreign key to TreatmentPackage if appointment is part of a package</summary>
     public Guid? TreatmentPackageId { get; set; }
 
+    /// <summary>Foreign key to TreatmentCase if appointment is part of a treatment case</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
+    /// <summary>Foreign key to TreatmentSession if appointment is part of a treatment session</summary>
+    public Guid? TreatmentSessionId { get; set; }
+
     /// <summary>Timestamp when appointment was approved by doctor</summary>
     public DateTime? ApprovedAt { get; set; }
 
@@ -172,6 +178,12 @@ public class Appointment : BaseEntity
 
     /// <summary>Navigation property to TreatmentPackage (if applicable)</summary>
     public virtual TreatmentPackage? TreatmentPackage { get; set; }
+
+    /// <summary>Navigation property to TreatmentCase (if applicable)</summary>
+    public virtual TreatmentCase? TreatmentCase { get; set; }
+
+    /// <summary>Navigation property to TreatmentSession (if applicable)</summary>
+    public virtual TreatmentSession? TreatmentSession { get; set; }
 
     /// <summary>Navigation property: consultation note for this appointment</summary>
     public virtual ConsultationNote? ConsultationNote { get; set; }

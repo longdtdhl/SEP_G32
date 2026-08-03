@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.CustomerSupport.DoctorApplications.DetailsModel
 @{
     ViewData["Title"] = "Practitioner Review";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 @{ var suc = TempData["Success"] as string; }
 @if (suc != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
@@ -91,14 +91,21 @@
         </div>
 
         <!-- Professional Summary Card -->
-        @if (!string.IsNullOrEmpty(app.Education))
+        @if (!string.IsNullOrEmpty(app.Notes) || !string.IsNullOrEmpty(app.Education))
         {
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-bottom">
                     <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Professional Summary</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-0" style="line-height:1.7;">@app.Education</p>
+                    @if (!string.IsNullOrEmpty(app.Notes))
+                    {
+                        <p class="text-muted mb-0" style="line-height:1.7;">@app.Notes</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0" style="line-height:1.7;">@app.Education</p>
+                    }
                 </div>
             </div>
         }
@@ -106,21 +113,54 @@
         <!-- Verification Documents Card -->
         @if (!string.IsNullOrEmpty(app.CertificateUrl))
         {
+            var certUrl = app.CertificateUrl;
+            var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) 
+                       || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) 
+                       || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                       || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                       || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)
+                       || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+            var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                     || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
+
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-bottom">
-                    <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Verification Documents</h6>
+                    <h6 class="mb-0 text-muted small fw-bold text-uppercase letter-spacing-1">Verification Documents / Certificate</h6>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="border rounded p-3 d-flex align-items-center gap-3 hover-shadow">
-                                <div class="bg-light rounded p-2"><i class="bi bi-file-earmark-pdf text-danger" style="font-size:1.5rem;"></i></div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold small">Practitioner License</div>
-                                    <div class="text-muted" style="font-size:0.75rem;">Uploaded document</div>
-                                </div>
-                                <a href="@app.CertificateUrl" target="_bspreadk" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                    @if (isImage)
+                    {
+                        <div class="text-center mb-3">
+                            <img src="@certUrl" alt="Practitioner Certificate" class="img-fluid rounded border shadow-sm" style="max-height: 500px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank', 'noopener')" title="Click to view full size" />
+                        </div>
+                    }
+                    else if (isPdf)
+                    {
+                        <div class="ratio ratio-16x9 mb-3">
+                            <iframe src="@certUrl" title="Certificate PDF Document" class="rounded border"></iframe>
+                        </div>
+                    }
+
+                    <div class="border rounded p-3 bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-white rounded p-2 border">
+                                <i class="bi @(isPdf ? "bi-file-earmark-pdf text-danger" : isImage ? "bi-file-earmark-image text-primary" : "bi-file-earmark-text text-secondary")" style="font-size:1.5rem;"></i>
                             </div>
+                            <div>
+                                <div class="fw-semibold small">Practitioner License & Certificate</div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-link-45deg me-1"></i>@(certUrl.Length > 60 ? certUrl.Substring(0, 60) + "..." : certUrl)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="@certUrl" target="_blank" rel="noopener" class="btn btn-sm btn-primary px-3">
+                                <i class="bi bi-eye me-1"></i>Open Certificate
+                            </a>
+                            <a href="@certUrl" download class="btn btn-sm btn-outline-secondary px-3">
+                                <i class="bi bi-download me-1"></i>Download
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -6,7 +6,7 @@ namespace OPCBS.Application.Interfaces.Services;
 /// <summary>
 /// Service interface for Treatment Case management.
 /// Handles the full lifecycle: creation from package template, session tracking,
-/// goal management, progress calculation, and timeline aggregation.
+/// goal management, progress calculation, schedule generation, homework, mood tracking, and timeline aggregation.
 /// </summary>
 public interface ITreatmentCaseService
 {
@@ -30,10 +30,24 @@ public interface ITreatmentCaseService
     /// <summary>Close a Treatment Case (complete or terminate)</summary>
     Task<ApiResponse> CloseAsync(Guid caseId, CloseTreatmentCaseDto dto, CancellationToken ct = default);
 
+    // === Schedule Generation ===
+
+    /// <summary>Generate treatment schedule (sessions + approved appointments)</summary>
+    Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, CancellationToken ct = default);
+
     // === Sessions ===
 
     /// <summary>Create a new session (optionally linked to an appointment)</summary>
     Task<ApiResponse<TreatmentSessionDto>> CreateSessionAsync(CreateSessionDto dto, CancellationToken ct = default);
+
+    /// <summary>Update session info (title, description, dates, linked goals)</summary>
+    Task<ApiResponse<TreatmentSessionDto>> UpdateSessionAsync(Guid sessionId, UpdateSessionDto dto, CancellationToken ct = default);
+
+    /// <summary>Delete an uncompleted session</summary>
+    Task<ApiResponse> DeleteSessionAsync(Guid sessionId, CancellationToken ct = default);
+
+    /// <summary>Reorder session numbers</summary>
+    Task<ApiResponse> ReorderSessionsAsync(ReorderSessionsDto dto, CancellationToken ct = default);
 
     /// <summary>Complete a session with summary, notes, and mood data</summary>
     Task<ApiResponse<TreatmentSessionDto>> CompleteSessionAsync(Guid sessionId, CompleteSessionDto dto, CancellationToken ct = default);
@@ -46,11 +60,39 @@ public interface ITreatmentCaseService
     /// <summary>Create a new treatment goal</summary>
     Task<ApiResponse<TreatmentGoalDto>> CreateGoalAsync(CreateGoalDto dto, CancellationToken ct = default);
 
-    /// <summary>Update goal progress and status</summary>
+    /// <summary>Update goal info, status, or overall progress</summary>
     Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, CancellationToken ct = default);
 
     /// <summary>Get all goals for a Treatment Case</summary>
     Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, CancellationToken ct = default);
+
+    /// <summary>Record a new goal progress evaluation history entry</summary>
+    Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, CancellationToken ct = default);
+
+    /// <summary>Get progress evaluation history for a goal</summary>
+    Task<ApiResponse<List<TreatmentGoalProgressDto>>> GetGoalProgressHistoryAsync(Guid goalId, CancellationToken ct = default);
+
+    // === Homework / Therapy Assignments ===
+
+    /// <summary>Assign homework for a session / case</summary>
+    Task<ApiResponse<HomeworkDto>> CreateHomeworkAsync(CreateHomeworkDto dto, CancellationToken ct = default);
+
+    /// <summary>Patient submits response for homework</summary>
+    Task<ApiResponse<HomeworkDto>> SubmitHomeworkAsync(Guid homeworkId, SubmitHomeworkDto dto, CancellationToken ct = default);
+
+    /// <summary>Doctor reviews homework submission</summary>
+    Task<ApiResponse<HomeworkDto>> ReviewHomeworkAsync(Guid homeworkId, ReviewHomeworkDto dto, CancellationToken ct = default);
+
+    /// <summary>Get homework list for a case</summary>
+    Task<ApiResponse<List<HomeworkDto>>> GetHomeworkByCaseAsync(Guid caseId, CancellationToken ct = default);
+
+    // === Mood Tracking ===
+
+    /// <summary>Patient submits daily/weekly mood check-in</summary>
+    Task<ApiResponse<MoodEntryDto>> AddMoodEntryAsync(Guid patientUserId, CreateMoodEntryDto dto, CancellationToken ct = default);
+
+    /// <summary>Get mood entries for a treatment case</summary>
+    Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, CancellationToken ct = default);
 
     // === Progress & Timeline ===
 

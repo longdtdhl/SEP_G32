@@ -105,7 +105,13 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<string>("Symptoms")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("TreatmentCaseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("TreatmentPackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TreatmentSessionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -128,7 +134,11 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasIndex("ProposedSlotId");
 
+                    b.HasIndex("TreatmentCaseId");
+
                     b.HasIndex("TreatmentPackageId");
+
+                    b.HasIndex("TreatmentSessionId");
 
                     b.ToTable("Appointments");
                 });
@@ -633,6 +643,9 @@ namespace OPCBS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("AverageRating")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3, 2)
@@ -643,13 +656,34 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CareApproach")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CareerBackground")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ConsultationFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ConsultationTypes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Education")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("ExperienceYears")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Gender")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -657,6 +691,9 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Property<bool>("IsVisible")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Languages")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LicenseExpiryDate")
                         .HasColumnType("datetime2");
@@ -914,6 +951,66 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.MoodEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("AnxietyScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("DepressionScore")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MoodScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RelationshipScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SleepQualityScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StressScore")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TreatmentCaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TreatmentCaseId");
+
+                    b.ToTable("MoodEntries");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.Notification", b =>
@@ -1786,7 +1883,10 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<Guid?>("TreatmentCaseId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("TreatmentPackageId")
+                    b.Property<Guid?>("TreatmentPackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TreatmentSessionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1800,6 +1900,8 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("TreatmentCaseId");
 
                     b.HasIndex("TreatmentPackageId");
+
+                    b.HasIndex("TreatmentSessionId");
 
                     b.ToTable("TherapyAssignments");
                 });
@@ -1838,6 +1940,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("DurationDaysSnapshot")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ExpectedEndDate")
                         .HasColumnType("datetime2");
 
@@ -1847,12 +1952,30 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<int>("OverallProgressPercent")
                         .HasColumnType("int");
 
+                    b.Property<string>("PackageDescriptionSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PackageNameSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PatientGuidanceSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PriceSnapshot")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PrimaryConcern")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RecommendedExercisesSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecommendedSessionsPerWeekSnapshot")
+                        .HasColumnType("int");
 
                     b.Property<int>("RemainingSessions")
                         .HasColumnType("int");
@@ -1863,7 +1986,13 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("TargetOutcomesSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("TotalSessions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalSessionsSnapshot")
                         .HasColumnType("int");
 
                     b.Property<Guid>("TreatmentPackageId")
@@ -1895,11 +2024,20 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<DateTime?>("AchievedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedByDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("CurrentValue")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -1924,6 +2062,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<DateTime?>("TargetDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("TargetValue")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -1931,6 +2072,9 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Property<Guid>("TreatmentCaseId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1943,6 +2087,54 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("TreatmentCaseId");
 
                     b.ToTable("TreatmentGoals");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentGoalProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("CurrentValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DoctorComment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("GoalId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProgressPercent")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TreatmentSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoalId");
+
+                    b.HasIndex("TreatmentSessionId");
+
+                    b.ToTable("TreatmentGoalProgresses");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentPackage", b =>
@@ -2046,6 +2238,15 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DoctorClinicalAssessment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DoctorPrivateNotes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("HomeworkAssigned")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -2063,6 +2264,15 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("PatientFriendlySummary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PlannedEndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStartTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("SessionNumber")
                         .HasColumnType("int");
 
@@ -2076,6 +2286,9 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<string>("TherapistNotes")
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("TreatmentCaseId")
                         .HasColumnType("uniqueidentifier");
@@ -2095,6 +2308,21 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasIndex("TreatmentCaseId");
 
                     b.ToTable("TreatmentSessions");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentSessionGoal", b =>
+                {
+                    b.Property<Guid>("TreatmentSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TreatmentGoalId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("TreatmentSessionId", "TreatmentGoalId");
+
+                    b.HasIndex("TreatmentGoalId");
+
+                    b.ToTable("TreatmentSessionGoals");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.User", b =>
@@ -2246,9 +2474,19 @@ namespace OPCBS.Infrastructure.Migrations
                         .HasForeignKey("ProposedSlotId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentCase", "TreatmentCase")
+                        .WithMany()
+                        .HasForeignKey("TreatmentCaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("OPCBS.Domain.Entities.TreatmentPackage", "TreatmentPackage")
                         .WithMany("Appointments")
                         .HasForeignKey("TreatmentPackageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentSession", "TreatmentSession")
+                        .WithMany()
+                        .HasForeignKey("TreatmentSessionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("AppointmentSlot");
@@ -2259,7 +2497,11 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Navigation("ProposedSlot");
 
+                    b.Navigation("TreatmentCase");
+
                     b.Navigation("TreatmentPackage");
+
+                    b.Navigation("TreatmentSession");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.AppointmentHistory", b =>
@@ -2513,6 +2755,26 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Navigation("Conversation");
                 });
 
+            modelBuilder.Entity("OPCBS.Domain.Entities.MoodEntry", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.PatientProfile", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentCase", "TreatmentCase")
+                        .WithMany("MoodEntries")
+                        .HasForeignKey("TreatmentCaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("TreatmentCase");
+                });
+
             modelBuilder.Entity("OPCBS.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("OPCBS.Domain.Entities.User", "User")
@@ -2704,13 +2966,18 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.HasOne("OPCBS.Domain.Entities.TreatmentPackage", "TreatmentPackage")
                         .WithMany()
-                        .HasForeignKey("TreatmentPackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TreatmentPackageId");
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentSession", "TreatmentSession")
+                        .WithMany("Assignments")
+                        .HasForeignKey("TreatmentSessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("TreatmentCase");
 
                     b.Navigation("TreatmentPackage");
+
+                    b.Navigation("TreatmentSession");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentCase", b =>
@@ -2747,10 +3014,28 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasOne("OPCBS.Domain.Entities.TreatmentCase", "TreatmentCase")
                         .WithMany("Goals")
                         .HasForeignKey("TreatmentCaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("TreatmentCase");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentGoalProgress", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentGoal", "Goal")
+                        .WithMany("ProgressHistory")
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentSession", "TreatmentSession")
+                        .WithMany()
+                        .HasForeignKey("TreatmentSessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Goal");
+
+                    b.Navigation("TreatmentSession");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentPackage", b =>
@@ -2781,12 +3066,31 @@ namespace OPCBS.Infrastructure.Migrations
                     b.HasOne("OPCBS.Domain.Entities.TreatmentCase", "TreatmentCase")
                         .WithMany("Sessions")
                         .HasForeignKey("TreatmentCaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Appointment");
 
                     b.Navigation("TreatmentCase");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentSessionGoal", b =>
+                {
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentGoal", "TreatmentGoal")
+                        .WithMany("SessionGoals")
+                        .HasForeignKey("TreatmentGoalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OPCBS.Domain.Entities.TreatmentSession", "TreatmentSession")
+                        .WithMany("SessionGoals")
+                        .HasForeignKey("TreatmentSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TreatmentGoal");
+
+                    b.Navigation("TreatmentSession");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.User", b =>
@@ -2934,7 +3238,16 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Navigation("Goals");
 
+                    b.Navigation("MoodEntries");
+
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentGoal", b =>
+                {
+                    b.Navigation("ProgressHistory");
+
+                    b.Navigation("SessionGoals");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentPackage", b =>
@@ -2942,6 +3255,13 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("TreatmentCases");
+                });
+
+            modelBuilder.Entity("OPCBS.Domain.Entities.TreatmentSession", b =>
+                {
+                    b.Navigation("Assignments");
+
+                    b.Navigation("SessionGoals");
                 });
 
             modelBuilder.Entity("OPCBS.Domain.Entities.User", b =>

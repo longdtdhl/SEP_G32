@@ -8,12 +8,12 @@ namespace OPCBS.Web.Pages.Doctor;
 public class VerificationModel : PageModel
 {
     private readonly IVerificationApiService _api;
-    private readonly IWebHostEnvironment _env;
+    private readonly IDoctorApiService _doctorApi;
 
-    public VerificationModel(IVerificationApiService api, IWebHostEnvironment env)
+    public VerificationModel(IVerificationApiService api, IDoctorApiService doctorApi)
     {
         _api = api;
-        _env = env;
+        _doctorApi = doctorApi;
     }
 
     public VerificationDto? Verification { get; set; }
@@ -24,36 +24,88 @@ public class VerificationModel : PageModel
     public string? Error { get; set; }
     public string? Success { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(bool resubmit = false)
     {
         Success = TempData["Success"] as string;
         var (data, error) = await _api.GetMyVerificationAsync();
-        if (data != null) { Verification = data; HasExisting = true; }
+        if (data != null)
+        {
+            Verification = data;
+            var statusLower = data.Status?.ToLower();
+            
+            // If submitted or approved (or rejected without resubmit flag), show existing request summary view
+            if ((statusLower == "submitted" || statusLower == "pending" || statusLower == "approved" || (statusLower == "rejected" && !resubmit))
+                && statusLower != "draft")
+            {
+                HasExisting = true;
+            }
+            else
+            {
+                // Prefill form for submission / resubmission
+                Input.LicenseNumber = data.LicenseNumber ?? "";
+                Input.Specialization = data.Specialization ?? "";
+                Input.ExperienceYears = data.ExperienceYears;
+                Input.Education = data.Education ?? "";
+                Input.CertificateUrl = data.CertificateUrl;
+                Input.Notes = data.Notes;
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        var (existingData, _) = await _api.GetMyVerificationAsync();
+
         if (UploadedFile != null && UploadedFile.Length > 0)
         {
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "verifications");
-            Directory.CreateDirectory(uploadsFolder);
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(UploadedFile.FileName);
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-            
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            // Validate file type
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+            var fileExtension = Path.GetExtension(UploadedFile.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(fileExtension))
             {
-                await UploadedFile.CopyToAsync(stream);
+                Error = "Invalid file type. Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.";
+                if (existingData != null) Verification = existingData;
+                return Page();
             }
-            Input.CertificateUrl = "/uploads/verifications/" + uniqueFileName;
+
+            // Validate file size (max 5MB)
+            const long maxFileSize = 5 * 1024 * 1024;
+            if (UploadedFile.Length > maxFileSize)
+            {
+                Error = "File size exceeds the maximum limit of 5MB.";
+                if (existingData != null) Verification = existingData;
+                return Page();
+            }
+
+            // Upload via API (Cloudinary)
+            using var stream = UploadedFile.OpenReadStream();
+            var (uploadedUrl, uploadError) = await _doctorApi.UploadCertificateAsync(stream, UploadedFile.FileName);
+            if (!string.IsNullOrEmpty(uploadError))
+            {
+                Error = $"Certificate upload failed: {uploadError}";
+                if (existingData != null) Verification = existingData;
+                return Page();
+            }
+            Input.CertificateUrl = uploadedUrl;
+        }
+        else if (string.IsNullOrWhiteSpace(Input.CertificateUrl) && existingData != null && !string.IsNullOrWhiteSpace(existingData.CertificateUrl))
+        {
+            // Keep existing certificate URL if not re-uploaded/re-entered
+            Input.CertificateUrl = existingData.CertificateUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.CertificateUrl))
+        {
+            Error = "Please upload a practice certificate or provide a valid certificate document link.";
+            if (existingData != null) Verification = existingData;
+            return Page();
         }
 
         var (success, error) = await _api.SubmitAsync(Input);
         if (!success)
         {
             Error = error;
-            // Reload existing verification data so the page renders correctly
-            var (data, _) = await _api.GetMyVerificationAsync();
-            if (data != null) { Verification = data; HasExisting = true; }
+            if (existingData != null) Verification = existingData;
             return Page();
         }
         TempData["Success"] = "Verification profile submitted successfully!";

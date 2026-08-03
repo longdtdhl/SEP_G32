@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.ProfileModel
 @{
     ViewData["Title"] = "Personal Profile";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 <div class="mb-page-header d-flex justify-content-between align-items-center">
     <h1><i class="bi bi-person-lines-fill me-2 text-primary"></i>Personal Profile</h1>
@@ -92,15 +92,15 @@
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small mb-1">Gender</div>
-                            <div class="fw-semibold text-dark">@(Model.Profile.Gender == "Male" ? "Male" : Model.Profile.Gender == "Female" ? "Female" : Model.Profile.Gender ?? "-")</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.Gender == "Male" ? "Male" : Model.DoctorProfile?.Gender == "Female" ? "Female" : Model.DoctorProfile?.Gender ?? "-")</div>
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted small mb-1">Date of Birth</div>
-                            <div class="fw-semibold text-dark">@(Model.Profile.DateOfBirth?.ToString("MM/dd/yyyy") ?? "-")</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.DateOfBirth?.ToString("MM/dd/yyyy") ?? "-")</div>
                         </div>
                         <div class="col-12">
                             <div class="text-muted small mb-1">Address</div>
-                            <div class="fw-semibold text-dark">@(Model.Profile.Address ?? "-")</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.Address ?? "-")</div>
                         </div>
                     </div>
 
@@ -130,6 +130,36 @@
                                 }
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Highest Academic Degree / Education</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.Education ?? "-")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Professional Background</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.CareerBackground ?? "-")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Consultation Fee (VND)</div>
+                            <div class="fw-semibold text-dark">@((Model.DoctorProfile?.ConsultationFee ?? 0).ToString("N0")) ₫</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Languages</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.Languages ?? "-")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">Consultation Types</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.ConsultationTypes ?? "-")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">License Number</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.LicenseNumber ?? "-")</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="text-muted small mb-1">Care Approach / Strengths</div>
+                            <div class="p-3 bg-light rounded-3 text-dark small" style="white-space: pre-line; line-height: 1.6;">
+                                @(Model.DoctorProfile?.CareApproach ?? "-")
+                            </div>
+                        </div>
                         <div class="col-12">
                             <div class="text-muted small mb-1">About Me</div>
                             <div class="p-3 bg-light rounded-3 text-dark small" style="white-space: pre-line; line-height: 1.6;">
@@ -147,8 +177,31 @@ else
     <!-- Edit Mode Form -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-4">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark"><i class="bi bi-person-gear me-2 text-primary"></i>Personal Information</h5>
+
+                <!-- Avatar Upload -->
+                <div class="mb-4">
+                    <label class="form-label fw-medium small">Profile Avatar</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle border p-1 bg-white shadow-sm" style="width: 80px; height: 80px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                            {
+                                <img id="avatar-preview" src="@Model.Profile.AvatarUrl" class="rounded-circle" style="width:100%; height:100%; object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <img id="avatar-preview" src="" class="rounded-circle" style="width:100%; height:100%; object-fit:cover; display:none;" />
+                                <i id="avatar-placeholder" class="bi bi-person-fill text-muted" style="font-size: 3rem;"></i>
+                            }
+                        </div>
+                        <div>
+                            <input type="file" asp-for="AvatarFile" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp" onchange="previewAvatar(this)" />
+                            <div class="form-text small">JPG, PNG, WEBP (max 2MB)</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">Full Name <span class="text-danger">*</span></label>
@@ -160,7 +213,7 @@ else
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">Gender</label>
-                        <select asp-for="Input.Gender" class="form-select">
+                        <select asp-for="DoctorInput.Gender" class="form-select">
                             <option value="">-- Select Gender --</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -169,11 +222,11 @@ else
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">Date of Birth</label>
-                        <input type="date" asp-for="Input.DateOfBirth" class="form-control" />
+                        <input type="date" asp-for="DoctorInput.DateOfBirth" class="form-control" value='@(Model.DoctorInput.DateOfBirth?.ToString("yyyy-MM-dd"))' />
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-medium small">Address</label>
-                        <input asp-for="Input.Address" class="form-control" placeholder="Enter address" />
+                        <input asp-for="DoctorInput.Address" class="form-control" placeholder="Enter address" />
                     </div>
                 </div>
 
@@ -204,6 +257,34 @@ else
                         </div>
                     </div>
 
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">Highest Academic Degree / Education</label>
+                        <input asp-for="DoctorInput.Education" class="form-control" placeholder="e.g. Master of Psychology" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">Consultation Fee (VND) <span class="text-danger">*</span></label>
+                        <input type="number" asp-for="DoctorInput.ConsultationFee" class="form-control" min="0" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">Spoken Languages</label>
+                        <input asp-for="DoctorInput.Languages" class="form-control" placeholder="e.g. English, Vietnamese" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">Consultation Types</label>
+                        <input asp-for="DoctorInput.ConsultationTypes" class="form-control" placeholder="e.g. Online, In-person" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">License Number</label>
+                        <input asp-for="DoctorInput.LicenseNumber" class="form-control" placeholder="e.g. 123456789" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-medium small">Professional Background / Career History</label>
+                        <textarea asp-for="DoctorInput.CareerBackground" class="form-control" rows="3" placeholder="Describe your career history..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-medium small">Care Approach / Strengths</label>
+                        <textarea asp-for="DoctorInput.CareApproach" class="form-control" rows="3" placeholder="Describe your therapeutic approaches..."></textarea>
+                    </div>
                     <div class="col-12">
                         <label class="form-label fw-medium small">About Me <span class="text-danger">*</span></label>
                         <textarea asp-for="DoctorInput.Biography" class="form-control" rows="6" placeholder="Write a brief introduction about your experience, orientation work and professional therapy..." required></textarea>
@@ -224,4 +305,22 @@ else
             </form>
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+    function previewAvatar(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var preview = document.getElementById('avatar-preview');
+                var placeholder = document.getElementById('avatar-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
 }

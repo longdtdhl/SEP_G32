@@ -88,7 +88,19 @@ public class DoctorService : IDoctorService
                 IsVisible = d.IsVisible,
                 AverageRating = d.AverageRating,
                 ReviewCount = d.ReviewCount,
-                Specializations = specNames
+                Specializations = specNames,
+                Gender = d.Gender?.ToString(),
+                DateOfBirth = d.DateOfBirth,
+                Address = d.Address,
+                Education = d.Education,
+                CareerBackground = d.CareerBackground,
+                ConsultationFee = d.ConsultationFee,
+                CareApproach = d.CareApproach,
+                Languages = d.Languages,
+                ConsultationTypes = d.ConsultationTypes,
+                LicenseNumber = d.LicenseNumber,
+                Email = user?.Email,
+                PhoneNumber = user?.PhoneNumber
             };
         }).ToList();
 
@@ -153,7 +165,19 @@ public class DoctorService : IDoctorService
             IsVisible = d.IsVisible,
             AverageRating = d.AverageRating,
             ReviewCount = d.ReviewCount,
-            Specializations = specializations ?? new List<string>()
+            Specializations = specializations ?? new List<string>(),
+            Gender = d.Gender?.ToString(),
+            DateOfBirth = d.DateOfBirth,
+            Address = d.Address,
+            Education = d.Education,
+            CareerBackground = d.CareerBackground,
+            ConsultationFee = d.ConsultationFee,
+            CareApproach = d.CareApproach,
+            Languages = d.Languages,
+            ConsultationTypes = d.ConsultationTypes,
+            LicenseNumber = d.LicenseNumber,
+            Email = user?.Email,
+            PhoneNumber = user?.PhoneNumber
         };
     }
 
@@ -172,12 +196,75 @@ public class DoctorService : IDoctorService
             doctor.ExperienceYears = dto.ExperienceYears.Value;
         if (dto.IsVisible.HasValue)
             doctor.IsVisible = dto.IsVisible.Value;
+        if (!string.IsNullOrEmpty(dto.Gender))
+        {
+            if (Enum.TryParse<Gender>(dto.Gender, true, out var g))
+                doctor.Gender = g;
+        }
+        else
+        {
+            doctor.Gender = null;
+        }
+        if (dto.DateOfBirth.HasValue)
+            doctor.DateOfBirth = dto.DateOfBirth.Value;
+        if (dto.Address != null)
+            doctor.Address = dto.Address;
+        if (dto.Education != null)
+            doctor.Education = dto.Education;
+        if (dto.CareerBackground != null)
+            doctor.CareerBackground = dto.CareerBackground;
+        if (dto.ConsultationFee.HasValue)
+            doctor.ConsultationFee = dto.ConsultationFee.Value;
+        if (dto.CareApproach != null)
+            doctor.CareApproach = dto.CareApproach;
+        if (dto.Languages != null)
+            doctor.Languages = dto.Languages;
+        if (dto.ConsultationTypes != null)
+            doctor.ConsultationTypes = dto.ConsultationTypes;
+        if (dto.LicenseNumber != null)
+            doctor.LicenseNumber = dto.LicenseNumber;
+
+        // Update specializations
+        if (dto.SpecializationIds != null)
+        {
+            var existingSpecs = (await _doctorSpecRepo.GetAllAsync(ct))
+                .Where(ds => ds.DoctorProfileId == doctor.Id)
+                .ToList();
+
+            // Remove specializations that are no longer selected
+            foreach (var spec in existingSpecs)
+            {
+                if (!dto.SpecializationIds.Contains(spec.SpecializationId))
+                {
+                    _doctorSpecRepo.Delete(spec);
+                }
+            }
+
+            // Add new specializations
+            var existingIds = existingSpecs.Select(ds => ds.SpecializationId).ToHashSet();
+            foreach (var specId in dto.SpecializationIds)
+            {
+                if (!existingIds.Contains(specId))
+                {
+                    await _doctorSpecRepo.AddAsync(new DoctorSpecialization
+                    {
+                        DoctorProfileId = doctor.Id,
+                        SpecializationId = specId,
+                        DoctorProfile = null!,
+                        Specialization = null!
+                    }, ct);
+                }
+            }
+        }
 
         doctor.UpdatedAt = DateTime.UtcNow;
         _doctorRepo.Update(doctor);
         await _uow.SaveChangesAsync(ct);
 
-        var result = _mapper.Map<DoctorProfileDto>(doctor);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == userId);
+        var specNames = await GetSpecNamesForDoctor(doctor.Id, ct);
+        var result = BuildDoctorDto(doctor, user, specNames);
         return ApiResponse<DoctorProfileDto>.SuccessResponse(result, "Profile updated successfully");
     }
 }
@@ -197,6 +284,9 @@ public class AppointmentService : IAppointmentService
     private readonly IEmailService _emailService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IRepository<PsychometricSubmission>? _psychRepo;
+    private readonly IRepository<TreatmentCase>? _treatmentCaseRepo;
+    private readonly IRepository<PatientRecord>? _patientRecordRepo;
 
     public AppointmentService(
         IRepository<Appointment> apptRepo,
@@ -211,7 +301,10 @@ public class AppointmentService : IAppointmentService
         INotificationService notificationService,
         IEmailService emailService,
         IUnitOfWork uow,
-        IMapper mapper)
+        IMapper mapper,
+        IRepository<PsychometricSubmission>? psychRepo = null,
+        IRepository<TreatmentCase>? treatmentCaseRepo = null,
+        IRepository<PatientRecord>? patientRecordRepo = null)
     {
         _apptRepo = apptRepo;
         _slotRepo = slotRepo;
@@ -226,6 +319,9 @@ public class AppointmentService : IAppointmentService
         _emailService = emailService;
         _uow = uow;
         _mapper = mapper;
+        _psychRepo = psychRepo;
+        _treatmentCaseRepo = treatmentCaseRepo;
+        _patientRecordRepo = patientRecordRepo;
     }
 
     public async Task<ApiResponse<AppointmentDto>> CreateAppointmentAsync(CreateAppointmentDto dto, Guid? patientUserId, CancellationToken ct = default)
@@ -521,8 +617,7 @@ public class AppointmentService : IAppointmentService
 
                 var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
                 dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
-                                    (slotDateTime - DateTime.UtcNow).TotalHours >= 24 &&
-                                    appt.Status != AppointmentStatus.RescheduleRequested;
+                                    slotDateTime > DateTime.Now;
             }
 
             dto.ProposedSlotId = appt.ProposedSlotId;
@@ -591,8 +686,7 @@ public class AppointmentService : IAppointmentService
 
             var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
             dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
-                                (slotDateTime - DateTime.UtcNow).TotalHours >= 24 &&
-                                appt.Status != AppointmentStatus.RescheduleRequested;
+                                slotDateTime > DateTime.Now;
         }
 
         dto.ProposedSlotId = appt.ProposedSlotId;
@@ -629,15 +723,31 @@ public class AppointmentService : IAppointmentService
         dto.CancellationReason = appt.CancellationReason;
     }
 
-    public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default)
+    public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, string? view = null, CancellationToken ct = default)
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == userId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
         if (patient == null)
             return ApiResponse<List<AppointmentListItemDto>>.ErrorResponse("Patient profile not found");
 
         var allAppts = await _apptRepo.GetAllAsync(ct);
-        var myAppts = allAppts.Where(a => a.PatientId == patient.Id && !a.IsDeleted).ToList();
+        var myAppts = allAppts.Where(a => (a.PatientId == patient.Id || a.PatientId == patient.UserId || a.PatientId == userId) && !a.IsDeleted).ToList();
+
+        if (!string.IsNullOrEmpty(view))
+        {
+            if (view.Equals("active", StringComparison.OrdinalIgnoreCase))
+            {
+                myAppts = myAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
+            }
+            else if (view.Equals("history", StringComparison.OrdinalIgnoreCase))
+            {
+                myAppts = myAppts.Where(a => AppointmentStatusHelper.IsHistory(a.Status)).ToList();
+            }
+        }
+        else if (string.IsNullOrEmpty(status))
+        {
+            myAppts = myAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
+        }
 
         if (!string.IsNullOrEmpty(status))
         {
@@ -1080,15 +1190,32 @@ public class AppointmentService : IAppointmentService
         string? search = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
+        string? view = null,
         CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
         if (doctor == null)
             return ApiResponse<List<AppointmentListItemDto>>.ErrorResponse("Doctor profile not found");
 
         var allAppts = await _apptRepo.GetAllAsync(ct);
-        var doctorAppts = allAppts.Where(a => a.DoctorId == doctor.Id && !a.IsDeleted).ToList();
+        var doctorAppts = allAppts.Where(a => (a.DoctorId == doctor.Id || a.DoctorId == doctor.UserId || a.DoctorId == doctorUserId) && !a.IsDeleted).ToList();
+
+        if (!string.IsNullOrEmpty(view))
+        {
+            if (view.Equals("active", StringComparison.OrdinalIgnoreCase))
+            {
+                doctorAppts = doctorAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
+            }
+            else if (view.Equals("history", StringComparison.OrdinalIgnoreCase))
+            {
+                doctorAppts = doctorAppts.Where(a => AppointmentStatusHelper.IsHistory(a.Status)).ToList();
+            }
+        }
+        else if (string.IsNullOrEmpty(status))
+        {
+            doctorAppts = doctorAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
+        }
 
         // 1. Status Filter
         if (!string.IsNullOrEmpty(status))
@@ -1461,6 +1588,210 @@ public class AppointmentService : IAppointmentService
 
         return ApiResponse<bool>.SuccessResponse(isReturning);
     }
+
+    public async Task<ApiResponse<AppointmentClinicalContextDto>> GetClinicalContextAsync(Guid appointmentId, Guid requestingUserId, CancellationToken ct = default)
+    {
+        var appt = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appt == null)
+            return ApiResponse<AppointmentClinicalContextDto>.ErrorResponse("Appointment not found");
+
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var requestingUser = allUsers.FirstOrDefault(u => u.Id == requestingUserId);
+
+        // Authorization check: doctor assigned to appt, patient assigned to appt, or staff/admin
+        var isAssignedDoctor = false;
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == appt.DoctorId || d.UserId == appt.DoctorId);
+        if (doctor != null && (doctor.UserId == requestingUserId || doctor.Id == requestingUserId))
+        {
+            isAssignedDoctor = true;
+        }
+
+        var isPatient = false;
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = appt.PatientId.HasValue ? allPatients.FirstOrDefault(p => p.Id == appt.PatientId.Value || p.UserId == appt.PatientId.Value) : null;
+        if (patient == null && appt.PatientId.HasValue)
+        {
+            patient = allPatients.FirstOrDefault(p => p.UserId == appt.PatientId.Value || p.Id == appt.PatientId.Value);
+        }
+
+        if (patient != null && patient.UserId == requestingUserId)
+        {
+            isPatient = true;
+        }
+
+        var isStaffOrAdmin = requestingUser != null && (requestingUser.Role?.Name == RoleConstants.SystemAdmin || requestingUser.Role?.Name == RoleConstants.CustomerSupport || requestingUser.Role?.Name == RoleConstants.BusinessManager);
+
+        if (!isAssignedDoctor && !isPatient && !isStaffOrAdmin)
+        {
+            return ApiResponse<AppointmentClinicalContextDto>.ErrorResponse("Unauthorized access to patient clinical context.");
+        }
+
+        var result = new AppointmentClinicalContextDto();
+
+        // 1. Fetch recent consultation records (excluding current appointment's note)
+        if (patient != null)
+        {
+            var allNotes = await _consultationNoteRepo.GetAllAsync(ct);
+            var allPatientRecords = _patientRecordRepo != null ? await _patientRecordRepo.GetAllAsync(ct) : new List<PatientRecord>();
+            var pRecord = allPatientRecords.FirstOrDefault(pr => pr.PatientId == patient.Id);
+            var pRecordId = pRecord?.Id;
+
+            var patientNotes = allNotes.Where(n => !n.IsDeleted &&
+                ((pRecordId.HasValue && n.PatientRecordId == pRecordId.Value) ||
+                 (n.Appointment != null && n.Appointment.PatientId == patient.Id) ||
+                 (n.AppointmentId.HasValue && n.AppointmentId != appointmentId)) &&
+                n.AppointmentId != appointmentId)
+                .OrderByDescending(n => n.ConsultationDate ?? n.CreatedAt)
+                .Take(3)
+                .ToList();
+
+            var docUsers = allDoctors.Join(allUsers, d => d.UserId, u => u.Id, (d, u) => new { DoctorProfileId = d.Id, FullName = u.FullName }).ToList();
+
+            result.RecentConsultations = patientNotes.Select(n => new RecentConsultationDto
+            {
+                Id = n.Id,
+                AppointmentId = n.AppointmentId,
+                ConsultationDate = n.ConsultationDate ?? n.CreatedAt,
+                DoctorName = docUsers.FirstOrDefault(d => d.DoctorProfileId == n.DoctorId)?.FullName ?? "Doctor",
+                Diagnosis = n.Diagnosis,
+                ConsultationSummary = n.ConsultationSummary,
+                Recommendation = n.Recommendation,
+                TherapyPlan = n.TherapyPlan
+            }).ToList();
+        }
+
+        // 2. Fetch Psychometric Assessments (Current Appointment + Top 3 recent history)
+        if (_psychRepo != null && patient != null)
+        {
+            var allSubmissions = await _psychRepo.GetAllAsync(ct);
+            var patientSubs = allSubmissions.Where(s => !s.IsDeleted && (s.PatientId == patient.Id || (s.Patient != null && s.Patient.UserId == patient.UserId))).ToList();
+
+            var currentSub = patientSubs.FirstOrDefault(s => s.AppointmentId == appointmentId);
+            if (currentSub != null)
+            {
+                result.CurrentAssessment = new RecentAssessmentResultDto
+                {
+                    Id = currentSub.Id,
+                    AppointmentId = currentSub.AppointmentId,
+                    TestTitle = currentSub.Test?.Title ?? "Psychometric Screening",
+                    TestType = currentSub.Test?.TestType,
+                    SubmittedAt = currentSub.CreatedAt,
+                    TotalScore = currentSub.TotalScore,
+                    Interpretation = currentSub.Interpretation,
+                    ScoreDataJson = currentSub.ScoreDataJson
+                };
+            }
+
+            var recentSubs = patientSubs
+                .Where(s => currentSub == null || s.Id != currentSub.Id)
+                .OrderByDescending(s => s.CreatedAt)
+                .Take(3)
+                .Select(s => new RecentAssessmentResultDto
+                {
+                    Id = s.Id,
+                    AppointmentId = s.AppointmentId,
+                    TestTitle = s.Test?.Title ?? "Psychometric Screening",
+                    TestType = s.Test?.TestType,
+                    SubmittedAt = s.CreatedAt,
+                    TotalScore = s.TotalScore,
+                    Interpretation = s.Interpretation,
+                    ScoreDataJson = s.ScoreDataJson
+                })
+                .ToList();
+
+            result.RecentAssessments = recentSubs;
+        }
+
+        // 3. Treatment Case Progress Context
+        if (_treatmentCaseRepo != null && patient != null)
+        {
+            var allCases = await _treatmentCaseRepo.GetAllAsync(ct);
+            TreatmentCase? tCase = null;
+
+            if (appt.TreatmentCaseId.HasValue)
+            {
+                tCase = allCases.FirstOrDefault(c => c.Id == appt.TreatmentCaseId.Value && !c.IsDeleted);
+            }
+
+            if (tCase == null)
+            {
+                tCase = allCases.Where(c => !c.IsDeleted && (c.PatientId == patient.Id || c.PatientId == patient.UserId) && c.Status == TreatmentCaseStatus.Active)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .FirstOrDefault();
+            }
+
+            if (tCase != null)
+            {
+                var goals = tCase.Goals != null ? tCase.Goals.Where(g => !g.IsDeleted).ToList() : new List<TreatmentGoal>();
+                var sessions = tCase.Sessions != null ? tCase.Sessions.Where(s => !s.IsDeleted).ToList() : new List<TreatmentSession>();
+                var assignments = tCase.Assignments != null ? tCase.Assignments.Where(a => !a.IsDeleted).ToList() : new List<TherapyAssignment>();
+                var moods = tCase.MoodEntries != null ? tCase.MoodEntries.Where(m => !m.IsDeleted).OrderByDescending(m => m.RecordedAt).ToList() : new List<MoodEntry>();
+
+                var currentSession = sessions.FirstOrDefault(s => s.AppointmentId == appointmentId);
+                var nextSession = sessions.Where(s => s.Status == TreatmentSessionStatus.Scheduled && s.PlannedStartTime > DateTime.Now).OrderBy(s => s.PlannedStartTime).FirstOrDefault();
+
+                var latestMood = moods.FirstOrDefault();
+                string? moodSummary = latestMood != null
+                    ? $"Overall Mood: {latestMood.MoodScore}/10{(latestMood.AnxietyScore.HasValue ? $", Anxiety: {latestMood.AnxietyScore}/10" : "")}{(latestMood.StressScore.HasValue ? $", Stress: {latestMood.StressScore}/10" : "")}"
+                    : null;
+
+                var activeGoals = goals.Where(g => g.Status != GoalStatus.Achieved && g.Status != GoalStatus.Cancelled)
+                    .OrderByDescending(g => g.Priority)
+                    .ThenByDescending(g => g.UpdatedAt)
+                    .Take(3)
+                    .Select(g => new TreatmentGoalContextDto
+                    {
+                        Id = g.Id,
+                        Title = g.Title,
+                        Category = g.Category.ToString(),
+                        ProgressPercent = g.ProgressPercent,
+                        CurrentValue = g.CurrentValue,
+                        TargetValue = g.TargetValue,
+                        Unit = g.Unit,
+                        Status = g.Status.ToString(),
+                        UpdatedAt = g.UpdatedAt ?? g.CreatedAt
+                    })
+                    .ToList();
+
+                var recentProgress = goals.SelectMany(g => g.ProgressHistory ?? new List<TreatmentGoalProgress>())
+                    .Where(p => !p.IsDeleted)
+                    .OrderByDescending(p => p.RecordedAt)
+                    .Take(3)
+                    .Select(p => new TreatmentGoalProgressContextDto
+                    {
+                        Id = p.Id,
+                        GoalTitle = p.Goal?.Title ?? "Goal Progress",
+                        SessionNumber = p.TreatmentSession?.SessionNumber,
+                        ProgressPercent = p.ProgressPercent,
+                        DoctorComment = p.DoctorComment,
+                        RecordedDate = p.RecordedAt
+                    })
+                    .ToList();
+
+                result.TreatmentCaseContext = new AppointmentTreatmentCaseContextDto
+                {
+                    TreatmentCaseId = tCase.Id,
+                    CaseName = tCase.CaseName,
+                    Status = tCase.Status.ToString(),
+                    CompletedSessions = tCase.CompletedSessions,
+                    TotalSessions = tCase.TotalSessions,
+                    CurrentSessionNumber = currentSession?.SessionNumber ?? (tCase.CompletedSessions + 1),
+                    NextPlannedSessionDate = nextSession?.PlannedStartTime,
+                    OverallProgressPercent = tCase.TotalSessions > 0 ? Math.Round((double)tCase.CompletedSessions / tCase.TotalSessions * 100, 1) : tCase.OverallProgressPercent,
+                    GoalsAchieved = goals.Count(g => g.Status == GoalStatus.Achieved),
+                    TotalGoals = goals.Count,
+                    HomeworkCompleted = assignments.Count(a => a.Status == HomeworkStatus.Submitted || a.Status == HomeworkStatus.Reviewed),
+                    HomeworkAssigned = assignments.Count,
+                    LatestMoodSummary = moodSummary,
+                    ActiveGoals = activeGoals,
+                    RecentGoalProgressHistory = recentProgress
+                };
+            }
+        }
+
+        return ApiResponse<AppointmentClinicalContextDto>.SuccessResponse(result);
+    }
 }
 
 
@@ -1736,7 +2067,7 @@ public class ScheduleService : IScheduleService
     public async Task<ApiResponse<AvailableSlotsDto>> GetDoctorAllSlotsAsync(Guid doctorUserId, DateOnly? date, CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
         if (doctor == null)
             return ApiResponse<AvailableSlotsDto>.ErrorResponse("Doctor not found");
 
@@ -1746,7 +2077,7 @@ public class ScheduleService : IScheduleService
         var allSlots = await _slotRepo.GetAllAsync(ct);
         // Include all slot statuses (Available, Booked, Blocked, etc.)
         var doctorSlots = allSlots
-            .Where(s => s.DoctorProfileId == doctor.Id)
+            .Where(s => (s.DoctorProfileId == doctor.Id || s.DoctorProfileId == doctor.UserId || s.DoctorProfileId == doctorUserId) && !s.IsDeleted)
             .ToList();
 
         if (date.HasValue)

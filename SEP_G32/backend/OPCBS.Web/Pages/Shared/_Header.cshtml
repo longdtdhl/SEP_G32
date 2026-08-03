@@ -1,42 +1,29 @@
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
-@inject OPCBS.Web.Services.IVerificationApiService VerificationService
 
 @{
     var isLoggedIn = JwtService.IsLoggedIn;
     var role = JwtService.GetRole();
-    var fullName = JwtService.GetFullName() ?? "User";
     var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
 
-    var isDoctor = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase);
     var isPatient = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase);
-    var isCS = string.Equals(role, "CustomerSupport", StringComparison.OrdinalIgnoreCase);
-    var isBM = string.Equals(role, "BusinessManager", StringComparison.OrdinalIgnoreCase);
-    var isAdmin = string.Equals(role, "SystemAdmin", StringComparison.OrdinalIgnoreCase);
 
-    var initials = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "U";
-    var roleBadge = isDoctor ? "Doctor" : isPatient ? "Patient" : isCS ? "CS" : isBM ? "BM" : isAdmin ? "Admin" : "";
-
-    // Check doctor verification
-    var isVerified = false;
-    if (isDoctor)
+    // Dashboard URL per role
+    var dashboardUrl = role switch
     {
-        try
-        {
-            var (vData, _) = await VerificationService.GetMyVerificationAsync();
-            if (vData != null && string.Equals(vData.Status, "Approved", StringComparison.OrdinalIgnoreCase))
-            {
-                isVerified = true;
-            }
-        }
-        catch { }
-    }
+        "Doctor" => "/Doctor/Dashboard",
+        "Patient" => "/Patient/Dashboard",
+        "CustomerSupport" => "/CustomerSupport/Dashboard",
+        "BusinessManager" => "/BusinessManager/Dashboard",
+        "SystemAdmin" => "/Admin/Dashboard",
+        _ => "/"
+    };
 }
 
 <nav class="navbar navbar-expand-lg mb-navbar">
     <div class="container">
         <!-- Brand -->
         <a class="navbar-brand d-flex align-items-center" asp-page="/Index">
-            <img src="~/images/logo-cropped.png" alt="OPCBS Logo" style="max-height: 48px; width: auto;" />
+            <img src="~/images/logo-cropped.png" alt="MindBridge Logo" style="max-height: 48px; width: auto;" />
         </a>
 
         <!-- Mobile Toggle -->
@@ -49,171 +36,35 @@
         <!-- Nav Links -->
         <div class="collapse navbar-collapse" id="navbarMain">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                @if (isDoctor)
-                {
-                    <li class="nav-item">
-                        <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")" asp-page="/Blog/Index">Resources</a>
-                    </li>
-                }
-                else
-                {
-                    <li class="nav-item">
-                        <a class="nav-link @(currentPath == "/" ? "active" : "")" asp-page="/Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(currentPath.StartsWith("/doctors") ? "active" : "")" asp-page="/Doctors/Index">Find a Therapist</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")" asp-page="/Blog/Index">Resources</a>
-                    </li>
-                    @if (!isLoggedIn || isPatient)
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")" asp-page="/Appointment/Track">Track Appointment</a>
-                        </li>
-                    }
-                }
+                <li class="nav-item">
+                    <a class="nav-link @(currentPath == "/" ? "active" : "")" asp-page="/Index">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentPath.StartsWith("/doctors") ? "active" : "")" asp-page="/Doctors/Index">Find a Therapist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")" asp-page="/Blog/Index">Resources</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")" asp-page="/Appointment/Track">Track Appointment</a>
+                </li>
             </ul>
 
             <ul class="navbar-nav align-items-lg-center gap-2">
                 @if (isLoggedIn)
                 {
                     <!-- Notification Bell -->
-                    <li class="nav-item dropdown" id="notification-bell-container">
-                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBellBtn">
-                            <i class="bi bi-bell fs-5"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notifBadge" style="font-size:0.6rem;">
-                                0
-                            </span>
+                    <partial name="_NotificationBell" />
+
+                    <!-- Go to Dashboard + simple dropdown -->
+                    <li class="nav-item">
+                        <a class="btn btn-get-started btn-sm" href="@dashboardUrl">
+                            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end shadow-lg p-0" style="min-width:340px;max-height:420px;border-radius:14px;border:1px solid #e5e7eb;" id="notifDropdown">
-                            <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-bottom:1px solid #f0f0f0;">
-                                <h6 class="mb-0 fw-bold" style="color:var(--mb-primary);">
-                                    <i class="bi bi-bell me-1"></i>Notifications
-                                </h6>
-                                <button class="btn btn-sm btn-link text-decoration-none p-0" id="markAllReadBtn" style="font-size:0.8rem;color:var(--mb-primary);">
-                                    Mark all read
-                                </button>
-                            </div>
-                            <div id="notifList" style="max-height:300px;overflow-y:auto;">
-                                <div class="text-center py-4 text-muted" id="notifEmpty">
-                                    <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
-                                    No new notifications
-                                </div>
-                            </div>
-                            <div class="text-center py-2" style="border-top:1px solid #f0f0f0;">
-                                <a href="/Notifications" class="text-decoration-none fw-semibold" style="font-size:0.85rem;color:var(--mb-primary);">
-                                    See all notifications →
-                                </a>
-                            </div>
-                        </div>
                     </li>
 
-                    <!-- Logged-in user dropdown with role context -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:34px;height:34px;background:var(--mb-primary);color:#fff;font-weight:600;font-size:0.8rem;">
-                                @initials
-                            </div>
-                            <span class="d-none d-lg-inline" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@fullName</span>
-                            @if (!string.IsNullOrEmpty(roleBadge))
-                            {
-                                <span class="badge bg-light text-dark" style="font-size:0.65rem;">@roleBadge</span>
-                            }
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:265px;border-radius:14px;border:1px solid #e5e7eb;max-height:85vh;overflow-y:auto;">
-                            <!-- Role-specific portal links -->
-                            @if (isPatient)
-                            {
-                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-person-heart me-1"></i>Patient Portal</h6></li>
-                                <li><a class="dropdown-item @(currentPath == "/patient/dashboard" ? "active" : "")" asp-page="/Patient/Dashboard"><i class="bi bi-house me-2"></i>Dashboard</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/appointments") ? "active" : "")" asp-page="/Patient/Appointments/Index"><i class="bi bi-calendar-check me-2"></i>My Appointments</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index"><i class="bi bi-file-medical me-2"></i>Consultation Records</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index"><i class="bi bi-box-seam me-2"></i>Treatment Packages</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index"><i class="bi bi-heart-pulse me-2"></i>Treatment Cases</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index"><i class="bi bi-journal-heart me-2"></i>Mood Journal</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest"><i class="bi bi-clipboard2-pulse me-2"></i>Psychometric Tests</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/favorites") ? "active" : "")" asp-page="/Patient/Favorites/Index"><i class="bi bi-heart me-2"></i>Favorite Doctors</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/patient/messages") ? "active" : "")" asp-page="/Patient/Messages/Index"><i class="bi bi-chat-dots me-2"></i>Messages</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index"><i class="bi bi-bell me-2"></i>Notifications</a></li>
-                            }
-                            else if (isDoctor)
-                            {
-                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-heart-pulse me-1"></i>Doctor Portal</h6></li>
-                                <li><a class="dropdown-item @(currentPath == "/doctor/dashboard" ? "active" : "")" asp-page="/Doctor/Dashboard"><i class="bi bi-house me-2"></i>Dashboard</a></li>
-                                @if (isVerified)
-                                {
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/appointments") ? "active" : "")" asp-page="/Doctor/Appointments/Index"><i class="bi bi-calendar-check me-2"></i>Appointments</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index"><i class="bi bi-clock me-2"></i>Schedules</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/patients") ? "active" : "")" asp-page="/Doctor/Patients/Index"><i class="bi bi-person-lines-fill me-2"></i>Patient Records</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/consultationnotes") ? "active" : "")" asp-page="/Doctor/ConsultationNotes/Index"><i class="bi bi-file-medical me-2"></i>Consultation Notes</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index"><i class="bi bi-box-seam me-2"></i>Treatment Packages</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index"><i class="bi bi-heart-pulse me-2"></i>Treatment Cases</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index"><i class="bi bi-journal-text me-2"></i>Blog Posts</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index"><i class="bi bi-gem me-2"></i>Service Packages</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status"><i class="bi bi-credit-card me-2"></i>Subscription Status</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/doctor/messages") ? "active" : "")" asp-page="/Doctor/Messages/Index"><i class="bi bi-chat-dots me-2"></i>Messages</a></li>
-                                    <li><a class="dropdown-item @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index"><i class="bi bi-bell me-2"></i>Notifications</a></li>
-                                }
-                                else
-                                {
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-calendar-check me-2"></i>Appointments <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-clock me-2"></i>Schedules <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-person-lines-fill me-2"></i>Patient Records <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-file-medical me-2"></i>Consultation Notes <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-box-seam me-2"></i>Treatment Packages <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                    <li><span class="dropdown-item text-muted disabled" title="Verification required"><i class="bi bi-journal-text me-2"></i>Blog Posts <i class="bi bi-lock-fill float-end" style="font-size:0.7rem;"></i></span></li>
-                                }
-                                <li>
-                                    <a class="dropdown-item @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/Verification">
-                                        <i class="bi bi-patch-check me-2"></i>Identity Verification
-                                        @if (!isVerified)
-                                        {
-                                            <span class="badge bg-warning text-dark float-end" style="font-size:0.6rem;">Pending</span>
-                                        }
-                                    </a>
-                                </li>
-                                <li><a class="dropdown-item @(currentPath == "/doctor/profile" ? "active" : "")" asp-page="/Doctor/Profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                            }
-                            else if (isCS)
-                            {
-                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-headset me-1"></i>CS Portal</h6></li>
-                                <li><a class="dropdown-item @(currentPath == "/customersupport/dashboard" ? "active" : "")" asp-page="/CustomerSupport/Dashboard"><i class="bi bi-house me-2"></i>Dashboard</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/customersupport/doctorapplications") ? "active" : "")" asp-page="/CustomerSupport/DoctorApplications/Index"><i class="bi bi-person-check me-2"></i>Doctor Applications</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/customersupport/blogmoderation") ? "active" : "")" asp-page="/CustomerSupport/BlogModeration/Index"><i class="bi bi-journal-check me-2"></i>Blog Moderation</a></li>
-                            }
-                            else if (isBM)
-                            {
-                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-briefcase me-1"></i>Business Portal</h6></li>
-                                <li><a class="dropdown-item @(currentPath == "/businessmanager/dashboard" ? "active" : "")" asp-page="/BusinessManager/Dashboard"><i class="bi bi-house me-2"></i>Dashboard</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/businessmanager/servicepackages") ? "active" : "")" asp-page="/BusinessManager/ServicePackages/Index"><i class="bi bi-gem me-2"></i>Packages</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/businessmanager/specializations") ? "active" : "")" asp-page="/BusinessManager/Specializations/Index"><i class="bi bi-tags me-2"></i>Specializations</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/businessmanager/analytics") ? "active" : "")" asp-page="/BusinessManager/Analytics"><i class="bi bi-graph-up me-2"></i>Analytics</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/businessmanager/reports") ? "active" : "")" asp-page="/BusinessManager/Reports"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a></li>
-                            }
-                            else if (isAdmin)
-                            {
-                                <li><h6 class="dropdown-header" style="color:var(--mb-primary);"><i class="bi bi-shield-lock me-1"></i>Admin Portal</h6></li>
-                                <li><a class="dropdown-item @(currentPath == "/admin/dashboard" ? "active" : "")" asp-page="/Admin/Dashboard"><i class="bi bi-house me-2"></i>Dashboard</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/users") ? "active" : "")" asp-page="/Admin/Users/Index"><i class="bi bi-people me-2"></i>Users</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/roles") ? "active" : "")" asp-page="/Admin/Roles/Index"><i class="bi bi-shield-check me-2"></i>Roles</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/permissions") ? "active" : "")" asp-page="/Admin/Permissions/Index"><i class="bi bi-key me-2"></i>Permissions</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index"><i class="bi bi-journal-text me-2"></i>Audit Logs</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a></li>
-                                <li><a class="dropdown-item @(currentPath.StartsWith("/admin/settings") ? "active" : "")" asp-page="/Admin/Settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
-                            }
-
-                            <li><hr class="dropdown-divider" /></li>
-                            <li><a class="dropdown-item" asp-page="/Account/Profile"><i class="bi bi-person me-2"></i>Profile</a></li>
-                            <li><a class="dropdown-item" asp-page="/Account/ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
-                            <li><hr class="dropdown-divider" /></li>
-                            <li>
-                                <form method="post" asp-page="/Account/Logout">
-                                    <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
+                    <!-- User Dropdown (simplified) -->
+                    <partial name="_UserDropdown" />
                 }
                 else
                 {

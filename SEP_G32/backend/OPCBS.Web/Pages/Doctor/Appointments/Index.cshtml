@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.Appointments.IndexModel
 @{
     ViewData["Title"] = "Appointment Management";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 <style>
     .stat-card {
@@ -100,10 +100,15 @@
     .action-btn:hover { transform: scale(1.1); }
 </style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div>
         <h1 class="mb-1">Appointment Management</h1>
-        <p class="text-muted mb-0 small">Manage and track all your patient appointments</p>
+        <p class="text-muted mb-0 small">Manage active and pending patient appointments</p>
+    </div>
+    <div>
+        <a asp-page="History" class="btn btn-outline-secondary btn-sm px-3 py-2" style="border-radius:10px; font-weight:600; font-size:0.85rem;">
+            <i class="bi bi-clock-history me-1"></i>Appointment History
+        </a>
     </div>
 </div>
 
@@ -115,7 +120,6 @@
     </div>
 }
 
-
 <!-- Filters -->
 <div class="card filter-section shadow-sm mb-4">
     <div class="card-body py-3">
@@ -123,12 +127,11 @@
             <div class="col-md-2">
                 <label class="form-label small fw-semibold text-muted">Status</label>
                 <select asp-for="Status" class="form-select form-select-sm">
-                    <option value="">All Statuses</option>
-                    <option value="Pending">Pending</option>
+                    <option value="">All Active Statuses</option>
+                    <option value="Pending">Pending Approval</option>
                     <option value="Approved">Approved</option>
+                    <option value="InProgress">In Progress</option>
                     <option value="RescheduleRequested">Reschedule Requested</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
                 </select>
             </div>
             <div class="col-md-3">

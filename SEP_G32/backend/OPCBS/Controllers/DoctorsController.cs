@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.DTOs.Auth;
+using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
 using OPCBS.Domain.Constants;
+using OPCBS.Domain.Entities;
 using OPCBS.Shared.Models;
 
 namespace OPCBS.Controllers;
@@ -92,10 +94,20 @@ public class DoctorsController : ControllerBase
 public class DoctorProfileController : ControllerBase
 {
     private readonly IDoctorService _doctorService;
+    private readonly IFileStorageService _fileStorage;
+    private readonly IRepository<User> _userRepo;
+    private readonly IUnitOfWork _uow;
 
-    public DoctorProfileController(IDoctorService doctorService)
+    public DoctorProfileController(
+        IDoctorService doctorService,
+        IFileStorageService fileStorage,
+        IRepository<User> userRepo,
+        IUnitOfWork uow)
     {
         _doctorService = doctorService;
+        _fileStorage = fileStorage;
+        _userRepo = userRepo;
+        _uow = uow;
     }
 
     /// <summary>GET /api/v1/doctor-profile - Get own profile</summary>
@@ -118,20 +130,67 @@ public class DoctorProfileController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>POST /api/v1/doctor-profile/avatar - Upload avatar (stub - returns upload URL pattern)</summary>
+    /// <summary>POST /api/v1/doctor-profile/avatar - Upload avatar image</summary>
     [HttpPost("avatar")]
-    public IActionResult UploadAvatar()
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
-        // TODO: integrate Cloudinary file upload
-        return BadRequest(ApiResponse.ErrorResponse("File upload requires Cloudinary configuration."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse.ErrorResponse("No file provided."));
+
+        // Validate image type
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(ApiResponse.ErrorResponse("Invalid file type. Only JPG, JPEG, PNG, WEBP images are allowed."));
+
+        // Max 2MB
+        if (file.Length > 2 * 1024 * 1024)
+            return BadRequest(ApiResponse.ErrorResponse("File size exceeds the maximum limit of 2MB."));
+
+        using var stream = file.OpenReadStream();
+        var url = await _fileStorage.UploadAsync(stream, file.FileName, "avatars");
+
+        // Update User.AvatarUrl in DB
+        var users = await _userRepo.GetAllAsync();
+        var user = users.FirstOrDefault(u => u.Id == userId.Value);
+        if (user == null)
+            return NotFound(ApiResponse.ErrorResponse("User not found."));
+
+        user.AvatarUrl = url;
+        await _uow.SaveChangesAsync();
+
+        return Ok(ApiResponse<object>.SuccessResponse(new { avatarUrl = url }, "Avatar uploaded successfully."));
     }
 
-    /// <summary>POST /api/v1/doctor-profile/certificates - Upload certificates (stub)</summary>
+    /// <summary>POST /api/v1/doctor-profile/certificates - Upload certificate file</summary>
     [HttpPost("certificates")]
-    public IActionResult UploadCertificates()
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadCertificates(IFormFile file)
     {
-        // TODO: integrate Cloudinary file upload
-        return BadRequest(ApiResponse.ErrorResponse("File upload requires Cloudinary configuration."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse.ErrorResponse("No file provided."));
+
+        // Validate file type
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(ApiResponse.ErrorResponse("Invalid file type. Only JPG, JPEG, PNG, WEBP, and PDF files are allowed."));
+
+        // Max 5MB
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(ApiResponse.ErrorResponse("File size exceeds the maximum limit of 5MB."));
+
+        using var stream = file.OpenReadStream();
+        var url = await _fileStorage.UploadAsync(stream, file.FileName, "verifications");
+
+        return Ok(ApiResponse<object>.SuccessResponse(new { certificateUrl = url }, "Certificate uploaded successfully."));
     }
 
     private Guid? GetUserId()
@@ -140,3 +199,4 @@ public class DoctorProfileController : ControllerBase
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
 }
+

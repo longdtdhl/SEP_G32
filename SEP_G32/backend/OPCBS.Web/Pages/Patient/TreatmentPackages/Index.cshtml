@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.IndexModel
 @{
     ViewData["Title"] = "My Treatment Packages";
-    ViewData["UseDashboardLayout"] = true;
-    // Filter out cancelled and rejected packages
+    
+    Layout = "_DashboardLayout";// Filter out cancelled and rejected packages
     var visiblePackages = Model.Packages.Where(p => p.Status != "Cancelled" && p.Status != "Rejected").ToList();
     var activePkgs = visiblePackages.Count(p => p.Status == "Active");
     var totalSessions = visiblePackages.Sum(p => p.TotalSessions);

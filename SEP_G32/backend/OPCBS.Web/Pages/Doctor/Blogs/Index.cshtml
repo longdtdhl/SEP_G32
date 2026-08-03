@@ -1,6 +1,7 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Blogs.IndexModel
-@{ ViewData["Title"] = "My Blog Posts"; ViewData["UseDashboardLayout"] = true; }
+@{ ViewData["Title"] = "My Blog Posts"; 
+    Layout = "_DashboardLayout";}
 
 <style>
     .blog-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }

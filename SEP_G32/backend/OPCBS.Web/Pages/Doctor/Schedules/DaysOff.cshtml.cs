@@ -24,7 +24,7 @@ public class DaysOffModel : PageModel
     {
         if (Input.StartDate.Date < DateTime.Today)
         {
-            TempData["Error"] = "Unable to chọn ngày nghỉ trong quá khứ.";
+            TempData["Error"] = "Cannot select days off in the past.";
             return RedirectToPage();
         }
         if (Input.EndDate == default) Input.EndDate = Input.StartDate;

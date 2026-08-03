@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.IndexModel
 @{
     ViewData["Title"] = "Consultation Records";
-    ViewData["UseDashboardLayout"] = true;
-    var groupedByPatient = Model.Records.GroupBy(r => r.DisplayPatientName).ToList();
+    
+    Layout = "_DashboardLayout";var groupedByPatient = Model.Records.GroupBy(r => r.DisplayPatientName).ToList();
     int totalRecords = Model.Records.Count;
     int totalPatients = groupedByPatient.Count;
     var latestRecord = Model.Records.OrderByDescending(r => r.ConsultationDate).FirstOrDefault();

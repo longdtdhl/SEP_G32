@@ -248,6 +248,33 @@ public class DoctorProfile : BaseEntity
     /// <summary>Average rating from patient reviews</summary>
     public decimal AverageRating { get; set; } = 0;
 
+    /// <summary>Doctor's Gender</summary>
+    public Gender? Gender { get; set; }
+
+    /// <summary>Doctor's Date of Birth</summary>
+    public DateTime? DateOfBirth { get; set; }
+
+    /// <summary>Doctor's Address</summary>
+    public string? Address { get; set; }
+
+    /// <summary>Highest Academic Degree / Education</summary>
+    public string? Education { get; set; }
+
+    /// <summary>Professional Background / Career History</summary>
+    public string? CareerBackground { get; set; }
+
+    /// <summary>Consultation Fee</summary>
+    public decimal ConsultationFee { get; set; } = 0;
+
+    /// <summary>Care Approach / Strengths</summary>
+    public string? CareApproach { get; set; }
+
+    /// <summary>Spoken Languages (e.g., "English, Vietnamese")</summary>
+    public string? Languages { get; set; }
+
+    /// <summary>Consultation Types (e.g., "Online, In-person")</summary>
+    public string? ConsultationTypes { get; set; }
+
     /// <summary>Total number of reviews</summary>
     public int ReviewCount { get; set; } = 0;
 

@@ -363,15 +363,23 @@ public class TreatmentPackagesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>GET /api/v1/treatment-packages — Get doctor's packages</summary>
-    [Authorize(Roles = RoleConstants.Doctor)]
+    /// <summary>GET /api/v1/treatment-packages — Get treatment packages</summary>
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetDoctorPackages([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _service.GetByDoctorAsync(userId.Value, page, pageSize);
-        return Ok(result);
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var result = await _service.GetByDoctorAsync(userId.Value, page, pageSize);
+            return Ok(result);
+        }
+        else
+        {
+            var result = await _service.GetByPatientAsync(userId.Value, page, pageSize);
+            return Ok(result);
+        }
     }
 
     /// <summary>PUT /api/v1/treatment-packages/{id} — Update package (Doctor, only unassigned/template packages)</summary>
@@ -426,15 +434,23 @@ public class TreatmentPackagesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>GET /api/v1/treatment-packages/my-packages — Get own packages (Patient)</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
+    /// <summary>GET /api/v1/treatment-packages/my-packages — Get my packages</summary>
+    [Authorize]
     [HttpGet("my-packages")]
     public async Task<IActionResult> GetMyPackages([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _service.GetByPatientAsync(userId.Value, page, pageSize);
-        return Ok(result);
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var result = await _service.GetByDoctorAsync(userId.Value, page, pageSize);
+            return Ok(result);
+        }
+        else
+        {
+            var result = await _service.GetByPatientAsync(userId.Value, page, pageSize);
+            return Ok(result);
+        }
     }
 
     /// <summary>GET /api/v1/treatment-packages/doctor/{doctorId}/patient/{patientId} — Get packages for a specific doctor-patient pair</summary>

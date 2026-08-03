@@ -55,7 +55,7 @@ public class TherapyAssignmentService : ITherapyAssignmentService
             DetailedInstructions = dto.DetailedInstructions,
             ResourceUrl = dto.ResourceUrl,
             DueDate = dto.DueDate,
-            Status = 0,
+            Status = Domain.Enums.HomeworkStatus.Assigned,
             TreatmentPackage = pkg
         };
 
@@ -73,7 +73,7 @@ public class TherapyAssignmentService : ITherapyAssignmentService
         entity.PatientSubmission = dto.PatientSubmission;
         entity.PatientSubmissionUrl = dto.PatientSubmissionUrl;
         entity.SubmittedAt = DateTime.UtcNow;
-        entity.Status = 1;
+        entity.Status = Domain.Enums.HomeworkStatus.Submitted;
         entity.UpdatedAt = DateTime.UtcNow;
         _assignmentRepo.Update(entity);
         await _uow.SaveChangesAsync(ct);
@@ -85,12 +85,12 @@ public class TherapyAssignmentService : ITherapyAssignmentService
         var entity = await _assignmentRepo.GetByIdAsync(id, ct);
         if (entity == null || entity.IsDeleted)
             return ApiResponse<TherapyAssignmentDto>.ErrorResponse("Không tìm thấy bài tập.");
-        if (entity.Status < 1)
+        if (entity.Status == Domain.Enums.HomeworkStatus.Assigned)
             return ApiResponse<TherapyAssignmentDto>.ErrorResponse("Bệnh nhân chưa nộp bài tập.");
 
         entity.DoctorFeedback = dto.DoctorFeedback;
         entity.FeedbackAt = DateTime.UtcNow;
-        entity.Status = 2;
+        entity.Status = Domain.Enums.HomeworkStatus.Reviewed;
         entity.UpdatedAt = DateTime.UtcNow;
         _assignmentRepo.Update(entity);
         await _uow.SaveChangesAsync(ct);
@@ -116,7 +116,7 @@ public class TherapyAssignmentService : ITherapyAssignmentService
         DetailedInstructions = e.DetailedInstructions,
         ResourceUrl = e.ResourceUrl,
         DueDate = e.DueDate,
-        Status = e.Status,
+        Status = (int)e.Status,
         PatientSubmission = e.PatientSubmission,
         PatientSubmissionUrl = e.PatientSubmissionUrl,
         SubmittedAt = e.SubmittedAt,

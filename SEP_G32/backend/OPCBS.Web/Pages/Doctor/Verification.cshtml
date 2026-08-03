@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.VerificationModel
 @{
     ViewData["Title"] = "Doctor Account Verification";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 <div class="mb-page-header">
     <h1><i class="bi bi-shield-check me-2 text-primary"></i>Professional Verification</h1>
@@ -146,9 +146,10 @@
                 var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) 
                            || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) 
                            || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                           || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase);
-                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-                var isLocalUpload = certUrl.StartsWith("/uploads/");
+                           || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)
+                           || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                         || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
                 
                 <hr class="my-4" />
                 <div class="text-muted small mb-2"><i class="bi bi-award me-1"></i>Certificates & Attached Documents</div>
@@ -162,7 +163,7 @@
                                      onclick="window.open(this.src, '_blank')" title="Click to view full size" />
                             </div>
                         }
-                        else if (isPdf && isLocalUpload)
+                        else if (isPdf)
                         {
                             <div class="ratio ratio-16x9 mb-3">
                                 <iframe src="@certUrl" title="Certificate PDF" class="rounded border"></iframe>
@@ -262,21 +263,55 @@ else
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-medium small">Practice Certificate / Related Documents (Upload) <span class="text-danger">*</span></label>
-                    <input type="file" asp-for="UploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required />
-                    <div class="form-text">Supports PDF, JPG, PNG files (max 5MB)</div>
+                    <label class="form-label fw-medium small">Practice Certificate / Related Documents (Upload File)</label>
+                    <input type="file" asp-for="UploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <div class="form-text">Supports PDF, JPG, PNG, WEBP files (max 5MB)</div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Or Attached Certificate Document URL</label>
+                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="e.g.: https://drive.google.com/... or public document link" />
+                    <div class="form-text small text-muted"><i class="bi bi-lightbulb me-1"></i>You can upload a file directly above OR paste a public document link here.</div>
+                </div>
+
+                @if (Model.Verification != null && !string.IsNullOrEmpty(Model.Verification.CertificateUrl))
+                {
+                    var existCertUrl = Model.Verification.CertificateUrl;
+                    var existIsImage = existCertUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                                   || existCertUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                   || existCertUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                                   || existCertUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                                   || existCertUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+                    var existIsPdf = existCertUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                                 || existCertUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
+
+                    <div class="card border bg-light mb-3">
+                        <div class="card-body">
+                            <div class="text-muted small fw-semibold mb-2"><i class="bi bi-paperclip me-1"></i>Currently Submitted Certificate</div>
+                            @if (existIsImage)
+                            {
+                                <div class="text-center mb-2">
+                                    <img src="@existCertUrl" alt="Current Certificate" class="img-fluid rounded border shadow-sm" style="max-height: 200px;" />
+                                </div>
+                            }
+                            else if (existIsPdf)
+                            {
+                                <div class="ratio ratio-16x9 mb-2" style="max-height: 200px;">
+                                    <iframe src="@existCertUrl" title="Current Certificate PDF" class="rounded border"></iframe>
+                                </div>
+                            }
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <a href="@existCertUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View</a>
+                                <a href="@existCertUrl" download class="btn btn-sm btn-outline-secondary"><i class="bi bi-download me-1"></i>Download</a>
+                                <span class="text-muted small ms-2">Upload a new file above to replace this certificate.</span>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="form-label fw-medium small">Professional Summary and Approach</label>
-                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Description summary experience practice, methods therapy chính, the trường phái psyforlogy áp dụng..." required></textarea>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Attached Certificate Document URL</label>
-                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="e.g.: PDF link stored on Drive, Dropbox, Cloud..." required />
-                    <div class="form-text small text-muted"><i class="bi bi-lightbulb me-1"></i>Mẹo: Bạn can tải certificate / CV lên Google Drive (set to viewing public) rồi dán linked here.</div>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Describe your professional experience, therapy methods, and approach..."></textarea>
                 </div>
 
                 <div class="form-check mb-4 mt-3">

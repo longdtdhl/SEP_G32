@@ -1,33 +1,40 @@
 using OPCBS.Domain.Common;
+using OPCBS.Domain.Enums;
 
 namespace OPCBS.Domain.Entities;
 
 /// <summary>
-/// Bài tập trị liệu do Bác sĩ giao cho Bệnh nhân trong một Gói điều trị.
-/// Ví dụ: "Ghi lại 3 suy nghĩ tiêu cực và cách tái cấu trúc", "Thực hành hít thở sâu 5 phút mỗi ngày"
+/// Therapy assignment / homework entity assigned by Doctor within a TreatmentCase session.
+/// Examples: "Record 3 negative thoughts and restructure", "Practice deep breathing 5 min daily"
 /// </summary>
 public class TherapyAssignment : BaseEntity
 {
-    /// <summary>Foreign key to TreatmentPackage</summary>
-    public Guid TreatmentPackageId { get; set; }
+    /// <summary>FK to TreatmentPackage (legacy, kept for backward compat)</summary>
+    public Guid? TreatmentPackageId { get; set; }
 
-    /// <summary>Tiêu đề bài tập</summary>
+    /// <summary>FK to TreatmentCase (required for new assignments)</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
+    /// <summary>FK to TreatmentSession this homework belongs to</summary>
+    public Guid? TreatmentSessionId { get; set; }
+
+    /// <summary>Assignment title</summary>
     public required string Title { get; set; }
 
-    /// <summary>Nội dung yêu cầu / Mô tả bài tập chi tiết</summary>
+    /// <summary>Assignment overview / description</summary>
     public string? Description { get; set; }
 
-    /// <summary>Hướng dẫn chi tiết cách thực hiện bài tập</summary>
+    /// <summary>Detailed instructions for the patient</summary>
     public string? DetailedInstructions { get; set; }
 
-    /// <summary>Đường link tài liệu, file bài tập, video hướng dẫn (URL)</summary>
+    /// <summary>URL to resource, file, video guide</summary>
     public string? ResourceUrl { get; set; }
 
-    /// <summary>Hạn hoàn thành</summary>
+    /// <summary>Due date for submission</summary>
     public DateTime? DueDate { get; set; }
 
-    /// <summary>Trạng thái: 0 = Chưa làm, 1 = Đã nộp bài, 2 = Bác sĩ đã nhận xét</summary>
-    public int Status { get; set; } = 0;
+    /// <summary>Assignment status</summary>
+    public HomeworkStatus Status { get; set; } = HomeworkStatus.Assigned;
 
     /// <summary>Patient's submission text content</summary>
     public string? PatientSubmission { get; set; }
@@ -38,18 +45,19 @@ public class TherapyAssignment : BaseEntity
     /// <summary>Timestamp when patient submitted the assignment</summary>
     public DateTime? SubmittedAt { get; set; }
 
-    /// <summary>Nhận xét / phản hồi của bác sĩ về bài làm</summary>
+    /// <summary>Doctor's feedback / review comment</summary>
     public string? DoctorFeedback { get; set; }
 
-    /// <summary>Thời điểm bác sĩ nhận xét</summary>
+    /// <summary>Timestamp when doctor reviewed</summary>
     public DateTime? FeedbackAt { get; set; }
 
-    /// <summary>FK to TreatmentCase (nullable for backward compatibility with legacy assignments)</summary>
-    public Guid? TreatmentCaseId { get; set; }
-
     // Navigation
-    public virtual required TreatmentPackage TreatmentPackage { get; set; }
+    /// <summary>Navigation to TreatmentPackage (legacy)</summary>
+    public virtual TreatmentPackage? TreatmentPackage { get; set; }
 
-    /// <summary>Navigation to TreatmentCase (optional)</summary>
+    /// <summary>Navigation to TreatmentCase</summary>
     public virtual TreatmentCase? TreatmentCase { get; set; }
+
+    /// <summary>Navigation to TreatmentSession</summary>
+    public virtual TreatmentSession? TreatmentSession { get; set; }
 }

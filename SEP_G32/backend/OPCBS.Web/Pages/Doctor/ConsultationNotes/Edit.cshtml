@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.EditModel
 @{
     ViewData["Title"] = "Details profile consultation";
-    ViewData["UseDashboardLayout"] = true;
-    var isWalkIn = Model.Record?.IsWalkIn ?? false;
+    
+    Layout = "_DashboardLayout";var isWalkIn = Model.Record?.IsWalkIn ?? false;
     var displayName = Model.Record?.DisplayPatientName ?? "Patient";
 }
 

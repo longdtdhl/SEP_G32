@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Domain.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace OPCBS.Web.Pages.Patient.Appointments;
 
@@ -36,8 +32,8 @@ public class IndexModel : PageModel
 
         try
         {
-            // Load all appointments to query unique doctor list and filter on memory
-            var (allData, _, error) = await _service.GetMyAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 9999 });
+            // Load active appointments
+            var (allData, _, error) = await _service.GetMyAppointmentsAsync(new AppointmentFilterDto { View = "active", Page = 1, PageSize = 9999 });
             if (allData != null)
             {
                 UniqueDoctors = allData
@@ -99,7 +95,7 @@ public class IndexModel : PageModel
         }
         catch
         {
-            Error = "Failed to load appointments.";
+            Error = "Failed to load active appointments.";
         }
     }
 }

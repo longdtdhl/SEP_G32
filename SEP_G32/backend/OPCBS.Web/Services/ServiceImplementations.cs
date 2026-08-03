@@ -609,6 +609,10 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     public async Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/close", dto);
 
+    // Schedule Generation
+    public async Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/generate-schedule", dto);
+
     // Sessions
     public async Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId)
     {
@@ -618,6 +622,15 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> CreateSessionAsync(object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/sessions", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateSessionAsync(Guid sessionId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteSessionAsync(Guid sessionId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}");
+
+    public async Task<(bool Success, string? Error)> ReorderSessionsAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/sessions/reorder", dto);
 
     public async Task<(bool Success, string? Error)> CompleteSessionAsync(Guid sessionId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}/complete", dto);
@@ -634,6 +647,41 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}", dto);
+
+    public async Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/progress", dto);
+
+    public async Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentGoalProgressWebDto>>($"{ApiRoutes.TreatmentCases}/goals/{goalId}/progress");
+        return (data ?? new(), error);
+    }
+
+    // Homework
+    public async Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<HomeworkWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/homework");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateHomeworkAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/homework", dto);
+
+    public async Task<(bool Success, string? Error)> SubmitHomeworkAsync(Guid homeworkId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/homework/{homeworkId}/submit", dto);
+
+    public async Task<(bool Success, string? Error)> ReviewHomeworkAsync(Guid homeworkId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/homework/{homeworkId}/review", dto);
+
+    // Mood Tracking
+    public async Task<(List<MoodEntryWebDto> Data, string? Error)> GetMoodEntriesAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<MoodEntryWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/mood");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> AddMoodEntryAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/mood", dto);
 
     // Progress & Timeline
     public async Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId)

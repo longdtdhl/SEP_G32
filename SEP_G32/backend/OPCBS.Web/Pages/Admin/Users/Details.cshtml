@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Admin.Users.DetailsModel
 @{
     ViewData["Title"] = "User Details";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 @{ var s = TempData["Success"] as string; var e = TempData["Error"] as string; }
 @if (s != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@s<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }

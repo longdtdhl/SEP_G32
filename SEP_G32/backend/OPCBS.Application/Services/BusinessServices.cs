@@ -665,12 +665,38 @@ public class VerificationService : IVerificationService
         doctor.VerificationStatus = VerificationStatus.Submitted;
         _doctorRepo.Update(doctor);
 
-        var request = new VerificationRequest { DoctorProfileId = doctor.Id, Status = VerificationStatus.Submitted, DoctorProfile = doctor, CertificateUrl = dto?.CertificateUrl };
-        await _verRepo.AddAsync(request, ct);
+        // Check for existing request to update or create new
+        var all = await _verRepo.GetAllAsync(ct);
+        var existingReq = all.Where(v => v.DoctorProfileId == doctor.Id)
+                             .OrderByDescending(v => v.CreatedAt)
+                             .FirstOrDefault();
+
+        VerificationRequest request;
+        if (existingReq != null && existingReq.Status != VerificationStatus.Approved)
+        {
+            existingReq.Status = VerificationStatus.Submitted;
+            existingReq.RejectionReason = null;
+            if (!string.IsNullOrWhiteSpace(dto?.CertificateUrl))
+                existingReq.CertificateUrl = dto.CertificateUrl;
+            _verRepo.Update(existingReq);
+            request = existingReq;
+        }
+        else
+        {
+            request = new VerificationRequest
+            {
+                DoctorProfileId = doctor.Id,
+                Status = VerificationStatus.Submitted,
+                DoctorProfile = doctor,
+                CertificateUrl = dto?.CertificateUrl
+            };
+            await _verRepo.AddAsync(request, ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
 
         var result = await BuildDtoAsync(request, ct);
-        return ApiResponse<VerificationRequestDto>.SuccessResponse(result, "Verification submitted");
+        return ApiResponse<VerificationRequestDto>.SuccessResponse(result, "Verification submitted successfully");
     }
 
     public async Task<ApiResponse<VerificationRequestDto>> GetVerificationStatusAsync(Guid doctorUserId, CancellationToken ct)
@@ -681,7 +707,23 @@ public class VerificationService : IVerificationService
 
         var all = await _verRepo.GetAllAsync(ct);
         var request = all.Where(v => v.DoctorProfileId == doctor.Id).OrderByDescending(v => v.CreatedAt).FirstOrDefault();
-        if (request == null) return ApiResponse<VerificationRequestDto>.ErrorResponse("No verification request found");
+        if (request == null)
+        {
+            var doctorUser = await _userRepo.GetByIdAsync(doctor.UserId, ct);
+            var draftDto = new VerificationRequestDto
+            {
+                DoctorProfileId = doctor.Id,
+                DoctorName = doctorUser?.FullName ?? "Unknown",
+                AvatarUrl = doctorUser?.AvatarUrl,
+                LicenseNumber = doctor.LicenseNumber,
+                Specialization = doctor.ProfessionalTitle,
+                ExperienceYears = doctor.ExperienceYears,
+                Biography = doctor.Biography,
+                Status = doctor.VerificationStatus.ToString(),
+                CreatedAt = DateTime.UtcNow
+            };
+            return ApiResponse<VerificationRequestDto>.SuccessResponse(draftDto);
+        }
 
         var dto = await BuildDtoAsync(request, ct);
         return ApiResponse<VerificationRequestDto>.SuccessResponse(dto);
@@ -1157,12 +1199,52 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         await _packageRepo.AddAsync(package, ct);
         await _uow.SaveChangesAsync(ct);
-        var createdDto = _mapper.Map<TreatmentPackageDto>(package);
-        await EnrichNamesAsync(new List<TreatmentPackageDto> { createdDto }, ct);
 
-        // Notify patient about new treatment package if assigned
+        // Auto-create TreatmentCase when package is assigned to a specific patient
         if (patient != null)
         {
+            var patientUserId = patient.UserId;
+
+            var allCases = await _caseRepo.GetAllAsync(ct);
+            var existingCase = allCases.FirstOrDefault(c =>
+                c.TreatmentPackageId == package.Id &&
+                c.DoctorId == doctorUserId &&
+                c.PatientId == patientUserId &&
+                !c.IsDeleted);
+
+            if (existingCase == null)
+            {
+                var treatmentCase = new TreatmentCase
+                {
+                    TreatmentPackageId = package.Id,
+                    DoctorId = doctorUserId,
+                    PatientId = patientUserId,
+                    CaseName = package.Name,
+                    CaseDescription = package.Description,
+                    PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
+                    
+                    PackageNameSnapshot = package.Name,
+                    PackageDescriptionSnapshot = package.Description,
+                    TotalSessionsSnapshot = package.SessionQuantity,
+                    DurationDaysSnapshot = package.ValidityDays,
+                    RecommendedSessionsPerWeekSnapshot = 1,
+                    PriceSnapshot = package.Price,
+                    TargetOutcomesSnapshot = package.TargetOutcome,
+                    RecommendedExercisesSnapshot = package.RecommendedExercises,
+                    PatientGuidanceSnapshot = package.Instructions,
+
+                    TotalSessions = package.SessionQuantity,
+                    CompletedSessions = 0,
+                    RemainingSessions = package.SessionQuantity,
+                    OverallProgressPercent = 0,
+                    StartDate = DateTime.UtcNow,
+                    ExpectedEndDate = DateTime.UtcNow.AddDays(validityDays),
+                    Status = TreatmentCaseStatus.Active
+                };
+                await _caseRepo.AddAsync(treatmentCase, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+
             try
             {
                 var allUsers = await _userRepo.GetAllAsync(ct);
@@ -1179,7 +1261,10 @@ public class TreatmentPackageService : ITreatmentPackageService
             catch { }
         }
 
-        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and assigned to patient" : "Template treatment package created successfully");
+        var createdDto = _mapper.Map<TreatmentPackageDto>(package);
+        await EnrichNamesAsync(new List<TreatmentPackageDto> { createdDto }, ct);
+
+        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and treatment case automatically initialized" : "Template treatment package created successfully");
     }
 
     /// <summary>Resolve DoctorName/PatientName from User entities (nav props not loaded by generic repo)</summary>
@@ -1231,11 +1316,9 @@ public class TreatmentPackageService : ITreatmentPackageService
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
-        if (patient == null)
-            return ApiResponse<List<TreatmentPackageDto>>.ErrorResponse("Patient not found");
 
         var all = await _packageRepo.GetAllAsync(ct);
-        var packages = all.Where(p => p.PatientId == patient.Id && !p.IsDeleted).ToList();
+        var packages = all.Where(p => !p.IsDeleted && (p.PatientId == null || (patient != null && p.PatientId == patient.Id))).ToList();
         var total = packages.Count;
         var items = packages.OrderByDescending(p => p.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var dtos = _mapper.Map<List<TreatmentPackageDto>>(items);
@@ -1281,25 +1364,26 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
-        if (patient == null || package.PatientId != patient.Id)
-            return ApiResponse.ErrorResponse("Not authorized to accept this package");
-
-        if (package.Status != TreatmentPackageStatus.Assigned)
-            return ApiResponse.ErrorResponse("Only assigned packages can be accepted");
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        if (patient == null)
+            return ApiResponse.ErrorResponse("Patient profile not found");
 
         package.Status = TreatmentPackageStatus.Active;
-        package.AcceptedDate = DateTime.UtcNow;
-        package.ActiveDate = DateTime.UtcNow;
+        package.AcceptedDate ??= DateTime.UtcNow;
+        package.ActiveDate ??= DateTime.UtcNow;
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
 
-        // Auto-create Treatment Case when package becomes Active
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId || d.UserId == package.DoctorId);
+        var doctorUserId = doctor != null ? doctor.UserId : package.DoctorId;
+
+        // Auto-create Treatment Case when package is accepted
         var allCases = await _caseRepo.GetAllAsync(ct);
         var existingCase = allCases.FirstOrDefault(c =>
             c.TreatmentPackageId == package.Id &&
-            c.DoctorId == package.DoctorId &&
-            c.PatientId == patient.Id &&
+            c.DoctorId == doctorUserId &&
+            c.PatientId == patient.UserId &&
             !c.IsDeleted);
 
         if (existingCase == null)
@@ -1307,21 +1391,37 @@ public class TreatmentPackageService : ITreatmentPackageService
             var treatmentCase = new TreatmentCase
             {
                 TreatmentPackageId = package.Id,
-                DoctorId = package.DoctorId,
-                PatientId = patient.Id,
+                DoctorId = doctorUserId,
+                PatientId = patient.UserId,
                 CaseName = package.Name,
                 CaseDescription = package.Description,
-                PrimaryConcern = package.TargetOutcome,
+                PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
+                
+                // Package Snapshot fields (immutable after patient acceptance)
+                PackageNameSnapshot = package.Name,
+                PackageDescriptionSnapshot = package.Description,
+                TotalSessionsSnapshot = package.SessionQuantity,
+                DurationDaysSnapshot = package.ValidityDays,
+                RecommendedSessionsPerWeekSnapshot = 1,
+                PriceSnapshot = package.Price,
+                TargetOutcomesSnapshot = package.TargetOutcome,
+                RecommendedExercisesSnapshot = package.RecommendedExercises,
+                PatientGuidanceSnapshot = package.Instructions,
+
                 TotalSessions = package.SessionQuantity,
+                CompletedSessions = 0,
                 RemainingSessions = package.SessionQuantity,
+                OverallProgressPercent = 0,
                 StartDate = DateTime.UtcNow,
-                ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays),
-                Status = TreatmentCaseStatus.Active,
-                TreatmentPackage = package,
-                Doctor = (await _doctorRepo.GetByIdAsync(package.DoctorId, ct))!,
-                Patient = patient
+                ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays > 0 ? package.ValidityDays : 90),
+                Status = TreatmentCaseStatus.Active
             };
             await _caseRepo.AddAsync(treatmentCase, ct);
+        }
+        else if (existingCase.Status == TreatmentCaseStatus.OnHold || existingCase.Status == TreatmentCaseStatus.Cancelled)
+        {
+            existingCase.Status = TreatmentCaseStatus.Active;
+            _caseRepo.Update(existingCase);
         }
 
         await _uow.SaveChangesAsync(ct);

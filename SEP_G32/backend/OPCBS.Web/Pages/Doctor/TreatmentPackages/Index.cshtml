@@ -1,227 +1,36 @@
 @page
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.IndexModel
 @{
-    ViewData["Title"] = "Treatment Package";
-    ViewData["UseDashboardLayout"] = true;
-    // Filter out cancelled and rejected packages
+    ViewData["Title"] = "Treatment Packages";
+    Layout = "_DashboardLayout";
     var visiblePackages = Model.Packages.Where(p => p.Status != "Cancelled" && p.Status != "Rejected").ToList();
-    var totalPkgs = visiblePackages.Count;
-    var activePkgs = visiblePackages.Count(p => p.Status == "Active");
-    var expiredPkgs = visiblePackages.Count(p => p.IsExpired);
-    var totalSessions = visiblePackages.Sum(p => p.TotalSessions);
-    var completedSessions = visiblePackages.Sum(p => p.CompletedSessions);
 }
 
 <style>
-    .pkg-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px;
-        margin-bottom: 1.5rem;
-    }
-
-    .pkg-stat-card {
-        background: white;
-        border-radius: 14px;
-        padding: 1rem 1.25rem;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-
-    .pkg-stat-card .stat-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-    }
-
-    .pkg-stat-card .stat-value {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    .pkg-stat-card .stat-label {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        font-weight: 500;
-    }
-
     .pkg-card {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #f1f5f9;
-        overflow: hidden;
-        transition: all 0.2s;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        background: white; border-radius: 16px; border: 1px solid #f1f5f9;
+        overflow: hidden; transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
-
-    .pkg-card:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        transform: translateY(-2px);
-    }
-
-    .pkg-card-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid #f8fafc;
-    }
-
-    .pkg-card-body {
-        padding: 1rem 1.25rem;
-    }
-
-    .pkg-card-footer {
-        padding: 0.75rem 1.25rem;
-        border-top: 1px solid #f8fafc;
-        background: #fafbfc;
-    }
-
-    .pkg-patient-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #eff6ff, #dbeafe);
-        color: #1e40af;
-        font-size: 0.78rem;
-        font-weight: 600;
-    }
-
-    .pkg-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.3px;
-    }
-
-    .pkg-status.active {
-        background: #dcfce7;
-        color: #15803d;
-    }
-
-    .pkg-status.created {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .pkg-status.completed {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
-
-    .pkg-status.expired {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .pkg-status.cancelled {
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    .pkg-status.finished {
-        background: #f0e7ff;
-        color: #6d28d9;
-    }
-
-    .pkg-meta-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.8rem;
-        color: #64748b;
-        margin-bottom: 6px;
-    }
-
-    .pkg-meta-row i {
-        color: var(--mb-primary);
-        font-size: 0.85rem;
-        width: 16px;
-        text-align: center;
-    }
-
-    .pkg-progress-track {
-        background: #e2e8f0;
-        border-radius: 6px;
-        height: 6px;
-        overflow: hidden;
-    }
-
-    .pkg-progress-fill {
-        height: 100%;
-        border-radius: 6px;
-        transition: width 0.6s ease;
-    }
-
-    .pkg-empty {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: white;
-        border-radius: 16px;
-        border: 2px dashed #e2e8f0;
-    }
-
-    .search-filter-bar {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .search-filter-bar .search-input {
-        flex: 1;
-        min-width: 200px;
-        padding: 10px 14px 10px 38px;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        outline: none;
-        transition: border-color 0.2s;
-        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
-    }
-
-    .search-filter-bar .search-input:focus {
-        border-color: var(--mb-primary);
-    }
-
-    .filter-chip {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        border: 1px solid #e2e8f0;
-        background: white;
-        color: #64748b;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .filter-chip.active,
-    .filter-chip:hover {
-        background: var(--mb-primary);
-        color: white;
-        border-color: var(--mb-primary);
-    }
+    .pkg-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .pkg-card-header { padding: 1.25rem; border-bottom: 1px solid #f8fafc; }
+    .pkg-card-body { padding: 1rem 1.25rem; }
+    .pkg-card-footer { padding: 0.75rem 1.25rem; border-top: 1px solid #f8fafc; background: #fafbfc; }
+    .pkg-status { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.3px; }
+    .pkg-status.active { background: #dcfce7; color: #15803d; }
+    .pkg-status.draft { background: #fef3c7; color: #b45309; }
+    .pkg-status.archived { background: #f1f5f9; color: #64748b; }
+    .pkg-meta-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #64748b; margin-bottom: 6px; }
+    .pkg-meta-row i { color: var(--mb-primary); font-size: 0.85rem; width: 18px; text-align: center; }
+    .pkg-empty { text-align: center; padding: 4rem 2rem; background: white; border-radius: 16px; border: 2px dashed #e2e8f0; }
 </style>
 
 <!-- Page Header -->
-<div class="mb-page-header d-flex justify-content-between align-items-center">
+<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package
+            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Packages
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage and track therapy packages for each patient
-        </p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage your standard treatment package templates</p>
     </div>
     <a asp-page="Create" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2"
        style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
@@ -236,7 +45,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
-
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none;">
@@ -245,208 +53,60 @@
     </div>
 }
 
-
-<!-- Search & Filter -->
-<div class="search-filter-bar">
-    <input type="text" class="search-input" placeholder="Search by package name or patient..." id="pkgSearch"
-           oninput="filterPackages()" />
-    <span class="filter-chip active" data-filter="all" onclick="setFilter(this, 'all')">All</span>
-    <span class="filter-chip" data-filter="Active" onclick="setFilter(this, 'Active')">Active</span>
-    <span class="filter-chip" data-filter="Finished" onclick="setFilter(this, 'Finished')">Finished</span>
-    <span class="filter-chip" data-filter="Created" onclick="setFilter(this, 'Created')">Created</span>
-    <span class="filter-chip" data-filter="Completed" onclick="setFilter(this, 'Completed')">Completed</span>
-</div>
-
-<!-- Package Cards -->
-<div class="row g-3" id="pkgGrid">
+<!-- Package Cards Grid -->
+<div class="row g-3">
     @if (visiblePackages.Any())
     {
         @foreach (var pkg in visiblePackages.OrderByDescending(p => p.CreatedAt))
         {
-            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
-            var statusClass = pkg.Status switch
-            {
-                "Active" => "active",
-                "Created" => "created",
-                "Completed" => "completed",
-                "Cancelled" => "cancelled",
-                _ => pkg.IsExpired ? "expired" : "created"
-            };
-            var statusIcon = pkg.Status switch
-            {
-                "Active" => "bi-lightning-charge-fill",
-                "Created" => "bi-clock",
-                "Completed" => "bi-check-circle-fill",
-                "Cancelled" => "bi-x-circle",
-                _ => "bi-clock"
-            };
-            var statusLabel = pkg.Status switch
-            {
-                "Active" => "Active",
-                "Created" => "Created",
-                "Completed" => "Completed",
-                "Cancelled" => "Cancelled",
-                _ => pkg.Status
-            };
-
-            // Finished: all sessions used up
-            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && pkg.Status == "Active";
-            if (isFinished)
-            {
-                statusClass = "finished"; statusLabel = "Finished"; statusIcon = "bi-trophy-fill";
-            }
-            else if (pkg.IsExpired && pkg.Status == "Active")
-            {
-                statusClass = "expired"; statusLabel = "Expired"; statusIcon = "bi-exclamation-triangle-fill";
-            }
-
-            var initial = pkg.DisplayPatientName.Substring(0, 1).ToUpper();
-            var colors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
-            var color = colors[Math.Abs(pkg.DisplayPatientName.GetHashCode()) % colors.Length];
-            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-
-            <div class="col-md-6 col-xl-4 pkg-item" data-status="@(isFinished ? "Finished" : pkg.Status)" data-name="@pkg.Title.ToLower()"
-                 data-patient="@pkg.DisplayPatientName.ToLower()">
-                <div class="pkg-card h-100">
-                    <!-- Header -->
-                    <div class="pkg-card-header">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 style="font-weight:700; font-size:0.95rem; color:#1e293b; margin:0; max-width:70%;"
-                                class="text-truncate" title="@pkg.Title">@pkg.Title</h6>
-                            <span class="pkg-status @statusClass"><i class="bi @statusIcon"></i>@statusLabel</span>
+            var statusClass = pkg.Status == "Active" ? "active" : pkg.Status == "Draft" ? "draft" : "archived";
+            <div class="col-md-6 col-xl-4">
+                <div class="pkg-card h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <!-- Header -->
+                        <div class="pkg-card-header d-flex justify-content-between align-items-start">
+                            <h6 style="font-weight:700; font-size:1rem; color:#1e293b; margin:0;" class="text-truncate" title="@pkg.Title">@pkg.Title</h6>
+                            <span class="pkg-status @statusClass">@pkg.Status</span>
                         </div>
-                        <div class="pkg-patient-badge">
-                            <span
-                            style="width:22px; height:22px; border-radius:6px; background:@(color)18; color:@color; display:inline-flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700;">@initial</span>
-                            @pkg.DisplayPatientName
+                        <!-- Body -->
+                        <div class="pkg-card-body">
+                            @if (!string.IsNullOrEmpty(pkg.Description))
+                            {
+                                <p style="font-size:0.83rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
+                            }
+                            <div class="pkg-meta-row"><i class="bi bi-calendar2-check"></i><span>Sessions: <strong>@pkg.TotalSessions sessions</strong></span></div>
+                            <div class="pkg-meta-row"><i class="bi bi-hourglass-split"></i><span>Duration: <strong>@pkg.ValidityDays days</strong></span></div>
+                            <div class="pkg-meta-row"><i class="bi bi-cash-stack"></i><span>Price: <strong style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
+                            @if (!string.IsNullOrEmpty(pkg.TargetOutcome))
+                            {
+                                <div class="pkg-meta-row"><i class="bi bi-trophy"></i><span class="text-truncate">Goal: @pkg.TargetOutcome</span></div>
+                            }
                         </div>
                     </div>
-
-                    <!-- Body -->
-                    <div class="pkg-card-body">
-                        @if (!string.IsNullOrEmpty(pkg.Description))
-                        {
-                            <p
-                                style="font-size:0.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-                                @pkg.Description</p>
-                            }
-
-                            <div class="pkg-meta-row"><i class="bi bi-calendar2-check"></i><span>Session: <strong
-                                style="color:#1e293b;">@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
-                                <div class="pkg-meta-row"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong
-                                    style="color:#1e293b;">@pkg.RemainingSessions sessions</strong></span></div>
-                                    <div class="pkg-meta-row"><i class="bi bi-calendar-x"></i><span>Expires: <strong
-                                        style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</strong></span>
-                                    </div>
-                                    <div class="pkg-meta-row"><i class="bi bi-currency-dollar"></i><span>Price: <strong
-                                        style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</strong></span></div>
-
-                                        <!-- Progress bar -->
-                                        <div style="margin-top:10px;">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Progress</span>
-                                                <span style="font-size:0.72rem; color:@progressColor; font-weight:700;">@(progress)%</span>
-                                            </div>
-                                            <div class="pkg-progress-track">
-                                                <div class="pkg-progress-fill" style="width:@(progress)%; background:@progressColor;"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Footer -->
-                                    <div class="pkg-card-footer d-flex gap-2">
-                                        <a asp-page="Details" asp-route-id="@pkg.Id"
-                                           class="btn btn-sm btn-outline-success flex-fill d-flex align-items-center justify-content-center gap-1"
-                                           style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                                            <i class="bi bi-journal-check"></i>Assignment
-                                        </a>
-                                        <a asp-page="Edit" asp-route-id="@pkg.Id"
-                                           class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1"
-                                           style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                                            <i class="bi bi-pencil-square"></i>Edit
-                                        </a>
-                                        @if (pkg.Status != "Completed" && pkg.Status != "Cancelled" && pkg.Status != "Rejected")
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger flex-fill d-flex align-items-center justify-content-center gap-1"
-                                                    style="border-radius:8px; font-size:0.78rem; font-weight:600;" data-bs-toggle="modal"
-                                                    data-bs-target="#cancelModal-@pkg.Id.ToString("N")">
-                                                <i class="bi bi-x-circle"></i>Cancel
-                                            </button>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
+                    <!-- Footer -->
+                    <div class="pkg-card-footer d-flex gap-2">
+                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary flex-fill text-center" style="border-radius:8px; font-size:0.8rem; font-weight:600;">
+                            <i class="bi bi-eye me-1"></i>Details
+                        </a>
+                        <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-secondary flex-fill text-center" style="border-radius:8px; font-size:0.8rem; font-weight:600;">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
     else
-                    {
-                        <div class="col-12">
-                            <div class="pkg-empty">
-                                <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
-                                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No treatment packages yet</h5>
-                                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Create your first therapy package to
-                                    start tracking patients</p>
-                                    <a asp-page="Create" class="btn btn-primary px-4 py-2"
-                                       style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                        <i class="bi bi-plus-lg me-1"></i>Create First Package
-                                    </a>
-                                </div>
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Cancel Modals -->
-                    @foreach (var pkg in Model.Packages.Where(p => p.Status != "Completed" && p.Status != "Cancelled" && p.Status !=
-                    "Rejected"))
-                    {
-                        <div class="modal fade" id="cancelModal-@pkg.Id.ToString("N")" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content" style="border-radius:16px;">
-                                    <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
-                                        <div class="modal-header border-0 pb-0">
-                                            <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel
-                                                Treatment Package</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">
-                                                    <i class="bi bi-info-circle me-1"></i>You are about to cancel <strong>@pkg.Title</strong> for
-                                                    patient <strong>@pkg.DisplayPatientName</strong>. This action cannot be undone.
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold">Cancellation Reason (optional)</label>
-                                                    <textarea name="CancelReason" class="form-control" rows="3"
-                                                              placeholder="Enter cancellation reason..." style="border-radius:10px;"></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                                                        style="border-radius:10px;">Close</button>
-                                                <button type="submit" class="btn btn-danger" style="border-radius:10px;"><i
-                                                    class="bi bi-x-circle me-1"></i>Confirm Cancel</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-
-                            <script>
-                                function filterPackages() {
-                                    const query = document.getElementById('pkgSearch').value.toLowerCase();
-                                    document.querySelectorAll('.pkg-item').forEach(item => {
-                                        const name = item.dataset.name || '';
-                                        const patient = item.dataset.patient || '';
-                                        const matchSearch = !query || name.includes(query) || patient.includes(query);
-                                        const filterStatus = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
-                                        const matchFilter = filterStatus === 'all' || item.dataset.status === filterStatus;
-                                        item.style.display = matchSearch && matchFilter ? '' : 'none';
-                                    });
-                                }
-                                function setFilter(el, status) {
-                                    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-                                    el.classList.add('active');
-                                    filterPackages();
-                                }
-                            </script>
+    {
+        <div class="col-12">
+            <div class="pkg-empty">
+                <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
+                <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No Treatment Packages Yet</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">Create your first standard treatment package to offer to patients</p>
+                <a asp-page="Create" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                    <i class="bi bi-plus-lg me-1"></i>Create New Package
+                </a>
+            </div>
+        </div>
+    }
+</div>

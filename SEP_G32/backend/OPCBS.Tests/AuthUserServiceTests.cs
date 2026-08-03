@@ -449,7 +449,8 @@ public class AuthServiceTests
 
         Assert.True(result.Success);
         _userRepoMock.Verify(r => r.AddAsync(It.IsAny<User>(), default), Times.Once);
-        _doctorRepoMock.Verify(r => r.AddAsync(It.IsAny<DoctorProfile>(), default), Times.Once);
+        _doctorRepoMock.Verify(r => r.AddAsync(It.Is<DoctorProfile>(dp => dp.VerificationStatus == VerificationStatus.Draft), default), Times.Once);
+        _verRepoMock.Verify(r => r.AddAsync(It.IsAny<VerificationRequest>(), default), Times.Never);
     }
 
     [Fact]

@@ -2,9 +2,8 @@
 @model OPCBS.Web.Pages.Admin.Permissions.IndexModel
 @{
     ViewData["Title"] = "Permissions";
-    ViewData["UseDashboardLayout"] = true;
-
-    // Static permission matrix based on docs/18-permission-matrix.md
+    
+    Layout = "_DashboardLayout";// Static permission matrix based on docs/18-permission-matrix.md
     var modules = new (string Module, string Icon, string[] Perms)[]
     {
         ("User Management", "bi-people", new[] { "View Users", "Lock/Unlock Users", "View User Details" }),

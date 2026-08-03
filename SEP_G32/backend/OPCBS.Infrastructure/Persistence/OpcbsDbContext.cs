@@ -80,6 +80,9 @@ public class OpcbsDbContext : DbContext
     public DbSet<TreatmentCase> TreatmentCases => Set<TreatmentCase>();
     public DbSet<TreatmentSession> TreatmentSessions => Set<TreatmentSession>();
     public DbSet<TreatmentGoal> TreatmentGoals => Set<TreatmentGoal>();
+    public DbSet<MoodEntry> MoodEntries => Set<MoodEntry>();
+    public DbSet<TreatmentGoalProgress> TreatmentGoalProgresses => Set<TreatmentGoalProgress>();
+    public DbSet<TreatmentSessionGoal> TreatmentSessionGoals => Set<TreatmentSessionGoal>();
 
     // Favorites
     public DbSet<FavoriteDoctor> FavoriteDoctors => Set<FavoriteDoctor>();
@@ -382,6 +385,14 @@ public class OpcbsDbContext : DbContext
             entity.HasOne(e => e.TreatmentPackage)
                 .WithMany(tp => tp.Appointments)
                 .HasForeignKey(e => e.TreatmentPackageId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.TreatmentSession)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentSessionId)
                 .OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.ProposedSlot)
                 .WithMany()
@@ -835,7 +846,7 @@ public class OpcbsDbContext : DbContext
             entity.HasOne(e => e.TreatmentCase)
                 .WithMany(tc => tc.Sessions)
                 .HasForeignKey(e => e.TreatmentCaseId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Appointment)
                 .WithMany()
@@ -858,16 +869,73 @@ public class OpcbsDbContext : DbContext
             entity.HasOne(e => e.TreatmentCase)
                 .WithMany(tc => tc.Goals)
                 .HasForeignKey(e => e.TreatmentCaseId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // TherapyAssignment -> TreatmentCase (optional FK)
+        // TherapyAssignment -> TreatmentCase (optional FK) & TreatmentSession
         modelBuilder.Entity<TherapyAssignment>(entity =>
         {
             entity.HasOne(e => e.TreatmentCase)
                 .WithMany(tc => tc.Assignments)
                 .HasForeignKey(e => e.TreatmentCaseId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.TreatmentSession)
+                .WithMany(ts => ts.Assignments)
+                .HasForeignKey(e => e.TreatmentSessionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // MoodEntry
+        modelBuilder.Entity<MoodEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TreatmentCaseId);
+            entity.HasIndex(e => e.PatientId);
+
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany(tc => tc.MoodEntries)
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .HasPrincipalKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TreatmentGoalProgress
+        modelBuilder.Entity<TreatmentGoalProgress>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.GoalId);
+
+            entity.HasOne(e => e.Goal)
+                .WithMany(g => g.ProgressHistory)
+                .HasForeignKey(e => e.GoalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.TreatmentSession)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentSessionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // TreatmentSessionGoal (Many-to-Many Join)
+        modelBuilder.Entity<TreatmentSessionGoal>(entity =>
+        {
+            entity.HasKey(e => new { e.TreatmentSessionId, e.TreatmentGoalId });
+
+            entity.HasOne(e => e.TreatmentSession)
+                .WithMany(s => s.SessionGoals)
+                .HasForeignKey(e => e.TreatmentSessionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.TreatmentGoal)
+                .WithMany(g => g.SessionGoals)
+                .HasForeignKey(e => e.TreatmentGoalId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // EmotionJournal -> TreatmentCase (optional FK)

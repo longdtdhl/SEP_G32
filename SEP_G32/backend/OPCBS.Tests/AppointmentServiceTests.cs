@@ -1006,4 +1006,44 @@ public class AppointmentServiceTests
         var result = await _sut.RescheduleAppointmentAsync(_appointmentId, _patientUserId, dto);
         Assert.False(result.Success);
     }
+
+    [Fact]
+    public async Task GetClinicalContext_ReturnsRecentConsultations_ExcludingCurrentAppt()
+    {
+        var appt = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appt);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { CreateDoctor() });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { CreatePatient() });
+
+        var doc = CreateDoctor();
+        var pRec = new PatientRecord { Id = Guid.NewGuid(), DoctorId = _doctorProfileId, PatientId = _patientProfileId, Doctor = doc };
+
+        var currentNote = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = _appointmentId, ConsultationSummary = "Current Note", CreatedAt = DateTime.UtcNow, Doctor = doc, PatientRecord = pRec };
+        var pastNote1 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), ConsultationSummary = "Past Note 1", CreatedAt = DateTime.UtcNow.AddDays(-5), Doctor = doc, PatientRecord = pRec };
+        var pastNote2 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), ConsultationSummary = "Past Note 2", CreatedAt = DateTime.UtcNow.AddDays(-10), Doctor = doc, PatientRecord = pRec };
+
+        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { currentNote, pastNote1, pastNote2 });
+
+        var result = await _sut.GetClinicalContextAsync(_appointmentId, _doctorUserId);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal(2, result.Data.RecentConsultations.Count);
+        Assert.DoesNotContain(result.Data.RecentConsultations, n => n.AppointmentId == _appointmentId);
+    }
+
+    [Fact]
+    public async Task GetClinicalContext_UnauthorizedUser_ReturnsError()
+    {
+        var appt = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appt);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { CreateDoctor() });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { CreatePatient() });
+
+        var unauthorizedUserId = Guid.NewGuid();
+        var result = await _sut.GetClinicalContextAsync(_appointmentId, unauthorizedUserId);
+
+        Assert.False(result.Success);
+        Assert.Contains("Unauthorized", result.Message);
+    }
 }

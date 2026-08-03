@@ -36,6 +36,7 @@ public class DetailsModel : PageModel
     public bool IsUsingFallbackPsych { get; set; }
     public ConsultationNoteDto? LatestConsultationNote { get; set; }
     public TreatmentPackageDto? ActiveTreatmentPackage { get; set; }
+    public AppointmentClinicalContextDto? ClinicalContext { get; set; }
     public bool HasConsultationNote => AssociatedRecord != null;
     public string? Error { get; set; }
     public string? Success { get; set; }
@@ -56,6 +57,10 @@ public class DetailsModel : PageModel
             return Page();
         }
         Appointment = data;
+
+        // Fetch Clinical Context (Recent consultations, assessment history, treatment case progress)
+        var (cContext, _) = await _api.GetClinicalContextAsync(id);
+        ClinicalContext = cContext;
 
         if (data.PatientId.HasValue)
         {

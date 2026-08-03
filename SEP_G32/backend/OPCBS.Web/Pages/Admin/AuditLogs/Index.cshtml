@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Admin.AuditLogs.IndexModel
 @{
     ViewData["Title"] = "Audit Logs";
-    ViewData["UseDashboardLayout"] = true;
-    var entities = new[] { "User", "Appointment", "Schedule", "Blog", "ConsultationNote", "TreatmentPackage", "Verification", "ServicePackage", "Subscription" };
+    
+    Layout = "_DashboardLayout";var entities = new[] { "User", "Appointment", "Schedule", "Blog", "ConsultationNote", "TreatmentPackage", "Verification", "ServicePackage", "Subscription" };
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">

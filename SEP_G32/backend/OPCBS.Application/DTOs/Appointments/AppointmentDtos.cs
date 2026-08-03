@@ -259,3 +259,80 @@ public class UpdateConsultationNoteDto
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 }
 
+/// <summary>
+/// Clinical Context DTOs for Doctor Appointment Details screen
+/// </summary>
+public class RecentConsultationDto
+{
+    public Guid Id { get; set; }
+    public Guid? AppointmentId { get; set; }
+    public DateTime ConsultationDate { get; set; }
+    public string? DoctorName { get; set; }
+    public string? Diagnosis { get; set; }
+    public string? ConsultationSummary { get; set; }
+    public string? Recommendation { get; set; }
+    public string? TherapyPlan { get; set; }
+}
+
+public class RecentAssessmentResultDto
+{
+    public Guid Id { get; set; }
+    public Guid? AppointmentId { get; set; }
+    public string TestTitle { get; set; } = string.Empty;
+    public string? TestType { get; set; }
+    public DateTime SubmittedAt { get; set; }
+    public int TotalScore { get; set; }
+    public string? Interpretation { get; set; }
+    public string? ScoreDataJson { get; set; }
+}
+
+public class TreatmentGoalContextDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public double ProgressPercent { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public decimal? TargetValue { get; set; }
+    public string? Unit { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class TreatmentGoalProgressContextDto
+{
+    public Guid Id { get; set; }
+    public string GoalTitle { get; set; } = string.Empty;
+    public int? SessionNumber { get; set; }
+    public double ProgressPercent { get; set; }
+    public string? DoctorComment { get; set; }
+    public DateTime RecordedDate { get; set; }
+}
+
+public class AppointmentTreatmentCaseContextDto
+{
+    public Guid TreatmentCaseId { get; set; }
+    public string CaseName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int CompletedSessions { get; set; }
+    public int TotalSessions { get; set; }
+    public int? CurrentSessionNumber { get; set; }
+    public DateTime? NextPlannedSessionDate { get; set; }
+    public double OverallProgressPercent { get; set; }
+    public int GoalsAchieved { get; set; }
+    public int TotalGoals { get; set; }
+    public int HomeworkCompleted { get; set; }
+    public int HomeworkAssigned { get; set; }
+    public string? LatestMoodSummary { get; set; }
+    public List<TreatmentGoalContextDto> ActiveGoals { get; set; } = new();
+    public List<TreatmentGoalProgressContextDto> RecentGoalProgressHistory { get; set; } = new();
+}
+
+public class AppointmentClinicalContextDto
+{
+    public List<RecentConsultationDto> RecentConsultations { get; set; } = new();
+    public RecentAssessmentResultDto? CurrentAssessment { get; set; }
+    public List<RecentAssessmentResultDto> RecentAssessments { get; set; } = new();
+    public AppointmentTreatmentCaseContextDto? TreatmentCaseContext { get; set; }
+}
+

@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.Admin.Users.IndexModel
 @{
     ViewData["Title"] = "Account Management";
-    ViewData["UseDashboardLayout"] = true;
-    var roles = new[] { "Patient", "Doctor", "CustomerSupport", "BusinessManager", "SystemAdmin" };
+    
+    Layout = "_DashboardLayout";var roles = new[] { "Patient", "Doctor", "CustomerSupport", "BusinessManager", "SystemAdmin" };
 }
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">

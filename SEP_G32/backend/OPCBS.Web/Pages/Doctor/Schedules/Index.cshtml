@@ -2,9 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.Schedules.IndexModel
 @{
     ViewData["Title"] = "Schedule Management";
-    ViewData["UseDashboardLayout"] = true;
     
-    var today = DateTime.Today;
+    Layout = "_DashboardLayout";var today = DateTime.Today;
     var currentMonth = new DateTime(today.Year, today.Month, 1);
     
     // Stats

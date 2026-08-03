@@ -76,6 +76,17 @@ public class TreatmentCaseController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    // ==================== Schedule Generation ====================
+
+    /// <summary>POST /api/v1/treatment-cases/generate-schedule - Generate sessions and appointments</summary>
+    [Authorize]
+    [HttpPost("generate-schedule")]
+    public async Task<IActionResult> GenerateSchedule([FromBody] GenerateScheduleDto dto)
+    {
+        var result = await _caseService.GenerateScheduleAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     // ==================== Sessions ====================
 
     /// <summary>POST /api/v1/treatment-cases/sessions - Create a new session</summary>
@@ -84,6 +95,33 @@ public class TreatmentCaseController : ControllerBase
     public async Task<IActionResult> CreateSession([FromBody] CreateSessionDto dto)
     {
         var result = await _caseService.CreateSessionAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/treatment-cases/sessions/{id} - Update session</summary>
+    [Authorize]
+    [HttpPut("sessions/{id:guid}")]
+    public async Task<IActionResult> UpdateSession(Guid id, [FromBody] UpdateSessionDto dto)
+    {
+        var result = await _caseService.UpdateSessionAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>DELETE /api/v1/treatment-cases/sessions/{id} - Delete session</summary>
+    [Authorize]
+    [HttpDelete("sessions/{id:guid}")]
+    public async Task<IActionResult> DeleteSession(Guid id)
+    {
+        var result = await _caseService.DeleteSessionAsync(id);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/sessions/reorder - Reorder sessions</summary>
+    [Authorize]
+    [HttpPost("sessions/reorder")]
+    public async Task<IActionResult> ReorderSessions([FromBody] ReorderSessionsDto dto)
+    {
+        var result = await _caseService.ReorderSessionsAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -131,6 +169,83 @@ public class TreatmentCaseController : ControllerBase
     public async Task<IActionResult> GetGoals(Guid caseId)
     {
         var result = await _caseService.GetGoalsByCaseAsync(caseId);
+        return Ok(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/goals/progress - Record goal progress history</summary>
+    [Authorize]
+    [HttpPost("goals/progress")]
+    public async Task<IActionResult> RecordGoalProgress([FromBody] CreateGoalProgressDto dto)
+    {
+        var result = await _caseService.RecordGoalProgressAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/treatment-cases/goals/{goalId}/progress - Get goal progress history</summary>
+    [Authorize]
+    [HttpGet("goals/{goalId:guid}/progress")]
+    public async Task<IActionResult> GetGoalProgressHistory(Guid goalId)
+    {
+        var result = await _caseService.GetGoalProgressHistoryAsync(goalId);
+        return Ok(result);
+    }
+
+    // ==================== Homework / Therapy Assignments ====================
+
+    /// <summary>POST /api/v1/treatment-cases/homework - Create homework</summary>
+    [Authorize]
+    [HttpPost("homework")]
+    public async Task<IActionResult> CreateHomework([FromBody] CreateHomeworkDto dto)
+    {
+        var result = await _caseService.CreateHomeworkAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/treatment-cases/homework/{id}/submit - Submit homework</summary>
+    [Authorize]
+    [HttpPut("homework/{id:guid}/submit")]
+    public async Task<IActionResult> SubmitHomework(Guid id, [FromBody] SubmitHomeworkDto dto)
+    {
+        var result = await _caseService.SubmitHomeworkAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/treatment-cases/homework/{id}/review - Review homework</summary>
+    [Authorize]
+    [HttpPut("homework/{id:guid}/review")]
+    public async Task<IActionResult> ReviewHomework(Guid id, [FromBody] ReviewHomeworkDto dto)
+    {
+        var result = await _caseService.ReviewHomeworkAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/treatment-cases/{caseId}/homework - Get homework list</summary>
+    [Authorize]
+    [HttpGet("{caseId:guid}/homework")]
+    public async Task<IActionResult> GetHomework(Guid caseId)
+    {
+        var result = await _caseService.GetHomeworkByCaseAsync(caseId);
+        return Ok(result);
+    }
+
+    // ==================== Mood Tracking ====================
+
+    /// <summary>POST /api/v1/treatment-cases/mood - Add mood entry</summary>
+    [Authorize]
+    [HttpPost("mood")]
+    public async Task<IActionResult> AddMoodEntry([FromBody] CreateMoodEntryDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _caseService.AddMoodEntryAsync(userId, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/treatment-cases/{caseId}/mood - Get mood entries</summary>
+    [Authorize]
+    [HttpGet("{caseId:guid}/mood")]
+    public async Task<IActionResult> GetMoodEntries(Guid caseId)
+    {
+        var result = await _caseService.GetMoodEntriesAsync(caseId);
         return Ok(result);
     }
 

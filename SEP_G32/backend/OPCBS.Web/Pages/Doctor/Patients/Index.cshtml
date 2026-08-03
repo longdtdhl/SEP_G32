@@ -2,9 +2,8 @@
 @model OPCBS.Web.Pages.Doctor.Patients.IndexModel
 @{
     ViewData["Title"] = "Patient Records";
-    ViewData["UseDashboardLayout"] = true;
     
-    var allPatients = Model.Patients;
+    Layout = "_DashboardLayout";var allPatients = Model.Patients;
     var totalAll = allPatients.Count;
     var currentTab = Model.Tab ?? "all";
 }
