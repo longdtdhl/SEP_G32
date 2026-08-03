@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<DoctorSpecialization> _doctorSpecRepo;
+    private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IJwtTokenService _jwtService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
@@ -30,6 +31,7 @@ public class AuthService : IAuthService
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<DoctorSpecialization> doctorSpecRepo,
+        IRepository<VerificationRequest> verRepo,
         IJwtTokenService jwtService,
         IEmailService emailService,
         IMapper mapper)
@@ -41,6 +43,7 @@ public class AuthService : IAuthService
         _patientRepo = patientRepo;
         _doctorRepo = doctorRepo;
         _doctorSpecRepo = doctorSpecRepo;
+        _verRepo = verRepo;
         _jwtService = jwtService;
         _emailService = emailService;
         _mapper = mapper;
@@ -53,6 +56,8 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Email already exists");
         if (allUsers.Any(u => u.PhoneNumber == dto.PhoneNumber))
             return ApiResponse<AuthResponseDto>.ErrorResponse("Phone number already exists");
+        if (dto.Password != dto.ConfirmPassword)
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Passwords do not match.");
 
         var allRoles = await _roleRepo.GetAllAsync(ct);
         var patientRole = allRoles.FirstOrDefault(r => r.Name == RoleConstants.Patient);
@@ -132,6 +137,7 @@ public class AuthService : IAuthService
                 ProfessionalTitle = dto.ProfessionalTitle,
                 Biography = dto.Biography,
                 ExperienceYears = dto.ExperienceYears,
+                VerificationStatus = VerificationStatus.Draft,
                 User = user
             };
             await _doctorRepo.AddAsync(doctorProfile, ct);
@@ -209,7 +215,21 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Invalid email or password");
 
         if (!user.IsEmailVerified)
-            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. Please verify your email first.");
+        {
+            var otpCode = GenerateOtp();
+            var otp = new OtpVerification
+            {
+                UserId = user.Id,
+                Code = otpCode,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                User = user
+            };
+            await _otpRepo.AddAsync(otp, ct);
+            await _uow.SaveChangesAsync(ct);
+            _ = _emailService.SendOtpEmailAsync(user.Email, otpCode, ct);
+
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. A new verification code has been sent to your email.");
+        }
 
         if (user.Status == UserStatus.Locked)
             return ApiResponse<AuthResponseDto>.ErrorResponse("Account is locked. Contact support.");

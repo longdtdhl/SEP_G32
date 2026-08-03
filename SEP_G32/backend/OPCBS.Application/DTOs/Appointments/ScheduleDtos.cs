@@ -25,6 +25,7 @@ public class CreateScheduleDto
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
     public SlotDuration SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 /// <summary>
@@ -37,6 +38,7 @@ public class UpdateScheduleDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public SlotDuration? SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 /// <summary>
@@ -49,3 +51,33 @@ public class CreateDayOffDto
     public string? Reason { get; set; }
 }
 
+/// <summary>
+/// Create individual slot request DTO
+/// </summary>
+public class CreateSlotDto
+{
+    public string Date { get; set; } = string.Empty; // Format: yyyy-MM-dd
+    public string StartTime { get; set; } = string.Empty; // Format: HH:mm
+    public string EndTime { get; set; } = string.Empty; // Format: HH:mm
+    public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+}
+
+/// <summary>
+/// Update slot request DTO - allows editing time, notes, and capacity
+/// </summary>
+public class UpdateSlotDto
+{
+    public string? StartTime { get; set; } // Format: HH:mm
+    public string? EndTime { get; set; } // Format: HH:mm
+    public string? Notes { get; set; }
+    public int? MaxPatients { get; set; }
+}
+
+/// <summary>
+/// Update slot notes request DTO
+/// </summary>
+public class UpdateSlotNotesRequest
+{
+    public string? Notes { get; set; }
+}

@@ -9,15 +9,23 @@ public class BookModel : PageModel
 {
     private readonly IAppointmentApiService _appointmentService;
     private readonly IDoctorApiService _doctorService;
+    private readonly ITreatmentPackageApiService _treatmentService;
+    private readonly IAuthApiService _authService;
 
     [BindProperty] public CreateAppointmentDto Input { get; set; } = new();
     [BindProperty(SupportsGet = true)] public Guid? DoctorId { get; set; }
     [BindProperty(SupportsGet = true)] public string? Week { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? TreatmentPackageId { get; set; }
+    [BindProperty(SupportsGet = true)] public bool Returning { get; set; }
+
+    public bool IsReturningPatient { get; set; }
 
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public DoctorDto? Doctor { get; set; }
     public bool IsGuest => !User.Identity?.IsAuthenticated ?? true;
     public string? Error { get; set; }
+    public TreatmentPackageDto? TreatmentPackage { get; set; }
+    public bool HasPackageButNotBookingVia { get; set; }
 
     // Week data
     public DateTime WeekStart { get; set; }
@@ -29,14 +37,22 @@ public class BookModel : PageModel
     public int CalStartHour { get; set; } = 8;
     public int CalEndHour { get; set; } = 18;
 
-    public BookModel(IAppointmentApiService appointmentService, IDoctorApiService doctorService)
+    public BookModel(
+        IAppointmentApiService appointmentService,
+        IDoctorApiService doctorService,
+        ITreatmentPackageApiService treatmentService,
+        IAuthApiService authService)
     {
         _appointmentService = appointmentService;
         _doctorService = doctorService;
+        _treatmentService = treatmentService;
+        _authService = authService;
     }
 
     public async Task OnGetAsync()
     {
+        // Patient fills in their own information — no auto-fill
+
         // Calculate week
         var today = DateTime.Today;
         if (!string.IsNullOrEmpty(Week) && DateTime.TryParse(Week, out var parsed))
@@ -49,6 +65,55 @@ public class BookModel : PageModel
         if (DoctorId.HasValue)
         {
             Input.DoctorId = DoctorId.Value;
+
+            // Load treatment package if specified
+            if (TreatmentPackageId.HasValue)
+            {
+                Input.TreatmentPackageId = TreatmentPackageId.Value;
+                try
+                {
+                    var (pkgData, _) = await _treatmentService.GetByIdAsync(TreatmentPackageId.Value);
+                    TreatmentPackage = pkgData;
+                }
+                catch { }
+            }
+            else if (!IsGuest)
+            {
+                try
+                {
+                    var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
+                    var activePkg = pkgs.FirstOrDefault(p =>
+                        p.DoctorId == DoctorId.Value &&
+                        (p.Status == "Active" || p.Status == "Accepted") &&
+                        !p.IsExpired &&
+                        p.RemainingSessions > 0);
+
+                    if (activePkg != null)
+                    {
+                        TreatmentPackage = activePkg;
+                        HasPackageButNotBookingVia = true;
+                    }
+                }
+                catch { }
+            }
+
+            // Check if returning patient (skip pre-evaluation)
+            if (!IsGuest && DoctorId.HasValue)
+            {
+                try
+                {
+                    if (Returning)
+                    {
+                        IsReturningPatient = true;
+                    }
+                    else
+                    {
+                        var (isReturning, _) = await _appointmentService.IsReturningAsync(DoctorId.Value);
+                        IsReturningPatient = isReturning;
+                    }
+                }
+                catch { }
+            }
 
             // Load doctor info
             try
@@ -91,16 +156,36 @@ public class BookModel : PageModel
         }
     }
 
+    [BindProperty(SupportsGet = true)] public string? SelectedDate { get; set; }
+    [BindProperty(SupportsGet = true)] public string? SelectedTime { get; set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.DoctorId == Guid.Empty) { Error = "Vui lòng chọn bác sĩ."; await OnGetAsync(); return Page(); }
-        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Vui lòng chọn slot thời gian."; await OnGetAsync(); return Page(); }
+        if (Input.DoctorId == Guid.Empty) { Error = "Please select a doctor."; await OnGetAsync(); return Page(); }
+        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Please select a time slot."; await OnGetAsync(); return Page(); }
 
-        var (success, error) = await _appointmentService.BookAsync(Input);
-        if (!success) { Error = error ?? "Không thể đặt lịch. Vui lòng thử lại."; await OnGetAsync(); return Page(); }
-        TempData["SuccessMessage"] = "Đặt lịch hẹn thành công!";
-        if (User.Identity?.IsAuthenticated == true)
-            return RedirectToPage("/Patient/Appointments/Index");
-        return RedirectToPage("/Appointment/Track");
+        // Guest validation
+        if (IsGuest)
+        {
+            if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Please enter your full name."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Please enter your email."; await OnGetAsync(); return Page(); }
+        }
+
+        var (bookedAppointment, error) = await _appointmentService.BookAsync(Input);
+        if (bookedAppointment == null)
+        {
+            Error = error ?? "Unable to book appointment. Please try again.";
+            await OnGetAsync();
+            return Page();
+        }
+
+        return RedirectToPage("/Appointment/Success", new
+        {
+            BookingCode = bookedAppointment.BookingCode ?? "",
+            DoctorName = bookedAppointment.DoctorName ?? Doctor?.FullName ?? "",
+            AppointmentDate = bookedAppointment.AppointmentDate ?? SelectedDate ?? "",
+            StartTime = bookedAppointment.StartTime ?? SelectedTime ?? "",
+            EndTime = bookedAppointment.EndTime ?? ""
+        });
     }
 }

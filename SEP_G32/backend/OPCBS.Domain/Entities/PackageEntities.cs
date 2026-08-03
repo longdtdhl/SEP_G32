@@ -4,18 +4,62 @@ using OPCBS.Domain.Enums;
 namespace OPCBS.Domain.Entities;
 
 /// <summary>
-/// Consultation record entity - medical notes and outcomes from completed appointments
+/// Patient record entity - doctor's overview of a patient
 /// </summary>
-public class ConsultationRecord : BaseEntity
+public class PatientRecord : BaseEntity
 {
-    /// <summary>Foreign key to Appointment (1-to-1 relationship)</summary>
-    public Guid AppointmentId { get; set; }
+    /// <summary>Foreign key to DoctorProfile</summary>
+    public Guid DoctorId { get; set; }
+
+    /// <summary>Foreign key to PatientProfile (nullable for walk-in/guest patients)</summary>
+    public Guid? PatientId { get; set; }
+
+    // --- Guest patient fields (for patients outside the system) ---
+    /// <summary>Guest patient name</summary>
+    public string? GuestName { get; set; }
+
+    /// <summary>Guest patient phone number</summary>
+    public string? GuestPhone { get; set; }
+
+    /// <summary>Guest patient email</summary>
+    public string? GuestEmail { get; set; }
+
+    // --- Psychological Health Info ---
+    /// <summary>Patient psychological history</summary>
+    public string? PsychologicalHistory { get; set; }
+
+    /// <summary>Current symptoms and concerns</summary>
+    public string? CurrentSymptoms { get; set; }
+
+    /// <summary>Stress factors / Trauma history</summary>
+    public string? StressFactors { get; set; }
+
+    /// <summary>General notes about the patient</summary>
+    public string? GeneralNotes { get; set; }
+
+    /// <summary>Navigation property to Doctor</summary>
+    public virtual required DoctorProfile Doctor { get; set; }
+
+    /// <summary>Navigation property to Patient</summary>
+    public virtual PatientProfile? Patient { get; set; }
+
+    /// <summary>Navigation property: list of consultation notes for this patient record</summary>
+    public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
+}
+
+/// <summary>
+/// Consultation note entity - medical notes and outcomes from completed appointments
+/// </summary>
+public class ConsultationNote : BaseEntity
+{
+    /// <summary>Foreign key to Appointment (nullable for walk-in patients)</summary>
+    public Guid? AppointmentId { get; set; }
 
     /// <summary>Foreign key to DoctorProfile who conducted consultation</summary>
     public Guid DoctorId { get; set; }
 
-    /// <summary>Foreign key to PatientProfile (patient in the consultation)</summary>
-    public Guid PatientId { get; set; }
+    /// <summary>Foreign key to PatientRecord</summary>
+    public Guid PatientRecordId { get; set; }
 
     /// <summary>Summary of the consultation session</summary>
     public required string ConsultationSummary { get; set; }
@@ -29,22 +73,27 @@ public class ConsultationRecord : BaseEntity
     /// <summary>Follow-up notes or action items</summary>
     public string? FollowUpNotes { get; set; }
 
-    /// <summary>Prescription or medication recommendations (if applicable)</summary>
-    public string? Prescription { get; set; }
+    /// <summary>Therapy plan or psychological intervention</summary>
+    public string? TherapyPlan { get; set; }
 
     /// <summary>Next appointment recommendation date (if applicable)</summary>
     public DateTime? NextAppointmentRecommendedDate { get; set; }
 
+    /// <summary>Date of the consultation. Auto-filled from appointment if linked, otherwise doctor inputs manually.</summary>
+    public DateTime? ConsultationDate { get; set; }
+
+    /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
+    public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
+
     /// <summary>Navigation property to Appointment</summary>
-    public virtual required Appointment Appointment { get; set; }
+    public virtual Appointment? Appointment { get; set; }
 
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }
 
-    /// <summary>Navigation property to Patient</summary>
-    public virtual required PatientProfile Patient { get; set; }
+    /// <summary>Navigation property to PatientRecord</summary>
+    public virtual required PatientRecord PatientRecord { get; set; }
 }
-
 /// <summary>
 /// Treatment package entity - custom package created by doctor for specific patient
 /// NOT paid through VNPay, only Service Packages are paid
@@ -54,14 +103,23 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Foreign key to DoctorProfile who created this package</summary>
     public Guid DoctorId { get; set; }
 
-    /// <summary>Foreign key to PatientProfile to whom package is assigned</summary>
-    public Guid PatientId { get; set; }
+    /// <summary>Foreign key to PatientProfile to whom package is assigned (nullable for doctor template packages)</summary>
+    public Guid? PatientId { get; set; }
 
     /// <summary>Package name</summary>
     public required string Name { get; set; }
 
     /// <summary>Package description and details</summary>
     public string? Description { get; set; }
+
+    /// <summary>Target outcomes / Goal of the treatment package</summary>
+    public string? TargetOutcome { get; set; }
+
+    /// <summary>Recommended exercises and therapeutic activities</summary>
+    public string? RecommendedExercises { get; set; }
+
+    /// <summary>Instructions and guidance for the patient</summary>
+    public string? Instructions { get; set; }
 
     /// <summary>Total number of counseling sessions in package</summary>
     public int SessionQuantity { get; set; }
@@ -97,7 +155,10 @@ public class TreatmentPackage : BaseEntity
     public virtual required DoctorProfile Doctor { get; set; }
 
     /// <summary>Navigation property to Patient</summary>
-    public virtual required PatientProfile Patient { get; set; }
+    public virtual PatientProfile? Patient { get; set; }
+
+    /// <summary>Navigation property: treatment cases created from this package template</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
 
     /// <summary>Navigation property: appointments using this package</summary>
     public virtual ICollection<Appointment>? Appointments { get; set; }
