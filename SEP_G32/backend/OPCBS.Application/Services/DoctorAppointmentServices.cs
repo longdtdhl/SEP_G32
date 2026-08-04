@@ -657,7 +657,9 @@ public class AppointmentService : IAppointmentService
         // Release the slot
         if (slot != null)
         {
-            slot.Status = AppointmentSlotStatus.Available;
+            slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+            if (slot.CurrentBookings < slot.MaxPatients)
+                slot.Status = AppointmentSlotStatus.Available;
             _slotRepo.Update(slot);
         }
 

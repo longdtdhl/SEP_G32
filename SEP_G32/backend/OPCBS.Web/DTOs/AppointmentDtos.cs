@@ -8,6 +8,7 @@ public class AppointmentDto
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public string? DoctorName { get; set; }
     public string? DoctorAvatarUrl { get; set; }
     public string? Specialization { get; set; }
@@ -25,6 +26,12 @@ public class AppointmentDto
     public Guid? TreatmentPackageId { get; set; }
     public string? TreatmentPackageName { get; set; }
     public int VisitCount { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public string? RescheduleReason { get; set; }
+    public bool CanReschedule { get; set; }
 
     public string StatusText => Status switch
     {
@@ -34,6 +41,7 @@ public class AppointmentDto
         3 => "In Progress",
         4 => "Completed",
         5 => "Cancelled",
+        6 => "Reschedule Requested",
         _ => "Unknown"
     };
 
@@ -56,7 +64,10 @@ public class AppointmentListItemDto
 {
     public Guid Id { get; set; }
     public string? BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public string? DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
     public string? Specialization { get; set; }
     public string? AppointmentDate { get; set; }
@@ -65,6 +76,11 @@ public class AppointmentListItemDto
     public int Status { get; set; }
     public decimal? Fee { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public bool CanReschedule { get; set; }
 
     public string StatusText => Status switch
     {
@@ -74,6 +90,7 @@ public class AppointmentListItemDto
         3 => "In Progress",
         4 => "Completed",
         5 => "Cancelled",
+        6 => "Reschedule Requested",
         _ => "Unknown"
     };
 
@@ -145,6 +162,8 @@ public class AppointmentSlotDto
     public int Status { get; set; }
     public decimal? Price { get; set; }
     public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
 }
 
 public class AvailableSlotsDto

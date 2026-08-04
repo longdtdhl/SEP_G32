@@ -31,6 +31,7 @@ public class AppointmentDto
     public Guid Id { get; set; }
     public required string BookingCode { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public required string DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
@@ -49,6 +50,12 @@ public class AppointmentDto
     public int VisitCount { get; set; }
     public string? Specialization { get; set; }
     public string? CancellationReason { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public string? RescheduleReason { get; set; }
+    public bool CanReschedule { get; set; }
 }
 
 /// <summary>
@@ -58,12 +65,23 @@ public class AppointmentListItemDto
 {
     public Guid Id { get; set; }
     public required string BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public required string DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
+    public string? Specialization { get; set; }
     public required string AppointmentDate { get; set; }
     public required string StartTime { get; set; }
     public string? EndTime { get; set; }
     public AppointmentStatus Status { get; set; }
+    public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public bool CanReschedule { get; set; }
 }
 
 /// <summary>
@@ -126,6 +144,8 @@ public class AppointmentSlotDto
     public AppointmentSlotStatus Status { get; set; }
     public decimal? Price { get; set; }
     public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
 }
 
 /// <summary>
@@ -156,6 +176,9 @@ public class ConsultationNoteDto
     public string? TherapyPlan { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public string? PackageName { get; set; }
 
     // Walk-in patient fields
     public string? WalkInPatientName { get; set; }
@@ -218,6 +241,8 @@ public class CreateConsultationNoteDto
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 }
 
 /// <summary>
@@ -230,5 +255,7 @@ public class UpdateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
 }
 
