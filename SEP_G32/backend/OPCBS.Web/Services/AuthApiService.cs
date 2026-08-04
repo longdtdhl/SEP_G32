@@ -17,9 +17,9 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(AuthResponseDto? Data, string? Error)> LoginAsync(LoginRequestDto model)
     {
         var (data, error) = await PostAsync<AuthResponseDto>(ApiRoutes.Login, model);
-        if (data?.AccessToken != null)
+        if (!string.IsNullOrWhiteSpace(data?.AccessToken) && !string.IsNullOrWhiteSpace(data.RefreshToken))
         {
-            _cookieService.StoreToken(data.AccessToken);
+            _cookieService.StoreTokens(data.AccessToken, data.RefreshToken, model.RememberMe);
         }
         return (data, error);
     }

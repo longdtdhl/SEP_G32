@@ -305,7 +305,7 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.RejectionReason)
                 .HasMaxLength(1000);
-            entity.HasIndex(e => e.DoctorProfileId).IsUnique();
+            entity.HasIndex(e => e.DoctorProfileId);
         });
     }
 

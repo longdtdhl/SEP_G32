@@ -30,7 +30,18 @@ public class LoginModel : PageModel
             new Claim(ClaimTypes.Role, role)
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        var authProperties = new AuthenticationProperties
+        {
+            AllowRefresh = true,
+            IsPersistent = Input.RememberMe,
+            ExpiresUtc = Input.RememberMe
+                ? DateTimeOffset.UtcNow.AddDays(30)
+                : DateTimeOffset.UtcNow.AddDays(7)
+        };
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            authProperties);
 
         // Redirect based on role
         return role switch

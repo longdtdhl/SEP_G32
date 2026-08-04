@@ -47,6 +47,42 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
     public async Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId) => await base.DeleteAsync($"{ApiRoutes.Schedules}/slots/{slotId}");
     public async Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/notes", new { Notes = notes });
     public async Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}", dto);
+
+    public async Task<(List<CalendarEventDto> Data, string? Error)> GetCalendarEventsAsync(DateTime? start = null, DateTime? end = null)
+    {
+        var url = $"{ApiRoutes.Schedules}/calendar";
+        var queryParams = new List<string>();
+        if (start.HasValue) queryParams.Add($"start={start.Value:yyyy-MM-ddTHH:mm:ss}");
+        if (end.HasValue) queryParams.Add($"end={end.Value:yyyy-MM-ddTHH:mm:ss}");
+        if (queryParams.Any()) url += "?" + string.Join("&", queryParams);
+
+        var (data, _, error) = await GetAsync<List<CalendarEventDto>>(url);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<EligibleTreatmentPatientDto> Data, string? Error)> GetEligibleTreatmentPatientsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<EligibleTreatmentPatientDto>>($"{ApiRoutes.Schedules}/eligible-treatment-patients");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(AppointmentSlotDto? Data, string? Error)> CreateTreatmentAppointmentAsync(CreateTreatmentAppointmentDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentSlotDto>($"{ApiRoutes.Schedules}/treatment-appointments", dto);
+        return (data, error);
+    }
+
+    public async Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto)
+    {
+        var (data, error) = await PostAsync<WeeklySchedulePreviewDto>($"{ApiRoutes.Schedules}/preview-weekly", dto);
+        return (data, error);
+    }
+
+    public async Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto)
+    {
+        var (data, error) = await PostAsync<int>($"{ApiRoutes.Schedules}/generate-weekly", dto);
+        return (data, error);
+    }
 }
 
 // --- Consultation Record ---
@@ -318,10 +354,11 @@ public class CustomerSupportApiService : ApiServiceBase, ICustomerSupportApiServ
         var (data, _, error) = await GetAsync<DashboardStatsDto>($"{ApiRoutes.CSDoctorApplications}/../dashboard");
         return (data, error);
     }
-    public async Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null)
+    public async Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null, string? search = null)
     {
         var url = $"{ApiRoutes.CSDoctorApplications}?page={page}";
         if (!string.IsNullOrEmpty(status)) url += $"&status={status}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
         var (data, pagination, error) = await GetAsync<List<VerificationDto>>(url);
         return (data ?? new(), pagination, error);
     }
@@ -369,6 +406,20 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     public async Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto) => await PostAsync(ApiRoutes.ServicePackages, dto);
     public async Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto) => await PutAsync($"{ApiRoutes.ServicePackages}/{id}", dto);
     public async Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.ServicePackages}/{id}");
+    // Doctor Subscriptions
+    public async Task<(List<SubscriptionDto> Data, PaginationDto? Pagination, string? Error)> GetSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10)
+    {
+        var url = $"api/v1/business-manager/subscriptions?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(status)) url += $"&status={status}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
+        var (data, pagination, error) = await GetAsync<List<SubscriptionDto>>(url);
+        return (data ?? new(), pagination, error);
+    }
+    public async Task<(SubscriptionDto? Data, string? Error)> GetSubscriptionByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<SubscriptionDto>($"api/v1/business-manager/subscriptions/{id}");
+        return (data, error);
+    }
     // Specializations
     public async Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync()
     {

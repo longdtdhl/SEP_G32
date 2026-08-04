@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using OPCBS.Application.DTOs.TreatmentCase;
 using OPCBS.Application.Interfaces.Repositories;
@@ -26,7 +27,9 @@ public class TreatmentCaseServiceTests
     private readonly Mock<IRepository<PatientProfile>> _patientRepo = new();
     private readonly Mock<IRepository<DoctorProfile>> _doctorRepo = new();
     private readonly Mock<IRepository<User>> _userRepo = new();
+    private readonly Mock<IRepository<AppointmentHistory>> _appointmentHistoryRepo = new();
     private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<ILogger<TreatmentCaseService>> _logger = new();
 
     private readonly TreatmentCaseService _service;
 
@@ -49,7 +52,9 @@ public class TreatmentCaseServiceTests
             _patientRepo.Object,
             _doctorRepo.Object,
             _userRepo.Object,
-            _uow.Object);
+            _appointmentHistoryRepo.Object,
+            _uow.Object,
+            _logger.Object);
     }
 
     private static User CreateDummyUser(Guid id, string name) => new()

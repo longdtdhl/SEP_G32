@@ -116,10 +116,19 @@ builder.Services.AddHostedService<OPCBS.Services.AppointmentReminderService>();
 var app = builder.Build();
 
 // Seed database on startup
+if (app.Configuration.GetValue<bool>("ResetDatabase", false) || Environment.GetEnvironmentVariable("RESET_DB") == "true")
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
+        context.Database.EnsureDeleted();
+    }
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
-    context.Database.Migrate();
+    context.Database.EnsureCreated();
     await SeedData.SeedAsync(context);
 }
 

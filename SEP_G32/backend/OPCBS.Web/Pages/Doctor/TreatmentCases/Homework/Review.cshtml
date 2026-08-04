@@ -1,0 +1,63 @@
+@page
+@model OPCBS.Web.Pages.Doctor.TreatmentCases.Homework.ReviewModel
+@{
+    ViewData["Title"] = "Review Homework";
+    Layout = "_DashboardLayout";
+}
+
+<div class="container-fluid py-3" style="max-width: 700px;">
+    <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=homework" class="text-decoration-none text-muted small d-inline-block mb-2">
+        <i class="bi bi-arrow-left me-1"></i>Back to Homework
+    </a>
+    <h4 class="fw-bold mb-1">Review Homework Submission</h4>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger rounded-3 mb-3"><i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage</div>
+    }
+
+    @if (Model.Homework == null)
+    {
+        <div class="alert alert-warning rounded-3">Homework not found.</div>
+        return;
+    }
+
+    <div class="card border-0 shadow-sm rounded-3 p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h6 class="fw-bold mb-1">@Model.Homework.Title</h6>
+                <p class="text-muted small mb-0">@(Model.Homework.Description ?? "No description")</p>
+            </div>
+            <span class="@Model.Homework.StatusBadgeClass">@Model.Homework.StatusText</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Homework.PatientSubmission))
+        {
+            <div class="p-3 bg-light rounded-3 mb-3">
+                <small class="fw-bold text-dark d-block mb-1"><i class="bi bi-person me-1"></i>Patient Submission:</small>
+                <div class="text-secondary small">@Model.Homework.PatientSubmission</div>
+                @if (!string.IsNullOrEmpty(Model.Homework.PatientSubmissionUrl))
+                {
+                    <a href="@Model.Homework.PatientSubmissionUrl" target="_blank" class="small text-primary mt-1 d-inline-block">
+                        <i class="bi bi-paperclip me-1"></i>View Attachment
+                    </a>
+                }
+            </div>
+        }
+
+        <form method="post" asp-page-handler="Review">
+            <input type="hidden" name="caseId" value="@Model.CaseId" />
+            <input type="hidden" name="homeworkId" value="@Model.HomeworkId" />
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Doctor Feedback & Comments <span class="text-danger">*</span></label>
+                <textarea name="doctorFeedback" class="form-control" rows="4" required placeholder="Enter feedback, encouragement, or detailed comments..."></textarea>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=homework" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-success px-4"><i class="bi bi-check2-square me-1"></i>Submit Feedback</button>
+            </div>
+        </form>
+    </div>
+</div>

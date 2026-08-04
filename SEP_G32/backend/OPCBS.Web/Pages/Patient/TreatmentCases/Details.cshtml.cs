@@ -22,6 +22,7 @@ public class DetailsModel : PageModel
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
     public string? ErrorMessage { get; set; }
+    public string? SuccessMessage { get; set; }
     public string ActiveTab { get; set; } = "overview";
 
     public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
@@ -55,6 +56,31 @@ public class DetailsModel : PageModel
         return Page();
     }
 
+    /// <summary>Helper to reload all data after a failed POST</summary>
+    private async Task ReloadDataAsync(Guid caseId, string tab)
+    {
+        ActiveTab = tab;
+        var (caseData, _) = await _api.GetByIdAsync(caseId);
+        Case = caseData;
+        if (caseData == null) return;
+
+        var sessionsTask = _api.GetSessionsAsync(caseId);
+        var goalsTask = _api.GetGoalsAsync(caseId);
+        var homeworkTask = _api.GetHomeworkAsync(caseId);
+        var moodTask = _api.GetMoodEntriesAsync(caseId);
+        var progressTask = _api.GetProgressAsync(caseId);
+        var timelineTask = _api.GetTimelineAsync(caseId);
+
+        await Task.WhenAll(sessionsTask, goalsTask, homeworkTask, moodTask, progressTask, timelineTask);
+
+        Sessions = sessionsTask.Result.Data;
+        Goals = goalsTask.Result.Data;
+        HomeworkList = homeworkTask.Result.Data;
+        MoodEntries = moodTask.Result.Data;
+        Progress = progressTask.Result.Data;
+        Timeline = timelineTask.Result.Data;
+    }
+
     public async Task<IActionResult> OnPostSubmitHomeworkAsync(Guid caseId, Guid homeworkId, string? patientSubmission, string? patientSubmissionUrl)
     {
         var dto = new SubmitHomeworkWebDto
@@ -62,24 +88,36 @@ public class DetailsModel : PageModel
             PatientSubmission = patientSubmission,
             PatientSubmissionUrl = patientSubmissionUrl
         };
-        await _api.SubmitHomeworkAsync(homeworkId, dto);
+        var (success, error) = await _api.SubmitHomeworkAsync(homeworkId, dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to submit homework.";
+            await ReloadDataAsync(caseId, "homework");
+            return Page();
+        }
         return RedirectToPage(new { id = caseId, tab = "homework" });
     }
 
-    public async Task<IActionResult> OnPostAddMoodAsync(Guid caseId, int moodScore, int? anxietyScore, int? stressScore, int? sleepQualityScore, int? depressionScore, int? relationshipScore, string? note)
+    public async Task<IActionResult> OnPostAddMoodEntryAsync(
+        Guid caseId, int moodScore, int? anxietyScore, int? stressScore,
+        int? sleepQualityScore, string? note)
     {
-        var dto = new CreateMoodEntryWebDto
+        var dto = new
         {
             TreatmentCaseId = caseId,
             MoodScore = moodScore,
-            AnxietyScore = anxietyScore,
-            StressScore = stressScore,
-            SleepQualityScore = sleepQualityScore,
-            DepressionScore = depressionScore,
-            RelationshipScore = relationshipScore,
+            AnxietyScore = anxietyScore > 0 ? anxietyScore : null,
+            StressScore = stressScore > 0 ? stressScore : null,
+            SleepQualityScore = sleepQualityScore > 0 ? sleepQualityScore : null,
             Note = note
         };
-        await _api.AddMoodEntryAsync(dto);
+        var (success, error) = await _api.AddMoodEntryAsync(dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to save mood entry.";
+            await ReloadDataAsync(caseId, "mood");
+            return Page();
+        }
         return RedirectToPage(new { id = caseId, tab = "mood" });
     }
 }

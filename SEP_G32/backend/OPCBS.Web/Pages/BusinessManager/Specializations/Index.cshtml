@@ -1,71 +1,136 @@
 @page
 @model OPCBS.Web.Pages.BusinessManager.Specializations.IndexModel
 @{
-    ViewData["Title"] = "Specializations";
+    ViewData["Title"] = "Specializations Management";
+    Layout = "_DashboardLayout";
+}
 
-    Layout = "_DashboardLayout";}
+<style>
+    .bm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-tags me-2" style="color:var(--mb-primary);"></i>Specialization Management</h1>
-    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Specialization</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-tags-fill me-2" style="color:var(--mb-primary);"></i>Medical Specializations
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Manage clinical specializations and practitioner discipline categories</p>
+    </div>
+    <a asp-page="Create" class="btn btn-primary btn-sm" style="border-radius:6px; font-weight:600;">
+        <i class="bi bi-plus-lg me-1"></i>Add Specialization
+    </a>
 </div>
 
-@if (Model.Success != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@Model.Success<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (Model.Success != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@Model.Success
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-<!-- Stats -->
-<div class="row g-3 mb-4">
+<!-- Metrics Summary -->
+<div class="row g-3 mb-3">
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(78,139,112,0.1);"><i class="bi bi-tags fs-4" style="color:var(--mb-primary);"></i></div>
-            <div><small class="text-muted">Total</small><h4 class="mb-0 fw-bold">@Model.Specializations.Count</h4></div>
-        </div></div>
+        <div class="bm-card p-3 d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(78,139,112,0.1); width:44px; height:44px;">
+                <i class="bi bi-tags fs-5" style="color:var(--mb-primary);"></i>
+            </div>
+            <div>
+                <small class="text-muted d-block">Total Specializations</small>
+                <h4 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Specializations.Count</h4>
+            </div>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(16,185,129,0.1);"><i class="bi bi-check-circle fs-4 text-success"></i></div>
-            <div><small class="text-muted">Active</small><h4 class="mb-0 fw-bold">@Model.Specializations.Count(s => s.IsActive)</h4></div>
-        </div></div>
+        <div class="bm-card p-3 d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(16,185,129,0.1); width:44px; height:44px;">
+                <i class="bi bi-check-circle fs-5 text-success"></i>
+            </div>
+            <div>
+                <small class="text-muted d-block">Active Categories</small>
+                <h4 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Specializations.Count(s => s.IsActive)</h4>
+            </div>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(59,130,246,0.1);"><i class="bi bi-person-badge fs-4" style="color:#3b82f6;"></i></div>
-            <div><small class="text-muted">Total Doctors</small><h4 class="mb-0 fw-bold">@Model.Specializations.Sum(s => s.DoctorCount)</h4></div>
-        </div></div>
+        <div class="bm-card p-3 d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(59,130,246,0.1); width:44px; height:44px;">
+                <i class="bi bi-person-badge fs-5 text-primary"></i>
+            </div>
+            <div>
+                <small class="text-muted d-block">Associated Doctors</small>
+                <h4 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Specializations.Sum(s => s.DoctorCount)</h4>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Table -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h6 class="mb-0 fw-semibold">Specializations</h6>
+<div class="bm-card">
+    <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Medical Specializations List</h6>
         <form method="get" class="d-flex gap-2">
-            <div class="input-group input-group-sm" style="width:260px;">
-                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search..." />
+            <div class="input-group input-group-sm" style="max-width:260px;">
+                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" asp-for="Search" class="form-control" placeholder="Search specialization..." />
             </div>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter"></i></button>
-            @if (!string.IsNullOrEmpty(Model.Search)) { <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i></a> }
+            <button type="submit" class="btn btn-primary btn-sm" style="border-radius:6px; font-size:0.8rem;"><i class="bi bi-funnel me-1"></i>Filter</button>
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; font-size:0.8rem;"><i class="bi bi-x-circle me-1"></i>Reset</a>
+            }
         </form>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th class="ps-4">Name</th><th>Description</th><th>Doctors</th><th>Status</th><th class="text-end pe-4">Actions</th></tr></thead>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Specialization Name</th>
+                    <th>Description</th>
+                    <th>Practitioners</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
             <tbody>
                 @if (Model.Specializations.Any())
                 {
                     @foreach (var spec in Model.Specializations)
                     {
                         <tr>
-                            <td class="ps-4"><div class="d-flex align-items-center gap-2"><i class="bi bi-tag" style="color:var(--mb-primary);"></i><span class="fw-semibold">@spec.Name</span></div></td>
-                            <td class="text-muted small">@(spec.Description ?? "—")</td>
-                            <td><span class="badge bg-primary bg-opacity-10 text-primary">@spec.DoctorCount</span></td>
-                            <td><span class="badge @(spec.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(spec.IsActive ? "Active" : "Inactive")</span></td>
-                            <td class="text-end pe-4">
-                                <a asp-page="Edit" asp-route-id="@spec.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-tag-fill text-primary"></i>
+                                    <span class="fw-semibold text-dark">@spec.Name</span>
+                                </div>
+                            </td>
+                            <td class="text-muted">@(spec.Description ?? "—")</td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.75rem;">@spec.DoctorCount doctors</span></td>
+                            <td>
+                                @if (spec.IsActive)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.7rem;">Inactive</span>
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <a asp-page="Edit" asp-route-id="@spec.Id" class="btn btn-sm btn-outline-primary me-1" style="border-radius:6px; font-size:0.75rem;" title="Edit Specialization"><i class="bi bi-pencil me-1"></i>Edit</a>
                                 <form method="post" asp-page-handler="Delete" class="d-inline">
                                     <input type="hidden" name="id" value="@spec.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Delete this specialization?')"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.75rem;" title="Delete Specialization" onclick="return confirm('Delete specialization @spec.Name?')">
+                                        <i class="bi bi-trash me-1"></i>Delete
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -73,9 +138,15 @@
                 }
                 else
                 {
-                    <tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-tags d-block mb-2" style="font-size:2.5rem;"></i><p>No specializations found.</p><a asp-page="Create" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Add First</a></td></tr>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-tags d-block mb-2" style="font-size:2rem; color:#cbd5e1;"></i>
+                            <p class="mb-2" style="font-size:0.85rem;">No specializations found.</p>
+                            <a asp-page="Create" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:0.8rem;"><i class="bi bi-plus-lg me-1"></i>Add First Specialization</a>
+                        </td>
+                    </tr>
                 }
             </tbody>
-        </table></div>
+        </table>
     </div>
 </div>

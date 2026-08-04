@@ -18,6 +18,11 @@ public interface IScheduleApiService
     Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
     Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes);
     Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto);
+    Task<(List<CalendarEventDto> Data, string? Error)> GetCalendarEventsAsync(DateTime? start = null, DateTime? end = null);
+    Task<(List<EligibleTreatmentPatientDto> Data, string? Error)> GetEligibleTreatmentPatientsAsync();
+    Task<(AppointmentSlotDto? Data, string? Error)> CreateTreatmentAppointmentAsync(CreateTreatmentAppointmentDto dto);
+    Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
+    Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
 }
 
 public interface IPatientRecordApiService
@@ -106,7 +111,7 @@ public interface IAdminApiService
 public interface ICustomerSupportApiService
 {
     Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync();
-    Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null);
+    Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null, string? search = null);
     Task<(VerificationDto? Data, string? Error)> GetApplicationByIdAsync(Guid id);
     Task<(bool Success, string? Error)> ReviewApplicationAsync(Guid id, ReviewVerificationDto dto);
     Task<(List<BlogListItemDto> Data, PaginationDto? Pagination, string? Error)> GetBlogModerationQueueAsync(int page = 1);
@@ -123,6 +128,8 @@ public interface IBusinessManagerApiService
     Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto);
     Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto);
     Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id);
+    Task<(List<SubscriptionDto> Data, PaginationDto? Pagination, string? Error)> GetSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10);
+    Task<(SubscriptionDto? Data, string? Error)> GetSubscriptionByIdAsync(Guid id);
     Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync();
     Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto);
     Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto);

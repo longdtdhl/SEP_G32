@@ -81,6 +81,7 @@ public class VerificationRequestDto
     public string? LicenseNumber { get; set; }
     public string? Specialization { get; set; }
     public int ExperienceYears { get; set; }
+    public string? Education { get; set; }
     public string? Biography { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? RejectionReason { get; set; }
@@ -88,6 +89,14 @@ public class VerificationRequestDto
     public Guid? ReviewedBy { get; set; }
     public string? ReviewedByName { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
+    public DateTime? CertificateUploadedAt { get; set; }
+    public DateTime SubmittedAt { get; set; }
+    public string? PreviousApprovedCertificateUrl { get; set; }
+    public string? PreviousApprovedCertificateFileName { get; set; }
+    public DateTime? PreviousApprovedCertificateUploadedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -98,6 +107,9 @@ public class SubmitVerificationDto
     public int ExperienceYears { get; set; }
     public string? Education { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -154,6 +166,7 @@ public class TreatmentPackageDto
     public int SessionQuantity { get; set; }
     public int RemainingSessions { get; set; }
     public int ValidityDays { get; set; }
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime ExpirationDate { get; set; }
@@ -173,6 +186,7 @@ public class CreateTreatmentPackageDto
     public string? Instructions { get; set; }
     public int SessionQuantity { get; set; }
     public int ValidityDays { get; set; } = 90;
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
 }
 
@@ -180,6 +194,7 @@ public class SubscriptionDto
 {
     public Guid Id { get; set; }
     public Guid DoctorId { get; set; }
+    public string? DoctorName { get; set; }
     public Guid ServicePackageId { get; set; }
     public required string PackageName { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -221,6 +236,14 @@ public class UserListDto
     public string Status { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class RoleDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int UserCount { get; set; }
 }
 
 public class DashboardStatsDto
@@ -270,15 +293,19 @@ public interface IReviewService
 /// <summary>
 /// Verification service - doctor verification workflow
 /// </summary>
+/// <summary>
+/// Verification service - doctor verification workflow
+/// </summary>
 public interface IVerificationService
 {
     Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, SubmitVerificationDto? dto = null, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationStatusAsync(Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationByIdAsync(Guid requestId, CancellationToken ct = default);
     Task<ApiResponse<List<VerificationRequestDto>>> GetPendingVerificationsAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
-    Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse> ApproveVerificationAsync(Guid requestId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectVerificationAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct = default);
+    Task<ApiResponse> RequestAdditionalInfoAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -317,6 +344,8 @@ public interface ISubscriptionService
     Task<ApiResponse<SubscriptionDto>> CreateSubscriptionDirectAsync(Guid doctorUserId, Guid servicePackageId, CancellationToken ct = default);
     Task<ApiResponse<SubscriptionDto>> GetActiveSubscriptionAsync(Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<List<SubscriptionDto>>> GetSubscriptionHistoryAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<List<SubscriptionDto>>> GetAllSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<SubscriptionDto>> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken ct = default);
     Task<ApiResponse> ProcessPaymentCallbackAsync(IDictionary<string, string> queryParams, CancellationToken ct = default);
 }
 
@@ -339,8 +368,10 @@ public interface IAdminService
 {
     Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct = default);
     Task<ApiResponse<List<UserListDto>>> GetUsersAsync(string? search, string? role, int page = 1, int pageSize = 10, CancellationToken ct = default);
-    Task<ApiResponse> LockUserAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<UserListDto>> GetUserByIdAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse> LockUserAsync(Guid userId, Guid requestingAdminId, CancellationToken ct = default);
     Task<ApiResponse> UnlockUserAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct = default);
     Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page = 1, int pageSize = 20, CancellationToken ct = default);
     Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default);
     Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, CancellationToken ct = default);

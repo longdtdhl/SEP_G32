@@ -420,6 +420,181 @@ public class BusinessServicesTests
     }
 
     [Fact]
+    public async Task DoctorVerificationService_SubmitVerification_PendingRequest_UpdatesInPlaceAndResetsReviewState()
+    {
+        var verRepo = new Mock<IRepository<VerificationRequest>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            VerificationStatus = VerificationStatus.Submitted,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        var existingReq = new VerificationRequest
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            Status = VerificationStatus.Submitted,
+            CertificateUrl = "https://res.cloudinary.com/old.pdf",
+            CertificateFileName = "old.pdf",
+            ReviewedAt = DateTime.UtcNow.AddDays(-1),
+            ReviewedBy = Guid.NewGuid(),
+            RejectionReason = "Previous reason",
+            DoctorProfile = doctor
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        verRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<VerificationRequest> { existingReq });
+        doctorRepo.Setup(r => r.GetByIdAsync(doctorId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor);
+        userRepo.Setup(r => r.GetByIdAsync(doctorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor.User);
+
+        VerificationRequest? updatedReq = null;
+        verRepo.Setup(r => r.Update(It.IsAny<VerificationRequest>()))
+            .Callback<VerificationRequest>(req => updatedReq = req);
+
+        var service = new VerificationService(verRepo.Object, doctorRepo.Object, userRepo.Object, uow.Object, mapper.Object);
+        var dto = new SubmitVerificationDto
+        {
+            CertificateUrl = "https://res.cloudinary.com/new.pdf",
+            CertificateFileName = "new.pdf",
+            CertificateContentType = "application/pdf"
+        };
+
+        var result = await service.SubmitVerificationAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(updatedReq);
+        Assert.Equal(existingReq.Id, updatedReq!.Id);
+        Assert.Equal(VerificationStatus.Submitted, updatedReq.Status);
+        Assert.Equal("https://res.cloudinary.com/new.pdf", updatedReq.CertificateUrl);
+        Assert.Null(updatedReq.ReviewedAt);
+        Assert.Null(updatedReq.ReviewedBy);
+        Assert.Null(updatedReq.RejectionReason);
+    }
+
+    [Fact]
+    public async Task DoctorVerificationService_SubmitVerification_RejectedRequest_CreatesNewRequestPreservingHistory()
+    {
+        var verRepo = new Mock<IRepository<VerificationRequest>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            VerificationStatus = VerificationStatus.Rejected,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        var rejectedReq = new VerificationRequest
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            Status = VerificationStatus.Rejected,
+            CertificateUrl = "https://res.cloudinary.com/rejected.pdf",
+            RejectionReason = "Illegible text",
+            DoctorProfile = doctor
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        verRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<VerificationRequest> { rejectedReq });
+        doctorRepo.Setup(r => r.GetByIdAsync(doctorId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor);
+        userRepo.Setup(r => r.GetByIdAsync(doctorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor.User);
+
+        VerificationRequest? newAddedReq = null;
+        verRepo.Setup(r => r.AddAsync(It.IsAny<VerificationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<VerificationRequest, CancellationToken>((req, _) => newAddedReq = req)
+            .Returns(Task.CompletedTask);
+
+        var service = new VerificationService(verRepo.Object, doctorRepo.Object, userRepo.Object, uow.Object, mapper.Object);
+        var dto = new SubmitVerificationDto
+        {
+            CertificateUrl = "https://res.cloudinary.com/resubmitted.pdf",
+            CertificateFileName = "resubmitted.pdf"
+        };
+
+        var result = await service.SubmitVerificationAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(newAddedReq);
+        Assert.NotEqual(rejectedReq.Id, newAddedReq!.Id);
+        Assert.Equal(VerificationStatus.Submitted, newAddedReq.Status);
+        Assert.Equal("https://res.cloudinary.com/resubmitted.pdf", newAddedReq.CertificateUrl);
+        Assert.Equal(VerificationStatus.Submitted, doctor.VerificationStatus);
+    }
+
+    [Fact]
+    public async Task DoctorVerificationService_SubmitVerification_ApprovedRequest_CreatesNewRequestPreservingApprovedHistory()
+    {
+        var verRepo = new Mock<IRepository<VerificationRequest>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            VerificationStatus = VerificationStatus.Approved,
+            User = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr. Test", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } }
+        };
+
+        var approvedReq = new VerificationRequest
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            Status = VerificationStatus.Approved,
+            CertificateUrl = "https://res.cloudinary.com/approved.pdf",
+            CertificateFileName = "approved.pdf",
+            ReviewedAt = DateTime.UtcNow.AddMonths(-6),
+            DoctorProfile = doctor
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        verRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<VerificationRequest> { approvedReq });
+        doctorRepo.Setup(r => r.GetByIdAsync(doctorId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor);
+        userRepo.Setup(r => r.GetByIdAsync(doctorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(doctor.User);
+
+        VerificationRequest? newAddedReq = null;
+        verRepo.Setup(r => r.AddAsync(It.IsAny<VerificationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<VerificationRequest, CancellationToken>((req, _) => newAddedReq = req)
+            .Returns(Task.CompletedTask);
+
+        var service = new VerificationService(verRepo.Object, doctorRepo.Object, userRepo.Object, uow.Object, mapper.Object);
+        var dto = new SubmitVerificationDto
+        {
+            CertificateUrl = "https://res.cloudinary.com/updated_cert.pdf",
+            CertificateFileName = "updated_cert.pdf"
+        };
+
+        var result = await service.SubmitVerificationAsync(doctorUserId, dto, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(newAddedReq);
+        Assert.NotEqual(approvedReq.Id, newAddedReq!.Id);
+        Assert.Equal(VerificationStatus.Submitted, newAddedReq.Status);
+        Assert.Equal("https://res.cloudinary.com/updated_cert.pdf", newAddedReq.CertificateUrl);
+        Assert.Equal(VerificationStatus.Submitted, doctor.VerificationStatus);
+        Assert.Equal("https://res.cloudinary.com/approved.pdf", result.Data!.PreviousApprovedCertificateUrl);
+    }
+
+    [Fact]
     public async Task ConsultationNoteService_UpdateAsync_WhenConfirmed_ReturnsError()
     {
         var recordRepo = new Mock<IRepository<ConsultationNote>>();
@@ -606,6 +781,481 @@ public class BusinessServicesTests
         Assert.True(note.IsPatientConfirmed);
         Assert.NotNull(note.PatientConfirmedAt);
         Assert.Equal(patientUserId, note.PatientConfirmedById);
+    }
+
+    [Fact]
+    public async Task ScheduleService_GetCalendarEventsAsync_ReturnsFormattedCalendarEvents()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var doctor = new DoctorProfile
+        {
+            Id = doctorId,
+            UserId = doctorUserId,
+            User = new User
+            {
+                Id = doctorUserId,
+                FullName = "Dr. Test",
+                Email = "dr.test@example.com",
+                PasswordHash = "hash",
+                PhoneNumber = "0123456789",
+                Role = new Role { Name = "Doctor" }
+            },
+            Biography = "Bio",
+            LicenseNumber = "LIC123"
+        };
+
+        var slot = new AppointmentSlot
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            SlotDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            Status = AppointmentSlotStatus.Available,
+            DoctorProfile = doctor,
+            Notes = "Sample Slot Note"
+        };
+
+        var dayOff = new DoctorDayOff
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today,
+            Reason = "Vacation",
+            DoctorProfile = doctor
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { slot });
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff> { dayOff });
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { doctor.User });
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+
+        var result = await service.GetCalendarEventsAsync(doctorUserId, DateTime.Today.AddDays(-1), DateTime.Today.AddDays(2), default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Contains(result.Data, e => e.EventType == "Availability");
+        Assert.Contains(result.Data, e => e.EventType == "DayOff");
+    }
+
+    [Fact]
+    public async Task ScheduleService_CreateSlot_CustomDurations_Success()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "d@test.com", FullName = "Doc", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot>());
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+
+        // 1. 30 Minutes
+        var res30 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "08:00", EndTime = "08:30" });
+        Assert.True(res30.Success);
+        Assert.Equal("08:00", res30.Data!.StartTime);
+        Assert.Equal("08:30", res30.Data!.EndTime);
+
+        // 2. 75 Minutes (1 hour 15 min)
+        var res75 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "09:00", EndTime = "10:15" });
+        Assert.True(res75.Success);
+        Assert.Equal("09:00", res75.Data!.StartTime);
+        Assert.Equal("10:15", res75.Data!.EndTime);
+
+        // 3. 3 Hours
+        var res3h = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "13:00", EndTime = "16:00" });
+        Assert.True(res3h.Success);
+        Assert.Equal("13:00", res3h.Data!.StartTime);
+        Assert.Equal("16:00", res3h.Data!.EndTime);
+    }
+
+    [Fact]
+    public async Task ScheduleService_CreateSlot_Validations_ReturnsErrors()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "d@test.com", FullName = "Doc", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+
+        var existingSlot = new AppointmentSlot
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = new DateOnly(2026, 8, 10),
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(9, 0),
+            Status = AppointmentSlotStatus.Available
+        };
+
+        var dayOff = new DoctorDayOff
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            StartDate = new DateTime(2026, 8, 15),
+            EndDate = new DateTime(2026, 8, 15)
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { existingSlot });
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff> { dayOff });
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+
+        // 1. StartTime >= EndTime
+        var resInvalidTime = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "09:00", EndTime = "08:00" });
+        Assert.False(resInvalidTime.Success);
+        Assert.Contains("Start time must be before end time", resInvalidTime.Message);
+
+        // 2. Overlapping Slot
+        var resOverlap = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "08:30", EndTime = "09:30" });
+        Assert.False(resOverlap.Success);
+        Assert.Contains("overlaps with an existing slot", resOverlap.Message);
+
+        // 3. Day Off
+        var resDayOff = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-15", StartTime = "08:00", EndTime = "09:00" });
+        Assert.False(resDayOff.Success);
+        Assert.Contains("day off", resDayOff.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ScheduleService_GetCalendarEventsAsync_OutsideHoursAndNoDuplicateBookedEvents()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "d@test.com", FullName = "Doc", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+        var testDate = new DateOnly(2026, 8, 10);
+        var slotId1 = Guid.NewGuid();
+        var slotId2 = Guid.NewGuid();
+
+        var earlySlot = new AppointmentSlot
+        {
+            Id = slotId1,
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = testDate,
+            StartTime = new TimeOnly(5, 0),
+            EndTime = new TimeOnly(6, 0),
+            Status = AppointmentSlotStatus.Available
+        };
+
+        var bookedSlot = new AppointmentSlot
+        {
+            Id = slotId2,
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = testDate,
+            StartTime = new TimeOnly(23, 0),
+            EndTime = new TimeOnly(23, 30),
+            Status = AppointmentSlotStatus.Booked
+        };
+
+        var appt = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "B123",
+            DoctorId = doctorId,
+            Doctor = doctor,
+            PatientId = Guid.NewGuid(),
+            AppointmentSlotId = slotId2,
+            AppointmentSlot = bookedSlot,
+            AppointmentDate = new DateTime(2026, 8, 10),
+            Status = AppointmentStatus.Approved
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { earlySlot, bookedSlot });
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment> { appt });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User>());
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+
+        var start = new DateTime(2026, 8, 10, 0, 0, 0);
+        var end = new DateTime(2026, 8, 11, 0, 0, 0);
+        var result = await service.GetCalendarEventsAsync(doctorUserId, start, end, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+
+        // Early slot (05:00-06:00) is included
+        Assert.Contains(result.Data, e => e.SlotId == slotId1 && e.Start.Contains("T05:00:00"));
+
+        // Booked slot with appointment renders ONLY 1 Appointment event, no duplicate Booked slot event
+        Assert.Single(result.Data.Where(e => e.SlotId == slotId2));
+        Assert.Equal("Appointment", result.Data.First(e => e.SlotId == slotId2).EventType);
+    }
+
+    [Fact]
+    public async Task ScheduleService_GenerateWeeklyScheduleAsync_SuccessAndIdempotent()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr Weekly", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot>());
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+
+        var config = new WeeklyScheduleConfigDto
+        {
+            WorkingDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
+            TimeRanges = new List<WeeklyScheduleRangeDto>
+            {
+                new WeeklyScheduleRangeDto { StartTime = "08:00", EndTime = "10:00" }
+            },
+            SlotDurationMinutes = 60,
+            BreakTimeMinutes = 0,
+            StartDate = "2026-08-10", // Monday
+            WeeksToApply = 2
+        };
+
+        var result = await service.GenerateWeeklyScheduleAsync(doctorUserId, config);
+
+        Assert.True(result.Success);
+        // 2 weeks * 2 days/week (Mon, Wed) * 2 slots/day (08-09, 09-10) = 8 slots
+        Assert.Equal(8, result.Data);
+
+        // Run second time (idempotency check)
+        var existingGeneratedSlots = new List<AppointmentSlot>();
+        slotRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<AppointmentSlot>>(), It.IsAny<CancellationToken>()))
+                .Callback<IEnumerable<AppointmentSlot>, CancellationToken>((slots, ct) => existingGeneratedSlots.AddRange(slots));
+
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(existingGeneratedSlots);
+
+        var result2 = await service.GenerateWeeklyScheduleAsync(doctorUserId, config);
+        Assert.True(result2.Success);
+    }
+
+    [Fact]
+    public async Task ScheduleService_GetCalendarEvents_ResolvesRegisteredPatientAndGuestNames_DeduplicatesBlockedSlots()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr Tester", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var patUser = new User { Id = patientUserId, Email = "pat@test.com", FullName = "Nguyen Van A", PhoneNumber = "456", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } };
+        var patientProfile = new PatientProfile { Id = patientProfileId, UserId = patientUserId, User = patUser };
+
+        var testDate = new DateOnly(2026, 8, 12);
+        var slotId1 = Guid.NewGuid();
+        var slot1 = new AppointmentSlot
+        {
+            Id = slotId1,
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = testDate,
+            StartTime = new TimeOnly(10, 0),
+            EndTime = new TimeOnly(11, 0),
+            Status = AppointmentSlotStatus.Blocked // Incorrectly set to Blocked in DB
+        };
+
+        var appt1 = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "APT-REG01",
+            DoctorId = doctorId,
+            Doctor = doctor,
+            PatientId = patientProfileId, // Points to PatientProfile.Id
+            AppointmentSlotId = slotId1,
+            AppointmentSlot = slot1,
+            AppointmentDate = new DateTime(2026, 8, 12, 10, 0, 0),
+            Status = AppointmentStatus.Approved
+        };
+
+        var slotId2 = Guid.NewGuid();
+        var slot2 = new AppointmentSlot
+        {
+            Id = slotId2,
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = testDate,
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Booked
+        };
+
+        var appt2 = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "APT-GUEST01",
+            DoctorId = doctorId,
+            Doctor = doctor,
+            PatientId = null,
+            GuestName = "Tran Guest B",
+            AppointmentSlotId = slotId2,
+            AppointmentSlot = slot2,
+            AppointmentDate = new DateTime(2026, 8, 12, 14, 0, 0),
+            Status = AppointmentStatus.Approved
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { slot1, slot2 });
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment> { appt1, appt2 });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { docUser, patUser });
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patientProfile });
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object, patientRepo: patientRepo.Object);
+
+        var start = new DateTime(2026, 8, 12, 0, 0, 0);
+        var end = new DateTime(2026, 8, 13, 0, 0, 0);
+        var result = await service.GetCalendarEventsAsync(doctorUserId, start, end, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+
+        // 1. Registered patient name resolved as FullName "Nguyen Van A"
+        var ev1 = result.Data.FirstOrDefault(e => e.AppointmentId == appt1.Id);
+        Assert.NotNull(ev1);
+        Assert.Equal("Nguyen Van A", ev1.PatientName);
+        Assert.Equal("APT-REG01", ev1.BookingCode);
+
+        // 2. Guest patient name resolved as GuestName "Tran Guest B"
+        var ev2 = result.Data.FirstOrDefault(e => e.AppointmentId == appt2.Id);
+        Assert.NotNull(ev2);
+        Assert.Equal("Tran Guest B", ev2.PatientName);
+
+        // 3. Exactly 2 total calendar events (the Blocked slot1 and Booked slot2 are suppressed because active appointments exist for both)
+        Assert.Equal(2, result.Data.Count);
+        Assert.DoesNotContain(result.Data, e => e.EventType == "Blocked" && e.SlotId == slotId1);
+    }
+
+    [Fact]
+    public async Task ScheduleService_GetCalendarEvents_CancelledAppointmentDoesNotSuppressAvailableSlot()
+    {
+        var scheduleRepo = new Mock<IRepository<Schedule>>();
+        var slotRepo = new Mock<IRepository<AppointmentSlot>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var dayOffRepo = new Mock<IRepository<DoctorDayOff>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        var doctorId = Guid.NewGuid();
+        var docUser = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr Tester", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
+        var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
+
+        var testDate = new DateOnly(2026, 8, 14);
+        var slotId = Guid.NewGuid();
+        var slot = new AppointmentSlot
+        {
+            Id = slotId,
+            DoctorProfileId = doctorId,
+            DoctorProfile = doctor,
+            SlotDate = testDate,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            Status = AppointmentSlotStatus.Available
+        };
+
+        var cancelledAppt = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "APT-CANCELLED",
+            DoctorId = doctorId,
+            Doctor = doctor,
+            PatientId = Guid.NewGuid(),
+            AppointmentSlotId = slotId,
+            AppointmentSlot = slot,
+            AppointmentDate = new DateTime(2026, 8, 14, 9, 0, 0),
+            Status = AppointmentStatus.Cancelled
+        };
+
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { slot });
+        dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
+        apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment> { cancelledAppt });
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { docUser });
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile>());
+
+        var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object, patientRepo: patientRepo.Object);
+
+        var start = new DateTime(2026, 8, 14, 0, 0, 0);
+        var end = new DateTime(2026, 8, 15, 0, 0, 0);
+        var result = await service.GetCalendarEventsAsync(doctorUserId, start, end, default);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+
+        // Cancelled appointment is NOT returned, and the Available slot IS returned
+        Assert.Single(result.Data);
+        var ev = result.Data.First();
+        Assert.Equal("Availability", ev.EventType);
+        Assert.Equal(slotId, ev.SlotId);
     }
 }
 

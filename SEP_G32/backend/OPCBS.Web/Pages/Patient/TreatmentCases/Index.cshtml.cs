@@ -12,6 +12,8 @@ public class IndexModel : PageModel
     public IndexModel(ITreatmentCaseApiService api, JwtCookieService jwt) { _api = api; _jwt = jwt; }
 
     public List<TreatmentCaseListWebDto> Cases { get; set; } = new();
+    public List<TreatmentCaseListWebDto> ActiveCases => Cases.Where(c => c.Status == 0 || c.Status == 1).ToList();
+    public List<TreatmentCaseListWebDto> HistoryCases => Cases.Where(c => c.Status >= 2).ToList();
     public string? ErrorMessage { get; set; }
 
     public async Task OnGetAsync()

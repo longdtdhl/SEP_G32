@@ -268,8 +268,8 @@
                 <div class="border-top pt-3">
                     <form method="post" asp-page-handler="Reject" asp-route-id="@blog.Id">
                         <div class="mb-2">
-                            <label class="form-label small fw-semibold text-dark">Rejection Reason</label>
-                            <textarea asp-for="RejectReason" class="form-control form-control-sm" rows="3" placeholder="Provide reason or guidance for doctor (optional)..." style="border-radius: 6px;"></textarea>
+                            <label class="form-label small fw-semibold text-dark">Rejection Reason <span class="text-danger">*</span></label>
+                            <textarea asp-for="RejectReason" class="form-control form-control-sm" rows="3" placeholder="Provide reason for rejection..." required style="border-radius: 6px;"></textarea>
                         </div>
                         <button type="submit" class="btn btn-outline-danger w-100" style="border-radius: 6px; font-weight: 600; font-size: 0.875rem;" onclick="return confirm('Confirm to reject this article?')">
                             <i class="bi bi-x-circle me-1"></i>Reject Article

@@ -2,96 +2,174 @@
 @model OPCBS.Web.Pages.BusinessManager.DashboardModel
 @{
     ViewData["Title"] = "Business Manager Dashboard";
+    Layout = "_DashboardLayout";
+}
 
-    Layout = "_DashboardLayout";}
+<style>
+    .bm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .bm-stat-box { background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
 
-<div class="mb-page-header"><h1><i class="bi bi-speedometer2 me-2" style="color:var(--mb-primary);"></i>Business Dashboard</h1></div>
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
-
-<!-- KPI Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(16,185,129,0.1);"><i class="bi bi-currency-dollar fs-4 text-success"></i></div>
-            <div><small class="text-muted">Total Revenue</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalRevenue.ToString("N0") <small class="fs-6 fw-normal">VND</small></h3></div>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(78,139,112,0.1);"><i class="bi bi-gem fs-4" style="color:var(--mb-primary);"></i></div>
-            <div><small class="text-muted">Service Packages</small><h3 class="mb-0 fw-bold">@Model.Packages.Count</h3></div>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(99,102,241,0.1);"><i class="bi bi-credit-card fs-4" style="color:#6366f1;"></i></div>
-            <div><small class="text-muted">Active Subscriptions</small><h3 class="mb-0 fw-bold">@Model.Stats.ActiveSubscriptions</h3></div>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-center gap-3">
-            <div class="rounded-3 p-3" style="background:rgba(59,130,246,0.1);"><i class="bi bi-person-badge fs-4" style="color:#3b82f6;"></i></div>
-            <div><small class="text-muted">Active Doctors</small><h3 class="mb-0 fw-bold">@Model.Stats.TotalDoctors</h3></div>
-        </div></div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-briefcase-fill me-2" style="color:var(--mb-primary);"></i>Business & Revenue Operations
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Monitors platform subscriptions, revenue, service packages, and specializations</p>
     </div>
 </div>
 
-<div class="row g-4">
-    <!-- Service Packages Overview -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-gem me-1"></i>Service Packages</h6>
-                <a asp-page="ServicePackages/Index" class="btn btn-sm btn-outline-primary">View All</a>
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Key Performance Indicators -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(16,185,129,0.1); width:48px; height:48px;">
+                <i class="bi bi-currency-exchange fs-4 text-success"></i>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive"><table class="table table-hover table-sm align-middle mb-0">
-                    <thead class="table-light"><tr><th class="ps-3">Name</th><th>Price</th><th>Duration</th><th>Status</th></tr></thead>
+            <div>
+                <span class="text-muted d-block small">Platform Revenue</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Stats.TotalRevenue.ToString("N0") <small class="text-muted fs-6">VND</small></h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(78,139,112,0.1); width:48px; height:48px;">
+                <i class="bi bi-gem fs-4" style="color:var(--mb-primary);"></i>
+            </div>
+            <div>
+                <span class="text-muted d-block small">Service Packages</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Packages.Count</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(99,102,241,0.1); width:48px; height:48px;">
+                <i class="bi bi-credit-card-2-front fs-4" style="color:#6366f1;"></i>
+            </div>
+            <div>
+                <span class="text-muted d-block small">Active Subscriptions</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Stats.ActiveSubscriptions</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(59,130,246,0.1); width:48px; height:48px;">
+                <i class="bi bi-person-badge fs-4 text-primary"></i>
+            </div>
+            <div>
+                <span class="text-muted d-block small">Total Doctors</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.3rem;">@Model.Stats.TotalDoctors</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Active Service Packages -->
+    <div class="col-lg-7">
+        <div class="bm-card h-100">
+            <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-gem me-1 text-primary"></i>Platform Service Packages
+                </h6>
+                <a asp-page="ServicePackages/Index" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; font-weight:600;">Manage Packages</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Package Name</th>
+                            <th>Price (VND)</th>
+                            <th>Validity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @foreach (var pkg in Model.Packages.Take(5))
                         {
                             <tr>
-                                <td class="ps-3 fw-semibold">@pkg.Name</td>
-                                <td>@pkg.Price.ToString("N0") VND</td>
-                                <td>@pkg.DurationDays days</td>
-                                <td><span class="badge @(pkg.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(pkg.IsActive ? "Active" : "Inactive")</span></td>
+                                <td class="ps-3 fw-semibold text-dark">@pkg.Name</td>
+                                <td class="fw-bold text-primary">@pkg.Price.ToString("N0") VND</td>
+                                <td class="text-muted">@pkg.DurationDays days</td>
+                                <td>
+                                    @if (pkg.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.7rem;">Inactive</span>
+                                    }
+                                </td>
                             </tr>
                         }
-                        @if (!Model.Packages.Any()) { <tr><td colspan="4" class="text-center py-3 text-muted">No packages</td></tr> }
+                        @if (!Model.Packages.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-box-open d-block mb-1" style="font-size:1.8rem; color:#cbd5e1;"></i>
+                                    <small>No service packages found</small>
+                                </td>
+                            </tr>
+                        }
                     </tbody>
-                </table></div>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- Specializations + Quick Actions -->
+    <!-- Specializations & Shortcuts -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-1"></i>Specializations</h6>
-                <a asp-page="Specializations/Index" class="btn btn-sm btn-outline-primary">Manage</a>
+        <div class="bm-card mb-3">
+            <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-tags me-1 text-primary"></i>Medical Specializations
+                </h6>
+                <a asp-page="Specializations/Index" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; font-weight:600;">Manage</a>
             </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    @foreach (var spec in Model.Specializations.Take(6))
+            <div class="p-0">
+                <ul class="list-group list-group-flush" style="font-size:0.85rem;">
+                    @foreach (var spec in Model.Specializations.Take(5))
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
-                            <span class="small fw-medium">@spec.Name</span>
+                            <span class="fw-medium text-dark">@spec.Name</span>
                             <span class="badge bg-primary bg-opacity-10 text-primary">@spec.DoctorCount doctors</span>
                         </li>
                     }
-                    @if (!Model.Specializations.Any()) { <li class="list-group-item text-center text-muted py-3">No specializations</li> }
+                    @if (!Model.Specializations.Any())
+                    {
+                        <li class="list-group-item text-center text-muted py-3"><small>No specializations defined</small></li>
+                    }
                 </ul>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-lightning me-1"></i>Quick Actions</h6></div>
-            <div class="card-body d-grid gap-2">
-                <a asp-page="ServicePackages/Create" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-plus-lg me-2"></i>Create Package</a>
-                <a asp-page="Specializations/Create" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-plus-lg me-2"></i>Add Specialization</a>
-                <a asp-page="Analytics" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-graph-up me-2"></i>View Analytics</a>
-                <a asp-page="Reports" class="btn btn-outline-primary text-start btn-sm"><i class="bi bi-file-earmark-bar-graph me-2"></i>Reports</a>
+        <!-- Operations Navigation -->
+        <div class="bm-card p-3">
+            <h6 class="fw-bold text-dark small text-uppercase mb-2" style="letter-spacing:0.5px;">
+                <i class="bi bi-lightning-charge me-1 text-primary"></i>Business Shortcuts
+            </h6>
+            <div class="d-grid gap-2">
+                <a asp-page="Subscriptions/Index" class="btn btn-sm btn-outline-primary text-start" style="border-radius:6px; font-size:0.8rem;">
+                    <i class="bi bi-credit-card me-2"></i> Doctor Subscriptions & Payments
+                </a>
+                <a asp-page="ServicePackages/Index" class="btn btn-sm btn-outline-primary text-start" style="border-radius:6px; font-size:0.8rem;">
+                    <i class="bi bi-gem me-2"></i> Configure Service Packages
+                </a>
+                <a asp-page="Specializations/Index" class="btn btn-sm btn-outline-primary text-start" style="border-radius:6px; font-size:0.8rem;">
+                    <i class="bi bi-tags me-2"></i> Manage Medical Specializations
+                </a>
             </div>
         </div>
     </div>

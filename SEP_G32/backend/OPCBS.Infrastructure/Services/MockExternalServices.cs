@@ -89,6 +89,18 @@ public class MockFileStorageService : IFileStorageService
         return Task.FromResult(fakeUrl);
     }
 
+    public Task<FileUploadResult> UploadFileAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default)
+    {
+        var publicId = $"opcbs/{folder.Trim('/')}/{Guid.NewGuid():N}";
+        var fakeUrl = $"https://res.cloudinary.com/mock/{publicId}/{fileName}";
+        _logger.LogInformation("[MockStorage] Uploaded {FileName} to {Folder} → {Url}", fileName, folder, fakeUrl);
+        return Task.FromResult(new FileUploadResult
+        {
+            Url = fakeUrl,
+            PublicId = publicId
+        });
+    }
+
     public Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[MockStorage] Deleted {PublicId}", publicId);

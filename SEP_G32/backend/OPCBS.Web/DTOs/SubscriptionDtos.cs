@@ -4,10 +4,12 @@ public class SubscriptionDto
 {
     public Guid Id { get; set; }
     public Guid DoctorId { get; set; }
+    public string? DoctorName { get; set; }
     public Guid ServicePackageId { get; set; }
     public string? PackageName { get; set; }
     public string? Status { get; set; }
     public DateTime StartDate { get; set; }
+    public DateTime ExpirationDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal AmountPaid { get; set; }
     public DateTime CreatedAt { get; set; }

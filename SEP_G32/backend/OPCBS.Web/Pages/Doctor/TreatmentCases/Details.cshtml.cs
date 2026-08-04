@@ -25,6 +25,7 @@ public class DetailsModel : PageModel
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
     public string? ErrorMessage { get; set; }
+    public string? SuccessMessage { get; set; }
     public string ActiveTab { get; set; } = "overview";
 
     public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
@@ -58,99 +59,42 @@ public class DetailsModel : PageModel
         return Page();
     }
 
-    // POST: Generate Schedule
-    public async Task<IActionResult> OnPostGenerateScheduleAsync(Guid caseId, List<DayOfWeek> daysOfWeek, string startTime, int durationMinutes, DateTime? startDate, int? totalWeeks, bool clearExistingFutureSessions)
+    /// <summary>Helper to reload all data after a failed POST so we can re-render Page()</summary>
+    private async Task ReloadDataAsync(Guid caseId, string tab)
     {
-        var dto = new GenerateScheduleWebDto
-        {
-            TreatmentCaseId = caseId,
-            DaysOfWeek = daysOfWeek ?? new List<DayOfWeek> { DayOfWeek.Monday },
-            StartTime = startTime ?? "09:00",
-            DurationMinutes = durationMinutes > 0 ? durationMinutes : 60,
-            StartDate = startDate,
-            TotalWeeks = totalWeeks,
-            ClearExistingFutureSessions = clearExistingFutureSessions
-        };
-        await _api.GenerateScheduleAsync(dto);
-        return RedirectToPage(new { id = caseId, tab = "calendar" });
-    }
+        ActiveTab = tab;
+        var (caseData, _) = await _api.GetByIdAsync(caseId);
+        Case = caseData;
+        if (caseData == null) return;
 
-    // POST: Complete Session
-    public async Task<IActionResult> OnPostCompleteSessionAsync(Guid caseId, Guid sessionId, string? title, string? sessionSummary, string? doctorClinicalAssessment, string? patientFriendlySummary, string? doctorPrivateNotes, string? patientFeedback, string? homeworkAssigned, int? moodBefore, int? moodAfter, List<Guid>? linkedGoalIds)
-    {
-        var dto = new CompleteSessionWebDto
-        {
-            Title = title,
-            SessionSummary = sessionSummary,
-            DoctorClinicalAssessment = doctorClinicalAssessment,
-            PatientFriendlySummary = patientFriendlySummary,
-            DoctorPrivateNotes = doctorPrivateNotes,
-            TherapistNotes = doctorPrivateNotes,
-            PatientFeedback = patientFeedback,
-            HomeworkAssigned = homeworkAssigned,
-            MoodBefore = moodBefore,
-            MoodAfter = moodAfter,
-            LinkedGoalIds = linkedGoalIds
-        };
-        await _api.CompleteSessionAsync(sessionId, dto);
-        return RedirectToPage(new { id = caseId, tab = "sessions" });
-    }
+        var sessionsTask = _api.GetSessionsAsync(caseId);
+        var goalsTask = _api.GetGoalsAsync(caseId);
+        var homeworkTask = _api.GetHomeworkAsync(caseId);
+        var moodTask = _api.GetMoodEntriesAsync(caseId);
+        var progressTask = _api.GetProgressAsync(caseId);
+        var timelineTask = _api.GetTimelineAsync(caseId);
 
-    // POST: Create Session
-    public async Task<IActionResult> OnPostCreateSessionAsync(Guid caseId, string? title, string? description, DateTime? plannedStartTime, DateTime? plannedEndTime)
-    {
-        var dto = new CreateSessionWebDto
-        {
-            TreatmentCaseId = caseId,
-            Title = title,
-            Description = description,
-            PlannedStartTime = plannedStartTime,
-            PlannedEndTime = plannedEndTime
-        };
-        await _api.CreateSessionAsync(dto);
-        return RedirectToPage(new { id = caseId, tab = "sessions" });
-    }
+        await Task.WhenAll(sessionsTask, goalsTask, homeworkTask, moodTask, progressTask, timelineTask);
 
-    // POST: Update Session
-    public async Task<IActionResult> OnPostUpdateSessionAsync(Guid caseId, Guid sessionId, string? title, string? description, DateTime? plannedStartTime, DateTime? plannedEndTime, List<Guid>? linkedGoalIds)
-    {
-        var dto = new UpdateSessionWebDto
-        {
-            Title = title,
-            Description = description,
-            PlannedStartTime = plannedStartTime,
-            PlannedEndTime = plannedEndTime,
-            LinkedGoalIds = linkedGoalIds
-        };
-        await _api.UpdateSessionAsync(sessionId, dto);
-        return RedirectToPage(new { id = caseId, tab = "sessions" });
+        Sessions = sessionsTask.Result.Data;
+        Goals = goalsTask.Result.Data;
+        HomeworkList = homeworkTask.Result.Data;
+        MoodEntries = moodTask.Result.Data;
+        Progress = progressTask.Result.Data;
+        Timeline = timelineTask.Result.Data;
     }
 
     // POST: Delete Session
     public async Task<IActionResult> OnPostDeleteSessionAsync(Guid caseId, Guid sessionId)
     {
-        await _api.DeleteSessionAsync(sessionId);
-        return RedirectToPage(new { id = caseId, tab = "sessions" });
-    }
-
-    // POST: Create Goal
-    public async Task<IActionResult> OnPostCreateGoalAsync(Guid caseId, string title, string? description, int category, int priority, decimal? targetValue, decimal? currentValue, string? unit, string? targetDate)
-    {
-        DateTime? parsedDate = string.IsNullOrEmpty(targetDate) ? null : DateTime.Parse(targetDate);
-        var dto = new CreateGoalWebDto
+        var (success, error) = await _api.DeleteSessionAsync(sessionId);
+        if (!success)
         {
-            TreatmentCaseId = caseId,
-            Title = title,
-            Description = description,
-            Category = category,
-            Priority = priority,
-            TargetValue = targetValue,
-            CurrentValue = currentValue,
-            Unit = unit,
-            TargetDate = parsedDate
-        };
-        await _api.CreateGoalAsync(dto);
-        return RedirectToPage(new { id = caseId, tab = "goals" });
+            ErrorMessage = error ?? "Failed to delete session.";
+            await ReloadDataAsync(caseId, "sessions");
+            return Page();
+        }
+        return RedirectToPage(new { id = caseId, tab = "sessions" });
     }
 
     // POST: Record Goal Progress
@@ -164,44 +108,58 @@ public class DetailsModel : PageModel
             CurrentValue = currentValue,
             DoctorComment = doctorComment
         };
-        await _api.RecordGoalProgressAsync(dto);
+        var (success, error) = await _api.RecordGoalProgressAsync(dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to record goal progress.";
+            await ReloadDataAsync(caseId, "goals");
+            return Page();
+        }
         return RedirectToPage(new { id = caseId, tab = "goals" });
-    }
-
-    // POST: Create Homework
-    public async Task<IActionResult> OnPostCreateHomeworkAsync(Guid caseId, Guid? sessionId, string title, string? description, string? detailedInstructions, string? resourceUrl, string? dueDate)
-    {
-        DateTime? parsedDate = string.IsNullOrEmpty(dueDate) ? null : DateTime.Parse(dueDate);
-        var dto = new CreateHomeworkWebDto
-        {
-            TreatmentCaseId = caseId,
-            TreatmentSessionId = sessionId,
-            Title = title,
-            Description = description,
-            DetailedInstructions = detailedInstructions,
-            ResourceUrl = resourceUrl,
-            DueDate = parsedDate
-        };
-        await _api.CreateHomeworkAsync(dto);
-        return RedirectToPage(new { id = caseId, tab = "homework" });
-    }
-
-    // POST: Review Homework
-    public async Task<IActionResult> OnPostReviewHomeworkAsync(Guid caseId, Guid homeworkId, string? doctorFeedback)
-    {
-        var dto = new ReviewHomeworkWebDto
-        {
-            DoctorFeedback = doctorFeedback
-        };
-        await _api.ReviewHomeworkAsync(homeworkId, dto);
-        return RedirectToPage(new { id = caseId, tab = "homework" });
     }
 
     // POST: Close Case
     public async Task<IActionResult> OnPostCloseCaseAsync(Guid caseId, string? closureNote, int closeStatus)
     {
         var dto = new { ClosureNote = closureNote, CloseStatus = closeStatus };
-        await _api.CloseAsync(caseId, dto);
+        var (success, error) = await _api.CloseAsync(caseId, dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to close treatment case.";
+            await ReloadDataAsync(caseId, "overview");
+            return Page();
+        }
         return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    // POST: Update Session (title, date, time)
+    public async Task<IActionResult> OnPostUpdateSessionAsync(
+        Guid caseId, Guid sessionId, string? title,
+        DateTime? plannedDate, string? startTime, string? endTime)
+    {
+        DateTime? plannedStart = null;
+        DateTime? plannedEnd = null;
+
+        if (plannedDate.HasValue && !string.IsNullOrEmpty(startTime))
+        {
+            plannedStart = plannedDate.Value.Date + TimeSpan.Parse(startTime);
+            if (!string.IsNullOrEmpty(endTime))
+                plannedEnd = plannedDate.Value.Date + TimeSpan.Parse(endTime);
+        }
+
+        var dto = new
+        {
+            Title = title,
+            PlannedStartTime = plannedStart,
+            PlannedEndTime = plannedEnd
+        };
+        var (success, error) = await _api.UpdateSessionAsync(sessionId, dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to update session.";
+            await ReloadDataAsync(caseId, "sessions");
+            return Page();
+        }
+        return RedirectToPage(new { id = caseId, tab = "sessions" });
     }
 }

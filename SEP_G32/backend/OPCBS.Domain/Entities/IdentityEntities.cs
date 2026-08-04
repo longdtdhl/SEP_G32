@@ -380,6 +380,21 @@ public class VerificationRequest : BaseEntity
     /// <summary>URL of the uploaded practice certificate or related documents</summary>
     public string? CertificateUrl { get; set; }
 
+    /// <summary>Cloudinary public ID for the uploaded certificate file</summary>
+    public string? CertificatePublicId { get; set; }
+
+    /// <summary>Original file name of the certificate document</summary>
+    public string? CertificateFileName { get; set; }
+
+    /// <summary>Content/MIME type of the certificate file</summary>
+    public string? CertificateContentType { get; set; }
+
+    /// <summary>Timestamp when the certificate file was uploaded</summary>
+    public DateTime? CertificateUploadedAt { get; set; }
+
+    /// <summary>Timestamp when verification request was submitted</summary>
+    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 }

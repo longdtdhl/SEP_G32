@@ -2,141 +2,118 @@
 @model OPCBS.Web.Pages.Admin.SettingsModel
 @{
     ViewData["Title"] = "System Settings";
+    Layout = "_DashboardLayout";
+}
 
-    Layout = "_DashboardLayout";}
+<style>
+    .adm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1><i class="bi bi-gear me-2" style="color:var(--mb-primary);"></i>System Settings</h1>
-        <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Manage application-wide security, configuration, and maintenance settings</p>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-gear-fill me-2" style="color:var(--mb-primary);"></i>System Configuration & Settings
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Manage global application parameters, security thresholds, and system operational modes</p>
     </div>
 </div>
 
 @if (Model.SuccessMessage != null)
 {
-    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius:12px;">
-        <i class="bi bi-check-circle-fill me-2" style="color:#10b981;"></i>@Model.SuccessMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
     </div>
 }
 @if (Model.ErrorMessage != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius:12px;">
-        <i class="bi bi-exclamation-triangle-fill me-2" style="color:#ef4444;"></i>@Model.ErrorMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<form method="post">
-    <div class="row g-4">
+<form method="post" onsubmit="return confirm('Are you sure you want to update system configuration settings?')">
+    <div class="row g-3">
         <!-- Security Settings -->
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:16px;">
-                <div class="card-header bg-white py-3 border-0" style="border-radius:16px 16px 0 0;">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-shield-lock me-2" style="color:var(--mb-primary);"></i>Security Settings</h6>
+            <div class="adm-card h-100">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                        <i class="bi bi-shield-lock me-1 text-primary"></i>Security & Authentication
+                    </h6>
                 </div>
-                <div class="card-body pt-0">
+                <div class="p-3" style="font-size:0.85rem;">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Session Timeout (minutes)</label>
-                        <input type="number" asp-for="SessionTimeout" class="form-control" style="border-radius:10px; padding:10px;" />
+                        <label class="form-label small fw-semibold text-dark">Session Timeout (Minutes)</label>
+                        <input type="number" asp-for="SessionTimeout" class="form-control form-control-sm" style="border-radius:6px;" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Max Login Attempts</label>
-                        <input type="number" asp-for="MaxLoginAttempts" class="form-control" style="border-radius:10px; padding:10px;" />
+                        <label class="form-label small fw-semibold text-dark">Max Failed Login Attempts</label>
+                        <input type="number" asp-for="MaxLoginAttempts" class="form-control form-control-sm" style="border-radius:6px;" />
                     </div>
-                    <div class="form-check form-switch mb-3">
+                    <div class="form-check form-switch mb-2">
                         <input class="form-check-input" type="checkbox" asp-for="RequireEmailVerification" id="requireEmail" />
-                        <label class="form-check-label small fw-medium" for="requireEmail">Require email verification</label>
+                        <label class="form-check-label small text-dark fw-medium" for="requireEmail">Require email verification for new accounts</label>
                     </div>
-                    <div class="form-check form-switch mb-3">
+                    <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" asp-for="EnableAuditLogging" id="enableAudit" />
-                        <label class="form-check-label small fw-medium" for="enableAudit">Enable audit logging</label>
+                        <label class="form-check-label small text-dark fw-medium" for="enableAudit">Enable detailed audit logging for security events</label>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- System Configuration -->
+        <!-- Operational Configuration -->
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:16px;">
-                <div class="card-header bg-white py-3 border-0" style="border-radius:16px 16px 0 0;">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-sliders me-2" style="color:var(--mb-primary);"></i>System Configuration</h6>
+            <div class="adm-card h-100">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                        <i class="bi bi-sliders me-1 text-primary"></i>System Defaults
+                    </h6>
                 </div>
-                <div class="card-body pt-0">
+                <div class="p-3" style="font-size:0.85rem;">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Default Page Size</label>
-                        <input type="number" asp-for="DefaultPageSize" class="form-control" style="border-radius:10px; padding:10px;" />
+                        <label class="form-label small fw-semibold text-dark">Default Grid Page Size</label>
+                        <input type="number" asp-for="DefaultPageSize" class="form-control form-control-sm" style="border-radius:6px;" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Max Appointment Slots Per Day</label>
-                        <input type="number" asp-for="MaxAppointmentSlotsPerDay" class="form-control" style="border-radius:10px; padding:10px;" />
+                        <label class="form-label small fw-semibold text-dark">Max Daily Appointment Slots Per Doctor</label>
+                        <input type="number" asp-for="MaxAppointmentSlotsPerDay" class="form-control form-control-sm" style="border-radius:6px;" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Consultation Duration (minutes)</label>
-                        <input type="number" asp-for="ConsultationDuration" class="form-control" style="border-radius:10px; padding:10px;" />
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" asp-for="AllowGuestBookings" id="allowGuest" />
-                        <label class="form-check-label small fw-medium" for="allowGuest">Allow guest bookings</label>
+                        <label class="form-label small fw-semibold text-dark">Standard Consultation Slot Duration (Minutes)</label>
+                        <input type="number" asp-for="ConsultationDuration" class="form-control form-control-sm" style="border-radius:6px;" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Email / Notifications -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:16px;">
-                <div class="card-header bg-white py-3 border-0" style="border-radius:16px 16px 0 0;">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-envelope me-2" style="color:var(--mb-primary);"></i>Email & Notifications</h6>
+        <!-- Maintenance Mode -->
+        <div class="col-lg-12">
+            <div class="adm-card">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                        <i class="bi bi-tools me-1 text-primary"></i>Maintenance Mode Settings
+                    </h6>
                 </div>
-                <div class="card-body pt-0">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">SMTP Server</label>
-                        <input type="text" asp-for="SmtpServer" class="form-control" style="border-radius:10px; padding:10px;" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Sender Email</label>
-                        <input type="email" asp-for="SenderEmail" class="form-control" style="border-radius:10px; padding:10px;" />
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" asp-for="SendAppointmentReminders" id="sendReminders" />
-                        <label class="form-check-label small fw-medium" for="sendReminders">Send appointment reminders</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Maintenance -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100" style="border-radius:16px;">
-                <div class="card-header bg-white py-3 border-0" style="border-radius:16px 16px 0 0;">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-tools me-2" style="color:var(--mb-primary);"></i>Maintenance & Backups</h6>
-                </div>
-                <div class="card-body pt-0">
+                <div class="p-3" style="font-size:0.85rem;">
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" asp-for="MaintenanceMode" id="maintMode" />
-                        <label class="form-check-label small fw-medium" for="maintMode">Maintenance Mode (restrict client access)</label>
+                        <label class="form-check-label small fw-bold text-danger" for="maintMode">Enable Maintenance Mode (Restricts public and practitioner logins)</label>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Maintenance Message</label>
-                        <textarea asp-for="MaintenanceMessage" class="form-control" rows="2" style="border-radius:10px; padding:10px;"></textarea>
-                    </div>
-                    <div class="d-flex gap-2 mt-2">
-                        <button type="button" class="btn btn-outline-danger btn-sm" style="border-radius:8px;"><i class="bi bi-arrow-counterclockwise me-1"></i>Clear Cache</button>
-                        <button type="button" class="btn btn-outline-warning btn-sm" style="border-radius:8px;"><i class="bi bi-database me-1"></i>Backup DB</button>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-dark">Maintenance Announcement Message</label>
+                        <textarea asp-for="MaintenanceMessage" class="form-control form-control-sm" rows="2" style="border-radius:6px;" placeholder="The system is undergoing scheduled maintenance..."></textarea>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-end mt-4">
-        <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius:12px; font-weight:600;">
-            <i class="bi bi-save me-2"></i>Save System Settings
+    <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-primary btn-sm px-4" style="border-radius:6px; font-weight:600;">
+            <i class="bi bi-save me-1"></i> Save Configuration
         </button>
     </div>
 </form>
-
-<div class="mt-4 text-muted small p-2 bg-light rounded" style="border-radius:8px; font-size:0.75rem;">
-    <i class="bi bi-info-circle me-1"></i> System configuration values are persisted in the database and loaded dynamically by the system.
-</div>

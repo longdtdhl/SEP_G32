@@ -16,12 +16,19 @@ public interface IEmailService
     Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default);
 }
 
+public class FileUploadResult
+{
+    public string Url { get; set; } = string.Empty;
+    public string PublicId { get; set; } = string.Empty;
+}
+
 /// <summary>
 /// File storage abstraction (Cloudinary in production, mock in dev)
 /// </summary>
 public interface IFileStorageService
 {
     Task<string> UploadAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default);
+    Task<FileUploadResult> UploadFileAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default);
 }
 

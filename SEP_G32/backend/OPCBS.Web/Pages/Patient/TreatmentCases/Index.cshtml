@@ -4,95 +4,155 @@
 
 <style>
     .tc-card {
-        background: white; border-radius: 16px; border: 1px solid #f1f5f9;
-        overflow: hidden; transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        background: white; border-radius: 8px; border: 1px solid #e2e8f0;
+        overflow: hidden; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .tc-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
-    .tc-card-header { padding: 1.25rem; border-bottom: 1px solid #f8fafc; }
-    .tc-card-body { padding: 1rem 1.25rem; }
-    .tc-card-footer { padding: 0.75rem 1.25rem; border-top: 1px solid #f8fafc; background: #fafbfc; }
-    .tc-status { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.3px; }
+    .tc-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .tc-card-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; }
+    .tc-card-body { padding: 0.875rem 1.25rem; }
+    .tc-card-footer { padding: 0.625rem 1.25rem; border-top: 1px solid #f1f5f9; background: #fafbfc; }
+    .tc-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
     .tc-status.active { background: #dcfce7; color: #15803d; }
     .tc-status.paused { background: #fef3c7; color: #92400e; }
     .tc-status.completed { background: #e0e7ff; color: #3730a3; }
     .tc-status.cancelled { background: #f1f5f9; color: #64748b; }
-    .tc-meta-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #64748b; margin-bottom: 6px; }
-    .tc-meta-row i { color: var(--mb-primary); font-size: 0.85rem; width: 16px; text-align: center; }
-    .tc-progress-track { background: #e2e8f0; border-radius: 6px; height: 6px; overflow: hidden; }
-    .tc-progress-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
-    .tc-empty { text-align: center; padding: 4rem 2rem; background: white; border-radius: 16px; border: 2px dashed #e2e8f0; }
+    .tc-meta-row { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #64748b; margin-bottom: 4px; }
+    .tc-meta-row i { color: var(--mb-primary); font-size: 0.82rem; width: 16px; text-align: center; }
+    .tc-progress-track { background: #e2e8f0; border-radius: 4px; height: 5px; overflow: hidden; }
+    .tc-progress-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .tc-empty { text-align: center; padding: 3rem 2rem; background: white; border-radius: 8px; border: 1px dashed #e2e8f0; }
+    .tc-tab-nav .nav-link { border-radius: 6px; font-size: 0.82rem; font-weight: 600; color: #64748b; padding: 6px 16px; margin-right: 4px; border: 1px solid transparent; }
+    .tc-tab-nav .nav-link.active { background: var(--mb-primary); color: white; border-color: var(--mb-primary); }
 </style>
 
-<!-- Page Header -->
-<div class="mb-page-header mb-4">
-    <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+<div class="mb-3">
+    <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
         <i class="bi bi-heart-pulse-fill me-2" style="color:var(--mb-primary);"></i>My Treatment Progress
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Track your therapy progress and treatment plans</p>
+    <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Track your therapy progress and treatment plans</p>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
-    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.85rem;">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
     </div>
 }
 
 @if (!Model.Cases.Any())
 {
     <div class="tc-empty">
-        <i class="bi bi-heart-pulse d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
-        <h5 style="font-weight:700; color:#475569; margin-bottom:8px;">No Active Treatment Cases</h5>
-        <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:1.5rem;">When your therapist starts a treatment plan for you, it will appear here.</p>
-        <a asp-page="/Doctors/Index" class="btn btn-primary px-4 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-            <i class="bi bi-search me-1"></i>Find a Doctor
+        <i class="bi bi-heart-pulse d-block mb-3" style="font-size:2.5rem; color:#cbd5e1;"></i>
+        <h5 style="font-weight:700; color:#475569; margin-bottom:6px; font-size:1rem;">No Treatment Cases</h5>
+        <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">When you accept a treatment package from your therapist, your case will appear here.</p>
+        <a asp-page="/Patient/TreatmentPackages/Index" class="btn btn-primary btn-sm px-4" style="border-radius:6px; background:var(--mb-primary); border-color:var(--mb-primary);">
+            <i class="bi bi-box-seam me-1"></i>View My Packages
         </a>
     </div>
 }
 else
 {
-    <div class="row g-3">
-        @foreach (var c in Model.Cases)
-        {
-            var statusClass = c.Status == 0 ? "active" : c.Status == 1 ? "paused" : c.Status == 2 ? "completed" : "cancelled";
-            var statusLabel = c.Status == 0 ? "Active" : c.Status == 1 ? "Paused" : c.Status == 2 ? "Completed" : "Cancelled";
-            var progressColor = c.OverallProgressPercent >= 100 ? "#10b981" : c.OverallProgressPercent >= 50 ? "#3b82f6" : "#f59e0b";
-            <div class="col-md-6 col-xl-4">
-                <div class="tc-card h-100 d-flex flex-column justify-content-between">
-                    <div>
-                        <!-- Header -->
-                        <div class="tc-card-header">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <h6 style="font-weight:700; font-size:0.95rem; color:#1e293b; margin:0; max-width:70%;" class="text-truncate" title="@c.CaseName">@c.CaseName</h6>
-                                <span class="tc-status @statusClass">@statusLabel</span>
+    <ul class="nav tc-tab-nav mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ptActivePane" type="button" role="tab">
+                <i class="bi bi-activity me-1"></i>Active (@Model.ActiveCases.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ptHistoryPane" type="button" role="tab">
+                <i class="bi bi-clock-history me-1"></i>History (@Model.HistoryCases.Count)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="ptActivePane" role="tabpanel">
+            @if (!Model.ActiveCases.Any())
+            {
+                <div class="tc-empty"><p style="font-size:0.82rem; color:#94a3b8; margin:0;">No active treatment cases.</p></div>
+            }
+            else
+            {
+                <div class="row g-3">
+                @foreach (var c in Model.ActiveCases)
+                {
+                    var statusClass = c.Status == 0 ? "active" : "paused";
+                    var statusLabel = c.Status == 0 ? "Active" : "On Hold";
+                    var progressColor = c.OverallProgressPercent >= 100 ? "#10b981" : c.OverallProgressPercent >= 50 ? "#3b82f6" : "#f59e0b";
+                    <div class="col-md-6 col-xl-4">
+                        <div class="tc-card h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="tc-card-header">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 style="font-weight:700; font-size:0.92rem; color:#1e293b; margin:0; max-width:70%;" class="text-truncate" title="@c.CaseName">@c.CaseName</h6>
+                                        <span class="tc-status @statusClass">@statusLabel</span>
+                                    </div>
+                                    <span class="text-muted" style="font-size:0.78rem;"><i class="bi bi-person-badge me-1" style="color:var(--mb-primary);"></i>Dr. @(c.DoctorName ?? "Unknown")</span>
+                                </div>
+                                <div class="tc-card-body">
+                                    <div class="tc-meta-row"><i class="bi bi-camera-video"></i><span>Sessions: <strong style="color:#1e293b;">@c.CompletedSessions / @c.TotalSessions</strong></span></div>
+                                    <div class="tc-meta-row"><i class="bi bi-calendar3"></i><span>Started: <strong style="color:#1e293b;">@c.StartDate.ToString("dd/MM/yyyy")</strong></span></div>
+                                    <div style="margin-top:8px;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span style="font-size:0.7rem; color:#94a3b8; font-weight:500;">Progress</span>
+                                            <span style="font-size:0.7rem; color:@progressColor; font-weight:700;">@(c.OverallProgressPercent)%</span>
+                                        </div>
+                                        <div class="tc-progress-track">
+                                            <div class="tc-progress-fill" style="width:@(c.OverallProgressPercent)%; background:@progressColor;"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <span class="text-muted" style="font-size:0.8rem;"><i class="bi bi-person-badge me-1" style="color:var(--mb-primary);"></i>Dr. @(c.DoctorName ?? "Unknown")</span>
-                        </div>
-                        <!-- Body -->
-                        <div class="tc-card-body">
-                            <div class="tc-meta-row"><i class="bi bi-camera-video"></i><span>Sessions: <strong style="color:#1e293b;">@c.CompletedSessions / @c.TotalSessions</strong></span></div>
-                            <div class="tc-meta-row"><i class="bi bi-calendar3"></i><span>Started: <strong style="color:#1e293b;">@c.StartDate.ToString("MMM dd, yyyy")</strong></span></div>
-                            <!-- Progress -->
-                            <div style="margin-top:10px;">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Overall Progress</span>
-                                    <span style="font-size:0.72rem; color:@progressColor; font-weight:700;">@(c.OverallProgressPercent)%</span>
-                                </div>
-                                <div class="tc-progress-track">
-                                    <div class="tc-progress-fill" style="width:@(c.OverallProgressPercent)%; background:@progressColor;"></div>
-                                </div>
+                            <div class="tc-card-footer">
+                                <a href="/Patient/TreatmentCases/Details?id=@c.Id" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1" style="border-radius:6px; font-size:0.78rem; font-weight:600; background:var(--mb-primary); border-color:var(--mb-primary);">
+                                    <i class="bi bi-graph-up"></i>View Progress
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <!-- Footer -->
-                    <div class="tc-card-footer">
-                        <a href="/Patient/TreatmentCases/Details?id=@c.Id" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1" style="border-radius:8px; font-size:0.8rem; font-weight:600; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-graph-up"></i>View Progress
-                        </a>
-                    </div>
+                }
                 </div>
-            </div>
-        }
+            }
+        </div>
+
+        <div class="tab-pane fade" id="ptHistoryPane" role="tabpanel">
+            @if (!Model.HistoryCases.Any())
+            {
+                <div class="tc-empty"><p style="font-size:0.82rem; color:#94a3b8; margin:0;">No completed or archived cases.</p></div>
+            }
+            else
+            {
+                <div class="row g-3">
+                @foreach (var c in Model.HistoryCases)
+                {
+                    var statusClass = c.Status == 2 ? "completed" : "cancelled";
+                    var statusLabel = c.Status == 2 ? "Completed" : c.Status == 3 ? "Terminated" : "Cancelled";
+                    <div class="col-md-6 col-xl-4">
+                        <div class="tc-card h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="tc-card-header">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 style="font-weight:700; font-size:0.92rem; color:#1e293b; margin:0; max-width:70%;" class="text-truncate" title="@c.CaseName">@c.CaseName</h6>
+                                        <span class="tc-status @statusClass">@statusLabel</span>
+                                    </div>
+                                    <span class="text-muted" style="font-size:0.78rem;"><i class="bi bi-person-badge me-1" style="color:var(--mb-primary);"></i>Dr. @(c.DoctorName ?? "Unknown")</span>
+                                </div>
+                                <div class="tc-card-body">
+                                    <div class="tc-meta-row"><i class="bi bi-camera-video"></i><span>Sessions: <strong>@c.CompletedSessions / @c.TotalSessions</strong></span></div>
+                                    <div class="tc-meta-row"><i class="bi bi-calendar3"></i><span>Started: <strong>@c.StartDate.ToString("dd/MM/yyyy")</strong></span></div>
+                                </div>
+                            </div>
+                            <div class="tc-card-footer">
+                                <a href="/Patient/TreatmentCases/Details?id=@c.Id" class="btn btn-sm btn-outline-primary w-100" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                    <i class="bi bi-eye me-1"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                </div>
+            }
+        </div>
     </div>
 }

@@ -241,6 +241,9 @@
             <a class="sb-link @(currentPath == "/businessmanager/dashboard" ? "active" : "")" asp-page="/BusinessManager/Dashboard">
                 <i class="bi bi-house"></i><span>Dashboard</span>
             </a>
+            <a class="sb-link @(currentPath.StartsWith("/businessmanager/subscriptions") ? "active" : "")" asp-page="/BusinessManager/Subscriptions/Index">
+                <i class="bi bi-credit-card"></i><span>Doctor Subscriptions</span>
+            </a>
             <a class="sb-link @(currentPath.StartsWith("/businessmanager/servicepackages") ? "active" : "")" asp-page="/BusinessManager/ServicePackages/Index">
                 <i class="bi bi-gem"></i><span>Service Packages</span>
             </a>

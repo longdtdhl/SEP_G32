@@ -27,6 +27,29 @@ public interface IAppointmentService
     Task<ApiResponse<AppointmentClinicalContextDto>> GetClinicalContextAsync(Guid appointmentId, Guid requestingUserId, CancellationToken ct = default);
 }
 
+public class CalendarEventDto
+{
+    public Guid Id { get; set; }
+    public string EventType { get; set; } = string.Empty; // Availability, Appointment, DayOff, Note
+    public string Title { get; set; } = string.Empty;
+    public string Start { get; set; } = string.Empty;
+    public string End { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty; // Available, Confirmed, Pending, Completed, Blocked, DayOff
+    public Guid? AppointmentId { get; set; }
+    public Guid? SlotId { get; set; }
+    public Guid? NoteId { get; set; }
+    public bool IsAllDay { get; set; }
+    public string? PatientName { get; set; }
+    public Guid? PatientId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public string? Description { get; set; }
+    public string? BookingCode { get; set; }
+    public bool HasNotes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
+}
+
 /// <summary>
 /// Schedule service - doctor schedule and slot management
 /// </summary>
@@ -40,10 +63,17 @@ public interface IScheduleService
     Task<ApiResponse<AvailableSlotsDto>> GetDoctorAllSlotsAsync(Guid doctorUserId, DateOnly? date, CancellationToken ct = default);
     Task<ApiResponse> ToggleBlockSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> AddDayOffAsync(Guid doctorUserId, CreateDayOffDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<DayOffDto>>> GetDoctorDaysOffAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse> DeleteDayOffAsync(Guid dayOffId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<AppointmentSlotDto>> CreateSlotAsync(Guid doctorUserId, CreateSlotDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> UpdateSlotNotesAsync(Guid slotId, Guid doctorUserId, string? notes, CancellationToken ct = default);
     Task<ApiResponse> UpdateSlotAsync(Guid slotId, Guid doctorUserId, UpdateSlotDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<CalendarEventDto>>> GetCalendarEventsAsync(Guid doctorUserId, DateTime? start, DateTime? end, CancellationToken ct = default);
+    Task<ApiResponse<List<EligibleTreatmentPatientDto>>> GetEligibleTreatmentPatientsAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<AppointmentSlotDto>> CreateTreatmentAppointmentAsync(Guid doctorUserId, CreateTreatmentAppointmentDto dto, CancellationToken ct = default);
+    Task<ApiResponse<WeeklySchedulePreviewDto>> PreviewWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
+    Task<ApiResponse<int>> GenerateWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
 }
 
 /// <summary>

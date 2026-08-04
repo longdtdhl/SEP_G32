@@ -38,17 +38,24 @@ public class CloudinaryFileStorageService : IFileStorageService
 
     public async Task<string> UploadAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default)
     {
+        var result = await UploadFileAsync(fileStream, fileName, folder, cancellationToken);
+        return result.Url;
+    }
+
+    public async Task<FileUploadResult> UploadFileAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default)
+    {
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
         var isPdf = extension == ".pdf";
+        var uniqueId = $"{Guid.NewGuid():N}";
+        var targetFolder = $"opcbs/{folder.Trim('/')}";
 
-        // Use raw resource type for PDFs, image for everything else
         if (isPdf)
         {
             var uploadParams = new RawUploadParams
             {
                 File = new FileDescription(fileName, fileStream),
-                Folder = $"opcbs/{folder}",
-                PublicId = $"{Guid.NewGuid():N}",
+                Folder = targetFolder,
+                PublicId = uniqueId,
                 Overwrite = true
             };
 
@@ -60,16 +67,20 @@ public class CloudinaryFileStorageService : IFileStorageService
                 throw new InvalidOperationException($"File upload failed: {result.Error.Message}");
             }
 
-            _logger.LogInformation("Cloudinary uploaded raw {FileName} to {Folder} → {Url}", fileName, folder, result.SecureUrl);
-            return result.SecureUrl.ToString();
+            _logger.LogInformation("Cloudinary uploaded raw {FileName} to {Folder} → {Url}", fileName, targetFolder, result.SecureUrl);
+            return new FileUploadResult
+            {
+                Url = result.SecureUrl.ToString(),
+                PublicId = result.PublicId ?? $"{targetFolder}/{uniqueId}"
+            };
         }
         else
         {
             var uploadParams = new ImageUploadParams
             {
                 File = new FileDescription(fileName, fileStream),
-                Folder = $"opcbs/{folder}",
-                PublicId = $"{Guid.NewGuid():N}",
+                Folder = targetFolder,
+                PublicId = uniqueId,
                 Overwrite = true,
                 Transformation = new Transformation()
                     .Quality("auto")
@@ -84,8 +95,12 @@ public class CloudinaryFileStorageService : IFileStorageService
                 throw new InvalidOperationException($"File upload failed: {result.Error.Message}");
             }
 
-            _logger.LogInformation("Cloudinary uploaded image {FileName} to {Folder} → {Url}", fileName, folder, result.SecureUrl);
-            return result.SecureUrl.ToString();
+            _logger.LogInformation("Cloudinary uploaded image {FileName} to {Folder} → {Url}", fileName, targetFolder, result.SecureUrl);
+            return new FileUploadResult
+            {
+                Url = result.SecureUrl.ToString(),
+                PublicId = result.PublicId ?? $"{targetFolder}/{uniqueId}"
+            };
         }
     }
 

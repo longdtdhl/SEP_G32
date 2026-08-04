@@ -214,6 +214,16 @@
                             <div class="col-md-4">
                                 <div class="metric-input-group h-100">
                                     <label class="form-field-label justify-content-center">
+                                        <i class="bi bi-calendar2-week"></i>
+                                        Sessions/Week
+                                    </label>
+                                    <input type="number" asp-for="Input.RecommendedSessionsPerWeek" class="form-control" min="1" max="7" value="1" />
+                                    <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Recommended per week</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="metric-input-group h-100">
+                                    <label class="form-field-label justify-content-center">
                                         <i class="bi bi-currency-dollar"></i>
                                         Price (Optional ₫)
                                     </label>

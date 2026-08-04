@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using OPCBS.Domain.Constants;
 using OPCBS.Web.Helpers;
 using OPCBS.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string customerSupportPolicy = "CustomerSupportPortal";
+
 // Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+    options.Conventions.AuthorizeFolder("/CustomerSupport", customerSupportPolicy));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<JwtCookieService>();
 
@@ -52,9 +56,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/403";
+        options.Events.OnValidatePrincipal = context =>
+        {
+            var jwtCookies = context.HttpContext.RequestServices.GetRequiredService<JwtCookieService>();
+            if (string.IsNullOrWhiteSpace(jwtCookies.GetToken()) &&
+                string.IsNullOrWhiteSpace(jwtCookies.GetRefreshToken()))
+            {
+                context.RejectPrincipal();
+                context.HttpContext.Response.Cookies.Delete(
+                    options.Cookie.Name!,
+                    new CookieOptions { Path = "/" });
+            }
+
+            return Task.CompletedTask;
+        };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+    options.AddPolicy(customerSupportPolicy, policy =>
+        policy.RequireRole(RoleConstants.CustomerSupport, RoleConstants.SystemAdmin)));
 
 var app = builder.Build();
 

@@ -145,6 +145,9 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Validity period in days</summary>
     public int ValidityDays { get; set; }
 
+    /// <summary>Recommended sessions per week (default 1, max 7)</summary>
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
+
     /// <summary>Expiration date of the package</summary>
     public DateTime ExpirationDate { get; set; }
 

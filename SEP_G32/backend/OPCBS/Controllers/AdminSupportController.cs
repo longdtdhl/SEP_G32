@@ -32,6 +32,9 @@ public class VerificationsController : ControllerBase
             ExperienceYears = body.ExperienceYears,
             Education = body.Education,
             CertificateUrl = body.CertificateUrl,
+            CertificatePublicId = body.CertificatePublicId,
+            CertificateFileName = body.CertificateFileName,
+            CertificateContentType = body.CertificateContentType,
             Notes = body.Notes
         };
         var result = await _verService.SubmitVerificationAsync(userId.Value, dto);
@@ -105,6 +108,9 @@ public class SubmitVerificationBody
     public int ExperienceYears { get; set; }
     public string? Education { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -371,10 +377,11 @@ public class CustomerSupportController : ControllerBase
     }
 
     /// <summary>GET /api/v1/customer-support/doctor-applications — List verification requests with optional status filter</summary>
+    /// <summary>GET /api/v1/customer-support/doctor-applications — List verification requests with optional status and search filter</summary>
     [HttpGet("doctor-applications")]
-    public async Task<IActionResult> GetDoctorApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null)
+    public async Task<IActionResult> GetDoctorApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
     {
-        var result = await _verService.GetAllVerificationsAsync(status, page, pageSize);
+        var result = await _verService.GetAllVerificationsAsync(status, search, page, pageSize);
         return Ok(result);
     }
 
@@ -386,21 +393,33 @@ public class CustomerSupportController : ControllerBase
         return result.Success ? Ok(result) : NotFound(result);
     }
 
-    /// <summary>PUT /api/v1/customer-support/doctor-applications/{id}/review — Approve or reject</summary>
+    /// <summary>PUT /api/v1/customer-support/doctor-applications/{id}/review — Approve, reject, or request additional info</summary>
     [HttpPut("doctor-applications/{id}/review")]
     public async Task<IActionResult> ReviewDoctorApplication(Guid id, [FromBody] ReviewApplicationBody body)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        if (body.Approved)
+        if (string.Equals(body.Action, "RequestInfo", StringComparison.OrdinalIgnoreCase) || string.Equals(body.Action, "AdditionalInfo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(body.RejectionReason))
+                return BadRequest(ApiResponse.ErrorResponse("A reason is required when requesting additional information."));
+
+            var result = await _verService.RequestAdditionalInfoAsync(id, userId.Value, body.RejectionReason);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        if (body.Approved || string.Equals(body.Action, "Approve", StringComparison.OrdinalIgnoreCase))
         {
             var result = await _verService.ApproveVerificationAsync(id, userId.Value);
             return result.Success ? Ok(result) : BadRequest(result);
         }
         else
         {
-            var result = await _verService.RejectVerificationAsync(id, userId.Value, body.RejectionReason ?? "No reason provided");
+            if (string.IsNullOrWhiteSpace(body.RejectionReason))
+                return BadRequest(ApiResponse.ErrorResponse("A reason is required when rejecting an application."));
+
+            var result = await _verService.RejectVerificationAsync(id, userId.Value, body.RejectionReason);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }
@@ -466,6 +485,7 @@ public class RejectBlogBody
 public class ReviewApplicationBody
 {
     public bool Approved { get; set; }
+    public string? Action { get; set; }
     public string? RejectionReason { get; set; }
 }
 
@@ -478,8 +498,13 @@ public class ReviewApplicationBody
 public class BusinessManagerController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly ISubscriptionService _subService;
 
-    public BusinessManagerController(IAdminService adminService) => _adminService = adminService;
+    public BusinessManagerController(IAdminService adminService, ISubscriptionService subService)
+    {
+        _adminService = adminService;
+        _subService = subService;
+    }
 
     /// <summary>GET /api/v1/business-manager/dashboard — BM dashboard</summary>
     [HttpGet("dashboard")]
@@ -487,6 +512,22 @@ public class BusinessManagerController : ControllerBase
     {
         var result = await _adminService.GetDashboardStatsAsync();
         return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/business-manager/subscriptions — All doctor subscriptions</summary>
+    [HttpGet("subscriptions")]
+    public async Task<IActionResult> GetSubscriptions([FromQuery] string? status, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _subService.GetAllSubscriptionsAsync(status, search, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/business-manager/subscriptions/{id} — Subscription details</summary>
+    [HttpGet("subscriptions/{id}")]
+    public async Task<IActionResult> GetSubscriptionById(Guid id)
+    {
+        var result = await _subService.GetSubscriptionByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     /// <summary>GET /api/v1/business-manager/analytics — Analytics (stub)</summary>
@@ -556,11 +597,22 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/admin/users/{id}</summary>
+    [HttpGet("users/{userId}")]
+    public async Task<IActionResult> GetUserById(Guid userId)
+    {
+        var result = await _adminService.GetUserByIdAsync(userId);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
     /// <summary>PUT /api/v1/admin/users/{id}/lock</summary>
     [HttpPut("users/{userId}/lock")]
     public async Task<IActionResult> LockUser(Guid userId)
     {
-        var result = await _adminService.LockUserAsync(userId);
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.LockUserAsync(userId, adminUserId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -576,8 +628,8 @@ public class AdminController : ControllerBase
     [HttpGet("roles")]
     public async Task<IActionResult> GetRoles()
     {
-        var result = await _adminService.GetSpecializationsAsync(); // Reuse for now
-        return Ok(ApiResponse.SuccessResponse("Roles endpoint — to be expanded"));
+        var result = await _adminService.GetRolesAsync();
+        return Ok(result);
     }
 
     /// <summary>GET /api/v1/admin/permissions</summary>
@@ -616,6 +668,12 @@ public class AdminController : ControllerBase
     {
         var result = await _adminService.UpdateSystemSettingsAsync(settings);
         return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    private Guid? GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(claim, out var id) ? id : null;
     }
 }
 

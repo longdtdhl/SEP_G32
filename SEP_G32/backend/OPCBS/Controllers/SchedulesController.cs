@@ -66,19 +66,34 @@ public class SchedulesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/schedules/calendar — Get calendar events within date range</summary>
+    [HttpGet("calendar")]
+    public async Task<IActionResult> GetCalendarEvents([FromQuery] DateTime? start, [FromQuery] DateTime? end)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.GetCalendarEventsAsync(userId.Value, start, end);
+        return Ok(result);
+    }
+
     /// <summary>GET /api/v1/schedules/days-off — Get unavailable dates</summary>
     [HttpGet("days-off")]
-    public Task<IActionResult> GetDaysOff()
+    public async Task<IActionResult> GetDaysOff()
     {
-        // Service doesn't have GetDaysOff yet, return empty
-        return Task.FromResult<IActionResult>(Ok(ApiResponse<List<object>>.SuccessResponse(new List<object>())));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.GetDoctorDaysOffAsync(userId.Value);
+        return Ok(result);
     }
 
     /// <summary>DELETE /api/v1/schedules/days-off/{id} — Remove unavailable date</summary>
     [HttpDelete("days-off/{dayOffId}")]
-    public Task<IActionResult> DeleteDayOff(Guid dayOffId)
+    public async Task<IActionResult> DeleteDayOff(Guid dayOffId)
     {
-        return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Day off removed")));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.DeleteDayOffAsync(dayOffId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>GET /api/v1/schedules/slots — Get doctor's own generated slots</summary>
@@ -138,6 +153,46 @@ public class SchedulesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _scheduleService.UpdateSlotAsync(slotId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/schedules/eligible-treatment-patients — Get patients eligible for treatment appointment</summary>
+    [HttpGet("eligible-treatment-patients")]
+    public async Task<IActionResult> GetEligibleTreatmentPatients()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.GetEligibleTreatmentPatientsAsync(userId.Value);
+        return Ok(result);
+    }
+
+    /// <summary>POST /api/v1/schedules/treatment-appointments — Create slot + appointment + link treatment session in transaction</summary>
+    [HttpPost("treatment-appointments")]
+    public async Task<IActionResult> CreateTreatmentAppointment([FromBody] CreateTreatmentAppointmentDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.CreateTreatmentAppointmentAsync(userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/schedules/preview-weekly — Preview weekly schedule slot generation</summary>
+    [HttpPost("preview-weekly")]
+    public async Task<IActionResult> PreviewWeeklySchedule([FromBody] WeeklyScheduleConfigDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.PreviewWeeklyScheduleAsync(userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/schedules/generate-weekly — Generate slots based on weekly schedule config</summary>
+    [HttpPost("generate-weekly")]
+    public async Task<IActionResult> GenerateWeeklySchedule([FromBody] WeeklyScheduleConfigDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.GenerateWeeklyScheduleAsync(userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

@@ -1,47 +1,135 @@
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 
 namespace OPCBS.Web.Helpers;
 
 public class JwtCookieService
 {
     private readonly IHttpContextAccessor _contextAccessor;
-    private readonly IWebHostEnvironment _env;
+    private const string AuthenticationCookieName = "OPCBS.Auth";
     private const string JwtCookieName = "OPCBS.JwtToken";
+    private const string RefreshTokenCookieName = "OPCBS.RefreshToken";
+    private string? _accessToken;
+    private string? _refreshToken;
+    private bool _accessTokenLoaded;
+    private bool _refreshTokenLoaded;
 
-    public JwtCookieService(IHttpContextAccessor contextAccessor, IWebHostEnvironment env)
+    internal SemaphoreSlim RefreshLock { get; } = new(1, 1);
+
+    public JwtCookieService(IHttpContextAccessor contextAccessor)
     {
         _contextAccessor = contextAccessor;
-        _env = env;
     }
 
     public string? GetToken()
     {
-        return _contextAccessor.HttpContext?.Request.Cookies[JwtCookieName];
+        if (!_accessTokenLoaded)
+        {
+            _accessToken = _contextAccessor.HttpContext?.Request.Cookies[JwtCookieName];
+            _accessTokenLoaded = true;
+        }
+
+        return _accessToken;
+    }
+
+    public string? GetRefreshToken()
+    {
+        if (!_refreshTokenLoaded)
+        {
+            _refreshToken = _contextAccessor.HttpContext?.Request.Cookies[RefreshTokenCookieName];
+            _refreshTokenLoaded = true;
+        }
+
+        return _refreshToken;
     }
 
     public void StoreToken(string token)
     {
-        if (_contextAccessor.HttpContext == null) return;
+        StoreAccessToken(token);
+    }
+
+    public void StoreTokens(string accessToken, string refreshToken, bool rememberMe = false)
+    {
+        StoreAccessToken(accessToken);
+
+        var context = _contextAccessor.HttpContext;
+        if (context == null) return;
+
+        _refreshToken = refreshToken;
+        _refreshTokenLoaded = true;
+
+        DeleteLegacyCookiePath(RefreshTokenCookieName);
+        context.Response.Cookies.Append(RefreshTokenCookieName, refreshToken, CreateCookieOptions(
+            rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(7)));
+    }
+
+    private void StoreAccessToken(string token)
+    {
+        var context = _contextAccessor.HttpContext;
+        if (context == null) return;
+
+        _accessToken = token;
+        _accessTokenLoaded = true;
 
         // In development (HTTP), Secure must be false or the browser
         // will refuse to store the cookie, causing 401 on every API call.
-        var isHttps = _contextAccessor.HttpContext.Request.IsHttps;
-
-        _contextAccessor.HttpContext.Response.Cookies.Append(JwtCookieName, token, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = isHttps,
-            SameSite = isHttps ? SameSiteMode.Strict : SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
-        });
+        var expires = GetTokenExpiration(token) ?? DateTimeOffset.UtcNow.AddHours(1);
+        DeleteLegacyCookiePath(JwtCookieName);
+        context.Response.Cookies.Append(JwtCookieName, token, CreateCookieOptions(expires));
     }
 
     public void RemoveToken()
     {
-        _contextAccessor.HttpContext?.Response.Cookies.Delete(JwtCookieName);
+        _accessToken = null;
+        _refreshToken = null;
+        _accessTokenLoaded = true;
+        _refreshTokenLoaded = true;
+
+        var response = _contextAccessor.HttpContext?.Response;
+        if (response == null) return;
+
+        response.Cookies.Delete(JwtCookieName, new CookieOptions { Path = "/" });
+        response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions { Path = "/" });
+        response.Cookies.Delete(AuthenticationCookieName, new CookieOptions { Path = "/" });
+        response.Cookies.Delete(JwtCookieName, new CookieOptions { Path = "/Account" });
+        response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions { Path = "/Account" });
+    }
+
+    public bool IsAccessTokenExpiring(TimeSpan clockSkew)
+    {
+        var token = GetToken();
+        if (string.IsNullOrWhiteSpace(token)) return true;
+
+        var expires = GetTokenExpiration(token);
+        return !expires.HasValue || expires.Value <= DateTimeOffset.UtcNow.Add(clockSkew);
+    }
+
+    private CookieOptions CreateCookieOptions(DateTimeOffset expires)
+    {
+        var isHttps = _contextAccessor.HttpContext?.Request.IsHttps == true;
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = expires
+        };
+    }
+
+    private void DeleteLegacyCookiePath(string cookieName)
+    {
+        _contextAccessor.HttpContext?.Response.Cookies.Delete(
+            cookieName,
+            new CookieOptions { Path = "/Account" });
+    }
+
+    private static DateTimeOffset? GetTokenExpiration(string token)
+    {
+        var expiration = GetClaimFromToken(token, "exp");
+        return long.TryParse(expiration, out var unixSeconds)
+            ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
+            : null;
     }
 
     /// <summary>
@@ -82,6 +170,11 @@ public class JwtCookieService
         var token = GetToken();
         if (string.IsNullOrEmpty(token)) return null;
 
+        return GetClaimFromToken(token, claimType);
+    }
+
+    private static string? GetClaimFromToken(string token, string claimType)
+    {
         try
         {
             var parts = token.Split('.');

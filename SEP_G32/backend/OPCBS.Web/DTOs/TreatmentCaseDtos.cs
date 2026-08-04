@@ -164,6 +164,7 @@ public class TreatmentSessionWebDto
         3 => "Cancelled",
         4 => "No Show",
         5 => "Missed",
+        6 => "Planned",
         _ => "Unknown"
     };
 
@@ -175,6 +176,7 @@ public class TreatmentSessionWebDto
         3 => "badge bg-danger",
         4 => "badge bg-secondary",
         5 => "badge bg-secondary",
+        6 => "badge bg-light text-dark border",
         _ => "badge bg-secondary"
     };
 }

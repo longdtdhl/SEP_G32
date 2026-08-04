@@ -16,6 +16,7 @@ public class TreatmentPackageDto
     public int SessionQuantity { get; set; }
     public int RemainingSessions { get; set; }
     public int ValidityDays { get; set; }
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime ExpirationDate { get; set; }
@@ -44,6 +45,7 @@ public class CreateTreatmentPackageDto
     public decimal Price { get; set; }
     public Guid? PatientId { get; set; }
     public int ValidityDays { get; set; } = 90;
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
 
     // Read-write aliases for Razor form binding
     public string Title { get => Name; set => Name = value; }
@@ -59,6 +61,7 @@ public class UpdateTreatmentPackageDto
     public string? Instructions { get; set; }
     public int SessionQuantity { get; set; }
     public int ValidityDays { get; set; } = 90;
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
 
     // Read-write aliases for Razor form binding

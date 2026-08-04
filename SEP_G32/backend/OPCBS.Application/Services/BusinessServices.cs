@@ -760,8 +760,6 @@ public class VerificationService : IVerificationService
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<VerificationRequestDto>.ErrorResponse("Doctor not found");
-        if (doctor.VerificationStatus == VerificationStatus.Approved)
-            return ApiResponse<VerificationRequestDto>.ErrorResponse("Already verified");
 
         // Update doctor profile with submitted data
         if (dto != null)
@@ -775,30 +773,50 @@ public class VerificationService : IVerificationService
         doctor.VerificationStatus = VerificationStatus.Submitted;
         _doctorRepo.Update(doctor);
 
-        // Check for existing request to update or create new
+        // Retrieve existing requests for this doctor
         var all = await _verRepo.GetAllAsync(ct);
         var existingReq = all.Where(v => v.DoctorProfileId == doctor.Id)
                              .OrderByDescending(v => v.CreatedAt)
                              .FirstOrDefault();
 
         VerificationRequest request;
-        if (existingReq != null && existingReq.Status != VerificationStatus.Approved)
+        // Draft or Submitted/Pending: update existing record in place and reset review state
+        if (existingReq != null && (existingReq.Status == VerificationStatus.Draft || existingReq.Status == VerificationStatus.Submitted))
         {
             existingReq.Status = VerificationStatus.Submitted;
             existingReq.RejectionReason = null;
+            existingReq.ReviewedAt = null;
+            existingReq.ReviewedBy = null;
+            existingReq.SubmittedAt = DateTime.UtcNow;
+            existingReq.UpdatedAt = DateTime.UtcNow;
+
             if (!string.IsNullOrWhiteSpace(dto?.CertificateUrl))
+            {
                 existingReq.CertificateUrl = dto.CertificateUrl;
+                existingReq.CertificatePublicId = dto.CertificatePublicId;
+                existingReq.CertificateFileName = dto.CertificateFileName;
+                existingReq.CertificateContentType = dto.CertificateContentType;
+                existingReq.CertificateUploadedAt = DateTime.UtcNow;
+            }
+
             _verRepo.Update(existingReq);
             request = existingReq;
         }
         else
         {
+            // Rejected or Approved (or first submission): create a NEW request record to keep history
             request = new VerificationRequest
             {
                 DoctorProfileId = doctor.Id,
                 Status = VerificationStatus.Submitted,
                 DoctorProfile = doctor,
-                CertificateUrl = dto?.CertificateUrl
+                CertificateUrl = dto?.CertificateUrl,
+                CertificatePublicId = dto?.CertificatePublicId,
+                CertificateFileName = dto?.CertificateFileName,
+                CertificateContentType = dto?.CertificateContentType,
+                CertificateUploadedAt = !string.IsNullOrWhiteSpace(dto?.CertificateUrl) ? DateTime.UtcNow : null,
+                SubmittedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             };
             await _verRepo.AddAsync(request, ct);
         }
@@ -850,26 +868,34 @@ public class VerificationService : IVerificationService
 
     public async Task<ApiResponse<List<VerificationRequestDto>>> GetPendingVerificationsAsync(int page, int pageSize, CancellationToken ct)
     {
-        return await GetAllVerificationsAsync("Submitted", page, pageSize, ct);
+        return await GetAllVerificationsAsync("Submitted", null, page, pageSize, ct);
     }
 
-    public async Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status, int page, int pageSize, CancellationToken ct)
+    public async Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status, string? search, int page, int pageSize, CancellationToken ct)
     {
         var all = await _verRepo.GetAllAsync(ct);
-        var filtered = all.AsEnumerable();
+        var dtos = new List<VerificationRequestDto>();
+        foreach (var item in all)
+            dtos.Add(await BuildDtoAsync(item, ct));
 
-        if (!string.IsNullOrEmpty(status) && Enum.TryParse<VerificationStatus>(status, true, out var statusEnum))
-            filtered = filtered.Where(v => v.Status == statusEnum);
+        var filtered = dtos.AsEnumerable();
 
-        var list = filtered.OrderByDescending(v => v.CreatedAt).ToList();
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<VerificationStatus>(status, true, out var statusEnum))
+            filtered = filtered.Where(v => string.Equals(v.Status, statusEnum.ToString(), StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            filtered = filtered.Where(v => (v.DoctorName != null && v.DoctorName.Contains(term, StringComparison.OrdinalIgnoreCase))
+                                        || (v.LicenseNumber != null && v.LicenseNumber.Contains(term, StringComparison.OrdinalIgnoreCase))
+                                        || (v.Specialization != null && v.Specialization.Contains(term, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        var list = filtered.OrderByDescending(v => v.SubmittedAt).ToList();
         var total = list.Count;
         var items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-        var dtos = new List<VerificationRequestDto>();
-        foreach (var item in items)
-            dtos.Add(await BuildDtoAsync(item, ct));
-
-        return ApiResponse<List<VerificationRequestDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
+        return ApiResponse<List<VerificationRequestDto>>.SuccessResponse(items, pagination: new PaginationMetadata
         {
             Page = page, PageSize = pageSize, TotalItems = total
         });
@@ -921,6 +947,23 @@ public class VerificationService : IVerificationService
         return ApiResponse.SuccessResponse("Verification rejected");
     }
 
+    public async Task<ApiResponse> RequestAdditionalInfoAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct)
+    {
+        var request = await _verRepo.GetByIdAsync(requestId, ct);
+        if (request == null) return ApiResponse.ErrorResponse("Request not found");
+        request.Status = VerificationStatus.RequiresAdditionalInfo;
+        request.RejectionReason = reason;
+        request.ReviewedAt = DateTime.UtcNow;
+        request.ReviewedBy = supportUserId;
+        _verRepo.Update(request);
+
+        var doctor = await _doctorRepo.GetByIdAsync(request.DoctorProfileId, ct);
+        if (doctor != null) { doctor.VerificationStatus = VerificationStatus.RequiresAdditionalInfo; _doctorRepo.Update(doctor); }
+
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Additional information requested");
+    }
+
     /// <summary>Manually builds DTO with doctor profile + reviewer data from repositories</summary>
     private async Task<VerificationRequestDto> BuildDtoAsync(VerificationRequest request, CancellationToken ct)
     {
@@ -931,6 +974,25 @@ public class VerificationService : IVerificationService
         User? reviewer = null;
         if (request.ReviewedBy.HasValue)
             reviewer = await _userRepo.GetByIdAsync(request.ReviewedBy.Value, ct);
+
+        // Retrieve previously approved certificate if current request is under review following an approved request
+        string? prevApprovedUrl = null;
+        string? prevApprovedFileName = null;
+        DateTime? prevApprovedUploadedAt = null;
+
+        var allRequests = await _verRepo.GetAllAsync(ct);
+        var prevApproved = allRequests.Where(v => v.DoctorProfileId == request.DoctorProfileId 
+                                               && v.Status == VerificationStatus.Approved 
+                                               && v.Id != request.Id)
+                                      .OrderByDescending(v => v.ReviewedAt ?? v.CreatedAt)
+                                      .FirstOrDefault();
+
+        if (prevApproved != null)
+        {
+            prevApprovedUrl = prevApproved.CertificateUrl;
+            prevApprovedFileName = prevApproved.CertificateFileName;
+            prevApprovedUploadedAt = prevApproved.CertificateUploadedAt ?? prevApproved.CreatedAt;
+        }
 
         return new VerificationRequestDto
         {
@@ -948,7 +1010,15 @@ public class VerificationService : IVerificationService
             ReviewedBy = request.ReviewedBy,
             ReviewedByName = reviewer?.FullName,
             CertificateUrl = request.CertificateUrl,
-            CreatedAt = request.CreatedAt
+            CertificatePublicId = request.CertificatePublicId,
+            CertificateFileName = request.CertificateFileName,
+            CertificateContentType = request.CertificateContentType,
+            CertificateUploadedAt = request.CertificateUploadedAt ?? request.CreatedAt,
+            SubmittedAt = request.SubmittedAt != default ? request.SubmittedAt : request.CreatedAt,
+            CreatedAt = request.CreatedAt,
+            PreviousApprovedCertificateUrl = prevApprovedUrl,
+            PreviousApprovedCertificateFileName = prevApprovedFileName,
+            PreviousApprovedCertificateUploadedAt = prevApprovedUploadedAt
         };
     }
 }
@@ -1087,6 +1157,7 @@ public class ServicePackageService : IServicePackageService
 public class AdminService : IAdminService
 {
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<Role> _roleRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<Appointment> _apptRepo;
@@ -1098,8 +1169,8 @@ public class AdminService : IAdminService
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public AdminService(IRepository<User> userRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper)
-    { _userRepo = userRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; }
+    public AdminService(IRepository<User> userRepo, IRepository<Role> roleRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper)
+    { _userRepo = userRepo; _roleRepo = roleRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; }
 
     public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct)
     {
@@ -1112,7 +1183,7 @@ public class AdminService : IAdminService
 
         return ApiResponse<DashboardStatsDto>.SuccessResponse(new DashboardStatsDto
         {
-            TotalUsers = users.Count(),
+            TotalUsers = users.Count(u => !u.IsDeleted),
             TotalDoctors = doctors.Count(),
             TotalPatients = patients.Count(),
             TotalAppointments = appts.Count(),
@@ -1123,33 +1194,95 @@ public class AdminService : IAdminService
 
     public async Task<ApiResponse<List<UserListDto>>> GetUsersAsync(string? search, string? role, int page, int pageSize, CancellationToken ct)
     {
-        var all = await _userRepo.GetAllAsync(ct);
-        var users = all.Where(u => !u.IsDeleted).ToList();
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var allRoles = await _roleRepo.GetAllAsync(ct);
+        var roleDict = allRoles.ToDictionary(r => r.Id, r => r.Name);
+
+        var users = allUsers.Where(u => !u.IsDeleted).ToList();
+
         if (!string.IsNullOrWhiteSpace(search))
-            users = users.Where(u => u.Email.Contains(search, StringComparison.OrdinalIgnoreCase) || u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        var total = users.Count;
-        var items = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<UserListDto>>.SuccessResponse(_mapper.Map<List<UserListDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+        {
+            var term = search.Trim();
+            users = users.Where(u => u.Email.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || u.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || u.PhoneNumber.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        var dtos = new List<UserListDto>();
+        foreach (var u in users)
+        {
+            var dto = _mapper.Map<UserListDto>(u);
+            if (roleDict.TryGetValue(u.RoleId, out var rName))
+                dto.Role = rName;
+            else if (string.IsNullOrEmpty(dto.Role))
+                dto.Role = "User";
+            dtos.Add(dto);
+        }
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            dtos = dtos.Where(d => string.Equals(d.Role, role, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        var total = dtos.Count;
+        var items = dtos.OrderByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ApiResponse<List<UserListDto>>.SuccessResponse(items, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
-    public async Task<ApiResponse> LockUserAsync(Guid userId, CancellationToken ct)
+    public async Task<ApiResponse<UserListDto>> GetUserByIdAsync(Guid userId, CancellationToken ct)
     {
         var user = await _userRepo.GetByIdAsync(userId, ct);
-        if (user == null) return ApiResponse.ErrorResponse("User not found");
+        if (user == null || user.IsDeleted) return ApiResponse<UserListDto>.ErrorResponse("User not found");
+
+        var dto = _mapper.Map<UserListDto>(user);
+        var role = await _roleRepo.GetByIdAsync(user.RoleId, ct);
+        if (role != null) dto.Role = role.Name;
+
+        return ApiResponse<UserListDto>.SuccessResponse(dto);
+    }
+
+    public async Task<ApiResponse> LockUserAsync(Guid userId, Guid requestingAdminId, CancellationToken ct)
+    {
+        if (userId == requestingAdminId)
+            return ApiResponse.ErrorResponse("System Administrators cannot lock or disable their own account.");
+
+        var user = await _userRepo.GetByIdAsync(userId, ct);
+        if (user == null || user.IsDeleted) return ApiResponse.ErrorResponse("User not found");
+
+        var role = await _roleRepo.GetByIdAsync(user.RoleId, ct);
+        if (role != null && string.Equals(role.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase))
+            return ApiResponse.ErrorResponse("System Administrator accounts cannot be locked directly.");
+
         user.Status = UserStatus.Locked;
         _userRepo.Update(user);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("User locked");
+        return ApiResponse.SuccessResponse("User account locked successfully");
     }
 
     public async Task<ApiResponse> UnlockUserAsync(Guid userId, CancellationToken ct)
     {
         var user = await _userRepo.GetByIdAsync(userId, ct);
-        if (user == null) return ApiResponse.ErrorResponse("User not found");
+        if (user == null || user.IsDeleted) return ApiResponse.ErrorResponse("User not found");
         user.Status = UserStatus.Active;
         _userRepo.Update(user);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("User unlocked");
+        return ApiResponse.SuccessResponse("User account unlocked successfully");
+    }
+
+    public async Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct)
+    {
+        var roles = await _roleRepo.GetAllAsync(ct);
+        var users = await _userRepo.GetAllAsync(ct);
+
+        var list = roles.Select(r => new RoleDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            UserCount = users.Count(u => !u.IsDeleted && u.RoleId == r.Id)
+        }).OrderBy(r => r.Name).ToList();
+
+        return ApiResponse<List<RoleDto>>.SuccessResponse(list);
     }
 
     public async Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page, int pageSize, CancellationToken ct)
@@ -1299,6 +1432,7 @@ public class TreatmentPackageService : ITreatmentPackageService
             SessionQuantity = dto.SessionQuantity,
             RemainingSessions = dto.SessionQuantity,
             ValidityDays = validityDays,
+            RecommendedSessionsPerWeek = dto.RecommendedSessionsPerWeek > 0 ? dto.RecommendedSessionsPerWeek : 1,
             ExpirationDate = DateTime.UtcNow.AddDays(validityDays),
             Price = dto.Price,
             Status = patient != null ? TreatmentPackageStatus.Assigned : TreatmentPackageStatus.Created,
@@ -1310,51 +1444,9 @@ public class TreatmentPackageService : ITreatmentPackageService
         await _packageRepo.AddAsync(package, ct);
         await _uow.SaveChangesAsync(ct);
 
-        // Auto-create TreatmentCase when package is assigned to a specific patient
+        // Send notification to patient (TreatmentCase is created only when patient accepts)
         if (patient != null)
         {
-            var patientUserId = patient.UserId;
-
-            var allCases = await _caseRepo.GetAllAsync(ct);
-            var existingCase = allCases.FirstOrDefault(c =>
-                c.TreatmentPackageId == package.Id &&
-                c.DoctorId == doctorUserId &&
-                c.PatientId == patientUserId &&
-                !c.IsDeleted);
-
-            if (existingCase == null)
-            {
-                var treatmentCase = new TreatmentCase
-                {
-                    TreatmentPackageId = package.Id,
-                    DoctorId = doctorUserId,
-                    PatientId = patientUserId,
-                    CaseName = package.Name,
-                    CaseDescription = package.Description,
-                    PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
-                    
-                    PackageNameSnapshot = package.Name,
-                    PackageDescriptionSnapshot = package.Description,
-                    TotalSessionsSnapshot = package.SessionQuantity,
-                    DurationDaysSnapshot = package.ValidityDays,
-                    RecommendedSessionsPerWeekSnapshot = 1,
-                    PriceSnapshot = package.Price,
-                    TargetOutcomesSnapshot = package.TargetOutcome,
-                    RecommendedExercisesSnapshot = package.RecommendedExercises,
-                    PatientGuidanceSnapshot = package.Instructions,
-
-                    TotalSessions = package.SessionQuantity,
-                    CompletedSessions = 0,
-                    RemainingSessions = package.SessionQuantity,
-                    OverallProgressPercent = 0,
-                    StartDate = DateTime.UtcNow,
-                    ExpectedEndDate = DateTime.UtcNow.AddDays(validityDays),
-                    Status = TreatmentCaseStatus.Active
-                };
-                await _caseRepo.AddAsync(treatmentCase, ct);
-                await _uow.SaveChangesAsync(ct);
-            }
-
             try
             {
                 var allUsers = await _userRepo.GetAllAsync(ct);
@@ -1362,7 +1454,7 @@ public class TreatmentPackageService : ITreatmentPackageService
                 await _notificationService.CreateNotificationAsync(
                     patient.UserId,
                     "📦 New Treatment Package",
-                    $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a treatment package \"{dto.Name}\" for you. Please review and confirm.",
+                    $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a treatment package \"{dto.Name}\" for you. Please review and accept to start treatment.",
                     Domain.Enums.NotificationType.Package,
                     package.Id,
                     "TreatmentPackage",
@@ -1374,7 +1466,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         var createdDto = _mapper.Map<TreatmentPackageDto>(package);
         await EnrichNamesAsync(new List<TreatmentPackageDto> { createdDto }, ct);
 
-        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and treatment case automatically initialized" : "Template treatment package created successfully");
+        return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and assigned. Treatment case will be created when patient accepts." : "Template treatment package created successfully");
     }
 
     /// <summary>Resolve DoctorName/PatientName from User entities (nav props not loaded by generic repo)</summary>
@@ -1512,7 +1604,7 @@ public class TreatmentPackageService : ITreatmentPackageService
                 PackageDescriptionSnapshot = package.Description,
                 TotalSessionsSnapshot = package.SessionQuantity,
                 DurationDaysSnapshot = package.ValidityDays,
-                RecommendedSessionsPerWeekSnapshot = 1,
+                RecommendedSessionsPerWeekSnapshot = package.RecommendedSessionsPerWeek,
                 PriceSnapshot = package.Price,
                 TargetOutcomesSnapshot = package.TargetOutcome,
                 RecommendedExercisesSnapshot = package.RecommendedExercises,
@@ -1586,6 +1678,23 @@ public class TreatmentPackageService : ITreatmentPackageService
         package.RejectionReason = reason ?? "Đã hủy bởi " + (isDoctor ? "bác sĩ" : "bệnh nhân");
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
+
+        // Cascade cancel to any linked active TreatmentCase
+        var allCases = await _caseRepo.GetAllAsync(ct);
+        var linkedActiveCases = allCases.Where(c =>
+            c.TreatmentPackageId == package.Id &&
+            !c.IsDeleted &&
+            (c.Status == TreatmentCaseStatus.Active || c.Status == TreatmentCaseStatus.OnHold)).ToList();
+
+        foreach (var linkedCase in linkedActiveCases)
+        {
+            linkedCase.Status = TreatmentCaseStatus.Cancelled;
+            linkedCase.ClosureNote = $"Tự động hủy do gói điều trị bị hủy. Lý do: {package.RejectionReason}";
+            linkedCase.ActualEndDate = DateTime.UtcNow;
+            linkedCase.UpdatedAt = DateTime.UtcNow;
+            _caseRepo.Update(linkedCase);
+        }
+
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Treatment package cancelled successfully");
     }
@@ -1596,6 +1705,7 @@ public class SubscriptionService : ISubscriptionService
     private readonly IRepository<DoctorSubscription> _subRepo;
     private readonly IRepository<ServicePackage> _pkgRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IRepository<PaymentTransaction> _paymentRepo;
     private readonly IPaymentService _paymentService;
     private readonly IUnitOfWork _uow;
@@ -1605,6 +1715,7 @@ public class SubscriptionService : ISubscriptionService
         IRepository<DoctorSubscription> subRepo,
         IRepository<ServicePackage> pkgRepo,
         IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
         IRepository<PaymentTransaction> paymentRepo,
         IPaymentService paymentService,
         IUnitOfWork uow,
@@ -1613,6 +1724,7 @@ public class SubscriptionService : ISubscriptionService
         _subRepo = subRepo;
         _pkgRepo = pkgRepo;
         _doctorRepo = doctorRepo;
+        _userRepo = userRepo;
         _paymentRepo = paymentRepo;
         _paymentService = paymentService;
         _uow = uow;
@@ -1894,5 +2006,86 @@ public class SubscriptionService : ISubscriptionService
         }
 
         return ApiResponse.ErrorResponse("Invalid payment callback");
+    }
+
+    public async Task<ApiResponse<List<SubscriptionDto>>> GetAllSubscriptionsAsync(string? status, string? search, int page, int pageSize, CancellationToken ct)
+    {
+        var allSubs = await _subRepo.GetAllAsync(ct);
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var allPackages = await _pkgRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+
+        var docDict = allDoctors.ToDictionary(d => d.Id);
+        var userDict = allUsers.ToDictionary(u => u.Id);
+        var pkgDict = allPackages.ToDictionary(p => p.Id);
+
+        var list = new List<SubscriptionDto>();
+        foreach (var sub in allSubs)
+        {
+            var doctorName = "Unknown Doctor";
+            if (docDict.TryGetValue(sub.DoctorProfileId, out var doc) && userDict.TryGetValue(doc.UserId, out var u))
+            {
+                doctorName = u.FullName;
+            }
+
+            var pkgName = pkgDict.TryGetValue(sub.ServicePackageId, out var pkg) ? pkg.Name : "Custom Package";
+            var amount = pkg?.Price ?? 0;
+
+            list.Add(new SubscriptionDto
+            {
+                Id = sub.Id,
+                DoctorId = sub.DoctorProfileId,
+                DoctorName = doctorName,
+                ServicePackageId = sub.ServicePackageId,
+                PackageName = pkgName,
+                Status = sub.Status.ToString(),
+                StartDate = sub.StartDate,
+                ExpirationDate = sub.ExpirationDate,
+                EndDate = sub.ExpirationDate,
+                AmountPaid = amount,
+                CreatedAt = sub.CreatedAt
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            list = list.Where(s => string.Equals(s.Status, status, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            list = list.Where(s => (s.DoctorName != null && s.DoctorName.Contains(term, StringComparison.OrdinalIgnoreCase))
+                                || s.PackageName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        var total = list.Count;
+        var items = list.OrderByDescending(s => s.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ApiResponse<List<SubscriptionDto>>.SuccessResponse(items, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+    }
+
+    public async Task<ApiResponse<SubscriptionDto>> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken ct)
+    {
+        var sub = await _subRepo.GetByIdAsync(subscriptionId, ct);
+        if (sub == null) return ApiResponse<SubscriptionDto>.ErrorResponse("Subscription not found");
+
+        var doc = await _doctorRepo.GetByIdAsync(sub.DoctorProfileId, ct);
+        var user = doc != null ? await _userRepo.GetByIdAsync(doc.UserId, ct) : null;
+        var pkg = await _pkgRepo.GetByIdAsync(sub.ServicePackageId, ct);
+
+        return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
+        {
+            Id = sub.Id,
+            DoctorId = sub.DoctorProfileId,
+            DoctorName = user?.FullName ?? "Unknown Doctor",
+            ServicePackageId = sub.ServicePackageId,
+            PackageName = pkg?.Name ?? "Custom Package",
+            Status = sub.Status.ToString(),
+            StartDate = sub.StartDate,
+            ExpirationDate = sub.ExpirationDate,
+            EndDate = sub.ExpirationDate,
+            AmountPaid = pkg?.Price ?? 0,
+            CreatedAt = sub.CreatedAt
+        });
     }
 }

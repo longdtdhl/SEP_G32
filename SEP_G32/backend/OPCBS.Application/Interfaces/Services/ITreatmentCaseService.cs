@@ -33,7 +33,7 @@ public interface ITreatmentCaseService
     // === Schedule Generation ===
 
     /// <summary>Generate treatment schedule (sessions + approved appointments)</summary>
-    Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, Guid doctorUserId, CancellationToken ct = default);
 
     // === Sessions ===
 

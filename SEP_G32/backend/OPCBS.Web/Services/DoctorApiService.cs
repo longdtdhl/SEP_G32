@@ -72,6 +72,51 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
     public async Task<(string? Url, string? Error)> UploadCertificateAsync(Stream fileStream, string fileName)
         => await UploadFileAsync("api/v1/doctor-profile/certificates", fileStream, fileName, "certificateUrl");
 
+    public async Task<(CertificateUploadResultDto? Data, string? Error)> UploadCertificateFullAsync(Stream fileStream, string fileName)
+    {
+        AttachToken();
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(GetMimeType(fileName));
+            content.Add(streamContent, "file", fileName);
+
+            var response = await Http.PostAsync("api/v1/doctor-profile/certificates", content);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var errorObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+                    if (errorObj.TryGetProperty("message", out var msg))
+                        return (null, msg.GetString());
+                }
+                catch { }
+                return (null, $"Upload failed with status {(int)response.StatusCode}");
+            }
+
+            var responseObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+            if (responseObj.TryGetProperty("data", out var data))
+            {
+                var result = new CertificateUploadResultDto
+                {
+                    CertificateUrl = data.TryGetProperty("certificateUrl", out var urlVal) ? urlVal.GetString() : null,
+                    CertificatePublicId = data.TryGetProperty("certificatePublicId", out var pidVal) ? pidVal.GetString() : null,
+                    CertificateFileName = data.TryGetProperty("certificateFileName", out var fnVal) ? fnVal.GetString() : null,
+                    CertificateContentType = data.TryGetProperty("certificateContentType", out var ctVal) ? ctVal.GetString() : null
+                };
+                return (result, null);
+            }
+            return (null, "No upload data returned");
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
     private async Task<(string? Url, string? Error)> UploadFileAsync(string url, Stream fileStream, string fileName, string urlKey)
     {
         AttachToken();

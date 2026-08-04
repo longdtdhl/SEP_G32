@@ -1,5 +1,28 @@
 namespace OPCBS.Web.DTOs;
 
+public class CalendarEventDto
+{
+    public Guid Id { get; set; }
+    public string EventType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Start { get; set; } = string.Empty;
+    public string End { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public Guid? AppointmentId { get; set; }
+    public Guid? SlotId { get; set; }
+    public Guid? NoteId { get; set; }
+    public bool IsAllDay { get; set; }
+    public string? PatientName { get; set; }
+    public Guid? PatientId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public string? Description { get; set; }
+    public string? BookingCode { get; set; }
+    public bool HasNotes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
+}
+
 // AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled
 public class AppointmentDto
 {

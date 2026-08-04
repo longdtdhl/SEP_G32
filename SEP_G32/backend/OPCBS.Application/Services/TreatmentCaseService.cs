@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using OPCBS.Application.DTOs.TreatmentCase;
 using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
@@ -30,7 +31,9 @@ public class TreatmentCaseService : ITreatmentCaseService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<AppointmentHistory> _appointmentHistoryRepo;
     private readonly IUnitOfWork _uow;
+    private readonly ILogger<TreatmentCaseService> _logger;
 
     public TreatmentCaseService(
         IRepository<TreatmentCase> caseRepo,
@@ -49,7 +52,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<User> userRepo,
-        IUnitOfWork uow)
+        IRepository<AppointmentHistory> appointmentHistoryRepo,
+        IUnitOfWork uow,
+        ILogger<TreatmentCaseService> logger)
     {
         _caseRepo = caseRepo;
         _sessionRepo = sessionRepo;
@@ -67,7 +72,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         _patientRepo = patientRepo;
         _doctorRepo = doctorRepo;
         _userRepo = userRepo;
+        _appointmentHistoryRepo = appointmentHistoryRepo;
         _uow = uow;
+        _logger = logger;
     }
 
     // ==================== Treatment Case CRUD ====================
@@ -114,7 +121,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             PackageDescriptionSnapshot = package.Description,
             TotalSessionsSnapshot = package.SessionQuantity,
             DurationDaysSnapshot = package.ValidityDays,
-            RecommendedSessionsPerWeekSnapshot = 1,
+            RecommendedSessionsPerWeekSnapshot = package.RecommendedSessionsPerWeek,
             PriceSnapshot = package.Price,
             TargetOutcomesSnapshot = package.TargetOutcome,
             RecommendedExercisesSnapshot = package.RecommendedExercises,
@@ -224,8 +231,31 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     // ==================== Schedule Generation ====================
 
-    public async Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, Guid doctorUserId, CancellationToken ct)
     {
+        // ── Input validation ────────────────────────────────────────────
+        if (dto.DaysOfWeek == null || !dto.DaysOfWeek.Any())
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("At least one day of the week must be selected.");
+
+        if (!TimeOnly.TryParse(dto.StartTime, out var startTime))
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Invalid start time format. Use HH:mm (e.g. 09:00).");
+
+        if (startTime < new TimeOnly(7, 0) || startTime > new TimeOnly(23, 0))
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Start time must be between 07:00 and 23:00.");
+
+        var durationMinutes = dto.DurationMinutes > 0 ? dto.DurationMinutes : 60;
+        if (durationMinutes < 15 || durationMinutes > 240)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Duration must be between 15 and 240 minutes.");
+
+        var endTime = startTime.AddMinutes(durationMinutes);
+        if (endTime <= startTime)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Session end time must be after start time and cannot cross midnight.");
+
+        var startDate = dto.StartDate?.Date ?? DateTime.Today.AddDays(1);
+        if (startDate.Date < DateTime.Today)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Start date cannot be in the past.");
+
+        // ── Load treatment case ─────────────────────────────────────────
         var treatmentCase = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId, ct);
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Treatment case not found.");
@@ -233,106 +263,222 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (treatmentCase.Status != TreatmentCaseStatus.Active)
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Can only generate schedule for active treatment cases.");
 
-        var allSessions = await _sessionRepo.GetAllAsync(ct);
-        var existingSessions = allSessions.Where(s => s.TreatmentCaseId == dto.TreatmentCaseId && !s.IsDeleted).ToList();
-
-        if (dto.ClearExistingFutureSessions)
-        {
-            var futureUncompleted = existingSessions.Where(s => s.Status == TreatmentSessionStatus.Scheduled).ToList();
-            foreach (var s in futureUncompleted)
-            {
-                s.IsDeleted = true;
-                _sessionRepo.Update(s);
-            }
-            existingSessions = existingSessions.Where(s => s.Status != TreatmentSessionStatus.Scheduled || s.IsDeleted == false).ToList();
-        }
-
-        var completedCount = existingSessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
-        var totalNeeded = treatmentCase.TotalSessions;
-        var sessionsToCreate = Math.Max(0, totalNeeded - completedCount);
-
-        if (sessionsToCreate <= 0)
-            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("All sessions for this treatment case have already been completed.");
-
-        if (dto.DaysOfWeek == null || !dto.DaysOfWeek.Any())
-            dto.DaysOfWeek = new List<DayOfWeek> { DayOfWeek.Monday };
-
-        if (!TimeOnly.TryParse(dto.StartTime, out var startTime))
-            startTime = new TimeOnly(9, 0);
-
-        var endTime = startTime.AddMinutes(dto.DurationMinutes > 0 ? dto.DurationMinutes : 60);
-        var startDate = dto.StartDate?.Date ?? DateTime.Today.AddDays(1);
-
+        // ── Ownership check ─────────────────────────────────────────────
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctorProfile = allDoctors.FirstOrDefault(d => d.UserId == treatmentCase.DoctorId || d.Id == treatmentCase.DoctorId);
+        var doctorProfile = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctorProfile == null)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Doctor profile not found.");
 
+        if (treatmentCase.DoctorId != doctorProfile.Id && treatmentCase.DoctorId != doctorUserId)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("You do not have permission to generate schedule for this treatment case.");
+
+        // ── Resolve patient ─────────────────────────────────────────────
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patientProfile = allPatients.FirstOrDefault(p => p.UserId == treatmentCase.PatientId || p.Id == treatmentCase.PatientId);
-
-        if (doctorProfile == null || patientProfile == null)
-            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Doctor or Patient profile missing.");
+        if (patientProfile == null)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Patient profile not found for this treatment case.");
 
         var allUsers = await _userRepo.GetAllAsync(ct);
         var patientUser = allUsers.FirstOrDefault(u => u.Id == patientProfile.UserId);
         var patientName = patientUser?.FullName ?? "Patient";
 
+        // ── Load existing sessions ──────────────────────────────────────
+        var allSessions = await _sessionRepo.GetAllAsync(ct);
+        var existingSessions = allSessions
+            .Where(s => s.TreatmentCaseId == dto.TreatmentCaseId && !s.IsDeleted)
+            .ToList();
+
+        // ── Clear future sessions if requested ──────────────────────────
+        if (dto.ClearExistingFutureSessions)
+        {
+            var futureUncompleted = existingSessions.Where(s =>
+                s.Status == TreatmentSessionStatus.Scheduled ||
+                s.Status == TreatmentSessionStatus.Planned).ToList();
+
+            foreach (var s in futureUncompleted)
+            {
+                s.Status = TreatmentSessionStatus.Cancelled;
+                s.UpdatedAt = DateTime.UtcNow;
+                _sessionRepo.Update(s);
+
+                if (s.AppointmentId.HasValue)
+                {
+                    var linkedAppt = await _appointmentRepo.GetByIdAsync(s.AppointmentId.Value, ct);
+                    if (linkedAppt != null && linkedAppt.Status != AppointmentStatus.Completed)
+                    {
+                        linkedAppt.Status = AppointmentStatus.Cancelled;
+                        linkedAppt.CancelledAt = DateTime.UtcNow;
+                        linkedAppt.CancellationReason = "Schedule regenerated by doctor.";
+                        linkedAppt.UpdatedAt = DateTime.UtcNow;
+                        _appointmentRepo.Update(linkedAppt);
+
+                        await _appointmentHistoryRepo.AddAsync(new AppointmentHistory
+                        {
+                            AppointmentId = linkedAppt.Id,
+                            PreviousStatus = AppointmentStatus.Approved,
+                            NewStatus = AppointmentStatus.Cancelled,
+                            Reason = "Schedule regenerated by doctor.",
+                            Appointment = linkedAppt
+                        }, ct);
+                    }
+                }
+            }
+
+            await _uow.SaveChangesAsync(ct);
+
+            existingSessions = existingSessions
+                .Where(s => s.Status != TreatmentSessionStatus.Cancelled)
+                .ToList();
+        }
+
+        // ── Calculate sessions needed ───────────────────────────────────
+        var completedCount = existingSessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+        var activeCount = existingSessions.Count(s =>
+            s.Status == TreatmentSessionStatus.Scheduled ||
+            s.Status == TreatmentSessionStatus.InProgress);
+        var plannedSessions = existingSessions
+            .Where(s => s.Status == TreatmentSessionStatus.Planned)
+            .OrderBy(s => s.SessionNumber)
+            .ToList();
+
+        var totalNeeded = treatmentCase.TotalSessions;
+        var sessionsToSchedule = Math.Max(0, totalNeeded - completedCount - activeCount);
+
+        if (sessionsToSchedule <= 0)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
+                $"All {totalNeeded} sessions are already completed or scheduled. No new sessions needed.");
+
+        // ── Load slots and appointments ─────────────────────────────────
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var allAppointments = await _appointmentRepo.GetAllAsync(ct);
 
-        var createdSessions = new List<TreatmentSession>();
+        var maxSessionNumber = existingSessions.Any()
+            ? existingSessions.Max(s => s.SessionNumber)
+            : 0;
+
         var currentDate = startDate;
-        var sessionNumber = completedCount + 1;
+        var maxDate = dto.TotalWeeks.HasValue && dto.TotalWeeks.Value > 0
+            ? startDate.AddDays(dto.TotalWeeks.Value * 7)
+            : startDate.AddYears(1);
 
-        while (createdSessions.Count < sessionsToCreate && currentDate < startDate.AddYears(1))
+        var createdSessions = new List<TreatmentSession>();
+        var plannedQueue = new Queue<TreatmentSession>(plannedSessions);
+        var skippedDates = new List<string>();
+
+        // ── Begin transaction for staged persistence ────────────────────
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            if (dto.DaysOfWeek.Contains(currentDate.DayOfWeek))
+            while (createdSessions.Count < sessionsToSchedule && currentDate < maxDate)
             {
-                var slotDate = DateOnly.FromDateTime(currentDate);
+                if (!dto.DaysOfWeek.Contains(currentDate.DayOfWeek))
+                {
+                    currentDate = currentDate.AddDays(1);
+                    continue;
+                }
 
-                // Check double booking for doctor at slotDate + startTime
-                var existingDoctorSlot = allSlots.FirstOrDefault(s =>
+                var slotDate = DateOnly.FromDateTime(currentDate);
+                var slotStartDateTime = currentDate.Date.Add(startTime.ToTimeSpan());
+
+                // Check for overlapping booked slots on this date
+                var overlappingBookedSlots = allSlots.Where(s =>
+                    s.DoctorProfileId == doctorProfile.Id &&
+                    s.SlotDate == slotDate &&
+                    !s.IsDeleted &&
+                    s.Status == AppointmentSlotStatus.Booked &&
+                    s.StartTime < endTime && s.EndTime > startTime).ToList();
+
+                if (overlappingBookedSlots.Any())
+                {
+                    skippedDates.Add(currentDate.ToString("MMM dd (ddd)") + " — slot conflict");
+                    currentDate = currentDate.AddDays(1);
+                    continue;
+                }
+
+                // Check for overlapping active appointments
+                var overlappingAppointments = allAppointments.Where(a =>
+                    a.DoctorId == doctorProfile.Id &&
+                    a.AppointmentDate.HasValue &&
+                    a.AppointmentDate.Value.Date == currentDate.Date &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Rejected).ToList();
+
+                var hasActiveOverlap = overlappingAppointments.Any(a =>
+                {
+                    var apptSlot = allSlots.FirstOrDefault(s => s.Id == a.AppointmentSlotId);
+                    return apptSlot != null &&
+                           apptSlot.StartTime < endTime && apptSlot.EndTime > startTime;
+                });
+
+                if (hasActiveOverlap)
+                {
+                    skippedDates.Add(currentDate.ToString("MMM dd (ddd)") + " — appointment conflict");
+                    currentDate = currentDate.AddDays(1);
+                    continue;
+                }
+
+                // Check unique index: DoctorProfileId + SlotDate + StartTime
+                var duplicateSlot = allSlots.Any(s =>
                     s.DoctorProfileId == doctorProfile.Id &&
                     s.SlotDate == slotDate &&
                     s.StartTime == startTime &&
-                    !s.IsDeleted &&
-                    s.Status != AppointmentSlotStatus.Cancelled);
+                    !s.IsDeleted);
 
-                AppointmentSlot slot;
-                var slotNotes = $"Session #{sessionNumber} for {patientName}: {treatmentCase.CaseName}";
-                if (existingDoctorSlot == null)
+                if (duplicateSlot)
                 {
-                    slot = new AppointmentSlot
-                    {
-                        DoctorProfileId = doctorProfile.Id,
-                        SlotDate = slotDate,
-                        StartTime = startTime,
-                        EndTime = endTime,
-                        Status = AppointmentSlotStatus.Booked,
-                        CurrentBookings = 1,
-                        MaxPatients = 1,
-                        Notes = slotNotes,
-                        DoctorProfile = doctorProfile
-                    };
-                    await _slotRepo.AddAsync(slot, ct);
+                    skippedDates.Add(currentDate.ToString("MMM dd (ddd)") + " — slot already exists at this time");
+                    currentDate = currentDate.AddDays(1);
+                    continue;
+                }
+
+                // ── STAGE 1: Create AppointmentSlot and save ────────────
+                var slotNotes = $"Treatment session for {patientName}: {treatmentCase.CaseName}";
+                var slot = new AppointmentSlot
+                {
+                    DoctorProfileId = doctorProfile.Id,
+                    SlotDate = slotDate,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    Status = AppointmentSlotStatus.Booked,
+                    CurrentBookings = 1,
+                    MaxPatients = 1,
+                    Notes = slotNotes,
+                    DoctorProfile = doctorProfile
+                };
+                await _slotRepo.AddAsync(slot, ct);
+                await _uow.SaveChangesAsync(ct);
+
+                // ── STAGE 2: Create/reuse TreatmentSession (Planned, no AppointmentId) and save ──
+                TreatmentSession session;
+                if (plannedQueue.Count > 0)
+                {
+                    session = plannedQueue.Dequeue();
+                    session.PlannedStartTime = slotStartDateTime;
+                    session.PlannedEndTime = currentDate.Date.Add(endTime.ToTimeSpan());
+                    session.UpdatedAt = DateTime.UtcNow;
+                    _sessionRepo.Update(session);
                 }
                 else
                 {
-                    if (existingDoctorSlot.Status == AppointmentSlotStatus.Booked)
+                    maxSessionNumber++;
+                    session = new TreatmentSession
                     {
-                        // Conflict! Move to next week for this day
-                        currentDate = currentDate.AddDays(1);
-                        continue;
-                    }
-                    slot = existingDoctorSlot;
-                    slot.Status = AppointmentSlotStatus.Booked;
-                    slot.CurrentBookings = 1;
-                    slot.Notes = slotNotes;
-                    _slotRepo.Update(slot);
+                        TreatmentCaseId = treatmentCase.Id,
+                        AppointmentId = null,
+                        SessionNumber = maxSessionNumber,
+                        Title = $"Session {maxSessionNumber}: {treatmentCase.CaseName}",
+                        Description = $"Planned session {maxSessionNumber} of {treatmentCase.TotalSessions}",
+                        PlannedStartTime = slotStartDateTime,
+                        PlannedEndTime = currentDate.Date.Add(endTime.ToTimeSpan()),
+                        Status = TreatmentSessionStatus.Planned,
+                        TreatmentCase = treatmentCase
+                    };
+                    await _sessionRepo.AddAsync(session, ct);
                 }
+                await _uow.SaveChangesAsync(ct);
 
+                // ── STAGE 3: Create Appointment with TreatmentSessionId and save ──
                 var bookingCode = $"TC-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}";
-                var slotStartDateTime = currentDate.Date.Add(startTime.ToTimeSpan());
-
                 var appointment = new Appointment
                 {
                     BookingCode = bookingCode,
@@ -343,6 +489,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                     ApprovedAt = DateTime.UtcNow,
                     TreatmentPackageId = treatmentCase.TreatmentPackageId,
                     TreatmentCaseId = treatmentCase.Id,
+                    TreatmentSessionId = session.Id,
                     AppointmentDate = slotStartDateTime,
                     Notes = slotNotes,
                     AppointmentSlot = slot,
@@ -350,35 +497,68 @@ public class TreatmentCaseService : ITreatmentCaseService
                     Patient = patientProfile
                 };
                 await _appointmentRepo.AddAsync(appointment, ct);
+                await _uow.SaveChangesAsync(ct);
 
-                var session = new TreatmentSession
+                // ── STAGE 4: Link session back to appointment, set Scheduled ──
+                session.AppointmentId = appointment.Id;
+                session.Status = TreatmentSessionStatus.Scheduled;
+                session.UpdatedAt = DateTime.UtcNow;
+                _sessionRepo.Update(session);
+                await _uow.SaveChangesAsync(ct);
+
+                // Add appointment history
+                await _appointmentHistoryRepo.AddAsync(new AppointmentHistory
                 {
-                    TreatmentCaseId = treatmentCase.Id,
                     AppointmentId = appointment.Id,
-                    SessionNumber = sessionNumber,
-                    Title = $"Session {sessionNumber}: {treatmentCase.CaseName}",
-                    Description = $"Planned session {sessionNumber} of {treatmentCase.TotalSessions}",
-                    PlannedStartTime = slotStartDateTime,
-                    PlannedEndTime = currentDate.Date.Add(endTime.ToTimeSpan()),
-                    Status = TreatmentSessionStatus.Scheduled,
-                    TreatmentCase = treatmentCase,
+                    PreviousStatus = null,
+                    NewStatus = AppointmentStatus.Approved,
+                    Reason = $"Auto-generated for treatment session {session.SessionNumber}.",
                     Appointment = appointment
-                };
-                await _sessionRepo.AddAsync(session, ct);
+                }, ct);
+
                 createdSessions.Add(session);
 
-                appointment.TreatmentSessionId = session.Id;
-                sessionNumber++;
+                // Refresh in-memory slot/appointment collections
+                allSlots = await _slotRepo.GetAllAsync(ct);
+                allAppointments = await _appointmentRepo.GetAllAsync(ct);
+
+                currentDate = currentDate.AddDays(1);
             }
 
-            currentDate = currentDate.AddDays(1);
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            _logger.LogError(ex,
+                "GenerateScheduleAsync failed. CaseId={CaseId}, DoctorUserId={DoctorUserId}, " +
+                "StartDate={StartDate}, StartTime={StartTime}, EndTime={EndTime}, " +
+                "SessionsCreatedBeforeFailure={Count}",
+                dto.TreatmentCaseId, doctorUserId, startDate, dto.StartTime, endTime,
+                createdSessions.Count);
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
+                "Failed to generate schedule due to a database conflict. Please try again or contact support.");
         }
 
-        await _uow.SaveChangesAsync(ct);
+        if (!createdSessions.Any())
+        {
+            var skipSummary = skippedDates.Any()
+                ? " Skipped dates: " + string.Join(", ", skippedDates.Take(5))
+                : "";
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
+                $"No available doctor slots were found for the selected recurrence.{skipSummary} Update Schedule Management or select different days and times.");
+        }
 
         var dtos = createdSessions.Select(MapToSessionDto).ToList();
-        return ApiResponse<List<TreatmentSessionDto>>.SuccessResponse(dtos, $"Generated {dtos.Count} treatment sessions and appointments.");
+        var skipInfo = skippedDates.Any()
+            ? $" ({skippedDates.Count} date(s) skipped due to conflicts)"
+            : "";
+        return ApiResponse<List<TreatmentSessionDto>>.SuccessResponse(dtos,
+            $"Generated {dtos.Count} treatment sessions and appointments.{skipInfo}");
     }
+
+
 
     // ==================== Sessions ====================
 
@@ -404,7 +584,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             Description = dto.Description,
             PlannedStartTime = dto.PlannedStartTime,
             PlannedEndTime = dto.PlannedEndTime,
-            Status = TreatmentSessionStatus.Scheduled,
+            Status = dto.AppointmentId.HasValue ? TreatmentSessionStatus.Scheduled : TreatmentSessionStatus.Planned,
             TreatmentCase = treatmentCase
         };
 
@@ -499,6 +679,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (session == null || session.IsDeleted)
             return ApiResponse<TreatmentSessionDto>.ErrorResponse("Session not found.");
 
+        // Idempotency guard: track whether this is a first-time completion
+        var wasAlreadyCompleted = session.Status == TreatmentSessionStatus.Completed;
+
         if (dto.Title != null) session.Title = dto.Title;
         session.SessionSummary = dto.SessionSummary;
         session.DoctorClinicalAssessment = dto.DoctorClinicalAssessment ?? dto.TherapistNotes;
@@ -513,6 +696,19 @@ public class TreatmentCaseService : ITreatmentCaseService
         session.UpdatedAt = DateTime.UtcNow;
 
         _sessionRepo.Update(session);
+
+        // Update linked Appointment status to Completed
+        if (session.AppointmentId.HasValue)
+        {
+            var appointment = await _appointmentRepo.GetByIdAsync(session.AppointmentId.Value, ct);
+            if (appointment != null && appointment.Status != AppointmentStatus.Completed)
+            {
+                appointment.Status = AppointmentStatus.Completed;
+                appointment.CompletedAt = DateTime.UtcNow;
+                appointment.UpdatedAt = DateTime.UtcNow;
+                _appointmentRepo.Update(appointment);
+            }
+        }
 
         // Link goals if provided
         if (dto.LinkedGoalIds != null && dto.LinkedGoalIds.Any())
@@ -538,12 +734,16 @@ public class TreatmentCaseService : ITreatmentCaseService
             }
         }
 
-        // Update parent case counters
+        // Update parent case counters using count-based recalculation (idempotent)
         var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
         if (treatmentCase != null)
         {
-            treatmentCase.CompletedSessions++;
-            treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.RemainingSessions - 1);
+            // Count-based recalculation prevents double-counting on repeated calls
+            var allSessions = await _sessionRepo.GetAllAsync(ct);
+            var caseSessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted).ToList();
+            treatmentCase.CompletedSessions = caseSessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+            treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - treatmentCase.CompletedSessions);
+
             await RecalculateProgressAsync(treatmentCase, ct);
             treatmentCase.UpdatedAt = DateTime.UtcNow;
             _caseRepo.Update(treatmentCase);
@@ -557,7 +757,8 @@ public class TreatmentCaseService : ITreatmentCaseService
         }
 
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<TreatmentSessionDto>.SuccessResponse(MapToSessionDto(session), "Session completed successfully.");
+        var message = wasAlreadyCompleted ? "Session updated (already completed)." : "Session completed successfully.";
+        return ApiResponse<TreatmentSessionDto>.SuccessResponse(MapToSessionDto(session), message);
     }
 
     public async Task<ApiResponse<List<TreatmentSessionDto>>> GetSessionsByCaseAsync(Guid caseId, CancellationToken ct)
@@ -1052,6 +1253,12 @@ public class TreatmentCaseService : ITreatmentCaseService
         return user?.FullName;
     }
 
+    private async Task<string?> GetPackageNameAsync(Guid packageId, CancellationToken ct)
+    {
+        var package = await _packageRepo.GetByIdAsync(packageId, ct);
+        return package?.Name;
+    }
+
     private async Task<TreatmentCaseDto> MapToCaseDtoAsync(TreatmentCase entity, CancellationToken ct)
     {
         var allGoals = await _goalRepo.GetAllAsync(ct);
@@ -1093,6 +1300,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             UpdatedAt = entity.UpdatedAt,
             DoctorName = await GetUserNameAsync(entity.DoctorId, ct),
             PatientName = await GetUserNameAsync(entity.PatientId, ct),
+            PackageName = await GetPackageNameAsync(entity.TreatmentPackageId, ct),
             GoalCount = goals.Count,
             AchievedGoalCount = goals.Count(g => g.Status == GoalStatus.Achieved),
             TotalHomeworkAssigned = assignments.Count,
@@ -1145,7 +1353,9 @@ public class TreatmentCaseService : ITreatmentCaseService
             MoodAfter = s.MoodAfter,
             Status = (int)s.Status,
             CreatedAt = s.CreatedAt,
-            UpdatedAt = s.UpdatedAt
+            UpdatedAt = s.UpdatedAt,
+            AppointmentDate = s.Appointment?.AppointmentDate ?? s.PlannedStartTime,
+            BookingCode = s.Appointment?.BookingCode
         };
     }
 

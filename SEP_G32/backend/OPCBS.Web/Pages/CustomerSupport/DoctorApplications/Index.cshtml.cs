@@ -15,12 +15,13 @@ public class IndexModel : PageModel
     public string? Error { get; set; }
 
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public new int Page { get; set; } = 1;
 
     public async Task OnGetAsync()
     {
         Error = TempData["Error"] as string;
-        var (data, pagination, error) = await _api.GetDoctorApplicationsAsync(Page, Status);
+        var (data, pagination, error) = await _api.GetDoctorApplicationsAsync(Page, Status, Search);
         Applications = data;
         Pagination = pagination;
         if (error != null && Error == null) Error = error;

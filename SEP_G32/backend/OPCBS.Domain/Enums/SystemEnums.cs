@@ -81,7 +81,10 @@ public enum VerificationStatus
     Approved = 2,
     
     /// <summary>Rejected by customer support - can resubmit</summary>
-    Rejected = 3
+    Rejected = 3,
+
+    /// <summary>Additional information or document requested by customer support</summary>
+    RequiresAdditionalInfo = 4
 }
 
 /// <summary>
@@ -361,7 +364,10 @@ public enum TreatmentSessionStatus
     NoShow = 4,
 
     /// <summary>Patient missed the session (alias for NoShow in some contexts)</summary>
-    Missed = 5
+    Missed = 5,
+
+    /// <summary>Session planned but not yet linked to an appointment slot</summary>
+    Planned = 6
 }
 
 /// <summary>
