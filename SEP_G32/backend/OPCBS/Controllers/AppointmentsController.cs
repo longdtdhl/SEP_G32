@@ -102,29 +102,6 @@ public class AppointmentsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>PUT /api/v1/appointments/reschedule/{id} - Reschedule appointment (Patient)</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
-    [HttpPut("reschedule/{appointmentId:guid}")]
-    public async Task<IActionResult> RescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
-    {
-        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
-        return result.Success ? Ok(result) : BadRequest(result);
-    }
-
-    /// <summary>POST /api/v1/appointments/{id}/request-reschedule - Request appointment reschedule (Patient)</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
-    [HttpPost("{appointmentId:guid}/request-reschedule")]
-    public async Task<IActionResult> RequestReschedule(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
-    {
-        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
-        return result.Success ? Ok(result) : BadRequest(result);
-    }
 
     /// <summary>PUT /api/v1/appointments/{id}/approve-reschedule - Doctor approves reschedule request</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
@@ -239,5 +216,28 @@ public class AppointmentsController : ControllerBase
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
+    }
+    /// <summary>PUT /api/v1/appointments/reschedule/{id} - Reschedule appointment (Patient)</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPut("reschedule/{appointmentId:guid}")]
+    public async Task<IActionResult> RescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
+    {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/{id}/request-reschedule - Request appointment reschedule (Patient)</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPost("{appointmentId:guid}/request-reschedule")]
+    public async Task<IActionResult> RequestReschedule(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
+    {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }

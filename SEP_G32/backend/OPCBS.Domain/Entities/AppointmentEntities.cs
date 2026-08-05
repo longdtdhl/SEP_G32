@@ -80,6 +80,12 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Optional notes/description for the slot</summary>
     public string? Notes { get; set; }
 
+    /// <summary>Maximum number of patients that can book this slot (default 1). Slot auto-locks when CurrentBookings >= MaxPatients.</summary>
+    public int MaxPatients { get; set; } = 1;
+
+    /// <summary>Current number of bookings for this slot</summary>
+    public int CurrentBookings { get; set; } = 0;
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 
@@ -146,8 +152,17 @@ public class Appointment : BaseEntity
     /// <summary>Reason for cancellation</summary>
     public string? CancellationReason { get; set; }
 
+    /// <summary>Foreign key to proposed AppointmentSlot when patient requests a reschedule</summary>
+    public Guid? ProposedSlotId { get; set; }
+
+    /// <summary>Reason provided by patient for rescheduling</summary>
+    public string? RescheduleReason { get; set; }
+
     /// <summary>Navigation property to AppointmentSlot</summary>
     public virtual required AppointmentSlot AppointmentSlot { get; set; }
+
+    /// <summary>Navigation property to proposed AppointmentSlot for reschedule</summary>
+    public virtual AppointmentSlot? ProposedSlot { get; set; }
 
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }
@@ -192,45 +207,4 @@ public class AppointmentHistory : ImmutableEntity
 
     /// <summary>Navigation property to Appointment</summary>
     public virtual required Appointment Appointment { get; set; }
-    /// <summary>
-    /// Consultation note entity - medical notes and outcomes from completed appointments
-    /// </summary>
-    public class ConsultationNote : BaseEntity
-    {
-        /// <summary>Foreign key to Appointment (nullable for walk-in patients)</summary>
-        public Guid? AppointmentId { get; set; }
-
-        /// <summary>Foreign key to DoctorProfile who conducted consultation</summary>
-        public Guid DoctorId { get; set; }
-
-        /// <summary>Foreign key to PatientRecord</summary>
-        public Guid PatientRecordId { get; set; }
-
-        /// <summary>Summary of the consultation session</summary>
-        public required string ConsultationSummary { get; set; }
-
-        /// <summary>Diagnosis or assessment findings</summary>
-        public string? Diagnosis { get; set; }
-
-        /// <summary>Treatment recommendations</summary>
-        public string? Recommendation { get; set; }
-
-        /// <summary>Follow-up notes or action items</summary>
-        public string? FollowUpNotes { get; set; }
-
-        /// <summary>Therapy plan or psychological intervention</summary>
-        public string? TherapyPlan { get; set; }
-
-        /// <summary>Next appointment recommendation date (if applicable)</summary>
-        public DateTime? NextAppointmentRecommendedDate { get; set; }
-
-        /// <summary>Navigation property to Appointment</summary>
-        public virtual Appointment? Appointment { get; set; }
-
-        /// <summary>Navigation property to Doctor</summary>
-        public virtual required DoctorProfile Doctor { get; set; }
-
-        /// <summary>Navigation property to PatientRecord</summary>
-        public virtual required PatientRecord PatientRecord { get; set; }
-    }
 }

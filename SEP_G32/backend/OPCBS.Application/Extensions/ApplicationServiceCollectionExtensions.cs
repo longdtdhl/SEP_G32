@@ -25,7 +25,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IDoctorService, DoctorService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IScheduleService, ScheduleService>();
-        
+        services.AddScoped<IConsultationNoteService, ConsultationNoteService>();
+        services.AddScoped<IPatientRecordService, PatientRecordService>();
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IVerificationService, VerificationService>();
@@ -34,6 +35,12 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<IPsychometricService, PsychometricService>();
+        services.AddScoped<ITherapyAssignmentService, TherapyAssignmentService>();
+        services.AddScoped<IEmotionJournalService, EmotionJournalService>();
+        services.AddScoped<IFavoriteDoctorService, FavoriteDoctorService>();
+        services.AddScoped<IMessagingService, MessagingService>();
+        services.AddScoped<ITreatmentCaseService, TreatmentCaseService>();
 
         return services;
     }
