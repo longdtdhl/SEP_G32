@@ -344,6 +344,9 @@ public class VerificationRequest : BaseEntity
     /// <summary>Customer support person who reviewed this request</summary>
     public Guid? ReviewedBy { get; set; }
 
+    /// <summary>URL of the uploaded practice certificate or related documents</summary>
+    public string? CertificateUrl { get; set; }
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 }

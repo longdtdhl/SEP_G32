@@ -327,13 +327,25 @@ public class VerificationService : IVerificationService
 {
     private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public VerificationService(IRepository<VerificationRequest> verRepo, IRepository<DoctorProfile> doctorRepo, IUnitOfWork uow, IMapper mapper)
-    { _verRepo = verRepo; _doctorRepo = doctorRepo; _uow = uow; _mapper = mapper; }
+    public VerificationService(
+        IRepository<VerificationRequest> verRepo,
+        IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
+        IUnitOfWork uow,
+        IMapper mapper)
+    {
+        _verRepo = verRepo;
+        _doctorRepo = doctorRepo;
+        _userRepo = userRepo;
+        _uow = uow;
+        _mapper = mapper;
+    }
 
-    public async Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, CancellationToken ct)
+    public async Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, SubmitVerificationDto? dto, CancellationToken ct)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
@@ -341,13 +353,24 @@ public class VerificationService : IVerificationService
         if (doctor.VerificationStatus == VerificationStatus.Approved)
             return ApiResponse<VerificationRequestDto>.ErrorResponse("Already verified");
 
+        // Update doctor profile with submitted data
+        if (dto != null)
+        {
+            if (!string.IsNullOrWhiteSpace(dto.LicenseNumber)) doctor.LicenseNumber = dto.LicenseNumber;
+            if (!string.IsNullOrWhiteSpace(dto.Specialization)) doctor.ProfessionalTitle = dto.Specialization;
+            if (dto.ExperienceYears > 0) doctor.ExperienceYears = dto.ExperienceYears;
+            if (!string.IsNullOrWhiteSpace(dto.Education)) doctor.Biography = dto.Education;
+        }
+
         doctor.VerificationStatus = VerificationStatus.Submitted;
         _doctorRepo.Update(doctor);
 
-        var request = new VerificationRequest { DoctorProfileId = doctor.Id, Status = VerificationStatus.Submitted, DoctorProfile = doctor };
+        var request = new VerificationRequest { DoctorProfileId = doctor.Id, Status = VerificationStatus.Submitted, DoctorProfile = doctor, CertificateUrl = dto?.CertificateUrl };
         await _verRepo.AddAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<VerificationRequestDto>.SuccessResponse(_mapper.Map<VerificationRequestDto>(request), "Verification submitted");
+
+        var result = await BuildDtoAsync(request, ct);
+        return ApiResponse<VerificationRequestDto>.SuccessResponse(result, "Verification submitted");
     }
 
     public async Task<ApiResponse<VerificationRequestDto>> GetVerificationStatusAsync(Guid doctorUserId, CancellationToken ct)
@@ -355,26 +378,51 @@ public class VerificationService : IVerificationService
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<VerificationRequestDto>.ErrorResponse("Doctor not found");
+
         var all = await _verRepo.GetAllAsync(ct);
         var request = all.Where(v => v.DoctorProfileId == doctor.Id).OrderByDescending(v => v.CreatedAt).FirstOrDefault();
         if (request == null) return ApiResponse<VerificationRequestDto>.ErrorResponse("No verification request found");
-        return ApiResponse<VerificationRequestDto>.SuccessResponse(_mapper.Map<VerificationRequestDto>(request));
+
+        var dto = await BuildDtoAsync(request, ct);
+        return ApiResponse<VerificationRequestDto>.SuccessResponse(dto);
     }
 
     public async Task<ApiResponse<VerificationRequestDto>> GetVerificationByIdAsync(Guid requestId, CancellationToken ct)
     {
         var request = await _verRepo.GetByIdAsync(requestId, ct);
         if (request == null) return ApiResponse<VerificationRequestDto>.ErrorResponse("Verification request not found");
-        return ApiResponse<VerificationRequestDto>.SuccessResponse(_mapper.Map<VerificationRequestDto>(request));
+
+        var dto = await BuildDtoAsync(request, ct);
+        return ApiResponse<VerificationRequestDto>.SuccessResponse(dto);
     }
 
     public async Task<ApiResponse<List<VerificationRequestDto>>> GetPendingVerificationsAsync(int page, int pageSize, CancellationToken ct)
     {
+        return await GetAllVerificationsAsync("Submitted", page, pageSize, ct);
+    }
+
+    public async Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status, int page, int pageSize, CancellationToken ct)
+    {
         var all = await _verRepo.GetAllAsync(ct);
-        var pending = all.Where(v => v.Status == VerificationStatus.Submitted).ToList();
-        var total = pending.Count;
-        var items = pending.OrderBy(v => v.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<VerificationRequestDto>>.SuccessResponse(_mapper.Map<List<VerificationRequestDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+        var filtered = all.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<VerificationStatus>(status, true, out var statusEnum))
+            filtered = filtered.Where(v => v.Status == statusEnum);
+
+        var list = filtered.OrderByDescending(v => v.CreatedAt).ToList();
+        var total = list.Count;
+        var items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var dtos = new List<VerificationRequestDto>();
+        foreach (var item in items)
+            dtos.Add(await BuildDtoAsync(item, ct));
+
+        return ApiResponse<List<VerificationRequestDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        });
     }
 
     public async Task<ApiResponse> ApproveVerificationAsync(Guid requestId, Guid supportUserId, CancellationToken ct)
@@ -387,7 +435,20 @@ public class VerificationService : IVerificationService
         _verRepo.Update(request);
 
         var doctor = await _doctorRepo.GetByIdAsync(request.DoctorProfileId, ct);
-        if (doctor != null) { doctor.VerificationStatus = VerificationStatus.Approved; _doctorRepo.Update(doctor); }
+        if (doctor != null)
+        {
+            doctor.VerificationStatus = VerificationStatus.Approved;
+            doctor.IsVisible = true;
+            _doctorRepo.Update(doctor);
+
+            // Activate the doctor's user account
+            var user = await _userRepo.GetByIdAsync(doctor.UserId, ct);
+            if (user != null && user.Status != UserStatus.Active)
+            {
+                user.Status = UserStatus.Active;
+                _userRepo.Update(user);
+            }
+        }
 
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Verification approved");
@@ -409,7 +470,39 @@ public class VerificationService : IVerificationService
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Verification rejected");
     }
+
+    /// <summary>Manually builds DTO with doctor profile + reviewer data from repositories</summary>
+    private async Task<VerificationRequestDto> BuildDtoAsync(VerificationRequest request, CancellationToken ct)
+    {
+        var doctor = await _doctorRepo.GetByIdAsync(request.DoctorProfileId, ct);
+        User? doctorUser = null;
+        if (doctor != null) doctorUser = await _userRepo.GetByIdAsync(doctor.UserId, ct);
+
+        User? reviewer = null;
+        if (request.ReviewedBy.HasValue)
+            reviewer = await _userRepo.GetByIdAsync(request.ReviewedBy.Value, ct);
+
+        return new VerificationRequestDto
+        {
+            Id = request.Id,
+            DoctorProfileId = request.DoctorProfileId,
+            DoctorName = doctorUser?.FullName ?? "Unknown",
+            AvatarUrl = doctorUser?.AvatarUrl,
+            LicenseNumber = doctor?.LicenseNumber,
+            Specialization = doctor?.ProfessionalTitle,
+            ExperienceYears = doctor?.ExperienceYears ?? 0,
+            Biography = doctor?.Biography,
+            Status = request.Status.ToString(),
+            RejectionReason = request.RejectionReason,
+            ReviewedAt = request.ReviewedAt,
+            ReviewedBy = request.ReviewedBy,
+            ReviewedByName = reviewer?.FullName,
+            CertificateUrl = request.CertificateUrl,
+            CreatedAt = request.CreatedAt
+        };
+    }
 }
+
 
 public class NotificationService : INotificationService
 {
@@ -472,11 +565,16 @@ public class ServicePackageService : IServicePackageService
     public ServicePackageService(IRepository<ServicePackage> pkgRepo, IUnitOfWork uow, IMapper mapper)
     { _pkgRepo = pkgRepo; _uow = uow; _mapper = mapper; }
 
-    public async Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(CancellationToken ct)
+    public async Task<ApiResponse<List<ServicePackageDto>>> GetActivePackagesAsync(bool includeInactive, CancellationToken ct)
     {
         var all = await _pkgRepo.GetAllAsync(ct);
-        var active = all.Where(p => p.IsActive && !p.IsDeleted).OrderBy(p => p.DisplayOrder).ToList();
-        return ApiResponse<List<ServicePackageDto>>.SuccessResponse(_mapper.Map<List<ServicePackageDto>>(active));
+        var query = all.Where(p => !p.IsDeleted);
+        if (!includeInactive)
+        {
+            query = query.Where(p => p.IsActive);
+        }
+        var list = query.OrderBy(p => p.DisplayOrder).ToList();
+        return ApiResponse<List<ServicePackageDto>>.SuccessResponse(_mapper.Map<List<ServicePackageDto>>(list));
     }
 
     public async Task<ApiResponse<ServicePackageDto>> GetByIdAsync(Guid packageId, CancellationToken ct)
