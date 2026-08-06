@@ -2,67 +2,58 @@
 @model OPCBS.Web.Pages.Doctor.VerificationModel
 @{
     ViewData["Title"] = "Doctor Account Verification";
-    ViewData["UseDashboardLayout"] = true;
+    Layout = "_DashboardLayout";
 }
 
-<div class="mb-page-header">
-    <h1><i class="bi bi-shield-check me-2 text-primary"></i>Professional Verification</h1>
-    <p class="text-muted">Complete your practice profile to start consulting on the platform</p>
+<div class="mb-page-header mb-4">
+    <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-shield-check me-2 text-primary"></i>Professional Verification</h1>
+    <p class="text-muted mb-0">Complete your practice profile to start consulting on the platform</p>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>@Model.Error
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 @if (Model.Success != null)
 {
-    <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle-fill me-1"></i>@Model.Success
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@Model.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
 @if (Model.HasExisting && Model.Verification != null)
 {
     var v = Model.Verification;
-    var statusLower = v.Status?.ToLower();
+    var statusLower = v.Status?.ToLower() ?? "draft";
 
-    var badgeClass = statusLower switch
+    var (badgeBg, badgeColor, badgeBorder, displayStatus) = statusLower switch
     {
-        "submitted" or "pending" => "bg-warning text-dark",
-        "approved" => "bg-success",
-        "rejected" => "bg-danger",
-        _ => "bg-secondary"
-    };
-
-    var displayStatus = statusLower switch
-    {
-        "submitted" or "pending" => "Pending approved",
-        "approved" => "Approved",
-        "rejected" => "Rejected",
-        _ => v.Status ?? "N/A"
+        "submitted" or "pending" => ("#fef3c7", "#92400e", "#fde68a", "Pending Review"),
+        "approved" => ("#dcfce7", "#166534", "#bbf7d0", "Approved"),
+        "rejected" => ("#fee2e2", "#991b1b", "#fecaca", "Rejected"),
+        _ => ("#f1f5f9", "#475569", "#e2e8f0", v.Status ?? "Draft")
     };
 
     <!-- Verification Timeline / Steps -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-            <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-activity me-1 text-primary"></i>Account Verification Progress</h5>
+            <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-activity me-2 text-primary"></i>Account Verification Progress</h5>
 
             <div class="d-flex justify-content-between align-items-center position-relative flex-wrap gap-4" style="z-index: 1;">
-                <!-- Line -->
                 <div class="position-absolute top-50 start-0 end-0 translate-middle-y bg-light d-none d-md-block" style="height: 4px; z-index: -1;"></div>
 
                 <!-- Step 1 -->
                 <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
-                        <i class="bi bi-send-check"></i>
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
+                        <i class="bi bi-send-check fs-5"></i>
                     </div>
                     <div>
-                        <div class="fw-bold small text-dark">Send profile</div>
-                        <small class="text-muted">@v.SubmittedAt.ToString("MM/dd/yyyy")</small>
+                        <div class="fw-bold small text-dark">Profile Submitted</div>
+                        <small class="text-muted">@v.SubmittedAt.ToString("MM/dd/yyyy HH:mm")</small>
                     </div>
                 </div>
 
@@ -72,12 +63,12 @@
                         var step2Bg = statusLower == "submitted" || statusLower == "pending" || statusLower == "approved" || statusLower == "rejected" ? "bg-warning text-dark" : "bg-light text-muted";
                         var step2Icon = statusLower == "approved" || statusLower == "rejected" ? "bi-check-lg" : "bi-hourglass-split";
                     }
-                    <div class="rounded-circle @step2Bg d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
-                        <i class="bi @step2Icon"></i>
+                    <div class="rounded-circle @step2Bg d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
+                        <i class="bi @step2Icon fs-5"></i>
                     </div>
                     <div>
-                        <div class="fw-bold small text-dark">Profile Validation</div>
-                        <small class="text-muted">Support team is reviewing</small>
+                        <div class="fw-bold small text-dark">Support Team Review</div>
+                        <small class="text-muted">Reviewing practitioner documents</small>
                     </div>
                 </div>
 
@@ -87,11 +78,11 @@
                         var step3Bg = statusLower == "approved" ? "bg-success text-white" : statusLower == "rejected" ? "bg-danger text-white" : "bg-light text-muted";
                         var step3Icon = statusLower == "approved" ? "bi-patch-check" : statusLower == "rejected" ? "bi-patch-exclamation" : "bi-shield";
                     }
-                    <div class="rounded-circle @step3Bg d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">
-                        <i class="bi @step3Icon"></i>
+                    <div class="rounded-circle @step3Bg d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
+                        <i class="bi @step3Icon fs-5"></i>
                     </div>
                     <div>
-                        <div class="fw-bold small text-dark">Result</div>
+                        <div class="fw-bold small text-dark">Verification Result</div>
                         <small class="text-muted">@displayStatus</small>
                     </div>
                 </div>
@@ -99,20 +90,22 @@
         </div>
     </div>
 
-    <!-- Details Card -->
-    <div class="card border-0 shadow-sm">
+    <!-- Current Profile & Certificate Details Card -->
+    <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
             <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-shaded me-2 text-primary"></i>Current Verification Profile</h5>
-            <span class="badge @badgeClass px-3 py-2 rounded-pill fw-semibold">@displayStatus</span>
+            <span class="badge px-3 py-2 rounded-pill fw-semibold" style="background-color: @badgeBg; color: @badgeColor; border: 1px solid @badgeBorder;">
+                @displayStatus
+            </span>
         </div>
         <div class="card-body p-4">
             <div class="row g-4">
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Full Name doctor</div>
+                    <div class="text-muted small mb-1">Doctor Name</div>
                     <div class="fw-bold text-dark">@(v.DoctorName ?? "-")</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Professional Title / Position</div>
+                    <div class="text-muted small mb-1">Specialization / Title</div>
                     <div class="fw-bold text-dark">@(v.Specialization ?? "-")</div>
                 </div>
                 <div class="col-md-6">
@@ -120,15 +113,15 @@
                     <div><code class="bg-light px-2 py-1 rounded text-primary fw-bold">@(v.LicenseNumber ?? "-")</code></div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Years of Experience practice</div>
+                    <div class="text-muted small mb-1">Experience</div>
                     <div class="fw-bold text-dark">@v.ExperienceYears years</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Highest Academic Degree</div>
+                    <div class="text-muted small mb-1">Education / Degree</div>
                     <div class="fw-bold text-dark">@(v.Education ?? "-")</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="text-muted small mb-1">Request Submission Time</div>
+                    <div class="text-muted small mb-1">Last Submitted Date</div>
                     <div class="fw-bold text-dark">@v.SubmittedAt.ToString("MM/dd/yyyy HH:mm")</div>
                 </div>
             </div>
@@ -136,66 +129,95 @@
             @if (!string.IsNullOrEmpty(v.Notes))
             {
                 <hr class="my-4" />
-                <div class="text-muted small mb-1">Professional Summary (Practice Description)</div>
+                <div class="text-muted small mb-1">Professional Notes / Summary</div>
                 <p class="mb-0 text-dark small" style="line-height: 1.6;">@v.Notes</p>
             }
+
+            <hr class="my-4" />
+
+            <!-- Certificate Section Header with Action Button -->
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="fw-bold text-dark"><i class="bi bi-award me-1 text-primary"></i>Practice Certificate Document</div>
+                <button type="button" class="btn btn-outline-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#updateCertModal">
+                    <i class="bi bi-cloud-arrow-up me-1"></i>Replace / Update Certificate
+                </button>
+            </div>
 
             @if (!string.IsNullOrEmpty(v.CertificateUrl))
             {
                 var certUrl = v.CertificateUrl;
+                var fileName = !string.IsNullOrEmpty(v.CertificateFileName) ? v.CertificateFileName : "Practice_Certificate_Document";
                 var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
                 || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
                 || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase);
-                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-                var isLocalUpload = certUrl.StartsWith("/uploads/");
-
-                <hr class="my-4" />
-                <div class="text-muted small mb-2"><i class="bi bi-award me-1"></i>Certificates & Attached Documents</div>
+                || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
 
                 <div class="card border bg-light mb-3">
                     <div class="card-body">
                         @if (isImage)
                         {
                             <div class="text-center mb-3">
-                                <img src="@certUrl" alt="Certificate Document" class="img-fluid rounded shadow-sm" style="max-height: 500px; cursor: pointer;"
-                                     onclick="window.open(this.src, '_blank')" title="Click to view full size" />
+                                <img src="@certUrl" alt="Practice Certificate Document" class="img-fluid rounded border shadow-sm" style="max-height: 450px; cursor: pointer;"
+                                     onclick="window.open(this.src, '_blank', 'noopener,noreferrer')" title="Click to view full size" />
                             </div>
                         }
-                        else if (isPdf && isLocalUpload)
+                        else if (isPdf)
                         {
                             <div class="ratio ratio-16x9 mb-3">
-                                <iframe src="@certUrl" title="Certificate PDF" class="rounded border"></iframe>
+                                <iframe src="@certUrl" title="Certificate PDF Document" class="rounded border"></iframe>
                             </div>
                         }
 
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <a href="@certUrl" target="_blank" class="btn btn-sm btn-outline-primary px-3">
-                                <i class="bi bi-eye-fill me-1"></i>View Full Document
-                            </a>
-                            <a href="@certUrl" download class="btn btn-sm btn-outline-secondary px-3">
-                                <i class="bi bi-download me-1"></i>Download
-                            </a>
-                            <span class="text-muted small ms-2">
-                                <i class="bi bi-link-45deg me-1"></i>@(certUrl.Length > 60 ? certUrl.Substring(0, 60) + "..." : certUrl)
-                            </span>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi @(isPdf ? "bi-file-earmark-pdf-fill text-danger fs-4" : isImage ? "bi-file-earmark-image-fill text-primary fs-4" : "bi-file-earmark-text-fill text-secondary fs-4")"></i>
+                                <div>
+                                    <div class="fw-semibold small text-dark">@fileName</div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-clock me-1"></i>Uploaded: @(v.CertificateUploadedAt?.ToString("MM/dd/yyyy HH:mm") ?? v.SubmittedAt.ToString("MM/dd/yyyy HH:mm"))
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="@certUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary px-3">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Open Certificate
+                                </a>
+                                <a href="@certUrl" download class="btn btn-sm btn-outline-secondary px-3">
+                                    <i class="bi bi-download me-1"></i>Download
+                                </a>
+                            </div>
                         </div>
                     </div>
+                </div>
+            }
+            else
+            {
+                <div class="card border border-dashed text-center p-4 bg-light my-3">
+                    <i class="bi bi-file-earmark-arrow-up text-muted fs-1 mb-2"></i>
+                    <h6 class="fw-semibold text-dark">No Practice Certificate Attached</h6>
+                    <p class="text-muted small mb-3">Please upload your practice license/certificate to complete verification.</p>
+                    <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#updateCertModal">
+                        <i class="bi bi-upload me-1"></i>Upload Certificate Now
+                    </button>
                 </div>
             }
 
             @if (v.ReviewedAt.HasValue)
             {
                 <hr class="my-4" />
-                <div class="row g-3 bg-light p-3 rounded-3 m-0">
+                <div class="row g-3 bg-light p-3 rounded-3 m-0 border">
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Approval Review Date</div>
+                        <div class="text-muted small mb-1">Reviewed On</div>
                         <div class="fw-semibold text-dark">@v.ReviewedAt.Value.ToString("MM/dd/yyyy HH:mm")</div>
                     </div>
                     @if (!string.IsNullOrEmpty(v.ReviewedByName))
                     {
                         <div class="col-md-6">
-                            <div class="text-muted small mb-1">Approval Reviewer</div>
+                            <div class="text-muted small mb-1">Reviewed By</div>
                             <div class="fw-semibold text-dark">@v.ReviewedByName</div>
                         </div>
                     }
@@ -204,11 +226,11 @@
 
             @if (!string.IsNullOrEmpty(v.RejectionReason))
             {
-                <div class="alert alert-danger mt-4 mb-0 d-flex gap-2">
-                    <i class="bi bi-x-circle-fill fs-5"></i>
+                <div class="alert alert-danger mt-4 mb-0 d-flex gap-2 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-x-circle-fill fs-5 text-danger"></i>
                     <div>
-                        <strong>Rejection Reason:</strong>
-                        <p class="mb-0 small mt-1">@v.RejectionReason</p>
+                        <strong class="text-danger">Rejection Reason:</strong>
+                        <p class="mb-0 small mt-1 text-dark">@v.RejectionReason</p>
                     </div>
                 </div>
             }
@@ -217,81 +239,247 @@
 
     @if (statusLower == "rejected")
     {
-        <div class="text-center mt-4">
-            <p class="text-muted small">Your verification profile was not approved. You can update your information and submit a new verification request.</p>
-            <a asp-page="Verification" asp-route-resubmit="true" class="btn btn-primary px-4"><i class="bi bi-arrow-repeat me-1"></i>Resubmit Verification Profile</a>
+        <div class="text-center mt-4 mb-4">
+            <p class="text-muted small">Your previous verification request was rejected. You can upload a new certificate and resubmit for review.</p>
+            <button type="button" class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#updateCertModal">
+                <i class="bi bi-arrow-repeat me-1"></i>Resubmit Verification Certificate
+            </button>
         </div>
     }
 }
 else
 {
-    <!-- Submit Verification Form -->
-    <div class="card border-0 shadow-sm">
+    <!-- Initial Submission Form -->
+    <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4 p-md-5">
-            <div class="alert alert-info d-flex gap-2 mb-4">
-                <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
-                <div>
-                    Your Doctor Profile needs to be validated by the Customer Support department before becoming active on the platform.
-                    Please provide accurate licenses and practice credentials.
+            <div class="alert alert-info d-flex gap-2 mb-4 border-0 shadow-sm">
+                <i class="bi bi-info-circle-fill fs-5 text-info"></i>
+                <div class="small">
+                    Your Doctor Profile needs to be validated by the Customer Support team before becoming active on the platform.
+                    Please provide accurate practice credentials and upload your official practice license/certificate.
                 </div>
             </div>
 
-            <form method="post" enctype="multipart/form-data">
-                <h5 class="fw-bold mb-4 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Verification Practice Information</h5>
+            <form method="post" enctype="multipart/form-data" id="initialVerificationForm">
+                <h5 class="fw-bold mb-4 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Verification Practice Credentials</h5>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Professional Position / Academic Title <span class="text-danger">*</span></label>
-                        <input asp-for="Input.Specialization" class="form-control" placeholder="e.g.: Clinical Psychologist, Therapy Specialist" required />
+                        <label class="form-label fw-medium small">Specialization / Position <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Specialization" class="form-control" placeholder="e.g. Clinical Psychologist, Therapy Specialist" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Highest Degree <span class="text-danger">*</span></label>
-                        <input asp-for="Input.Education" class="form-control" placeholder="e.g.: PhD, Master, MD..." required />
+                        <label class="form-label fw-medium small">Highest Academic Degree <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Education" class="form-control" placeholder="e.g. PhD, Master, MD" required />
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">License Number (License Number) <span class="text-danger">*</span></label>
-                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="Enter your license number issued by the Ministry of Health" required />
+                        <label class="form-label fw-medium small">License Number <span class="text-danger">*</span></label>
+                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="Enter license number issued by authority" required />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-medium small">Years of Experience <span class="text-danger">*</span></label>
+                        <label class="form-label fw-medium small">Years of Practice Experience <span class="text-danger">*</span></label>
                         <input asp-for="Input.ExperienceYears" type="number" min="0" class="form-control" required />
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Practice Certificate / Related Documents (Upload) <span class="text-danger">*</span></label>
-                    <input type="file" asp-for="UploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required />
-                    <div class="form-text">Supports PDF, JPG, PNG files (max 5MB)</div>
-                </div>
-
-
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Professional Summary and Approach</label>
-                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Description summary experience practice, methods therapy chính, the trường phái psyforlogy áp dụng..." required></textarea>
+                <div class="mb-4">
+                    <label class="form-label fw-medium small">Upload Practice Certificate Document <span class="text-danger">*</span></label>
+                    <input type="file" asp-for="UploadedFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required onchange="validateFormFile(this)" />
+                    <div class="form-text small text-muted">Allowed formats: PDF, JPG, JPEG, PNG, WEBP (Max 10MB)</div>
+                    <div id="fileValidationMsg" class="text-danger small mt-1" style="display:none;"></div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-medium small">Attached Certificate Document URL</label>
-                    <input asp-for="Input.CertificateUrl" class="form-control" placeholder="e.g.: PDF link stored on Drive, Dropbox, Cloud..." required />
-                    <div class="form-text small text-muted"><i class="bi bi-lightbulb me-1"></i>Mẹo: Bạn can tải certificate / CV lên Google Drive (set to viewing public) rồi dán linked here.</div>
+                    <label class="form-label fw-medium small">Professional Summary & Bio</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="4" placeholder="Describe your background, specialty areas, and practice approach..."></textarea>
                 </div>
 
                 <div class="form-check mb-4 mt-3">
                     <input class="form-check-input" type="checkbox" id="certifyCheck" required>
                     <label class="form-check-label small text-muted" for="certifyCheck">
-                        Tôi certify all thông tin and credentials, certificate practice provide trên here là completely truthful. Tôi đồng ý responsible before law về tính xác thực of the information this and tuân thủ the quy tắc đạo đức nghề nghiệp of platform.
+                        I hereby certify that all information and practice certificates provided above are accurate and authentic.
                     </label>
                 </div>
 
                 <div class="d-flex justify-content-end border-top pt-3">
-                    <button type="submit" class="btn btn-primary px-4 py-2">
-                        <i class="bi bi-send-fill me-1"></i>Send profile validation
+                    <button type="submit" id="btnSubmitInitial" class="btn btn-primary px-4 py-2">
+                        <i class="bi bi-send-fill me-1"></i>Submit Verification Application
                     </button>
                 </div>
             </form>
         </div>
     </div>
 }
+
+<!-- Modal: Replace / Update Practice Certificate -->
+<div class="modal fade" id="updateCertModal" tabindex="-1" aria-labelledby="updateCertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title fw-bold text-dark" id="updateCertModalLabel">
+                    <i class="bi bi-cloud-arrow-up me-2 text-primary"></i>Update Practice Certificate
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="updateCertForm" onsubmit="handleFormSubmit(this)">
+                <div class="modal-body p-4">
+                    @if (Model.Verification != null)
+                    {
+                        var statusLowerModal = Model.Verification.Status?.ToLower();
+                        if (statusLowerModal == "submitted" || statusLowerModal == "pending")
+                        {
+                            <div class="alert alert-warning d-flex align-items-center gap-2 mb-4 border-0 shadow-sm" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+                                <div class="small fw-semibold">
+                                    Updating this certificate will restart the review process by customer support.
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Verification.CertificateUrl))
+                        {
+                            <div class="card border bg-light mb-4">
+                                <div class="card-body p-3">
+                                    <div class="text-muted small fw-semibold mb-1"><i class="bi bi-file-earmark-check me-1"></i>Current Certificate File</div>
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <span class="small fw-bold text-dark text-truncate" style="max-width: 350px;">
+                                            @(Model.Verification.CertificateFileName ?? "Current_Certificate_Document")
+                                        </span>
+                                        <a href="@Model.Verification.CertificateUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye me-1"></i>View Current
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Select New Certificate File <span class="text-danger">*</span></label>
+                        <input type="file" name="UploadedFile" id="modalFileInput" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required onchange="previewSelectedFile(this)" />
+                        <div class="form-text small text-muted">Supports PDF, JPG, JPEG, PNG, WEBP up to 10MB</div>
+                        <div id="modalFileError" class="text-danger small mt-1" style="display:none;"></div>
+                    </div>
+
+                    <!-- Client-side Preview Box -->
+                    <div id="newFilePreviewContainer" class="card border border-dashed bg-white p-3 mb-3 text-center" style="display:none;">
+                        <div class="text-muted small fw-semibold mb-2">New File Selected Preview</div>
+                        <div id="imagePreviewWrapper" style="display:none;">
+                            <img id="newImagePreview" src="" alt="New File Preview" class="img-fluid rounded border shadow-sm" style="max-height: 250px;" />
+                        </div>
+                        <div id="pdfPreviewWrapper" style="display:none;" class="p-3 bg-light rounded border">
+                            <i class="bi bi-file-earmark-pdf-fill text-danger display-4 mb-2"></i>
+                            <div id="pdfFileName" class="fw-bold small text-dark"></div>
+                            <div id="pdfFileSize" class="text-muted small"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="btnConfirmModalSubmit" class="btn btn-primary px-4">
+                        <i class="bi bi-upload me-1"></i>Confirm & Update Certificate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewSelectedFile(input) {
+        var errorDiv = document.getElementById('modalFileError');
+        var container = document.getElementById('newFilePreviewContainer');
+        var imgWrapper = document.getElementById('imagePreviewWrapper');
+        var imgTag = document.getElementById('newImagePreview');
+        var pdfWrapper = document.getElementById('pdfPreviewWrapper');
+        var pdfName = document.getElementById('pdfFileName');
+        var pdfSize = document.getElementById('pdfFileSize');
+        var submitBtn = document.getElementById('btnConfirmModalSubmit');
+
+        errorDiv.style.display = 'none';
+        errorDiv.innerText = '';
+        container.style.display = 'none';
+        imgWrapper.style.display = 'none';
+        pdfWrapper.style.display = 'none';
+        submitBtn.disabled = false;
+
+        if (!input.files || !input.files[0]) return;
+
+        var file = input.files[0];
+        var fileName = file.name;
+        var ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+        var allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+
+        if (!allowedExts.includes(ext)) {
+            errorDiv.innerText = 'Invalid file type. Only PDF, JPG, JPEG, PNG, WEBP allowed.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            input.value = '';
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            errorDiv.innerText = 'File size exceeds maximum allowed limit of 10MB.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            input.value = '';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        if (ext === '.pdf') {
+            pdfWrapper.style.display = 'block';
+            pdfName.innerText = fileName;
+            pdfSize.innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        } else {
+            imgWrapper.style.display = 'block';
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                imgTag.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function validateFormFile(input) {
+        var errorDiv = document.getElementById('fileValidationMsg');
+        var submitBtn = document.getElementById('btnSubmitInitial');
+        errorDiv.style.display = 'none';
+        errorDiv.innerText = '';
+        if (submitBtn) submitBtn.disabled = false;
+
+        if (!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        var allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+
+        if (!allowedExts.includes(ext)) {
+            errorDiv.innerText = 'Invalid file type. Only PDF, JPG, JPEG, PNG, WEBP allowed.';
+            errorDiv.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+            input.value = '';
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            errorDiv.innerText = 'File size exceeds maximum allowed limit of 10MB.';
+            errorDiv.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+            input.value = '';
+            return;
+        }
+    }
+
+    function handleFormSubmit(form) {
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Uploading...';
+        }
+    }
+</script>

@@ -12,4 +12,15 @@ public interface IDoctorApiService
     Task<List<SpecializationDto>> GetSpecializationDtosAsync();
     Task<(DoctorDto? Data, string? Error)> GetMyProfileAsync();
     Task<(bool Success, string? Error)> UpdateMyProfileAsync(UpdateDoctorProfileDto dto);
+    Task<(string? Url, string? Error)> UploadAvatarAsync(Stream fileStream, string fileName);
+    Task<(string? Url, string? Error)> UploadCertificateAsync(Stream fileStream, string fileName);
+    Task<(CertificateUploadResultDto? Data, string? Error)> UploadCertificateFullAsync(Stream fileStream, string fileName);
+}
+
+public class CertificateUploadResultDto
+{
+    public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
 }

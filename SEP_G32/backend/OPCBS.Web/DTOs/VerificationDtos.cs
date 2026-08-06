@@ -22,16 +22,26 @@ public class VerificationDto
     public string? Education { get; set; }
 
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
+    public DateTime? CertificateUploadedAt { get; set; }
+
     public string? Status { get; set; }
     public string? Notes { get; set; }
     public string? RejectionReason { get; set; }
 
-    [JsonPropertyName("createdAt")]
+    [JsonPropertyName("submittedAt")]
     public DateTime SubmittedAt { get; set; }
 
     public DateTime? ReviewedAt { get; set; }
     public Guid? ReviewedBy { get; set; }
     public string? ReviewedByName { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public string? PreviousApprovedCertificateUrl { get; set; }
+    public string? PreviousApprovedCertificateFileName { get; set; }
+    public DateTime? PreviousApprovedCertificateUploadedAt { get; set; }
 }
 
 public class SubmitVerificationDto
@@ -41,11 +51,15 @@ public class SubmitVerificationDto
     public int ExperienceYears { get; set; }
     public string? Education { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
     public string? Notes { get; set; }
 }
 
 public class ReviewVerificationDto
 {
+    public string Action { get; set; } = "Approve";
     public bool Approved { get; set; }
     public string? RejectionReason { get; set; }
 }

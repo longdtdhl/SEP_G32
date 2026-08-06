@@ -26,6 +26,7 @@ public class ProfileModel : PageModel
     [BindProperty] public UpdateProfileDto Input { get; set; } = new();
     [BindProperty] public UpdateDoctorProfileDto DoctorInput { get; set; } = new();
     [BindProperty] public List<Guid> SelectedSpecializations { get; set; } = new();
+    [BindProperty] public IFormFile? AvatarFile { get; set; }
 
     public bool IsEditing { get; set; }
     public string? Error { get; set; }
@@ -79,7 +80,17 @@ public class ProfileModel : PageModel
                 ProfessionalTitle = DoctorProfile.Specialization,
                 Biography = DoctorProfile.Bio,
                 ExperienceYears = DoctorProfile.ExperienceYears,
-                IsVisible = DoctorProfile.IsVisible
+                IsVisible = DoctorProfile.IsVisible,
+                Gender = DoctorProfile.Gender,
+                DateOfBirth = DoctorProfile.DateOfBirth,
+                Address = DoctorProfile.Address,
+                Education = DoctorProfile.Education,
+                CareerBackground = DoctorProfile.CareerBackground,
+                ConsultationFee = DoctorProfile.ConsultationFee,
+                CareApproach = DoctorProfile.CareApproach,
+                Languages = DoctorProfile.Languages,
+                ConsultationTypes = DoctorProfile.ConsultationTypes,
+                LicenseNumber = DoctorProfile.LicenseNumber
             };
 
             // Pre-fill selected specializations (match by name or ID if available)
@@ -101,6 +112,32 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // 0. Handle avatar upload if provided
+        if (AvatarFile != null && AvatarFile.Length > 0)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var ext = Path.GetExtension(AvatarFile.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                TempData["Error"] = "Invalid avatar file type. Only JPG, JPEG, PNG, WEBP images are allowed.";
+                return RedirectToPage(new { edit = true });
+            }
+            if (AvatarFile.Length > 2 * 1024 * 1024)
+            {
+                TempData["Error"] = "Avatar file size exceeds the maximum limit of 2MB.";
+                return RedirectToPage(new { edit = true });
+            }
+
+            using var stream = AvatarFile.OpenReadStream();
+            var (avatarUrl, uploadError) = await _doctorApi.UploadAvatarAsync(stream, AvatarFile.FileName);
+            if (!string.IsNullOrEmpty(uploadError))
+            {
+                TempData["Error"] = $"Avatar upload failed: {uploadError}";
+                return RedirectToPage(new { edit = true });
+            }
+            // Avatar URL is already saved server-side by the API endpoint
+        }
+
         // 1. Update general user profile info
         var (userOk, userErr) = await _auth.UpdateProfileAsync(Input);
         if (!userOk)

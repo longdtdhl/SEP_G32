@@ -1,25 +1,134 @@
 @page
 @model OPCBS.Web.Pages.Doctor.VerificationStatusModel
 @{
-    ViewData["Title"] = "Verification Status"; ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = "Verification Status";
+    Layout = "_DashboardLayout";
 }
 
-<div class="mb-page-header"><h1>Verification Status</h1></div>
+<div class="mb-page-header mb-4">
+    <h1><i class="bi bi-shield-check me-2 text-primary"></i>Verification Status</h1>
+    <p class="text-muted">Track the progress of your doctor account verification request</p>
+</div>
 
 @if (Model.Verification != null)
 {
     var v = Model.Verification;
-    var badge = v.Status switch { "Pending" => "bg-warning text-dark", "Approved" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary" };
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-4">
-            <span class="badge @badge fs-5 mb-3">@(v.Status ?? "N/A")</span>
-            <h4>@(v.DoctorName ?? "N/A")</h4>
-            <p class="text-muted">Submitted on @v.SubmittedAt.ToString("MM/dd/yyyy")</p>
-            @if (!string.IsNullOrEmpty(v.RejectionReason))
+    var statusLower = v.Status?.ToLower();
+
+    var badgeClass = statusLower switch
+    {
+        "submitted" or "pending" => "bg-warning text-dark",
+        "approved" => "bg-success",
+        "rejected" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    var displayStatus = statusLower switch
+    {
+        "submitted" or "pending" => "Pending Review",
+        "approved" => "Approved",
+        "rejected" => "Rejected",
+        "draft" => "Not Submitted (Draft)",
+        _ => v.Status ?? "Not Submitted"
+    };
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 border-bottom pb-3">
+                <div>
+                    <h4 class="fw-bold mb-1 text-dark">@(v.DoctorName ?? "Doctor Profile")</h4>
+                    <span class="text-muted small">@(v.Specialization ?? "Practitioner") • @v.ExperienceYears years experience</span>
+                </div>
+                <span class="badge @badgeClass fs-6 px-3 py-2 rounded-pill">@displayStatus</span>
+            </div>
+
+            @if (statusLower == "draft" || string.IsNullOrEmpty(statusLower))
             {
-                <div class="alert alert-danger">@v.RejectionReason</div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-1"></i> Your verification request is in <strong>Draft</strong> status. Please submit your practice details and certificate.
+                </div>
             }
-            <a asp-page="Verification" class="btn btn-outline-primary mt-2">View Details</a>
+            else if (statusLower == "submitted" || statusLower == "pending")
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-hourglass-split me-1"></i> Your verification request was submitted on <strong>@v.SubmittedAt.ToString("MM/dd/yyyy HH:mm")</strong> and is currently being reviewed by Customer Support.
+                </div>
+            }
+            else if (statusLower == "approved")
+            {
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill me-1"></i> Your doctor account is <strong>Approved</strong> and fully active!
+                </div>
+            }
+            else if (statusLower == "rejected")
+            {
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle-fill me-1"></i> Your application was rejected.
+                    @if (!string.IsNullOrEmpty(v.RejectionReason))
+                    {
+                        <div class="mt-2 fw-semibold">Reason: @v.RejectionReason</div>
+                    }
+                </div>
+            }
+
+            <!-- Submitted Certificate Section -->
+            @if (!string.IsNullOrEmpty(v.CertificateUrl))
+            {
+                var certUrl = v.CertificateUrl;
+                var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                || certUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)
+                || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+                var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
+
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-file-earmark-check me-2 text-primary"></i>Submitted Documents / Certificate</h6>
+                    <div class="card border bg-light">
+                        <div class="card-body">
+                            @if (isImage)
+                            {
+                                <div class="text-center mb-3">
+                                    <img src="@certUrl" alt="Certificate Preview" class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                         onclick="window.open(this.src, '_blank', 'noopener')" title="Click to view full size" />
+                                </div>
+                            }
+                            else if (isPdf)
+                            {
+                                <div class="ratio ratio-16x9 mb-3">
+                                    <iframe src="@certUrl" title="Certificate PDF" class="rounded border"></iframe>
+                                </div>
+                            }
+
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <a href="@certUrl" target="_blank" rel="noopener" class="btn btn-sm btn-primary px-3">
+                                    <i class="bi bi-eye me-1"></i>View Full Certificate
+                                </a>
+                                <a href="@certUrl" download class="btn btn-sm btn-outline-secondary px-3">
+                                    <i class="bi bi-download me-1"></i>Download
+                                </a>
+                                <span class="text-muted small ms-2">
+                                    <i class="bi bi-link-45deg me-1"></i>@(certUrl.Length > 60 ? certUrl.Substring(0, 60) + "..." : certUrl)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <a asp-page="Verification" class="btn btn-outline-primary">
+                    <i class="bi bi-gear-fill me-1"></i>Manage Verification Details
+                </a>
+                @if (statusLower == "rejected" || statusLower == "draft")
+                {
+                    <a asp-page="Verification" asp-route-resubmit="true" class="btn btn-primary">
+                        <i class="bi bi-send-fill me-1"></i>Submit / Resubmit Verification
+                    </a>
+                }
+            </div>
         </div>
     </div>
 }
@@ -27,8 +136,12 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5 text-muted">
-            <p>Not Submitted profile verification</p>
-            <a asp-page="Verification" class="btn btn-primary">Submit profile</a>
+            <i class="bi bi-shield-slash fs-1 d-block mb-3 text-warning"></i>
+            <h5 class="fw-bold text-dark">No Verification Profile Submitted</h5>
+            <p class="mb-4">You have not submitted your professional license and certificate for review yet.</p>
+            <a asp-page="Verification" class="btn btn-primary px-4 py-2">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i>Submit Verification Profile
+            </a>
         </div>
     </div>
 }
