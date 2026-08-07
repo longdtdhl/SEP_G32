@@ -92,4 +92,8 @@ public static class ApiRoutes
 
     // Treatment Cases
     public const string TreatmentCases = $"{Base}/treatment-cases";
+
+    // Violation Reports
+    public const string ViolationReports = $"{Base}/violation-reports";
 }
+

@@ -55,34 +55,41 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Error)> ConfirmAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/approve/{id}");
 
+    public async Task<(bool Success, string? Error)> ConfirmCompletionAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/confirm-completion");
+
     public async Task<(bool Success, string? Error)> StartAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/start/{id}");
 
     public async Task<(bool Success, string? Error)> CompleteAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/complete/{id}");
 
-    public async Task<(List<AppointmentListItemDto> Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
+    public async Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
     {
-        // Backend: GET /api/v1/appointments/track/{bookingCode}?email={email}
-        if (string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
-        {
-            // Search by email only - use a placeholder code or the email-based search
-            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.Email)}?email={Uri.EscapeDataString(dto.Email)}";
-            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
-            return (data ?? new(), error);
-        }
-        else if (!string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
-        {
-            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.BookingCode)}?email={Uri.EscapeDataString(dto.Email)}";
-            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
-            return (data ?? new(), error);
-        }
-        else
-        {
-            // Fallback: try POST
-            var (data, error) = await PostAsync<List<AppointmentListItemDto>>(ApiRoutes.AppointmentTrack, dto);
-            return (data ?? new(), error);
-        }
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return (null, "Vui lòng nhập đầy đủ Mã đặt lịch và Email.");
+
+        var url = $"{ApiRoutes.Appointments}/track/{Uri.EscapeDataString(dto.BookingCode.Trim())}?email={Uri.EscapeDataString(dto.Email.Trim())}";
+        var (data, _, error) = await GetAsync<AppointmentDto>(url);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Message, string? Error)> ResendConfirmationAsync(ResendConfirmationRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return (false, null, "Mã đặt lịch và Email là bắt buộc.");
+
+        var (res, error) = await PostAsync<dynamic>($"{ApiRoutes.Appointments}/resend-confirmation", dto);
+        if (error != null) return (false, null, error);
+        return (true, "Đã gửi lại email xác nhận lịch hẹn thành công.", null);
+    }
+
+    public async Task<(bool Success, string? Error)> ConfirmGuestAppointmentAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return (false, "The confirmation link is invalid.");
+
+        return await PostAsync($"{ApiRoutes.Appointments}/guest/confirm", new ConfirmGuestAppointmentDto { Token = token.Trim() });
     }
 
     public async Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null)

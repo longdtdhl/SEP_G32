@@ -190,6 +190,7 @@ public interface IMessagingApiService
 public interface ITreatmentCaseApiService
 {
     Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByDoctorAsync(Guid doctorUserId);
+    Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetMyDoctorCasesAsync();
     Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId);
     Task<(TreatmentCaseWebDto? Data, string? Error)> GetByIdAsync(Guid id);
     Task<(bool Success, string? Error)> CreateAsync(object dto);

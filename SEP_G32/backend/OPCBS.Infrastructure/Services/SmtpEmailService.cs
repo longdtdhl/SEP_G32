@@ -170,12 +170,12 @@ public class SmtpEmailService : IEmailService
     {
         var subject = "🎉 MindBridge - Consultation Completed";
         var bodyHtml = $@"
-            <h2 style='color:#1e293b;margin:0 0 8px;'>Consultation Completed</h2>
-            <p class='info'>Hi <strong>{patientName}</strong>, your consultation with <strong>Dr. {doctorName}</strong> has been completed.</p>
+            <h2 style='color:#1e293b;margin:0 0 8px;'>Confirm your consultation</h2>
+            <p class='info'>Hi <strong>{patientName}</strong>, Dr. <strong>{doctorName}</strong> requested your confirmation for a consultation.</p>
             <div style='background:#f0fdf4; border-radius:12px; padding:20px; margin:20px 0; text-align:center;'>
                 <p style='font-size:16px; color:#166534; font-weight:600; margin:0;'>✅ Your consultation records are now available</p>
             </div>
-            <p class='info'>Please log in to your MindBridge account to view your consultation notes and recommendations. Don't forget to leave a review for your doctor!</p>";
+            <p class='info'>Please log in to review the consultation note. The appointment is completed only after you confirm it.</p>";
         var html = BuildEmailTemplate("🎉 MindBridge", "Your consultation is complete", "#166534 0%, #22c55e 100%", bodyHtml);
         await SendEmailAsync(to, subject, html, cancellationToken);
     }
@@ -224,6 +224,44 @@ public class SmtpEmailService : IEmailService
             <p class='info'>Your doctor has recommended a follow-up consultation. Please log in to MindBridge to book your next appointment.</p>
             <p class='info'>If you've already booked or no longer need a follow-up, you can safely ignore this email.</p>";
         var html = BuildEmailTemplate("🔔 MindBridge", "Time for your follow-up appointment", "#92400e 0%, #f59e0b 100%", bodyHtml);
+        await SendEmailAsync(to, subject, html, cancellationToken);
+    }
+
+    public async Task SendAppointmentBookingConfirmationEmailAsync(string to, string patientName, string doctorName, string bookingCode, string date, string time, string consultationMode, string statusText, string trackUrl, CancellationToken cancellationToken = default)
+    {
+        var subject = $"📌 OPCBS - Xác nhận thông tin lịch hẹn [{bookingCode}]";
+        var bodyHtml = $@"
+            <h2 style='color:#1e293b;margin:0 0 8px;text-align:center;'>Đặt Lịch Hẹn Thành Công!</h2>
+            <p class='info' style='text-align:center;'>Xin chào <strong>{patientName}</strong>, lịch hẹn tham vấn tâm lý của bạn đã được ghi nhận trên hệ thống OPCBS.</p>
+            
+            <div style='background:#f0fdf4; border:2px dashed #166534; border-radius:12px; padding:20px; margin:24px 0; text-align:center;'>
+                <div style='font-size:13px; color:#15803d; text-transform:uppercase; font-weight:600; letter-spacing:1px; margin-bottom:4px;'>Mã Tra Cứu Lịch Hẹn (Booking Code)</div>
+                <div style='font-size:26px; font-weight:800; letter-spacing:2px; color:#166534;'>{bookingCode}</div>
+            </div>
+
+            <div style='background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; padding:20px; margin:20px 0;'>
+                <h3 style='margin:0 0 12px; font-size:16px; color:#334155; border-bottom:1px solid #e2e8f0; padding-bottom:8px;'>Chi Tiết Lịch Hẹn</h3>
+                <table style='width:100%; font-size:14px; border-collapse:collapse;'>
+                    <tr><td style='color:#64748b; padding:8px 0; width:40%;'>Chuyên gia/Bác sĩ:</td><td style='font-weight:600; color:#0f172a;'>{doctorName}</td></tr>
+                    <tr><td style='color:#64748b; padding:8px 0;'>Ngày hẹn:</td><td style='font-weight:600; color:#0f172a;'>{date}</td></tr>
+                    <tr><td style='color:#64748b; padding:8px 0;'>Khung giờ:</td><td style='font-weight:600; color:#0f172a;'>{time}</td></tr>
+                    <tr><td style='color:#64748b; padding:8px 0;'>Hình thức:</td><td style='font-weight:600; color:#0f172a;'>{consultationMode}</td></tr>
+                    <tr><td style='color:#64748b; padding:8px 0;'>Trạng thái:</td><td style='font-weight:600; color:#16a34a;'>{statusText}</td></tr>
+                </table>
+            </div>
+
+            <div style='text-align:center; margin:28px 0;'>
+                <a href='{trackUrl}' style='background:#166534; color:#ffffff; padding:14px 28px; text-decoration:none; border-radius:8px; font-weight:600; display:inline-block; font-size:15px; box-shadow:0 4px 12px rgba(22,101,52,0.25);'>
+                    🔍 Tra Cứu Trạng Thái Lịch Hẹn
+                </a>
+            </div>
+
+            <div style='background:#eff6ff; border-radius:8px; padding:14px 16px; margin-top:20px; font-size:13px; color:#1e40af;'>
+                <strong>💡 Hướng dẫn tra cứu:</strong><br/>
+                Bạn có thể truy cập trang <a href='{trackUrl}' style='color:#1d4ed8; text-decoration:underline;'>Appointment Track</a> bất cứ lúc nào, nhập <strong>Mã đặt lịch ({bookingCode})</strong> cùng địa chỉ <strong>Email ({to})</strong> để kiểm tra cập nhật mới nhất từ bác sĩ.
+            </div>";
+
+        var html = BuildEmailTemplate("🌿 OPCBS MindBridge", "Xác nhận đặt lịch tham vấn tâm lý", "#166534 0%, #15803d 100%", bodyHtml);
         await SendEmailAsync(to, subject, html, cancellationToken);
     }
 }

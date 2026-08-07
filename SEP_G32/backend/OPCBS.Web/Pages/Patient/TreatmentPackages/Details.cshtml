@@ -6,34 +6,69 @@
 }
 
 <style>
-    .pkg-detail-sidebar { border-radius: 16px; border: 1px solid #f1f5f9; overflow: hidden; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-    .pkg-sidebar-header {
-        padding: 1.1rem 1.25rem; border-bottom: 1px solid #f8fafc;
-        font-weight: 700; font-size: 0.88rem; color: #1e293b;
-        display: flex; align-items: center; gap: 8px; background: #fafbfc;
+    /* ── Sections ── */
+    .pd-section {
+        background: #fff; border-radius: 14px; border: 1px solid #e2e8f0;
+        overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); margin-bottom: 1rem;
     }
-    .pkg-sidebar-header i { color: var(--mb-primary); }
-    .pkg-sidebar-row {
+    .pd-section-head {
+        padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+        font-weight: 700; font-size: .88rem; color: #1e293b; display: flex;
+        align-items: center; gap: 8px; background: #fafbfc;
+    }
+    .pd-section-head i { color: #0d9488; }
+    .pd-section-body { padding: 1.25rem; }
+    .pd-row {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 0; font-size: 0.85rem; border-bottom: 1px solid #f8fafc;
+        padding: 10px 0; font-size: .85rem; border-bottom: 1px solid #f8fafc;
     }
-    .pkg-sidebar-row:last-child { border-bottom: none; }
-    .pkg-sidebar-row .label { color: #64748b; }
-    .pkg-sidebar-row .value { font-weight: 600; color: #1e293b; }
-    .instruction-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; font-size: 0.85rem; color: #334155; white-space: pre-line; }
+    .pd-row:last-child { border-bottom: none; }
+    .pd-row .label { color: #64748b; }
+    .pd-row .value { font-weight: 600; color: #1e293b; }
+    .pd-info-box {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 14px; font-size: .85rem; color: #334155; white-space: pre-line; line-height: 1.65;
+    }
+
+    /* ── Pending banner ── */
+    .pd-pending-banner {
+        background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a;
+        border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .pd-pending-banner h5 { color: #92400e; font-weight: 700; font-size: 1rem; margin-bottom: .5rem; }
+    .pd-pending-banner p { color: #a16207; font-size: .85rem; margin-bottom: 0; }
+
+    /* ── Doctor card ── */
+    .pd-doctor-card {
+        text-align: center; padding: 1.5rem 1.25rem;
+    }
+    .pd-doctor-avatar {
+        width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        color: #166534; display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-weight: 700; margin: 0 auto 10px;
+    }
+
+    /* ── Action area ── */
+    .pd-action-area { padding: 1.25rem; }
+    .pd-accept-btn {
+        background: #0d9488; border: none; color: #fff; font-weight: 700;
+        border-radius: 10px; padding: 12px 0; width: 100%; font-size: .9rem; transition: all .2s;
+    }
+    .pd-accept-btn:hover { background: #0f766e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,.3); }
+    .pd-decline-btn {
+        border: 1px solid #fecaca; background: #fff; color: #dc2626; font-weight: 600;
+        border-radius: 10px; padding: 10px 0; width: 100%; font-size: .85rem; transition: all .2s;
+    }
+    .pd-decline-btn:hover { background: #fef2f2; }
 </style>
 
-<!-- Page Header -->
-<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package Details
-        </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View treatment package information assigned by your doctor</p>
-    </div>
-    <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px; font-weight:600; font-size:0.85rem;">
-        <i class="bi bi-arrow-left me-1"></i>Back to List
+<!-- ── Breadcrumb ── -->
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-page="Index" class="text-decoration-none" style="color:#64748b; font-size:.85rem;">
+        <i class="bi bi-arrow-left me-1"></i>My Packages
     </a>
+    <span style="color:#cbd5e1;">/</span>
+    <span style="font-size:.85rem; font-weight:600; color:#1e293b;">Package Details</span>
 </div>
 
 @if (Model.Error != null)
@@ -47,98 +82,158 @@
 @if (Model.Package != null)
 {
     var pkg = Model.Package;
-    var docName = string.IsNullOrWhiteSpace(pkg.DoctorName) ? "Therapist / Doctor" : pkg.DoctorName;
+    var docName = string.IsNullOrWhiteSpace(pkg.DoctorName) ? "Your Therapist" : pkg.DoctorName;
+    var isPending = pkg.Status == "Pending" || pkg.Status == "Assigned";
+    var isActive = pkg.Status == "Active" || pkg.Status == "Accepted";
+
+    <!-- Pending Banner -->
+    @if (isPending)
+    {
+        <div class="pd-pending-banner">
+            <h5><i class="bi bi-bell-fill me-2"></i>Your Doctor Has Proposed a Treatment Plan</h5>
+            <p>Review the details below, then accept to begin your treatment or decline if it doesn't feel right. You can always discuss changes with your doctor.</p>
+        </div>
+    }
 
     <div class="row g-4">
-        <!-- Main Content -->
+        <!-- ── Main Column ── -->
         <div class="col-lg-8">
-            <div class="pkg-detail-sidebar mb-4">
-                <div class="pkg-sidebar-header"><i class="bi bi-info-circle-fill"></i>Package Overview</div>
-                <div style="padding:1.25rem;">
-                    <h4 class="fw-bold text-dark mb-2">@pkg.Title</h4>
-                    <p class="text-secondary" style="font-size:0.9rem; line-height:1.6;">@pkg.Description</p>
+            <!-- Package Overview -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-info-circle-fill"></i>About This Package</div>
+                <div class="pd-section-body">
+                    <h4 class="fw-bold mb-2" style="color:#1e293b;">@pkg.Title</h4>
+                    <p style="font-size:.9rem; color:#475569; line-height:1.7;">@(pkg.Description ?? "No description provided.")</p>
                 </div>
             </div>
 
-            <!-- Detailed Treatment Plan -->
+            <!-- Treatment Plan & Goals -->
             @if (!string.IsNullOrEmpty(pkg.TargetOutcome) || !string.IsNullOrEmpty(pkg.RecommendedExercises) || !string.IsNullOrEmpty(pkg.Instructions))
             {
-                <div class="pkg-detail-sidebar mb-4">
-                    <div class="pkg-sidebar-header"><i class="bi bi-journal-medical"></i>Treatment Plan &amp; Goals</div>
-                    <div style="padding:1.25rem;">
+                <div class="pd-section">
+                    <div class="pd-section-head"><i class="bi bi-journal-medical"></i>What to Expect</div>
+                    <div class="pd-section-body">
                         @if (!string.IsNullOrEmpty(pkg.TargetOutcome))
                         {
                             <div class="mb-3">
-                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-trophy me-1 text-warning"></i>Target Outcomes</span>
-                                <div class="instruction-box">@pkg.TargetOutcome</div>
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-trophy me-1" style="color:#f59e0b;"></i>Expected Outcomes
+                                </span>
+                                <div class="pd-info-box">@pkg.TargetOutcome</div>
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(pkg.RecommendedExercises))
                         {
                             <div class="mb-3">
-                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-journal-check me-1 text-primary"></i>Recommended Exercises &amp; Activities</span>
-                                <div class="instruction-box">@pkg.RecommendedExercises</div>
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-journal-check me-1" style="color:#3b82f6;"></i>Recommended Activities
+                                </span>
+                                <div class="pd-info-box">@pkg.RecommendedExercises</div>
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(pkg.Instructions))
                         {
                             <div>
-                                <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-info-circle me-1 text-success"></i>Patient Guidance</span>
-                                <div class="instruction-box">@pkg.Instructions</div>
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-lightbulb me-1" style="color:#10b981;"></i>Your Guidance
+                                </span>
+                                <div class="pd-info-box">@pkg.Instructions</div>
                             </div>
                         }
                     </div>
                 </div>
             }
+
+            <!-- What Happens Next (for pending) -->
+            @if (isPending)
+            {
+                <div class="pd-section">
+                    <div class="pd-section-head"><i class="bi bi-arrow-right-circle"></i>What Happens After You Accept?</div>
+                    <div class="pd-section-body" style="font-size:.85rem; color:#475569;">
+                        <div class="d-flex gap-3 mb-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">1</div>
+                            <div>
+                                <strong style="color:#1e293b;">Treatment Case Created</strong>
+                                <p class="mb-0 text-muted">A personalized treatment case will be set up for you automatically.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 mb-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#e0e7ff; color:#3730a3; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">2</div>
+                            <div>
+                                <strong style="color:#1e293b;">Sessions Scheduled</strong>
+                                <p class="mb-0 text-muted">Your doctor will set up a session schedule that fits your availability.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#fef3c7; color:#92400e; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">3</div>
+                            <div>
+                                <strong style="color:#1e293b;">Track Your Progress</strong>
+                                <p class="mb-0 text-muted">Goals, homework, and mood tracking will be available throughout your journey.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
 
-        <!-- Sidebar Specifications & Register Action -->
+        <!-- ── Sidebar ── -->
         <div class="col-lg-4">
-            <!-- Doctor Info -->
-            <div class="pkg-detail-sidebar mb-3">
-                <div class="pkg-sidebar-header"><i class="bi bi-person-badge-fill"></i>Assigned Doctor</div>
-                <div style="padding:1.25rem; text-align:center;">
-                    <div style="width:52px; height:52px; border-radius:14px; background:#f0fdf4; color:#166534; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; margin:0 auto 8px;">
-                        <i class="bi bi-person-fill"></i>
-                    </div>
+            <!-- Doctor -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-person-badge-fill"></i>Your Doctor</div>
+                <div class="pd-doctor-card">
+                    <div class="pd-doctor-avatar"><i class="bi bi-person-fill"></i></div>
                     <div style="font-weight:700; font-size:1rem; color:#1e293b;">Dr. @docName</div>
                 </div>
             </div>
 
             <!-- Package Specs -->
-            <div class="pkg-detail-sidebar mb-3">
-                <div class="pkg-sidebar-header"><i class="bi bi-sliders"></i>Package Details</div>
-                <div style="padding:1rem 1.25rem;">
-                    <div class="pkg-sidebar-row"><span class="label">Total Sessions</span><span class="value">@pkg.TotalSessions sessions</span></div>
-                    <div class="pkg-sidebar-row"><span class="label">Completed Sessions</span><span class="value">@pkg.CompletedSessions sessions</span></div>
-                    <div class="pkg-sidebar-row"><span class="label">Remaining Sessions</span><span class="value">@pkg.RemainingSessions sessions</span></div>
-                    <div class="pkg-sidebar-row"><span class="label">Package Duration</span><span class="value">@pkg.ValidityDays days</span></div>
-                    <div class="pkg-sidebar-row"><span class="label">Package Price</span><span class="value" style="color:var(--mb-primary); font-size:1.05rem;">@pkg.Price.ToString("N0") ₫</span></div>
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-sliders"></i>Package Details</div>
+                <div style="padding: 1rem 1.25rem;">
+                    <div class="pd-row"><span class="label">Total Sessions</span><span class="value">@pkg.TotalSessions</span></div>
+                    @if (!isPending)
+                    {
+                        <div class="pd-row"><span class="label">Completed</span><span class="value text-success">@pkg.CompletedSessions</span></div>
+                        <div class="pd-row"><span class="label">Remaining</span><span class="value">@pkg.RemainingSessions</span></div>
+                    }
+                    <div class="pd-row"><span class="label">Duration</span><span class="value">@pkg.ValidityDays days</span></div>
+
+                    <div class="pd-row"><span class="label">Fee</span><span class="value" style="color:#0d9488; font-size:1.05rem;">@pkg.Price.ToString("N0") ₫</span></div>
+                    <div class="pd-row"><span class="label">Expires</span><span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b")">@pkg.ExpirationDate.ToString("MMM dd, yyyy")</span></div>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="pkg-detail-sidebar">
-                <div class="pkg-sidebar-header"><i class="bi bi-lightning-charge"></i>Actions</div>
-                <div style="padding:1.25rem;">
-                    @if (pkg.Status == "Pending" || pkg.Status == "Created" || pkg.Status == "Assigned")
+            <!-- Actions -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-lightning-charge"></i>Actions</div>
+                <div class="pd-action-area">
+                    @if (isPending)
                     {
-                        <p style="font-size:0.83rem; color:#64748b;" class="mb-3">
-                            Confirm this treatment package to auto-create your personalized Treatment Case.
-                        </p>
                         <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id" class="mb-2">
-                            <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                <i class="bi bi-check-circle me-1"></i>Accept Package
+                            <button type="submit" class="pd-accept-btn">
+                                <i class="bi bi-check-circle me-1"></i>Accept & Begin Treatment
                             </button>
                         </form>
-                        <button type="button" class="btn btn-outline-danger w-100 py-2 fw-semibold" style="border-radius:10px;" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <button type="button" class="pd-decline-btn" data-bs-toggle="modal" data-bs-target="#rejectModal">
                             <i class="bi bi-x-circle me-1"></i>Decline Package
                         </button>
                     }
-                    else if (pkg.Status == "Active" || pkg.Status == "Accepted")
+                    else if (isActive)
                     {
-                        <a asp-page="/Patient/TreatmentCases/Details" asp-route-id="@pkg.Id" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                            <i class="bi bi-graph-up me-1"></i>View Treatment Progress
+                        <a asp-page="/Patient/TreatmentCases/Index" class="btn w-100 py-2 fw-bold" style="border-radius:10px; background:#0d9488; color:#fff; font-size:.9rem;">
+                            <i class="bi bi-graph-up me-1"></i>View My Treatment Progress
+                        </a>
+                        <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id" class="mt-2">
+                            <button type="button" class="pd-decline-btn" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-x-octagon me-1"></i>Cancel Package
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-page="Index" class="btn btn-outline-secondary w-100 py-2" style="border-radius:10px; font-weight:600;">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Packages
                         </a>
                     }
                 </div>
@@ -146,20 +241,20 @@
         </div>
     </div>
 
-    <!-- Reject Modal -->
+    <!-- ── Reject Modal ── -->
     <div class="modal fade" id="rejectModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content" style="border-radius:14px;">
                 <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
                     <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Decline Treatment Package</h5>
+                        <h5 class="modal-title fw-bold" style="color:#dc2626;"><i class="bi bi-x-circle me-2"></i>Decline Treatment Package</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="small text-secondary mb-3">Are you sure you want to decline this treatment package?</p>
+                        <p class="small text-secondary mb-3">Are you sure? Your doctor will be notified. You can always discuss changes and receive a new proposal.</p>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Reason for declining (optional)</label>
-                            <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Enter reason..." style="border-radius:8px;"></textarea>
+                            <label class="form-label small fw-bold">Reason for declining <span class="fw-normal text-muted">(optional)</span></label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="Let your doctor know why..." style="border-radius:8px;"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
@@ -170,4 +265,32 @@
             </div>
         </div>
     </div>
+
+    <!-- ── Cancel Modal ── -->
+    @if (isActive)
+    {
+        <div class="modal fade" id="cancelModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="border-radius:14px;">
+                    <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold" style="color:#dc2626;"><i class="bi bi-x-octagon me-2"></i>Cancel Treatment Package</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="small text-secondary mb-3">This will cancel your active treatment. Any remaining sessions will not be available.</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Reason for cancellation <span class="fw-normal text-muted">(optional)</span></label>
+                                <textarea name="reason" class="form-control" rows="3" placeholder="Tell us why..." style="border-radius:8px;"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Keep Package</button>
+                            <button type="submit" class="btn btn-danger btn-sm px-3" style="border-radius:8px;">Confirm Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }

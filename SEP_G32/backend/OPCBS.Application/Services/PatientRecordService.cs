@@ -183,6 +183,16 @@ public class PatientRecordService : IPatientRecordService
                 return ApiResponse.ErrorResponse("Doctor profile not found");
             }
 
+            if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
+            {
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients.FirstOrDefault(p => p.Id == dto.PatientId.Value || p.UserId == dto.PatientId.Value);
+                if (pat == null)
+                {
+                    return ApiResponse.ErrorResponse("Could not resolve or create patient record: Patient record not found");
+                }
+            }
+
             var entity = new PatientRecord
             {
                 DoctorId = doctorProfile.Id,

@@ -1,0 +1,123 @@
+@page
+@model OPCBS.Web.Pages.Admin.ViolationReports.IndexModel
+@{
+    ViewData["Title"] = "System Admin Escalated Reports Queue";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    .adm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-shield-lock-fill me-2" style="color:#ef4444;"></i>Escalated Violation Reports Queue
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Review escalated conduct violations requiring administrative enforcement</p>
+    </div>
+    <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary btn-sm" style="border-radius:6px;">
+        <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+    </a>
+</div>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search Toolbar -->
+<div class="adm-card mb-3 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" asp-for="Search" class="form-control border-start-0 ps-0" placeholder="Search reporter, reported, reason ID..." />
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <button type="submit" class="btn btn-sm btn-primary px-3" style="border-radius:6px; font-size:0.8rem; background:#0d9488; border-color:#0d9488;">
+                <i class="bi bi-funnel me-1"></i>Search
+            </button>
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.8rem;">Reset</a>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- Escalated Queue Table -->
+<div class="adm-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Report Target</th>
+                    <th>Reporter</th>
+                    <th>Category</th>
+                    <th>Warnings</th>
+                    <th>CS Note</th>
+                    <th>Escalated Date</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.EscalatedReports.Any())
+                {
+                    @foreach (var r in Model.EscalatedReports)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark">
+                                @(r.ReportedUserName ?? "Unknown Account")
+                            </td>
+                            <td class="text-muted small">
+                                @(r.ReporterName ?? "System Auto-Report")
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@r.ReasonCategoryDisplay</span>
+                            </td>
+                            <td>
+                                @if (r.WarningNumber > 0)
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>#@r.WarningNumber</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">None</span>
+                                }
+                            </td>
+                            <td class="text-muted small" style="max-width:200px;">
+                                <div class="text-truncate">@(string.IsNullOrEmpty(r.CustomerSupportNote) ? "No note provided" : r.CustomerSupportNote)</div>
+                            </td>
+                            <td class="text-muted small">
+                                @(r.EscalatedAt?.ToString("MM/dd/yyyy HH:mm") ?? r.CreatedAt.ToString("MM/dd/yyyy HH:mm"))
+                            </td>
+                            <td>
+                                <span class="@r.StatusBadgeClass">@r.StatusText</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <a asp-page="Details" asp-route-id="@r.Id" class="btn btn-sm btn-danger px-3" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                    <i class="bi bi-shield-lock me-1"></i>Enforce
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-shield-check text-success d-block mb-1" style="font-size:1.8rem;"></i>
+                            <small>No escalated violation reports pending administrative action.</small>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

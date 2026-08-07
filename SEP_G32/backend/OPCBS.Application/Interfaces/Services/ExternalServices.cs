@@ -14,6 +14,7 @@ public interface IEmailService
     Task SendAppointmentReminderEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
     Task SendConsultationNoteEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
     Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default);
+    Task SendAppointmentBookingConfirmationEmailAsync(string to, string patientName, string doctorName, string bookingCode, string date, string time, string consultationMode, string statusText, string trackUrl, CancellationToken cancellationToken = default);
 }
 
 public class FileUploadResult

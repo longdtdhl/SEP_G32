@@ -202,6 +202,10 @@ public class SubscriptionDto
     public DateTime ExpirationDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal AmountPaid { get; set; }
+    /// <summary>Maximum schedule slots the subscribed plan permits per day.</summary>
+    public int? MaxDailySlotsCapacity { get; set; }
+    /// <summary>Maximum active patient capacity advertised by the subscribed plan.</summary>
+    public int? MaxPatientCapacity { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PaymentUrl { get; set; }
 }

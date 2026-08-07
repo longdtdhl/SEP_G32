@@ -1,56 +1,77 @@
-@page
+@page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.DetailsModel
 @{
-    ViewData["Title"] = "Treatment Package Details";
+    ViewData["Title"] = Model.Package?.Title ?? "Treatment Package Details";
     Layout = "_DashboardLayout";
 }
 
 <style>
-    .dt-card { background: white; border-radius: 16px; border: 1px solid #f1f5f9; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-    .dt-card-header { padding: 1.1rem 1.25rem; border-bottom: 1px solid #f8fafc; font-weight: 700; font-size: 0.9rem; color: #1e293b; display: flex; align-items: center; gap: 8px; background: #fafbfc; }
-    .dt-card-header i { color: var(--mb-primary); }
-    .dt-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 0.85rem; border-bottom: 1px solid #f8fafc; }
-    .dt-row:last-child { border-bottom: none; }
-    .dt-row .label { color: #64748b; }
-    .dt-row .value { font-weight: 600; color: #1e293b; }
-    .instruction-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; font-size: 0.85rem; color: #334155; white-space: pre-line; }
-    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
-    .status-active { background: #dcfce7; color: #15803d; }
-    .status-draft { background: #fef3c7; color: #b45309; }
-    .status-archived { background: #f1f5f9; color: #64748b; }
+    .tp-det-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
+    }
+    .tp-det-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafbfc;
+        border-top-left-radius: 11px;
+        border-top-right-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .tp-det-body {
+        padding: 1.5rem;
+    }
+    .tp-spec-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+    }
+    .tp-spec-row:last-child { border-bottom: none; }
+    .tp-instruction-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        font-size: 0.875rem;
+        color: #334155;
+        white-space: pre-line;
+    }
 </style>
 
-<!-- Page Header -->
-<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Treatment Package Details
+        <a asp-page="Index" class="text-decoration-none text-muted fs-7 d-inline-block mb-1">
+            <i class="bi bi-arrow-left me-1"></i> Back to Packages & Templates
+        </a>
+        <h1 class="fs-4 fw-bold text-dark mb-0">
+            <i class="bi bi-box-seam text-teal me-2" style="color:#0d9488;"></i> @(Model.Package?.Title ?? "Treatment Package Details")
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Standard treatment package template created by therapist</p>
+        <p class="text-muted fs-7 mb-0">Reusable treatment template specifications and clinical protocol.</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px; font-weight:600; font-size:0.85rem;">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
-        </a>
         @if (Model.Package != null)
         {
-            <a asp-page="Edit" asp-route-id="@Model.Package.Id" class="btn btn-primary px-3 py-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600; font-size:0.85rem;">
-                <i class="bi bi-pencil me-1"></i>Edit Package
+            <a asp-page="Edit" asp-route-id="@Model.Package.Id" class="btn btn-outline-secondary btn-sm px-3" style="border-radius:6px; font-weight:600;">
+                <i class="bi bi-pencil me-1"></i> Edit Template
+            </a>
+            <a asp-page="Create" asp-route-patientId="@Model.Package.PatientId" class="btn btn-primary btn-sm px-3" style="background:#0d9488; border-color:#0d9488; border-radius:6px; font-weight:600;">
+                <i class="bi bi-plus-lg me-1"></i> Duplicate / Assign
             </a>
         }
     </div>
 </div>
 
-@if (TempData["SuccessMessage"] != null)
+@if (!string.IsNullOrEmpty(Model.Error))
 {
-    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none;">
-        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-@if (Model.Error != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -59,115 +80,98 @@
 @if (Model.Package != null)
 {
     var pkg = Model.Package;
-    var statusClass = pkg.Status == "Active" ? "status-active" : pkg.Status == "Draft" ? "status-draft" : "status-archived";
 
     <div class="row g-4">
-        <!-- Main Content -->
+        <!-- Main Clinical Details (8 cols) -->
         <div class="col-lg-8">
-            <!-- Overview Card -->
-            <div class="dt-card mb-4">
-                <div class="dt-card-header d-flex justify-content-between">
-                    <span><i class="bi bi-file-earmark-text me-1"></i>Overview Information</span>
-                    <span class="status-badge @statusClass">@pkg.Status</span>
+            <div class="tp-det-card">
+                <div class="tp-det-header">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-file-earmark-text text-teal me-2" style="color:#0d9488;"></i> Protocol Description</h6>
+                    <span class="badge bg-light text-dark border fs-8">Status: @pkg.Status</span>
                 </div>
-                <div style="padding:1.25rem;">
-                    <h4 class="fw-bold text-dark mb-2">@pkg.Title</h4>
-                    <p class="text-secondary" style="font-size:0.9rem; line-height:1.6;">@pkg.Description</p>
-                </div>
-            </div>
-
-            <!-- Detailed Clinical Plan -->
-            <div class="dt-card mb-4">
-                <div class="dt-card-header"><i class="bi bi-journal-medical me-1"></i>Treatment Framework &amp; Goals</div>
-                <div style="padding:1.25rem;">
-                    @if (!string.IsNullOrEmpty(pkg.TargetOutcome))
-                    {
-                        <div class="mb-3">
-                            <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-trophy me-1 text-warning"></i>Target Outcomes:</span>
-                            <div class="instruction-box">@pkg.TargetOutcome</div>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(pkg.RecommendedExercises))
-                    {
-                        <div class="mb-3">
-                            <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-journal-check me-1 text-primary"></i>Recommended Exercises &amp; Activities:</span>
-                            <div class="instruction-box">@pkg.RecommendedExercises</div>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(pkg.Instructions))
-                    {
-                        <div>
-                            <span class="fw-bold text-dark d-block mb-1"><i class="bi bi-info-circle me-1 text-success"></i>Patient Guidance:</span>
-                            <div class="instruction-box">@pkg.Instructions</div>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar Specifications -->
-        <div class="col-lg-4">
-            <div class="dt-card mb-4">
-                <div class="dt-card-header"><i class="bi bi-sliders me-1"></i>Package Specifications</div>
-                <div style="padding:1.25rem;">
-                    <div class="dt-row">
-                        <span class="label">Total Sessions</span>
-                        <span class="value">@pkg.TotalSessions sessions</span>
-                    </div>
-                    <div class="dt-row">
-                        <span class="label">Validity Duration</span>
-                        <span class="value">@pkg.ValidityDays days</span>
-                    </div>
-                    <div class="dt-row">
-                        <span class="label">Price</span>
-                        <span class="value" style="color:var(--mb-primary); font-size:1.05rem;">@pkg.Price.ToString("N0") ₫</span>
-                    </div>
-                    <div class="dt-row">
-                        <span class="label">Recommended Frequency</span>
-                        <span class="value">1 - 2 sessions / week</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions for Doctor -->
-            <div class="dt-card">
-                <div class="dt-card-header"><i class="bi bi-heart-pulse me-1"></i>Management Actions</div>
-                <div style="padding:1.25rem;">
-                    <p style="font-size:0.83rem; color:#64748b;" class="mb-3">
-                        View treatment cases created from this package or archive this package when no longer in use.
+                <div class="tp-det-body">
+                    <p class="text-secondary fs-7 mb-0" style="line-height: 1.6;">
+                        @(string.IsNullOrWhiteSpace(pkg.Description) ? "No detailed description provided for this treatment package template." : pkg.Description)
                     </p>
-                    <a asp-page="/Doctor/TreatmentCases/Index" class="btn btn-outline-primary btn-sm w-100 py-2 mb-2" style="border-radius:10px; font-weight:600;">
-                        <i class="bi bi-folder me-1"></i>View Treatment Progress
-                    </a>
-                    <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2" style="border-radius:10px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#cancelPkgModal">
-                        <i class="bi bi-archive me-1"></i>Archive / Cancel Package
-                    </button>
+                </div>
+            </div>
+
+            <!-- Clinical Framework & Guidelines -->
+            <div class="tp-det-card">
+                <div class="tp-det-header">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-journal-medical text-teal me-2" style="color:#0d9488;"></i> Clinical Framework & Objectives</h6>
+                </div>
+                <div class="tp-det-body">
+                    @if (!string.IsNullOrWhiteSpace(pkg.TargetOutcome))
+                    {
+                        <div class="mb-3">
+                            <label class="fw-bold text-dark fs-7 mb-1 d-block"><i class="bi bi-trophy text-amber me-1" style="color:#d97706;"></i> Target Outcomes:</label>
+                            <div class="tp-instruction-box">@pkg.TargetOutcome</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(pkg.RecommendedExercises))
+                    {
+                        <div class="mb-3">
+                            <label class="fw-bold text-dark fs-7 mb-1 d-block"><i class="bi bi-journal-check text-blue me-1" style="color:#2563eb;"></i> Recommended Exercises:</label>
+                            <div class="tp-instruction-box">@pkg.RecommendedExercises</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(pkg.Instructions))
+                    {
+                        <div class="mb-0">
+                            <label class="fw-bold text-dark fs-7 mb-1 d-block"><i class="bi bi-info-circle text-emerald me-1" style="color:#059669;"></i> Patient Guidance & Instructions:</label>
+                            <div class="tp-instruction-box">@pkg.Instructions</div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Cancel Package Modal -->
-    <div class="modal fade" id="cancelPkgModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content" style="border-radius:14px;">
-                <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-archive me-2"></i>Archive / Cancel Package</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- Sidebar Specifications (4 cols) -->
+        <div class="col-lg-4">
+            <div class="tp-det-card">
+                <div class="tp-det-header">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-sliders text-teal me-2" style="color:#0d9488;"></i> Specifications</h6>
+                </div>
+                <div class="tp-det-body py-2">
+                    <div class="tp-spec-row">
+                        <span class="text-muted">Total Sessions</span>
+                        <strong class="text-dark">@pkg.TotalSessions sessions</strong>
                     </div>
-                    <div class="modal-body">
-                        <p class="small text-secondary mb-3">Are you sure you want to cancel or archive this treatment package template?</p>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Reason for cancellation (optional)</label>
-                            <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Enter reason..." style="border-radius:8px;"></textarea>
-                        </div>
+                    <div class="tp-spec-row">
+                        <span class="text-muted">Validity Duration</span>
+                        <strong class="text-dark">@pkg.ValidityDays days</strong>
                     </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
-                        <button type="submit" class="btn btn-danger btn-sm px-3" style="border-radius:8px;">Confirm Cancellation</button>
+                    <div class="tp-spec-row">
+                        <span class="text-muted">Recommended Pace</span>
+                        <strong class="text-dark">@pkg.RecommendedSessionsPerWeek session / wk</strong>
                     </div>
-                </form>
+                    <div class="tp-spec-row">
+                        <span class="text-muted">Package Fee</span>
+                        <strong class="text-teal fw-bold fs-6" style="color:#0d9488;">@pkg.Price.ToString("N0") VND</strong>
+                    </div>
+                    <div class="tp-spec-row">
+                        <span class="text-muted">Assigned Patient</span>
+                        <strong class="text-dark">@pkg.DisplayPatientName</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Management Actions Card -->
+            <div class="tp-det-card">
+                <div class="tp-det-header">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-gear text-teal me-2" style="color:#0d9488;"></i> Management Actions</h6>
+                </div>
+                <div class="tp-det-body">
+                    <p class="text-muted fs-8 mb-3">
+                        View active treatment cases created using this template or archive the template when superseded.
+                    </p>
+                    <a asp-page="/Doctor/TreatmentCases/Index" class="btn btn-outline-primary btn-sm w-100 mb-2 py-2" style="border-radius:6px; font-weight:600;">
+                        <i class="bi bi-folder me-1"></i> View Treatment Cases
+                    </a>
+                </div>
             </div>
         </div>
     </div>

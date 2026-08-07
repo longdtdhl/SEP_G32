@@ -9,14 +9,17 @@ public static class AppointmentStatusHelper
         AppointmentStatus.Pending,
         AppointmentStatus.Approved,
         AppointmentStatus.InProgress,
-        AppointmentStatus.RescheduleRequested
+        AppointmentStatus.RescheduleRequested,
+        AppointmentStatus.AwaitingPatientConfirmation,
+        AppointmentStatus.AwaitingGuestConfirmation
     };
 
     public static readonly AppointmentStatus[] HistoryStatuses = new[]
     {
         AppointmentStatus.Completed,
         AppointmentStatus.Cancelled,
-        AppointmentStatus.Rejected
+        AppointmentStatus.Rejected,
+        AppointmentStatus.NoShow
     };
 
     public static bool IsActive(AppointmentStatus status) => ActiveStatuses.Contains(status);

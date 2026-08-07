@@ -163,9 +163,9 @@ public class TreatmentSessionWebDto
         2 => "Completed",
         3 => "Cancelled",
         4 => "No Show",
-        5 => "Missed",
+        5 => "No Show",
         6 => "Planned",
-        _ => "Unknown"
+        _ => "Planned"
     };
 
     public string StatusBadgeClass => Status switch
@@ -173,11 +173,11 @@ public class TreatmentSessionWebDto
         0 => "badge bg-info",
         1 => "badge bg-warning text-dark",
         2 => "badge bg-success",
-        3 => "badge bg-danger",
-        4 => "badge bg-secondary",
-        5 => "badge bg-secondary",
+        3 => "badge bg-secondary",
+        4 => "badge bg-danger",
+        5 => "badge bg-danger",
         6 => "badge bg-light text-dark border",
-        _ => "badge bg-secondary"
+        _ => "badge bg-light text-dark border"
     };
 }
 

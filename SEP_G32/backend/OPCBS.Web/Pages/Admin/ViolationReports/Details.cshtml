@@ -1,0 +1,247 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Admin.ViolationReports.DetailsModel
+@{
+    ViewData["Title"] = "Escalated Report Decision Workspace";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    .adm-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 1rem; }
+    .adm-card-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; background: #fafbfc; font-weight: 700; font-size: 0.9rem; color: #1e293b; }
+    .adm-card-body { padding: 1.25rem; }
+    .ev-thumb { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s; }
+    .ev-thumb:hover { transform: scale(1.03); border-color: #ef4444; }
+</style>
+
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0; color:#1e293b;">
+            <i class="bi bi-shield-lock-fill me-2" style="color:#ef4444;"></i>Admin Enforcement Workspace
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Escalated Report ID: @RouteData.Values["id"]</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:6px;">
+        <i class="bi bi-arrow-left me-1"></i>Back to Queue
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Report != null)
+{
+    var r = Model.Report;
+    <div class="row g-4">
+        <!-- Main Details Column -->
+        <div class="col-lg-8">
+            <!-- Status Summary Banner -->
+            <div class="adm-card">
+                <div class="adm-card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-dark text-white">Source: @r.Source</span>
+                            <span class="badge bg-light text-dark border">Category: @r.ReasonCategoryDisplay</span>
+                            <span class="@r.StatusBadgeClass">@r.StatusText</span>
+                        </div>
+                        <div class="text-muted small">
+                            Escalated on @(r.EscalatedAt?.ToString("MMMM dd, yyyy 'at' HH:mm") ?? r.CreatedAt.ToString("MMMM dd, yyyy"))
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">Warning History</div>
+                        <span class="badge bg-warning text-dark fs-6"><i class="bi bi-exclamation-triangle me-1"></i>#@r.WarningNumber Warnings</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Support Escalation Notes -->
+            <div class="adm-card">
+                <div class="adm-card-header"><i class="bi bi-headset me-2 text-primary"></i>Customer Support Escalation Notes</div>
+                <div class="adm-card-body">
+                    <div class="p-3 rounded-2 border" style="background:#eff6ff; border-color:#bfdbfe; font-size:0.9rem; color:#1e40af; line-height:1.6;">
+                        @(string.IsNullOrEmpty(r.CustomerSupportNote) ? "No Customer Support note provided." : r.CustomerSupportNote)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reported Reason & Incident Details -->
+            <div class="adm-card">
+                <div class="adm-card-header"><i class="bi bi-card-text me-2 text-primary"></i>Submitted Incident Detail</div>
+                <div class="adm-card-body">
+                    <div class="p-3 bg-light rounded-3 text-secondary border mb-3" style="font-size:0.9rem; line-height:1.65; white-space:pre-line;">
+                        @r.ReasonDetail
+                    </div>
+                    @if (r.RelatedAppointmentId.HasValue || r.RelatedTreatmentCaseId.HasValue)
+                    {
+                        <div class="d-flex gap-3 flex-wrap pt-2 border-top">
+                            @if (r.RelatedAppointmentId.HasValue)
+                            {
+                                <div class="small">
+                                    <span class="text-muted d-block">Related Appointment ID</span>
+                                    <strong class="text-dark"><i class="bi bi-calendar-event me-1"></i>@r.RelatedAppointmentId.Value</strong>
+                                </div>
+                            }
+                            @if (r.RelatedTreatmentCaseId.HasValue)
+                            {
+                                <div class="small">
+                                    <span class="text-muted d-block">Related Treatment Case ID</span>
+                                    <strong class="text-dark"><i class="bi bi-journal-medical me-1"></i>@r.RelatedTreatmentCaseId.Value</strong>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Evidence Attachments Gallery -->
+            <div class="adm-card">
+                <div class="adm-card-header"><i class="bi bi-paperclip me-2 text-primary"></i>Evidence Files (@r.EvidenceFiles.Count)</div>
+                <div class="adm-card-body">
+                    @if (!r.EvidenceFiles.Any())
+                    {
+                        <div class="text-muted small text-center py-3">No evidence files attached to this report.</div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach (var ev in r.EvidenceFiles)
+                            {
+                                var mbSize = (ev.FileSizeBytes / (1024.0 * 1024.0)).ToString("0.00");
+                                if (ev.IsImage)
+                                {
+                                    <div class="text-center">
+                                        <img src="@ev.FileUrl" alt="@ev.FileName" class="ev-thumb" onclick="openImageModal('@ev.FileUrl', '@ev.FileName');" />
+                                        <div class="text-truncate mt-1 small text-dark fw-medium" style="max-width:120px;" title="@ev.FileName">@ev.FileName</div>
+                                        <div class="text-muted" style="font-size:0.7rem;">@mbSize MB</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="p-3 border rounded-3 text-center bg-light" style="width:130px;">
+                                        <i class="bi bi-file-earmark-pdf text-danger fs-1 d-block mb-1"></i>
+                                        <div class="text-truncate small fw-bold text-dark mb-1" title="@ev.FileName">@ev.FileName</div>
+                                        <div class="text-muted mb-2" style="font-size:0.7rem;">@mbSize MB</div>
+                                        <a href="@ev.FileUrl" target="_blank" class="btn btn-sm btn-outline-danger w-100 py-1" style="font-size:0.75rem;">Open PDF</a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(r.AdminNote))
+            {
+                <div class="adm-card">
+                    <div class="adm-card-header"><i class="bi bi-shield-check me-2 text-danger"></i>System Admin Recorded Note</div>
+                    <div class="adm-card-body">
+                        <div class="p-3 rounded-2 border" style="background:#fef2f2; border-color:#fecaca; font-size:0.875rem; color:#991b1b;">
+                            @r.AdminNote
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar / Actions Column -->
+        <div class="col-lg-4">
+            <!-- Reported Account Profile Card -->
+            <div class="adm-card">
+                <div class="adm-card-header"><i class="bi bi-person-badge me-2 text-primary"></i>Reported Account Target</div>
+                <div class="adm-card-body" style="font-size:0.85rem;">
+                    <div class="mb-2">
+                        <span class="text-muted d-block small">Account Name</span>
+                        <strong class="text-dark fs-6">@(r.ReportedUserName ?? "Unknown Account")</strong>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted d-block small">User ID</span>
+                        <code class="text-dark small">@r.ReportedUserId</code>
+                    </div>
+                    <div class="p-2 bg-light rounded-2 border text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>Reporter: <strong>@(r.ReporterName ?? "System Auto-Report")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Action Forms -->
+            <div class="adm-card">
+                <div class="adm-card-header"><i class="bi bi-shield-lock me-2 text-danger"></i>Administrative Action</div>
+                <div class="adm-card-body">
+                    @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.EscalatedToAdmin)
+                    {
+                        <!-- Option 1: Disable Account -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <h6 class="fw-bold text-danger small mb-2"><i class="bi bi-person-x-fill me-1"></i>1. Disable User Account</h6>
+                            <div class="alert alert-danger py-2 px-3 small mb-2" style="font-size:0.78rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Destructive action! Disables the user's account in database and blocks all access.
+                            </div>
+                            <form method="post" asp-page-handler="DisableAccount" asp-route-id="@r.Id">
+                                <textarea name="adminNote" class="form-control form-control-sm mb-2" rows="3" required placeholder="Required admin decision note explaining account lock..." style="border-radius:6px; font-size:0.8rem;"></textarea>
+                                <button type="submit" class="btn btn-sm btn-danger w-100 fw-bold" style="border-radius:6px; font-size:0.8rem;" onclick="return confirm('ARE YOU SURE you want to DISABLE this user account?');">
+                                    <i class="bi bi-lock-fill me-1"></i>Disable Account Now
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Option 2: Dismiss Report -->
+                        <div>
+                            <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-x-circle me-1"></i>2. Dismiss Escalated Report</h6>
+                            <p class="text-muted small mb-2">Dismiss this report without disabling the reported user account.</p>
+                            <form method="post" asp-page-handler="Dismiss" asp-route-id="@r.Id">
+                                <textarea name="adminNote" class="form-control form-control-sm mb-2" rows="2" required placeholder="Required admin decision note..." style="border-radius:6px; font-size:0.8rem;"></textarea>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary w-100" style="border-radius:6px; font-size:0.8rem;">
+                                    Dismiss Report
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info py-2 px-3 small mb-2" style="font-size:0.8rem;">
+                            <i class="bi bi-info-circle me-1"></i>This report has been finalized. Current status: <strong>@r.StatusText</strong>.
+                        </div>
+                    }
+
+                    <div class="mt-3 pt-2 border-top text-muted small" style="font-size:0.75rem;">
+                        <i class="bi bi-shield-check me-1"></i>Account reactivation and appeals are managed via Customer Support contact (<code>support@opcbs.com</code>).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius:12px; border:none; background:transparent;">
+                <div class="modal-body p-0 text-center position-relative">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" style="z-index:10;"></button>
+                    <img id="modalImg" src="" alt="Evidence" class="img-fluid rounded-3 shadow-lg" style="max-height:85vh; object-fit:contain;" />
+                    <div id="modalCaption" class="text-white small mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openImageModal(url, filename) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('modalCaption').textContent = filename;
+            var modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+    </script>
+}

@@ -39,7 +39,57 @@ public enum AppointmentStatus
     Cancelled = 5,
     
     /// <summary>Reschedule requested by patient, pending doctor approval</summary>
-    RescheduleRequested = 6
+    RescheduleRequested = 6,
+
+    /// <summary>Doctor requested the patient's confirmation before completion</summary>
+    AwaitingPatientConfirmation = 7,
+
+    /// <summary>Patient did not attend the appointment</summary>
+    NoShow = 8,
+
+    /// <summary>Guest booking is waiting for email confirmation before doctor review</summary>
+    AwaitingGuestConfirmation = 9
+}
+
+/// <summary>Patient response to a doctor's appointment-completion request.</summary>
+public enum AppointmentCompletionConfirmationStatus
+{
+    Pending = 0,
+    Confirmed = 1,
+    ExpiredAndAccountLocked = 2,
+    Cancelled = 3
+}
+
+/// <summary>Origin of a violation report.</summary>
+public enum ViolationReportSource
+{
+    Patient = 0,
+    Doctor = 1,
+    System = 2
+}
+
+/// <summary>Reason categories used for report routing and policy analytics.</summary>
+public enum ViolationReason
+{
+    Other = 0,
+    RepeatedNoShow = 1,
+    AppointmentCompletionDispute = 2,
+    HarassmentOrAbuse = 3,
+    FraudOrImpersonation = 4,
+    ProfessionalConduct = 5,
+    PolicyViolation = 6
+}
+
+/// <summary>Lifecycle of a report as it moves from Customer Support to Admin.</summary>
+public enum ViolationReportStatus
+{
+    Submitted = 0,
+    UnderCustomerSupportReview = 1,
+    WarningIssued = 2,
+    EscalatedToAdmin = 3,
+    AccountDisabled = 4,
+    Dismissed = 5,
+    Resolved = 6
 }
 
 /// <summary>

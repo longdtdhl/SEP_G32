@@ -20,3 +20,19 @@ public interface IFavoriteDoctorService
     /// <summary>Check if a doctor is in favorites</summary>
     Task<ApiResponse<bool>> IsFavoriteAsync(Guid patientUserId, Guid doctorId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Sends in-app updates to patients who follow a doctor through Favorites.
+/// </summary>
+public interface IFavoriteDoctorNotificationService
+{
+    Task NotifyFollowersAsync(
+        Guid doctorProfileId,
+        Guid doctorUserId,
+        string doctorName,
+        string title,
+        string message,
+        Guid? relatedEntityId = null,
+        string? relatedEntityType = null,
+        CancellationToken ct = default);
+}

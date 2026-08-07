@@ -57,6 +57,20 @@ builder.Services.AddAuthentication(options =>
                 context.Token = accessToken;
             }
             return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var userIdValue = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                context.Fail("Invalid account identity.");
+                return;
+            }
+
+            var db = context.HttpContext.RequestServices.GetRequiredService<OpcbsDbContext>();
+            var user = await db.Users.FindAsync([userId]);
+            if (user == null || user.IsDeleted || user.Status != OPCBS.Domain.Enums.UserStatus.Active)
+                context.Fail("Account is inactive or locked.");
         }
     };
 });
@@ -115,8 +129,13 @@ builder.Services.AddHostedService<OPCBS.Services.AppointmentReminderService>();
 
 var app = builder.Build();
 
-// Seed database on startup
-if (app.Configuration.GetValue<bool>("ResetDatabase", false) || Environment.GetEnvironmentVariable("RESET_DB") == "true")
+// Database deletion must be an explicit one-off action. Normal restarts preserve all data.
+var resetDatabase = string.Equals(
+    Environment.GetEnvironmentVariable("RESET_DB"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+
+if (resetDatabase)
 {
     using (var scope = app.Services.CreateScope())
     {
@@ -129,6 +148,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
     context.Database.EnsureCreated();
+    await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
     await SeedData.SeedAsync(context);
 }
 

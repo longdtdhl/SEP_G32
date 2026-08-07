@@ -85,16 +85,37 @@ public class AppointmentsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>GET /api/v1/appointments/track/{bookingCode} - Track by booking code (Guest or Patient)</summary>
+    /// <summary>GET /api/v1/appointments/track/{bookingCode} - Track by booking code & email (Guest or Patient)</summary>
     [HttpGet("track/{bookingCode}")]
-    public async Task<IActionResult> TrackAppointment(string bookingCode, [FromQuery] string email)
+    public async Task<IActionResult> TrackAppointment(string bookingCode, [FromQuery] string? email)
     {
         if (string.IsNullOrWhiteSpace(bookingCode) || string.IsNullOrWhiteSpace(email))
-            return BadRequest(ApiResponse.ErrorResponse("Booking code and email are required."));
+            return BadRequest(ApiResponse.ErrorResponse("Vui lòng cung cấp cả Mã đặt lịch và Email."));
 
-        var dto = new TrackAppointmentDto { BookingCode = bookingCode, Email = email };
+        var dto = new TrackAppointmentDto { BookingCode = bookingCode.Trim(), Email = email.Trim() };
         var result = await _apptService.TrackAppointmentAsync(dto);
         return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/resend-confirmation - Resend confirmation email</summary>
+    [HttpPost("resend-confirmation")]
+    public async Task<IActionResult> ResendConfirmation([FromBody] ResendConfirmationDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return BadRequest(ApiResponse.ErrorResponse("Mã đặt lịch và Email là bắt buộc."));
+
+        var result = await _apptService.ResendConfirmationEmailAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/guest/confirm - Confirm an email link for a guest booking.</summary>
+    [AllowAnonymous]
+    [HttpPost("guest/confirm")]
+    public async Task<IActionResult> ConfirmGuestAppointment([FromBody] ConfirmGuestAppointmentDto? dto)
+    {
+        if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Confirmation token is required."));
+        var result = await _apptService.ConfirmGuestAppointmentAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>PUT /api/v1/appointments/cancel/{id} - Cancel appointment</summary>
@@ -222,6 +243,28 @@ public class AppointmentsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _apptService.CompleteAppointmentAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/confirm-completion - Patient confirms a doctor completion request.</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPut("{appointmentId:guid}/confirm-completion")]
+    public async Task<IActionResult> ConfirmCompletion(Guid appointmentId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.ConfirmCompletionAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/no-show - Doctor records a patient no-show after slot end time.</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("{appointmentId:guid}/no-show")]
+    public async Task<IActionResult> MarkPatientNoShow(Guid appointmentId, [FromBody] CancelAppointmentDto? dto = null)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.MarkPatientNoShowAsync(appointmentId, userId.Value, dto?.Reason);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

@@ -287,6 +287,10 @@ public class AppointmentService : IAppointmentService
     private readonly IRepository<PsychometricSubmission>? _psychRepo;
     private readonly IRepository<TreatmentCase>? _treatmentCaseRepo;
     private readonly IRepository<PatientRecord>? _patientRecordRepo;
+    private readonly IRepository<TreatmentSession>? _sessionRepo;
+    private readonly IRepository<AppointmentCompletionConfirmation>? _completionConfirmationRepo;
+    private readonly IViolationReportService? _violationReports;
+    private readonly ITreatmentCaseService? _treatmentCaseService;
 
     public AppointmentService(
         IRepository<Appointment> apptRepo,
@@ -304,7 +308,11 @@ public class AppointmentService : IAppointmentService
         IMapper mapper,
         IRepository<PsychometricSubmission>? psychRepo = null,
         IRepository<TreatmentCase>? treatmentCaseRepo = null,
-        IRepository<PatientRecord>? patientRecordRepo = null)
+        IRepository<PatientRecord>? patientRecordRepo = null,
+        IRepository<TreatmentSession>? sessionRepo = null,
+        IRepository<AppointmentCompletionConfirmation>? completionConfirmationRepo = null,
+        IViolationReportService? violationReports = null,
+        ITreatmentCaseService? treatmentCaseService = null)
     {
         _apptRepo = apptRepo;
         _slotRepo = slotRepo;
@@ -322,6 +330,32 @@ public class AppointmentService : IAppointmentService
         _psychRepo = psychRepo;
         _treatmentCaseRepo = treatmentCaseRepo;
         _patientRecordRepo = patientRecordRepo;
+        _sessionRepo = sessionRepo;
+        _completionConfirmationRepo = completionConfirmationRepo;
+        _violationReports = violationReports;
+        _treatmentCaseService = treatmentCaseService;
+    }
+
+    private async Task SyncSessionStatusAsync(Appointment appt, TreatmentSessionStatus newSessionStatus, CancellationToken ct)
+    {
+        if (_sessionRepo == null) return;
+        var allSessions = await _sessionRepo.GetAllAsync(ct);
+        var session = allSessions.FirstOrDefault(s => s.AppointmentId == appt.Id || (appt.TreatmentSessionId.HasValue && s.Id == appt.TreatmentSessionId.Value));
+        if (session != null && !session.IsDeleted)
+        {
+            session.Status = newSessionStatus;
+            if (newSessionStatus == TreatmentSessionStatus.Scheduled && appt.AppointmentSlotId != Guid.Empty)
+            {
+                var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
+                if (slot != null)
+                {
+                    session.PlannedStartTime = slot.SlotDate.ToDateTime(slot.StartTime);
+                    session.PlannedEndTime = slot.SlotDate.ToDateTime(slot.EndTime);
+                }
+            }
+            session.UpdatedAt = DateTime.UtcNow;
+            _sessionRepo.Update(session);
+        }
     }
 
     public async Task<ApiResponse<AppointmentDto>> CreateAppointmentAsync(CreateAppointmentDto dto, Guid? patientUserId, CancellationToken ct = default)
@@ -352,8 +386,8 @@ public class AppointmentService : IAppointmentService
 
         // Validate slot exists and is available
         var slot = await _slotRepo.GetByIdAsync(dto.AppointmentSlotId, ct);
-        if (slot == null || (slot.Status != AppointmentSlotStatus.Available && slot.Status != AppointmentSlotStatus.Booked))
-            return ApiResponse<AppointmentDto>.ErrorResponse("Slot is not available for booking.");
+        if (slot == null || slot.Status != AppointmentSlotStatus.Available)
+            return ApiResponse<AppointmentDto>.ErrorResponse("Slot not available for booking.");
         // Check capacity
         if (slot.CurrentBookings >= slot.MaxPatients)
             return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã đạt giới hạn số lượng bệnh nhân.");
@@ -369,7 +403,22 @@ public class AppointmentService : IAppointmentService
         {
             var allPatients = await _patientRepo.GetAllAsync(ct);
             var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId.Value);
-            patientProfileId = patient?.Id;
+            if (patient != null)
+                patientProfileId = patient.Id;
+        }
+
+        // Check for duplicate active appointment for the same patient at the same slot
+        if (patientProfileId.HasValue)
+        {
+            var existingAppts = await _apptRepo.GetAllAsync(ct);
+            var duplicate = existingAppts.FirstOrDefault(a =>
+                a.PatientId == patientProfileId.Value &&
+                a.AppointmentSlotId == dto.AppointmentSlotId &&
+                !a.IsDeleted &&
+                a.Status != AppointmentStatus.Cancelled &&
+                a.Status != AppointmentStatus.Rejected);
+            if (duplicate != null)
+                return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã được đặt trước. Bạn đã đặt khung giờ này rồi.");
         }
         else
         {
@@ -471,6 +520,7 @@ public class AppointmentService : IAppointmentService
                 }
             }
 
+            var guestConfirmationToken = patientProfileId.HasValue ? null : CreateGuestConfirmationToken();
             var appointment = new Appointment
             {
                 BookingCode = bookingCode,
@@ -485,7 +535,10 @@ public class AppointmentService : IAppointmentService
                 MedicalHistory = dto.MedicalHistory,
                 Expectations = dto.Expectations,
                 TreatmentPackageId = dto.TreatmentPackageId,
-                Status = AppointmentStatus.Pending,
+                Status = patientProfileId.HasValue ? AppointmentStatus.Pending : AppointmentStatus.AwaitingGuestConfirmation,
+                GuestConfirmationTokenHash = guestConfirmationToken == null ? null : HashGuestConfirmationToken(guestConfirmationToken),
+                GuestConfirmationLastSentAt = guestConfirmationToken == null ? null : DateTime.UtcNow,
+                GuestConfirmationSendCount = guestConfirmationToken == null ? 0 : 1,
                 AppointmentDate = slotDateTime,
                 AppointmentSlot = slot,
                 Doctor = doctor
@@ -495,8 +548,8 @@ public class AppointmentService : IAppointmentService
             await _historyRepo.AddAsync(new AppointmentHistory
             {
                 AppointmentId = appointment.Id,
-                NewStatus = AppointmentStatus.Pending,
-                Reason = "Appointment created",
+                NewStatus = appointment.Status,
+                Reason = patientProfileId.HasValue ? "Appointment created" : "Guest booking created; awaiting email confirmation",
                 Appointment = appointment
             }, ct);
 
@@ -546,6 +599,47 @@ public class AppointmentService : IAppointmentService
                     ct);
             }
             catch { /* Non-critical — don't fail the booking */ }
+
+            // Send confirmation email to patient/guest
+            try
+            {
+                string? targetEmail = appointment.GuestEmail;
+                if (patientProfileId.HasValue && patientUserId.HasValue)
+                {
+                    var patUser = allUsers.FirstOrDefault(u => u.Id == patientUserId.Value);
+                    if (patUser != null && !string.IsNullOrEmpty(patUser.Email))
+                    {
+                        targetEmail = patUser.Email;
+                    }
+                }
+
+                if (!patientProfileId.HasValue && guestConfirmationToken != null)
+                {
+                    await SendGuestConfirmationEmailAsync(appointment, slot, doctorUser?.FullName ?? "your doctor", guestConfirmationToken, ct);
+                }
+                else if (!string.IsNullOrWhiteSpace(targetEmail))
+                {
+                    var trackUrl = $"http://localhost:5044/Appointment/Track?code={appointment.BookingCode}&email={Uri.EscapeDataString(targetEmail)}";
+                    var statusText = "Chờ xác nhận (Pending)";
+                    var consultationMode = "Tư vấn Trực tuyến (Online)";
+                    var dateStr = slot.SlotDate.ToString("dd/MM/yyyy");
+                    var timeStr = $"{slot.StartTime:HH:mm} - {slot.EndTime:HH:mm}";
+                    var docNameStr = doctorUser?.FullName != null ? $"BS. {doctorUser.FullName}" : "Bác sĩ chuyên khoa";
+
+                    await _emailService.SendAppointmentBookingConfirmationEmailAsync(
+                        targetEmail,
+                        patientName,
+                        docNameStr,
+                        appointment.BookingCode,
+                        dateStr,
+                        timeStr,
+                        consultationMode,
+                        statusText,
+                        trackUrl,
+                        ct);
+                }
+            }
+            catch { /* Non-critical email failure — don't break booking flow */ }
 
             return ApiResponse<AppointmentDto>.SuccessResponse(result, "Appointment booked successfully");
         }
@@ -799,19 +893,184 @@ public class AppointmentService : IAppointmentService
         return ApiResponse<AppointmentDto>.SuccessResponse(dto);
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _lastResendTimes = new();
+
     public async Task<ApiResponse<AppointmentDto>> TrackAppointmentAsync(TrackAppointmentDto dto, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return ApiResponse<AppointmentDto>.ErrorResponse("Vui lòng nhập đầy đủ Mã đặt lịch và Email.");
+
+        var cleanCode = dto.BookingCode.Trim();
+        var cleanEmail = dto.Email.Trim();
+
         var allAppts = await _apptRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var patientUserDict = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u.Email);
+
         var appointment = allAppts.FirstOrDefault(a =>
-            a.BookingCode == dto.BookingCode &&
-            (a.GuestEmail == dto.Email || (a.Patient != null && a.Patient.User.Email == dto.Email)));
+            a.BookingCode.Equals(cleanCode, StringComparison.OrdinalIgnoreCase) &&
+            !a.IsDeleted &&
+            ((!string.IsNullOrEmpty(a.GuestEmail) && a.GuestEmail.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase)) ||
+             (a.PatientId.HasValue && patientUserDict.TryGetValue(a.PatientId.Value, out var uId) &&
+              userDict.TryGetValue(uId, out var pEmail) && pEmail.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase))));
 
         if (appointment == null)
-            return ApiResponse<AppointmentDto>.ErrorResponse("Appointment not found");
+            return ApiResponse<AppointmentDto>.ErrorResponse("Không tìm thấy thông tin lịch hẹn phù hợp với Mã đặt lịch và Email đã cung cấp.");
 
         var result = _mapper.Map<AppointmentDto>(appointment);
         await EnrichAppointmentDtoAsync(result, appointment, ct);
         return ApiResponse<AppointmentDto>.SuccessResponse(result);
+    }
+
+    public async Task<ApiResponse> ResendConfirmationEmailAsync(ResendConfirmationDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return ApiResponse.ErrorResponse("Vui lòng nhập đầy đủ Mã đặt lịch và Email.");
+
+        var cleanCode = dto.BookingCode.Trim();
+        var cleanEmail = dto.Email.Trim();
+
+        var key = $"{cleanCode.ToUpperInvariant()}_{cleanEmail.ToLowerInvariant()}";
+
+        if (_lastResendTimes.TryGetValue(key, out var lastSent))
+        {
+            var elapsed = DateTime.UtcNow - lastSent;
+            if (elapsed < TimeSpan.FromSeconds(60))
+            {
+                var remainSeconds = 60 - (int)elapsed.TotalSeconds;
+                return ApiResponse.ErrorResponse($"Bạn thao tác quá nhanh. Vui lòng đợi {remainSeconds} giây trước khi gửi lại email.");
+            }
+        }
+
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var patientUserDict = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u.Email);
+        var userNameDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
+
+        var appointment = allAppts.FirstOrDefault(a =>
+            a.BookingCode.Equals(cleanCode, StringComparison.OrdinalIgnoreCase) &&
+            !a.IsDeleted &&
+            ((!string.IsNullOrEmpty(a.GuestEmail) && a.GuestEmail.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase)) ||
+             (a.PatientId.HasValue && patientUserDict.TryGetValue(a.PatientId.Value, out var uId) &&
+              userDict.TryGetValue(uId, out var pEmail) && pEmail.Equals(cleanEmail, StringComparison.OrdinalIgnoreCase))));
+
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Không tìm thấy thông tin lịch hẹn phù hợp với Mã đặt lịch và Email đã cung cấp.");
+
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doc = allDoctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+        var docUser = doc != null ? allUsers.FirstOrDefault(u => u.Id == doc.UserId) : null;
+
+        if (appointment.Status == AppointmentStatus.AwaitingGuestConfirmation &&
+            !appointment.PatientId.HasValue &&
+            !string.IsNullOrWhiteSpace(appointment.GuestEmail) &&
+            slot != null)
+        {
+            if (slot.SlotDate.ToDateTime(slot.StartTime) <= DateTime.UtcNow.AddDays(1))
+                return ApiResponse.ErrorResponse("This booking can no longer be confirmed because it is within 24 hours of the appointment time.");
+
+            var confirmationToken = CreateGuestConfirmationToken();
+            appointment.GuestConfirmationTokenHash = HashGuestConfirmationToken(confirmationToken);
+            appointment.GuestConfirmationLastSentAt = DateTime.UtcNow;
+            appointment.GuestConfirmationSendCount++;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            _apptRepo.Update(appointment);
+            await _uow.SaveChangesAsync(ct);
+
+            await SendGuestConfirmationEmailAsync(appointment, slot, docUser?.FullName ?? "your doctor", confirmationToken, ct);
+            _lastResendTimes[key] = DateTime.UtcNow;
+            return ApiResponse.SuccessResponse("A new appointment confirmation link has been sent to your email.");
+        }
+
+        var patientName = appointment.GuestName;
+        if (string.IsNullOrEmpty(patientName) && appointment.PatientId.HasValue && patientUserDict.TryGetValue(appointment.PatientId.Value, out var pUserId2))
+        {
+            userNameDict.TryGetValue(pUserId2, out patientName);
+        }
+        patientName ??= "Bệnh nhân";
+
+        var dateStr = slot != null ? slot.SlotDate.ToString("dd/MM/yyyy") : (appointment.AppointmentDate.HasValue ? appointment.AppointmentDate.Value.ToString("dd/MM/yyyy") : "");
+        var timeStr = slot != null ? $"{slot.StartTime:HH:mm} - {slot.EndTime:HH:mm}" : (appointment.AppointmentDate.HasValue ? appointment.AppointmentDate.Value.ToString("HH:mm") : "");
+        var docNameStr = docUser != null ? $"BS. {docUser.FullName}" : "Bác sĩ chuyên khoa";
+        var statusText = appointment.Status switch
+        {
+            AppointmentStatus.AwaitingGuestConfirmation => "Waiting for guest email confirmation",
+            AppointmentStatus.Pending => "Chờ xác nhận (Pending)",
+            AppointmentStatus.Approved => "Đã xác nhận (Approved)",
+            AppointmentStatus.Completed => "Đã hoàn thành (Completed)",
+            AppointmentStatus.Cancelled => "Đã hủy (Cancelled)",
+            AppointmentStatus.Rejected => "Đã từ chối (Rejected)",
+            _ => appointment.Status.ToString()
+        };
+        var trackUrl = $"http://localhost:5044/Appointment/Track?code={appointment.BookingCode}&email={Uri.EscapeDataString(cleanEmail)}";
+
+        await _emailService.SendAppointmentBookingConfirmationEmailAsync(
+            cleanEmail,
+            patientName,
+            docNameStr,
+            appointment.BookingCode,
+            dateStr,
+            timeStr,
+            "Tư vấn Trực tuyến (Online)",
+            statusText,
+            trackUrl,
+            ct);
+
+        _lastResendTimes[key] = DateTime.UtcNow;
+
+        return ApiResponse.SuccessResponse("Thông tin lịch hẹn đã được gửi lại thành công tới email của bạn.");
+    }
+
+    public async Task<ApiResponse> ConfirmGuestAppointmentAsync(ConfirmGuestAppointmentDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Token) || dto.Token.Trim().Length < 32)
+            return ApiResponse.ErrorResponse("The confirmation link is invalid.");
+
+        var tokenHash = HashGuestConfirmationToken(dto.Token.Trim());
+        var appointments = await _apptRepo.GetAllAsync(ct);
+        var appointment = appointments.FirstOrDefault(a => !a.IsDeleted &&
+            a.Status == AppointmentStatus.AwaitingGuestConfirmation &&
+            a.GuestConfirmationTokenHash == tokenHash);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("This confirmation link is invalid, expired, or has already been used.");
+
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (slot == null || slot.SlotDate.ToDateTime(slot.StartTime) <= DateTime.UtcNow.AddDays(1))
+            return ApiResponse.ErrorResponse("This booking can no longer be confirmed because it is within 24 hours of the appointment time.");
+
+        appointment.Status = AppointmentStatus.Pending;
+        appointment.GuestConfirmedAt = DateTime.UtcNow;
+        appointment.GuestConfirmationTokenHash = null;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        _apptRepo.Update(appointment);
+        await _historyRepo.AddAsync(new AppointmentHistory
+        {
+            AppointmentId = appointment.Id,
+            PreviousStatus = AppointmentStatus.AwaitingGuestConfirmation,
+            NewStatus = AppointmentStatus.Pending,
+            Reason = "Guest confirmed booking by email",
+            Appointment = appointment
+        }, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        var doctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = doctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+        if (doctor != null)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(doctor.UserId, "Guest booking confirmed",
+                    $"{appointment.GuestName ?? "A guest"} confirmed booking {appointment.BookingCode}. The appointment is ready for your review.",
+                    NotificationType.Appointment, appointment.Id, "Appointment", ct);
+            }
+            catch { }
+        }
+        return ApiResponse.SuccessResponse("Your appointment has been confirmed and is awaiting doctor approval.");
     }
 
     public async Task<ApiResponse> CancelAppointmentAsync(Guid appointmentId, Guid userId, CancelAppointmentDto dto, CancellationToken ct = default)
@@ -888,6 +1147,7 @@ public class AppointmentService : IAppointmentService
         }
 
         _apptRepo.Update(appointment);
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Cancelled, ct);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
             AppointmentId = appointmentId,
@@ -958,7 +1218,75 @@ public class AppointmentService : IAppointmentService
 
     public async Task<ApiResponse> RescheduleAppointmentAsync(Guid appointmentId, Guid userId, RescheduleAppointmentDto dto, CancellationToken ct = default)
     {
-        return await RequestRescheduleAsync(appointmentId, userId, dto, ct);
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Appointment not found");
+
+        if (appointment.Status != AppointmentStatus.Approved && appointment.Status != AppointmentStatus.Pending)
+            return ApiResponse.ErrorResponse("Only approved appointments can be rescheduled.");
+
+        var currentSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (currentSlot != null)
+        {
+            var slotStartDateTime = currentSlot.SlotDate.ToDateTime(currentSlot.StartTime);
+            if (slotStartDateTime < DateTime.UtcNow)
+            {
+                return ApiResponse.ErrorResponse("Cannot reschedule an appointment in the past.");
+            }
+            if ((slotStartDateTime - DateTime.UtcNow).TotalHours < 24)
+            {
+                return ApiResponse.ErrorResponse("Reschedule requests must be made at least 24 hours prior to appointment start time.");
+            }
+        }
+
+        var newSlot = await _slotRepo.GetByIdAsync(dto.NewSlotId, ct);
+        if (newSlot == null)
+            return ApiResponse.ErrorResponse("The selected time slot does not exist.");
+
+        var newSlotStartDateTime = newSlot.SlotDate.ToDateTime(newSlot.StartTime);
+        if (newSlotStartDateTime < DateTime.UtcNow)
+        {
+            return ApiResponse.ErrorResponse("Cannot reschedule to a slot in the past.");
+        }
+
+        if (newSlot.Status != AppointmentSlotStatus.Available)
+            return ApiResponse.ErrorResponse("The selected time slot is not available.");
+
+        // Release old slot
+        if (currentSlot != null)
+        {
+            currentSlot.CurrentBookings = Math.Max(0, currentSlot.CurrentBookings - 1);
+            if (currentSlot.CurrentBookings < currentSlot.MaxPatients)
+                currentSlot.Status = AppointmentSlotStatus.Available;
+            _slotRepo.Update(currentSlot);
+        }
+
+        // Occupy new slot
+        newSlot.CurrentBookings++;
+        if (newSlot.CurrentBookings >= newSlot.MaxPatients)
+            newSlot.Status = AppointmentSlotStatus.Booked;
+        _slotRepo.Update(newSlot);
+
+        // Update appointment
+        appointment.AppointmentSlotId = dto.NewSlotId;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        _apptRepo.Update(appointment);
+
+        // Sync linked treatment session if any exists
+        if (_sessionRepo != null)
+        {
+            var allSessions = await _sessionRepo.GetAllAsync(ct);
+            var linkedSession = allSessions.FirstOrDefault(s => s.AppointmentId == appointmentId && !s.IsDeleted);
+            if (linkedSession != null)
+            {
+                linkedSession.PlannedStartTime = newSlot.SlotDate.ToDateTime(newSlot.StartTime);
+                linkedSession.PlannedEndTime = newSlot.SlotDate.ToDateTime(newSlot.EndTime);
+                _sessionRepo.Update(linkedSession);
+            }
+        }
+
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Appointment rescheduled successfully");
     }
 
     public async Task<ApiResponse> RequestRescheduleAsync(Guid appointmentId, Guid patientUserId, RescheduleAppointmentDto dto, CancellationToken ct = default)
@@ -982,6 +1310,10 @@ public class AppointmentService : IAppointmentService
         if (currentSlot != null)
         {
             var slotStartDateTime = currentSlot.SlotDate.ToDateTime(currentSlot.StartTime);
+            if (slotStartDateTime < DateTime.UtcNow)
+            {
+                return ApiResponse.ErrorResponse("Cannot reschedule an appointment in the past.");
+            }
             if ((slotStartDateTime - DateTime.UtcNow).TotalHours < 24)
             {
                 return ApiResponse.ErrorResponse("Reschedule requests must be made at least 24 hours prior to appointment start time.");
@@ -993,7 +1325,7 @@ public class AppointmentService : IAppointmentService
             return ApiResponse.ErrorResponse("The selected time slot does not exist.");
 
         if (newSlot.Status != AppointmentSlotStatus.Available)
-            return ApiResponse.ErrorResponse("The selected time slot is no longer available.");
+            return ApiResponse.ErrorResponse("The selected time slot is not available.");
 
         if (newSlot.DoctorProfileId != appointment.DoctorId)
             return ApiResponse.ErrorResponse("The selected time slot belongs to a different doctor.");
@@ -1089,6 +1421,7 @@ public class AppointmentService : IAppointmentService
         appointment.UpdatedAt = DateTime.UtcNow;
 
         _apptRepo.Update(appointment);
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Scheduled, ct);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
             AppointmentId = appointmentId,
@@ -1297,6 +1630,7 @@ public class AppointmentService : IAppointmentService
         appointment.ApprovedAt = DateTime.UtcNow;
         appointment.UpdatedAt = DateTime.UtcNow;
         _apptRepo.Update(appointment);
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Scheduled, ct);
 
         await _historyRepo.AddAsync(new AppointmentHistory
         {
@@ -1380,6 +1714,7 @@ public class AppointmentService : IAppointmentService
         appointment.RejectionReason = dto.Reason;
         appointment.UpdatedAt = DateTime.UtcNow;
         _apptRepo.Update(appointment);
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Cancelled, ct);
 
         // Release the slot
         var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
@@ -1484,15 +1819,41 @@ public class AppointmentService : IAppointmentService
             return ApiResponse.ErrorResponse("Please create a consultation note before completing this appointment.");
 
         var prevStatus = appointment.Status;
-        appointment.Status = AppointmentStatus.Completed;
-        appointment.CompletedAt = DateTime.UtcNow;
+        if (!appointment.PatientId.HasValue)
+            return ApiResponse.ErrorResponse("Guest appointments cannot use patient completion confirmation.");
+        if (_completionConfirmationRepo == null)
+            return ApiResponse.ErrorResponse("Completion confirmation service is unavailable.");
+
+        var allPatientsForConfirmation = await _patientRepo.GetAllAsync(ct);
+        var patientForConfirmation = allPatientsForConfirmation.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+        if (patientForConfirmation == null)
+            return ApiResponse.ErrorResponse("Patient profile not found.");
+
+        var pendingConfirmations = await _completionConfirmationRepo.GetAllAsync(ct);
+        if (pendingConfirmations.Any(c => c.AppointmentId == appointmentId && c.Status == AppointmentCompletionConfirmationStatus.Pending && !c.IsDeleted))
+            return ApiResponse.ErrorResponse("The patient has already been asked to confirm this appointment.");
+
+        appointment.Status = AppointmentStatus.AwaitingPatientConfirmation;
         appointment.UpdatedAt = DateTime.UtcNow;
         _apptRepo.Update(appointment);
+
+        var now = DateTime.UtcNow;
+        await _completionConfirmationRepo.AddAsync(new AppointmentCompletionConfirmation
+        {
+            AppointmentId = appointmentId,
+            DoctorUserId = doctorUserId,
+            PatientUserId = patientForConfirmation.UserId,
+            RequestedAt = now,
+            ReminderDueAt = now.AddDays(1),
+            EscalationDueAt = now.AddDays(7),
+            DoctorNote = "Doctor requested completion confirmation.",
+            CreatedBy = doctorUserId
+        }, ct);
 
         var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
         if (slot != null)
         {
-            slot.Status = AppointmentSlotStatus.Completed;
+            slot.Status = AppointmentSlotStatus.Booked;
             _slotRepo.Update(slot);
         }
 
@@ -1500,14 +1861,14 @@ public class AppointmentService : IAppointmentService
         {
             AppointmentId = appointmentId,
             PreviousStatus = prevStatus,
-            NewStatus = AppointmentStatus.Completed,
-            Reason = "Completed by doctor",
+            NewStatus = AppointmentStatus.AwaitingPatientConfirmation,
+            Reason = "Completion requested from patient",
             Appointment = appointment
         }, ct);
 
         await _uow.SaveChangesAsync(ct);
 
-        // Notify patient about completion + send email
+        // Notify the patient that completion is awaiting their confirmation.
         try
         {
             if (appointment.PatientId.HasValue)
@@ -1522,9 +1883,9 @@ public class AppointmentService : IAppointmentService
                         pat.UserId,
                         "🎉 Consultation Completed",
                         $"Your consultation with Dr. {doctorUser?.FullName ?? "your doctor"} has been completed. Please check your consultation records.",
-                        NotificationType.Appointment,
+                        NotificationType.ConsultationNote,
                         appointmentId,
-                        "Appointment",
+                        "AppointmentCompletionConfirmation",
                         ct);
 
                     // Send completion email
@@ -1542,7 +1903,88 @@ public class AppointmentService : IAppointmentService
         }
         catch { }
 
-        return ApiResponse.SuccessResponse("Appointment completed");
+        return ApiResponse.SuccessResponse("Completion request sent to the patient.");
+    }
+
+    public async Task<ApiResponse> ConfirmCompletionAsync(Guid appointmentId, Guid patientUserId, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null || !appointment.PatientId.HasValue)
+            return ApiResponse.ErrorResponse("Appointment not found.");
+        if (_completionConfirmationRepo == null)
+            return ApiResponse.ErrorResponse("Completion confirmation service is unavailable.");
+        var patients = await _patientRepo.GetAllAsync(ct);
+        if (patients.All(p => p.Id != appointment.PatientId.Value || p.UserId != patientUserId))
+            return ApiResponse.ErrorResponse("Not authorized.");
+        var confirmations = await _completionConfirmationRepo.GetAllAsync(ct);
+        var confirmation = confirmations.FirstOrDefault(c => c.AppointmentId == appointmentId && c.PatientUserId == patientUserId && c.Status == AppointmentCompletionConfirmationStatus.Pending && !c.IsDeleted);
+        if (confirmation == null) return ApiResponse.ErrorResponse("No pending completion confirmation was found.");
+
+        var prevStatus = appointment.Status;
+        appointment.Status = AppointmentStatus.Completed;
+        appointment.CompletedAt = DateTime.UtcNow;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        confirmation.Status = AppointmentCompletionConfirmationStatus.Confirmed;
+        confirmation.ConfirmedAt = DateTime.UtcNow;
+        confirmation.UpdatedAt = DateTime.UtcNow;
+        _apptRepo.Update(appointment);
+        _completionConfirmationRepo.Update(confirmation);
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (slot != null) { slot.Status = AppointmentSlotStatus.Completed; _slotRepo.Update(slot); }
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Completed, ct);
+        await _historyRepo.AddAsync(new AppointmentHistory { AppointmentId = appointmentId, PreviousStatus = prevStatus, NewStatus = AppointmentStatus.Completed, Reason = "Confirmed by patient", Appointment = appointment }, ct);
+        await _uow.SaveChangesAsync(ct);
+        if (appointment.TreatmentCaseId.HasValue && _treatmentCaseService != null)
+            await _treatmentCaseService.RefreshProgressAsync(appointment.TreatmentCaseId.Value, ct);
+        return ApiResponse.SuccessResponse("Appointment completion confirmed.");
+    }
+
+    private static string CreateGuestConfirmationToken() => Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+    private static string HashGuestConfirmationToken(string token) => Convert.ToHexString(
+        System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
+
+    private async Task SendGuestConfirmationEmailAsync(Appointment appointment, AppointmentSlot slot, string doctorName, string token, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(appointment.GuestEmail)) return;
+        var confirmUrl = $"http://localhost:5044/Appointment/GuestConfirm?token={Uri.EscapeDataString(token)}";
+        var body = $"<h2>Confirm your appointment</h2>" +
+            $"<p>Hello {System.Net.WebUtility.HtmlEncode(appointment.GuestName ?? "Guest")}, please confirm your appointment with {System.Net.WebUtility.HtmlEncode(doctorName)}.</p>" +
+            $"<p><strong>Booking code:</strong> {System.Net.WebUtility.HtmlEncode(appointment.BookingCode)}</p>" +
+            $"<p><strong>Time:</strong> {slot.SlotDate:dd/MM/yyyy} {slot.StartTime:HH\\:mm} - {slot.EndTime:HH\\:mm}</p>" +
+            $"<p><a href='{confirmUrl}'>Confirm appointment</a></p>" +
+            "<p>This request is cancelled automatically if it is not confirmed at least 24 hours before the appointment.</p>";
+        await _emailService.SendEmailAsync(appointment.GuestEmail, "OPCBS - Confirm your appointment", body, ct);
+    }
+
+    public async Task<ApiResponse> MarkPatientNoShowAsync(Guid appointmentId, Guid doctorUserId, string? reason = null, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null || !appointment.PatientId.HasValue) return ApiResponse.ErrorResponse("Appointment not found.");
+        var doctors = await _doctorRepo.GetAllAsync(ct);
+        if (doctors.All(d => d.UserId != doctorUserId || d.Id != appointment.DoctorId)) return ApiResponse.ErrorResponse("Not authorized.");
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (slot == null || slot.SlotDate.ToDateTime(slot.EndTime) > DateTime.UtcNow) return ApiResponse.ErrorResponse("A no-show can only be recorded after the appointment has ended.");
+        if (appointment.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.NoShow) return ApiResponse.ErrorResponse("This appointment cannot be marked as no-show.");
+        var prevStatus = appointment.Status;
+        appointment.Status = AppointmentStatus.NoShow;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        _apptRepo.Update(appointment);
+        slot.Status = AppointmentSlotStatus.Completed;
+        _slotRepo.Update(slot);
+        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.NoShow, ct);
+        await _historyRepo.AddAsync(new AppointmentHistory { AppointmentId = appointmentId, PreviousStatus = prevStatus, NewStatus = AppointmentStatus.NoShow, Reason = string.IsNullOrWhiteSpace(reason) ? "Patient did not attend" : reason.Trim(), Appointment = appointment }, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        var appointments = await _apptRepo.GetAllAsync(ct);
+        var cutoff = DateTime.UtcNow.AddDays(-90);
+        var noShowCount = appointments.Count(a => !a.IsDeleted && a.PatientId == appointment.PatientId && a.Status == AppointmentStatus.NoShow && a.UpdatedAt >= cutoff);
+        if (noShowCount >= 3)
+        {
+            var patient = (await _patientRepo.GetAllAsync(ct)).FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+            if (patient != null && _violationReports != null) await _violationReports.CreateSystemNoShowReportAsync(patient.UserId, doctorUserId, appointment.Id, appointment.TreatmentCaseId, ct);
+        }
+        return ApiResponse.SuccessResponse(noShowCount >= 3 ? "No-show recorded and sent to Customer Support for review." : "No-show recorded.");
     }
 
     public async Task<ApiResponse<int>> GetVisitCountAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default)
@@ -1821,6 +2263,9 @@ public class ScheduleService : IScheduleService
     private readonly IRepository<AppointmentHistory>? _historyRepo;
     private readonly IRepository<PatientProfile>? _patientRepo;
     private readonly INotificationService? _notifService;
+    private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
+    private readonly IRepository<DoctorSubscription>? _subscriptionRepo;
+    private readonly IRepository<ServicePackage>? _servicePackageRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -1838,7 +2283,10 @@ public class ScheduleService : IScheduleService
         IRepository<TreatmentSession>? sessionRepo = null,
         IRepository<AppointmentHistory>? historyRepo = null,
         IRepository<PatientProfile>? patientRepo = null,
-        INotificationService? notifService = null)
+        INotificationService? notifService = null,
+        IFavoriteDoctorNotificationService? favoriteNotificationService = null,
+        IRepository<DoctorSubscription>? subscriptionRepo = null,
+        IRepository<ServicePackage>? servicePackageRepo = null)
     {
         _scheduleRepo = scheduleRepo;
         _slotRepo = slotRepo;
@@ -1854,6 +2302,30 @@ public class ScheduleService : IScheduleService
         _historyRepo = historyRepo;
         _patientRepo = patientRepo;
         _notifService = notifService;
+        _favoriteNotificationService = favoriteNotificationService;
+        _subscriptionRepo = subscriptionRepo;
+        _servicePackageRepo = servicePackageRepo;
+    }
+
+    private async Task<int?> GetDailySlotCapacityAsync(Guid doctorProfileId, CancellationToken ct)
+    {
+        if (_subscriptionRepo == null || _servicePackageRepo == null)
+            return null;
+
+        var now = DateTime.UtcNow;
+        var activeSubscription = (await _subscriptionRepo.GetAllAsync(ct))
+            .Where(s => s.DoctorProfileId == doctorProfileId
+                     && s.Status == SubscriptionStatus.Active
+                     && s.StartDate <= now
+                     && s.ExpirationDate > now)
+            .OrderByDescending(s => s.StartDate)
+            .FirstOrDefault();
+
+        if (activeSubscription == null)
+            return null;
+
+        var servicePackage = await _servicePackageRepo.GetByIdAsync(activeSubscription.ServicePackageId, ct);
+        return servicePackage?.MaxDailySlotsCapacity;
     }
 
     /// <summary>
@@ -1898,6 +2370,7 @@ public class ScheduleService : IScheduleService
             .Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate >= today && s.Status != AppointmentSlotStatus.Available)
             .ToHashSet();
         var existingKeys = new HashSet<string>(remainingSlots.Select(s => $"{s.SlotDate}|{s.StartTime}"));
+        var dailySlotCapacity = await GetDailySlotCapacityAsync(doctor.Id, ct);
 
         // Load days off
         var allDaysOff = await _dayOffRepo.GetAllAsync(ct);
@@ -1920,8 +2393,13 @@ public class ScheduleService : IScheduleService
 
             // Generate slots for this day
             var currentTime = schedule.StartTime;
+            var slotsAlreadyScheduled = remainingSlots.Count(s => s.SlotDate == date);
+            var slotsGeneratedForDay = 0;
             while (currentTime.AddMinutes(slotDurationMinutes) <= schedule.EndTime)
             {
+                if (dailySlotCapacity.HasValue && slotsAlreadyScheduled + slotsGeneratedForDay >= dailySlotCapacity.Value)
+                    break;
+
                 var slotEnd = currentTime.AddMinutes(slotDurationMinutes);
                 var key = $"{date}|{currentTime}";
 
@@ -1937,6 +2415,7 @@ public class ScheduleService : IScheduleService
                         DoctorProfile = doctor
                     });
                     existingKeys.Add(key);
+                    slotsGeneratedForDay++;
                 }
                 currentTime = slotEnd;
             }
@@ -2234,6 +2713,13 @@ public class ScheduleService : IScheduleService
         // Check for existing slot overlap for same doctor
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var existingSlots = allSlots.Where(s => s.DoctorProfileId == doctor.Id && !s.IsDeleted && s.SlotDate == slotDate).ToList();
+
+        var dailySlotCapacity = await GetDailySlotCapacityAsync(doctor.Id, ct);
+        if (dailySlotCapacity.HasValue && existingSlots.Count >= dailySlotCapacity.Value)
+        {
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse(
+                $"Your active service package allows up to {dailySlotCapacity.Value} slot(s) per day.");
+        }
         
         foreach (var existing in existingSlots)
         {
@@ -2271,6 +2757,28 @@ public class ScheduleService : IScheduleService
             MaxPatients = slot.MaxPatients,
             CurrentBookings = slot.CurrentBookings
         };
+
+        if (_favoriteNotificationService != null)
+        {
+            try
+            {
+                var doctorName = (await _userRepo.GetAllAsync(ct))
+                    .FirstOrDefault(u => u.Id == doctor.UserId)?.FullName ?? "your favorite doctor";
+                await _favoriteNotificationService.NotifyFollowersAsync(
+                    doctor.Id,
+                    doctor.UserId,
+                    doctorName,
+                    $"New availability from Dr. {doctorName}",
+                    $"Dr. {doctorName} opened a consultation slot on {slot.SlotDate:dd/MM/yyyy} from {slot.StartTime:HH\\:mm} to {slot.EndTime:HH\\:mm}.",
+                    doctor.Id,
+                    "FavoriteDoctor",
+                    ct);
+            }
+            catch
+            {
+                // Slot creation remains successful even if follower notification delivery is unavailable.
+            }
+        }
 
         return ApiResponse<AppointmentSlotDto>.SuccessResponse(returnDto, "Slot created successfully");
     }
@@ -2915,6 +3423,7 @@ public class ScheduleService : IScheduleService
         var weeks = dto.WeeksToApply > 0 ? dto.WeeksToApply : 4;
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var doctorSlots = allSlots.Where(s => (s.DoctorProfileId == doctor.Id || s.DoctorProfileId == doctor.UserId) && !s.IsDeleted).ToList();
+        var dailySlotCapacity = await GetDailySlotCapacityAsync(doctor.Id, ct);
         var allDaysOff = await _dayOffRepo.GetAllAsync(ct);
         var daysOff = allDaysOff.Where(d => (d.DoctorProfileId == doctor.Id || d.DoctorProfileId == doctor.UserId) && !d.IsDeleted).ToList();
 
@@ -2939,6 +3448,7 @@ public class ScheduleService : IScheduleService
                 }
 
                 var dateSlots = doctorSlots.Where(s => s.SlotDate == currDate).ToList();
+                var previewSlotsForDay = 0;
 
                 foreach (var range in dto.TimeRanges)
                 {
@@ -2948,6 +3458,10 @@ public class ScheduleService : IScheduleService
                     var currentTime = rangeStart;
                     while (currentTime.AddMinutes(dto.SlotDurationMinutes) <= rangeEnd)
                     {
+                        var slotsForDay = dateSlots.Count + previewSlotsForDay;
+                        if (dailySlotCapacity.HasValue && slotsForDay >= dailySlotCapacity.Value)
+                            break;
+
                         var slotEnd = currentTime.AddMinutes(dto.SlotDurationMinutes);
                         if (currDate.ToDateTime(currentTime) <= DateTime.Now)
                         {
@@ -2962,6 +3476,7 @@ public class ScheduleService : IScheduleService
                         else
                         {
                             expectedSlotsCount++;
+                            previewSlotsForDay++;
                         }
                         currentTime = slotEnd;
                     }
@@ -3013,6 +3528,7 @@ public class ScheduleService : IScheduleService
         var weeks = dto.WeeksToApply > 0 ? dto.WeeksToApply : 4;
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var doctorSlots = allSlots.Where(s => (s.DoctorProfileId == doctor.Id || s.DoctorProfileId == doctor.UserId) && !s.IsDeleted).ToList();
+        var dailySlotCapacity = await GetDailySlotCapacityAsync(doctor.Id, ct);
         var allDaysOff = await _dayOffRepo.GetAllAsync(ct);
         var daysOff = allDaysOff.Where(d => (d.DoctorProfileId == doctor.Id || d.DoctorProfileId == doctor.UserId) && !d.IsDeleted).ToList();
 
@@ -3039,6 +3555,10 @@ public class ScheduleService : IScheduleService
                     var currentTime = rangeStart;
                     while (currentTime.AddMinutes(dto.SlotDurationMinutes) <= rangeEnd)
                     {
+                        var slotsForDay = dateSlots.Count + newSlots.Count(s => s.SlotDate == currDate);
+                        if (dailySlotCapacity.HasValue && slotsForDay >= dailySlotCapacity.Value)
+                            break;
+
                         var slotEnd = currentTime.AddMinutes(dto.SlotDurationMinutes);
                         if (currDate.ToDateTime(currentTime) <= DateTime.Now)
                         {
@@ -3077,6 +3597,28 @@ public class ScheduleService : IScheduleService
         {
             await _slotRepo.AddRangeAsync(newSlots, ct);
             await _uow.SaveChangesAsync(ct);
+
+            if (_favoriteNotificationService != null)
+            {
+                try
+                {
+                    var doctorName = (await _userRepo.GetAllAsync(ct))
+                        .FirstOrDefault(u => u.Id == doctor.UserId)?.FullName ?? "your favorite doctor";
+                    await _favoriteNotificationService.NotifyFollowersAsync(
+                        doctor.Id,
+                        doctor.UserId,
+                        doctorName,
+                        $"Schedule updated by Dr. {doctorName}",
+                        $"Dr. {doctorName} opened {newSlots.Count} new consultation slot(s).",
+                        doctor.Id,
+                        "FavoriteDoctor",
+                        ct);
+                }
+                catch
+                {
+                    // Weekly schedule generation remains successful if notifications cannot be delivered.
+                }
+            }
         }
 
         return ApiResponse<int>.SuccessResponse(newSlots.Count, $"Generated {newSlots.Count} new slot(s)");

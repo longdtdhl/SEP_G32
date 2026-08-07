@@ -1,50 +1,63 @@
 @page
 @model OPCBS.Web.Pages.Doctor.TreatmentCases.Sessions.CreateModel
 @{
-    ViewData["Title"] = "Add Session";
+    ViewData["Title"] = "Add Custom Session";
     Layout = "_DashboardLayout";
 }
 
-<div class="container-fluid py-3" style="max-width: 700px;">
-    <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="text-decoration-none text-muted small d-inline-block mb-2">
-        <i class="bi bi-arrow-left me-1"></i>Back to Sessions
+<style>
+    .tc-create-page { max-width: 1120px; margin: 0 auto; }
+    .tc-create-page .form-label { font-size: .9rem; margin-bottom: .45rem; }
+    .tc-create-page .form-control { min-height: 46px; font-size: .95rem; }
+    .tc-create-page textarea.form-control { min-height: 140px; }
+</style>
+<div class="container-fluid py-3 tc-create-page">
+    <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="text-decoration-none text-muted fs-7 d-inline-block mb-2">
+        <i class="bi bi-arrow-left me-1"></i> Back to Sessions
     </a>
-    <h4 class="fw-bold mb-1">Add New Session</h4>
-    <p class="text-muted small mb-3">Manually add a session to this treatment case.</p>
+    <h1 class="fs-3 fw-bold text-dark mb-1">
+        <i class="bi bi-calendar-plus text-teal me-2" style="color:#0d9488;"></i> Add Custom Treatment Session
+    </h1>
+    <p class="text-muted mb-4">Add a planned session. Schedule it from the case calendar to create the linked appointment.</p>
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger rounded-3 mb-3"><i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage</div>
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 
-    <div class="card border-0 shadow-sm rounded-3 p-4">
+    <div class="bg-white border rounded-3 p-4 p-lg-5 shadow-sm">
         <form method="post" asp-page-handler="Create">
             <input type="hidden" name="caseId" value="@Model.CaseId" />
 
             <div class="mb-3">
-                <label class="form-label small fw-bold">Session Title</label>
-                <input type="text" name="title" class="form-control" placeholder="e.g. Initial Assessment" />
+                <label class="form-label fw-bold text-dark">Session Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Mid-Treatment Evaluation & Goal Review" required />
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold">Description / Agenda</label>
-                <textarea name="description" class="form-control" rows="3" placeholder="What will be covered in this session..."></textarea>
+                <label class="form-label fw-bold text-dark">Description & Agenda</label>
+                <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..."></textarea>
             </div>
 
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <label class="form-label small fw-bold">Planned Start Time</label>
+                    <label class="form-label fw-bold text-dark">Planned Start Time</label>
                     <input type="datetime-local" name="plannedStartTime" class="form-control" />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label small fw-bold">Planned End Time</label>
+                    <label class="form-label fw-bold text-dark">Planned End Time</label>
                     <input type="datetime-local" name="plannedEndTime" class="form-control" />
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between">
-                <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Add Session</button>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                    <i class="bi bi-plus-lg"></i> Add Session to Case
+                </button>
             </div>
         </form>
     </div>

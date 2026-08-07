@@ -24,10 +24,12 @@ public class DetailsModel : PageModel
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
     public string ActiveTab { get; set; } = "overview";
+    public string ActivitySubTab { get; set; } = "homework";
 
-    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
+    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview", string? activityTab = "homework")
     {
         ActiveTab = tab ?? "overview";
+        ActivitySubTab = activityTab ?? "homework";
         var (caseData, error) = await _api.GetByIdAsync(id);
         if (error != null || caseData == null)
         {
@@ -57,9 +59,10 @@ public class DetailsModel : PageModel
     }
 
     /// <summary>Helper to reload all data after a failed POST</summary>
-    private async Task ReloadDataAsync(Guid caseId, string tab)
+    private async Task ReloadDataAsync(Guid caseId, string tab, string activityTab = "homework")
     {
         ActiveTab = tab;
+        ActivitySubTab = activityTab;
         var (caseData, _) = await _api.GetByIdAsync(caseId);
         Case = caseData;
         if (caseData == null) return;
@@ -92,10 +95,10 @@ public class DetailsModel : PageModel
         if (!success)
         {
             ErrorMessage = error ?? "Failed to submit homework.";
-            await ReloadDataAsync(caseId, "homework");
+            await ReloadDataAsync(caseId, "activities", "homework");
             return Page();
         }
-        return RedirectToPage(new { id = caseId, tab = "homework" });
+        return RedirectToPage(new { id = caseId, tab = "activities", activityTab = "homework" });
     }
 
     public async Task<IActionResult> OnPostAddMoodEntryAsync(
@@ -115,9 +118,9 @@ public class DetailsModel : PageModel
         if (!success)
         {
             ErrorMessage = error ?? "Failed to save mood entry.";
-            await ReloadDataAsync(caseId, "mood");
+            await ReloadDataAsync(caseId, "activities", "mood");
             return Page();
         }
-        return RedirectToPage(new { id = caseId, tab = "mood" });
+        return RedirectToPage(new { id = caseId, tab = "activities", activityTab = "mood" });
     }
 }

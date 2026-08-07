@@ -14,8 +14,8 @@
             <div class="success-confetti"></div>
         </div>
 
-        <h1 class="success-title">Booking Successful!</h1>
-        <p class="success-subtitle">Your appointment has been recorded and is awaiting doctor confirmation.</p>
+        <h1 class="success-title">Booking Submitted!</h1>
+        <p class="success-subtitle">@(Model.IsGuest ? "Please confirm the booking from the email we sent before the doctor can review it." : "Your appointment has been recorded and is awaiting doctor confirmation.")</p>
 
         <!-- Booking Details -->
         @if (!string.IsNullOrEmpty(Model.BookingCode) || !string.IsNullOrEmpty(Model.DoctorName))
@@ -70,14 +70,21 @@
         <!-- Status Info -->
         <div class="success-status-info">
             <i class="bi bi-info-circle me-2"></i>
-            Status: <strong>Pending Confirmation</strong> — The doctor will confirm your appointment as soon as possible.
+            @if (Model.IsGuest)
+            {
+                <span>Status: <strong>Waiting for email confirmation</strong>. Confirm the link in your email to send the request to the doctor.</span>
+            }
+            else
+            {
+                <span>Status: <strong>Pending Confirmation</strong>. The doctor will confirm your appointment as soon as possible.</span>
+            }
         </div>
 
         @if (Model.IsGuest && !string.IsNullOrEmpty(Model.BookingCode))
         {
             <div class="success-guest-note">
                 <i class="bi bi-envelope-heart me-2"></i>
-                Please save your <strong>booking code</strong> to track your appointment status.
+                Please check your email to confirm the booking, and save your <strong>booking code</strong> to track its status.
             </div>
         }
 

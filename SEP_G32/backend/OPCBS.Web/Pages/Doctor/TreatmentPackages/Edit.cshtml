@@ -1,348 +1,221 @@
-@page
+@page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.EditModel
 @{
-    ViewData["Title"] = "Edit Treatment Package";
-
-    Layout = "_DashboardLayout";}
+    ViewData["Title"] = "Edit Treatment Package Template";
+    Layout = "_DashboardLayout";
+}
 
 <style>
-    .form-section { margin-bottom: 1.25rem; }
-    .form-section-title {
-        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
-        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
-        display: flex; align-items: center; gap: 8px;
+    .tp-form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
     }
-    .form-section-title i { color: var(--mb-primary); }
-    .detail-sidebar { border-radius: 16px; border: 1px solid #f1f5f9; overflow: hidden; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-    .sidebar-header {
-        padding: 1.25rem; border-bottom: 1px solid #f1f5f9;
-        font-weight: 700; font-size: 0.85rem; color: #1e293b;
-        display: flex; align-items: center; gap: 8px;
+    .tp-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafbfc;
+        border-top-left-radius: 11px;
+        border-top-right-radius: 11px;
     }
-    .sidebar-header i { color: var(--mb-primary); }
-    .sidebar-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 8px 0; font-size: 0.82rem;
+    .tp-form-body {
+        padding: 1.5rem;
     }
-    .sidebar-row .label { color: #64748b; }
-    .sidebar-row .value { font-weight: 600; color: #1e293b; }
-    .pkg-status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
-    .pkg-status-badge.active { background: #dcfce7; color: #15803d; }
-    .pkg-status-badge.created { background: #fef3c7; color: #92400e; }
-    .pkg-status-badge.completed { background: #e0e7ff; color: #3730a3; }
-    .pkg-status-badge.finished { background: #f0e7ff; color: #6d28d9; }
-    .pkg-status-badge.expired { background: #fee2e2; color: #991b1b; }
-    .pkg-status-badge.cancelled { background: #f1f5f9; color: #64748b; }
-    .metric-card {
-        background: #f8faf8; border: 1px solid #e0e7e3; border-radius: 14px; padding: 1rem;
-        text-align: center;
+    .tp-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
-    .metric-card .form-control { font-weight: 700; font-size: 1.15rem; color: var(--mb-primary); text-align: center; border-radius: 10px; }
-    .form-field { margin-bottom: 1.25rem; }
-    .form-field-label {
-        font-size: 0.83rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;
-        display: flex; align-items: center; gap: 8px;
+    .tp-section-title i {
+        color: #0d9488;
     }
-    .form-field-label i { color: var(--mb-primary); font-size: 0.95rem; }
-    .form-field .form-control, .form-field .form-select {
-        border-radius: 12px; padding: 10px 14px; border-color: #cbd5e1;
-    }
-    .form-field .form-control:focus, .form-field .form-select:focus {
-        border-color: var(--mb-primary); box-shadow: 0 0 0 3px rgba(78,139,112,0.12);
-    }
-    .metric-input-group {
-        background: #f8faf9; border: 1px solid #e0e7e3; border-radius: 14px; padding: 1rem; text-align: center;
-    }
-    .metric-input-group .form-control {
-        font-weight: 700; font-size: 1.15rem; color: var(--mb-primary); text-align: center;
-    }
-    .readonly-overlay {
-        opacity: 0.6; pointer-events: none; position: relative;
-    }
-    .readonly-overlay::after {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(255,255,255,0.3); z-index: 10; border-radius: 16px;
+    .tp-preview-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: sticky;
+        top: 80px;
     }
 </style>
 
-<!-- Page Header -->
-<div class="mb-page-header d-flex justify-content-between align-items-center">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam-fill me-2" style="color:var(--mb-primary);"></i>Edit Treatment Package
+        <a asp-page="Index" class="text-decoration-none text-muted fs-7 d-inline-block mb-1">
+            <i class="bi bi-arrow-left me-1"></i> Back to Packages & Templates
+        </a>
+        <h1 class="fs-4 fw-bold text-dark mb-0">
+            <i class="bi bi-pencil-square text-teal me-2" style="color:#0d9488;"></i> Edit Treatment Package Template
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View and edit therapy package details</p>
+        <p class="text-muted fs-7 mb-0">Update template parameters, session quantities, and clinical recommendations.</p>
     </div>
-    <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
-        <i class="bi bi-arrow-left me-1"></i>Back to Packages
-    </a>
 </div>
 
-@if (Model.Error != null)
+@if (!string.IsNullOrEmpty(Model.Error))
 {
-    <div class="alert @(Model.IsReadOnly ? "alert-warning" : "alert-danger") alert-dismissible fade show" style="border-radius:12px; border:none;">
-        <i class="bi bi-@(Model.IsReadOnly ? "lock-fill" : "exclamation-triangle-fill") me-2"></i>@Model.Error
+    <div class="alert alert-warning alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<div class="row g-4">
-    <!-- Sidebar -->
-    <div class="col-lg-4" style="position: sticky; top: 100px; align-self: flex-start;">
-        @if (Model.Package != null)
-        {
-            var pkg = Model.Package;
-            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
-            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && pkg.Status == "Active";
-            var statusClass = isFinished ? "finished" : pkg.Status switch { "Active" => "active", "Created" => "created", "Completed" => "completed", _ => "created" };
-            var statusLabel = isFinished ? "Finished" : pkg.Status switch { "Active" => "Active", "Created" => "Created", "Completed" => "Completed", "Cancelled" => "Cancelled", _ => pkg.Status };
-            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-            if (pkg.IsExpired && pkg.Status == "Active" && !isFinished) { statusClass = "expired"; statusLabel = "Expired"; }
-
-            <!-- Patient Info -->
-            <div class="detail-sidebar mb-3">
-                <div class="sidebar-header"><i class="bi bi-person-fill"></i>Patient</div>
-                <div style="padding:1.25rem; text-align:center;">
-                    @{
-                        var initial = pkg.DisplayPatientName.Substring(0, 1).ToUpper();
-                        var ccolors = new[] { "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
-                        var pcolor = ccolors[Math.Abs(pkg.DisplayPatientName.GetHashCode()) % ccolors.Length];
-                    }
-                    <div style="width:56px; height:56px; border-radius:14px; background:@(pcolor)18; color:@pcolor; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; margin:0 auto 8px;">@initial</div>
-                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">@pkg.DisplayPatientName</div>
-                    <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">@(pkg.IsTemplate ? "Template (Unassigned)" : "Assigned Patient")</div>
-                </div>
-            </div>
-
-            <!-- Progress -->
-            <div class="detail-sidebar mb-3">
-                <div class="sidebar-header"><i class="bi bi-graph-up"></i>Treatment Progress</div>
-                <div style="padding:1.25rem; text-align:center;">
-                    <div style="position:relative; width:90px; height:90px; margin:0 auto 12px;">
-                        <svg width="90" height="90" style="transform:rotate(-90deg);">
-                            <circle cx="45" cy="45" r="38" fill="none" stroke="#e2e8f0" stroke-width="6" />
-                            <circle cx="45" cy="45" r="38" fill="none" stroke="@progressColor" stroke-width="6"
-                                    stroke-dasharray="@(Math.Round(2 * Math.PI * 38))" stroke-dashoffset="@(Math.Round(2 * Math.PI * 38 * (1 - progress / 100.0)))"
-                                    stroke-linecap="round" />
-                        </svg>
-                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.2rem; font-weight:800; color:@progressColor;">@(progress)%</div>
+<form method="post" asp-route-id="@Model.PackageId">
+    <fieldset disabled="@Model.IsReadOnly">
+        <div class="row g-4">
+            <!-- Form Main Content (8 cols) -->
+            <div class="col-lg-8">
+                <!-- Section 1: Basic Information -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-info-circle-fill"></i> 1. Basic Information
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Template title and general clinical description.</p>
                     </div>
-                    <div style="font-size:0.82rem; color:#64748b;">
-                        <strong style="color:#1e293b;">@pkg.CompletedSessions</strong> / @pkg.TotalSessions sessions completed
+                    <div class="tp-form-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Template Title <span class="text-danger">*</span></label>
+                            <input asp-for="Input.Title" class="form-control" placeholder="e.g. CBT Anxiety Recovery Protocol (8 Sessions)" required />
+                            <span asp-validation-for="Input.Title" class="text-danger fs-8"></span>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-semibold text-dark fs-7">Description & Scope</label>
+                            <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Provide a summary of the clinical approach, methodology, and therapeutic scope..."></textarea>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Section 2: Therapy Structure -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-calendar2-range-fill"></i> 2. Therapy Structure & Schedule Pace
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Configure session count, validity timeframe, and recommended pace per week.</p>
+                    </div>
+                    <div class="tp-form-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Total Sessions <span class="text-danger">*</span></label>
+                                <input type="number" asp-for="Input.TotalSessions" id="inputTotalSessions" class="form-control" min="1" max="50" required onchange="updatePreview()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Sessions / Week</label>
+                                <input type="number" asp-for="Input.RecommendedSessionsPerWeek" id="inputPace" class="form-control" min="1" max="7" onchange="updatePreview()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Validity (Days)</label>
+                                <input type="number" asp-for="Input.ValidityDays" id="inputValidity" class="form-control" min="1" max="365" onchange="updatePreview()" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Clinical Guidelines & Pricing -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-journal-medical"></i> 3. Clinical Guidelines & Pricing
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Specify expected outcomes, exercises, instructions, and package fee.</p>
+                    </div>
+                    <div class="tp-form-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Target Outcomes</label>
+                            <textarea asp-for="Input.TargetOutcome" class="form-control" rows="2" placeholder="Target outcomes..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Recommended Exercises</label>
+                            <textarea asp-for="Input.RecommendedExercises" class="form-control" rows="2" placeholder="List recommended activities..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Patient Guidance & Preparation</label>
+                            <textarea asp-for="Input.Instructions" class="form-control" rows="2" placeholder="Special guidance..."></textarea>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-semibold text-dark fs-7">Package Fee (VND)</label>
+                            <div class="input-group">
+                                <input type="number" asp-for="Input.Price" id="inputPrice" class="form-control" placeholder="0" onchange="updatePreview()" />
+                                <span class="input-group-text bg-light text-muted">VND</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Buttons -->
+                @if (!Model.IsReadOnly)
+                {
+                    <div class="d-flex justify-content-end gap-2 mb-4">
+                        <a asp-page="Index" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                            <i class="bi bi-check-circle-fill"></i> Save Template Changes
+                        </button>
+                    </div>
+                }
             </div>
 
-            <!-- Package Details -->
-            <div class="detail-sidebar mb-3">
-                <div class="sidebar-header"><i class="bi bi-info-circle"></i>Package Info</div>
-                <div style="padding:1rem 1.25rem;">
-                    <div class="sidebar-row">
-                        <span class="label">Status</span>
-                        <span class="pkg-status-badge @statusClass">@statusLabel</span>
+            <!-- Sidebar Summary Preview (4 cols) -->
+            <div class="col-lg-4">
+                <div class="tp-preview-box">
+                    <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-eye text-teal" style="color:#0d9488;"></i> Template Summary
+                    </h6>
+                    <div class="mb-3 pb-3 border-bottom">
+                        <span class="badge bg-light text-dark border mb-1 fs-8">Existing Template</span>
+                        <h6 class="fw-bold text-dark mb-1" id="prevTitle">@Model.Input.Title</h6>
+                        <p class="text-muted fs-8 mb-0" id="prevType">Reusable Protocol Template</p>
                     </div>
-                    <div class="sidebar-row">
-                        <span class="label">Price</span>
-                        <span class="value" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") ₫</span>
-                    </div>
-                    <div class="sidebar-row">
-                        <span class="label">Validity</span>
-                        <span class="value">@pkg.ValidityDays days</span>
-                    </div>
-                    <div class="sidebar-row">
-                        <span class="label">Expiration</span>
-                        <span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b");">@pkg.ExpirationDate.ToString("MM/dd/yyyy")</span>
-                    </div>
-                    <div class="sidebar-row">
-                        <span class="label">Created</span>
-                        <span class="value">@pkg.CreatedAt.ToString("MM/dd/yyyy")</span>
-                    </div>
-                    @if (pkg.AssignedDate.HasValue)
-                    {
-                        <div class="sidebar-row">
-                            <span class="label">Assigned</span>
-                            <span class="value">@pkg.AssignedDate.Value.ToString("MM/dd/yyyy")</span>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-calendar-event me-1"></i> Total Sessions:</span>
+                            <strong class="text-dark" id="prevSessions">@Model.Input.TotalSessions Sessions</strong>
                         </div>
-                    }
-                    @if (pkg.AcceptedDate.HasValue)
-                    {
-                        <div class="sidebar-row">
-                            <span class="label">Accepted</span>
-                            <span class="value">@pkg.AcceptedDate.Value.ToString("MM/dd/yyyy")</span>
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-speedometer2 me-1"></i> Recommended Pace:</span>
+                            <strong class="text-dark" id="prevPace">@Model.Input.RecommendedSessionsPerWeek session / wk</strong>
                         </div>
-                    }
-                    @if (pkg.ActiveDate.HasValue)
-                    {
-                        <div class="sidebar-row">
-                            <span class="label">Activated</span>
-                            <span class="value">@pkg.ActiveDate.Value.ToString("MM/dd/yyyy")</span>
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-hourglass-split me-1"></i> Validity Period:</span>
+                            <strong class="text-dark" id="prevValidity">@Model.Input.ValidityDays Days</strong>
                         </div>
-                    }
-                    <div class="sidebar-row">
-                        <span class="label">Remaining</span>
-                        <span class="value">@pkg.RemainingSessions sessions</span>
+                        <div class="d-flex justify-content-between fs-7 mb-0">
+                            <span class="text-muted"><i class="bi bi-tag me-1"></i> Package Fee:</span>
+                            <strong class="text-teal fw-bold" style="color:#0d9488;" id="prevPrice">@Model.Input.Price.ToString("N0") VND</strong>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Timeline -->
-            <div class="detail-sidebar">
-                <div class="sidebar-header"><i class="bi bi-clock-history"></i>Timeline</div>
-                <div style="padding:1rem 1.25rem;">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:#eff6ff; color:#3b82f6; flex-shrink:0;">
-                            <i class="bi bi-plus-circle" style="font-size:0.7rem;"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:0.78rem; font-weight:600; color:#1e293b;">Package Created</div>
-                            <div style="font-size:0.68rem; color:#94a3b8;">@pkg.CreatedAt.ToString("MM/dd/yyyy HH:mm")</div>
-                        </div>
-                    </div>
-                    @if (pkg.AcceptedDate.HasValue)
-                    {
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:#dcfce7; color:#16a34a; flex-shrink:0;">
-                                <i class="bi bi-check-circle" style="font-size:0.7rem;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:0.78rem; font-weight:600; color:#1e293b;">Patient Accepted</div>
-                                <div style="font-size:0.68rem; color:#94a3b8;">@pkg.AcceptedDate.Value.ToString("MM/dd/yyyy HH:mm")</div>
-                            </div>
-                        </div>
-                    }
-                    @if (pkg.ActiveDate.HasValue)
-                    {
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:#fef3c7; color:#f59e0b; flex-shrink:0;">
-                                <i class="bi bi-lightning-charge" style="font-size:0.7rem;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:0.78rem; font-weight:600; color:#1e293b;">Activated</div>
-                                <div style="font-size:0.68rem; color:#94a3b8;">@pkg.ActiveDate.Value.ToString("MM/dd/yyyy HH:mm")</div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- Main Form -->
-    <div class="col-lg-8">
-        <div class="@(Model.IsReadOnly ? "readonly-overlay" : "")">
-        <form method="post" asp-route-id="@Model.PackageId">
-            <div class="card border-0 shadow-sm" style="border-radius:16px;">
-                <div class="card-body p-4">
-                    <!-- Package Name -->
-                    <div class="form-field">
-                        <label class="form-field-label">
-                            <i class="bi bi-tag-fill"></i>
-                            Package Name <span class="text-danger">*</span>
-                        </label>
-                        <input asp-for="Input.Title" class="form-control" placeholder="e.g. Stress Management, Anxiety Treatment..." required />
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-field">
-                        <label class="form-field-label">
-                            <i class="bi bi-card-text"></i>
-                            Package Overview &amp; Description
-                        </label>
-                        <textarea asp-for="Input.Description" class="form-control" rows="4" placeholder="Describe the therapeutic goals, methodology, and scope of this package..."></textarea>
-                        <small class="text-muted mt-1 d-block"><i class="bi bi-info-circle me-1"></i>This description will be visible to the patient</small>
-                    </div>
-
-                    <!-- Target Outcomes -->
-                    <div class="form-field">
-                        <label class="form-field-label">
-                            <i class="bi bi-trophy"></i>
-                            Target Outcomes &amp; Expectations
-                        </label>
-                        <textarea asp-for="Input.TargetOutcome" class="form-control" rows="2" placeholder="Key expected milestones and psychological improvements..."></textarea>
-                    </div>
-
-                    <!-- Recommended Exercises -->
-                    <div class="form-field">
-                        <label class="form-field-label">
-                            <i class="bi bi-journal-check"></i>
-                            Recommended Exercises &amp; Activities
-                        </label>
-                        <textarea asp-for="Input.RecommendedExercises" class="form-control" rows="2" placeholder="List key assignments or daily practices included in this package..."></textarea>
-                    </div>
-
-                    <!-- Patient Instructions -->
-                    <div class="form-field">
-                        <label class="form-field-label">
-                            <i class="bi bi-info-square"></i>
-                            Patient Guidance &amp; Instructions
-                        </label>
-                        <textarea asp-for="Input.Instructions" class="form-control" rows="2" placeholder="Special instructions on session frequency, preparation, or expectations..."></textarea>
-                    </div>
-
-                    <!-- Sessions + Validity + Price -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="metric-input-group h-100">
-                                <label class="form-field-label justify-content-center">
-                                    <i class="bi bi-calendar2-check"></i>
-                                    Total Sessions <span class="text-danger">*</span>
-                                </label>
-                                <input type="number" asp-for="Input.TotalSessions" class="form-control" min="1" required />
-                                <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Number of consultation sessions</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="metric-input-group h-100">
-                                <label class="form-field-label justify-content-center">
-                                    <i class="bi bi-hourglass-split"></i>
-                                    Validity (days)
-                                </label>
-                                <input type="number" asp-for="Input.ValidityDays" class="form-control" min="1" />
-                                <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Package validity duration</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="metric-input-group h-100">
-                                <label class="form-field-label justify-content-center">
-                                    <i class="bi bi-calendar2-week"></i>
-                                    Sessions/Week
-                                </label>
-                                <input type="number" asp-for="Input.RecommendedSessionsPerWeek" class="form-control" min="1" max="7" />
-                                <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Recommended per week</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="metric-input-group h-100">
-                                <label class="form-field-label justify-content-center">
-                                    <i class="bi bi-currency-dollar"></i>
-                                    Price (₫)
-                                </label>
-                                <input type="number" asp-for="Input.Price" class="form-control" />
-                                <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Total treatment package fee</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (!Model.IsReadOnly)
-                    {
-                        <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
-                            <a asp-page="Index" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                <i class="bi bi-check-circle-fill"></i>Update Package
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
-                            <a asp-page="Index" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">
-                                <i class="bi bi-arrow-left me-1"></i>Back to Packages
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
-        </form>
         </div>
-    </div>
-</div>
+    </fieldset>
+</form>
+
+@section Scripts {
+    <script>
+        function updatePreview() {
+            var title = document.querySelector('[name="Input.Title"]').value;
+            var sessions = document.getElementById('inputTotalSessions').value || 0;
+            var pace = document.getElementById('inputPace').value || 1;
+            var validity = document.getElementById('inputValidity').value || 90;
+            var price = parseFloat(document.getElementById('inputPrice').value || 0);
+
+            document.getElementById('prevTitle').innerText = title || "Treatment Package";
+            document.getElementById('prevSessions').innerText = sessions + " Sessions";
+            document.getElementById('prevPace').innerText = pace + " session / wk";
+            document.getElementById('prevValidity').innerText = validity + " Days";
+            document.getElementById('prevPrice').innerText = price.toLocaleString('vi-VN') + " VND";
+        }
+
+        document.querySelector('[name="Input.Title"]').addEventListener('input', updatePreview);
+    </script>
+}

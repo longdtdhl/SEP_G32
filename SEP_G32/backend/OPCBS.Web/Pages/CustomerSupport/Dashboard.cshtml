@@ -17,6 +17,9 @@
         </h1>
         <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Overview of pending practitioner verifications and content moderation queues</p>
     </div>
+    <a asp-page="ViolationReports/Index" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-weight:600;">
+        <i class="bi bi-shield-exclamation me-1"></i>Violation Report Queue
+    </a>
 </div>
 
 @if (Model.Error != null)

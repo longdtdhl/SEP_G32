@@ -640,6 +640,12 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
         return (data ?? new(), error);
     }
 
+    public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetMyDoctorCasesAsync()
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/doctor/me");
+        return (data ?? new(), error);
+    }
+
     public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId)
     {
         var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/patient/{patientUserId}");

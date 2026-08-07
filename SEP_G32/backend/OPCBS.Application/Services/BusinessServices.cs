@@ -16,9 +16,25 @@ public class BlogService : IBlogService
     private readonly IRepository<User> _userRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
 
-    public BlogService(IRepository<BlogPost> blogRepo, IRepository<BlogComment> commentRepo, IRepository<DoctorProfile> doctorRepo, IRepository<User> userRepo, IUnitOfWork uow, IMapper mapper)
-    { _blogRepo = blogRepo; _commentRepo = commentRepo; _doctorRepo = doctorRepo; _userRepo = userRepo; _uow = uow; _mapper = mapper; }
+    public BlogService(
+        IRepository<BlogPost> blogRepo,
+        IRepository<BlogComment> commentRepo,
+        IRepository<DoctorProfile> doctorRepo,
+        IRepository<User> userRepo,
+        IUnitOfWork uow,
+        IMapper mapper,
+        IFavoriteDoctorNotificationService? favoriteNotificationService = null)
+    {
+        _blogRepo = blogRepo;
+        _commentRepo = commentRepo;
+        _doctorRepo = doctorRepo;
+        _userRepo = userRepo;
+        _uow = uow;
+        _mapper = mapper;
+        _favoriteNotificationService = favoriteNotificationService;
+    }
 
     public async Task<ApiResponse<List<BlogPostDto>>> GetPublishedBlogsAsync(string? search, int page, int pageSize, CancellationToken ct)
     {
@@ -120,6 +136,33 @@ public class BlogService : IBlogService
         blog.PublishedAt = DateTime.UtcNow;
         _blogRepo.Update(blog);
         await _uow.SaveChangesAsync(ct);
+
+        if (_favoriteNotificationService != null)
+        {
+            try
+            {
+                var doctor = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == blog.DoctorId);
+                if (doctor != null)
+                {
+                    var doctorName = (await _userRepo.GetAllAsync(ct))
+                        .FirstOrDefault(u => u.Id == doctor.UserId)?.FullName ?? "your favorite doctor";
+                    await _favoriteNotificationService.NotifyFollowersAsync(
+                        doctor.Id,
+                        doctor.UserId,
+                        doctorName,
+                        $"New post from Dr. {doctorName}",
+                        $"Dr. {doctorName} published a new post: {blog.Title}",
+                        blog.Id,
+                        "BlogPost",
+                        ct);
+                }
+            }
+            catch
+            {
+                // Publishing remains successful even if notification delivery is unavailable.
+            }
+        }
+
         return ApiResponse.SuccessResponse("Blog approved and published");
     }
 
@@ -475,7 +518,7 @@ public class ConsultationNoteService : IConsultationNoteService
             }
         }
 
-        if (patientRecord == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Could not resolve or create patient record");
+        if (patientRecord == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Could not resolve or create patient record: Patient record not found");
 
         var record = new ConsultationNote
         {
@@ -1124,6 +1167,13 @@ public class ServicePackageService : IServicePackageService
 
     public async Task<ApiResponse<ServicePackageDto>> CreateAsync(CreateServicePackageDto dto, CancellationToken ct)
     {
+        if (dto.DurationDays <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Package duration must be greater than 0 days");
+        if (dto.MaxDailySlotsCapacity is <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Daily slot capacity must be greater than 0 when specified");
+        if (dto.MaxPatientCapacity is <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Patient capacity must be greater than 0 when specified");
+
         var pkg = new ServicePackage { Name = dto.Name, Description = dto.Description, DurationDays = dto.DurationDays, Price = dto.Price, MaxPatientCapacity = dto.MaxPatientCapacity, MaxDailySlotsCapacity = dto.MaxDailySlotsCapacity, IsFeatured = dto.IsFeatured };
         await _pkgRepo.AddAsync(pkg, ct);
         await _uow.SaveChangesAsync(ct);
@@ -1134,6 +1184,12 @@ public class ServicePackageService : IServicePackageService
     {
         var pkg = await _pkgRepo.GetByIdAsync(packageId, ct);
         if (pkg == null) return ApiResponse<ServicePackageDto>.ErrorResponse("Package not found");
+        if (dto.DurationDays <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Package duration must be greater than 0 days");
+        if (dto.MaxDailySlotsCapacity is <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Daily slot capacity must be greater than 0 when specified");
+        if (dto.MaxPatientCapacity is <= 0)
+            return ApiResponse<ServicePackageDto>.ErrorResponse("Patient capacity must be greater than 0 when specified");
         pkg.Name = dto.Name; pkg.Description = dto.Description; pkg.DurationDays = dto.DurationDays;
         pkg.Price = dto.Price; pkg.MaxPatientCapacity = dto.MaxPatientCapacity;
         pkg.MaxDailySlotsCapacity = dto.MaxDailySlotsCapacity; pkg.IsFeatured = dto.IsFeatured;
@@ -1371,6 +1427,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
 
     public TreatmentPackageService(
         IRepository<TreatmentPackage> packageRepo,
@@ -1380,7 +1437,8 @@ public class TreatmentPackageService : ITreatmentPackageService
         IRepository<TreatmentCase> caseRepo,
         INotificationService notificationService,
         IUnitOfWork uow,
-        IMapper mapper)
+        IMapper mapper,
+        IFavoriteDoctorNotificationService? favoriteNotificationService = null)
     {
         _packageRepo = packageRepo;
         _doctorRepo = doctorRepo;
@@ -1390,6 +1448,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         _notificationService = notificationService;
         _uow = uow;
         _mapper = mapper;
+        _favoriteNotificationService = favoriteNotificationService;
     }
 
     public async Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct)
@@ -1462,6 +1521,27 @@ public class TreatmentPackageService : ITreatmentPackageService
             }
             catch { }
         }
+        else if (_favoriteNotificationService != null)
+        {
+            try
+            {
+                var doctorName = (await _userRepo.GetAllAsync(ct))
+                    .FirstOrDefault(u => u.Id == doctor.UserId)?.FullName ?? "your favorite doctor";
+                await _favoriteNotificationService.NotifyFollowersAsync(
+                    doctor.Id,
+                    doctor.UserId,
+                    doctorName,
+                    $"New treatment program from Dr. {doctorName}",
+                    $"Dr. {doctorName} added a new treatment program: {package.Name}",
+                    doctor.Id,
+                    "FavoriteDoctor",
+                    ct);
+            }
+            catch
+            {
+                // A template is still created when follower notification delivery is unavailable.
+            }
+        }
 
         var createdDto = _mapper.Map<TreatmentPackageDto>(package);
         await EnrichNamesAsync(new List<TreatmentPackageDto> { createdDto }, ct);
@@ -1519,8 +1599,11 @@ public class TreatmentPackageService : ITreatmentPackageService
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
 
+        if (patient == null)
+            return ApiResponse<List<TreatmentPackageDto>>.ErrorResponse("Patient profile not found");
+
         var all = await _packageRepo.GetAllAsync(ct);
-        var packages = all.Where(p => !p.IsDeleted && (p.PatientId == null || (patient != null && p.PatientId == patient.Id))).ToList();
+        var packages = all.Where(p => !p.IsDeleted && p.PatientId == patient.Id).ToList();
         var total = packages.Count;
         var items = packages.OrderByDescending(p => p.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var dtos = _mapper.Map<List<TreatmentPackageDto>>(items);
@@ -1554,6 +1637,17 @@ public class TreatmentPackageService : ITreatmentPackageService
         var package = await _packageRepo.GetByIdAsync(packageId, ct);
         if (package == null)
             return ApiResponse<TreatmentPackageDto>.ErrorResponse("Treatment package not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == userId);
+        var canView = (doctor != null && package.DoctorId == doctor.Id)
+            || (patient != null && package.PatientId == patient.Id);
+
+        if (!canView)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Not authorized to view this package");
+
         var dto = _mapper.Map<TreatmentPackageDto>(package);
         await EnrichNamesAsync(new List<TreatmentPackageDto> { dto }, ct);
         return ApiResponse<TreatmentPackageDto>.SuccessResponse(dto);
@@ -1566,68 +1660,89 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
         if (patient == null)
             return ApiResponse.ErrorResponse("Patient profile not found");
 
-        package.Status = TreatmentPackageStatus.Active;
-        package.AcceptedDate ??= DateTime.UtcNow;
-        package.ActiveDate ??= DateTime.UtcNow;
-        package.UpdatedAt = DateTime.UtcNow;
-        _packageRepo.Update(package);
+        if (package.PatientId != patient.Id)
+            return ApiResponse.ErrorResponse("Not authorized to accept this package");
+
+        if (package.Status != TreatmentPackageStatus.Assigned && package.Status != TreatmentPackageStatus.Active)
+            return ApiResponse.ErrorResponse("Only assigned packages can be accepted");
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId || d.UserId == package.DoctorId);
-        var doctorUserId = doctor != null ? doctor.UserId : package.DoctorId;
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId);
+        if (doctor == null)
+            return ApiResponse.ErrorResponse("Doctor profile not found");
 
-        // Auto-create Treatment Case when package is accepted
         var allCases = await _caseRepo.GetAllAsync(ct);
         var existingCase = allCases.FirstOrDefault(c =>
             c.TreatmentPackageId == package.Id &&
-            c.DoctorId == doctorUserId &&
-            c.PatientId == patient.UserId &&
+            c.DoctorId == doctor.Id &&
+            c.PatientId == patient.Id &&
             !c.IsDeleted);
 
-        if (existingCase == null)
+        if (package.Status == TreatmentPackageStatus.Active && existingCase != null)
+            return ApiResponse.SuccessResponse("Treatment package was already accepted.");
+
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            var treatmentCase = new TreatmentCase
+            var now = DateTime.UtcNow;
+            package.Status = TreatmentPackageStatus.Active;
+            package.AcceptedDate ??= now;
+            package.ActiveDate ??= now;
+            package.UpdatedAt = now;
+            _packageRepo.Update(package);
+
+            if (existingCase == null)
             {
-                TreatmentPackageId = package.Id,
-                DoctorId = doctorUserId,
-                PatientId = patient.UserId,
-                CaseName = package.Name,
-                CaseDescription = package.Description,
-                PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
-                
-                // Package Snapshot fields (immutable after patient acceptance)
-                PackageNameSnapshot = package.Name,
-                PackageDescriptionSnapshot = package.Description,
-                TotalSessionsSnapshot = package.SessionQuantity,
-                DurationDaysSnapshot = package.ValidityDays,
-                RecommendedSessionsPerWeekSnapshot = package.RecommendedSessionsPerWeek,
-                PriceSnapshot = package.Price,
-                TargetOutcomesSnapshot = package.TargetOutcome,
-                RecommendedExercisesSnapshot = package.RecommendedExercises,
-                PatientGuidanceSnapshot = package.Instructions,
+                var treatmentCase = new TreatmentCase
+                {
+                    TreatmentPackageId = package.Id,
+                    DoctorId = doctor.Id,
+                    PatientId = patient.Id,
+                    CaseName = package.Name,
+                    CaseDescription = package.Description,
+                    PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
 
-                TotalSessions = package.SessionQuantity,
-                CompletedSessions = 0,
-                RemainingSessions = package.SessionQuantity,
-                OverallProgressPercent = 0,
-                StartDate = DateTime.UtcNow,
-                ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays > 0 ? package.ValidityDays : 90),
-                Status = TreatmentCaseStatus.Active
-            };
-            await _caseRepo.AddAsync(treatmentCase, ct);
+                    // Preserve the proposal exactly as it was when the patient accepted it.
+                    PackageNameSnapshot = package.Name,
+                    PackageDescriptionSnapshot = package.Description,
+                    TotalSessionsSnapshot = package.SessionQuantity,
+                    DurationDaysSnapshot = package.ValidityDays,
+                    RecommendedSessionsPerWeekSnapshot = package.RecommendedSessionsPerWeek,
+                    PriceSnapshot = package.Price,
+                    TargetOutcomesSnapshot = package.TargetOutcome,
+                    RecommendedExercisesSnapshot = package.RecommendedExercises,
+                    PatientGuidanceSnapshot = package.Instructions,
+
+                    TotalSessions = package.SessionQuantity,
+                    CompletedSessions = 0,
+                    RemainingSessions = package.SessionQuantity,
+                    OverallProgressPercent = 0,
+                    StartDate = now,
+                    ExpectedEndDate = now.AddDays(package.ValidityDays > 0 ? package.ValidityDays : 90),
+                    Status = TreatmentCaseStatus.Active
+                };
+                await _caseRepo.AddAsync(treatmentCase, ct);
+            }
+            else if (existingCase.Status == TreatmentCaseStatus.OnHold || existingCase.Status == TreatmentCaseStatus.Cancelled)
+            {
+                existingCase.Status = TreatmentCaseStatus.Active;
+                existingCase.UpdatedAt = now;
+                _caseRepo.Update(existingCase);
+            }
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+            return ApiResponse.SuccessResponse("Treatment package accepted and treatment case created.");
         }
-        else if (existingCase.Status == TreatmentCaseStatus.OnHold || existingCase.Status == TreatmentCaseStatus.Cancelled)
+        catch
         {
-            existingCase.Status = TreatmentCaseStatus.Active;
-            _caseRepo.Update(existingCase);
+            await _uow.RollbackTransactionAsync(ct);
+            return ApiResponse.ErrorResponse("Unable to accept the treatment package. Please try again.");
         }
-
-        await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("Treatment package accepted and treatment case created.");
     }
 
     public async Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct)
@@ -1638,8 +1753,14 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
-        if (patient == null || package.PatientId != patient.Id)
+        if (patient == null)
+            return ApiResponse.ErrorResponse("Patient profile not found");
+
+        if (package.PatientId != patient.Id)
             return ApiResponse.ErrorResponse("Not authorized to reject this package");
+
+        if (package.Status == TreatmentPackageStatus.Rejected)
+            return ApiResponse.SuccessResponse("Treatment package was already rejected.");
 
         if (package.Status != TreatmentPackageStatus.Assigned)
             return ApiResponse.ErrorResponse("Only assigned packages can be rejected");
@@ -1731,6 +1852,29 @@ public class SubscriptionService : ISubscriptionService
         _mapper = mapper;
     }
 
+    private static DateTime GetNextSubscriptionStartDate(
+        IEnumerable<DoctorSubscription> subscriptions,
+        Guid doctorProfileId,
+        DateTime now,
+        Guid? excludedSubscriptionId = null)
+    {
+        var latestExpiration = subscriptions
+            .Where(s => s.DoctorProfileId == doctorProfileId
+                     && s.Status == SubscriptionStatus.Active
+                     && s.ExpirationDate > now
+                     && (!excludedSubscriptionId.HasValue || s.Id != excludedSubscriptionId.Value))
+            .Select(s => s.ExpirationDate)
+            .DefaultIfEmpty(now)
+            .Max();
+
+        return latestExpiration > now ? latestExpiration : now;
+    }
+
+    private static string GetDisplayStatus(DoctorSubscription subscription, DateTime now) =>
+        subscription.Status == SubscriptionStatus.Active && subscription.ExpirationDate <= now
+            ? SubscriptionStatus.Expired.ToString()
+            : subscription.Status.ToString();
+
     public async Task<ApiResponse<SubscriptionDto>> PurchaseAsync(Guid doctorUserId, Guid servicePackageId, string returnUrl, CancellationToken ct)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
@@ -1744,22 +1888,16 @@ public class SubscriptionService : ISubscriptionService
         // FREE PACKAGE — activate immediately without VNPay
         if (package.Price <= 0)
         {
-            // Deactivate existing active subscriptions
             var allSubs = await _subRepo.GetAllAsync(ct);
-            var activeSubs = allSubs.Where(s => s.DoctorProfileId == doctor.Id && s.Status == SubscriptionStatus.Active).ToList();
-            foreach (var activeSub in activeSubs)
-            {
-                activeSub.Status = SubscriptionStatus.Expired;
-                _subRepo.Update(activeSub);
-            }
+            var startDate = GetNextSubscriptionStartDate(allSubs, doctor.Id, DateTime.UtcNow);
 
             var freeSub = new DoctorSubscription
             {
                 DoctorProfileId = doctor.Id,
                 ServicePackageId = servicePackageId,
                 Status = SubscriptionStatus.Active,
-                StartDate = DateTime.UtcNow,
-                ExpirationDate = DateTime.UtcNow.AddDays(package.DurationDays),
+                StartDate = startDate,
+                ExpirationDate = startDate.AddDays(package.DurationDays),
                 DoctorProfile = doctor,
                 ServicePackage = package
             };
@@ -1785,18 +1923,22 @@ public class SubscriptionService : ISubscriptionService
                 Status = freeSub.Status.ToString(),
                 StartDate = freeSub.StartDate,
                 ExpirationDate = freeSub.ExpirationDate,
+                MaxDailySlotsCapacity = package.MaxDailySlotsCapacity,
+                MaxPatientCapacity = package.MaxPatientCapacity,
                 CreatedAt = freeSub.CreatedAt
             }, "Free trial activated successfully!");
         }
 
         // PAID PACKAGE — use VNPay
+        var purchaseNow = DateTime.UtcNow;
         var subscription = new DoctorSubscription
         {
             DoctorProfileId = doctor.Id,
             ServicePackageId = servicePackageId,
             Status = SubscriptionStatus.PendingPayment,
-            StartDate = DateTime.UtcNow,
-            ExpirationDate = DateTime.UtcNow.AddDays(package.DurationDays),
+            // The final period is calculated again at successful payment time.
+            StartDate = purchaseNow,
+            ExpirationDate = purchaseNow.AddDays(package.DurationDays),
             DoctorProfile = doctor,
             ServicePackage = package
         };
@@ -1831,6 +1973,8 @@ public class SubscriptionService : ISubscriptionService
             Status = subscription.Status.ToString(),
             StartDate = subscription.StartDate,
             ExpirationDate = subscription.ExpirationDate,
+            MaxDailySlotsCapacity = package.MaxDailySlotsCapacity,
+            MaxPatientCapacity = package.MaxPatientCapacity,
             CreatedAt = subscription.CreatedAt,
             PaymentUrl = paymentUrl
         }, "Subscription created. Redirect to VNPay for payment.");
@@ -1846,22 +1990,16 @@ public class SubscriptionService : ISubscriptionService
         if (package == null || !package.IsActive)
             return ApiResponse<SubscriptionDto>.ErrorResponse("Service package not found or inactive");
 
-        // Deactivate any existing active subscriptions for this doctor
         var allSubs = await _subRepo.GetAllAsync(ct);
-        var activeSubs = allSubs.Where(s => s.DoctorProfileId == doctor.Id && s.Status == SubscriptionStatus.Active).ToList();
-        foreach (var activeSub in activeSubs)
-        {
-            activeSub.Status = SubscriptionStatus.Expired;
-            _subRepo.Update(activeSub);
-        }
+        var startDate = GetNextSubscriptionStartDate(allSubs, doctor.Id, DateTime.UtcNow);
 
         var subscription = new DoctorSubscription
         {
             DoctorProfileId = doctor.Id,
             ServicePackageId = servicePackageId,
-            Status = SubscriptionStatus.Active, // Active immediately
-            StartDate = DateTime.UtcNow,
-            ExpirationDate = DateTime.UtcNow.AddDays(package.DurationDays),
+            Status = SubscriptionStatus.Active,
+            StartDate = startDate,
+            ExpirationDate = startDate.AddDays(package.DurationDays),
             DoctorProfile = doctor,
             ServicePackage = package
         };
@@ -1888,6 +2026,8 @@ public class SubscriptionService : ISubscriptionService
             Status = subscription.Status.ToString(),
             StartDate = subscription.StartDate,
             ExpirationDate = subscription.ExpirationDate,
+            MaxDailySlotsCapacity = package.MaxDailySlotsCapacity,
+            MaxPatientCapacity = package.MaxPatientCapacity,
             CreatedAt = subscription.CreatedAt
         }, "Subscription created and activated successfully.");
     }
@@ -1898,11 +2038,15 @@ public class SubscriptionService : ISubscriptionService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<SubscriptionDto>.ErrorResponse("Doctor not found");
 
+        var now = DateTime.UtcNow;
         var allSubs = await _subRepo.GetAllAsync(ct);
-        var activeSub = allSubs.FirstOrDefault(s =>
-            s.DoctorProfileId == doctor.Id &&
-            s.Status == SubscriptionStatus.Active &&
-            s.ExpirationDate > DateTime.UtcNow);
+        var activeSub = allSubs
+            .Where(s => s.DoctorProfileId == doctor.Id
+                     && s.Status == SubscriptionStatus.Active
+                     && s.StartDate <= now
+                     && s.ExpirationDate > now)
+            .OrderByDescending(s => s.StartDate)
+            .FirstOrDefault();
 
         if (activeSub == null)
         {
@@ -1922,11 +2066,13 @@ public class SubscriptionService : ISubscriptionService
             DoctorId = doctor.Id,
             ServicePackageId = activeSub.ServicePackageId,
             PackageName = pkg?.Name ?? "Unknown",
-            Status = activeSub.Status.ToString(),
+            Status = GetDisplayStatus(activeSub, now),
             StartDate = activeSub.StartDate,
             ExpirationDate = activeSub.ExpirationDate,
             EndDate = activeSub.ExpirationDate,
             AmountPaid = pkg?.Price ?? 0,
+            MaxDailySlotsCapacity = pkg?.MaxDailySlotsCapacity,
+            MaxPatientCapacity = pkg?.MaxPatientCapacity,
             CreatedAt = activeSub.CreatedAt
         });
     }
@@ -1937,6 +2083,7 @@ public class SubscriptionService : ISubscriptionService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<List<SubscriptionDto>>.ErrorResponse("Doctor not found");
 
+        var now = DateTime.UtcNow;
         var allSubs = await _subRepo.GetAllAsync(ct);
         var subs = allSubs.Where(s => s.DoctorProfileId == doctor.Id).OrderByDescending(s => s.CreatedAt).ToList();
 
@@ -1950,11 +2097,13 @@ public class SubscriptionService : ISubscriptionService
                 DoctorId = doctor.Id,
                 ServicePackageId = sub.ServicePackageId,
                 PackageName = pkg?.Name ?? "Unknown",
-                Status = sub.Status.ToString(),
+                Status = GetDisplayStatus(sub, now),
                 StartDate = sub.StartDate,
                 ExpirationDate = sub.ExpirationDate,
                 EndDate = sub.ExpirationDate,
                 AmountPaid = pkg?.Price ?? 0,
+                MaxDailySlotsCapacity = pkg?.MaxDailySlotsCapacity,
+                MaxPatientCapacity = pkg?.MaxPatientCapacity,
                 CreatedAt = sub.CreatedAt
             });
         }
@@ -1975,18 +2124,17 @@ public class SubscriptionService : ISubscriptionService
             var sub = await _subRepo.GetByIdAsync(subscriptionId, ct);
             if (sub != null && sub.Status == SubscriptionStatus.PendingPayment)
             {
-                // Deactivate any existing active subscriptions for this doctor
                 var allSubs = await _subRepo.GetAllAsync(ct);
-                var activeSubs = allSubs.Where(s => s.DoctorProfileId == sub.DoctorProfileId && s.Status == SubscriptionStatus.Active).ToList();
-                foreach (var activeSub in activeSubs)
-                {
-                    activeSub.Status = SubscriptionStatus.Expired;
-                    activeSub.UpdatedAt = DateTime.UtcNow;
-                    _subRepo.Update(activeSub);
-                }
+                var package = await _pkgRepo.GetByIdAsync(sub.ServicePackageId, ct);
+                if (package == null)
+                    return ApiResponse.ErrorResponse("Service package not found");
 
+                var now = DateTime.UtcNow;
+                var startDate = GetNextSubscriptionStartDate(allSubs, sub.DoctorProfileId, now, sub.Id);
                 sub.Status = SubscriptionStatus.Active;
-                sub.UpdatedAt = DateTime.UtcNow;
+                sub.StartDate = startDate;
+                sub.ExpirationDate = startDate.AddDays(package.DurationDays);
+                sub.UpdatedAt = now;
                 _subRepo.Update(sub);
 
                 // Update payment transaction record status to success
@@ -2014,6 +2162,7 @@ public class SubscriptionService : ISubscriptionService
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var allPackages = await _pkgRepo.GetAllAsync(ct);
         var allUsers = await _userRepo.GetAllAsync(ct);
+        var now = DateTime.UtcNow;
 
         var docDict = allDoctors.ToDictionary(d => d.Id);
         var userDict = allUsers.ToDictionary(u => u.Id);
@@ -2038,11 +2187,13 @@ public class SubscriptionService : ISubscriptionService
                 DoctorName = doctorName,
                 ServicePackageId = sub.ServicePackageId,
                 PackageName = pkgName,
-                Status = sub.Status.ToString(),
+                Status = GetDisplayStatus(sub, now),
                 StartDate = sub.StartDate,
                 ExpirationDate = sub.ExpirationDate,
                 EndDate = sub.ExpirationDate,
                 AmountPaid = amount,
+                MaxDailySlotsCapacity = pkg?.MaxDailySlotsCapacity,
+                MaxPatientCapacity = pkg?.MaxPatientCapacity,
                 CreatedAt = sub.CreatedAt
             });
         }
@@ -2080,11 +2231,13 @@ public class SubscriptionService : ISubscriptionService
             DoctorName = user?.FullName ?? "Unknown Doctor",
             ServicePackageId = sub.ServicePackageId,
             PackageName = pkg?.Name ?? "Custom Package",
-            Status = sub.Status.ToString(),
+            Status = GetDisplayStatus(sub, DateTime.UtcNow),
             StartDate = sub.StartDate,
             ExpirationDate = sub.ExpirationDate,
             EndDate = sub.ExpirationDate,
             AmountPaid = pkg?.Price ?? 0,
+            MaxDailySlotsCapacity = pkg?.MaxDailySlotsCapacity,
+            MaxPatientCapacity = pkg?.MaxPatientCapacity,
             CreatedAt = sub.CreatedAt
         });
     }

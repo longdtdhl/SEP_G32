@@ -143,23 +143,53 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentCaseDto>.SuccessResponse(await MapToCaseDtoAsync(entity, ct), "Treatment case created successfully.");
     }
 
-    public async Task<ApiResponse<TreatmentCaseDto>> GetByIdAsync(Guid caseId, CancellationToken ct)
+    private async Task<bool> ValidateUserAccessToCaseAsync(TreatmentCase treatmentCase, Guid? requestingUserId, CancellationToken ct)
+    {
+        if (!requestingUserId.HasValue || requestingUserId.Value == Guid.Empty)
+            return true;
+
+        var userId = requestingUserId.Value;
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
+        if (doctor != null && treatmentCase.DoctorId == doctor.Id)
+            return true;
+
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
+        if (patient != null && treatmentCase.PatientId == patient.Id)
+            return true;
+
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => u.Id == userId);
+        if (user != null && user.Role?.Name == "Admin")
+            return true;
+
+        return false;
+    }
+
+    public async Task<ApiResponse<TreatmentCaseDto>> GetByIdAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
         var entity = await _caseRepo.GetByIdAsync(caseId, ct);
         if (entity == null || entity.IsDeleted)
             return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
 
+        if (!await ValidateUserAccessToCaseAsync(entity, requestingUserId, ct))
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Access denied. You do not have permission to view this treatment case.");
+
         return ApiResponse<TreatmentCaseDto>.SuccessResponse(await MapToCaseDtoAsync(entity, ct));
     }
 
-    public async Task<ApiResponse<List<TreatmentCaseListDto>>> GetByDoctorAsync(Guid doctorUserId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentCaseListDto>>> GetByDoctorAsync(Guid doctorUserId, CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<List<TreatmentCaseListDto>>.SuccessResponse(new List<TreatmentCaseListDto>());
 
         var all = await _caseRepo.GetAllAsync(ct);
         var cases = all
-            .Where(c => !c.IsDeleted && (c.DoctorId == doctorUserId || (doctor != null && (c.DoctorId == doctor.Id || c.DoctorId == doctor.UserId))))
+            .Where(c => !c.IsDeleted && (c.DoctorId == doctor.Id || c.DoctorId == doctor.UserId))
             .OrderByDescending(c => c.CreatedAt)
             .ToList();
 
@@ -170,14 +200,16 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<List<TreatmentCaseListDto>>.SuccessResponse(result);
     }
 
-    public async Task<ApiResponse<List<TreatmentCaseListDto>>> GetByPatientAsync(Guid patientUserId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentCaseListDto>>> GetByPatientAsync(Guid patientUserId, CancellationToken ct = default)
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        if (patient == null)
+            return ApiResponse<List<TreatmentCaseListDto>>.SuccessResponse(new List<TreatmentCaseListDto>());
 
         var all = await _caseRepo.GetAllAsync(ct);
         var cases = all
-            .Where(c => !c.IsDeleted && (c.PatientId == patientUserId || (patient != null && (c.PatientId == patient.Id || c.PatientId == patient.UserId))))
+            .Where(c => !c.IsDeleted && (c.PatientId == patient.Id || c.PatientId == patient.UserId))
             .OrderByDescending(c => c.CreatedAt)
             .ToList();
 
@@ -206,7 +238,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentCaseDto>.SuccessResponse(await MapToCaseDtoAsync(entity, ct), "Treatment case updated successfully.");
     }
 
-    public async Task<ApiResponse> CloseAsync(Guid caseId, CloseTreatmentCaseDto dto, CancellationToken ct)
+    public async Task<ApiResponse> CloseAsync(Guid caseId, CloseTreatmentCaseDto dto, CancellationToken ct = default)
     {
         var entity = await _caseRepo.GetByIdAsync(caseId, ct);
         if (entity == null || entity.IsDeleted)
@@ -215,18 +247,67 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (entity.Status != TreatmentCaseStatus.Active && entity.Status != TreatmentCaseStatus.OnHold)
             return ApiResponse.ErrorResponse("Only active or on-hold cases can be closed.");
 
-        entity.Status = (TreatmentCaseStatus)dto.CloseStatus;
-        entity.ClosureNote = dto.ClosureNote;
-        entity.ActualEndDate = DateTime.UtcNow;
-        entity.UpdatedAt = DateTime.UtcNow;
+        var newStatus = (TreatmentCaseStatus)dto.CloseStatus;
 
-        if (entity.Status == TreatmentCaseStatus.Completed)
-            entity.OverallProgressPercent = 100;
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            entity.Status = newStatus;
+            entity.ClosureNote = dto.ClosureNote;
+            entity.ActualEndDate = DateTime.UtcNow;
+            entity.UpdatedAt = DateTime.UtcNow;
 
-        _caseRepo.Update(entity);
-        await _uow.SaveChangesAsync(ct);
+            if (newStatus == TreatmentCaseStatus.Completed)
+            {
+                entity.OverallProgressPercent = 100;
+            }
+            else if (newStatus == TreatmentCaseStatus.Terminated || newStatus == TreatmentCaseStatus.Cancelled)
+            {
+                var allSessions = await _sessionRepo.GetAllAsync(ct);
+                var uncompletedSessions = allSessions.Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted && s.Status != TreatmentSessionStatus.Completed).ToList();
+                foreach (var session in uncompletedSessions)
+                {
+                    session.Status = TreatmentSessionStatus.Cancelled;
+                    session.UpdatedAt = DateTime.UtcNow;
+                    _sessionRepo.Update(session);
 
-        return ApiResponse.SuccessResponse("Treatment case closed successfully.");
+                    if (session.AppointmentId.HasValue)
+                    {
+                        var appt = await _appointmentRepo.GetByIdAsync(session.AppointmentId.Value, ct);
+                        if (appt != null && appt.Status != AppointmentStatus.Completed && appt.Status != AppointmentStatus.Cancelled)
+                        {
+                            appt.Status = AppointmentStatus.Cancelled;
+                            appt.CancelledAt = DateTime.UtcNow;
+                            appt.CancellationReason = $"Treatment case closed ({newStatus}).";
+                            appt.UpdatedAt = DateTime.UtcNow;
+                            _appointmentRepo.Update(appt);
+
+                            var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
+                            if (slot != null)
+                            {
+                                slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+                                if (slot.CurrentBookings < slot.MaxPatients)
+                                    slot.Status = AppointmentSlotStatus.Available;
+                                slot.UpdatedAt = DateTime.UtcNow;
+                                _slotRepo.Update(slot);
+                            }
+                        }
+                    }
+                }
+            }
+
+            _caseRepo.Update(entity);
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+
+            return ApiResponse.SuccessResponse("Treatment case closed successfully.");
+        }
+        catch (Exception ex)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            _logger.LogError(ex, "Failed to close treatment case {CaseId}", caseId);
+            return ApiResponse.ErrorResponse("Failed to close treatment case due to database transaction error.");
+        }
     }
 
     // ==================== Schedule Generation ====================
@@ -573,7 +654,10 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         var allSessions = await _sessionRepo.GetAllAsync(ct);
         var existingSessions = allSessions.Where(s => s.TreatmentCaseId == dto.TreatmentCaseId && !s.IsDeleted).ToList();
-        var sessionNumber = existingSessions.Count + 1;
+        var sessionNumber = existingSessions.Any() ? existingSessions.Max(s => s.SessionNumber) + 1 : 1;
+
+        if (existingSessions.Any(s => s.SessionNumber == sessionNumber))
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse($"Session number {sessionNumber} already exists for this treatment case.");
 
         var session = new TreatmentSession
         {
@@ -636,7 +720,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentSessionDto>.SuccessResponse(MapToSessionDto(session), "Session updated successfully.");
     }
 
-    public async Task<ApiResponse> DeleteSessionAsync(Guid sessionId, CancellationToken ct)
+    public async Task<ApiResponse> DeleteSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
         var session = await _sessionRepo.GetByIdAsync(sessionId, ct);
         if (session == null || session.IsDeleted)
@@ -645,11 +729,47 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (session.Status == TreatmentSessionStatus.Completed)
             return ApiResponse.ErrorResponse("Cannot delete a completed session.");
 
-        session.IsDeleted = true;
-        _sessionRepo.Update(session);
-        await _uow.SaveChangesAsync(ct);
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            if (session.AppointmentId.HasValue)
+            {
+                var appt = await _appointmentRepo.GetByIdAsync(session.AppointmentId.Value, ct);
+                if (appt != null && appt.Status != AppointmentStatus.Completed && appt.Status != AppointmentStatus.Cancelled)
+                {
+                    appt.Status = AppointmentStatus.Cancelled;
+                    appt.CancelledAt = DateTime.UtcNow;
+                    appt.CancellationReason = "Session deleted by doctor.";
+                    appt.UpdatedAt = DateTime.UtcNow;
+                    _appointmentRepo.Update(appt);
 
-        return ApiResponse.SuccessResponse("Session deleted successfully.");
+                    var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
+                    if (slot != null)
+                    {
+                        slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+                        if (slot.CurrentBookings < slot.MaxPatients)
+                            slot.Status = AppointmentSlotStatus.Available;
+                        slot.UpdatedAt = DateTime.UtcNow;
+                        _slotRepo.Update(slot);
+                    }
+                }
+            }
+
+            session.IsDeleted = true;
+            session.Status = TreatmentSessionStatus.Cancelled;
+            session.UpdatedAt = DateTime.UtcNow;
+            _sessionRepo.Update(session);
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+            return ApiResponse.SuccessResponse("Session deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            _logger.LogError(ex, "Failed to delete session {SessionId}", sessionId);
+            return ApiResponse.ErrorResponse("Failed to delete session due to database transaction error.");
+        }
     }
 
     public async Task<ApiResponse> ReorderSessionsAsync(ReorderSessionsDto dto, CancellationToken ct)
@@ -678,6 +798,19 @@ public class TreatmentCaseService : ITreatmentCaseService
         var session = await _sessionRepo.GetByIdAsync(sessionId, ct);
         if (session == null || session.IsDeleted)
             return ApiResponse<TreatmentSessionDto>.ErrorResponse("Session not found.");
+
+        if (session.Status == TreatmentSessionStatus.Planned || session.Status == TreatmentSessionStatus.Cancelled)
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse("Cannot complete a planned or cancelled session.");
+
+        if (!session.AppointmentId.HasValue)
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse("Cannot complete a session without a scheduled appointment.");
+
+        var linkedAppt = await _appointmentRepo.GetByIdAsync(session.AppointmentId.Value, ct);
+        if (linkedAppt == null || linkedAppt.IsDeleted)
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse("Linked appointment not found.");
+
+        if (session.PlannedStartTime.HasValue && session.PlannedStartTime.Value > DateTime.UtcNow.AddMinutes(5))
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse("Cannot complete a future session before its scheduled time.");
 
         // Idempotency guard: track whether this is a first-time completion
         var wasAlreadyCompleted = session.Status == TreatmentSessionStatus.Completed;
@@ -761,8 +894,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentSessionDto>.SuccessResponse(MapToSessionDto(session), message);
     }
 
-    public async Task<ApiResponse<List<TreatmentSessionDto>>> GetSessionsByCaseAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentSessionDto>>> GetSessionsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Access denied. You do not have permission to view sessions for this treatment case.");
+
         var all = await _sessionRepo.GetAllAsync(ct);
         var sessions = all
             .Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted)
@@ -860,8 +1000,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentGoalDto>.SuccessResponse(MapToGoalDto(goal), "Goal updated successfully.");
     }
 
-    public async Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<TreatmentGoalDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
+            return ApiResponse<List<TreatmentGoalDto>>.ErrorResponse("Access denied. You do not have permission to view goals for this treatment case.");
+
         var all = await _goalRepo.GetAllAsync(ct);
         var goals = all
             .Where(g => g.TreatmentCaseId == caseId && !g.IsDeleted)
@@ -948,6 +1095,19 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<HomeworkDto>.ErrorResponse("Treatment case not found.");
 
+        if (!dto.TreatmentSessionId.HasValue)
+            return ApiResponse<HomeworkDto>.ErrorResponse("Homework must be linked to a treatment session.");
+
+        var session = await _sessionRepo.GetByIdAsync(dto.TreatmentSessionId.Value, ct);
+        if (session == null || session.IsDeleted || session.TreatmentCaseId != dto.TreatmentCaseId)
+            return ApiResponse<HomeworkDto>.ErrorResponse("Select a valid session from this treatment case.");
+
+        if (string.IsNullOrWhiteSpace(dto.DetailedInstructions))
+            return ApiResponse<HomeworkDto>.ErrorResponse("Homework instructions and completion conditions are required.");
+
+        if (!dto.DueDate.HasValue)
+            return ApiResponse<HomeworkDto>.ErrorResponse("A due date is required for homework.");
+
         var assignment = new TherapyAssignment
         {
             TreatmentCaseId = dto.TreatmentCaseId,
@@ -971,6 +1131,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         var assignment = await _assignmentRepo.GetByIdAsync(homeworkId, ct);
         if (assignment == null || assignment.IsDeleted)
             return ApiResponse<HomeworkDto>.ErrorResponse("Homework assignment not found.");
+
+        if (string.IsNullOrWhiteSpace(dto.PatientSubmission) && string.IsNullOrWhiteSpace(dto.PatientSubmissionUrl))
+            return ApiResponse<HomeworkDto>.ErrorResponse("Provide a written reflection or an evidence link before submitting homework.");
 
         assignment.PatientSubmission = dto.PatientSubmission;
         assignment.PatientSubmissionUrl = dto.PatientSubmissionUrl;
@@ -1011,8 +1174,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<HomeworkDto>.SuccessResponse(MapToHomeworkDto(assignment), "Homework reviewed successfully.");
     }
 
-    public async Task<ApiResponse<List<HomeworkDto>>> GetHomeworkByCaseAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse<List<HomeworkDto>>> GetHomeworkByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<HomeworkDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
+            return ApiResponse<List<HomeworkDto>>.ErrorResponse("Access denied. You do not have permission to view homework for this treatment case.");
+
         var all = await _assignmentRepo.GetAllAsync(ct);
         var homeworkList = all
             .Where(a => a.TreatmentCaseId == caseId && !a.IsDeleted)
@@ -1058,8 +1228,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<MoodEntryDto>.SuccessResponse(MapToMoodEntryDto(moodEntry), "Mood entry recorded successfully.");
     }
 
-    public async Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<MoodEntryDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
+            return ApiResponse<List<MoodEntryDto>>.ErrorResponse("Access denied. You do not have permission to view mood entries for this treatment case.");
+
         var all = await _moodRepo.GetAllAsync(ct);
         var entries = all
             .Where(m => m.TreatmentCaseId == caseId && !m.IsDeleted)
@@ -1072,11 +1249,40 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     // ==================== Progress & Timeline ====================
 
-    public async Task<ApiResponse<TreatmentProgressDto>> GetProgressAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse> RefreshProgressAsync(Guid caseId, CancellationToken ct = default)
+    {
+        var treatmentCase = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (treatmentCase == null || treatmentCase.IsDeleted)
+            return ApiResponse.ErrorResponse("Treatment case not found.");
+
+        var sessions = (await _sessionRepo.GetAllAsync(ct))
+            .Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted)
+            .ToList();
+
+        treatmentCase.CompletedSessions = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+        treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - treatmentCase.CompletedSessions);
+        await RecalculateProgressAsync(treatmentCase, ct);
+
+        if (treatmentCase.TotalSessions > 0 && treatmentCase.CompletedSessions >= treatmentCase.TotalSessions)
+        {
+            treatmentCase.Status = TreatmentCaseStatus.Completed;
+            treatmentCase.ActualEndDate ??= DateTime.UtcNow;
+            treatmentCase.OverallProgressPercent = 100;
+        }
+
+        _caseRepo.Update(treatmentCase);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Treatment case progress refreshed.");
+    }
+
+    public async Task<ApiResponse<TreatmentProgressDto>> GetProgressAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
         var entity = await _caseRepo.GetByIdAsync(caseId, ct);
         if (entity == null || entity.IsDeleted)
             return ApiResponse<TreatmentProgressDto>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(entity, requestingUserId, ct))
+            return ApiResponse<TreatmentProgressDto>.ErrorResponse("Access denied. You do not have permission to view progress for this treatment case.");
 
         var allSessions = await _sessionRepo.GetAllAsync(ct);
         var sessions = allSessions.Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted).ToList();
@@ -1094,6 +1300,11 @@ public class TreatmentCaseService : ITreatmentCaseService
         var sessionProgress = entity.TotalSessions > 0 ? (completedSessions * 100 / entity.TotalSessions) : 0;
         var goalProgress = (int)Math.Round(avgGoalProgress);
         var assignmentProgress = assignments.Count > 0 ? (completedAssignments * 100 / assignments.Count) : 0;
+        var calculatedOverallProgress = goals.Count > 0 && assignments.Count > 0
+            ? (int)Math.Round(sessionProgress * 0.50 + goalProgress * 0.35 + assignmentProgress * 0.15)
+            : goals.Count > 0
+                ? (int)Math.Round(sessionProgress * 0.60 + goalProgress * 0.40)
+                : sessionProgress;
 
         var allMoods = await _moodRepo.GetAllAsync(ct);
         var moodEntries = allMoods.Where(m => m.TreatmentCaseId == caseId && !m.IsDeleted).OrderBy(m => m.RecordedAt).ToList();
@@ -1113,7 +1324,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         {
             CaseId = entity.Id,
             CaseName = entity.CaseName,
-            OverallProgressPercent = entity.OverallProgressPercent,
+            OverallProgressPercent = entity.Status == TreatmentCaseStatus.Completed
+                ? 100
+                : Math.Clamp(calculatedOverallProgress, 0, 100),
             TotalSessions = entity.TotalSessions,
             CompletedSessions = completedSessions,
             SessionProgressPercent = sessionProgress,
@@ -1135,8 +1348,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentProgressDto>.SuccessResponse(progress);
     }
 
-    public async Task<ApiResponse<List<TreatmentTimelineDto>>> GetTimelineAsync(Guid caseId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentTimelineDto>>> GetTimelineAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<TreatmentTimelineDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
+            return ApiResponse<List<TreatmentTimelineDto>>.ErrorResponse("Access denied. You do not have permission to view timeline for this treatment case.");
+
         var timeline = new List<TreatmentTimelineDto>();
 
         // Sessions
@@ -1250,7 +1470,16 @@ public class TreatmentCaseService : ITreatmentCaseService
     private async Task<string?> GetUserNameAsync(Guid userId, CancellationToken ct)
     {
         var user = await _userRepo.GetByIdAsync(userId, ct);
-        return user?.FullName;
+        if (user != null)
+            return user.FullName;
+
+        // Older treatment cases may store a profile ID rather than the user ID.
+        var doctor = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == userId);
+        if (doctor != null)
+            return (await _userRepo.GetByIdAsync(doctor.UserId, ct))?.FullName;
+
+        var patient = (await _patientRepo.GetAllAsync(ct)).FirstOrDefault(p => p.Id == userId);
+        return patient == null ? null : (await _userRepo.GetByIdAsync(patient.UserId, ct))?.FullName;
     }
 
     private async Task<string?> GetPackageNameAsync(Guid packageId, CancellationToken ct)
@@ -1314,6 +1543,9 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     private async Task<TreatmentCaseListDto> MapToListDtoAsync(TreatmentCase entity, CancellationToken ct)
     {
+        // List cards must use the same live aggregation as the details page, rather than stale case counters.
+        var progress = (await GetProgressAsync(entity.Id, null, ct)).Data;
+
         return new TreatmentCaseListDto
         {
             Id = entity.Id,
@@ -1321,9 +1553,9 @@ public class TreatmentCaseService : ITreatmentCaseService
             PackageNameSnapshot = entity.PackageNameSnapshot,
             PatientName = await GetUserNameAsync(entity.PatientId, ct),
             DoctorName = await GetUserNameAsync(entity.DoctorId, ct),
-            TotalSessions = entity.TotalSessions,
-            CompletedSessions = entity.CompletedSessions,
-            OverallProgressPercent = entity.OverallProgressPercent,
+            TotalSessions = progress?.TotalSessions ?? entity.TotalSessions,
+            CompletedSessions = progress?.CompletedSessions ?? entity.CompletedSessions,
+            OverallProgressPercent = progress?.OverallProgressPercent ?? entity.OverallProgressPercent,
             Status = (int)entity.Status,
             StartDate = entity.StartDate,
             CreatedAt = entity.CreatedAt

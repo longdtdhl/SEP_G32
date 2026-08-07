@@ -9,11 +9,16 @@ namespace OPCBS.Web.Pages.Doctor.TreatmentCases;
 public class DetailsModel : PageModel
 {
     private readonly ITreatmentCaseApiService _api;
+    private readonly IPsychometricApiService _psychApi;
     private readonly JwtCookieService _jwt;
 
-    public DetailsModel(ITreatmentCaseApiService api, JwtCookieService jwt)
+    public DetailsModel(
+        ITreatmentCaseApiService api,
+        IPsychometricApiService psychApi,
+        JwtCookieService jwt)
     {
         _api = api;
+        _psychApi = psychApi;
         _jwt = jwt;
     }
 
@@ -24,13 +29,31 @@ public class DetailsModel : PageModel
     public List<MoodEntryWebDto> MoodEntries { get; set; } = new();
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
+    public List<PsychometricSubmissionDto> RecentAssessments { get; set; } = new();
+
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public string ActiveTab { get; set; } = "overview";
 
-    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
+    [BindProperty(SupportsGet = true)]
+    public string ActivitySubTab { get; set; } = "homework";
+
+    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview", string? subTab = "homework")
     {
-        ActiveTab = tab ?? "overview";
+        if (id == Guid.Empty)
+        {
+            TempData["ErrorMessage"] = "Select a treatment case to view its details.";
+            return RedirectToPage("./Index");
+        }
+
+        ActiveTab = string.IsNullOrWhiteSpace(tab) ? "overview" : tab;
+        ActivitySubTab = string.IsNullOrWhiteSpace(subTab) ? "homework" : subTab;
+
+        ErrorMessage = TempData["ErrorMessage"] as string;
+        SuccessMessage = TempData["SuccessMessage"] as string;
+
         var (caseData, error) = await _api.GetByIdAsync(id);
         if (error != null || caseData == null)
         {
@@ -49,20 +72,37 @@ public class DetailsModel : PageModel
 
         await Task.WhenAll(sessionsTask, goalsTask, homeworkTask, moodTask, progressTask, timelineTask);
 
-        Sessions = sessionsTask.Result.Data;
-        Goals = goalsTask.Result.Data;
-        HomeworkList = homeworkTask.Result.Data;
-        MoodEntries = moodTask.Result.Data;
+        Sessions = sessionsTask.Result.Data ?? new();
+        Goals = goalsTask.Result.Data ?? new();
+        HomeworkList = homeworkTask.Result.Data ?? new();
+        MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
-        Timeline = timelineTask.Result.Data;
+        Timeline = timelineTask.Result.Data ?? new();
+
+        // Load psychometric assessments associated with appointment sessions if available
+        try
+        {
+            var apptIds = Sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToList();
+            var assessments = new List<PsychometricSubmissionDto>();
+            foreach (var apptId in apptIds.Take(5))
+            {
+                var (sub, _) = await _psychApi.GetSubmissionByAppointmentAsync(apptId);
+                if (sub != null)
+                {
+                    assessments.Add(sub);
+                }
+            }
+            RecentAssessments = assessments;
+        }
+        catch { }
 
         return Page();
     }
 
-    /// <summary>Helper to reload all data after a failed POST so we can re-render Page()</summary>
-    private async Task ReloadDataAsync(Guid caseId, string tab)
+    private async Task ReloadDataAsync(Guid caseId, string tab, string subTab = "homework")
     {
         ActiveTab = tab;
+        ActivitySubTab = subTab;
         var (caseData, _) = await _api.GetByIdAsync(caseId);
         Case = caseData;
         if (caseData == null) return;
@@ -76,12 +116,12 @@ public class DetailsModel : PageModel
 
         await Task.WhenAll(sessionsTask, goalsTask, homeworkTask, moodTask, progressTask, timelineTask);
 
-        Sessions = sessionsTask.Result.Data;
-        Goals = goalsTask.Result.Data;
-        HomeworkList = homeworkTask.Result.Data;
-        MoodEntries = moodTask.Result.Data;
+        Sessions = sessionsTask.Result.Data ?? new();
+        Goals = goalsTask.Result.Data ?? new();
+        HomeworkList = homeworkTask.Result.Data ?? new();
+        MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
-        Timeline = timelineTask.Result.Data;
+        Timeline = timelineTask.Result.Data ?? new();
     }
 
     // POST: Delete Session
@@ -90,15 +130,18 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.DeleteSessionAsync(sessionId);
         if (!success)
         {
-            ErrorMessage = error ?? "Failed to delete session.";
-            await ReloadDataAsync(caseId, "sessions");
-            return Page();
+            TempData["ErrorMessage"] = error ?? "Failed to delete session.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Session deleted successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "sessions" });
     }
 
     // POST: Record Goal Progress
-    public async Task<IActionResult> OnPostRecordGoalProgressAsync(Guid caseId, Guid goalId, Guid? sessionId, int progressPercent, decimal? currentValue, string? doctorComment)
+    public async Task<IActionResult> OnPostRecordGoalProgressAsync(
+        Guid caseId, Guid goalId, Guid? sessionId, int progressPercent, decimal? currentValue, string? doctorComment)
     {
         var dto = new CreateGoalProgressWebDto
         {
@@ -111,9 +154,11 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.RecordGoalProgressAsync(dto);
         if (!success)
         {
-            ErrorMessage = error ?? "Failed to record goal progress.";
-            await ReloadDataAsync(caseId, "goals");
-            return Page();
+            TempData["ErrorMessage"] = error ?? "Failed to record goal progress.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Goal progress recorded successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "goals" });
     }
@@ -125,14 +170,16 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.CloseAsync(caseId, dto);
         if (!success)
         {
-            ErrorMessage = error ?? "Failed to close treatment case.";
-            await ReloadDataAsync(caseId, "overview");
-            return Page();
+            TempData["ErrorMessage"] = error ?? "Failed to close treatment case.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment case closed successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "overview" });
     }
 
-    // POST: Update Session (title, date, time)
+    // POST: Update Session
     public async Task<IActionResult> OnPostUpdateSessionAsync(
         Guid caseId, Guid sessionId, string? title,
         DateTime? plannedDate, string? startTime, string? endTime)
@@ -156,10 +203,28 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.UpdateSessionAsync(sessionId, dto);
         if (!success)
         {
-            ErrorMessage = error ?? "Failed to update session.";
-            await ReloadDataAsync(caseId, "sessions");
-            return Page();
+            TempData["ErrorMessage"] = error ?? "Failed to update session.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Session updated successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "sessions" });
+    }
+
+    // POST: Review Homework
+    public async Task<IActionResult> OnPostReviewHomeworkAsync(Guid caseId, Guid homeworkId, string doctorFeedback)
+    {
+        var dto = new ReviewHomeworkWebDto { DoctorFeedback = doctorFeedback };
+        var (success, error) = await _api.ReviewHomeworkAsync(homeworkId, dto);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to review homework.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Homework reviewed successfully.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "activities", subTab = "homework" });
     }
 }

@@ -98,11 +98,20 @@ public class BusinessServicesTests
             Doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Id = Guid.NewGuid(), Email = "d@test.com", FullName = "Doctor", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } } },
             Patient = new PatientProfile { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } }
         };
+        var unassignedTemplate = new TreatmentPackage
+        {
+            Id = Guid.NewGuid(),
+            DoctorId = package.DoctorId,
+            PatientId = null,
+            Name = "Unassigned template",
+            Status = TreatmentPackageStatus.Created,
+            Doctor = package.Doctor
+        };
 
         patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PatientProfile> { new() { Id = patientId, UserId = patientUserId, User = new User { Id = patientUserId, Email = "p@test.com", FullName = "Patient", PhoneNumber = "123", PasswordHash = "hash", RoleId = Guid.NewGuid(), Role = new Role { Name = "Patient" } } } });
         packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<TreatmentPackage> { package });
+            .ReturnsAsync(new List<TreatmentPackage> { package, unassignedTemplate });
         userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<User> { package.Doctor.User, package.Patient.User });
         mapper.Setup(m => m.Map<List<TreatmentPackageDto>>(It.IsAny<List<TreatmentPackage>>()))
@@ -118,11 +127,132 @@ public class BusinessServicesTests
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data!);
+        mapper.Verify(m => m.Map<List<TreatmentPackageDto>>(It.Is<List<TreatmentPackage>>(items =>
+            items.Count == 1 && items[0].Id == package.Id)), Times.Once);
     }
 
     // ──────────────────────────────────────────────
     // CONSULTATION NOTE SERVICE CREATE TESTS (20+ Cases)
     // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task TreatmentPackageService_AcceptAssignedPackage_CreatesCaseWithProfileIds()
+    {
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var caseRepo = new Mock<IRepository<TreatmentCase>>();
+        var notificationService = new Mock<INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorProfileId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var package = new TreatmentPackage
+        {
+            Id = Guid.NewGuid(),
+            DoctorId = doctorProfileId,
+            PatientId = patientProfileId,
+            Doctor = null!,
+            Name = "CBT for Anxiety",
+            SessionQuantity = 10,
+            ValidityDays = 90,
+            Status = TreatmentPackageStatus.Assigned
+        };
+
+        packageRepo.Setup(r => r.GetByIdAsync(package.Id, It.IsAny<CancellationToken>())).ReturnsAsync(package);
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { new() { Id = doctorProfileId, UserId = Guid.NewGuid(), User = null! } });
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PatientProfile> { new() { Id = patientProfileId, UserId = patientUserId, User = null! } });
+        caseRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentCase>());
+
+        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object,
+            userRepo.Object, caseRepo.Object, notificationService.Object, uow.Object, mapper.Object);
+
+        var result = await service.AcceptPackageAsync(package.Id, patientUserId, default);
+
+        Assert.True(result.Success);
+        Assert.Equal(TreatmentPackageStatus.Active, package.Status);
+        caseRepo.Verify(r => r.AddAsync(It.Is<TreatmentCase>(c =>
+            c.TreatmentPackageId == package.Id &&
+            c.DoctorId == doctorProfileId &&
+            c.PatientId == patientProfileId &&
+            c.TotalSessions == 10), It.IsAny<CancellationToken>()), Times.Once);
+        uow.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task TreatmentPackageService_AcceptPackageAssignedToAnotherPatient_IsRejected()
+    {
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var package = new TreatmentPackage
+        {
+            Id = Guid.NewGuid(),
+            DoctorId = Guid.NewGuid(),
+            PatientId = Guid.NewGuid(),
+            Doctor = null!,
+            Name = "Private package",
+            Status = TreatmentPackageStatus.Assigned
+        };
+
+        packageRepo.Setup(r => r.GetByIdAsync(package.Id, It.IsAny<CancellationToken>())).ReturnsAsync(package);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PatientProfile> { new() { Id = patientProfileId, UserId = patientUserId, User = null! } });
+
+        var caseRepo = new Mock<IRepository<TreatmentCase>>();
+        var uow = new Mock<IUnitOfWork>();
+        var service = new TreatmentPackageService(packageRepo.Object, new Mock<IRepository<DoctorProfile>>().Object,
+            patientRepo.Object, new Mock<IRepository<User>>().Object, caseRepo.Object,
+            new Mock<INotificationService>().Object, uow.Object, new Mock<IMapper>().Object);
+
+        var result = await service.AcceptPackageAsync(package.Id, patientUserId, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("Not authorized", result.Message);
+        caseRepo.Verify(r => r.AddAsync(It.IsAny<TreatmentCase>(), It.IsAny<CancellationToken>()), Times.Never);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TreatmentPackageService_RejectAssignedPackage_UpdatesStatusAndReason()
+    {
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var package = new TreatmentPackage
+        {
+            Id = Guid.NewGuid(),
+            DoctorId = Guid.NewGuid(),
+            PatientId = patientProfileId,
+            Doctor = null!,
+            Name = "Package",
+            Status = TreatmentPackageStatus.Assigned
+        };
+
+        packageRepo.Setup(r => r.GetByIdAsync(package.Id, It.IsAny<CancellationToken>())).ReturnsAsync(package);
+        patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PatientProfile> { new() { Id = patientProfileId, UserId = patientUserId, User = null! } });
+
+        var uow = new Mock<IUnitOfWork>();
+        var service = new TreatmentPackageService(packageRepo.Object, new Mock<IRepository<DoctorProfile>>().Object,
+            patientRepo.Object, new Mock<IRepository<User>>().Object, new Mock<IRepository<TreatmentCase>>().Object,
+            new Mock<INotificationService>().Object, uow.Object, new Mock<IMapper>().Object);
+
+        var result = await service.RejectPackageAsync(package.Id, patientUserId, "Schedule does not fit", default);
+
+        Assert.True(result.Success);
+        Assert.Equal(TreatmentPackageStatus.Rejected, package.Status);
+        Assert.Equal("Schedule does not fit", package.RejectionReason);
+        packageRepo.Verify(r => r.Update(package), Times.Once);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
 
     [Fact]
     public async Task CreateAsync_DoctorNotFound_ReturnsError()

@@ -36,7 +36,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _caseService.GetByIdAsync(id);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetByIdAsync(id, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return result.Success ? Ok(result) : NotFound(result);
     }
 
@@ -50,6 +53,15 @@ public class TreatmentCaseController : ControllerBase
         if (currentUserId != doctorUserId)
             return Forbid();
         var result = await _caseService.GetByDoctorAsync(doctorUserId);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/treatment-cases/doctor/me - Get cases for the signed-in doctor.</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpGet("doctor/me")]
+    public async Task<IActionResult> GetMyDoctorCases()
+    {
+        var result = await _caseService.GetByDoctorAsync(GetCurrentUserId());
         return Ok(result);
     }
 
@@ -160,7 +172,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/sessions")]
     public async Task<IActionResult> GetSessions(Guid caseId)
     {
-        var result = await _caseService.GetSessionsByCaseAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetSessionsByCaseAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return Ok(result);
     }
 
@@ -188,7 +203,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/goals")]
     public async Task<IActionResult> GetGoals(Guid caseId)
     {
-        var result = await _caseService.GetGoalsByCaseAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetGoalsByCaseAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return Ok(result);
     }
 
@@ -242,7 +260,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/homework")]
     public async Task<IActionResult> GetHomework(Guid caseId)
     {
-        var result = await _caseService.GetHomeworkByCaseAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetHomeworkByCaseAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return Ok(result);
     }
 
@@ -262,7 +283,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/mood")]
     public async Task<IActionResult> GetMoodEntries(Guid caseId)
     {
-        var result = await _caseService.GetMoodEntriesAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetMoodEntriesAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return Ok(result);
     }
 
@@ -272,7 +296,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/progress")]
     public async Task<IActionResult> GetProgress(Guid caseId)
     {
-        var result = await _caseService.GetProgressAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetProgressAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return result.Success ? Ok(result) : NotFound(result);
     }
 
@@ -280,7 +307,10 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("{caseId:guid}/timeline")]
     public async Task<IActionResult> GetTimeline(Guid caseId)
     {
-        var result = await _caseService.GetTimelineAsync(caseId);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.GetTimelineAsync(caseId, currentUserId);
+        if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         return Ok(result);
     }
 }

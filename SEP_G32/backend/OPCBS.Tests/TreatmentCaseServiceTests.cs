@@ -145,16 +145,28 @@ public class TreatmentCaseServiceTests
             Patient = new PatientProfile { UserId = Guid.NewGuid(), User = dummyUser }
         };
 
+        var apptId = Guid.NewGuid();
+        var appt = new Appointment
+        {
+            Id = apptId,
+            BookingCode = "BC-999",
+            AppointmentSlot = null!,
+            Doctor = null!,
+            Status = AppointmentStatus.Approved
+        };
+
         var session = new TreatmentSession
         {
             Id = sessionId,
             TreatmentCaseId = caseId,
             SessionNumber = 1,
             Status = TreatmentSessionStatus.Scheduled,
+            AppointmentId = apptId,
             TreatmentCase = treatmentCase
         };
 
         _sessionRepo.Setup(r => r.GetByIdAsync(sessionId, It.IsAny<CancellationToken>())).ReturnsAsync(session);
+        _appointmentRepo.Setup(r => r.GetByIdAsync(apptId, It.IsAny<CancellationToken>())).ReturnsAsync(appt);
         _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
         _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentSession> { session });
         _goalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentGoal>());

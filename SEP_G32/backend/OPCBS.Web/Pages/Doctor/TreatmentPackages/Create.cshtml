@@ -1,248 +1,253 @@
 @page
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.CreateModel
 @{
-    ViewData["Title"] = "Create Treatment Package";
-
-    Layout = "_DashboardLayout";}
+    ViewData["Title"] = "Create Treatment Package Template";
+    Layout = "_DashboardLayout";
+}
 
 <style>
-    .create-form-card {
-        border-radius: 20px;
-        border: 1px solid rgba(78, 139, 112, 0.12);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    }
-
-    .form-field {
-        margin-bottom: 1.25rem;
-    }
-
-    .form-field-label {
-        font-size: 0.83rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .form-field-label i {
-        color: var(--mb-primary);
-        font-size: 0.95rem;
-    }
-
-    .form-field .form-control,
-    .form-field .form-select {
+    .tp-form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 10px 14px;
-        border-color: #cbd5e1;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
     }
-
-    .form-field .form-control:focus,
-    .form-field .form-select:focus {
-        border-color: var(--mb-primary);
-        box-shadow: 0 0 0 3px rgba(78, 139, 112, 0.12);
+    .tp-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafbfc;
+        border-top-left-radius: 11px;
+        border-top-right-radius: 11px;
     }
-
-    .metric-input-group {
-        background: #f8faf9;
-        border: 1px solid #e0e7e3;
-        border-radius: 14px;
-        padding: 1rem;
-        text-align: center;
+    .tp-form-body {
+        padding: 1.5rem;
     }
-
-    .metric-input-group .form-control {
+    .tp-section-title {
+        font-size: 1rem;
         font-weight: 700;
-        font-size: 1.15rem;
-        color: var(--mb-primary);
-        text-align: center;
-    }
-
-    .patient-profile-card {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border: 1px solid #bbf7d0;
-        border-radius: 14px;
-        padding: 1rem 1.25rem;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.5rem;
     }
-
-    .patient-profile-card .avatar {
-        width: 48px;
-        height: 48px;
+    .tp-section-title i {
+        color: #0d9488;
+    }
+    .tp-preview-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
-        background: #16a34a;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.2rem;
+        padding: 1.25rem;
+        position: sticky;
+        top: 80px;
     }
 </style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-box-seam me-2" style="color:var(--mb-primary);"></i>Create Treatment Package
-        </h1>
-        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">Create a pre-defined template package or assign a
-            custom package to a patient</p>
-        </div>
-        <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;">
-            <i class="bi bi-arrow-left me-1"></i>Back
+        <a asp-page="Index" class="text-decoration-none text-muted fs-7 d-inline-block mb-1">
+            <i class="bi bi-arrow-left me-1"></i> Back to Packages & Templates
         </a>
+        <h1 class="fs-4 fw-bold text-dark mb-0">
+            <i class="bi bi-box-seam text-teal me-2" style="color:#0d9488;"></i> Create Treatment Package Template
+        </h1>
+        <p class="text-muted fs-7 mb-0">Define a reusable clinical protocol template to assign to patients.</p>
     </div>
+</div>
 
-    @if (Model.Error != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-    <div class="card create-form-card">
-        <div class="card-body p-4">
-            <form method="post">
+<form method="post">
+    <div class="row g-4">
+        <!-- Form Main Content (8 cols) -->
+        <div class="col-lg-8">
+            <!-- Section 1: Basic Information -->
+            <div class="tp-form-card">
+                <div class="tp-form-header">
+                    <h5 class="tp-section-title">
+                        <i class="bi bi-info-circle-fill"></i> 1. Basic Information
+                    </h5>
+                    <p class="text-muted fs-8 mb-0">Title and patient assignment for this treatment package.</p>
+                </div>
+                <div class="tp-form-body">
                     @if (Model.PrefilledPatient != null)
                     {
-                        <!-- Target Patient Section -->
-                        <div class="form-field">
-                            <label class="form-field-label">
-                                <i class="bi bi-person-fill"></i>
-                                Assign to Patient
-                            </label>
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <label class="form-label fw-bold text-dark fs-7 mb-1">Assigned Patient</label>
                             <input type="hidden" asp-for="Input.PatientId" value="@Model.PrefilledPatient.PatientId" />
-                            <div class="patient-profile-card">
-                                <div class="avatar">
-                                    @((Model.PrefilledPatient.DisplayName ?? "?").Substring(0, 1).ToUpper())
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar bg-teal text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:36px; height:36px; background:#0d9488;">
+                                    @((Model.PrefilledPatient.DisplayName ?? "P").Substring(0, 1).ToUpper())
                                 </div>
-                                <div style="flex:1;">
-                                    <div class="fw-bold text-dark" style="font-size:0.95rem;">@Model.PrefilledPatient.DisplayName
-                                    </div>
-                                    <div class="small text-muted d-flex gap-3 mt-1">
-                                        @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayEmail))
-                                        {
-                                            <span><i class="bi bi-envelope me-1"></i>@Model.PrefilledPatient.DisplayEmail</span>
-                                        }
-                                        @if (!string.IsNullOrEmpty(Model.PrefilledPatient.DisplayPhone))
-                                        {
-                                            <span><i class="bi bi-telephone me-1"></i>@Model.PrefilledPatient.DisplayPhone</span>
-                                        }
-                                    </div>
+                                <div>
+                                    <div class="fw-bold text-dark fs-7">@Model.PrefilledPatient.DisplayName</div>
+                                    <div class="fs-8 text-muted">@Model.PrefilledPatient.DisplayEmail</div>
                                 </div>
-                                <span class="badge bg-success" style="font-size:0.7rem;">Assigned from Patient Profile</span>
+                                <span class="badge bg-success ms-auto">Patient Pre-selected</span>
                             </div>
                         </div>
                     }
-
-                <!-- Package Name -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-tag-fill"></i>
-                        Package Name <span class="text-danger">*</span>
-                    </label>
-                    <input asp-for="Input.Title" class="form-control"
-                           placeholder="e.g., Stress & Anxiety Therapy (8 Sessions), CBT Depression Recovery..." required />
-                </div>
-
-                <!-- Description -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-card-text"></i>
-                        Package Overview &amp; Description
-                    </label>
-                    <textarea asp-for="Input.Description" class="form-control" rows="3"
-                              placeholder="Describe the therapeutic goals, methodology, and scope of this package..."></textarea>
-                </div>
-
-                <!-- Target Outcomes -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-trophy"></i>
-                        Target Outcomes &amp; Expectations                    </label>
-                    <textarea asp-for="Input.TargetOutcome" class="form-control" rows="2"
-                              placeholder="Key expected milestones and psychological improvements (e.g., Reduced PHQ-9 score, improved coping strategies)..."></textarea>
-                </div>
-
-                <!-- Recommended Exercises -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-journal-check"></i>
-                        Recommended Exercises &amp; Activities                    </label>
-                    <textarea asp-for="Input.RecommendedExercises" class="form-control" rows="2"
-                              placeholder="List key assignments or daily practices included in this package (e.g., Daily Mood Journaling, Breathing Exercises)..."></textarea>
-                </div>
-
-                <!-- Patient Instructions -->
-                <div class="form-field">
-                    <label class="form-field-label">
-                        <i class="bi bi-info-square"></i>
-                        Patient Guidance &amp; Instructions                    </label>
-                    <textarea asp-for="Input.Instructions" class="form-control" rows="2"
-                              placeholder="Special instructions on session frequency, preparation, or expectations..."></textarea>
-                </div>
-
-                <!-- Sessions + Validity + Optional Price -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <div class="metric-input-group h-100">
-                            <label class="form-field-label justify-content-center">
-                                <i class="bi bi-calendar2-check"></i>
-                                Total Sessions <span class="text-danger">*</span>
-                            </label>
-                            <input type="number" asp-for="Input.TotalSessions" class="form-control" min="1" value="8"
-                                   required />
-                            <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Number of consultation
-                                sessions</small>
-                            </div>
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Assign to Patient (Optional)</label>
+                            <select asp-for="Input.PatientId" class="form-select form-select-sm">
+                                <option value="">None (Save as reusable Template)</option>
+                                @foreach (var p in Model.DoctorPatients)
+                                {
+                                    <option value="@p.PatientId">@p.DisplayName (@p.DisplayEmail)</option>
+                                }
+                            </select>
+                            <small class="text-muted fs-8">Leave empty to keep this package as a reusable template for any patient.</small>
                         </div>
-                        <div class="col-md-4">
-                            <div class="metric-input-group h-100">
-                                <label class="form-field-label justify-content-center">
-                                    <i class="bi bi-hourglass-split"></i>
-                                    Validity (days)
-                                </label>
-                                <input type="number" asp-for="Input.ValidityDays" class="form-control" min="1" value="90" />
-                                <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Package validity
-                                    duration</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="metric-input-group h-100">
-                                    <label class="form-field-label justify-content-center">
-                                        <i class="bi bi-calendar2-week"></i>
-                                        Sessions/Week
-                                    </label>
-                                    <input type="number" asp-for="Input.RecommendedSessionsPerWeek" class="form-control" min="1" max="7" value="1" />
-                                    <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Recommended per week</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="metric-input-group h-100">
-                                    <label class="form-field-label justify-content-center">
-                                        <i class="bi bi-currency-dollar"></i>
-                                        Price (Optional ₫)
-                                    </label>
-                                    <input type="number" asp-for="Input.Price" class="form-control" placeholder="0" />
-                                    <small class="text-muted mt-1 d-block" style="font-size:0.72rem;">Informational package
-                                        fee</small>
-                                    </div>
-                                </div>
-                            </div>
+                    }
 
-                            <!-- Actions -->
-                            <div class="d-flex justify-content-end gap-3 pt-3 border-top mt-4">
-                                <a asp-page="Index" class="btn btn-outline-secondary px-4 py-2" style="border-radius:12px;">Cancel</a>
-                                <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                                        style="border-radius:12px; background:var(--mb-primary); border-color:var(--mb-primary);">
-                                    <i class="bi bi-check-circle"></i>
-                                    Create Treatment Package
-                                </button>
-                            </div>
-                        </form>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark fs-7">Template Title <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Title" class="form-control" placeholder="e.g. CBT Anxiety Recovery Protocol (8 Sessions)" required />
+                        <span asp-validation-for="Input.Title" class="text-danger fs-8"></span>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold text-dark fs-7">Description & Scope</label>
+                        <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Provide a summary of the clinical approach, methodology, and therapeutic scope..."></textarea>
                     </div>
                 </div>
+            </div>
+
+            <!-- Section 2: Therapy Structure -->
+            <div class="tp-form-card">
+                <div class="tp-form-header">
+                    <h5 class="tp-section-title">
+                        <i class="bi bi-calendar2-range-fill"></i> 2. Therapy Structure & Schedule Pace
+                    </h5>
+                    <p class="text-muted fs-8 mb-0">Configure session count, validity timeframe, and recommended pace per week.</p>
+                </div>
+                <div class="tp-form-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark fs-7">Total Sessions <span class="text-danger">*</span></label>
+                            <input type="number" asp-for="Input.TotalSessions" id="inputTotalSessions" class="form-control" min="1" max="50" required onchange="updatePreview()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark fs-7">Sessions / Week</label>
+                            <input type="number" asp-for="Input.RecommendedSessionsPerWeek" id="inputPace" class="form-control" min="1" max="7" onchange="updatePreview()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark fs-7">Validity (Days)</label>
+                            <input type="number" asp-for="Input.ValidityDays" id="inputValidity" class="form-control" min="1" max="365" onchange="updatePreview()" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Clinical Guidelines & Pricing -->
+            <div class="tp-form-card">
+                <div class="tp-form-header">
+                    <h5 class="tp-section-title">
+                        <i class="bi bi-journal-medical"></i> 3. Clinical Guidelines & Pricing
+                    </h5>
+                    <p class="text-muted fs-8 mb-0">Specify expected outcomes, exercises, instructions, and package fee.</p>
+                </div>
+                <div class="tp-form-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark fs-7">Target Outcomes</label>
+                        <textarea asp-for="Input.TargetOutcome" class="form-control" rows="2" placeholder="e.g. Significant reduction in PHQ-9 anxiety scores, enhanced emotional regulation..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark fs-7">Recommended Exercises</label>
+                        <textarea asp-for="Input.RecommendedExercises" class="form-control" rows="2" placeholder="e.g. Daily Thought Records, Progressive Muscle Relaxation..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark fs-7">Patient Guidance & Preparation</label>
+                        <textarea asp-for="Input.Instructions" class="form-control" rows="2" placeholder="Instructions for patient on attendance expectations, session homework..."></textarea>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold text-dark fs-7">Package Fee (VND)</label>
+                        <div class="input-group">
+                            <input type="number" asp-for="Input.Price" id="inputPrice" class="form-control" placeholder="0" onchange="updatePreview()" />
+                            <span class="input-group-text bg-light text-muted">VND</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Buttons -->
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a asp-page="Index" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                    <i class="bi bi-check-circle-fill"></i> Save Treatment Package Template
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar Summary Preview (4 cols) -->
+        <div class="col-lg-4">
+            <div class="tp-preview-box">
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-eye text-teal" style="color:#0d9488;"></i> Live Template Summary
+                </h6>
+                <div class="mb-3 pb-3 border-bottom">
+                    <span class="badge bg-light text-dark border mb-1 fs-8">Template Preview</span>
+                    <h6 class="fw-bold text-dark mb-1" id="prevTitle">New Treatment Package</h6>
+                    <p class="text-muted fs-8 mb-0" id="prevType">Reusable Protocol Template</p>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between fs-7 mb-2">
+                        <span class="text-muted"><i class="bi bi-calendar-event me-1"></i> Total Sessions:</span>
+                        <strong class="text-dark" id="prevSessions">8 Sessions</strong>
+                    </div>
+                    <div class="d-flex justify-content-between fs-7 mb-2">
+                        <span class="text-muted"><i class="bi bi-speedometer2 me-1"></i> Recommended Pace:</span>
+                        <strong class="text-dark" id="prevPace">1 session / wk</strong>
+                    </div>
+                    <div class="d-flex justify-content-between fs-7 mb-2">
+                        <span class="text-muted"><i class="bi bi-hourglass-split me-1"></i> Validity Period:</span>
+                        <strong class="text-dark" id="prevValidity">90 Days (~3 mos)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between fs-7 mb-0">
+                        <span class="text-muted"><i class="bi bi-tag me-1"></i> Package Fee:</span>
+                        <strong class="text-teal fw-bold" style="color:#0d9488;" id="prevPrice">0 VND</strong>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-white rounded-3 border fs-8 text-secondary">
+                    <i class="bi bi-shield-check text-teal me-1"></i>
+                    <strong>Note:</strong> Editing a template will not affect already active Treatment Cases assigned to patients.
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        function updatePreview() {
+            var title = document.querySelector('[name="Input.Title"]').value;
+            var sessions = document.getElementById('inputTotalSessions').value || 0;
+            var pace = document.getElementById('inputPace').value || 1;
+            var validity = document.getElementById('inputValidity').value || 90;
+            var price = parseFloat(document.getElementById('inputPrice').value || 0);
+
+            document.getElementById('prevTitle').innerText = title || "New Treatment Package";
+            document.getElementById('prevSessions').innerText = sessions + " Sessions";
+            document.getElementById('prevPace').innerText = pace + " session / wk";
+            document.getElementById('prevValidity').innerText = validity + " Days (~" + Math.round(validity/30) + " mos)";
+            document.getElementById('prevPrice').innerText = price.toLocaleString('vi-VN') + " VND";
+        }
+
+        document.querySelector('[name="Input.Title"]').addEventListener('input', updatePreview);
+    </script>
+}

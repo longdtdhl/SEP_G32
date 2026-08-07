@@ -35,6 +35,9 @@ public class AppointmentDto
     public required string DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
+    public string? PatientEmail { get; set; }
+    public string? GuestEmail { get; set; }
+    public string ConsultationMode { get; set; } = "Tư vấn Trực tuyến (Online)";
     public required string AppointmentDate { get; set; }
     public required string StartTime { get; set; }
     public required string EndTime { get; set; }
@@ -88,6 +91,21 @@ public class AppointmentListItemDto
 /// Track appointment request DTO
 /// </summary>
 public class TrackAppointmentDto
+{
+    public required string BookingCode { get; set; }
+    public required string Email { get; set; }
+}
+
+/// <summary>Anonymous guest confirmation request using the single-use email token.</summary>
+public class ConfirmGuestAppointmentDto
+{
+    public required string Token { get; set; }
+}
+
+/// <summary>
+/// Resend confirmation request DTO
+/// </summary>
+public class ResendConfirmationDto
 {
     public required string BookingCode { get; set; }
     public required string Email { get; set; }

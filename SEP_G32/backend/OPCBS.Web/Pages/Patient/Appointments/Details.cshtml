@@ -238,6 +238,12 @@
         <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
     </div>
 }
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" style="border-radius:12px; border:none;">
+        <i class="bi bi-check-circle-fill me-1"></i>@successMessage
+    </div>
+}
 
 @if (Model.Appointment != null)
 {
@@ -249,6 +255,7 @@
     var isCompleted = apt.Status == 4;
     var isCancelled = apt.Status == 5;
     var isRescheduleRequested = apt.Status == 6;
+    var isAwaitingPatientConfirmation = apt.Status == 7;
     var canCancel = isPending || isApproved;
 
     <!-- Status Banner -->
@@ -268,6 +275,20 @@
                 <i class="bi bi-hourglass-split"></i>
                 <span><strong>Pending Confirmation</strong> — The doctor will review and respond shortly.</span>
             </div>
+        </div>
+    }
+    else if (isAwaitingPatientConfirmation)
+    {
+        <div class="apt-banner b-inprogress" style="background:#f0fdfa; border-color:#99f6e4; color:#115e59;">
+            <div class="banner-text">
+                <i class="bi bi-shield-check fs-5"></i>
+                <span><strong>Confirmation Required</strong> - Your doctor marked this consultation as completed. Confirm only after the session has actually taken place.</span>
+            </div>
+            <form method="post" asp-page-handler="ConfirmCompletion" asp-route-id="@apt.Id">
+                <button type="submit" class="btn btn-success btn-sm" style="border-radius:10px; white-space:nowrap;">
+                    <i class="bi bi-check2-circle me-1"></i>Confirm Completion
+                </button>
+            </form>
         </div>
     }
     else if (isApproved)
@@ -588,6 +609,11 @@
                     <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-outline">
                         <i class="bi bi-calendar-plus"></i> Book Again
                     </a>
+                    <div class="text-center mt-2 pt-1">
+                        <a asp-page="/Patient/Appointments/Report" asp-route-id="@apt.Id" class="text-secondary small text-decoration-none" style="font-size:0.75rem;">
+                            <i class="bi bi-flag me-1 text-muted"></i>Report user / issue
+                        </a>
+                    </div>
                 </div>
             </div>
 

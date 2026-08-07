@@ -16,7 +16,7 @@ public interface ITreatmentCaseService
     Task<ApiResponse<TreatmentCaseDto>> CreateFromPackageAsync(CreateTreatmentCaseDto dto, CancellationToken ct = default);
 
     /// <summary>Get a Treatment Case by ID with full details</summary>
-    Task<ApiResponse<TreatmentCaseDto>> GetByIdAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentCaseDto>> GetByIdAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     /// <summary>Get all Treatment Cases for a doctor</summary>
     Task<ApiResponse<List<TreatmentCaseListDto>>> GetByDoctorAsync(Guid doctorUserId, CancellationToken ct = default);
@@ -53,7 +53,7 @@ public interface ITreatmentCaseService
     Task<ApiResponse<TreatmentSessionDto>> CompleteSessionAsync(Guid sessionId, CompleteSessionDto dto, CancellationToken ct = default);
 
     /// <summary>Get all sessions for a Treatment Case</summary>
-    Task<ApiResponse<List<TreatmentSessionDto>>> GetSessionsByCaseAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentSessionDto>>> GetSessionsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     // === Goals ===
 
@@ -64,7 +64,7 @@ public interface ITreatmentCaseService
     Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, CancellationToken ct = default);
 
     /// <summary>Get all goals for a Treatment Case</summary>
-    Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     /// <summary>Record a new goal progress evaluation history entry</summary>
     Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, CancellationToken ct = default);
@@ -84,7 +84,7 @@ public interface ITreatmentCaseService
     Task<ApiResponse<HomeworkDto>> ReviewHomeworkAsync(Guid homeworkId, ReviewHomeworkDto dto, CancellationToken ct = default);
 
     /// <summary>Get homework list for a case</summary>
-    Task<ApiResponse<List<HomeworkDto>>> GetHomeworkByCaseAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<List<HomeworkDto>>> GetHomeworkByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     // === Mood Tracking ===
 
@@ -92,13 +92,16 @@ public interface ITreatmentCaseService
     Task<ApiResponse<MoodEntryDto>> AddMoodEntryAsync(Guid patientUserId, CreateMoodEntryDto dto, CancellationToken ct = default);
 
     /// <summary>Get mood entries for a treatment case</summary>
-    Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     // === Progress & Timeline ===
 
     /// <summary>Get aggregated treatment progress (sessions, goals, homework, mood trend)</summary>
-    Task<ApiResponse<TreatmentProgressDto>> GetProgressAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentProgressDto>> GetProgressAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
+
+    /// <summary>Synchronize persisted case counters after an appointment-driven session status change.</summary>
+    Task<ApiResponse> RefreshProgressAsync(Guid caseId, CancellationToken ct = default);
 
     /// <summary>Get chronological timeline of all events in a Treatment Case</summary>
-    Task<ApiResponse<List<TreatmentTimelineDto>>> GetTimelineAsync(Guid caseId, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentTimelineDto>>> GetTimelineAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 }

@@ -1,112 +1,334 @@
 @page
 @model OPCBS.Web.Pages.Appointment.TrackModel
 @{
-    ViewData["Title"] = "Track Appointment";
+    ViewData["Title"] = "Tra Cứu Lịch Hẹn";
 }
 
-<section class="mb-section">
-    <div style="max-width:680px;margin:0 auto;">
+@functions {
+    public string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return "—";
+        var parts = email.Trim().Split('@');
+        if (parts.Length != 2) return email;
+        var name = parts[0];
+        var domain = parts[1];
+        if (name.Length <= 2)
+            return $"{name[0]}***@{domain}";
+        return $"{name[0]}***{name[^1]}@{domain}";
+    }
+}
+
+<section class="mb-section py-4 py-md-5">
+    <div class="container" style="max-width: 760px;">
+        
         <!-- Header -->
         <div class="text-center mb-4">
-            <div class="d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;border-radius:50%;background:var(--mb-primary-light);">
-                <i class="bi bi-search" style="font-size:1.5rem;color:var(--mb-primary);"></i>
+            <div class="d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                <i class="bi bi-search-heart" style="font-size:1.75rem;color:#2e7d32;"></i>
             </div>
-            <h2>Track Appointment</h2>
-            <p class="text-muted">Enter your email and booking code to check your appointment status.</p>
+            <h2 class="fw-bold text-dark mb-1">Tra Cứu Lịch Hẹn</h2>
+            <p class="text-muted mb-0">Nhập <strong>Mã đặt lịch (Booking Code)</strong> và <strong>Email</strong> để xem trạng thái và thông tin chi tiết.</p>
         </div>
 
-        <!-- Track Form -->
-        <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <!-- Alert Notifications -->
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-start gap-3" role="alert" style="border-radius:12px; background-color:#fef2f2; color:#991b1b;">
+                <i class="bi bi-exclamation-octagon-fill fs-5 mt-1 text-danger"></i>
+                <div>
+                    <div class="fw-semibold mb-1">Thông báo tra cứu</div>
+                    <div>@Model.ErrorMessage</div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success border-0 shadow-sm mb-4 d-flex align-items-start gap-3" role="alert" style="border-radius:12px; background-color:#f0fdf4; color:#166534;">
+                <i class="bi bi-check-circle-fill fs-5 mt-1 text-success"></i>
+                <div>
+                    <div class="fw-semibold mb-1">Thao tác thành công</div>
+                    <div>@Model.SuccessMessage</div>
+                </div>
+            </div>
+        }
+
+        <!-- Lookup Form Card -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
             <div class="card-body p-4">
-                @if (ViewData.ModelState.ErrorCount > 0)
-                {
-                    <div class="alert alert-danger" style="border-radius:10px;">
-                        <i class="bi bi-exclamation-triangle me-1"></i>
-                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <span>@err.ErrorMessage</span>
-                        }
+                <form method="post" id="trackForm" onsubmit="showLoadingState()">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark mb-1">
+                                <i class="bi bi-upc-scan me-1 text-success"></i>Mã Đặt Lịch <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Input.BookingCode" class="form-control form-control-lg text-uppercase fw-semibold" 
+                                   placeholder="VD: OPCBS-20260806-ABCD1234" required 
+                                   style="border-radius:10px; font-size:0.95rem; letter-spacing:0.5px;" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark mb-1">
+                                <i class="bi bi-envelope me-1 text-success"></i>Email Đăng Ký <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Input.Email" type="email" class="form-control form-control-lg" 
+                                   placeholder="VD: email@domain.com" required 
+                                   style="border-radius:10px; font-size:0.95rem;" />
+                        </div>
                     </div>
-                }
 
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="alert alert-success" style="border-radius:10px;">
-                        <i class="bi bi-check-circle me-1"></i>@TempData["SuccessMessage"]
+                    <div class="mt-4">
+                        <button type="submit" id="btnSubmit" class="btn btn-success btn-lg w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" style="border-radius:10px; background:linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); border:none; padding: 12px;">
+                            <i class="bi bi-search"></i>
+                            <span>Tra Cứu Lịch Hẹn</span>
+                        </button>
                     </div>
-                }
-
-                <form method="post">
-                    <div class="mb-3">
-                        <label class="form-label fw-medium"><i class="bi bi-envelope me-1" style="color:var(--mb-primary);"></i>Email</label>
-                        <input asp-for="Input.Email" class="form-control form-control-lg" placeholder="Enter the email you used when booking" style="border-radius:10px;" />
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-medium"><i class="bi bi-upc-scan me-1" style="color:var(--mb-primary);"></i>Booking Code <span class="text-muted fw-normal">(optional)</span></label>
-                        <input asp-for="Input.BookingCode" class="form-control form-control-lg" placeholder="VD: APT-XXXXX" style="border-radius:10px;" />
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100" style="border-radius:10px;">
-                        <i class="bi bi-search me-2"></i>Find appointment
-                    </button>
                 </form>
             </div>
         </div>
 
-        <!-- Results -->
-        @if (Model.Results != null)
+        <!-- Result Section -->
+        @if (Model.AppointmentResult != null)
         {
-            @if (Model.Results.Any())
-            {
-                <div class="mt-4">
-                    <h5 class="mb-3"><i class="bi bi-calendar-check me-2" style="color:var(--mb-primary);"></i>Search Results (@Model.Results.Count appointments)</h5>
-                    <div class="d-flex flex-column gap-3">
-                        @foreach (var apt in Model.Results)
-                        {
-                            var borderClass = apt.Status == 0 ? "border-start-warning" :
-                                              apt.Status == 1 ? "border-start-primary" :
-                                              apt.Status == 4 ? "border-start-success" : "border-start-danger";
+            var apt = Model.AppointmentResult;
+            var displayEmail = MaskEmail(apt.PatientEmail ?? apt.GuestEmail ?? Model.Input.Email);
 
-                            <div class="card border-0 shadow-sm @borderClass" style="border-radius:12px;border-left:4px solid !important;">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                        <div>
-                                            <h6 class="mb-1">@(apt.DoctorName ?? "Therapist")</h6>
-                                            <div class="d-flex flex-wrap gap-3" style="font-size:0.8125rem;color:var(--mb-text-secondary);">
-                                                <span><i class="bi bi-calendar3 me-1"></i>@(apt.AppointmentDate ?? "—")</span>
-                                                <span><i class="bi bi-clock me-1"></i>@(apt.StartTime ?? "—")</span>
-                                                @if (!string.IsNullOrEmpty(apt.BookingCode))
-                                                {
-                                                    <span><i class="bi bi-upc me-1"></i><code>@apt.BookingCode</code></span>
-                                                }
-                                            </div>
-                                        </div>
-                                        <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
+            <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius:16px;">
+                <!-- Card Header with Booking Code & Semantic Status Badge -->
+                <div class="card-header bg-light border-0 p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <span class="text-muted fs-7 text-uppercase fw-bold letter-spacing-1 d-block mb-1">Mã Đặt Lịch Hẹn</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="fw-extrabold text-success mb-0 font-monospace">@apt.BookingCode</h4>
+                            <button type="button" class="btn btn-sm btn-light border-0 text-muted" onclick="navigator.clipboard.writeText('@apt.BookingCode'); alert('Đã sao chép mã đặt lịch!');" title="Sao chép mã">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        @if (apt.Status == 0)
+                        {
+                            <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-clock-history me-1"></i>Chờ Bác Sĩ Xác Nhận
+                            </span>
+                        }
+                        else if (apt.Status == 9)
+                        {
+                            <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-envelope-check me-1"></i>Chờ Xác Nhận Email
+                            </span>
+                        }
+                        else if (apt.Status == 1)
+                        {
+                            <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-check-circle-fill me-1"></i>Đã Xác Nhận (Đã Duyệt)
+                            </span>
+                        }
+                        else if (apt.Status == 4)
+                        {
+                            <span class="badge bg-success px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-patch-check-fill me-1"></i>Đã Hoàn Thành
+                            </span>
+                        }
+                        else if (apt.Status == 5)
+                        {
+                            <span class="badge bg-danger px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-x-circle-fill me-1"></i>Đã Hủy Lịch Hẹn
+                            </span>
+                        }
+                        else if (apt.Status == 2)
+                        {
+                            <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-dash-circle-fill me-1"></i>Bác Sĩ Từ Chối
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info text-dark px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                Đang Diễn Ra
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Main Information Grid -->
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        
+                        <!-- Doctor Info -->
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 bg-light h-100 border border-light">
+                                <div class="text-muted small fw-semibold text-uppercase mb-2">
+                                    <i class="bi bi-person-badge text-success me-1"></i>Chuyên Gia / Bác Sĩ
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">@(string.IsNullOrWhiteSpace(apt.DoctorName) ? "Chuyên gia Tâm lý" : apt.DoctorName)</h5>
+                                <div class="text-success fw-medium small mb-2">
+                                    <i class="bi bi-award me-1"></i>@(string.IsNullOrWhiteSpace(apt.Specialization) ? "Chuyên khoa Tâm lý học" : apt.Specialization)
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="bi bi-laptop me-1"></i>Hình thức: <strong>@(string.IsNullOrWhiteSpace(apt.ConsultationMode) ? "Tư vấn Trực tuyến (Online)" : apt.ConsultationMode)</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date & Time Info -->
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 bg-light h-100 border border-light">
+                                <div class="text-muted small fw-semibold text-uppercase mb-2">
+                                    <i class="bi bi-calendar3 text-success me-1"></i>Thời Gian Tư Vấn
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">
+                                    <i class="bi bi-calendar-event text-success me-2"></i>@apt.AppointmentDate
+                                </h5>
+                                <div class="text-primary fw-semibold fs-6 mb-2">
+                                    <i class="bi bi-clock me-1"></i>@apt.StartTime - @apt.EndTime
+                                </div>
+                                @if (apt.Fee.HasValue && apt.Fee > 0)
+                                {
+                                    <div class="small text-muted">
+                                        <i class="bi bi-cash-stack me-1"></i>Phí tư vấn: <strong>@apt.Fee.Value.ToString("N0") VNĐ</strong>
                                     </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Patient Info -->
+                        <div class="col-md-12">
+                            <div class="p-3 rounded-3 bg-white border">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6 mb-2 mb-md-0">
+                                        <span class="text-muted small d-block">Bệnh nhân / Khách hàng</span>
+                                        <strong class="text-dark fs-6">@(string.IsNullOrWhiteSpace(apt.PatientName) ? "Khách hàng" : apt.PatientName)</strong>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Email đã dùng (Được che bảo mật)</span>
+                                        <span class="font-monospace fw-semibold text-dark">@displayEmail</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes / Symptoms / Cancellation reason -->
+                        @if (!string.IsNullOrWhiteSpace(apt.Symptoms) || !string.IsNullOrWhiteSpace(apt.Expectations) || !string.IsNullOrWhiteSpace(apt.Notes) || !string.IsNullOrWhiteSpace(apt.CancellationReason))
+                        {
+                            <div class="col-md-12">
+                                <div class="p-3 rounded-3 bg-white border">
+                                    @if (!string.IsNullOrWhiteSpace(apt.CancellationReason))
+                                    {
+                                        <div class="mb-2 text-danger">
+                                            <span class="fw-semibold"><i class="bi bi-info-circle me-1"></i>Lý do hủy/từ chối:</span>
+                                            <span>@apt.CancellationReason</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(apt.Symptoms))
+                                    {
+                                        <div class="mb-1 text-muted small">
+                                            <strong>Triệu chứng / Vấn đề:</strong> @apt.Symptoms
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(apt.Expectations))
+                                    {
+                                        <div class="mb-1 text-muted small">
+                                            <strong>Mong muốn:</strong> @apt.Expectations
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(apt.Notes))
+                                    {
+                                        <div class="text-muted small">
+                                            <strong>Ghi chú:</strong> @apt.Notes
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         }
                     </div>
+
+                    <!-- Guidelines / Instructions Box -->
+                    <div class="mt-4 p-3 rounded-3" style="background-color:#eff6ff; border:1px solid #bfdbfe;">
+                        <h6 class="fw-bold text-primary mb-2">
+                            <i class="bi bi-lightbulb-fill me-1"></i>Hướng Dẫn Dành Cho Bệnh Nhân
+                        </h6>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li class="mb-1">Hãy chuẩn bị không gian yên tĩnh và kết nối mạng ổn định trước giờ hẹn <strong>5 - 10 phút</strong>.</li>
+                            <li class="mb-1">Nếu cần điều chỉnh hoặc hủy lịch hẹn, bạn có thể thực hiện trước thời gian diễn ra buổi tư vấn <strong>24 giờ</strong>.</li>
+                            <li class="mb-0">Mọi thắc mắc hỗ trợ gấp, xin vui lòng liên hệ Bộ phận Chăm sóc khách hàng OPCBS qua hotline hoặc email hỗ trợ.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Actions / Resend Email Section -->
+                    <div class="mt-4 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <form method="post" asp-page-handler="Resend" id="resendForm">
+                            <input type="hidden" name="Input.BookingCode" value="@apt.BookingCode" />
+                            <input type="hidden" name="Input.Email" value="@Model.Input.Email" />
+                            <button type="submit" id="btnResend" class="btn btn-outline-success d-flex align-items-center gap-2" style="border-radius:8px;">
+                                <i class="bi bi-send-check"></i>
+                                <span id="resendText">Gửi lại email xác nhận</span>
+                            </button>
+                        </form>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a asp-page="/Doctors/Index" class="btn btn-light border text-secondary" style="border-radius:8px;">
+                                <i class="bi bi-plus-circle me-1"></i>Đặt Lịch Mới
+                            </a>
+                            <a asp-page="/Index" class="btn btn-light border text-secondary" style="border-radius:8px;">
+                                <i class="bi bi-house me-1"></i>Trang Chủ
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="text-center py-5 mt-4">
-                    <i class="bi bi-calendar-x d-block mb-3" style="font-size:2.5rem;color:var(--mb-text-muted);"></i>
-                    <h5>Not found appointment</h5>
-                    <p class="text-muted">Please double-check your email or booking code.</p>
-                </div>
-            }
+            </div>
+        }
+        else if (Model.HasSearched && string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="text-center py-5 bg-white rounded-3 shadow-sm mb-4">
+                <i class="bi bi-calendar-x text-muted" style="font-size:3rem;"></i>
+                <h5 class="fw-bold mt-3 text-dark">Không Tìm Thấy Lịch Hẹn</h5>
+                <p class="text-muted max-w-md mx-auto small">Vui lòng kiểm tra lại chính xác <strong>Mã đặt lịch</strong> và <strong>Email đăng ký</strong> của bạn.</p>
+            </div>
         }
 
-        <!-- Guest CTA -->
-        <div class="text-center mt-4 pt-3" style="border-top:1px solid var(--mb-border-light);">
-            <p class="text-muted mb-2" style="font-size:0.875rem;">Don't have an account? Register to manage appointments more easily.</p>
-            <a asp-page="/Account/Register" class="btn btn-outline-primary btn-sm me-2">
-                <i class="bi bi-person-plus me-1"></i>Register
-            </a>
-            <a asp-page="/Doctors/Index" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-search-heart me-1"></i>Find a Specialist
-            </a>
+        <!-- Help Footer -->
+        <div class="text-center text-muted small mt-4">
+            Cần trợ giúp trực tiếp? Liên hệ bộ phận tư vấn OPCBS qua Email <a href="mailto:support@opcbs.com" class="text-success text-decoration-underline">support@opcbs.com</a>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        function showLoadingState() {
+            var btn = document.getElementById('btnSubmit');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang tìm kiếm...';
+            }
+        }
+
+        // Handle Resend Cooldown
+        document.addEventListener('DOMContentLoaded', function () {
+            var resendForm = document.getElementById('resendForm');
+            if (resendForm) {
+                resendForm.addEventListener('submit', function (e) {
+                    var btn = document.getElementById('btnResend');
+                    var txt = document.getElementById('resendText');
+                    if (btn && !btn.disabled) {
+                        btn.disabled = true;
+                        var seconds = 60;
+                        txt.innerText = 'Vui lòng đợi (' + seconds + 's)';
+                        
+                        var timer = setInterval(function () {
+                            seconds--;
+                            if (seconds <= 0) {
+                                clearInterval(timer);
+                                btn.disabled = false;
+                                txt.innerText = 'Gửi lại email xác nhận';
+                            } else {
+                                txt.innerText = 'Vui lòng đợi (' + seconds + 's)';
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+        });
+    </script>
+}

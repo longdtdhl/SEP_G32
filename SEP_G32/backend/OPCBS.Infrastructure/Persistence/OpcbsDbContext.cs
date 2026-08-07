@@ -43,6 +43,7 @@ public class OpcbsDbContext : DbContext
     public DbSet<AppointmentSlot> AppointmentSlots => Set<AppointmentSlot>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentHistory> AppointmentHistories => Set<AppointmentHistory>();
+    public DbSet<AppointmentCompletionConfirmation> AppointmentCompletionConfirmations => Set<AppointmentCompletionConfirmation>();
 
     // Consultations & Patient Records
     public DbSet<PatientRecord> PatientRecords => Set<PatientRecord>();
@@ -65,6 +66,8 @@ public class OpcbsDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemConfig> SystemConfigs => Set<SystemConfig>();
+    public DbSet<ViolationReport> ViolationReports => Set<ViolationReport>();
+    public DbSet<ViolationReportEvidence> ViolationReportEvidences => Set<ViolationReportEvidence>();
 
     // Psychometrics
     public DbSet<PsychometricTest> PsychometricTests => Set<PsychometricTest>();
@@ -363,6 +366,8 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(255);
             entity.Property(e => e.GuestPhoneNumber)
                 .HasMaxLength(20);
+            entity.Property(e => e.GuestConfirmationTokenHash)
+                .HasMaxLength(64);
             entity.Property(e => e.Notes)
                 .HasMaxLength(2000);
             entity.Property(e => e.RejectionReason)
@@ -390,10 +395,6 @@ public class OpcbsDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.TreatmentCaseId)
                 .OnDelete(DeleteBehavior.SetNull);
-            entity.HasOne(e => e.TreatmentSession)
-                .WithMany()
-                .HasForeignKey(e => e.TreatmentSessionId)
-                .OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(e => e.ProposedSlot)
                 .WithMany()
                 .HasForeignKey(e => e.ProposedSlotId)
@@ -410,6 +411,14 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Reason)
                 .HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<AppointmentCompletionConfirmation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AppointmentId).IsUnique();
+            entity.HasIndex(e => new { e.Status, e.ReminderDueAt });
+            entity.Property(e => e.DoctorNote).HasMaxLength(2000);
         });
 
         // ConsultationNote
@@ -661,6 +670,31 @@ public class OpcbsDbContext : DbContext
 
     private static void ConfigureSystemEntities(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ViolationReport>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReasonDetail).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.CustomerSupportNote).HasMaxLength(2000);
+            entity.Property(e => e.AdminNote).HasMaxLength(2000);
+            entity.HasIndex(e => new { e.ReportedUserId, e.Status });
+            entity.HasIndex(e => new { e.ReporterUserId, e.ReasonCategory, e.Status });
+            entity.HasIndex(e => e.CreatedAt);
+        });
+
+        modelBuilder.Entity<ViolationReportEvidence>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileUrl).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.PublicId).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.ViolationReportId);
+            entity.HasOne(e => e.ViolationReport)
+                .WithMany(r => r.EvidenceFiles)
+                .HasForeignKey(e => e.ViolationReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // SystemConfig
         modelBuilder.Entity<SystemConfig>(entity =>
         {
@@ -830,13 +864,11 @@ public class OpcbsDbContext : DbContext
             entity.HasOne(e => e.Doctor)
                 .WithMany(d => d.TreatmentCases)
                 .HasForeignKey(e => e.DoctorId)
-                .HasPrincipalKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Patient)
                 .WithMany(p => p.TreatmentCases)
                 .HasForeignKey(e => e.PatientId)
-                .HasPrincipalKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -845,7 +877,12 @@ public class OpcbsDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.TreatmentCaseId);
-            entity.HasIndex(e => e.AppointmentId).IsUnique().HasFilter("[AppointmentId] IS NOT NULL");
+            entity.HasIndex(e => e.AppointmentId)
+                .IsUnique()
+                .HasFilter("[AppointmentId] IS NOT NULL AND [IsDeleted] = 0");
+            entity.HasIndex(e => new { e.TreatmentCaseId, e.SessionNumber })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             entity.Property(e => e.SessionSummary).HasMaxLength(4000);
             entity.Property(e => e.TherapistNotes).HasMaxLength(4000);
@@ -858,8 +895,8 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Appointment)
-                .WithMany()
-                .HasForeignKey(e => e.AppointmentId)
+                .WithOne(a => a.TreatmentSession)
+                .HasForeignKey<TreatmentSession>(e => e.AppointmentId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

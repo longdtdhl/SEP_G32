@@ -2,6 +2,7 @@ using AutoMapper;
 using Moq;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.Interfaces.Repositories;
+using OPCBS.Application.Interfaces.Services;
 using OPCBS.Application.Services;
 using OPCBS.Domain.Entities;
 using OPCBS.Domain.Enums;
@@ -24,6 +25,8 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
     private readonly Mock<IRepository<TreatmentPackage>> _packageRepoMock;
     private readonly Mock<IRepository<ConsultationNote>> _consultationNoteRepoMock;
+    private readonly Mock<IRepository<AppointmentCompletionConfirmation>> _completionConfirmationRepo;
+    private readonly Mock<IViolationReportService> _violationReportServiceMock;
     private readonly Mock<IUnitOfWork> _uow;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<OPCBS.Application.Interfaces.Services.INotificationService> _notificationServiceMock;
@@ -53,6 +56,9 @@ public class AppointmentServiceTests
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
         _packageRepoMock = new Mock<IRepository<TreatmentPackage>>();
         _consultationNoteRepoMock = new Mock<IRepository<ConsultationNote>>();
+        _completionConfirmationRepo = new Mock<IRepository<AppointmentCompletionConfirmation>>();
+        _completionConfirmationRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentCompletionConfirmation>());
+        _violationReportServiceMock = new Mock<IViolationReportService>();
         _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote>());
         _uow = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
@@ -86,7 +92,9 @@ public class AppointmentServiceTests
             _notificationServiceMock.Object,
             _emailServiceMock.Object,
             _uow.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            completionConfirmationRepo: _completionConfirmationRepo.Object,
+            violationReports: _violationReportServiceMock.Object);
     }
 
     #region Helper Methods
@@ -197,6 +205,8 @@ public class AppointmentServiceTests
             .ReturnsAsync(doctor);
         _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<DoctorProfile> { doctor });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PatientProfile> { CreatePatient() });
         _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(slot);
         _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -527,6 +537,8 @@ public class AppointmentServiceTests
     public async Task CompleteAppointment_Success()
     {
         // Arrange
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PatientProfile> { CreatePatient() });
         var appointment = CreateAppointment(AppointmentStatus.Approved);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
@@ -561,7 +573,7 @@ public class AppointmentServiceTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Equal(AppointmentStatus.Completed, appointment.Status);
+        Assert.Equal(AppointmentStatus.AwaitingPatientConfirmation, appointment.Status);
     }
 
     [Fact]

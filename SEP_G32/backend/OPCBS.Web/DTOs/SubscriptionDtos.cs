@@ -12,6 +12,8 @@ public class SubscriptionDto
     public DateTime ExpirationDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal AmountPaid { get; set; }
+    public int? MaxDailySlotsCapacity { get; set; }
+    public int? MaxPatientCapacity { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PaymentUrl { get; set; }
 }

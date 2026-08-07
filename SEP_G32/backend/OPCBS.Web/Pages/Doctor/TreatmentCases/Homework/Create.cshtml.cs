@@ -48,6 +48,6 @@ public class CreateModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Doctor/TreatmentCases/Details", new { id = caseId, tab = "homework" });
+        return RedirectToPage("/Doctor/TreatmentCases/Details", new { id = caseId, tab = "activities", subTab = "homework" });
     }
 }

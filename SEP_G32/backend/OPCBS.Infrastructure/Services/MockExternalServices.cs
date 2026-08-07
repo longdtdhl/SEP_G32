@@ -68,6 +68,12 @@ public class MockEmailService : IEmailService
         _logger.LogInformation("[MockEmail] Follow-up reminder to {To}: {Patient} with Dr. {Doctor} on {Date}", to, patientName, doctorName, date);
         return Task.CompletedTask;
     }
+
+    public Task SendAppointmentBookingConfirmationEmailAsync(string to, string patientName, string doctorName, string bookingCode, string date, string time, string consultationMode, string statusText, string trackUrl, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[MockEmail] Booking confirmation email to {To}: Code {BookingCode}, Patient {Patient}, Dr. {Doctor}, Date {Date} {Time}", to, bookingCode, patientName, doctorName, date, time);
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>

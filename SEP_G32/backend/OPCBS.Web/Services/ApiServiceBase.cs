@@ -37,6 +37,7 @@ public abstract class ApiServiceBase
             : new AuthenticationHeaderValue("Bearer", token);
     }
 
+
     /// <summary>GET request that unwraps ApiResponse&lt;T&gt;.</summary>
     protected async Task<(T? Data, PaginationDto? Pagination, string? Error)> GetAsync<T>(string url)
     {
@@ -84,6 +85,24 @@ public abstract class ApiServiceBase
         catch (Exception ex)
         {
             return (false, ex.Message);
+        }
+    }
+
+    /// <summary>POST multipart/form-data request that unwraps ApiResponse&lt;T&gt;.</summary>
+    protected async Task<(T? Data, string? Error)> PostMultipartAsync<T>(string url, MultipartFormDataContent content)
+    {
+        try
+        {
+            using var response = await SendWithRefreshAsync(() => new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = content
+            });
+            var (data, _, error) = await ParseResponse<T>(response);
+            return (data, error);
+        }
+        catch (Exception ex)
+        {
+            return (default, ex.Message);
         }
     }
 

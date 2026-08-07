@@ -119,6 +119,18 @@ public class Appointment : BaseEntity
     /// <summary>Guest phone number (required if PatientId is null)</summary>
     public string? GuestPhoneNumber { get; set; }
 
+    /// <summary>SHA-256 hash of the email confirmation token for guest bookings.</summary>
+    public string? GuestConfirmationTokenHash { get; set; }
+
+    /// <summary>Latest time a guest confirmation email was sent.</summary>
+    public DateTime? GuestConfirmationLastSentAt { get; set; }
+
+    /// <summary>Total guest confirmation emails sent for this booking.</summary>
+    public int GuestConfirmationSendCount { get; set; }
+
+    /// <summary>Timestamp when the guest confirmed their email booking.</summary>
+    public DateTime? GuestConfirmedAt { get; set; }
+
     /// <summary>Optional appointment notes/reason</summary>
     public string? Notes { get; set; }
 

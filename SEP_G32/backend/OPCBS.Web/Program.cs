@@ -46,6 +46,7 @@ RegisterApi<ITherapyApiService, TherapyApiService>(builder.Services);
 RegisterApi<IFavoriteApiService, FavoriteApiService>(builder.Services);
 RegisterApi<IMessagingApiService, MessagingApiService>(builder.Services);
 RegisterApi<ITreatmentCaseApiService, TreatmentCaseApiService>(builder.Services);
+RegisterApi<IViolationReportApiService, ViolationReportApiService>(builder.Services);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

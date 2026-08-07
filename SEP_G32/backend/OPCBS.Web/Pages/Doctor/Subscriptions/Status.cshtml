@@ -266,7 +266,13 @@
                     <div class="col-md-4">
                         <div class="d-flex align-items-center gap-2 small text-dark">
                             <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Max Appointments: <strong>@pkg.MaxAppointments</strong></span>
+                            <span>Daily schedule slots: <strong>@(pkg.MaxDailySlotsCapacity?.ToString() ?? "Unlimited")</strong></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center gap-2 small text-dark">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Patient capacity: <strong>@(pkg.MaxPatientCapacity?.ToString() ?? "Unlimited")</strong></span>
                         </div>
                     </div>
                     @if (pkg.Features != null && pkg.Features.Any())

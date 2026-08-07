@@ -184,8 +184,9 @@ public class TreatmentSessionDto
         2 => "Completed",
         3 => "Cancelled",
         4 => "No Show",
-        5 => "Missed",
-        _ => "Unknown"
+        5 => "No Show",
+        6 => "Planned",
+        _ => "Planned"
     };
 }
 

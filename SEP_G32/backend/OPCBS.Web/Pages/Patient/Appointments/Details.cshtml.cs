@@ -114,4 +114,17 @@ public class DetailsModel : PageModel
         TempData["SuccessMessage"] = "Appointment cancelled successfully.";
         return RedirectToPage("Index");
     }
+
+    public async Task<IActionResult> OnPostConfirmCompletionAsync(Guid id)
+    {
+        var (success, error) = await _service.ConfirmCompletionAsync(id);
+        if (!success)
+        {
+            Error = error ?? "Unable to confirm appointment completion.";
+            return await OnGetAsync(id);
+        }
+
+        TempData["SuccessMessage"] = "You confirmed that this consultation was completed.";
+        return RedirectToPage(new { id });
+    }
 }

@@ -23,7 +23,8 @@ public class CalendarEventDto
     public int CurrentBookings { get; set; } = 0;
 }
 
-// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled
+// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled,
+// 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow, 9=AwaitingGuestConfirmation.
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -43,6 +44,9 @@ public class AppointmentDto
     public string? MedicalHistory { get; set; }
     public string? Expectations { get; set; }
     public int Status { get; set; }
+    public string? GuestEmail { get; set; }
+    public string? PatientEmail { get; set; }
+    public string? ConsultationMode { get; set; }
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -65,6 +69,9 @@ public class AppointmentDto
         4 => "Completed",
         5 => "Cancelled",
         6 => "Reschedule Requested",
+        7 => "Awaiting Your Confirmation",
+        8 => "No Show",
+        9 => "Awaiting Email Confirmation",
         _ => "Unknown"
     };
 
@@ -114,6 +121,9 @@ public class AppointmentListItemDto
         4 => "Completed",
         5 => "Cancelled",
         6 => "Reschedule Requested",
+        7 => "Awaiting Your Confirmation",
+        8 => "No Show",
+        9 => "Awaiting Email Confirmation",
         _ => "Unknown"
     };
 
@@ -163,6 +173,17 @@ public class TrackAppointmentRequestDto
     public string? BookingCode { get; set; }
     // Alias for backend
     public string? TrackingCode { get => BookingCode; set => BookingCode = value; }
+}
+
+public class ResendConfirmationRequestDto
+{
+    public string? BookingCode { get; set; }
+    public string? Email { get; set; }
+}
+
+public class ConfirmGuestAppointmentDto
+{
+    public string? Token { get; set; }
 }
 
 public class AppointmentFilterDto

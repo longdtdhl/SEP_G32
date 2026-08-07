@@ -1,0 +1,186 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Reports.IndexModel
+@{
+    ViewData["Title"] = "My Incident Reports";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    .rep-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .rep-timeline { position: relative; padding-left: 24px; border-left: 2px solid #e2e8f0; margin-left: 8px; }
+    .rep-timeline-item { position: relative; margin-bottom: 1rem; }
+    .rep-timeline-item:last-child { margin-bottom: 0; }
+    .rep-timeline-dot { position: absolute; left: -31px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #94a3b8; border: 2px solid white; }
+    .rep-timeline-dot.active { background: #0d9488; }
+</style>
+
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0; color:#1e293b;">
+            <i class="bi bi-shield-exclamation me-2" style="color:#0d9488;"></i>My Incident Reports
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Track reports submitted regarding patient conduct or policy concerns</p>
+    </div>
+    <a asp-page="/Doctor/Appointments/Index" class="btn btn-outline-secondary btn-sm" style="border-radius:6px;">
+        <i class="bi bi-calendar-event me-1"></i>My Appointments
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="rep-card">
+    @if (!Model.Reports.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-shield-check text-muted d-block mb-2" style="font-size:2.5rem;"></i>
+            <h6 class="fw-bold text-dark mb-1">No Submitted Reports</h6>
+            <p class="text-muted small mb-0">You have not submitted any conduct or policy reports.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Report Target</th>
+                        <th>Category</th>
+                        <th>Appointment ID</th>
+                        <th>Submitted Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-3">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Reports.OrderByDescending(x => x.CreatedAt))
+                    {
+                        var rowId = $"report-detail-{r.Id}";
+                        <tr>
+                            <td class="ps-3 fw-semibold text-dark">
+                                @(string.IsNullOrEmpty(r.ReportedUserName) ? "Patient Account" : r.ReportedUserName)
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@r.ReasonCategoryDisplay</span>
+                            </td>
+                            <td class="text-muted small">
+                                @(r.RelatedAppointmentId.HasValue ? r.RelatedAppointmentId.Value.ToString()[..8] + "..." : "N/A")
+                            </td>
+                            <td class="text-muted small">
+                                @r.CreatedAt.ToString("MM/dd/yyyy HH:mm")
+                            </td>
+                            <td>
+                                <span class="@r.StatusBadgeClass">@r.StatusText</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" style="border-radius:6px; font-size:0.78rem;" data-bs-toggle="collapse" data-bs-target="#@rowId">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="@rowId" style="background:#fafbfc;">
+                            <td colspan="6" class="p-3 ps-4 pe-4 border-bottom">
+                                <div class="row g-3">
+                                    <div class="col-md-7">
+                                        <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-text-paragraph me-1 text-primary"></i>Submitted Reason</h6>
+                                        <div class="p-3 bg-white border rounded-2 small text-secondary mb-3" style="line-height:1.6; white-space:pre-line;">
+                                            @r.ReasonDetail
+                                        </div>
+
+                                        @if (r.EvidenceFiles.Any())
+                                        {
+                                            <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-paperclip me-1 text-primary"></i>Evidence Attachments (@r.EvidenceFiles.Count)</h6>
+                                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                                @foreach (var ev in r.EvidenceFiles)
+                                                {
+                                                    var mbSize = (ev.FileSizeBytes / (1024.0 * 1024.0)).ToString("0.00");
+                                                    <a href="@ev.FileUrl" target="_blank" class="btn btn-sm btn-light border text-start d-flex align-items-center gap-2" style="border-radius:6px; font-size:0.8rem;">
+                                                        <i class="bi @(ev.IsPdf ? "bi-file-earmark-pdf text-danger" : "bi-file-earmark-image text-primary") fs-5"></i>
+                                                        <div class="text-truncate" style="max-width:180px;">
+                                                            <div class="fw-semibold text-dark text-truncate">@ev.FileName</div>
+                                                            <div class="text-muted small" style="font-size:0.7rem;">@mbSize MB</div>
+                                                        </div>
+                                                    </a>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="col-md-5">
+                                        <h6 class="fw-bold text-dark small mb-3"><i class="bi bi-clock-history me-1 text-primary"></i>Report Status Timeline</h6>
+                                        <div class="rep-timeline">
+                                            <div class="rep-timeline-item">
+                                                <div class="rep-timeline-dot active"></div>
+                                                <div class="fw-semibold small text-dark">Report Submitted</div>
+                                                <div class="text-muted small" style="font-size:0.75rem;">@r.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                            </div>
+
+                                            @if (r.Status >= OPCBS.Web.DTOs.ViolationReportStatus.UnderCustomerSupportReview)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-dark">Under Customer Support Review</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">In progress</div>
+                                                </div>
+                                            }
+
+                                            @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.WarningIssued)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-warning">Warning Issued</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">@(r.WarningIssuedAt?.ToString("MMM dd, yyyy") ?? "Completed")</div>
+                                                </div>
+                                            }
+
+                                            @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.EscalatedToAdmin)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-danger">Escalated to Admin</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">@(r.EscalatedAt?.ToString("MMM dd, yyyy") ?? "Under investigation")</div>
+                                                </div>
+                                            }
+
+                                            @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.AccountDisabled)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-dark">Enforcement Action Taken</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">Account locked</div>
+                                                </div>
+                                            }
+
+                                            @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.Dismissed)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-muted">Dismissed</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">Closed</div>
+                                                </div>
+                                            }
+
+                                            @if (r.Status == OPCBS.Web.DTOs.ViolationReportStatus.Resolved)
+                                            {
+                                                <div class="rep-timeline-item">
+                                                    <div class="rep-timeline-dot active"></div>
+                                                    <div class="fw-semibold small text-success">Resolved</div>
+                                                    <div class="text-muted small" style="font-size:0.75rem;">@(r.ResolvedAt?.ToString("MMM dd, yyyy") ?? "Resolved")</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -67,6 +67,8 @@
                     "AppointmentReminder" => "/Patient/Appointments/Index",
                     "ConsultationNote" => "/Patient/ConsultationRecords/Index",
                     "TreatmentPackage" => "/Patient/TreatmentPackages/Index",
+                    "BlogPost" => $"/Blog/Details?id={notif.RelatedEntityId}",
+                    "FavoriteDoctor" => $"/Doctors/Details?id={notif.RelatedEntityId}",
                     _ => "#"
                 };
 
