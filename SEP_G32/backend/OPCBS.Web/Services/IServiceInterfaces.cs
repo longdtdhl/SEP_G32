@@ -23,6 +23,11 @@ public interface IScheduleApiService
     Task<(AppointmentSlotDto? Data, string? Error)> CreateTreatmentAppointmentAsync(CreateTreatmentAppointmentDto dto);
     Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
     Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
+    Task<(AppointmentSlotDto? Data, string? Error)> AssignTreatmentSlotAsync(AssignTreatmentSlotDto dto);
+    Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10);
+    Task<(ScheduleNoteWebDto? Data, string? Error)> CreateNoteAsync(CreateScheduleNoteWebDto dto);
+    Task<(ScheduleNoteWebDto? Data, string? Error)> UpdateNoteAsync(Guid id, UpdateScheduleNoteWebDto dto);
+    Task<(bool Success, string? Error)> DeleteNoteAsync(Guid id);
 }
 
 public interface IPatientRecordApiService
@@ -144,6 +149,7 @@ public interface IPsychometricApiService
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByAppointmentAsync(Guid appointmentId);
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId);
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync();
+    Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId);
 }
 
 public interface INotificationApiService
@@ -208,12 +214,28 @@ public interface ITreatmentCaseApiService
     Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto);
     Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto);
     Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId);
-    Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId);
-    Task<(bool Success, string? Error)> CreateHomeworkAsync(object dto);
+    // Goal Details (Milestones)
+    Task<(bool Success, string? Error)> CreateGoalDetailAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> UpdateGoalDetailAsync(Guid detailId, object dto);
+    Task<(bool Success, string? Error)> DeleteGoalDetailAsync(Guid detailId);
+    // Goal Success Criteria
+    Task<(bool Success, string? Error)> CreateSuccessCriteriaAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> UpdateSuccessCriteriaAsync(Guid criteriaId, object dto);
+    Task<(bool Success, string? Error)> DeleteSuccessCriteriaAsync(Guid criteriaId);
+    Task<(bool Success, string? Error)> EvaluateSuccessCriteriaAsync(Guid criteriaId, object dto);
+      // Homework
+      Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId);
+      Task<(List<TreatmentCaseFileWebDto> Data, string? Error)> GetPatientFilesAsync(Guid caseId);
+      Task<(bool Success, string? Error)> CreateHomeworkAsync(object dto);
     Task<(bool Success, string? Error)> SubmitHomeworkAsync(Guid homeworkId, object dto);
     Task<(bool Success, string? Error)> ReviewHomeworkAsync(Guid homeworkId, object dto);
+    // Mood
     Task<(List<MoodEntryWebDto> Data, string? Error)> GetMoodEntriesAsync(Guid caseId);
     Task<(bool Success, string? Error)> AddMoodEntryAsync(object dto);
+    // Progress & Timeline
     Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId);
     Task<(List<TreatmentTimelineWebDto> Data, string? Error)> GetTimelineAsync(Guid caseId);
+    // Dashboard & Risk
+    Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync();
+    Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId);
 }

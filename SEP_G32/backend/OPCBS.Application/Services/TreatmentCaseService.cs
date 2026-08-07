@@ -18,6 +18,9 @@ public class TreatmentCaseService : ITreatmentCaseService
     private readonly IRepository<TreatmentCase> _caseRepo;
     private readonly IRepository<TreatmentSession> _sessionRepo;
     private readonly IRepository<TreatmentGoal> _goalRepo;
+    private readonly IRepository<GoalDetail> _goalDetailRepo;
+    private readonly IRepository<GoalSuccessCriteria> _successCriteriaRepo;
+    private readonly IRepository<SuccessCriteriaEvaluation> _criteriaEvaluationRepo;
     private readonly IRepository<TreatmentGoalProgress> _goalProgressRepo;
     private readonly IRepository<TreatmentSessionGoal> _sessionGoalRepo;
     private readonly IRepository<TreatmentPackage> _packageRepo;
@@ -32,6 +35,10 @@ public class TreatmentCaseService : ITreatmentCaseService
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<AppointmentHistory> _appointmentHistoryRepo;
+    private readonly IRepository<DoctorDayOff>? _dayOffRepo;
+    private readonly IRepository<Message>? _messageRepo;
+    private readonly IRepository<Conversation>? _conversationRepo;
+    private readonly IRepository<PsychometricTest>? _psychTestRepo;
     private readonly IUnitOfWork _uow;
     private readonly ILogger<TreatmentCaseService> _logger;
 
@@ -39,6 +46,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         IRepository<TreatmentCase> caseRepo,
         IRepository<TreatmentSession> sessionRepo,
         IRepository<TreatmentGoal> goalRepo,
+        IRepository<GoalDetail> goalDetailRepo,
+        IRepository<GoalSuccessCriteria> successCriteriaRepo,
+        IRepository<SuccessCriteriaEvaluation> criteriaEvaluationRepo,
         IRepository<TreatmentGoalProgress> goalProgressRepo,
         IRepository<TreatmentSessionGoal> sessionGoalRepo,
         IRepository<TreatmentPackage> packageRepo,
@@ -54,11 +64,18 @@ public class TreatmentCaseService : ITreatmentCaseService
         IRepository<User> userRepo,
         IRepository<AppointmentHistory> appointmentHistoryRepo,
         IUnitOfWork uow,
-        ILogger<TreatmentCaseService> logger)
+        ILogger<TreatmentCaseService> logger,
+        IRepository<DoctorDayOff>? dayOffRepo = null,
+        IRepository<Message>? messageRepo = null,
+        IRepository<Conversation>? conversationRepo = null,
+        IRepository<PsychometricTest>? psychTestRepo = null)
     {
         _caseRepo = caseRepo;
         _sessionRepo = sessionRepo;
         _goalRepo = goalRepo;
+        _goalDetailRepo = goalDetailRepo;
+        _successCriteriaRepo = successCriteriaRepo;
+        _criteriaEvaluationRepo = criteriaEvaluationRepo;
         _goalProgressRepo = goalProgressRepo;
         _sessionGoalRepo = sessionGoalRepo;
         _packageRepo = packageRepo;
@@ -75,6 +92,10 @@ public class TreatmentCaseService : ITreatmentCaseService
         _appointmentHistoryRepo = appointmentHistoryRepo;
         _uow = uow;
         _logger = logger;
+        _dayOffRepo = dayOffRepo;
+        _messageRepo = messageRepo;
+        _conversationRepo = conversationRepo;
+        _psychTestRepo = psychTestRepo;
     }
 
     // ==================== Treatment Case CRUD ====================
@@ -152,12 +173,12 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
-        if (doctor != null && treatmentCase.DoctorId == doctor.Id)
+        if (doctor != null && (treatmentCase.DoctorId == doctor.Id || treatmentCase.DoctorId == doctor.UserId))
             return true;
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
-        if (patient != null && treatmentCase.PatientId == patient.Id)
+        if (patient != null && (treatmentCase.PatientId == patient.Id || treatmentCase.PatientId == patient.UserId))
             return true;
 
         var allUsers = await _userRepo.GetAllAsync(ct);
@@ -218,6 +239,54 @@ public class TreatmentCaseService : ITreatmentCaseService
             result.Add(await MapToListDtoAsync(c, ct));
 
         return ApiResponse<List<TreatmentCaseListDto>>.SuccessResponse(result);
+    }
+
+    public async Task<ApiResponse<DoctorTreatmentDashboardDto>> GetDoctorDashboardAsync(Guid doctorUserId, CancellationToken ct = default)
+    {
+        var doctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = doctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<DoctorTreatmentDashboardDto>.ErrorResponse("Doctor profile not found.");
+
+        var cases = (await _caseRepo.GetAllAsync(ct))
+            .Where(c => !c.IsDeleted && c.Status == TreatmentCaseStatus.Active &&
+                        (c.DoctorId == doctor.UserId || c.DoctorId == doctor.Id))
+            .ToList();
+
+        var attentionCases = new List<TreatmentCaseRiskDto>();
+        foreach (var treatmentCase in cases)
+        {
+            var risk = await BuildCaseRiskAsync(treatmentCase, ct);
+            if (!string.Equals(risk.Level, "Low", StringComparison.OrdinalIgnoreCase))
+                attentionCases.Add(risk);
+        }
+
+        var unreadCount = 0;
+        if (_conversationRepo != null && _messageRepo != null)
+        {
+            var conversationIds = (await _conversationRepo.GetAllAsync(ct))
+                .Where(c => !c.IsDeleted && (c.DoctorId == doctor.UserId || c.DoctorId == doctor.Id))
+                .Select(c => c.Id)
+                .ToHashSet();
+
+            unreadCount = (await _messageRepo.GetAllAsync(ct))
+                .Count(m => conversationIds.Contains(m.ConversationId) &&
+                            m.SenderId != doctor.UserId && m.SenderId != doctor.Id && !m.IsRead);
+        }
+
+        var result = new DoctorTreatmentDashboardDto
+        {
+            ActiveCaseCount = cases.Count,
+            HighRiskCaseCount = attentionCases.Count(r => r.Level == "High"),
+            AttentionCaseCount = attentionCases.Count,
+            UnreadMessageCount = unreadCount,
+            AttentionCases = attentionCases
+                .OrderByDescending(r => r.Level == "High")
+                .ThenByDescending(r => r.Score)
+                .ToList()
+        };
+
+        return ApiResponse<DoctorTreatmentDashboardDto>.SuccessResponse(result);
     }
 
     public async Task<ApiResponse<TreatmentCaseDto>> UpdateAsync(Guid caseId, UpdateTreatmentCaseDto dto, CancellationToken ct)
@@ -450,6 +519,10 @@ public class TreatmentCaseService : ITreatmentCaseService
         await _uow.BeginTransactionAsync(ct);
         try
         {
+            // Load days off for the doctor
+            var allDaysOff = _dayOffRepo != null ? await _dayOffRepo.GetAllAsync(ct) : new List<DoctorDayOff>();
+            var doctorDaysOff = allDaysOff.Where(d => (d.DoctorProfileId == doctorProfile.Id || d.DoctorProfileId == doctorUserId) && !d.IsDeleted).ToList();
+
             while (createdSessions.Count < sessionsToSchedule && currentDate < maxDate)
             {
                 if (!dto.DaysOfWeek.Contains(currentDate.DayOfWeek))
@@ -461,12 +534,21 @@ public class TreatmentCaseService : ITreatmentCaseService
                 var slotDate = DateOnly.FromDateTime(currentDate);
                 var slotStartDateTime = currentDate.Date.Add(startTime.ToTimeSpan());
 
-                // Check for overlapping booked slots on this date
+                // Check if date is a doctor day off
+                var isDayOff = doctorDaysOff.Any(d => currentDate.Date >= d.StartDate.Date && currentDate.Date <= d.EndDate.Date);
+                if (isDayOff)
+                {
+                    skippedDates.Add(currentDate.ToString("MMM dd (ddd)") + " — day off");
+                    currentDate = currentDate.AddDays(1);
+                    continue;
+                }
+
+                // Check for overlapping booked/blocked slots on this date
                 var overlappingBookedSlots = allSlots.Where(s =>
                     s.DoctorProfileId == doctorProfile.Id &&
                     s.SlotDate == slotDate &&
                     !s.IsDeleted &&
-                    s.Status == AppointmentSlotStatus.Booked &&
+                    (s.Status == AppointmentSlotStatus.Booked || s.Status == AppointmentSlotStatus.Blocked) &&
                     s.StartTime < endTime && s.EndTime > startTime).ToList();
 
                 if (overlappingBookedSlots.Any())
@@ -498,36 +580,46 @@ public class TreatmentCaseService : ITreatmentCaseService
                     continue;
                 }
 
-                // Check unique index: DoctorProfileId + SlotDate + StartTime
-                var duplicateSlot = allSlots.Any(s =>
+                var slotNotes = $"Treatment session for {patientName}: {treatmentCase.CaseName}";
+
+                // ── STAGE 1: Check for existing Available slot to REUSE, or create new ──
+                var existingAvailableSlot = allSlots.FirstOrDefault(s =>
                     s.DoctorProfileId == doctorProfile.Id &&
                     s.SlotDate == slotDate &&
                     s.StartTime == startTime &&
-                    !s.IsDeleted);
+                    !s.IsDeleted &&
+                    s.Status == AppointmentSlotStatus.Available);
 
-                if (duplicateSlot)
+                AppointmentSlot slot;
+                if (existingAvailableSlot != null)
                 {
-                    skippedDates.Add(currentDate.ToString("MMM dd (ddd)") + " — slot already exists at this time");
-                    currentDate = currentDate.AddDays(1);
-                    continue;
+                    // Reuse existing Available slot
+                    slot = existingAvailableSlot;
+                    slot.Status = AppointmentSlotStatus.Booked;
+                    slot.CurrentBookings = 1;
+                    slot.Notes = slotNotes;
+                    slot.UpdatedAt = DateTime.UtcNow;
+                    _slotRepo.Update(slot);
+                    await _uow.SaveChangesAsync(ct);
                 }
-
-                // ── STAGE 1: Create AppointmentSlot and save ────────────
-                var slotNotes = $"Treatment session for {patientName}: {treatmentCase.CaseName}";
-                var slot = new AppointmentSlot
+                else
                 {
-                    DoctorProfileId = doctorProfile.Id,
-                    SlotDate = slotDate,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    Status = AppointmentSlotStatus.Booked,
-                    CurrentBookings = 1,
-                    MaxPatients = 1,
-                    Notes = slotNotes,
-                    DoctorProfile = doctorProfile
-                };
-                await _slotRepo.AddAsync(slot, ct);
-                await _uow.SaveChangesAsync(ct);
+                    // Create new AppointmentSlot
+                    slot = new AppointmentSlot
+                    {
+                        DoctorProfileId = doctorProfile.Id,
+                        SlotDate = slotDate,
+                        StartTime = startTime,
+                        EndTime = endTime,
+                        Status = AppointmentSlotStatus.Booked,
+                        CurrentBookings = 1,
+                        MaxPatients = 1,
+                        Notes = slotNotes,
+                        DoctorProfile = doctorProfile
+                    };
+                    await _slotRepo.AddAsync(slot, ct);
+                    await _uow.SaveChangesAsync(ct);
+                }
 
                 // ── STAGE 2: Create/reuse TreatmentSession (Planned, no AppointmentId) and save ──
                 TreatmentSession session;
@@ -604,6 +696,17 @@ public class TreatmentCaseService : ITreatmentCaseService
                 allAppointments = await _appointmentRepo.GetAllAsync(ct);
 
                 currentDate = currentDate.AddDays(1);
+            }
+
+            if (createdSessions.Count < sessionsToSchedule)
+            {
+                await _uow.RollbackTransactionAsync(ct);
+                var missingCount = sessionsToSchedule - createdSessions.Count;
+                var skipSummary = skippedDates.Any()
+                    ? " Conflict reasons: " + string.Join(", ", skippedDates.Take(5))
+                    : "";
+                return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
+                    $"Insufficient available schedule slots for the requested recurrence. Only {createdSessions.Count} of {sessionsToSchedule} required sessions could be scheduled (missing {missingCount} session(s)).{skipSummary}");
             }
 
             await _uow.SaveChangesAsync(ct);
@@ -692,28 +795,11 @@ public class TreatmentCaseService : ITreatmentCaseService
         session.UpdatedAt = DateTime.UtcNow;
         _sessionRepo.Update(session);
 
-        // Update session-goal links
-        if (dto.LinkedGoalIds != null)
+        if (dto.LinkedGoalDetailIds != null || dto.LinkedGoalIds != null)
         {
-            var allLinks = await _sessionGoalRepo.GetAllAsync(ct);
-            var existingLinks = allLinks.Where(sg => sg.TreatmentSessionId == sessionId).ToList();
-            foreach (var link in existingLinks)
-                _sessionGoalRepo.Delete(link);
-
-            foreach (var goalId in dto.LinkedGoalIds)
-            {
-                var goal = await _goalRepo.GetByIdAsync(goalId, ct);
-                if (goal != null)
-                {
-                    await _sessionGoalRepo.AddAsync(new TreatmentSessionGoal
-                    {
-                        TreatmentSessionId = sessionId,
-                        TreatmentGoalId = goalId,
-                        TreatmentSession = session,
-                        TreatmentGoal = goal
-                    }, ct);
-                }
-            }
+            var detailIds = await ResolveGoalDetailIdsAsync(
+                session.TreatmentCaseId, dto.LinkedGoalDetailIds, dto.LinkedGoalIds, ct);
+            await ReplaceSessionGoalLinksAsync(session, detailIds, ct);
         }
 
         await _uow.SaveChangesAsync(ct);
@@ -843,29 +929,14 @@ public class TreatmentCaseService : ITreatmentCaseService
             }
         }
 
-        // Link goals if provided
-        if (dto.LinkedGoalIds != null && dto.LinkedGoalIds.Any())
+        if (dto.LinkedGoalDetailIds != null || dto.LinkedGoalIds != null)
         {
-            var allLinks = await _sessionGoalRepo.GetAllAsync(ct);
-            var existingLinks = allLinks.Where(sg => sg.TreatmentSessionId == sessionId).ToList();
-            foreach (var link in existingLinks)
-                _sessionGoalRepo.Delete(link);
-
-            foreach (var goalId in dto.LinkedGoalIds)
-            {
-                var goal = await _goalRepo.GetByIdAsync(goalId, ct);
-                if (goal != null)
-                {
-                    await _sessionGoalRepo.AddAsync(new TreatmentSessionGoal
-                    {
-                        TreatmentSessionId = sessionId,
-                        TreatmentGoalId = goalId,
-                        TreatmentSession = session,
-                        TreatmentGoal = goal
-                    }, ct);
-                }
-            }
+            var detailIds = await ResolveGoalDetailIdsAsync(
+                session.TreatmentCaseId, dto.LinkedGoalDetailIds, dto.LinkedGoalIds, ct);
+            await ReplaceSessionGoalLinksAsync(session, detailIds, ct);
         }
+
+        await SynchronizeGoalsForSessionAsync(session, null, ct);
 
         // Update parent case counters using count-based recalculation (idempotent)
         var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
@@ -913,6 +984,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         var allAssignments = await _assignmentRepo.GetAllAsync(ct);
         var allSessionGoals = await _sessionGoalRepo.GetAllAsync(ct);
         var allGoals = await _goalRepo.GetAllAsync(ct);
+        var allDetails = await _goalDetailRepo.GetAllAsync(ct);
 
         foreach (var s in sessions)
         {
@@ -920,9 +992,12 @@ public class TreatmentCaseService : ITreatmentCaseService
             var sessionHomework = allAssignments.Where(a => a.TreatmentSessionId == s.Id && !a.IsDeleted).ToList();
             dto.HomeworkList = sessionHomework.Select(MapToHomeworkDto).ToList();
 
-            var linkedGoalIds = allSessionGoals.Where(sg => sg.TreatmentSessionId == s.Id).Select(sg => sg.TreatmentGoalId).ToHashSet();
+            var linkedDetailIds = allSessionGoals.Where(sg => sg.TreatmentSessionId == s.Id && !sg.IsDeleted).Select(sg => sg.GoalDetailId).ToHashSet();
+            var linkedDetails = allDetails.Where(d => linkedDetailIds.Contains(d.Id) && !d.IsDeleted).ToList();
+            var linkedGoalIds = linkedDetails.Select(d => d.GoalId).ToHashSet();
             var linkedGoals = allGoals.Where(g => linkedGoalIds.Contains(g.Id) && !g.IsDeleted).ToList();
             dto.LinkedGoals = linkedGoals.Select(MapToGoalDto).ToList();
+            dto.LinkedGoalDetails = linkedDetails.Select(MapToGoalDetailDto).ToList();
 
             dtos.Add(dto);
         }
@@ -932,39 +1007,87 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     // ==================== Goals ====================
 
-    public async Task<ApiResponse<TreatmentGoalDto>> CreateGoalAsync(CreateGoalDto dto, CancellationToken ct)
+    public async Task<ApiResponse<TreatmentGoalDto>> CreateGoalAsync(CreateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
     {
         var treatmentCase = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId, ct);
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<TreatmentGoalDto>.ErrorResponse("Treatment case not found.");
+        if (doctorUserId.HasValue && !await ValidateUserAccessToCaseAsync(treatmentCase, doctorUserId, ct))
+            return ApiResponse<TreatmentGoalDto>.ErrorResponse("Access denied.");
+
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal title is required.");
+
+        if (!Enum.IsDefined(typeof(GoalCategory), dto.Category) || !Enum.IsDefined(typeof(GoalPriority), dto.Priority))
+            return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal category or priority is invalid.");
+
+        var currentGoals = await _goalRepo.GetAllAsync(ct);
+        var nextOrder = currentGoals.Where(g => g.TreatmentCaseId == dto.TreatmentCaseId && !g.IsDeleted)
+            .Select(g => g.OrderIndex).DefaultIfEmpty(-1).Max() + 1;
 
         var goal = new TreatmentGoal
         {
             TreatmentCaseId = dto.TreatmentCaseId,
+            TemplateId = dto.TemplateId,
             CreatedByDoctorId = treatmentCase.DoctorId,
             Title = dto.Title,
             Description = dto.Description,
             Category = (GoalCategory)dto.Category,
             Priority = (GoalPriority)dto.Priority,
+            OrderIndex = dto.OrderIndex ?? nextOrder,
             TargetValue = dto.TargetValue,
             CurrentValue = dto.CurrentValue,
             Unit = dto.Unit,
             TargetDate = dto.TargetDate,
-            Status = GoalStatus.NotStarted,
+            StartDate = dto.StartDate,
+            Status = GoalStatus.Draft,
             TreatmentCase = treatmentCase
         };
 
         await _goalRepo.AddAsync(goal, ct);
+
+        foreach (var detailDto in dto.Details)
+        {
+            if (string.IsNullOrWhiteSpace(detailDto.Title))
+                return ApiResponse<TreatmentGoalDto>.ErrorResponse("Every goal detail needs a title.");
+
+            var detail = await CreateGoalDetailEntityAsync(goal, detailDto, ct);
+            await _goalDetailRepo.AddAsync(detail, ct);
+            await ReplaceSessionGoalLinksAsync(detail, detailDto.TreatmentSessionIds, ct);
+        }
+
+        foreach (var criteriaDto in dto.SuccessCriteria)
+        {
+            var criteriaValidation = ValidateCriteria(criteriaDto.CriteriaType, criteriaDto.DataSource, criteriaDto.Operator, criteriaDto.TargetValue, criteriaDto.Weight);
+            if (criteriaValidation != null)
+                return ApiResponse<TreatmentGoalDto>.ErrorResponse(criteriaValidation);
+
+            await _successCriteriaRepo.AddAsync(new GoalSuccessCriteria
+            {
+                GoalId = goal.Id,
+                CriteriaType = (GoalSuccessCriteriaType)criteriaDto.CriteriaType,
+                DataSource = (GoalCriteriaDataSource)criteriaDto.DataSource,
+                Operator = (GoalCriteriaOperator)criteriaDto.Operator,
+                TargetValue = criteriaDto.TargetValue,
+                Weight = criteriaDto.Weight,
+                IsRequired = criteriaDto.IsRequired,
+                Description = criteriaDto.Description,
+                Goal = goal
+            }, ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
 
-        return ApiResponse<TreatmentGoalDto>.SuccessResponse(MapToGoalDto(goal), "Treatment goal created successfully.");
+        return ApiResponse<TreatmentGoalDto>.SuccessResponse(await BuildGoalDtoAsync(goal, ct), "Treatment goal created successfully.");
     }
 
-    public async Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, CancellationToken ct)
+    public async Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
     {
         var goal = await _goalRepo.GetByIdAsync(goalId, ct);
         if (goal == null || goal.IsDeleted)
             return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal not found.");
+        if (!await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<TreatmentGoalDto>.ErrorResponse("Access denied.");
 
         if (dto.Title != null) goal.Title = dto.Title;
         if (dto.Description != null) goal.Description = dto.Description;
@@ -974,17 +1097,23 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (dto.TargetValue.HasValue) goal.TargetValue = dto.TargetValue.Value;
         if (dto.Unit != null) goal.Unit = dto.Unit;
         if (dto.DoctorNotes != null) goal.DoctorNotes = dto.DoctorNotes;
+        if (dto.StartDate.HasValue) goal.StartDate = dto.StartDate;
+        if (dto.OrderIndex.HasValue) goal.OrderIndex = dto.OrderIndex.Value;
 
         if (dto.Status.HasValue)
         {
+            if (!Enum.IsDefined(typeof(GoalStatus), dto.Status.Value))
+                return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal status is invalid.");
+            if ((GoalStatus)dto.Status.Value == GoalStatus.Achieved)
+                return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal achievement is determined from required success criteria.");
             goal.Status = (GoalStatus)dto.Status.Value;
-            if (goal.Status == GoalStatus.Achieved)
-            {
-                goal.AchievedDate = DateTime.UtcNow;
-                goal.ProgressPercent = 100;
-            }
         }
-        if (dto.ProgressPercent.HasValue) goal.ProgressPercent = dto.ProgressPercent.Value;
+        if (dto.ProgressPercent.HasValue)
+        {
+            if (dto.ProgressPercent is < 0 or > 100)
+                return ApiResponse<TreatmentGoalDto>.ErrorResponse("Progress percentage must be between 0 and 100.");
+            goal.ProgressPercent = dto.ProgressPercent.Value;
+        }
 
         goal.UpdatedAt = DateTime.UtcNow;
         _goalRepo.Update(goal);
@@ -997,7 +1126,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         }
 
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<TreatmentGoalDto>.SuccessResponse(MapToGoalDto(goal), "Goal updated successfully.");
+        return ApiResponse<TreatmentGoalDto>.SuccessResponse(await BuildGoalDtoAsync(goal, ct), "Goal updated successfully.");
     }
 
     public async Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
@@ -1016,37 +1145,54 @@ public class TreatmentCaseService : ITreatmentCaseService
             .ThenBy(g => g.CreatedAt)
             .ToList();
 
-        var allProgress = await _goalProgressRepo.GetAllAsync(ct);
         var dtos = new List<TreatmentGoalDto>();
-
         foreach (var g in goals)
-        {
-            var dto = MapToGoalDto(g);
-            var history = allProgress.Where(p => p.GoalId == g.Id && !p.IsDeleted).OrderByDescending(p => p.RecordedAt).ToList();
-            dto.ProgressHistory = history.Select(MapToGoalProgressDto).ToList();
-            dtos.Add(dto);
-        }
+            dtos.Add(await BuildGoalDtoAsync(g, ct));
 
         return ApiResponse<List<TreatmentGoalDto>>.SuccessResponse(dtos);
     }
 
-    public async Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, CancellationToken ct)
+    public async Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
     {
         var goal = await _goalRepo.GetByIdAsync(dto.GoalId, ct);
         if (goal == null || goal.IsDeleted)
             return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Goal not found.");
+        if (!await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Access denied.");
 
-        goal.ProgressPercent = dto.ProgressPercent;
+        if (dto.ProgressPercent is < 0 or > 100)
+            return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Progress percentage must be between 0 and 100.");
+
+        GoalDetail? detail = null;
+        if (dto.GoalDetailId.HasValue)
+        {
+            detail = await _goalDetailRepo.GetByIdAsync(dto.GoalDetailId.Value, ct);
+            if (detail == null || detail.IsDeleted || detail.GoalId != goal.Id)
+                return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Goal detail does not belong to this goal.");
+        }
+
+        TreatmentSession? session = null;
+        if (dto.TreatmentSessionId.HasValue)
+        {
+            session = await _sessionRepo.GetByIdAsync(dto.TreatmentSessionId.Value, ct);
+            if (session == null || session.IsDeleted || session.TreatmentCaseId != goal.TreatmentCaseId)
+                return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Treatment session does not belong to this treatment case.");
+            if (detail != null && !await IsDetailLinkedToSessionAsync(detail.Id, session.Id, ct))
+                return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Link this goal detail to the treatment session before recording progress.");
+        }
+
+        if (detail != null)
+        {
+            detail.ProgressPercent = dto.ProgressPercent;
+            detail.Status = dto.ProgressPercent >= 100 ? GoalDetailStatus.Completed :
+                detail.Status == GoalDetailStatus.NotStarted && dto.ProgressPercent > 0 ? GoalDetailStatus.InProgress : detail.Status;
+            detail.CompletedDate = dto.ProgressPercent >= 100 ? DateTime.UtcNow : null;
+            detail.UpdatedAt = DateTime.UtcNow;
+            _goalDetailRepo.Update(detail);
+        }
+
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, dto.ProgressPercent, ct);
         if (dto.CurrentValue.HasValue) goal.CurrentValue = dto.CurrentValue.Value;
-        if (dto.ProgressPercent >= 100)
-        {
-            goal.Status = GoalStatus.Achieved;
-            goal.AchievedDate = DateTime.UtcNow;
-        }
-        else if (goal.Status == GoalStatus.NotStarted && dto.ProgressPercent > 0)
-        {
-            goal.Status = GoalStatus.InProgress;
-        }
 
         goal.UpdatedAt = DateTime.UtcNow;
         _goalRepo.Update(goal);
@@ -1055,6 +1201,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         {
             GoalId = dto.GoalId,
             TreatmentSessionId = dto.TreatmentSessionId,
+            GoalDetailId = dto.GoalDetailId,
             ProgressPercent = dto.ProgressPercent,
             CurrentValue = dto.CurrentValue,
             DoctorComment = dto.DoctorComment,
@@ -1063,6 +1210,8 @@ public class TreatmentCaseService : ITreatmentCaseService
         };
 
         await _goalProgressRepo.AddAsync(progressRecord, ct);
+
+        await SynchronizeAndEvaluateGoalAsync(goal, session, doctorUserId, ct);
 
         var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
         if (treatmentCase != null)
@@ -1075,8 +1224,14 @@ public class TreatmentCaseService : ITreatmentCaseService
         return ApiResponse<TreatmentGoalProgressDto>.SuccessResponse(MapToGoalProgressDto(progressRecord), "Goal progress recorded successfully.");
     }
 
-    public async Task<ApiResponse<List<TreatmentGoalProgressDto>>> GetGoalProgressHistoryAsync(Guid goalId, CancellationToken ct)
+    public async Task<ApiResponse<List<TreatmentGoalProgressDto>>> GetGoalProgressHistoryAsync(Guid goalId, Guid? requestingUserId = null, CancellationToken ct = default)
     {
+        var goal = await _goalRepo.GetByIdAsync(goalId, ct);
+        if (goal == null || goal.IsDeleted)
+            return ApiResponse<List<TreatmentGoalProgressDto>>.ErrorResponse("Goal not found.");
+        var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
+        if (treatmentCase == null || !await ValidateUserAccessToCaseAsync(treatmentCase, requestingUserId, ct))
+            return ApiResponse<List<TreatmentGoalProgressDto>>.ErrorResponse("Access denied.");
         var all = await _goalProgressRepo.GetAllAsync(ct);
         var history = all
             .Where(p => p.GoalId == goalId && !p.IsDeleted)
@@ -1085,6 +1240,176 @@ public class TreatmentCaseService : ITreatmentCaseService
             .ToList();
 
         return ApiResponse<List<TreatmentGoalProgressDto>>.SuccessResponse(history);
+    }
+
+    public async Task<ApiResponse<GoalDetailDto>> CreateGoalDetailAsync(Guid goalId, CreateGoalDetailDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var goal = await _goalRepo.GetByIdAsync(goalId, ct);
+        if (goal == null || goal.IsDeleted)
+            return ApiResponse<GoalDetailDto>.ErrorResponse("Goal not found.");
+        if (!await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<GoalDetailDto>.ErrorResponse("Access denied.");
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return ApiResponse<GoalDetailDto>.ErrorResponse("Goal detail title is required.");
+
+        var detail = await CreateGoalDetailEntityAsync(goal, dto, ct);
+        await _goalDetailRepo.AddAsync(detail, ct);
+        await ReplaceSessionGoalLinksAsync(detail, dto.TreatmentSessionIds, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<GoalDetailDto>.SuccessResponse(await BuildGoalDetailDtoAsync(detail, ct), "Goal detail created successfully.");
+    }
+
+    public async Task<ApiResponse<GoalDetailDto>> UpdateGoalDetailAsync(Guid detailId, UpdateGoalDetailDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var detail = await _goalDetailRepo.GetByIdAsync(detailId, ct);
+        if (detail == null || detail.IsDeleted)
+            return ApiResponse<GoalDetailDto>.ErrorResponse("Goal detail not found.");
+        var goal = await _goalRepo.GetByIdAsync(detail.GoalId, ct);
+        if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<GoalDetailDto>.ErrorResponse("Access denied.");
+
+        if (dto.Title != null) detail.Title = dto.Title;
+        if (dto.Description != null) detail.Description = dto.Description;
+        if (dto.Objective != null) detail.Objective = dto.Objective;
+        if (dto.ExpectedOutcome != null) detail.ExpectedOutcome = dto.ExpectedOutcome;
+        if (dto.OrderIndex.HasValue) detail.OrderIndex = dto.OrderIndex.Value;
+        if (dto.EstimatedSessions.HasValue) detail.EstimatedSessions = dto.EstimatedSessions;
+        if (dto.Status.HasValue)
+        {
+            if (!Enum.IsDefined(typeof(GoalDetailStatus), dto.Status.Value))
+                return ApiResponse<GoalDetailDto>.ErrorResponse("Goal detail status is invalid.");
+            detail.Status = (GoalDetailStatus)dto.Status.Value;
+            detail.CompletedDate = detail.Status == GoalDetailStatus.Completed ? DateTime.UtcNow : null;
+            detail.ProgressPercent = detail.Status == GoalDetailStatus.Completed ? 100 : detail.ProgressPercent;
+        }
+        detail.UpdatedAt = DateTime.UtcNow;
+        _goalDetailRepo.Update(detail);
+        if (dto.TreatmentSessionIds != null)
+            await ReplaceSessionGoalLinksAsync(detail, dto.TreatmentSessionIds, ct);
+        await SynchronizeAndEvaluateGoalAsync(goal, null, doctorUserId, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<GoalDetailDto>.SuccessResponse(await BuildGoalDetailDtoAsync(detail, ct), "Goal detail updated successfully.");
+    }
+
+    public async Task<ApiResponse> DeleteGoalDetailAsync(Guid detailId, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var detail = await _goalDetailRepo.GetByIdAsync(detailId, ct);
+        if (detail == null || detail.IsDeleted)
+            return ApiResponse.ErrorResponse("Goal detail not found.");
+        var goal = await _goalRepo.GetByIdAsync(detail.GoalId, ct);
+        if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse.ErrorResponse("Access denied.");
+        detail.IsDeleted = true;
+        detail.UpdatedAt = DateTime.UtcNow;
+        _goalDetailRepo.Update(detail);
+        foreach (var link in (await _sessionGoalRepo.GetAllAsync(ct)).Where(x => x.GoalDetailId == detailId && !x.IsDeleted))
+            _sessionGoalRepo.Delete(link);
+        await SynchronizeAndEvaluateGoalAsync(goal, null, doctorUserId, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Goal detail deleted successfully.");
+    }
+
+    public async Task<ApiResponse<GoalSuccessCriteriaDto>> CreateSuccessCriteriaAsync(Guid goalId, CreateGoalSuccessCriteriaDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var goal = await _goalRepo.GetByIdAsync(goalId, ct);
+        if (goal == null || goal.IsDeleted)
+            return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse("Goal not found.");
+        if (!await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse("Access denied.");
+        var validation = ValidateCriteria(dto.CriteriaType, dto.DataSource, dto.Operator, dto.TargetValue, dto.Weight);
+        if (validation != null) return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse(validation);
+
+        var criteria = new GoalSuccessCriteria
+        {
+            GoalId = goalId,
+            CriteriaType = (GoalSuccessCriteriaType)dto.CriteriaType,
+            DataSource = (GoalCriteriaDataSource)dto.DataSource,
+            Operator = (GoalCriteriaOperator)dto.Operator,
+            TargetValue = dto.TargetValue,
+            Weight = dto.Weight,
+            IsRequired = dto.IsRequired,
+            Description = dto.Description,
+            Goal = goal
+        };
+        await _successCriteriaRepo.AddAsync(criteria, ct);
+        await SynchronizeAndEvaluateGoalAsync(goal, null, doctorUserId, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<GoalSuccessCriteriaDto>.SuccessResponse(await BuildCriteriaDtoAsync(criteria, ct), "Success criterion created successfully.");
+    }
+
+    public async Task<ApiResponse<GoalSuccessCriteriaDto>> UpdateSuccessCriteriaAsync(Guid criteriaId, UpdateGoalSuccessCriteriaDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var criteria = await _successCriteriaRepo.GetByIdAsync(criteriaId, ct);
+        if (criteria == null || criteria.IsDeleted)
+            return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse("Success criterion not found.");
+        var goal = await _goalRepo.GetByIdAsync(criteria.GoalId, ct);
+        if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse("Access denied.");
+
+        var type = dto.CriteriaType ?? (int)criteria.CriteriaType;
+        var source = dto.DataSource ?? (int)criteria.DataSource;
+        var op = dto.Operator ?? (int)criteria.Operator;
+        var target = dto.TargetValue ?? criteria.TargetValue;
+        var weight = dto.Weight ?? criteria.Weight;
+        var validation = ValidateCriteria(type, source, op, target, weight);
+        if (validation != null) return ApiResponse<GoalSuccessCriteriaDto>.ErrorResponse(validation);
+        criteria.CriteriaType = (GoalSuccessCriteriaType)type;
+        criteria.DataSource = (GoalCriteriaDataSource)source;
+        criteria.Operator = (GoalCriteriaOperator)op;
+        criteria.TargetValue = target;
+        criteria.Weight = weight;
+        if (dto.IsRequired.HasValue) criteria.IsRequired = dto.IsRequired.Value;
+        if (dto.Description != null) criteria.Description = dto.Description;
+        criteria.UpdatedAt = DateTime.UtcNow;
+        _successCriteriaRepo.Update(criteria);
+        await SynchronizeAndEvaluateGoalAsync(goal, null, doctorUserId, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<GoalSuccessCriteriaDto>.SuccessResponse(await BuildCriteriaDtoAsync(criteria, ct), "Success criterion updated successfully.");
+    }
+
+    public async Task<ApiResponse> DeleteSuccessCriteriaAsync(Guid criteriaId, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var criteria = await _successCriteriaRepo.GetByIdAsync(criteriaId, ct);
+        if (criteria == null || criteria.IsDeleted)
+            return ApiResponse.ErrorResponse("Success criterion not found.");
+        var goal = await _goalRepo.GetByIdAsync(criteria.GoalId, ct);
+        if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse.ErrorResponse("Access denied.");
+
+        criteria.IsDeleted = true;
+        criteria.UpdatedAt = DateTime.UtcNow;
+        _successCriteriaRepo.Update(criteria);
+        await SynchronizeAndEvaluateGoalAsync(goal, null, doctorUserId, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Success criterion deleted successfully.");
+    }
+
+    public async Task<ApiResponse<SuccessCriteriaEvaluationDto>> EvaluateSuccessCriteriaAsync(Guid criteriaId, CreateSuccessCriteriaEvaluationDto dto, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var criteria = await _successCriteriaRepo.GetByIdAsync(criteriaId, ct);
+        if (criteria == null || criteria.IsDeleted)
+            return ApiResponse<SuccessCriteriaEvaluationDto>.ErrorResponse("Success criterion not found.");
+        var goal = await _goalRepo.GetByIdAsync(criteria.GoalId, ct);
+        if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse<SuccessCriteriaEvaluationDto>.ErrorResponse("Access denied.");
+        if (!dto.CurrentValue.HasValue)
+            return ApiResponse<SuccessCriteriaEvaluationDto>.ErrorResponse("Current value is required for a manual criterion evaluation.");
+
+        TreatmentSession? session = null;
+        if (dto.TreatmentSessionId.HasValue)
+        {
+            session = await _sessionRepo.GetByIdAsync(dto.TreatmentSessionId.Value, ct);
+            if (session == null || session.IsDeleted || session.TreatmentCaseId != goal.TreatmentCaseId)
+                return ApiResponse<SuccessCriteriaEvaluationDto>.ErrorResponse("Treatment session does not belong to this treatment case.");
+        }
+
+        criteria.CurrentValue = dto.CurrentValue;
+        criteria.UpdatedAt = DateTime.UtcNow;
+        _successCriteriaRepo.Update(criteria);
+        var evaluation = await AddCriteriaEvaluationAsync(criteria, session?.Id, dto.CurrentValue, doctorUserId, ct);
+        await SynchronizeAndEvaluateGoalAsync(goal, session, doctorUserId, ct, synchronizeAutomaticCriteria: false);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<SuccessCriteriaEvaluationDto>.SuccessResponse(MapToCriteriaEvaluationDto(evaluation), "Success criterion evaluated successfully.");
     }
 
     // ==================== Homework / Therapy Assignments ====================
@@ -1143,6 +1468,8 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         _assignmentRepo.Update(assignment);
 
+        await SynchronizeGoalsForHomeworkAsync(assignment, null, ct);
+
         if (assignment.TreatmentCaseId.HasValue)
         {
             var treatmentCase = await _caseRepo.GetByIdAsync(assignment.TreatmentCaseId.Value, ct);
@@ -1169,6 +1496,17 @@ public class TreatmentCaseService : ITreatmentCaseService
         assignment.UpdatedAt = DateTime.UtcNow;
 
         _assignmentRepo.Update(assignment);
+        await SynchronizeGoalsForHomeworkAsync(assignment, null, ct);
+
+        if (assignment.TreatmentCaseId.HasValue)
+        {
+            var treatmentCase = await _caseRepo.GetByIdAsync(assignment.TreatmentCaseId.Value, ct);
+            if (treatmentCase != null)
+            {
+                await RecalculateProgressAsync(treatmentCase, ct);
+                _caseRepo.Update(treatmentCase);
+            }
+        }
         await _uow.SaveChangesAsync(ct);
 
         return ApiResponse<HomeworkDto>.SuccessResponse(MapToHomeworkDto(assignment), "Homework reviewed successfully.");
@@ -1237,14 +1575,95 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
             return ApiResponse<List<MoodEntryDto>>.ErrorResponse("Access denied. You do not have permission to view mood entries for this treatment case.");
 
-        var all = await _moodRepo.GetAllAsync(ct);
-        var entries = all
-            .Where(m => m.TreatmentCaseId == caseId && !m.IsDeleted)
-            .OrderByDescending(m => m.RecordedAt)
-            .Select(MapToMoodEntryDto)
+        var entries = new List<MoodEntryDto>();
+
+        // 1. Fetch EmotionJournal entries (Mood Journey)
+        if (_journalRepo != null)
+        {
+            var journals = await _journalRepo.GetAllAsync(ct);
+            var caseJournals = journals.Where(j => !j.IsDeleted && (
+                j.TreatmentCaseId == caseId ||
+                (!j.TreatmentCaseId.HasValue && j.PatientId == tc.PatientId && j.CreatedAt >= tc.StartDate && (tc.ActualEndDate == null || j.CreatedAt <= tc.ActualEndDate))
+            )).ToList();
+
+            foreach (var j in caseJournals)
+            {
+                int moodScore = j.MoodScale <= 5 ? j.MoodScale * 2 : j.MoodScale;
+                int stressScore = j.StressScale <= 5 ? j.StressScale * 2 : j.StressScale;
+
+                entries.Add(new MoodEntryDto
+                {
+                    Id = j.Id,
+                    TreatmentCaseId = caseId,
+                    PatientId = j.PatientId,
+                    MoodScore = moodScore,
+                    StressScore = stressScore,
+                    Note = !string.IsNullOrWhiteSpace(j.Title) ? (string.IsNullOrWhiteSpace(j.Content) ? j.Title : $"{j.Title}: {j.Content}") : j.Content,
+                    RecordedAt = j.CreatedAt
+                });
+            }
+        }
+
+        // 2. Fetch legacy MoodEntry entries
+        var allMoods = await _moodRepo.GetAllAsync(ct);
+        var caseMoods = allMoods.Where(m => !m.IsDeleted && (
+            m.TreatmentCaseId == caseId ||
+            (m.TreatmentCaseId == Guid.Empty && m.PatientId == tc.PatientId && m.RecordedAt >= tc.StartDate && (tc.ActualEndDate == null || m.RecordedAt <= tc.ActualEndDate))
+        )).ToList();
+
+        foreach (var m in caseMoods)
+        {
+            if (!entries.Any(e => e.Id == m.Id))
+            {
+                entries.Add(MapToMoodEntryDto(m));
+            }
+        }
+
+        entries = entries.OrderByDescending(m => m.RecordedAt).ToList();
+        return ApiResponse<List<MoodEntryDto>>.SuccessResponse(entries);
+    }
+
+    public async Task<ApiResponse<TreatmentCaseRiskDto>> GetCaseRiskAsync(Guid caseId, Guid doctorUserId, CancellationToken ct = default)
+    {
+        var treatmentCase = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (treatmentCase == null || treatmentCase.IsDeleted)
+            return ApiResponse<TreatmentCaseRiskDto>.ErrorResponse("Treatment case not found.");
+
+        var doctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = doctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null || (treatmentCase.DoctorId != doctor.UserId && treatmentCase.DoctorId != doctor.Id))
+            return ApiResponse<TreatmentCaseRiskDto>.ErrorResponse("Access denied. Only the treating doctor can view attention risk.");
+
+        return ApiResponse<TreatmentCaseRiskDto>.SuccessResponse(await BuildCaseRiskAsync(treatmentCase, ct));
+    }
+
+    public async Task<ApiResponse<List<TreatmentCaseFileDto>>> GetPatientFilesAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
+    {
+        var treatmentCase = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (treatmentCase == null || treatmentCase.IsDeleted)
+            return ApiResponse<List<TreatmentCaseFileDto>>.ErrorResponse("Treatment case not found.");
+
+        if (!await ValidateUserAccessToCaseAsync(treatmentCase, requestingUserId, ct))
+            return ApiResponse<List<TreatmentCaseFileDto>>.ErrorResponse("Access denied. You do not have permission to view patient files for this treatment case.");
+
+        var files = (await _assignmentRepo.GetAllAsync(ct))
+            .Where(a => !a.IsDeleted && a.TreatmentCaseId == caseId &&
+                        !string.IsNullOrWhiteSpace(a.PatientSubmissionUrl))
+            .OrderByDescending(a => a.SubmittedAt ?? a.CreatedAt)
+            .Select(a => new TreatmentCaseFileDto
+            {
+                Id = a.Id,
+                TreatmentCaseId = caseId,
+                TreatmentSessionId = a.TreatmentSessionId,
+                HomeworkId = a.Id,
+                FileName = GetFileName(a.PatientSubmissionUrl!, a.Title),
+                FileUrl = a.PatientSubmissionUrl!,
+                HomeworkTitle = a.Title,
+                UploadedAt = a.SubmittedAt ?? a.CreatedAt
+            })
             .ToList();
 
-        return ApiResponse<List<MoodEntryDto>>.SuccessResponse(entries);
+        return ApiResponse<List<TreatmentCaseFileDto>>.SuccessResponse(files);
     }
 
     // ==================== Progress & Timeline ====================
@@ -1306,12 +1725,16 @@ public class TreatmentCaseService : ITreatmentCaseService
                 ? (int)Math.Round(sessionProgress * 0.60 + goalProgress * 0.40)
                 : sessionProgress;
 
-        var allMoods = await _moodRepo.GetAllAsync(ct);
-        var moodEntries = allMoods.Where(m => m.TreatmentCaseId == caseId && !m.IsDeleted).OrderBy(m => m.RecordedAt).ToList();
+        var moodResult = await GetMoodEntriesAsync(caseId, requestingUserId, ct);
+        var moodEntries = moodResult.Success && moodResult.Data != null ? moodResult.Data : new List<MoodEntryDto>();
 
-        var moodTrend = moodEntries.TakeLast(10).Select(m => new MoodTrendItem
+        var moodTrend = moodEntries.OrderBy(m => m.RecordedAt).TakeLast(10).Select(m => new MoodTrendItem
         {
             MoodScore = m.MoodScore,
+            AnxietyScore = m.AnxietyScore,
+            StressScore = m.StressScore,
+            SleepQualityScore = m.SleepQualityScore,
+            Note = m.Note,
             Date = m.RecordedAt
         }).ToList();
 
@@ -1430,6 +1853,311 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     // ==================== Private Helpers ====================
 
+    private async Task<GoalDetail> CreateGoalDetailEntityAsync(TreatmentGoal goal, CreateGoalDetailDto dto, CancellationToken ct)
+    {
+        var allDetails = await _goalDetailRepo.GetAllAsync(ct);
+        var nextOrder = allDetails.Where(d => d.GoalId == goal.Id && !d.IsDeleted)
+            .Select(d => d.OrderIndex).DefaultIfEmpty(-1).Max() + 1;
+        return new GoalDetail
+        {
+            GoalId = goal.Id,
+            Title = dto.Title.Trim(),
+            Description = dto.Description,
+            Objective = dto.Objective,
+            ExpectedOutcome = dto.ExpectedOutcome,
+            OrderIndex = dto.OrderIndex ?? nextOrder,
+            EstimatedSessions = dto.EstimatedSessions,
+            Goal = goal
+        };
+    }
+
+    private async Task ReplaceSessionGoalLinksAsync(TreatmentSession session, IEnumerable<Guid> detailIds, CancellationToken ct)
+    {
+        var requestedIds = detailIds.Distinct().ToList();
+        var details = (await _goalDetailRepo.GetAllAsync(ct))
+            .Where(d => requestedIds.Contains(d.Id) && !d.IsDeleted)
+            .ToList();
+        var caseGoalIds = (await _goalRepo.GetAllAsync(ct))
+            .Where(g => g.TreatmentCaseId == session.TreatmentCaseId && !g.IsDeleted)
+            .Select(g => g.Id).ToHashSet();
+        if (details.Count != requestedIds.Count || details.Any(d => !caseGoalIds.Contains(d.GoalId)))
+            throw new InvalidOperationException("Goal detail selection is not valid for this treatment case.");
+
+        var existingLinks = (await _sessionGoalRepo.GetAllAsync(ct))
+            .Where(link => link.TreatmentSessionId == session.Id && !link.IsDeleted)
+            .ToList();
+        foreach (var link in existingLinks)
+            _sessionGoalRepo.Delete(link);
+
+        for (var index = 0; index < details.Count; index++)
+        {
+            await _sessionGoalRepo.AddAsync(new TreatmentSessionGoal
+            {
+                TreatmentSessionId = session.Id,
+                GoalDetailId = details[index].Id,
+                OrderIndex = index,
+                TreatmentSession = session,
+                GoalDetail = details[index]
+            }, ct);
+        }
+    }
+
+    private async Task ReplaceSessionGoalLinksAsync(GoalDetail detail, IEnumerable<Guid> sessionIds, CancellationToken ct)
+    {
+        var requestedIds = sessionIds.Distinct().ToList();
+        var sessions = (await _sessionRepo.GetAllAsync(ct))
+            .Where(s => requestedIds.Contains(s.Id) && !s.IsDeleted)
+            .ToList();
+        var goal = await _goalRepo.GetByIdAsync(detail.GoalId, ct) ?? detail.Goal;
+        if (goal == null || sessions.Count != requestedIds.Count || sessions.Any(s => s.TreatmentCaseId != goal.TreatmentCaseId))
+            throw new InvalidOperationException("Treatment session selection is not valid for this goal detail.");
+
+        var existingLinks = (await _sessionGoalRepo.GetAllAsync(ct))
+            .Where(link => link.GoalDetailId == detail.Id && !link.IsDeleted)
+            .ToList();
+        foreach (var link in existingLinks)
+            _sessionGoalRepo.Delete(link);
+
+        for (var index = 0; index < sessions.Count; index++)
+        {
+            await _sessionGoalRepo.AddAsync(new TreatmentSessionGoal
+            {
+                TreatmentSessionId = sessions[index].Id,
+                GoalDetailId = detail.Id,
+                OrderIndex = index,
+                TreatmentSession = sessions[index],
+                GoalDetail = detail
+            }, ct);
+        }
+    }
+
+    private async Task<List<Guid>> ResolveGoalDetailIdsAsync(Guid treatmentCaseId, IEnumerable<Guid>? detailIds, IEnumerable<Guid>? legacyGoalIds, CancellationToken ct)
+    {
+        var requested = detailIds?.Distinct().ToList() ?? new List<Guid>();
+        if (legacyGoalIds != null)
+        {
+            var legacyIds = legacyGoalIds.Distinct().ToHashSet();
+            var goals = (await _goalRepo.GetAllAsync(ct))
+                .Where(g => g.TreatmentCaseId == treatmentCaseId && legacyIds.Contains(g.Id) && !g.IsDeleted)
+                .Select(g => g.Id).ToHashSet();
+            requested.AddRange((await _goalDetailRepo.GetAllAsync(ct))
+                .Where(d => goals.Contains(d.GoalId) && !d.IsDeleted)
+                .Select(d => d.Id));
+        }
+        return requested.Distinct().ToList();
+    }
+
+    private async Task<bool> IsDetailLinkedToSessionAsync(Guid detailId, Guid sessionId, CancellationToken ct) =>
+        (await _sessionGoalRepo.GetAllAsync(ct)).Any(link =>
+            !link.IsDeleted && link.GoalDetailId == detailId && link.TreatmentSessionId == sessionId);
+
+    private async Task SynchronizeGoalsForHomeworkAsync(TherapyAssignment assignment, Guid? evaluatedBy, CancellationToken ct)
+    {
+        if (!assignment.TreatmentSessionId.HasValue)
+            return;
+        var session = await _sessionRepo.GetByIdAsync(assignment.TreatmentSessionId.Value, ct);
+        if (session != null && !session.IsDeleted)
+            await SynchronizeGoalsForSessionAsync(session, evaluatedBy, ct);
+    }
+
+    private async Task SynchronizeGoalsForSessionAsync(TreatmentSession session, Guid? evaluatedBy, CancellationToken ct)
+    {
+        var links = (await _sessionGoalRepo.GetAllAsync(ct) ?? Enumerable.Empty<TreatmentSessionGoal>())
+            .Where(link => link.TreatmentSessionId == session.Id && !link.IsDeleted).ToList();
+        if (links.Count == 0)
+            return;
+
+        var detailIds = links.Select(link => link.GoalDetailId).ToHashSet();
+        var goalIds = (await _goalDetailRepo.GetAllAsync(ct) ?? Enumerable.Empty<GoalDetail>())
+            .Where(detail => detailIds.Contains(detail.Id) && !detail.IsDeleted)
+            .Select(detail => detail.GoalId).Distinct().ToHashSet();
+        var goals = (await _goalRepo.GetAllAsync(ct) ?? Enumerable.Empty<TreatmentGoal>())
+            .Where(goal => goalIds.Contains(goal.Id) && !goal.IsDeleted).ToList();
+        foreach (var goal in goals)
+            await SynchronizeAndEvaluateGoalAsync(goal, session, evaluatedBy, ct);
+    }
+
+    private async Task<bool> CanDoctorManageGoalAsync(TreatmentGoal goal, Guid? doctorUserId, CancellationToken ct)
+    {
+        if (!doctorUserId.HasValue || doctorUserId.Value == Guid.Empty)
+            return true;
+        var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
+        if (treatmentCase == null || treatmentCase.IsDeleted)
+            return false;
+        var doctor = (await _doctorRepo.GetAllAsync(ct))
+            .FirstOrDefault(d => d.UserId == doctorUserId.Value || d.Id == doctorUserId.Value);
+        return doctor != null && (treatmentCase.DoctorId == doctor.Id || treatmentCase.DoctorId == doctor.UserId);
+    }
+
+    private static string? ValidateCriteria(int criteriaType, int dataSource, int comparisonOperator, decimal? targetValue, decimal weight)
+    {
+        if (!Enum.IsDefined(typeof(GoalSuccessCriteriaType), criteriaType) ||
+            !Enum.IsDefined(typeof(GoalCriteriaDataSource), dataSource) ||
+            !Enum.IsDefined(typeof(GoalCriteriaOperator), comparisonOperator))
+            return "Success criterion type, data source, or operator is invalid.";
+        if (!targetValue.HasValue)
+            return "Success criterion target value is required.";
+        if (weight <= 0)
+            return "Success criterion weight must be greater than zero.";
+        return null;
+    }
+
+    private async Task<int> CalculateGoalProgressAsync(Guid goalId, int fallbackProgress, CancellationToken ct)
+    {
+        var details = (await _goalDetailRepo.GetAllAsync(ct)).Where(d => d.GoalId == goalId && !d.IsDeleted).ToList();
+        return details.Count == 0 ? fallbackProgress : (int)Math.Round(details.Average(d => d.ProgressPercent));
+    }
+
+    private async Task SynchronizeAndEvaluateGoalAsync(TreatmentGoal goal, TreatmentSession? session, Guid? evaluatedBy, CancellationToken ct, bool synchronizeAutomaticCriteria = true)
+    {
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, goal.ProgressPercent, ct);
+        var criteria = (await _successCriteriaRepo.GetAllAsync(ct)).Where(c => c.GoalId == goal.Id && !c.IsDeleted).ToList();
+
+        if (synchronizeAutomaticCriteria)
+        {
+            var detailIds = (await _goalDetailRepo.GetAllAsync(ct)).Where(d => d.GoalId == goal.Id && !d.IsDeleted).Select(d => d.Id).ToHashSet();
+            var linkedSessionIds = (await _sessionGoalRepo.GetAllAsync(ct))
+                .Where(link => detailIds.Contains(link.GoalDetailId) && !link.IsDeleted)
+                .Select(link => link.TreatmentSessionId).Distinct().ToHashSet();
+            var sessions = (await _sessionRepo.GetAllAsync(ct)).Where(s => linkedSessionIds.Contains(s.Id) && !s.IsDeleted).ToList();
+            var assignments = (await _assignmentRepo.GetAllAsync(ct))
+                .Where(a => a.TreatmentSessionId.HasValue && linkedSessionIds.Contains(a.TreatmentSessionId.Value) && !a.IsDeleted).ToList();
+
+            foreach (var criterion in criteria.Where(c => c.DataSource is GoalCriteriaDataSource.GoalProgress or GoalCriteriaDataSource.Homework or GoalCriteriaDataSource.Attendance))
+            {
+                decimal value = criterion.DataSource switch
+                {
+                    GoalCriteriaDataSource.GoalProgress => goal.ProgressPercent,
+                    GoalCriteriaDataSource.Homework => assignments.Count == 0 ? 0 : Math.Round(assignments.Count(a => a.Status is HomeworkStatus.Submitted or HomeworkStatus.Reviewed) * 100m / assignments.Count, 2),
+                    GoalCriteriaDataSource.Attendance => sessions.Count == 0 ? 0 : Math.Round(sessions.Count(s => s.Status == TreatmentSessionStatus.Completed) * 100m / sessions.Count, 2),
+                    _ => 0
+                };
+                criterion.CurrentValue = value;
+                criterion.UpdatedAt = DateTime.UtcNow;
+                _successCriteriaRepo.Update(criterion);
+                await AddCriteriaEvaluationAsync(criterion, session?.Id, value, evaluatedBy, ct);
+            }
+        }
+
+        var requiredCriteria = criteria.Where(c => c.IsRequired).ToList();
+        var allRequiredCriteriaPassed = requiredCriteria.Count > 0 && requiredCriteria.All(IsCriterionPassed);
+        if (goal.Status != GoalStatus.Cancelled && goal.Status != GoalStatus.OnHold)
+        {
+            if (allRequiredCriteriaPassed)
+            {
+                goal.Status = GoalStatus.Achieved;
+                goal.AchievedDate ??= DateTime.UtcNow;
+            }
+            else if (goal.ProgressPercent > 0 || criteria.Any(c => c.CurrentValue.HasValue))
+            {
+                goal.Status = GoalStatus.InProgress;
+                goal.AchievedDate = null;
+            }
+            else if (goal.Status != GoalStatus.Draft)
+            {
+                goal.Status = GoalStatus.NotStarted;
+            }
+        }
+        goal.UpdatedAt = DateTime.UtcNow;
+        _goalRepo.Update(goal);
+
+        var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
+        if (treatmentCase != null)
+        {
+            await RecalculateProgressAsync(treatmentCase, ct);
+            _caseRepo.Update(treatmentCase);
+        }
+    }
+
+    private static bool IsCriterionPassed(GoalSuccessCriteria criterion)
+    {
+        if (!criterion.CurrentValue.HasValue || !criterion.TargetValue.HasValue)
+            return false;
+        return criterion.Operator switch
+        {
+            GoalCriteriaOperator.GreaterThan => criterion.CurrentValue > criterion.TargetValue,
+            GoalCriteriaOperator.GreaterThanOrEqual => criterion.CurrentValue >= criterion.TargetValue,
+            GoalCriteriaOperator.LessThan => criterion.CurrentValue < criterion.TargetValue,
+            GoalCriteriaOperator.LessThanOrEqual => criterion.CurrentValue <= criterion.TargetValue,
+            GoalCriteriaOperator.Equal => criterion.CurrentValue == criterion.TargetValue,
+            _ => false
+        };
+    }
+
+    private async Task<SuccessCriteriaEvaluation> AddCriteriaEvaluationAsync(GoalSuccessCriteria criterion, Guid? sessionId, decimal? currentValue, Guid? evaluatedBy, CancellationToken ct)
+    {
+        var evaluation = new SuccessCriteriaEvaluation
+        {
+            SuccessCriteriaId = criterion.Id,
+            TreatmentSessionId = sessionId,
+            CurrentValue = currentValue,
+            IsPassed = IsCriterionPassed(criterion),
+            EvaluatedAt = DateTime.UtcNow,
+            EvaluatedBy = evaluatedBy,
+            SuccessCriteria = criterion
+        };
+        await _criteriaEvaluationRepo.AddAsync(evaluation, ct);
+        return evaluation;
+    }
+
+    private async Task<TreatmentGoalDto> BuildGoalDtoAsync(TreatmentGoal goal, CancellationToken ct)
+    {
+        var dto = MapToGoalDto(goal);
+        var details = (await _goalDetailRepo.GetAllAsync(ct)).Where(d => d.GoalId == goal.Id && !d.IsDeleted).OrderBy(d => d.OrderIndex).ToList();
+        dto.Details = (await Task.WhenAll(details.Select(d => BuildGoalDetailDtoAsync(d, ct)))).ToList();
+        var criteria = (await _successCriteriaRepo.GetAllAsync(ct)).Where(c => c.GoalId == goal.Id && !c.IsDeleted).ToList();
+        dto.SuccessCriteria = (await Task.WhenAll(criteria.Select(c => BuildCriteriaDtoAsync(c, ct)))).ToList();
+        dto.ProgressHistory = (await _goalProgressRepo.GetAllAsync(ct)).Where(p => p.GoalId == goal.Id && !p.IsDeleted)
+            .OrderByDescending(p => p.RecordedAt).Select(MapToGoalProgressDto).ToList();
+        return dto;
+    }
+
+    private async Task<GoalDetailDto> BuildGoalDetailDtoAsync(GoalDetail detail, CancellationToken ct)
+    {
+        var links = (await _sessionGoalRepo.GetAllAsync(ct)).Where(l => l.GoalDetailId == detail.Id && !l.IsDeleted).OrderBy(l => l.OrderIndex).ToList();
+        return new GoalDetailDto
+        {
+            Id = detail.Id, GoalId = detail.GoalId, Title = detail.Title, Description = detail.Description,
+            Objective = detail.Objective, ExpectedOutcome = detail.ExpectedOutcome, OrderIndex = detail.OrderIndex,
+            ProgressPercent = detail.ProgressPercent, Status = (int)detail.Status, EstimatedSessions = detail.EstimatedSessions,
+            CompletedDate = detail.CompletedDate, Sessions = links.Select(MapToSessionGoalDto).ToList()
+        };
+    }
+
+    private async Task<GoalSuccessCriteriaDto> BuildCriteriaDtoAsync(GoalSuccessCriteria criteria, CancellationToken ct)
+    {
+        var evaluations = (await _criteriaEvaluationRepo.GetAllAsync(ct))
+            .Where(e => e.SuccessCriteriaId == criteria.Id).OrderByDescending(e => e.EvaluatedAt).ToList();
+        return new GoalSuccessCriteriaDto
+        {
+            Id = criteria.Id, GoalId = criteria.GoalId, CriteriaType = (int)criteria.CriteriaType,
+            DataSource = (int)criteria.DataSource, Operator = (int)criteria.Operator, TargetValue = criteria.TargetValue,
+            CurrentValue = criteria.CurrentValue, Weight = criteria.Weight, IsRequired = criteria.IsRequired,
+            Description = criteria.Description, Evaluations = evaluations.Select(MapToCriteriaEvaluationDto).ToList()
+        };
+    }
+
+    private static GoalDetailDto MapToGoalDetailDto(GoalDetail detail) => new()
+    {
+        Id = detail.Id, GoalId = detail.GoalId, Title = detail.Title, Description = detail.Description,
+        Objective = detail.Objective, ExpectedOutcome = detail.ExpectedOutcome, OrderIndex = detail.OrderIndex,
+        ProgressPercent = detail.ProgressPercent, Status = (int)detail.Status, EstimatedSessions = detail.EstimatedSessions,
+        CompletedDate = detail.CompletedDate
+    };
+
+    private static TreatmentSessionGoalDto MapToSessionGoalDto(TreatmentSessionGoal link) => new()
+    {
+        Id = link.Id, TreatmentSessionId = link.TreatmentSessionId, GoalDetailId = link.GoalDetailId,
+        OrderIndex = link.OrderIndex, PlannedActivity = link.PlannedActivity
+    };
+
+    private static SuccessCriteriaEvaluationDto MapToCriteriaEvaluationDto(SuccessCriteriaEvaluation evaluation) => new()
+    {
+        Id = evaluation.Id, SuccessCriteriaId = evaluation.SuccessCriteriaId,
+        TreatmentSessionId = evaluation.TreatmentSessionId, CurrentValue = evaluation.CurrentValue,
+        IsPassed = evaluation.IsPassed, EvaluatedAt = evaluation.EvaluatedAt, EvaluatedBy = evaluation.EvaluatedBy
+    };
+
     private async Task RecalculateProgressAsync(TreatmentCase treatmentCase, CancellationToken ct)
     {
         var allSessions = await _sessionRepo.GetAllAsync(ct);
@@ -1488,6 +2216,13 @@ public class TreatmentCaseService : ITreatmentCaseService
         return package?.Name;
     }
 
+    private async Task<Guid> GetCanonicalPatientUserIdAsync(Guid patientId, CancellationToken ct)
+    {
+        var patient = (await _patientRepo.GetAllAsync(ct))
+            .FirstOrDefault(p => p.Id == patientId || p.UserId == patientId);
+        return patient?.UserId ?? patientId;
+    }
+
     private async Task<TreatmentCaseDto> MapToCaseDtoAsync(TreatmentCase entity, CancellationToken ct)
     {
         var allGoals = await _goalRepo.GetAllAsync(ct);
@@ -1501,7 +2236,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             Id = entity.Id,
             TreatmentPackageId = entity.TreatmentPackageId,
             DoctorId = entity.DoctorId,
-            PatientId = entity.PatientId,
+            PatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct),
             CaseName = entity.CaseName,
             CaseDescription = entity.CaseDescription,
             PrimaryConcern = entity.PrimaryConcern,
@@ -1549,8 +2284,12 @@ public class TreatmentCaseService : ITreatmentCaseService
         return new TreatmentCaseListDto
         {
             Id = entity.Id,
+            TreatmentPackageId = entity.TreatmentPackageId,
+            DoctorId = entity.DoctorId,
+            PatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct),
             CaseName = entity.CaseName,
             PackageNameSnapshot = entity.PackageNameSnapshot,
+            PackageName = await GetPackageNameAsync(entity.TreatmentPackageId, ct),
             PatientName = await GetUserNameAsync(entity.PatientId, ct),
             DoctorName = await GetUserNameAsync(entity.DoctorId, ct),
             TotalSessions = progress?.TotalSessions ?? entity.TotalSessions,
@@ -1560,6 +2299,166 @@ public class TreatmentCaseService : ITreatmentCaseService
             StartDate = entity.StartDate,
             CreatedAt = entity.CreatedAt
         };
+    }
+
+    private async Task<TreatmentCaseRiskDto> BuildCaseRiskAsync(TreatmentCase treatmentCase, CancellationToken ct)
+    {
+        var patient = (await _patientRepo.GetAllAsync(ct))
+            .FirstOrDefault(p => p.UserId == treatmentCase.PatientId || p.Id == treatmentCase.PatientId);
+        var patientIds = new HashSet<Guid> { treatmentCase.PatientId };
+        if (patient != null)
+        {
+            patientIds.Add(patient.Id);
+            patientIds.Add(patient.UserId);
+        }
+
+        var result = new TreatmentCaseRiskDto
+        {
+            TreatmentCaseId = treatmentCase.Id,
+            CaseName = treatmentCase.CaseName,
+            PatientName = await GetUserNameAsync(treatmentCase.PatientId, ct)
+        };
+
+        var moodPoints = new List<(DateTime RecordedAt, decimal Score)>();
+        var journalEntries = await _journalRepo.GetAllAsync(ct);
+        moodPoints.AddRange(journalEntries
+            .Where(j => !j.IsDeleted && j.IsShared &&
+                        (j.TreatmentCaseId == treatmentCase.Id ||
+                         (!j.TreatmentCaseId.HasValue && patientIds.Contains(j.PatientId) && j.CreatedAt >= treatmentCase.StartDate)))
+            .Select(j => (j.CreatedAt, (decimal)(j.MoodScale <= 5 ? j.MoodScale * 2 : j.MoodScale))));
+
+        var moodEntries = await _moodRepo.GetAllAsync(ct);
+        moodPoints.AddRange(moodEntries
+            .Where(m => !m.IsDeleted &&
+                        (m.TreatmentCaseId == treatmentCase.Id ||
+                         (m.TreatmentCaseId == Guid.Empty && patientIds.Contains(m.PatientId) && m.RecordedAt >= treatmentCase.StartDate)))
+            .Select(m => (m.RecordedAt, (decimal)m.MoodScore)));
+
+        var orderedMoods = moodPoints.OrderByDescending(m => m.RecordedAt).ToList();
+        var recentMoods = orderedMoods.Take(7).Select(m => m.Score).ToList();
+        var previousMoods = orderedMoods.Skip(7).Take(7).Select(m => m.Score).ToList();
+        result.RecentAverageMood = recentMoods.Count > 0 ? Math.Round(recentMoods.Average(), 1) : null;
+        result.PreviousAverageMood = previousMoods.Count > 0 ? Math.Round(previousMoods.Average(), 1) : null;
+
+        if (result.RecentAverageMood is <= 3)
+        {
+            result.Factors.Add(new TreatmentRiskFactorDto
+            {
+                Code = "low_mood",
+                Label = "Low recent mood",
+                Severity = "High",
+                Detail = $"Average mood is {result.RecentAverageMood:0.0}/10 across the most recent entries."
+            });
+        }
+        else if (result.RecentAverageMood is <= 5)
+        {
+            result.Factors.Add(new TreatmentRiskFactorDto
+            {
+                Code = "low_mood",
+                Label = "Low recent mood",
+                Severity = "Medium",
+                Detail = $"Average mood is {result.RecentAverageMood:0.0}/10 across the most recent entries."
+            });
+        }
+
+        if (result.RecentAverageMood.HasValue && result.PreviousAverageMood.HasValue &&
+            result.PreviousAverageMood.Value - result.RecentAverageMood.Value >= 2)
+        {
+            result.Factors.Add(new TreatmentRiskFactorDto
+            {
+                Code = "mood_declining",
+                Label = "Mood trend declining",
+                Severity = "Medium",
+                Detail = $"Recent average declined from {result.PreviousAverageMood:0.0}/10 to {result.RecentAverageMood:0.0}/10."
+            });
+        }
+
+        var sessions = (await _sessionRepo.GetAllAsync(ct))
+            .Where(s => !s.IsDeleted && s.TreatmentCaseId == treatmentCase.Id)
+            .ToList();
+        var sessionIds = sessions.Select(s => s.Id).ToHashSet();
+        var appointments = (await _appointmentRepo.GetAllAsync(ct))
+            .Where(a => !a.IsDeleted && (a.TreatmentCaseId == treatmentCase.Id ||
+                                         (a.TreatmentSessionId.HasValue && sessionIds.Contains(a.TreatmentSessionId.Value))))
+            .OrderByDescending(a => a.AppointmentDate ?? a.CreatedAt)
+            .ToList();
+
+        result.ConsecutiveNoShows = appointments.TakeWhile(a => a.Status == AppointmentStatus.NoShow).Count();
+        if (result.ConsecutiveNoShows >= 3)
+        {
+            result.Factors.Add(new TreatmentRiskFactorDto
+            {
+                Code = "repeated_no_show",
+                Label = "Repeated missed appointments",
+                Severity = "High",
+                Detail = $"{result.ConsecutiveNoShows} consecutive treatment appointments were marked as no-show."
+            });
+        }
+        else if (result.ConsecutiveNoShows >= 2)
+        {
+            result.Factors.Add(new TreatmentRiskFactorDto
+            {
+                Code = "repeated_no_show",
+                Label = "Repeated missed appointments",
+                Severity = "Medium",
+                Detail = $"{result.ConsecutiveNoShows} consecutive treatment appointments were marked as no-show."
+            });
+        }
+
+        var assessments = (await _psychRepo.GetAllAsync(ct))
+            .Where(s => !s.IsDeleted &&
+                        (s.TreatmentCaseId == treatmentCase.Id ||
+                         (!s.TreatmentCaseId.HasValue && patientIds.Contains(s.PatientId) && s.CreatedAt >= treatmentCase.StartDate)))
+            .OrderByDescending(s => s.CreatedAt)
+            .ToList();
+        var latestAssessment = assessments.FirstOrDefault();
+        if (latestAssessment != null)
+        {
+            var tests = _psychTestRepo == null
+                ? new Dictionary<Guid, PsychometricTest>()
+                : (await _psychTestRepo.GetAllAsync(ct)).Where(t => !t.IsDeleted).ToDictionary(t => t.Id);
+            var testName = tests.TryGetValue(latestAssessment.TestId, out var test)
+                ? test.TestType
+                : "Psychometric assessment";
+            result.LatestAssessment = $"{testName}: {latestAssessment.Interpretation}";
+            result.LatestAssessmentAt = latestAssessment.CreatedAt;
+
+            var interpretation = latestAssessment.Interpretation ?? string.Empty;
+            var severity = interpretation.Contains("severe", StringComparison.OrdinalIgnoreCase) ||
+                           interpretation.Contains("high", StringComparison.OrdinalIgnoreCase)
+                ? "High"
+                : interpretation.Contains("moderate", StringComparison.OrdinalIgnoreCase)
+                    ? "Medium"
+                    : null;
+            if (severity != null)
+            {
+                result.Factors.Add(new TreatmentRiskFactorDto
+                {
+                    Code = "assessment_attention",
+                    Label = "Assessment requires attention",
+                    Severity = severity,
+                    Detail = result.LatestAssessment
+                });
+            }
+        }
+
+        result.Score = result.Factors.Sum(f => f.Severity == "High" ? 50 : 25);
+        result.Level = result.Factors.Any(f => f.Severity == "High")
+            ? "High"
+            : result.Factors.Any() ? "Medium" : "Low";
+        return result;
+    }
+
+    private static string GetFileName(string fileUrl, string fallback)
+    {
+        if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
+        {
+            var name = Path.GetFileName(Uri.UnescapeDataString(uri.LocalPath));
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+        }
+
+        return string.IsNullOrWhiteSpace(fallback) ? "Homework submission" : fallback;
     }
 
     private static TreatmentSessionDto MapToSessionDto(TreatmentSession s)
@@ -1597,12 +2496,14 @@ public class TreatmentCaseService : ITreatmentCaseService
         {
             Id = g.Id,
             TreatmentCaseId = g.TreatmentCaseId,
+            TemplateId = g.TemplateId,
             CreatedByDoctorId = g.CreatedByDoctorId,
             Title = g.Title,
             Description = g.Description,
             Category = (int)g.Category,
             CategoryText = g.Category.ToString(),
             Priority = (int)g.Priority,
+            OrderIndex = g.OrderIndex,
             Status = (int)g.Status,
             ProgressPercent = g.ProgressPercent,
             TargetValue = g.TargetValue,
@@ -1610,6 +2511,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             Unit = g.Unit,
             TargetDate = g.TargetDate,
             AchievedDate = g.AchievedDate,
+            StartDate = g.StartDate,
             DoctorNotes = g.DoctorNotes,
             CreatedAt = g.CreatedAt,
             UpdatedAt = g.UpdatedAt
@@ -1623,6 +2525,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             Id = p.Id,
             GoalId = p.GoalId,
             TreatmentSessionId = p.TreatmentSessionId,
+            GoalDetailId = p.GoalDetailId,
             ProgressPercent = p.ProgressPercent,
             CurrentValue = p.CurrentValue,
             DoctorComment = p.DoctorComment,

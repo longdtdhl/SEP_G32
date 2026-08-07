@@ -52,9 +52,9 @@ public class IndexModel : PageModel
         {
             var q = Search.Trim().ToLowerInvariant();
             Patients = Patients.Where(p =>
-                (p.DisplayName?.ToLowerInvariant().Contains(q) ?? false) ||
-                (p.DisplayEmail?.ToLowerInvariant().Contains(q) ?? false) ||
-                (p.DisplayPhone?.ToLowerInvariant().Contains(q) ?? false)
+                p.ResolvedDisplayName.ToLowerInvariant().Contains(q) ||
+                (p.ResolvedDisplayEmail?.ToLowerInvariant().Contains(q) ?? false) ||
+                (p.ResolvedDisplayPhone?.ToLowerInvariant().Contains(q) ?? false)
             ).ToList();
         }
 

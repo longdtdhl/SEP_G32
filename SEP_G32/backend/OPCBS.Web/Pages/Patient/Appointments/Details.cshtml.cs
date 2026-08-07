@@ -23,6 +23,7 @@ public class DetailsModel : PageModel
     }
 
     public AppointmentDto? Appointment { get; set; }
+    public AppointmentClinicalContextDto? ClinicalContext { get; set; }
     public AppointmentDto? LatestEvalAppointment { get; set; }
     public bool IsUsingFallbackEval { get; set; }
     public string? Error { get; set; }
@@ -38,6 +39,16 @@ public class DetailsModel : PageModel
         var (data, error) = await _service.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Not found lịch hẹn."; return Page(); }
         Appointment = data;
+
+        if (data.TreatmentPackageId.HasValue || data.TreatmentCaseId.HasValue)
+        {
+            try
+            {
+                var (clinicalContext, _) = await _service.GetClinicalContextAsync(id);
+                ClinicalContext = clinicalContext;
+            }
+            catch { }
+        }
 
         // Load psychometric submission for this appointment
         var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(id);

@@ -452,11 +452,56 @@ public enum GoalStatus
     /// <summary>Goal has been achieved</summary>
     Achieved = 2,
 
-    /// <summary>Goal has been deferred to a later time</summary>
-    Deferred = 3,
+    /// <summary>Goal is temporarily paused by the treating doctor</summary>
+    OnHold = 3,
 
     /// <summary>Goal has been cancelled</summary>
+    Cancelled = 4,
+
+    /// <summary>Goal is being prepared and is not yet visible in the active treatment plan</summary>
+    Draft = 5
+}
+
+/// <summary>Execution status for a concrete milestone under a treatment goal.</summary>
+public enum GoalDetailStatus
+{
+    NotStarted = 0,
+    InProgress = 1,
+    Completed = 2,
+    OnHold = 3,
     Cancelled = 4
+}
+
+/// <summary>Clinical or operational measurement represented by a goal success criterion.</summary>
+public enum GoalSuccessCriteriaType
+{
+    ProgressPercentage = 0,
+    HomeworkCompletion = 1,
+    Attendance = 2,
+    DoctorApproval = 3,
+    AssessmentScore = 4,
+    Custom = 99
+}
+
+/// <summary>Source used to synchronize a criterion's current value.</summary>
+public enum GoalCriteriaDataSource
+{
+    Manual = 0,
+    GoalProgress = 1,
+    Homework = 2,
+    Attendance = 3,
+    Assessment = 4,
+    DoctorApproval = 5
+}
+
+/// <summary>Comparison applied to a criterion target and current value.</summary>
+public enum GoalCriteriaOperator
+{
+    GreaterThan = 0,
+    GreaterThanOrEqual = 1,
+    LessThan = 2,
+    LessThanOrEqual = 3,
+    Equal = 4
 }
 
 /// <summary>

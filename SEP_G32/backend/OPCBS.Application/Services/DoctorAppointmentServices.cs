@@ -343,14 +343,24 @@ public class AppointmentService : IAppointmentService
         var session = allSessions.FirstOrDefault(s => s.AppointmentId == appt.Id || (appt.TreatmentSessionId.HasValue && s.Id == appt.TreatmentSessionId.Value));
         if (session != null && !session.IsDeleted)
         {
-            session.Status = newSessionStatus;
-            if (newSessionStatus == TreatmentSessionStatus.Scheduled && appt.AppointmentSlotId != Guid.Empty)
+            if (newSessionStatus == TreatmentSessionStatus.Cancelled || newSessionStatus == TreatmentSessionStatus.Planned)
             {
-                var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
-                if (slot != null)
+                session.AppointmentId = null;
+                session.PlannedStartTime = null;
+                session.PlannedEndTime = null;
+                session.Status = TreatmentSessionStatus.Planned;
+            }
+            else
+            {
+                session.Status = newSessionStatus;
+                if (newSessionStatus == TreatmentSessionStatus.Scheduled && appt.AppointmentSlotId != Guid.Empty)
                 {
-                    session.PlannedStartTime = slot.SlotDate.ToDateTime(slot.StartTime);
-                    session.PlannedEndTime = slot.SlotDate.ToDateTime(slot.EndTime);
+                    var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
+                    if (slot != null)
+                    {
+                        session.PlannedStartTime = slot.SlotDate.ToDateTime(slot.StartTime);
+                        session.PlannedEndTime = slot.SlotDate.ToDateTime(slot.EndTime);
+                    }
                 }
             }
             session.UpdatedAt = DateTime.UtcNow;
@@ -2266,6 +2276,7 @@ public class ScheduleService : IScheduleService
     private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
     private readonly IRepository<DoctorSubscription>? _subscriptionRepo;
     private readonly IRepository<ServicePackage>? _servicePackageRepo;
+    private readonly IRepository<ScheduleNote>? _scheduleNoteRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -2286,7 +2297,8 @@ public class ScheduleService : IScheduleService
         INotificationService? notifService = null,
         IFavoriteDoctorNotificationService? favoriteNotificationService = null,
         IRepository<DoctorSubscription>? subscriptionRepo = null,
-        IRepository<ServicePackage>? servicePackageRepo = null)
+        IRepository<ServicePackage>? servicePackageRepo = null,
+        IRepository<ScheduleNote>? scheduleNoteRepo = null)
     {
         _scheduleRepo = scheduleRepo;
         _slotRepo = slotRepo;
@@ -2305,6 +2317,7 @@ public class ScheduleService : IScheduleService
         _favoriteNotificationService = favoriteNotificationService;
         _subscriptionRepo = subscriptionRepo;
         _servicePackageRepo = servicePackageRepo;
+        _scheduleNoteRepo = scheduleNoteRepo;
     }
 
     private async Task<int?> GetDailySlotCapacityAsync(Guid doctorProfileId, CancellationToken ct)
@@ -3005,6 +3018,7 @@ public class ScheduleService : IScheduleService
         var doctorAppts = allAppts.Where(a => (a.DoctorId == doctor.Id || a.DoctorId == doctor.UserId)
                                             && !a.IsDeleted
                                             && a.Status != AppointmentStatus.Cancelled
+                                            && a.Status != AppointmentStatus.Rejected
                                             && a.AppointmentDate.HasValue
                                             && DateOnly.FromDateTime(a.AppointmentDate.Value) >= startDate
                                             && DateOnly.FromDateTime(a.AppointmentDate.Value) < endDate)
@@ -3148,7 +3162,9 @@ public class ScheduleService : IScheduleService
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
         if (doctor == null) return ApiResponse<List<EligibleTreatmentPatientDto>>.ErrorResponse("Doctor not found");
 
-        var allCases = await _caseRepo.GetAllAsync(ct);
+        var allCases = _caseRepo != null
+            ? await _caseRepo.GetAllAsync(ct)
+            : new List<TreatmentCase>();
         var doctorCases = allCases.Where(c => (c.DoctorId == doctor.UserId || c.DoctorId == doctor.Id)
                                             && (c.Status == TreatmentCaseStatus.Active || c.Status == TreatmentCaseStatus.OnHold)
                                             && !c.IsDeleted)
@@ -3622,5 +3638,376 @@ public class ScheduleService : IScheduleService
         }
 
         return ApiResponse<int>.SuccessResponse(newSlots.Count, $"Generated {newSlots.Count} new slot(s)");
+    }
+
+    public async Task<ApiResponse<ScheduleNoteDto>> CreateNoteAsync(Guid doctorUserId, CreateScheduleNoteDto dto, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null) return ApiResponse<ScheduleNoteDto>.ErrorResponse("Doctor not found");
+
+        if (_scheduleNoteRepo == null)
+            return ApiResponse<ScheduleNoteDto>.ErrorResponse("ScheduleNote repository is not configured.");
+
+        if (!DateOnly.TryParse(dto.Date, out var noteDate))
+            return ApiResponse<ScheduleNoteDto>.ErrorResponse("Invalid date format. Expected yyyy-MM-dd");
+
+        TimeOnly? startTime = !string.IsNullOrWhiteSpace(dto.StartTime) && TimeOnly.TryParse(dto.StartTime, out var st) ? st : null;
+        TimeOnly? endTime = !string.IsNullOrWhiteSpace(dto.EndTime) && TimeOnly.TryParse(dto.EndTime, out var et) ? et : null;
+
+        var note = new ScheduleNote
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctor.Id,
+            NoteDate = noteDate,
+            StartTime = startTime,
+            EndTime = endTime,
+            Title = dto.Title.Trim(),
+            Content = dto.Content.Trim(),
+            Category = string.IsNullOrWhiteSpace(dto.Category) ? "General" : dto.Category.Trim(),
+            PatientId = dto.PatientId,
+            TreatmentCaseId = dto.TreatmentCaseId,
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+
+        await _scheduleNoteRepo.AddAsync(note, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        string? patientName = null;
+        if (dto.PatientId.HasValue && _patientRepo != null)
+        {
+            var patients = await _patientRepo.GetAllAsync(ct);
+            var pat = patients.FirstOrDefault(p => p.Id == dto.PatientId.Value || p.UserId == dto.PatientId.Value);
+            if (pat != null)
+            {
+                var users = await _userRepo.GetAllAsync(ct);
+                patientName = users.FirstOrDefault(u => u.Id == pat.UserId)?.FullName;
+            }
+        }
+
+        string? caseName = null;
+        if (dto.TreatmentCaseId.HasValue && _caseRepo != null)
+        {
+            var tc = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId.Value, ct);
+            caseName = tc?.CaseName ?? tc?.PackageNameSnapshot;
+        }
+
+        var noteDto = new ScheduleNoteDto
+        {
+            Id = note.Id,
+            DoctorProfileId = note.DoctorProfileId,
+            Date = note.NoteDate.ToString("yyyy-MM-dd"),
+            StartTime = note.StartTime?.ToString("HH\\:mm"),
+            EndTime = note.EndTime?.ToString("HH\\:mm"),
+            Title = note.Title,
+            Content = note.Content,
+            Category = note.Category,
+            PatientId = note.PatientId,
+            PatientName = patientName,
+            TreatmentCaseId = note.TreatmentCaseId,
+            TreatmentCaseName = caseName,
+            CreatedAt = note.CreatedAt
+        };
+
+        return ApiResponse<ScheduleNoteDto>.SuccessResponse(noteDto, "Schedule note created successfully");
+    }
+
+    public async Task<ApiResponse<ScheduleNoteDto>> UpdateNoteAsync(Guid noteId, Guid doctorUserId, UpdateScheduleNoteDto dto, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null) return ApiResponse<ScheduleNoteDto>.ErrorResponse("Doctor not found");
+
+        if (_scheduleNoteRepo == null) return ApiResponse<ScheduleNoteDto>.ErrorResponse("ScheduleNote repository is not configured.");
+
+        var note = await _scheduleNoteRepo.GetByIdAsync(noteId, ct);
+        if (note == null || note.IsDeleted) return ApiResponse<ScheduleNoteDto>.ErrorResponse("Schedule note not found");
+        if (note.DoctorProfileId != doctor.Id && note.DoctorProfileId != doctor.UserId)
+            return ApiResponse<ScheduleNoteDto>.ErrorResponse("Not authorized to update this note");
+
+        if (!string.IsNullOrWhiteSpace(dto.Date) && DateOnly.TryParse(dto.Date, out var noteDate))
+            note.NoteDate = noteDate;
+
+        if (!string.IsNullOrWhiteSpace(dto.StartTime))
+            note.StartTime = TimeOnly.TryParse(dto.StartTime, out var st) ? st : note.StartTime;
+
+        if (!string.IsNullOrWhiteSpace(dto.EndTime))
+            note.EndTime = TimeOnly.TryParse(dto.EndTime, out var et) ? et : note.EndTime;
+
+        if (!string.IsNullOrWhiteSpace(dto.Title))
+            note.Title = dto.Title.Trim();
+
+        if (!string.IsNullOrWhiteSpace(dto.Content))
+            note.Content = dto.Content.Trim();
+
+        if (!string.IsNullOrWhiteSpace(dto.Category))
+            note.Category = dto.Category.Trim();
+
+        if (dto.PatientId.HasValue)
+            note.PatientId = dto.PatientId;
+
+        if (dto.TreatmentCaseId.HasValue)
+            note.TreatmentCaseId = dto.TreatmentCaseId;
+
+        note.UpdatedAt = DateTime.UtcNow;
+        _scheduleNoteRepo.Update(note);
+        await _uow.SaveChangesAsync(ct);
+
+        string? patientName = null;
+        if (note.PatientId.HasValue && _patientRepo != null)
+        {
+            var patients = await _patientRepo.GetAllAsync(ct);
+            var pat = patients.FirstOrDefault(p => p.Id == note.PatientId.Value || p.UserId == note.PatientId.Value);
+            if (pat != null)
+            {
+                var users = await _userRepo.GetAllAsync(ct);
+                patientName = users.FirstOrDefault(u => u.Id == pat.UserId)?.FullName;
+            }
+        }
+
+        string? caseName = null;
+        if (note.TreatmentCaseId.HasValue && _caseRepo != null)
+        {
+            var tc = await _caseRepo.GetByIdAsync(note.TreatmentCaseId.Value, ct);
+            caseName = tc?.CaseName ?? tc?.PackageNameSnapshot;
+        }
+
+        var noteDto = new ScheduleNoteDto
+        {
+            Id = note.Id,
+            DoctorProfileId = note.DoctorProfileId,
+            Date = note.NoteDate.ToString("yyyy-MM-dd"),
+            StartTime = note.StartTime?.ToString("HH\\:mm"),
+            EndTime = note.EndTime?.ToString("HH\\:mm"),
+            Title = note.Title,
+            Content = note.Content,
+            Category = note.Category,
+            PatientId = note.PatientId,
+            PatientName = patientName,
+            TreatmentCaseId = note.TreatmentCaseId,
+            TreatmentCaseName = caseName,
+            CreatedAt = note.CreatedAt
+        };
+
+        return ApiResponse<ScheduleNoteDto>.SuccessResponse(noteDto, "Schedule note updated successfully");
+    }
+
+    public async Task<ApiResponse> DeleteNoteAsync(Guid noteId, Guid doctorUserId, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null) return ApiResponse.ErrorResponse("Doctor not found");
+
+        if (_scheduleNoteRepo == null) return ApiResponse.ErrorResponse("ScheduleNote repository is not configured.");
+
+        var note = await _scheduleNoteRepo.GetByIdAsync(noteId, ct);
+        if (note == null || note.IsDeleted) return ApiResponse.ErrorResponse("Schedule note not found");
+        if (note.DoctorProfileId != doctor.Id && note.DoctorProfileId != doctor.UserId)
+            return ApiResponse.ErrorResponse("Not authorized to delete this note");
+
+        note.IsDeleted = true;
+        note.UpdatedAt = DateTime.UtcNow;
+        _scheduleNoteRepo.Update(note);
+        await _uow.SaveChangesAsync(ct);
+
+        return ApiResponse.SuccessResponse("Schedule note deleted successfully");
+    }
+
+    public async Task<ApiResponse<List<ScheduleNoteDto>>> GetNotesAsync(
+        Guid doctorUserId,
+        string? search = null,
+        string? category = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null) return ApiResponse<List<ScheduleNoteDto>>.SuccessResponse(new List<ScheduleNoteDto>());
+
+        if (_scheduleNoteRepo == null)
+            return ApiResponse<List<ScheduleNoteDto>>.SuccessResponse(new List<ScheduleNoteDto>());
+
+        var allNotes = await _scheduleNoteRepo.GetAllAsync(ct);
+        var query = allNotes.Where(n => (n.DoctorProfileId == doctor.Id || n.DoctorProfileId == doctor.UserId) && !n.IsDeleted);
+
+        if (fromDate.HasValue)
+        {
+            var fd = DateOnly.FromDateTime(fromDate.Value);
+            query = query.Where(n => n.NoteDate >= fd);
+        }
+
+        if (toDate.HasValue)
+        {
+            var td = DateOnly.FromDateTime(toDate.Value);
+            query = query.Where(n => n.NoteDate <= td);
+        }
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            query = query.Where(n => string.Equals(n.Category, category, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(n => n.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                                     n.Content.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var sorted = query.OrderByDescending(n => n.NoteDate).ThenByDescending(n => n.CreatedAt).ToList();
+
+        var allPatients = _patientRepo != null ? await _patientRepo.GetAllAsync(ct) : new List<PatientProfile>();
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var allCases = _caseRepo != null ? await _caseRepo.GetAllAsync(ct) : new List<TreatmentCase>();
+
+        var dtos = sorted.Select(n =>
+        {
+            string? pName = null;
+            if (n.PatientId.HasValue)
+            {
+                var pat = allPatients.FirstOrDefault(p => p.Id == n.PatientId.Value || p.UserId == n.PatientId.Value);
+                if (pat != null)
+                {
+                    pName = allUsers.FirstOrDefault(u => u.Id == pat.UserId)?.FullName;
+                }
+            }
+
+            string? cName = null;
+            if (n.TreatmentCaseId.HasValue)
+            {
+                var tc = allCases.FirstOrDefault(c => c.Id == n.TreatmentCaseId.Value);
+                cName = tc?.CaseName ?? tc?.PackageNameSnapshot;
+            }
+
+            return new ScheduleNoteDto
+            {
+                Id = n.Id,
+                DoctorProfileId = n.DoctorProfileId,
+                Date = n.NoteDate.ToString("yyyy-MM-dd"),
+                StartTime = n.StartTime?.ToString("HH\\:mm"),
+                EndTime = n.EndTime?.ToString("HH\\:mm"),
+                Title = n.Title,
+                Content = n.Content,
+                Category = n.Category,
+                PatientId = n.PatientId,
+                PatientName = pName,
+                TreatmentCaseId = n.TreatmentCaseId,
+                TreatmentCaseName = cName,
+                CreatedAt = n.CreatedAt
+            };
+        }).ToList();
+
+        return ApiResponse<List<ScheduleNoteDto>>.SuccessResponse(dtos);
+    }
+
+    public async Task<ApiResponse<AppointmentSlotDto>> AssignTreatmentSlotAsync(Guid doctorUserId, AssignTreatmentSlotDto dto, CancellationToken ct = default)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null) return ApiResponse<AppointmentSlotDto>.ErrorResponse("Doctor not found");
+
+        if (_caseRepo == null || _sessionRepo == null || _patientRepo == null)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment services unavailable");
+
+        // 1. Check Slot
+        var slot = await _slotRepo.GetByIdAsync(dto.SlotId, ct);
+        if (slot == null || slot.IsDeleted)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Slot not found");
+        if (slot.DoctorProfileId != doctor.Id && slot.DoctorProfileId != doctor.UserId)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Not authorized for this slot");
+        if (slot.Status != AppointmentSlotStatus.Available)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Slot is not available for booking");
+
+        var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
+        if (slotDateTime < DateTime.UtcNow)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Cannot assign treatment to a past slot");
+
+        // 2. Check Treatment Case
+        var tc = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment Case not found");
+        if (tc.DoctorId != doctor.UserId && tc.DoctorId != doctor.Id)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment Case does not belong to this doctor");
+
+        // 3. Check Session
+        var allSessions = await _sessionRepo.GetAllAsync(ct);
+        var session = allSessions.FirstOrDefault(s => s.Id == dto.TreatmentSessionId && !s.IsDeleted && s.TreatmentCaseId == tc.Id);
+        if (session == null)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment session not found for this case");
+        if (session.AppointmentId.HasValue && session.AppointmentId.Value != Guid.Empty)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment session is already scheduled");
+
+        // 4. Resolve Patient
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.Id == dto.PatientId || p.UserId == dto.PatientId);
+        if (patient == null)
+            return ApiResponse<AppointmentSlotDto>.ErrorResponse("Patient not found");
+
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            // Update Slot to Booked
+            slot.Status = AppointmentSlotStatus.Booked;
+            slot.CurrentBookings = 1;
+            slot.Notes = $"Treatment Session #{session.SessionNumber} for {tc.CaseName ?? tc.PackageNameSnapshot}";
+            slot.UpdatedAt = DateTime.UtcNow;
+            _slotRepo.Update(slot);
+
+            // Create Approved Appointment
+            var appointment = new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = $"TRT-{Random.Shared.Next(100000, 999999)}",
+                AppointmentSlotId = slot.Id,
+                DoctorId = doctor.Id,
+                PatientId = patient.Id,
+                TreatmentCaseId = tc.Id,
+                TreatmentSessionId = session.Id,
+                Status = AppointmentStatus.Approved,
+                AppointmentDate = slotDateTime,
+                ApprovedAt = DateTime.UtcNow,
+                Notes = dto.Notes ?? $"Assigned Treatment Session #{session.SessionNumber}",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false,
+                AppointmentSlot = slot,
+                Doctor = doctor
+            };
+
+            await _appointmentRepo.AddAsync(appointment, ct);
+
+            // Link Session
+            session.AppointmentId = appointment.Id;
+            session.PlannedStartTime = slotDateTime;
+            session.PlannedEndTime = slot.SlotDate.ToDateTime(slot.EndTime);
+            session.Status = TreatmentSessionStatus.Scheduled;
+            session.UpdatedAt = DateTime.UtcNow;
+            _sessionRepo.Update(session);
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+
+            var slotDto = new AppointmentSlotDto
+            {
+                Id = slot.Id,
+                Date = slot.SlotDate.ToString("yyyy-MM-dd"),
+                StartTime = slot.StartTime.ToString("HH\\:mm"),
+                EndTime = slot.EndTime.ToString("HH\\:mm"),
+                Status = slot.Status,
+                Notes = slot.Notes,
+                MaxPatients = slot.MaxPatients,
+                CurrentBookings = slot.CurrentBookings
+            };
+
+            return ApiResponse<AppointmentSlotDto>.SuccessResponse(slotDto, "Treatment patient assigned to slot successfully");
+        }
+        catch
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
+        }
     }
 }

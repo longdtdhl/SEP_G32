@@ -196,6 +196,16 @@ public class SchedulesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>POST /api/v1/schedules/assign-treatment-slot — Assign an existing Available slot to a treatment patient and session</summary>
+    [HttpPost("assign-treatment-slot")]
+    public async Task<IActionResult> AssignTreatmentSlot([FromBody] AssignTreatmentSlotDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _scheduleService.AssignTreatmentSlotAsync(userId.Value, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

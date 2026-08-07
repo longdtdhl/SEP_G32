@@ -2,53 +2,156 @@
 @model OPCBS.Web.Pages.Doctor.DashboardModel
 @{
     ViewData["Title"] = "Doctor Dashboard";
+    Layout = "_DashboardLayout";
+}
 
-    Layout = "_DashboardLayout";}
+<style>
+    /* ─── KPI Strip ─── */
+    .dash-kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .dash-kpi {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem 1.125rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: box-shadow 0.15s ease;
+    }
+    .dash-kpi:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .dash-kpi-icon {
+        width: 40px; height: 40px; border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; flex-shrink: 0;
+    }
+    .dash-kpi-val { font-size: 1.35rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .dash-kpi-lbl { font-size: 0.72rem; color: #64748b; margin-top: 1px; }
 
-<div class="mb-page-header">
-    <h1>Dashboard</h1>
-    <p class="text-muted">Overview of your consultation activities</p>
+    /* ─── Section Card ─── */
+    .dash-section {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+    .dash-section-head {
+        padding: 1rem 1.25rem 0.625rem;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .dash-section-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .dash-section-body { padding: 0; }
+    .dash-section-body .table { margin-bottom: 0; font-size: 0.84rem; }
+    .dash-section-body .table th {
+        font-size: 0.72rem; font-weight: 600; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 0.03em;
+        border-bottom: 1px solid #f1f5f9; background: #fafbfc; padding: 0.625rem 1rem;
+    }
+    .dash-section-body .table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .dash-section-body .table tbody tr:hover { background: #f8fffe; }
+
+    /* ─── Empty State ─── */
+    .dash-empty {
+        text-align: center; padding: 2rem 1.5rem; color: #94a3b8;
+    }
+    .dash-empty i { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1; }
+    .dash-empty p { font-size: 0.82rem; margin: 0; }
+
+    /* ─── Status Badge ─── */
+    .dash-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 3px 10px; border-radius: 5px;
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .dash-badge.pending { background: #fef3c7; color: #92400e; }
+    .dash-badge.approved { background: #dbeafe; color: #1e40af; }
+    .dash-badge.completed { background: #dcfce7; color: #166534; }
+    .dash-badge.submitted { background: #fef3c7; color: #92400e; }
+    .dash-badge.overdue { background: #fee2e2; color: #991b1b; }
+    .dash-badge.active { background: #ccfbf1; color: #115e59; }
+
+    /* ─── Quick Action ─── */
+    .dash-action-link {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.78rem; font-weight: 600; color: #0d9488;
+        text-decoration: none; padding: 3px 8px; border-radius: 5px;
+        transition: background 0.12s;
+    }
+    .dash-action-link:hover { background: #f0fdfa; color: #0f766e; }
+
+    /* ─── Progress Bar ─── */
+    .dash-progress-track {
+        background: #e2e8f0; border-radius: 3px; height: 5px;
+        overflow: hidden; min-width: 60px;
+    }
+    .dash-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0;">
+            <i class="bi bi-grid-1x2-fill me-2" style="color:#0d9488;"></i>Dashboard
+        </h1>
+        <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">Your operational overview at a glance</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
+            <i class="bi bi-calendar3 me-1"></i>Schedule
+        </a>
+        <a asp-page="/Doctor/TreatmentCases/Index" class="btn btn-sm" style="border-radius:7px; font-size:0.8rem; font-weight:600; background:#0d9488; color:white; border-color:#0d9488;">
+            <i class="bi bi-heart-pulse me-1"></i>Treatment Cases
+        </a>
+    </div>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-warning">@Model.Error</div>
+    <div class="alert alert-warning" style="border-radius:8px; font-size:0.85rem;">@Model.Error</div>
 }
 
 <!-- Verification Banner -->
 @if (!Model.IsVerified)
 {
     var statusLower = Model.VerificationStatus?.ToLower();
-    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;overflow:hidden;">
-        <div class="card-body p-4" style="background:linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);">
+    <div class="dash-section" style="border-left: 4px solid #f59e0b;">
+        <div style="padding:1.25rem;">
             <div class="d-flex align-items-start gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#ffc107;">
-                    <i class="bi bi-shield-exclamation text-white" style="font-size:1.5rem;"></i>
+                <div class="dash-kpi-icon" style="background:#fef3c7; color:#d97706; width:44px; height:44px;">
+                    <i class="bi bi-shield-exclamation"></i>
                 </div>
                 <div class="flex-grow-1">
                     @if (statusLower == "submitted" || statusLower == "pending")
                     {
-                        <h5 class="fw-bold mb-1" style="color:#856404;">Profile pending approval</h5>
-                        <p class="mb-2 text-muted">Your verification profile has been submitted and is under review. You will be notified of the result.</p>
-                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending approved</span>
+                        <h6 class="fw-bold mb-1" style="color:#92400e;">Profile Pending Approval</h6>
+                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Your verification is under review. You'll be notified once approved.</p>
+                        <span class="dash-badge pending"><i class="bi bi-hourglass-split"></i> Pending</span>
                     }
                     else if (statusLower == "rejected")
                     {
-                        <h5 class="fw-bold mb-1" style="color:#721c24;">Profile has been rejected</h5>
-                        <p class="mb-2 text-muted">Your verification profile has been rejected. Please edit and resubmit.</p>
+                        <h6 class="fw-bold mb-1" style="color:#991b1b;">Profile Rejected</h6>
+                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Please edit and resubmit your profile.</p>
                         @if (!string.IsNullOrEmpty(Model.RejectionReason))
                         {
-                            <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.875rem;">
+                            <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.82rem; border-radius:6px;">
                                 <i class="bi bi-x-circle me-1"></i><strong>Reason:</strong> @Model.RejectionReason
                             </div>
                         }
-                        <a asp-page="/Doctor/Verification" class="btn btn-danger btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Resubmit Profile</a>
+                        <a asp-page="/Doctor/Verification" class="btn btn-sm btn-danger" style="border-radius:7px;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Resubmit
+                        </a>
                     }
                     else
                     {
-                        <h5 class="fw-bold mb-1" style="color:#856404;">Profile not verified</h5>
-                        <p class="mb-2 text-muted">You need to submit your verification profile to start using platform features (scheduling, consulting, blogging...).</p>
-                        <a asp-page="/Doctor/Verification" class="btn btn-primary btn-sm"><i class="bi bi-send me-1"></i>Submit Verification Profile</a>
+                        <h6 class="fw-bold mb-1" style="color:#92400e;">Profile Not Verified</h6>
+                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Submit your verification to access scheduling, consulting, and other platform features.</p>
+                        <a asp-page="/Doctor/Verification" class="btn btn-sm" style="border-radius:7px; background:#0d9488; color:white;">
+                            <i class="bi bi-send me-1"></i>Submit Verification
+                        </a>
                     }
                 </div>
             </div>
@@ -56,280 +159,396 @@
     </div>
 }
 
-<!-- Premium Stats Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: linear-gradient(135deg, #4e8b70 0%, #3a6854 100%); color: white;">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <h3 class="mb-0 fw-bold">@Model.TotalAppointments</h3>
-                    <small class="text-white-50">Total Appointments</small>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(255,255,255,0.2);">
-                    <i class="bi bi-calendar-check" style="font-size: 1.5rem;"></i>
-                </div>
+@if (Model.IsVerified)
+{
+    <!-- ══ KPI Strip ══ -->
+    <div class="dash-kpi-strip">
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#ccfbf1; color:#0d9488;">
+                <i class="bi bi-camera-video-fill"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.TodaySessionsCount</div>
+                <div class="dash-kpi-lbl">Today's Sessions</div>
+            </div>
+        </div>
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#dbeafe; color:#1d4ed8;">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.UpcomingSessionsCount</div>
+                <div class="dash-kpi-lbl">Upcoming (7d)</div>
+            </div>
+        </div>
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#f0fdf4; color:#16a34a;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.ActivePatientsCount</div>
+                <div class="dash-kpi-lbl">Active Patients</div>
+            </div>
+        </div>
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#fdf4ff; color:#9333ea;">
+                <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.ActiveCasesCount</div>
+                <div class="dash-kpi-lbl">Active Cases</div>
+            </div>
+        </div>
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#fef3c7; color:#d97706;">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.GoalsNearDeadlineCount</div>
+                <div class="dash-kpi-lbl">Goals Near Deadline</div>
+            </div>
+        </div>
+        <div class="dash-kpi">
+            <div class="dash-kpi-icon" style="background:#fee2e2; color:#dc2626;">
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <div>
+                <div class="dash-kpi-val">@Model.HomeworkWaitingCount</div>
+                <div class="dash-kpi-lbl">Homework to Review</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <h3 class="mb-0 fw-bold" style="color: #f59e0b;">@Model.PendingCount</h3>
-                    <small class="text-muted">Pending Review</small>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #fffbeb; color: #f59e0b;">
-                    <i class="bi bi-clock-history" style="font-size: 1.5rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <h3 class="mb-0 fw-bold" style="color: #3b82f6;">@Model.TotalConsultations</h3>
-                    <small class="text-muted">Consultation Records</small>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6;">
-                    <i class="bi bi-file-earmark-medical" style="font-size: 1.5rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px; background: white;">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <h3 class="mb-0 fw-bold" style="color: #10b981;">@Model.TotalActivePackages</h3>
-                    <small class="text-muted">Active Treatment Pkgs</small>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #ecfdf5; color: #10b981;">
-                    <i class="bi bi-box-seam" style="font-size: 1.5rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row g-4 mb-4">
-    <!-- Upcoming Appointments -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Upcoming Appointments</h5>
-                <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3">View All</a>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.UpcomingAppointments.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4 text-muted font-weight-normal small">Patient</th>
-                                    <th class="text-muted font-weight-normal small">Time</th>
-                                    <th class="text-muted font-weight-normal small">Status</th>
-                                    <th class="pe-4 text-end text-muted font-weight-normal small">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var apt in Model.UpcomingAppointments)
-                                {
-                                    <tr>
-                                        <td class="ps-4 py-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">
-                                                    @(string.IsNullOrEmpty(apt.PatientName) ? "?" : apt.PatientName.Substring(0, 1).ToUpper())
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold text-dark">@(apt.PatientName ?? "N/A")</div>
-                                                    @if (!string.IsNullOrEmpty(apt.Specialization))
-                                                    {
-                                                        <small class="text-muted">@apt.Specialization</small>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="py-3">
-                                            <div class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy")</div>
-                                            <small class="text-muted"><i class="bi bi-clock me-1"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm")</small>
-                                        </td>
-                                        <td class="py-3">
-                                            @{
-                                                var badgeClass = apt.Status switch
+    <div class="row g-3">
+        <!-- ══ Left Column: Today's Sessions + Goals + Homework ══ -->
+        <div class="col-lg-8">
+            <!-- Today's Sessions -->
+            <div class="dash-section">
+                <div class="dash-section-head">
+                    <h5 class="dash-section-title"><i class="bi bi-camera-video me-2" style="color:#0d9488;"></i>Today's Sessions</h5>
+                    <a asp-page="/Doctor/Schedules/Index" class="dash-action-link">View Schedule <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="dash-section-body">
+                    @if (Model.TodaySessions.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Time</th>
+                                    <th>Patient</th>
+                                    <th>Status</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var s in Model.TodaySessions)
+                                    {
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <span class="fw-semibold text-dark">@s.StartAt.LocalDateTime.ToString("HH:mm")</span>
+                                                @if (!string.IsNullOrEmpty(s.EndTime))
                                                 {
-                                                    0 => "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25",
-                                                    1 => "bg-info bg-opacity-10 text-info border border-info border-opacity-25",
-                                                    4 => "bg-success bg-opacity-10 text-success border border-success border-opacity-25",
-                                                    3 => "bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25",
-                                                    _ => "bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25"
-                                                };
-                                            }
-                                            <span class="badge rounded-pill @badgeClass px-3 py-2 fw-semibold">@apt.StatusText</span>
-                                        </td>
-                                        <td class="pe-4 text-end py-3">
-                                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="btn btn-sm btn-light rounded-circle" title="View Details">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-5 text-muted">
-                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-calendar-x text-muted" style="font-size:2.5rem"></i>
+                                                    <span class="text-muted"> – @s.EndTime</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">@(s.PatientName ?? "N/A")</div>
+                                                @if (!string.IsNullOrEmpty(s.BookingCode))
+                                                {
+                                                    <span class="text-muted" style="font-size:0.72rem;">@s.BookingCode</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var sCls = s.Status == 0 ? "pending" : s.Status == 1 ? "approved" : "completed";
+                                                }
+                                                <span class="dash-badge @sCls">@s.StatusText</span>
+                                            </td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@s.Id" class="dash-action-link" title="View Appointment">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
-                        <h6 class="fw-bold">No upcoming appointments</h6>
-                        <p class="small">Your schedule is currently empty.</p>
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <div class="dash-empty">
+                            <i class="bi bi-calendar-check"></i>
+                            <p>No sessions scheduled for today</p>
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Right Column (Subscription & Packages) -->
-    <div class="col-lg-4">
-        <!-- Subscription Info -->
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; overflow: hidden;">
-            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-credit-card me-2 text-primary"></i>Service Package</h5>
-            </div>
-            <div class="card-body px-4 pb-4">
-                @if (Model.CurrentSubscription != null)
-                {
-                    <div class="bg-light p-3 text-center" style="border-radius: 12px;">
-                        <span class="badge bg-success mb-2 rounded-pill px-3 py-2">@Model.CurrentSubscription.Status</span>
-                        <h4 class="text-primary fw-bold mb-1">@(Model.CurrentSubscription.PackageName ?? "N/A")</h4>
-                        <p class="text-muted small mb-0">
-                            <i class="bi bi-calendar3 me-1"></i>
-                            @Model.CurrentSubscription.StartDate.ToString("MM/dd/yyyy") - @Model.CurrentSubscription.EndDate.ToString("MM/dd/yyyy")
-                        </p>
+            <!-- Goals Near Deadline -->
+            @if (Model.GoalsNearDeadline.Any())
+            {
+                <div class="dash-section">
+                    <div class="dash-section-head">
+                        <h5 class="dash-section-title"><i class="bi bi-flag me-2" style="color:#d97706;"></i>Goals Near Deadline</h5>
                     </div>
-                    <div class="mt-3 text-center">
-                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-outline-primary rounded-pill w-100">Manage Services</a>
+                    <div class="dash-section-body">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Goal</th>
+                                    <th>Progress</th>
+                                    <th>Due Date</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var g in Model.GoalsNearDeadline)
+                                    {
+                                        var daysLeft = g.TargetDate.HasValue ? (g.TargetDate.Value - DateTime.UtcNow).Days : 0;
+                                        var urgency = daysLeft <= 1 ? "overdue" : daysLeft <= 3 ? "pending" : "active";
+                                        var barColor = daysLeft <= 1 ? "#dc2626" : daysLeft <= 3 ? "#d97706" : "#0d9488";
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width:220px;" title="@g.Title">@g.Title</div>
+                                                <span class="text-muted" style="font-size:0.72rem;">@g.CategoryText</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="dash-progress-track" style="width:60px;">
+                                                        <div class="dash-progress-fill" style="width:@(g.ProgressPercent)%; background:@barColor;"></div>
+                                                    </div>
+                                                    <span class="fw-semibold" style="font-size:0.78rem; color:@barColor;">@(g.ProgressPercent)%</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="dash-badge @urgency">
+                                                    @(g.TargetDate?.ToString("MMM dd"))
+                                                    @if (daysLeft <= 0) { <text> (overdue)</text> }
+                                                    else { <text> (@daysLeft d)</text> }
+                                                </span>
+                                            </td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a href="/Doctor/TreatmentCases/Details?id=@g.TreatmentCaseId&tab=goals" class="dash-action-link">
+                                                    <i class="bi bi-arrow-right"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                }
-                else
-                {
-                    <div class="text-center py-3 text-muted">
-                        <i class="bi bi-credit-card-2-front d-block mb-3" style="font-size:2.5rem; color: #cbd5e1;"></i>
-                        <p class="mb-3">You have not subscribed to any service package.</p>
-                        <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary rounded-pill w-100">View Service Packages</a>
+                </div>
+            }
+
+            <!-- Homework Waiting Review -->
+            @if (Model.HomeworkWaitingReview.Any())
+            {
+                <div class="dash-section">
+                    <div class="dash-section-head">
+                        <h5 class="dash-section-title"><i class="bi bi-journal-check me-2" style="color:#dc2626;"></i>Homework Waiting Review</h5>
                     </div>
-                }
+                    <div class="dash-section-body">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Homework</th>
+                                    <th>Submitted</th>
+                                    <th>Status</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var h in Model.HomeworkWaitingReview)
+                                    {
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width:240px;" title="@h.Title">@h.Title</div>
+                                                @if (h.SessionNumber.HasValue)
+                                                {
+                                                    <span class="text-muted" style="font-size:0.72rem;">Session #@h.SessionNumber</span>
+                                                }
+                                            </td>
+                                            <td class="text-muted">
+                                                @(h.SubmittedAt?.ToString("MMM dd, HH:mm") ?? "—")
+                                            </td>
+                                            <td><span class="dash-badge submitted">Submitted</span></td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a href="/Doctor/TreatmentCases/Details?id=@h.TreatmentCaseId&tab=activities&subTab=homework" class="dash-action-link">
+                                                    Review <i class="bi bi-arrow-right"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Upcoming Appointments -->
+            <div class="dash-section">
+                <div class="dash-section-head">
+                    <h5 class="dash-section-title"><i class="bi bi-calendar-event me-2" style="color:#1d4ed8;"></i>Upcoming Appointments</h5>
+                    <a asp-page="/Doctor/Appointments/Index" class="dash-action-link">View All <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="dash-section-body">
+                    @if (Model.UpcomingAppointments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Patient</th>
+                                    <th>Date & Time</th>
+                                    <th>Status</th>
+                                    <th class="text-end" style="padding-right:1.25rem;"></th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var apt in Model.UpcomingAppointments)
+                                    {
+                                        var aBadge = apt.Status == 0 ? "pending" : apt.Status == 1 ? "approved" : "completed";
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                         style="width:32px; height:32px; background:#ccfbf1; color:#0d9488; font-weight:700; font-size:0.8rem;">
+                                                        @(string.IsNullOrEmpty(apt.PatientName) ? "?" : apt.PatientName[..1].ToUpper())
+                                                    </div>
+                                                    <span class="fw-semibold text-dark">@(apt.PatientName ?? "N/A")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("MMM dd")</span>
+                                                <span class="text-muted ms-1" style="font-size:0.78rem;">@apt.StartAt.LocalDateTime.ToString("HH:mm")</span>
+                                            </td>
+                                            <td><span class="dash-badge @aBadge">@apt.StatusText</span></td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="dash-action-link">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dash-empty">
+                            <i class="bi bi-calendar-x"></i>
+                            <p>No upcoming appointments this week</p>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
-        
-        <!-- Active Treatment Packages -->
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Active Treatment Packages</h6>
-                <a asp-page="/Doctor/TreatmentPackages/Index" class="text-primary small text-decoration-none">All</a>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.ActivePackages.Any())
-                {
-                    <div class="list-group list-group-flush border-top-0">
-                        @foreach (var pkg in Model.ActivePackages)
-                        {
-                            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
-                            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-                            
-                            <a asp-page="/Doctor/TreatmentPackages/Edit" asp-route-id="@pkg.Id" class="list-group-item list-group-item-action px-4 py-3 border-bottom-0 border-top">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-semibold text-dark text-truncate" style="max-width: 70%;">@pkg.Name</span>
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Active</span>
-                                </div>
-                                <div class="small text-muted mb-2">
-                                    <i class="bi bi-person me-1"></i> @pkg.DisplayPatientName
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar" role="progressbar" style="width: @progress%; background-color: @progressColor;" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <small class="text-muted" style="min-width: 35px; text-align: right;">@progress%</small>
-                                </div>
+
+        <!-- ══ Right Column: Subscription + Active Cases + Recent Consultations ══ -->
+        <div class="col-lg-4">
+            <!-- Subscription -->
+            <div class="dash-section">
+                <div class="dash-section-head">
+                    <h5 class="dash-section-title"><i class="bi bi-credit-card me-2" style="color:#1d4ed8;"></i>Service Package</h5>
+                </div>
+                <div style="padding: 0.75rem 1.25rem 1.25rem;">
+                    @if (Model.CurrentSubscription != null)
+                    {
+                        <div style="background:#f8fafc; border-radius:8px; padding:0.875rem; text-align:center;">
+                            <span class="dash-badge active mb-1">@Model.CurrentSubscription.Status</span>
+                            <h6 class="fw-bold mb-1" style="color:#0d9488;">@(Model.CurrentSubscription.PackageName ?? "N/A")</h6>
+                            <p class="text-muted mb-0" style="font-size:0.78rem;">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                @Model.CurrentSubscription.StartDate.ToString("MMM dd, yyyy") — @Model.CurrentSubscription.EndDate.ToString("MMM dd, yyyy")
+                            </p>
+                        </div>
+                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-sm btn-outline-secondary w-100 mt-2" style="border-radius:7px; font-size:0.8rem;">
+                            Manage Services
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="dash-empty" style="padding:1.5rem;">
+                            <i class="bi bi-credit-card-2-front"></i>
+                            <p>No active service package</p>
+                            <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-sm mt-2" style="background:#0d9488; color:white; border-radius:7px; font-size:0.78rem;">
+                                View Packages
                             </a>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-4 text-muted">
-                        <p class="small mb-0">No active treatment packages.</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Consultation Records -->
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-medical me-2 text-primary"></i>Recent Consultation Records</h5>
-                <a asp-page="/Doctor/Patients/Index" class="btn btn-sm btn-light rounded-pill px-3">View Patients</a>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.RecentConsultations.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4 text-muted font-weight-normal small">Patient</th>
-                                    <th class="text-muted font-weight-normal small">Created Date</th>
-                                    <th class="text-muted font-weight-normal small">Diagnosis</th>
-                                    <th class="pe-4 text-end text-muted font-weight-normal small">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var rec in Model.RecentConsultations)
-                                {
-                                    <tr>
-                                        <td class="ps-4 py-3">
-                                            <div class="fw-bold text-dark">@(rec.PatientName ?? rec.WalkInPatientName ?? "Guest")</div>
-                                            @if (rec.PatientRecordId == Guid.Empty)
-                                            {
-                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill mt-1" style="font-size: 0.65rem;">Vãng lai</span>
-                                            }
-                                        </td>
-                                        <td class="py-3 text-muted">
-                                            @rec.CreatedAt.ToString("MM/dd/yyyy HH:mm")
-                                        </td>
-                                        <td class="py-3 text-truncate" style="max-width: 250px;">
-                                            @(string.IsNullOrEmpty(rec.Diagnosis) ? "-" : rec.Diagnosis)
-                                        </td>
-                                        <td class="pe-4 text-end py-3">
-                                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="btn btn-sm btn-light rounded-circle text-primary" title="Edit">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-5 text-muted">
-                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-journal-x text-muted" style="font-size:2.5rem"></i>
                         </div>
-                        <h6 class="fw-bold">None yet profile consultation</h6>
-                        <p class="small">You have not created any consultation notes for patients.</p>
-                    </div>
-                }
+                    }
+                </div>
+            </div>
+
+            <!-- Active Treatment Cases -->
+            <div class="dash-section">
+                <div class="dash-section-head">
+                    <h5 class="dash-section-title"><i class="bi bi-heart-pulse me-2" style="color:#9333ea;"></i>Active Cases</h5>
+                    <a asp-page="/Doctor/TreatmentCases/Index" class="dash-action-link">All <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="dash-section-body">
+                    @if (Model.ActiveCases.Any())
+                    {
+                        <div style="padding: 0 0.25rem;">
+                            @foreach (var tc in Model.ActiveCases.Take(6))
+                            {
+                                var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="d-flex align-items-center gap-3 text-decoration-none px-3 py-2" style="border-bottom:1px solid #f1f5f9; transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
+                                    <div class="flex-grow-1 min-width-0">
+                                        <div class="fw-semibold text-dark text-truncate" style="font-size:0.84rem;" title="@tc.CaseName">@tc.CaseName</div>
+                                        <div class="text-muted" style="font-size:0.72rem;">
+                                            <i class="bi bi-person me-1"></i>@(tc.PatientName ?? "—") · @tc.CompletedSessions/@tc.TotalSessions sessions
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        <div class="dash-progress-track" style="width:40px;">
+                                            <div class="dash-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
+                                        </div>
+                                        <span style="font-size:0.72rem; font-weight:700; color:@pColor; min-width:28px; text-align:right;">@(tc.OverallProgressPercent)%</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dash-empty">
+                            <i class="bi bi-heart-pulse"></i>
+                            <p>No active treatment cases</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Consultations -->
+            <div class="dash-section">
+                <div class="dash-section-head">
+                    <h5 class="dash-section-title"><i class="bi bi-journal-medical me-2" style="color:#1d4ed8;"></i>Recent Consultations</h5>
+                    <a asp-page="/Doctor/Patients/Index" class="dash-action-link">Patients <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="dash-section-body">
+                    @if (Model.RecentConsultations.Any())
+                    {
+                        <div style="padding: 0 0.25rem;">
+                            @foreach (var rec in Model.RecentConsultations)
+                            {
+                                <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="d-flex align-items-center gap-3 text-decoration-none px-3 py-2" style="border-bottom:1px solid #f1f5f9; transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
+                                    <div class="flex-grow-1 min-width-0">
+                                        <div class="fw-semibold text-dark text-truncate" style="font-size:0.84rem;">@(rec.PatientName ?? rec.WalkInPatientName ?? "Guest")</div>
+                                        <div class="text-muted text-truncate" style="font-size:0.72rem;">@(string.IsNullOrEmpty(rec.Diagnosis) ? "No diagnosis" : rec.Diagnosis)</div>
+                                    </div>
+                                    <span class="text-muted flex-shrink-0" style="font-size:0.72rem;">@rec.CreatedAt.ToString("MMM dd")</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dash-empty">
+                            <i class="bi bi-journal-x"></i>
+                            <p>No consultation records yet</p>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
-</div>
+}

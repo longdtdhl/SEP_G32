@@ -1,298 +1,893 @@
 @page "{id:Guid}"
 @model OPCBS.Web.Pages.Doctor.Patients.DetailsModel
 @{
-    ViewData["Title"] = "Patient Profile Details";
-
-    Layout = "_DashboardLayout";}
+    ViewData["Title"] = $"{Model.PatientRecord?.ResolvedDisplayName ?? "Patient"} - Profile Details";
+    Layout = "_DashboardLayout";
+}
 
 <style>
-    .patient-banner {
-        background: linear-gradient(135deg, #f0fdf8 0%, #ecfdf5 50%, #d1fae5 100%);
-        border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;
-        border: 1px solid rgba(16,185,129,0.12);
+    /* ─── Banner Header ─── */
+    .pd-banner {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
-    .patient-banner .avatar {
-        width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
-        font-size: 1.8rem; font-weight: 700; flex-shrink: 0;
+    .pd-avatar {
+        width: 56px; height: 56px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; font-weight: 800; flex-shrink: 0;
+        background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+        color: #0f766e; border: 1px solid #99f6e4;
     }
-    .patient-meta { font-size: 0.85rem; color: #64748b; display: flex; gap: 16px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
-    
-    .info-group { margin-bottom: 1.25rem; }
-    .info-group .label { font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-    .info-group .value { font-size: 0.95rem; color: #1e293b; font-weight: 500; }
-    
-    .timeline-item { position: relative; padding-left: 1.5rem; padding-bottom: 1.5rem; border-left: 2px solid #e2e8f0; }
-    .timeline-item:last-child { border-left-color: transparent; padding-bottom: 0; }
-    .timeline-item::before {
-        content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px;
-        border-radius: 50%; background: var(--mb-primary); border: 2px solid white; box-shadow: 0 0 0 2px var(--mb-primary);
+    .pd-meta { font-size: 0.82rem; color: #64748b; display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+    .pd-meta i { font-size: 0.82rem; color: #0d9488; }
+
+    /* ─── Needs Attention Alert Box ─── */
+    .pd-attention-box {
+        background: #fff8f8;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 0.875rem 1.25rem;
+        margin-bottom: 1rem;
     }
-    .timeline-date { font-size: 0.8rem; font-weight: 600; color: var(--mb-primary); margin-bottom: 4px; }
+    .pd-attention-clean {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 4px solid #22c55e;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ─── Tab Nav ─── */
+    .pd-tab-nav { border-bottom: 2px solid #e2e8f0; margin-bottom: 1.25rem; display: flex; gap: 0; }
+    .pd-tab-nav .nav-link {
+        border: none; border-bottom: 2px solid transparent; border-radius: 0;
+        font-size: 0.82rem; font-weight: 600; color: #64748b;
+        padding: 0.625rem 1rem; margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+    }
+    .pd-tab-nav .nav-link.active { color: #0d9488; border-bottom-color: #0d9488; }
+    .pd-tab-nav .nav-link:hover:not(.active) { color: #334155; }
+
+    /* ─── Cards ─── */
+    .pd-card {
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px;
+        overflow: hidden; margin-bottom: 1rem;
+    }
+    .pd-card-head {
+        padding: 0.875rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+        display: flex; justify-content: space-between; align-items: center;
+        background: #fafbfc;
+    }
+    .pd-card-title { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .pd-card-body { padding: 1rem 1.25rem; }
+    .pd-info-row { margin-bottom: 0.875rem; }
+    .pd-info-row:last-child { margin-bottom: 0; }
+    .pd-info-lbl { font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
+    .pd-info-val { font-size: 0.88rem; color: #1e293b; font-weight: 500; }
+
+    /* ─── Timeline ─── */
+    .pd-tl-item { position: relative; padding-left: 1.25rem; padding-bottom: 1.25rem; border-left: 2px solid #e2e8f0; }
+    .pd-tl-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+    .pd-tl-item::before {
+        content: ''; position: absolute; left: -5px; top: 2px; width: 8px; height: 8px;
+        border-radius: 50%; background: #0d9488; border: 2px solid white; box-shadow: 0 0 0 2px #0d9488;
+    }
+    .pd-tl-date { font-size: 0.75rem; font-weight: 600; color: #0d9488; margin-bottom: 3px; }
+
+    /* ─── Badges ─── */
+    .pd-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 10px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; }
+    .pd-badge.active { background: #ccfbf1; color: #115e59; }
+    .pd-badge.hold { background: #fef3c7; color: #92400e; }
+    .pd-badge.completed { background: #dbeafe; color: #1e40af; }
+    .pd-badge.terminated { background: #fee2e2; color: #991b1b; }
+    .pd-badge.cancelled { background: #f1f5f9; color: #64748b; }
+
+    /* ─── Progress bar ─── */
+    .pd-progress-track { background: #e2e8f0; border-radius: 3px; height: 6px; overflow: hidden; }
+    .pd-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+    /* ─── Table ─── */
+    .pd-table { font-size: 0.84rem; margin-bottom: 0; }
+    .pd-table th { font-size: 0.72rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; background: #fafbfc; border-bottom: 1px solid #f1f5f9; padding: 0.625rem 1rem; }
+    .pd-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .pd-table tbody tr:hover { background: #f8fffe; }
+
+    /* ─── Empty state ─── */
+    .pd-empty { text-align: center; padding: 2rem; color: #94a3b8; }
+    .pd-empty i { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1; }
+    .pd-empty p { font-size: 0.82rem; margin: 0; }
 </style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
+<!-- ══ Page Title ══ -->
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Patient Profile
+        <h1 style="font-size:1.3rem; font-weight:800; color:#0f172a; margin:0;">
+            <i class="bi bi-person-badge-fill me-2" style="color:#0d9488;"></i>Patient Medical Profile
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View patient overview and history</p>
+        <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">Comprehensive clinical record, demographics, consultation history & cases</p>
     </div>
-    <div>
-        <a asp-page="./Edit" asp-route-id="@Model.PatientRecord.Id" class="btn btn-warning me-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-pencil-square me-1"></i>Edit Profile</a>
-        <a asp-page="./Index" class="btn btn-outline-secondary px-3 py-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    <div class="d-flex gap-2">
+        @if (Model.PatientRecord?.PatientId.HasValue == true)
+        {
+            <a href="/Doctor/Messages/Index?patientId=@Model.PatientRecord.PatientId" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:7px; font-size:0.8rem; font-weight:600;">
+                <i class="bi bi-chat-dots me-1"></i>Message
+            </a>
+        }
+        <a href="/Doctor/Schedules/Index" class="btn btn-sm btn-outline-primary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
+            <i class="bi bi-calendar-plus me-1"></i>Create Appointment
+        </a>
+        <a asp-page="./Edit" asp-route-id="@Model.PatientRecord?.Id" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
+            <i class="bi bi-pencil-square me-1"></i>Edit
+        </a>
+        <a asp-page="./Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
     </div>
 </div>
 
-<div class="patient-banner d-flex align-items-center gap-4 shadow-sm mt-3">
-    @{
-        var initial = Model.PatientRecord.DisplayName.Substring(0, 1).ToUpper();
-    }
-    <div class="avatar" style="background:rgba(16,185,129,0.15); color:var(--mb-primary);">@initial</div>
-    <div class="flex-grow-1">
-        <h3 style="margin:0; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-            @Model.PatientRecord.DisplayName
-            @if (Model.PatientRecord.IsGuest)
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.PatientRecord == null)
+{
+    <div class="pd-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px; padding:4rem;">
+        <i class="bi bi-person-x"></i>
+        <h5 style="font-weight:700; color:#475569; font-size:1.1rem; margin-bottom:6px;">Patient Record Not Found</h5>
+        <p>The requested patient record could not be loaded or does not exist.</p>
+        <a asp-page="./Index" class="btn btn-sm btn-outline-primary mt-3" style="border-radius:7px;">Back to Patient List</a>
+    </div>
+}
+else
+{
+    <!-- ══ Patient Header Banner ══ -->
+    <div class="pd-banner d-flex align-items-center gap-3 flex-wrap">
+        @{ var initial = Model.PatientRecord != null && !string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayName) ? Model.PatientRecord.ResolvedDisplayName[..1].ToUpper() : "?"; }
+        <div class="pd-avatar">@initial</div>
+        <div class="flex-grow-1 min-width-0">
+            <h4 style="margin:0; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; font-size:1.2rem;">
+                @Model.PatientRecord!.ResolvedDisplayName
+                @if (Model.PatientRecord.IsGuest)
+                {
+                    <span style="font-size:0.68rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:5px; font-weight:700;"><i class="bi bi-person me-1"></i>Guest Patient</span>
+                }
+                else
+                {
+                    <span style="font-size:0.68rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:5px; font-weight:700;"><i class="bi bi-shield-check me-1"></i>Registered User</span>
+                }
+            </h4>
+            <div class="pd-meta">
+                <span><i class="bi bi-telephone me-1"></i>@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayPhone) ? "N/A" : Model.PatientRecord.ResolvedDisplayPhone)</span>
+                <span><i class="bi bi-envelope me-1"></i>@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayEmail) ? "N/A" : Model.PatientRecord.ResolvedDisplayEmail)</span>
+                <span><i class="bi bi-calendar-event me-1"></i>DOB: @(Model.PatientRecord.ResolvedDateOfBirth?.ToString("MMM dd, yyyy") ?? "Not recorded")</span>
+                <span><i class="bi bi-gender-ambiguous me-1"></i>Gender: @(Model.PatientRecord.ResolvedGender ?? "Not recorded")</span>
+                <span><i class="bi bi-clock-history me-1"></i>Registered: @Model.PatientRecord.CreatedAt.ToString("MMM dd, yyyy")</span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            @if (Model.PatientCases.Any(c => c.Status == 0 || c.Status == 1))
             {
-                <span style="font-size:0.7rem; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:8px;">Guest</span>
+                <span class="pd-badge active" style="font-size:0.75rem; padding:6px 12px;">
+                    <i class="bi bi-heart-pulse-fill me-1"></i> @Model.PatientCases.Count(c => c.Status == 0 || c.Status == 1) Active Case(s)
+                </span>
+            }
+            @if (Model.NextAppointment != null)
+            {
+                <span class="pd-badge hold" style="font-size:0.75rem; padding:6px 12px;" title="Next scheduled session">
+                    <i class="bi bi-calendar-event me-1"></i> Next: @Model.NextAppointment.StartAt.ToString("MMM dd, HH:mm")
+                </span>
+            }
+        </div>
+    </div>
+
+    <!-- ══ Needs Attention Section (Doctor-Only Risk & Alerts) ══ -->
+    var hasNoShows = Model.NoShowCount > 0;
+    var hasOverdueHw = Model.OverdueHomework.Any();
+    var lowestMood = Model.RecentMoodEntries.FirstOrDefault(m => m.MoodScore <= 3);
+    var highRiskCase = Model.CaseRisks.Values.FirstOrDefault(r => r.Level == "High" || r.Level == "Critical");
+    var hasAlerts = hasNoShows || hasOverdueHw || lowestMood != null || highRiskCase != null;
+
+
+    @if (hasAlerts)
+    {
+        <div class="pd-attention-box">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 style="font-size:0.88rem; font-weight:800; color:#991b1b; margin:0;">
+                    <i class="bi bi-exclamation-triangle-fill me-2" style="color:#ef4444;"></i>Needs Attention (Doctor Notice)
+                </h6>
+                <span class="text-muted" style="font-size:0.72rem;">Clinical risk & action items</span>
+            </div>
+            <div class="d-flex gap-2 flex-wrap" style="font-size:0.78rem;">
+                @if (hasNoShows)
+                {
+                    <span class="badge bg-danger d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding:5px 10px;">
+                        <i class="bi bi-person-x-fill"></i> @Model.NoShowCount No-Show Appointment(s)
+                    </span>
+                }
+                @if (hasOverdueHw)
+                {
+                    <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding:5px 10px;">
+                        <i class="bi bi-clock-history"></i> @Model.OverdueHomework.Count Overdue Homework Assignment(s)
+                    </span>
+                }
+                @if (lowestMood != null)
+                {
+                    <span class="badge bg-danger d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding:5px 10px;">
+                        <i class="bi bi-graph-down-arrow"></i> Low Mood Score (@lowestMood.MoodScore/10 recorded on @lowestMood.RecordedAt.ToString("MMM dd"))
+                    </span>
+                }
+                @if (highRiskCase != null)
+                {
+                    <span class="badge bg-danger d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding:5px 10px;">
+                        <i class="bi bi-shield-exclamation"></i> High Risk Case Alert (@highRiskCase.Level)
+                    </span>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="pd-attention-clean d-flex align-items-center justify-content-between">
+            <span style="font-size:0.8rem; color:#166534; font-weight:600;">
+                <i class="bi bi-check-circle-fill me-2" style="color:#22c55e;"></i>No urgent clinical risk alerts or overdue assignments for this patient.
+            </span>
+            <span class="text-muted" style="font-size:0.72rem;">Status Normal</span>
+        </div>
+    }
+
+    <!-- ══ Tab Navigation ══ -->
+    <ul class="nav pd-tab-nav" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(Model.ActiveTab == "overview" ? "active" : "")" id="tab-overview" data-bs-toggle="tab" data-bs-target="#pane-overview" type="button" role="tab">
+                <i class="bi bi-grid me-1"></i>Overview Profile
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(Model.ActiveTab == "clinical" ? "active" : "")" id="tab-clinical" data-bs-toggle="tab" data-bs-target="#pane-clinical" type="button" role="tab">
+                <i class="bi bi-journal-medical me-1"></i>Clinical & Consultations (@Model.ConsultationNotes.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(Model.ActiveTab == "cases" ? "active" : "")" id="tab-cases" data-bs-toggle="tab" data-bs-target="#pane-cases" type="button" role="tab">
+                <i class="bi bi-folder2-open me-1"></i>Treatment Cases (@Model.PatientCases.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(Model.ActiveTab == "files" ? "active" : "")" id="tab-files" data-bs-toggle="tab" data-bs-target="#pane-files" type="button" role="tab">
+                <i class="bi bi-paperclip me-1"></i>Patient Files (@Model.PatientFiles.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(Model.ActiveTab == "mood" ? "active" : "")" id="tab-mood" data-bs-toggle="tab" data-bs-target="#pane-mood" type="button" role="tab">
+                <i class="bi bi-emoji-smile me-1"></i>Mood & Assessments (@Model.PsychoSubmissions.Count)
+            </button>
+        </li>
+    </ul>
+
+    <!-- ══ Tab Contents ══ -->
+    <div class="tab-content">
+        <!-- ── TAB 1: OVERVIEW PROFILE ── -->
+        <div class="tab-pane fade @(Model.ActiveTab == "overview" ? "show active" : "")" id="pane-overview" role="tabpanel">
+            <div class="row g-3">
+                <!-- Left Column (Clinical Summary & Demographics) -->
+                <div class="col-lg-5">
+                    <!-- Personal Information -->
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-person-lines-fill me-2" style="color:#0d9488;"></i>Demographics & Contact</h6>
+                        </div>
+                        <div class="pd-card-body">
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Full Name</div>
+                                <div class="pd-info-val fw-bold">@Model.PatientRecord.ResolvedDisplayName</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Phone</div>
+                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayPhone) ? "N/A" : Model.PatientRecord.ResolvedDisplayPhone)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Email</div>
+                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayEmail) ? "N/A" : Model.PatientRecord.ResolvedDisplayEmail)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Date of Birth</div>
+                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedDateOfBirth?.ToString("MMM dd, yyyy") ?? "Not recorded")</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Gender</div>
+                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedGender ?? "Not recorded")</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Address</div>
+                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedAddress ?? "Not recorded")</div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactName) || !string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactPhone))
+                            {
+                                <div class="pd-info-row">
+                                    <div class="pd-info-lbl">Emergency Contact</div>
+                                    <div class="pd-info-val">
+                                        @(Model.PatientRecord.EmergencyContactName ?? "Not recorded")
+                                        @if (!string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactPhone))
+                                        {
+                                            <span class="text-muted">&middot; @Model.PatientRecord.EmergencyContactPhone</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Clinical Summary -->
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-heart-pulse-fill me-2" style="color:#dc2626;"></i>Clinical Summary</h6>
+                        </div>
+                        <div class="pd-card-body">
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Psychological History</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Current Symptoms</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Stress Factors</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Doctor General Notes</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Treatment Cases Summary & Recent Consultations) -->
+                <div class="col-lg-7">
+                    <!-- Active Treatment Cases Summary -->
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Treatment Cases Summary</h6>
+                            <span class="text-muted" style="font-size:0.75rem;">@Model.PatientCases.Count Total Case(s)</span>
+                        </div>
+                        <div class="pd-card-body" style="padding:0;">
+                            @if (Model.PatientCases.Any())
+                            {
+                                @foreach (var tc in Model.PatientCases)
+                                {
+                                    var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                    var tcBadge = tc.Status == 0 ? "active" : tc.Status == 1 ? "hold" : tc.Status == 2 ? "completed" : tc.Status == 3 ? "terminated" : "cancelled";
+                                    var tcLabel = tc.Status == 0 ? "Active" : tc.Status == 1 ? "On Hold" : tc.Status == 2 ? "Completed" : tc.Status == 3 ? "Terminated" : "Cancelled";
+                                    var activeGoal = Model.ActiveGoals.FirstOrDefault(g => g.TreatmentCaseId == tc.Id);
+                                    var risk = Model.CaseRisks.GetValueOrDefault(tc.Id);
+
+                                    <div class="p-3 border-bottom" style="transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="pd-badge @tcBadge">@tcLabel</span>
+                                                    @if (risk != null)
+                                                    {
+                                                        <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
+                                                            @if (risk.Level == "High" || risk.Level == "Critical") { <i class="bi bi-exclamation-triangle-fill me-1"></i> }
+                                                            Risk: @risk.Level
+                                                        </span>
+                                                    }
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-0" style="font-size:0.92rem;">@tc.CaseName</h6>
+                                                <span class="text-muted" style="font-size:0.75rem;">Package: @(tc.PackageNameSnapshot ?? tc.PackageName ?? "—")</span>
+                                            </div>
+                                            <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; padding:4px 12px;">
+                                                <i class="bi bi-eye me-1"></i>View Case
+                                            </a>
+                                        </div>
+
+                                        <!-- Progress Bar -->
+                                        <div class="mt-2 mb-2">
+                                            <div class="d-flex justify-content-between text-muted mb-1" style="font-size:0.72rem;">
+                                                <span>Sessions: <strong>@tc.CompletedSessions/@tc.TotalSessions</strong></span>
+                                                <span style="color:@pColor; font-weight:700;">@tc.OverallProgressPercent%</span>
+                                            </div>
+                                            <div class="pd-progress-track">
+                                                <div class="pd-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Current Goal & Next Session -->
+                                        <div class="d-flex justify-content-between align-items-center pt-1" style="font-size:0.75rem; color:#64748b;">
+                                            <div>
+                                                <i class="bi bi-flag me-1 text-warning"></i>Current Goal:
+                                                <strong class="text-dark">@(activeGoal != null ? activeGoal.Title : "No active goal")</strong>
+                                            </div>
+                                            @if (Model.NextAppointment != null)
+                                            {
+                                                <div>
+                                                    <i class="bi bi-calendar-event me-1 text-primary"></i>Next:
+                                                    <strong class="text-dark">@Model.NextAppointment.StartAt.ToString("MMM dd, HH:mm")</strong>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="pd-empty" style="padding:2rem;">
+                                    <i class="bi bi-folder-x"></i>
+                                    <p>No treatment cases created for this patient</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Recent Consultation Records Preview -->
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-journal-medical me-2" style="color:#0d9488;"></i>Recent Consultations</h6>
+                            <button class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size:0.75rem; color:#0d9488;" onclick="document.getElementById('tab-clinical').click()">View All (@Model.ConsultationNotes.Count)</button>
+                        </div>
+                        <div class="pd-card-body">
+                            @if (Model.ConsultationNotes.Any())
+                            {
+                                @foreach (var note in Model.ConsultationNotes.Take(3))
+                                {
+                                    <div class="pd-tl-item mb-2">
+                                        <div class="pd-tl-date">@note.DisplayConsultationDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</div>
+                                        <div style="background:#f8fafc; border-radius:6px; padding:0.625rem 0.875rem; border:1px solid #f1f5f9; font-size:0.8rem;">
+                                            <div class="fw-bold text-dark">@(string.IsNullOrEmpty(note.Diagnosis) ? "General Consultation" : note.Diagnosis)</div>
+                                            @if (!string.IsNullOrEmpty(note.ConsultationSummary))
+                                            {
+                                                <p class="text-muted mb-1 text-truncate" style="max-width:380px;">@note.ConsultationSummary</p>
+                                            }
+                                            <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
+                                                <span><i class="bi bi-person me-1"></i>Dr. @note.DoctorName</span>
+                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="text-primary text-decoration-none">Details →</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="pd-empty" style="padding:1.5rem;">
+                                    <i class="bi bi-journal-x"></i>
+                                    <p>No consultation notes recorded</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Mood Trend Quick Preview -->
+                    @if (Model.RecentMoodEntries.Any())
+                    {
+                        <div class="pd-card">
+                            <div class="pd-card-head">
+                                <h6 class="pd-card-title"><i class="bi bi-emoji-smile me-2" style="color:#d97706;"></i>Recent Mood Trend</h6>
+                            </div>
+                            <div class="pd-card-body">
+                                <div class="d-flex gap-1 align-items-end" style="height:50px;">
+                                    @foreach (var m in Model.RecentMoodEntries.Take(14).Reverse())
+                                    {
+                                        var h = Math.Max(6, m.MoodScore * 5);
+                                        var c = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                        <div title="@m.RecordedAt.ToString("MMM dd") — Mood: @m.MoodScore/10"
+                                             style="flex:1; min-width:6px; max-width:20px; height:@(h)px; background:@c; border-radius:3px 3px 0 0; opacity:0.85;"></div>
+                                    }
+                                </div>
+                                <div class="text-muted text-end mt-1" style="font-size:0.68rem;">Last @Model.RecentMoodEntries.Take(14).Count() entries</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 2: CLINICAL & CONSULTATIONS ── -->
+        <div class="tab-pane fade @(Model.ActiveTab == "clinical" ? "show active" : "")" id="pane-clinical" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-heart-pulse-fill me-2" style="color:#dc2626;"></i>Detailed Clinical Notes</h6>
+                        </div>
+                        <div class="pd-card-body">
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Psychological History</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Current Symptoms</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">Stress Factors</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
+                            </div>
+                            <div class="pd-info-row">
+                                <div class="pd-info-lbl">General Notes</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-journal-medical me-2" style="color:#0d9488;"></i>Consultation History Timeline</h6>
+                        </div>
+                        <div class="pd-card-body pt-3">
+                            @if (Model.ConsultationNotes.Any())
+                            {
+                                @foreach (var note in Model.ConsultationNotes)
+                                {
+                                    <div class="pd-tl-item mb-3">
+                                        <div class="pd-tl-date">@note.DisplayConsultationDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</div>
+                                        <div style="background:#f8fafc; border-radius:8px; padding:0.875rem 1rem; border:1px solid #f1f5f9;">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="fw-bold mb-0" style="color:#334155; font-size:0.9rem;">
+                                                    @(string.IsNullOrEmpty(note.Diagnosis) ? "No Diagnosis Specified" : note.Diagnosis)
+                                                </h6>
+                                                <div class="d-flex gap-1">
+                                                    <span class="@note.VisibilityBadgeClass" style="font-size:0.68rem;"><i class="bi @note.VisibilityIcon me-1"></i>@note.VisibilityText</span>
+                                                    <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem; border-radius:5px; padding:2px 8px;">Details</a>
+                                                </div>
+                                            </div>
+                                            <p class="mb-1" style="font-size:0.82rem; color:#475569;">
+                                                <strong>Summary:</strong> @(string.IsNullOrEmpty(note.ConsultationSummary) ? "None" : note.ConsultationSummary)
+                                            </p>
+                                            @if (!string.IsNullOrEmpty(note.Recommendation))
+                                            {
+                                                <p class="mb-1" style="font-size:0.82rem; color:#0f766e;">
+                                                    <strong>Recommendation:</strong> @note.Recommendation
+                                                </p>
+                                            }
+                                            <div style="font-size:0.75rem; color:#94a3b8;" class="mt-2">
+                                                <i class="bi bi-person-badge me-1"></i>Dr. @note.DoctorName
+                                                @if (!string.IsNullOrEmpty(note.PackageName))
+                                                {
+                                                    <span class="ms-2"><i class="bi bi-box-seam me-1"></i>@note.PackageName</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="pd-empty" style="padding:3rem;">
+                                    <i class="bi bi-journal-x"></i>
+                                    <p>No consultation records available for this patient</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 3: TREATMENT CASES & GOALS ── -->
+        <div class="tab-pane fade @(Model.ActiveTab == "cases" ? "show active" : "")" id="pane-cases" role="tabpanel">
+            @if (Model.PatientCases.Any())
+            {
+                <div class="pd-card mb-3">
+                    <div class="pd-card-head">
+                        <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Treatment Cases List</h6>
+                    </div>
+                    <div class="pd-card-body" style="padding:0;">
+                        <div class="table-responsive">
+                            <table class="table pd-table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Case Name</th>
+                                    <th>Package</th>
+                                    <th>Sessions</th>
+                                    <th>Progress</th>
+                                    <th>Risk</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var tc in Model.PatientCases)
+                                    {
+                                        var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                        var tcBadge = tc.Status == 0 ? "active" : tc.Status == 1 ? "hold" : tc.Status == 2 ? "completed" : tc.Status == 3 ? "terminated" : "cancelled";
+                                        var tcLabel = tc.Status == 0 ? "Active" : tc.Status == 1 ? "On Hold" : tc.Status == 2 ? "Completed" : tc.Status == 3 ? "Terminated" : "Cancelled";
+                                        var risk = Model.CaseRisks.GetValueOrDefault(tc.Id);
+
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width:220px;" title="@tc.CaseName">@tc.CaseName</div>
+                                            </td>
+                                            <td class="text-muted" style="font-size:0.8rem;">@(tc.PackageNameSnapshot ?? tc.PackageName ?? "—")</td>
+                                            <td>
+                                                <span class="fw-semibold">@tc.CompletedSessions</span><span class="text-muted">/@tc.TotalSessions</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="pd-progress-track" style="width:50px;">
+                                                        <div class="pd-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
+                                                    </div>
+                                                    <span style="font-size:0.75rem; font-weight:700; color:@pColor;">@(tc.OverallProgressPercent)%</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (risk != null)
+                                                {
+                                                    <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
+                                                        @if (risk.Level == "High" || risk.Level == "Critical") { <i class="bi bi-exclamation-triangle-fill me-1"></i> }
+                                                        @risk.Level
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted" style="font-size:0.72rem;">—</span>
+                                                }
+                                            </td>
+                                            <td><span class="pd-badge @tcBadge">@tcLabel</span></td>
+                                            <td class="text-muted" style="font-size:0.8rem;">@tc.StartDate.ToString("MMM dd, yyyy")</td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.75rem; padding:3px 10px;">
+                                                    <i class="bi bi-eye me-1"></i>View Case
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             }
             else
             {
-                <span style="font-size:0.7rem; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:8px;">System User</span>
+                <div class="pd-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px; padding:3rem;">
+                    <i class="bi bi-folder-x"></i>
+                    <p>No treatment cases recorded for this patient</p>
+                </div>
             }
-        </h3>
-        <div class="patient-meta">
-            <span><i class="bi bi-telephone me-1 text-success"></i> @Model.PatientRecord.DisplayPhone</span>
-            <span><i class="bi bi-envelope me-1 text-primary"></i> @Model.PatientRecord.DisplayEmail</span>
-            <span><i class="bi bi-calendar-event me-1 text-warning"></i> DOB: @(Model.PatientRecord.GuestDateOfBirth.HasValue ? Model.PatientRecord.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")</span>
-            <span><i class="bi bi-gender-ambiguous me-1 text-info"></i> Gender: @(string.IsNullOrEmpty(Model.PatientRecord.GuestGender) ? "N/A" : Model.PatientRecord.GuestGender)</span>
-        </div>
-    </div>
-</div>
 
-<div class="row g-4">
-    <!-- Patient Profile Column -->
-    <div class="col-lg-4">
-        <!-- Personal Information Card -->
-        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
-            <div class="card-body p-4">
-                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                    <i class="bi bi-person-badge-fill text-primary me-2"></i>Personal Information
-                </h5>
-                
-                <div class="info-group">
-                    <span class="label">Full Name</span>
-                    <span class="value">@Model.PatientRecord.DisplayName</span>
-                </div>
-
-                <div class="info-group">
-                    <span class="label">Phone Number</span>
-                    <span class="value">@Model.PatientRecord.DisplayPhone</span>
-                </div>
-
-                <div class="info-group">
-                    <span class="label">Email Address</span>
-                    <span class="value">@Model.PatientRecord.DisplayEmail</span>
-                </div>
-
-                <div class="info-group">
-                    <span class="label">Date of Birth</span>
-                    <span class="value">@(Model.PatientRecord.GuestDateOfBirth.HasValue ? Model.PatientRecord.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")</span>
-                </div>
-
-                <div class="info-group">
-                    <span class="label">Gender</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.GuestGender) ? "N/A" : Model.PatientRecord.GuestGender)</span>
-                </div>
-
-                <div class="info-group mb-0">
-                    <span class="label">Address</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.GuestAddress) ? "N/A" : Model.PatientRecord.GuestAddress)</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Clinical Information Card -->
-        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
-            <div class="card-body p-4">
-                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                    <i class="bi bi-heart-pulse-fill text-danger me-2"></i>Clinical Information
-                </h5>
-                
-                <div class="info-group">
-                    <span class="label">Psychological History</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</span>
-                </div>
-                
-                <div class="info-group">
-                    <span class="label">Current Symptoms</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</span>
-                </div>
-                
-                <div class="info-group">
-                    <span class="label">Stress Factors</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</span>
-                </div>
-                
-                <div class="info-group mb-0">
-                    <span class="label">Other Notes</span>
-                    <span class="value">@(string.IsNullOrEmpty(Model.PatientRecord.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Patient Treatment Packages -->
-        @if (!Model.PatientRecord.IsGuest)
-        {
-            <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                        <h5 class="fw-bold mb-0" style="color:#1e293b; font-size:1rem;">
-                            <i class="bi bi-box-seam text-success me-2"></i>Psychotherapy Packages
-                        </h5>
-                        <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.PatientId" 
-                           class="btn btn-sm btn-primary fw-semibold d-flex align-items-center gap-1" 
-                           style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary); font-size:0.75rem;">
-                            <i class="bi bi-plus-lg"></i>Create New
-                        </a>
+            <!-- Active Goals -->
+            @if (Model.ActiveGoals.Any())
+            {
+                <div class="pd-card mt-3">
+                    <div class="pd-card-head">
+                        <h6 class="pd-card-title"><i class="bi bi-flag me-2" style="color:#d97706;"></i>Active Therapeutic Goals</h6>
                     </div>
-                    
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success py-2 mb-3" style="border-radius:10px; font-size:0.82rem; border:none;">
-                            <i class="bi bi-check-circle-fill me-1"></i>@TempData["SuccessMessage"]
+                    <div class="pd-card-body" style="padding:0;">
+                        <div class="table-responsive">
+                            <table class="table pd-table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">Goal Title</th>
+                                    <th>Category</th>
+                                    <th>Priority</th>
+                                    <th>Progress</th>
+                                    <th>Target Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Case</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var g in Model.ActiveGoals)
+                                    {
+                                        var gColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width:240px;" title="@g.Title">@g.Title</div>
+                                            </td>
+                                            <td class="text-muted" style="font-size:0.8rem;">@g.CategoryText</td>
+                                            <td><span class="@g.PriorityBadgeClass" style="font-size:0.68rem;">@g.PriorityText</span></td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="pd-progress-track" style="width:50px;">
+                                                        <div class="pd-progress-fill" style="width:@(g.ProgressPercent)%; background:@gColor;"></div>
+                                                    </div>
+                                                    <span style="font-size:0.75rem; font-weight:700; color:@gColor;">@(g.ProgressPercent)%</span>
+                                                </div>
+                                            </td>
+                                            <td class="text-muted" style="font-size:0.8rem;">@(g.TargetDate?.ToString("MMM dd, yyyy") ?? "—")</td>
+                                            <td><span class="@g.StatusBadgeClass" style="font-size:0.68rem;">@g.StatusText</span></td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                <a href="/Doctor/TreatmentCases/Details?id=@g.TreatmentCaseId&tab=goals" class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:2px 8px;">
+                                                    <i class="bi bi-arrow-right me-1"></i>View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
-                    }
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger py-2 mb-3" style="border-radius:10px; font-size:0.82rem; border:none;">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>@TempData["ErrorMessage"]
-                        </div>
-                    }
+                    </div>
+                </div>
+            }
+        </div>
 
-                    <!-- Active Packages List -->
-                    @if (Model.TreatmentPackages.Any())
+        <!-- ── TAB 4: PATIENT FILES & EVIDENCE ── -->
+        <div class="tab-pane fade @(Model.ActiveTab == "files" ? "show active" : "")" id="pane-files" role="tabpanel">
+            <div class="pd-card">
+                <div class="pd-card-head">
+                    <h6 class="pd-card-title"><i class="bi bi-paperclip me-2" style="color:#0d9488;"></i>Uploaded Patient Files & Homework Submissions</h6>
+                </div>
+                <div class="pd-card-body" style="padding:0;">
+                    @if (Model.PatientFiles.Any())
                     {
-                        <div class="d-flex flex-column gap-3 mb-3">
-                            @foreach (var pkg in Model.TreatmentPackages)
-                            {
-                                var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
-                                var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-                                var statusBg = pkg.Status switch {
-                                    "Active" => "bg-success", "Accepted" => "bg-success",
-                                    "Completed" => "bg-primary", "Assigned" => "bg-warning",
-                                    _ => "bg-secondary"
-                                };
-
-                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h6 class="fw-bold text-dark mb-0" style="font-size:0.85rem; line-height:1.4;">@pkg.Title</h6>
-                                        <span class="badge @statusBg" style="font-size:0.65rem;">@pkg.Status</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
-                                        <span>Completed: @pkg.CompletedSessions/@pkg.TotalSessions</span>
-                                        <span style="color:@progressColor; font-weight:700;">@progress%</span>
-                                    </div>
-                                    <div class="progress mb-2" style="height:6px; border-radius:4px;">
-                                        <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
-                                    </div>
-                                    <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" 
-                                       class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
-                                        <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
-                                    </a>
-                                </div>
-                            }
+                        <div class="table-responsive">
+                            <table class="table pd-table align-middle">
+                                <thead><tr>
+                                    <th style="padding-left:1.25rem;">File</th>
+                                    <th>Uploaded</th>
+                                    <th>Source</th>
+                                    <th>Homework</th>
+                                    <th class="text-end" style="padding-right:1.25rem;">Open</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach (var hw in Model.PatientFiles)
+                                    {
+                                        <tr>
+                                            <td style="padding-left:1.25rem;">
+                                                <div class="fw-semibold text-dark text-truncate" style="max-width:200px;">@hw.Title</div>
+                                                <span class="text-muted" style="font-size:0.7rem;">@hw.SourceType</span>
+                                            </td>
+                                            <td class="text-muted" style="font-size:0.8rem;">@(hw.SubmittedAt?.ToString("MMM dd, yyyy HH:mm") ?? "—")</td>
+                                            <td><span class="@hw.StatusBadgeClass" style="font-size:0.68rem;">@hw.StatusText</span></td>
+                                            <td>
+                                                <div class="text-dark text-truncate" style="max-width:250px; font-size:0.8rem;">
+                                                    @(string.IsNullOrEmpty(hw.PatientSubmission) ? "No homework context" : hw.PatientSubmission)
+                                                </div>
+                                            </td>
+                                            <td class="text-end" style="padding-right:1.25rem;">
+                                                @if (!string.IsNullOrEmpty(hw.PatientSubmissionUrl))
+                                                {
+                                                    <a href="@hw.PatientSubmissionUrl" target="_blank" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.75rem; padding:3px 10px;">
+                                                        <i class="bi bi-box-arrow-up-right me-1"></i>Open File
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted" style="font-size:0.75rem;">Text only</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     }
                     else
                     {
-                        <div class="text-center py-3 mb-3 text-muted rounded-3" style="background:#fafbfc; border:1px dashed #e2e8f0;">
-                            <i class="bi bi-box-seam d-block mb-1" style="font-size:1.4rem; opacity:0.35;"></i>
-                            <span class="small">No active treatment package for this patient.</span>
-                        </div>
-                    }
-
-                    <!-- Assign Template Package Section -->
-                    @if (Model.TemplatePackages.Any())
-                    {
-                        <div class="mt-2 pt-3 border-top">
-                            <h6 class="fw-bold mb-2" style="font-size:0.82rem; color:#334155;">
-                                <i class="bi bi-clipboard-plus me-1 text-primary"></i>Assign Existing Template
-                            </h6>
-                            <form method="post" asp-page-handler="AssignTemplate" asp-route-id="@Model.PatientRecord.Id">
-                                <select name="AssignTemplateId" class="form-select form-select-sm mb-2" style="border-radius:8px; font-size:0.82rem;" required>
-                                    <option value="">-- Select a template package --</option>
-                                    @foreach (var tpl in Model.TemplatePackages)
-                                    {
-                                        <option value="@tpl.Id">
-                                            @tpl.Title (@tpl.TotalSessions sessions, @tpl.ValidityDays days)
-                                        </option>
-                                    }
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-semibold" 
-                                        style="border-radius:8px; font-size:0.78rem;">
-                                    <i class="bi bi-clipboard-check me-1"></i>Assign Selected Template to Patient
-                                </button>
-                            </form>
+                        <div class="pd-empty" style="padding:3rem;">
+                            <i class="bi bi-file-earmark-x"></i>
+                            <p>No patient submission files or evidence uploaded yet</p>
                         </div>
                     }
                 </div>
             </div>
-        }
-    </div>
+        </div>
 
-    <!-- Consultation Sessions Column -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm" style="border-radius:16px;">
-            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;">
-                <h5 class="fw-bold mb-0" style="color:#1e293b; font-size:1rem;">
-                    <i class="bi bi-journal-medical me-2" style="color:var(--mb-primary);"></i>Consultation History
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                @if (Model.ConsultationNotes.Any())
-                {
-                    <div class="timeline ps-2 pt-2">
-                        @foreach (var note in Model.ConsultationNotes.OrderByDescending(n => n.CreatedAt))
-                        {
-                            <div class="timeline-item">
-                                <div class="timeline-date">@note.DisplayConsultationDate.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</div>
-                                <div class="card border border-light bg-light" style="border-radius:12px;">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="fw-bold mb-0" style="color:#334155;">
-                                                @(string.IsNullOrEmpty(note.Diagnosis) ? "No Diagnosis" : note.Diagnosis)
-                                            </h6>
-                                            <div class="d-flex gap-1 align-items-center">
-                                                <span class="@note.VisibilityBadgeClass" style="font-size:0.7rem;"><i class="bi @note.VisibilityIcon me-1"></i>@note.VisibilityText</span>
-                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size:0.75rem; border-radius:6px;">Details</a>
-                                            </div>
-                                        </div>
-                                        <p class="mb-2" style="font-size:0.85rem; color:#475569;">
-                                            <strong>Summary:</strong> @(string.IsNullOrEmpty(note.ConsultationSummary) ? "None" : note.ConsultationSummary)
-                                        </p>
-                                        <div style="font-size:0.8rem; color:#94a3b8;">
-                                            <i class="bi bi-person-badge me-1"></i>Doctor: @note.DoctorName
-                                            @if (!string.IsNullOrEmpty(note.PackageName))
-                                            {
-                                                <span class="ms-2"><i class="bi bi-box-seam me-1"></i>Package: <span class="badge bg-info text-dark" style="font-size:0.7rem;">@note.PackageName</span></span>
-                                            }
-                                        </div>
-                                    </div>
+        <!-- ── TAB 5: MOOD & PSYCHOMETRIC ASSESSMENTS ── -->
+        <div class="tab-pane fade @(Model.ActiveTab == "mood" ? "show active" : "")" id="pane-mood" role="tabpanel">
+            <div class="row g-3">
+                <!-- Mood Journey Column -->
+                <div class="col-lg-6">
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-emoji-smile me-2" style="color:#d97706;"></i>Mood Journey (30 Entries)</h6>
+                        </div>
+                        <div class="pd-card-body">
+                            @if (Model.RecentMoodEntries.Any())
+                            {
+                                <!-- Chart -->
+                                <div class="d-flex gap-1 align-items-end" style="height:100px; margin-bottom:1rem;">
+                                    @foreach (var m in Model.RecentMoodEntries.Take(30).Reverse())
+                                    {
+                                        var h = Math.Max(8, m.MoodScore * 10);
+                                        var c = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                        <div title="@m.RecordedAt.ToString("MMM dd, HH:mm") — Mood: @m.MoodScore"
+                                             style="flex:1; min-width:6px; max-width:18px; height:@(h)px; background:@c; border-radius:3px 3px 0 0; opacity:0.85;"></div>
+                                    }
                                 </div>
-                            </div>
-                        }
+
+                                <div class="table-responsive">
+                                    <table class="table pd-table align-middle">
+                                        <thead><tr>
+                                            <th>Date</th>
+                                            <th>Score</th>
+                                            <th>Anxiety</th>
+                                            <th>Stress</th>
+                                            <th>Note</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @foreach (var m in Model.RecentMoodEntries.Take(12))
+                                            {
+                                                var mC = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                                <tr>
+                                                    <td class="text-muted" style="font-size:0.78rem;">@m.RecordedAt.ToString("MMM dd, HH:mm")</td>
+                                                    <td><span class="fw-bold" style="color:@mC;">@m.MoodScore/10</span></td>
+                                                    <td class="text-muted" style="font-size:0.78rem;">@(m.AnxietyScore?.ToString() ?? "—")</td>
+                                                    <td class="text-muted" style="font-size:0.78rem;">@(m.StressScore?.ToString() ?? "—")</td>
+                                                    <td class="text-muted text-truncate" style="max-width:180px; font-size:0.78rem;">@(string.IsNullOrEmpty(m.Note) ? "—" : m.Note)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="pd-empty" style="padding:2rem;">
+                                    <i class="bi bi-emoji-neutral"></i>
+                                    <p>No mood records logged</p>
+                                </div>
+                            }
+                        </div>
                     </div>
-                }
-                else
-                {
-                    <div class="text-center p-4">
-                        <i class="bi bi-inbox d-block mb-3" style="font-size:2.5rem; color:#cbd5e1;"></i>
-                        <h6 class="fw-semibold text-muted">No consultations recorded yet</h6>
-                        <p style="font-size:0.85rem; color:#94a3b8;">No consultation history records found for this patient.</p>
-                        <a asp-page="/Doctor/Appointments/Index" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:8px;">View Doctor Appointments</a>
+                </div>
+
+                <!-- Psychometric Submissions Column -->
+                <div class="col-lg-6">
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-clipboard2-check me-2" style="color:#0d9488;"></i>Psychometric Test Submissions</h6>
+                        </div>
+                        <div class="pd-card-body" style="padding:0;">
+                            @if (Model.PsychoSubmissions.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table pd-table align-middle">
+                                        <thead><tr>
+                                            <th style="padding-left:1.25rem;">Test Title</th>
+                                            <th>Score</th>
+                                            <th>Submitted Date</th>
+                                            <th class="text-end" style="padding-right:1.25rem;">Result</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @foreach (var sub in Model.PsychoSubmissions)
+                                            {
+                                                <tr>
+                                                    <td style="padding-left:1.25rem;">
+                                                        <div class="fw-semibold text-dark text-truncate" style="max-width:180px;">@sub.TestTitle</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="fw-bold text-teal" style="color:#0d9488;">@sub.TotalScore</span>
+                                                    </td>
+                                                    <td class="text-muted" style="font-size:0.78rem;">@sub.SubmittedAt.ToString("MMM dd, yyyy")</td>
+                                                    <td class="text-end" style="padding-right:1.25rem;">
+                                                         <span class="badge bg-light text-dark border">@(string.IsNullOrEmpty(sub.Interpretation) ? (string.IsNullOrEmpty(sub.TestType) ? "Submitted" : sub.TestType) : sub.Interpretation)</span>
+                                                     </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="pd-empty" style="padding:3rem;">
+                                    <i class="bi bi-file-earmark-check"></i>
+                                    <p>No psychometric test submissions for this patient</p>
+                                </div>
+                            }
+                        </div>
                     </div>
-                }
+                </div>
             </div>
         </div>
     </div>
-</div>
+}

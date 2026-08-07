@@ -47,6 +47,8 @@ public class CalendarEventDto
     public Guid? PatientId { get; set; }
     public Guid? TreatmentCaseId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public string? TreatmentCaseName { get; set; }
+    public int? SessionNumber { get; set; }
     public string? Description { get; set; }
     public string? BookingCode { get; set; }
     public bool HasNotes { get; set; }
@@ -78,6 +80,11 @@ public interface IScheduleService
     Task<ApiResponse<AppointmentSlotDto>> CreateTreatmentAppointmentAsync(Guid doctorUserId, CreateTreatmentAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse<WeeklySchedulePreviewDto>> PreviewWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
     Task<ApiResponse<int>> GenerateWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
+    Task<ApiResponse<ScheduleNoteDto>> CreateNoteAsync(Guid doctorUserId, CreateScheduleNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse<ScheduleNoteDto>> UpdateNoteAsync(Guid noteId, Guid doctorUserId, UpdateScheduleNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DeleteNoteAsync(Guid noteId, Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<List<ScheduleNoteDto>>> GetNotesAsync(Guid doctorUserId, string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<AppointmentSlotDto>> AssignTreatmentSlotAsync(Guid doctorUserId, AssignTreatmentSlotDto dto, CancellationToken ct = default);
 }
 
 /// <summary>

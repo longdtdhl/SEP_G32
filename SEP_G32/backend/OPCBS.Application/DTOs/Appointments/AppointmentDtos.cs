@@ -49,6 +49,8 @@ public class AppointmentDto
     public DateTime CreatedAt { get; set; }
     public decimal? Fee { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
     public string? TreatmentPackageName { get; set; }
     public int VisitCount { get; set; }
     public string? Specialization { get; set; }
@@ -234,6 +236,13 @@ public class PatientRecordDto
     public string? DisplayPhone { get; set; }
     public string? DisplayEmail { get; set; }
     public bool IsGuest => PatientId == null;
+
+    // Enriched from PatientProfile for registered patients. Guest records intentionally remain null.
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? Address { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }

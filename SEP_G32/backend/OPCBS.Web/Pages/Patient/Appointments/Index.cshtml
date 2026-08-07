@@ -261,6 +261,31 @@
         background-color: #fff !important;
         pointer-events: none;
     }
+
+    .apt-search-group {
+        display: flex;
+        min-width: 230px;
+        flex: 1.6;
+    }
+
+    .apt-search-group .form-control {
+        height: 44px;
+        border-radius: 10px 0 0 10px;
+        border-color: #e2e8f0;
+        box-shadow: none;
+        font-size: .85rem;
+    }
+
+    .apt-search-submit {
+        width: 44px;
+        border: 1px solid #0f766e;
+        border-left: 0;
+        border-radius: 0 10px 10px 0;
+        background: #0f766e;
+        color: #fff;
+    }
+
+    .apt-search-submit:hover { background: #115e59; }
 </style>
 
 <!-- Page Header -->
@@ -303,6 +328,13 @@
     <input type="hidden" name="page" value="1" />
 
     <div class="apt-filter-bar d-flex gap-3 align-items-center flex-wrap">
+        <div class="apt-search-group">
+            <input type="search" name="Search" value="@Model.Search" class="form-control"
+                   placeholder="Search doctor or booking code" aria-label="Search appointments" />
+            <button type="submit" class="apt-search-submit" title="Search" aria-label="Search appointments">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
         <div style="flex: 1.2; min-width: 180px;">
             <select name="Status" onchange="this.form.submit()" class="form-select"
                     style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
@@ -330,7 +362,7 @@
             <input type="date" name="Date" value="@Model.Date" onchange="this.form.submit()" class="form-control"
                    style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
         </div>
-        @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Doctor) ||
+        @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Doctor) ||
         !string.IsNullOrEmpty(Model.Date))
         {
             <div>
@@ -464,7 +496,7 @@
                     <!-- Previous Button -->
                     <li class="page-item apt-pagination-item @(Model.Pagination.HasPreviousPage ? "" : "disabled")">
                         <a class="page-link apt-pagination-link"
-                           href="@Url.Page("./Index", new { page = Model.Pagination.Page - 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                           href="@Url.Page("./Index", new { page = Model.Pagination.Page - 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date, Search = Model.Search })">
                             <i class="bi bi-chevron-left"></i>
                         </a>
                     </li>
@@ -474,7 +506,7 @@
                     {
                         <li class="page-item apt-pagination-item @(Model.Pagination.Page == i ? "active" : "")">
                             <a class="page-link apt-pagination-link"
-                               href="@Url.Page("./Index", new { page = i, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                               href="@Url.Page("./Index", new { page = i, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date, Search = Model.Search })">
                                 @i
                             </a>
                         </li>
@@ -483,7 +515,7 @@
                     <!-- Next Button -->
                     <li class="page-item apt-pagination-item @(Model.Pagination.HasNextPage ? "" : "disabled")">
                         <a class="page-link apt-pagination-link"
-                           href="@Url.Page("./Index", new { page = Model.Pagination.Page + 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                           href="@Url.Page("./Index", new { page = Model.Pagination.Page + 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date, Search = Model.Search })">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>

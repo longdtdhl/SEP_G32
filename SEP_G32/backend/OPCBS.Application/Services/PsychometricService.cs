@@ -21,6 +21,7 @@ public class PsychometricService : IPsychometricService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<Appointment> _appointmentRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<TreatmentCase>? _caseRepo;
     private readonly IUnitOfWork _uow;
 
     public PsychometricService(
@@ -31,7 +32,8 @@ public class PsychometricService : IPsychometricService
         IRepository<PatientProfile> patientRepo,
         IRepository<Appointment> appointmentRepo,
         IRepository<User> userRepo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IRepository<TreatmentCase>? caseRepo = null)
     {
         _testRepo = testRepo;
         _questionRepo = questionRepo;
@@ -41,6 +43,7 @@ public class PsychometricService : IPsychometricService
         _appointmentRepo = appointmentRepo;
         _userRepo = userRepo;
         _uow = uow;
+        _caseRepo = caseRepo;
     }
 
     public async Task<ApiResponse<List<PsychometricTestDto>>> GetTestsAsync(CancellationToken ct = default)
@@ -275,34 +278,98 @@ public class PsychometricService : IPsychometricService
     public async Task<ApiResponse<List<PsychometricSubmissionDto>>> GetPatientSubmissionsAsync(Guid patientUserId, CancellationToken ct = default)
     {
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
         if (patient == null)
-            return ApiResponse<List<PsychometricSubmissionDto>>.ErrorResponse("Không tìm thấy hồ sơ bệnh nhân.");
+            return ApiResponse<List<PsychometricSubmissionDto>>.ErrorResponse("Patient profile not found.");
 
         var submissions = await _submissionRepo.GetAllAsync(ct);
-        var filtered = submissions.Where(s => s.PatientId == patient.Id && !s.IsDeleted).ToList();
+        var filtered = submissions.Where(s => s.PatientId == patient.Id && !s.IsDeleted).OrderBy(s => s.CreatedAt).ToList();
 
         var tests = await _testRepo.GetAllAsync(ct);
         var testDict = tests.ToDictionary(t => t.Id, t => t);
 
         var patientUser = await _userRepo.GetByIdAsync(patient.UserId, ct);
+        var patientName = patientUser?.FullName ?? "Patient";
 
-        var dtos = filtered.Select(s => new PsychometricSubmissionDto
+        var dtos = new List<PsychometricSubmissionDto>();
+        for (int i = 0; i < filtered.Count; i++)
         {
-            Id = s.Id,
-            TestId = s.TestId,
-            TestTitle = testDict.TryGetValue(s.TestId, out var t) ? t.Title : "",
-            TestType = testDict.TryGetValue(s.TestId, out var t2) ? t2.TestType : "",
-            PatientId = s.PatientId,
-            PatientName = patientUser?.FullName,
-            AppointmentId = s.AppointmentId,
-            SubmittedAt = s.CreatedAt,
-            TotalScore = s.TotalScore,
-            ScoreDataJson = s.ScoreDataJson,
-            Interpretation = s.Interpretation
-        }).OrderByDescending(s => s.SubmittedAt).ToList();
+            var s = filtered[i];
+            var prev = filtered.Take(i).LastOrDefault(x => x.TestId == s.TestId);
+            int? prevScore = prev?.TotalScore;
+            int? change = prevScore.HasValue ? s.TotalScore - prevScore.Value : null;
 
-        return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(dtos);
+            dtos.Add(new PsychometricSubmissionDto
+            {
+                Id = s.Id,
+                TestId = s.TestId,
+                TestTitle = testDict.TryGetValue(s.TestId, out var t) ? t.Title : "Assessment Result",
+                TestType = testDict.TryGetValue(s.TestId, out var t2) ? t2.TestType : "Screening",
+                PatientId = s.PatientId,
+                PatientName = patientName,
+                AppointmentId = s.AppointmentId,
+                TreatmentCaseId = s.TreatmentCaseId,
+                SubmittedAt = s.CreatedAt,
+                TotalScore = s.TotalScore,
+                PreviousScore = prevScore,
+                ScoreChange = change,
+                ScoreDataJson = s.ScoreDataJson,
+                Interpretation = s.Interpretation
+            });
+        }
+
+        return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(dtos.OrderByDescending(s => s.SubmittedAt).ToList());
+    }
+
+    public async Task<ApiResponse<List<PsychometricSubmissionDto>>> GetSubmissionsByCaseIdAsync(Guid caseId, Guid requestingUserId, CancellationToken ct = default)
+    {
+        if (_caseRepo == null)
+            return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(new List<PsychometricSubmissionDto>());
+
+        var tc = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (tc == null || tc.IsDeleted)
+            return ApiResponse<List<PsychometricSubmissionDto>>.ErrorResponse("Treatment case not found.");
+
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+        var filtered = submissions.Where(s => !s.IsDeleted && (
+            s.TreatmentCaseId == caseId ||
+            (!s.TreatmentCaseId.HasValue && s.PatientId == tc.PatientId && s.CreatedAt >= tc.StartDate && (tc.ActualEndDate == null || s.CreatedAt <= tc.ActualEndDate))
+        )).OrderBy(s => s.CreatedAt).ToList();
+
+        var tests = await _testRepo.GetAllAsync(ct);
+        var testDict = tests.ToDictionary(t => t.Id, t => t);
+
+        var patientUser = tc.Patient != null ? await _userRepo.GetByIdAsync(tc.Patient.UserId, ct) : null;
+        var patientName = patientUser?.FullName ?? "Patient";
+
+        var dtos = new List<PsychometricSubmissionDto>();
+        for (int i = 0; i < filtered.Count; i++)
+        {
+            var s = filtered[i];
+            var prev = filtered.Take(i).LastOrDefault(x => x.TestId == s.TestId);
+            int? prevScore = prev?.TotalScore;
+            int? change = prevScore.HasValue ? s.TotalScore - prevScore.Value : null;
+
+            dtos.Add(new PsychometricSubmissionDto
+            {
+                Id = s.Id,
+                TestId = s.TestId,
+                TestTitle = testDict.TryGetValue(s.TestId, out var t) ? t.Title : "Assessment Result",
+                TestType = testDict.TryGetValue(s.TestId, out var t2) ? t2.TestType : "Screening",
+                PatientId = s.PatientId,
+                PatientName = patientName,
+                AppointmentId = s.AppointmentId,
+                TreatmentCaseId = caseId,
+                SubmittedAt = s.CreatedAt,
+                TotalScore = s.TotalScore,
+                PreviousScore = prevScore,
+                ScoreChange = change,
+                ScoreDataJson = s.ScoreDataJson,
+                Interpretation = s.Interpretation
+            });
+        }
+
+        return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(dtos.OrderByDescending(s => s.SubmittedAt).ToList());
     }
 
     #region Diagnostic Interpretations

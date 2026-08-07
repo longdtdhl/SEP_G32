@@ -15,6 +15,9 @@ public class TreatmentNormalizationTests
     private readonly Mock<IRepository<TreatmentCase>> _caseRepo = new();
     private readonly Mock<IRepository<TreatmentSession>> _sessionRepo = new();
     private readonly Mock<IRepository<TreatmentGoal>> _goalRepo = new();
+    private readonly Mock<IRepository<GoalDetail>> _goalDetailRepo = new();
+    private readonly Mock<IRepository<GoalSuccessCriteria>> _successCriteriaRepo = new();
+    private readonly Mock<IRepository<SuccessCriteriaEvaluation>> _criteriaEvaluationRepo = new();
     private readonly Mock<IRepository<TreatmentGoalProgress>> _goalProgressRepo = new();
     private readonly Mock<IRepository<TreatmentSessionGoal>> _sessionGoalRepo = new();
     private readonly Mock<IRepository<TreatmentPackage>> _packageRepo = new();
@@ -40,6 +43,9 @@ public class TreatmentNormalizationTests
             _caseRepo.Object,
             _sessionRepo.Object,
             _goalRepo.Object,
+            _goalDetailRepo.Object,
+            _successCriteriaRepo.Object,
+            _criteriaEvaluationRepo.Object,
             _goalProgressRepo.Object,
             _sessionGoalRepo.Object,
             _packageRepo.Object,
@@ -552,5 +558,218 @@ public class TreatmentNormalizationTests
         // Assert
         Assert.False(result.Success);
         _uow.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Scenario11_GenerateSchedule_ReusesExistingAvailableSlots()
+    {
+        // Arrange
+        var caseId = Guid.NewGuid();
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+
+        var docUser = CreateDummyUser(doctorUserId, "Dr Reuse");
+        var patUser = CreateDummyUser(patientUserId, "Patient Reuse", "Patient");
+
+        var doctorProfile = new DoctorProfile { Id = doctorProfileId, UserId = doctorUserId, User = docUser };
+        var patientProfile = new PatientProfile { Id = patientProfileId, UserId = patientUserId, User = patUser };
+
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            CaseName = "Reuse Slot CBT",
+            TreatmentPackage = null!,
+            Doctor = doctorProfile,
+            Patient = patientProfile,
+            TotalSessions = 1,
+            CompletedSessions = 0,
+            RemainingSessions = 1,
+            Status = TreatmentCaseStatus.Active,
+            DoctorId = doctorProfileId,
+            PatientId = patientProfileId
+        };
+
+        var targetDate = DateTime.Today.AddDays(1);
+        var existingSlot = new AppointmentSlot
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorProfileId,
+            DoctorProfile = doctorProfile,
+            SlotDate = DateOnly.FromDateTime(targetDate),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            Status = AppointmentSlotStatus.Available,
+            MaxPatients = 1,
+            CurrentBookings = 0
+        };
+
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctorProfile });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patientProfile });
+        _userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { docUser, patUser });
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentSession>());
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { existingSlot });
+        _appointmentRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
+
+        var dto = new GenerateScheduleDto
+        {
+            TreatmentCaseId = caseId,
+            StartDate = targetDate,
+            DaysOfWeek = new List<DayOfWeek> { targetDate.DayOfWeek },
+            StartTime = "09:00",
+            DurationMinutes = 60,
+            TotalWeeks = 1
+        };
+
+        // Act
+        var result = await _caseService.GenerateScheduleAsync(dto, doctorUserId, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(AppointmentSlotStatus.Booked, existingSlot.Status);
+        _slotRepo.Verify(r => r.Update(existingSlot), Times.Once);
+    }
+
+    [Fact]
+    public void ScheduleNote_EntityCreation_IsIsolatedFromSlots()
+    {
+        // Arrange
+        var doctorId = Guid.NewGuid();
+        var patientId = Guid.NewGuid();
+        var caseId = Guid.NewGuid();
+
+        // Act
+        var note = new ScheduleNote
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctorId,
+            NoteDate = DateOnly.FromDateTime(DateTime.Today),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            Title = "Follow-up schedule instructions",
+            Content = "Review patient assessment results before session",
+            Category = "Clinical Note",
+            PatientId = patientId,
+            TreatmentCaseId = caseId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Assert
+        Assert.NotEqual(Guid.Empty, note.Id);
+        Assert.Equal("Follow-up schedule instructions", note.Title);
+        Assert.Equal("Clinical Note", note.Category);
+        Assert.Equal(patientId, note.PatientId);
+        Assert.Equal(caseId, note.TreatmentCaseId);
+        Assert.False(note.IsDeleted);
+    }
+
+    [Fact]
+    public async Task AssignTreatmentSlot_ValidAvailableSlot_ConvertsToBookedAndCreatesApprovedAppointment()
+    {
+        // Arrange
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var caseId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var slotId = Guid.NewGuid();
+
+        var doctorProfile = new DoctorProfile
+        {
+            Id = doctorProfileId,
+            UserId = doctorUserId,
+            User = new User { Id = doctorUserId, FullName = "Dr. Smith", Email = "doc@test.com", PasswordHash = "hash", PhoneNumber = "0123456789", Role = null! }
+        };
+
+        var patientProfile = new PatientProfile
+        {
+            Id = patientProfileId,
+            UserId = patientUserId,
+            User = new User { Id = patientUserId, FullName = "John Doe", Email = "john@test.com", PasswordHash = "hash", PhoneNumber = "0987654321", Role = null! }
+        };
+
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
+        var slot = new AppointmentSlot
+        {
+            Id = slotId,
+            DoctorProfileId = doctorProfileId,
+            DoctorProfile = doctorProfile,
+            SlotDate = futureDate,
+            StartTime = new TimeOnly(10, 0),
+            EndTime = new TimeOnly(11, 0),
+            Status = AppointmentSlotStatus.Available,
+            MaxPatients = 1,
+            CurrentBookings = 0
+        };
+
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            DoctorId = doctorUserId,
+            PatientId = patientProfileId,
+            Status = TreatmentCaseStatus.Active,
+            CaseName = "CBT Anxiety Protocol"
+        };
+
+        var session = new TreatmentSession
+        {
+            Id = sessionId,
+            TreatmentCaseId = caseId,
+            SessionNumber = 1,
+            Status = TreatmentSessionStatus.Planned,
+            TreatmentCase = treatmentCase
+        };
+
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctorProfile });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patientProfile });
+        _slotRepo.Setup(r => r.GetByIdAsync(slotId, It.IsAny<CancellationToken>())).ReturnsAsync(slot);
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentSession> { session });
+
+        var scheduleService = new ScheduleService(
+            new Mock<IRepository<Schedule>>().Object,
+            _slotRepo.Object,
+            _doctorRepo.Object,
+            _userRepo.Object,
+            new Mock<IRepository<DoctorDayOff>>().Object,
+            _appointmentRepo.Object,
+            _uow.Object,
+            new Mock<AutoMapper.IMapper>().Object,
+            _caseRepo.Object,
+            _packageRepo.Object,
+            _sessionRepo.Object,
+            _appointmentHistoryRepo.Object,
+            _patientRepo.Object,
+            null, null, null, null,
+            new Mock<IRepository<ScheduleNote>>().Object
+        );
+
+        var dto = new AssignTreatmentSlotDto
+        {
+            SlotId = slotId,
+            PatientId = patientProfileId,
+            TreatmentCaseId = caseId,
+            TreatmentSessionId = sessionId,
+            Notes = "Assign session 1"
+        };
+
+        // Act
+        var result = await scheduleService.AssignTreatmentSlotAsync(doctorUserId, dto, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(AppointmentSlotStatus.Booked, slot.Status);
+        Assert.Equal(1, slot.CurrentBookings);
+        _slotRepo.Verify(r => r.Update(slot), Times.Once);
+        _appointmentRepo.Verify(r => r.AddAsync(It.Is<Appointment>(a =>
+            a.AppointmentSlotId == slotId &&
+            a.PatientId == patientProfileId &&
+            a.TreatmentCaseId == caseId &&
+            a.TreatmentSessionId == sessionId &&
+            a.Status == AppointmentStatus.Approved
+        ), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -38,6 +38,7 @@ public class OpcbsDbContext : DbContext
     // Schedule
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<DoctorDayOff> DoctorDayOffs => Set<DoctorDayOff>();
+    public DbSet<ScheduleNote> ScheduleNotes => Set<ScheduleNote>();
 
     // Appointments
     public DbSet<AppointmentSlot> AppointmentSlots => Set<AppointmentSlot>();
@@ -83,6 +84,9 @@ public class OpcbsDbContext : DbContext
     public DbSet<TreatmentCase> TreatmentCases => Set<TreatmentCase>();
     public DbSet<TreatmentSession> TreatmentSessions => Set<TreatmentSession>();
     public DbSet<TreatmentGoal> TreatmentGoals => Set<TreatmentGoal>();
+    public DbSet<GoalDetail> GoalDetails => Set<GoalDetail>();
+    public DbSet<GoalSuccessCriteria> GoalSuccessCriteria => Set<GoalSuccessCriteria>();
+    public DbSet<SuccessCriteriaEvaluation> SuccessCriteriaEvaluations => Set<SuccessCriteriaEvaluation>();
     public DbSet<MoodEntry> MoodEntries => Set<MoodEntry>();
     public DbSet<TreatmentGoalProgress> TreatmentGoalProgresses => Set<TreatmentGoalProgress>();
     public DbSet<TreatmentSessionGoal> TreatmentSessionGoals => Set<TreatmentSessionGoal>();
@@ -117,6 +121,7 @@ public class OpcbsDbContext : DbContext
         //  e.g. AppointmentHistory -> Appointment, OtpVerification -> User)
         modelBuilder.Entity<AppointmentSlot>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Appointment>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<ScheduleNote>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     private static void ConfigureIdentityEntities(ModelBuilder modelBuilder)
@@ -918,6 +923,43 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // GoalDetail
+        modelBuilder.Entity<GoalDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.GoalId, e.OrderIndex });
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(300);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.Objective).HasMaxLength(2000);
+            entity.Property(e => e.ExpectedOutcome).HasMaxLength(2000);
+            entity.HasOne(e => e.Goal).WithMany(g => g.Details)
+                .HasForeignKey(e => e.GoalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // GoalSuccessCriteria and its immutable evaluations
+        modelBuilder.Entity<GoalSuccessCriteria>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.GoalId);
+            entity.Property(e => e.Weight).HasPrecision(8, 2);
+            entity.Property(e => e.TargetValue).HasPrecision(18, 4);
+            entity.Property(e => e.CurrentValue).HasPrecision(18, 4);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.HasOne(e => e.Goal).WithMany(g => g.SuccessCriteria)
+                .HasForeignKey(e => e.GoalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SuccessCriteriaEvaluation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.SuccessCriteriaId, e.EvaluatedAt });
+            entity.Property(e => e.CurrentValue).HasPrecision(18, 4);
+            entity.HasOne(e => e.SuccessCriteria).WithMany(c => c.Evaluations)
+                .HasForeignKey(e => e.SuccessCriteriaId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.TreatmentSession).WithMany()
+                .HasForeignKey(e => e.TreatmentSessionId).OnDelete(DeleteBehavior.SetNull);
+        });
+
         // TherapyAssignment -> TreatmentCase (optional FK) & TreatmentSession
         modelBuilder.Entity<TherapyAssignment>(entity =>
         {
@@ -966,21 +1008,27 @@ public class OpcbsDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.TreatmentSessionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.GoalDetail)
+                .WithMany(d => d.ProgressHistory)
+                .HasForeignKey(e => e.GoalDetailId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // TreatmentSessionGoal (Many-to-Many Join)
         modelBuilder.Entity<TreatmentSessionGoal>(entity =>
         {
-            entity.HasKey(e => new { e.TreatmentSessionId, e.TreatmentGoalId });
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TreatmentSessionId, e.GoalDetailId }).IsUnique();
 
             entity.HasOne(e => e.TreatmentSession)
                 .WithMany(s => s.SessionGoals)
                 .HasForeignKey(e => e.TreatmentSessionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(e => e.TreatmentGoal)
-                .WithMany(g => g.SessionGoals)
-                .HasForeignKey(e => e.TreatmentGoalId)
+            entity.HasOne(e => e.GoalDetail)
+                .WithMany(d => d.SessionGoals)
+                .HasForeignKey(e => e.GoalDetailId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

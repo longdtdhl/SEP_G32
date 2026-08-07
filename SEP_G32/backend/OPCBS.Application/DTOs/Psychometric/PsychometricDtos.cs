@@ -42,8 +42,11 @@ public class PsychometricSubmissionDto
     public Guid PatientId { get; set; }
     public string? PatientName { get; set; }
     public Guid? AppointmentId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
     public DateTime SubmittedAt { get; set; }
     public int TotalScore { get; set; }
+    public int? PreviousScore { get; set; }
+    public int? ScoreChange { get; set; }
     public required string ScoreDataJson { get; set; }
     public required string Interpretation { get; set; }
 }

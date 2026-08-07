@@ -232,3 +232,23 @@ public class AppointmentHistory : ImmutableEntity
     /// <summary>Navigation property to Appointment</summary>
     public virtual required Appointment Appointment { get; set; }
 }
+
+/// <summary>
+/// Dedicated schedule note entity for doctor personal notes, reminders, or case notes
+/// </summary>
+public class ScheduleNote : BaseEntity
+{
+    public Guid DoctorProfileId { get; set; }
+    public DateOnly NoteDate { get; set; }
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+    public required string Title { get; set; }
+    public required string Content { get; set; }
+    public string Category { get; set; } = "General";
+    public Guid? PatientId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+
+    public virtual DoctorProfile? DoctorProfile { get; set; }
+    public virtual PatientProfile? Patient { get; set; }
+    public virtual TreatmentCase? TreatmentCase { get; set; }
+}

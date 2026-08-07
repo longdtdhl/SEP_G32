@@ -19,6 +19,7 @@ public class PatientRecordService : IPatientRecordService
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<Appointment> _apptRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
+    private readonly IRepository<User> _userRepo;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -27,6 +28,7 @@ public class PatientRecordService : IPatientRecordService
         IRepository<DoctorProfile> doctorRepo,
         IRepository<Appointment> apptRepo,
         IRepository<PatientProfile> patientRepo,
+        IRepository<User> userRepo,
         IMapper mapper,
         IUnitOfWork unitOfWork)
     {
@@ -34,6 +36,7 @@ public class PatientRecordService : IPatientRecordService
         _doctorRepo = doctorRepo;
         _apptRepo = apptRepo;
         _patientRepo = patientRepo;
+        _userRepo = userRepo;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
     }
@@ -42,15 +45,97 @@ public class PatientRecordService : IPatientRecordService
     {
         if (!dtos.Any()) return;
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var usersById = (await _userRepo.GetAllAsync(ct)).ToDictionary(user => user.Id);
 
         foreach (var dto in dtos)
         {
-            if (dto.PatientId.HasValue && patientUserMap.TryGetValue(dto.PatientId.Value, out var patUserId))
+            if (!dto.PatientId.HasValue)
+                continue;
+
+            var patient = allPatients.FirstOrDefault(p => p.Id == dto.PatientId.Value || p.UserId == dto.PatientId.Value);
+            if (patient != null)
             {
-                dto.PatientId = patUserId;
+                dto.PatientId = patient.UserId;
+                dto.DateOfBirth = patient.DateOfBirth;
+                dto.Gender = patient.Gender?.ToString();
+                dto.Address = patient.Address;
+                dto.EmergencyContactName = patient.EmergencyContactName;
+                dto.EmergencyContactPhone = patient.EmergencyContactPhone;
+
+                if (usersById.TryGetValue(patient.UserId, out var user))
+                {
+                    dto.DisplayName = user.FullName;
+                    dto.DisplayPhone = user.PhoneNumber;
+                    dto.DisplayEmail = user.Email;
+                }
             }
         }
+    }
+
+    private static bool MatchesDoctor(Guid doctorId, DoctorProfile doctorProfile) =>
+        doctorId == doctorProfile.Id || doctorId == doctorProfile.UserId;
+
+    private async Task<List<PatientRecord>> EnsureAppointmentPatientsHaveRecordsAsync(
+        IEnumerable<Appointment> appointments,
+        DoctorProfile doctorProfile,
+        List<PatientProfile> patientProfiles,
+        List<PatientRecord> existingRecords,
+        CancellationToken ct)
+    {
+        var createdAny = false;
+        var activeAppointments = appointments.Where(a =>
+            MatchesDoctor(a.DoctorId, doctorProfile) &&
+            !a.IsDeleted &&
+            a.Status != AppointmentStatus.Cancelled &&
+            a.Status != AppointmentStatus.Rejected);
+
+        foreach (var appointment in activeAppointments)
+        {
+            var patient = appointment.PatientId.HasValue
+                ? patientProfiles.FirstOrDefault(p => p.Id == appointment.PatientId.Value || p.UserId == appointment.PatientId.Value)
+                : null;
+
+            var alreadyTracked = patient != null
+                ? existingRecords.Any(record =>
+                    MatchesDoctor(record.DoctorId, doctorProfile) &&
+                    !record.IsDeleted &&
+                    record.PatientId.HasValue &&
+                    (record.PatientId == patient.Id || record.PatientId == patient.UserId))
+                : existingRecords.Any(record =>
+                    MatchesDoctor(record.DoctorId, doctorProfile) &&
+                    !record.IsDeleted &&
+                    !record.PatientId.HasValue &&
+                    ((!string.IsNullOrWhiteSpace(appointment.GuestEmail) &&
+                      string.Equals(record.GuestEmail, appointment.GuestEmail, StringComparison.OrdinalIgnoreCase)) ||
+                     (string.Equals(record.GuestName, appointment.GuestName, StringComparison.OrdinalIgnoreCase) &&
+                      string.Equals(record.GuestPhone, appointment.GuestPhoneNumber, StringComparison.OrdinalIgnoreCase))));
+
+            if (alreadyTracked)
+                continue;
+
+            var record = new PatientRecord
+            {
+                DoctorId = doctorProfile.Id,
+                Doctor = doctorProfile,
+                PatientId = patient?.Id,
+                Patient = patient,
+                GuestName = patient == null ? appointment.GuestName : null,
+                GuestEmail = patient == null ? appointment.GuestEmail : null,
+                GuestPhone = patient == null ? appointment.GuestPhoneNumber : null,
+                PsychologicalHistory = appointment.MedicalHistory,
+                CurrentSymptoms = appointment.Symptoms,
+                GeneralNotes = appointment.Notes
+            };
+
+            await _repo.AddAsync(record, ct);
+            existingRecords.Add(record);
+            createdAny = true;
+        }
+
+        if (createdAny)
+            await _unitOfWork.SaveChangesAsync(ct);
+
+        return existingRecords;
     }
 
     public async Task<List<PatientRecordDto>> GetAllAsync(CancellationToken ct = default)
@@ -67,21 +152,17 @@ public class PatientRecordService : IPatientRecordService
         var doctorProfile = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctorProfile == null) return new List<PatientRecordDto>();
 
-        // Get all patient IDs from appointments with this doctor
         var allAppts = await _apptRepo.GetAllAsync(ct);
-        var myPatientUserIds = allAppts
-            .Where(a => a.DoctorId == doctorProfile.Id && a.PatientId.HasValue &&
-                        a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Rejected)
-            .Select(a => a.PatientId!.Value)
-            .Distinct()
-            .ToHashSet();
+        var allPatients = (await _patientRepo.GetAllAsync(ct)).ToList();
 
-        // Get patient records: either created by this doctor OR linked to a patient who had an appointment
-        var allRecords = await _repo.GetAllAsync(ct);
-        var myRecords = allRecords.Where(r =>
-            r.DoctorId == doctorProfile.Id ||  // Records created by this doctor
-            (r.PatientId.HasValue && myPatientUserIds.Contains(r.PatientId.Value))  // Patients with appointments
-        ).OrderByDescending(x => x.CreatedAt).ToList();
+        // Backfill is idempotent and repairs appointments created before patient-record creation was introduced.
+        // Records remain doctor-owned, so this does not expose another doctor's clinical notes.
+        var allRecords = (await _repo.GetAllAsync(ct)).ToList();
+        await EnsureAppointmentPatientsHaveRecordsAsync(allAppts, doctorProfile, allPatients, allRecords, ct);
+        var myRecords = allRecords
+            .Where(record => !record.IsDeleted && MatchesDoctor(record.DoctorId, doctorProfile))
+            .OrderByDescending(record => record.CreatedAt)
+            .ToList();
 
         var dtos = _mapper.Map<List<PatientRecordDto>>(myRecords);
         await EnrichPatientRecordDtosAsync(dtos, ct);
@@ -97,16 +178,26 @@ public class PatientRecordService : IPatientRecordService
         var record = await _repo.GetByIdAsync(patientRecordId, ct);
         if (record == null) return false;
 
-        // Doctor created this record
-        if (record.DoctorId == doctorProfile.Id) return true;
+        // Doctor created this record.
+        if (MatchesDoctor(record.DoctorId, doctorProfile)) return true;
 
         // Doctor has appointment with this patient
         if (record.PatientId.HasValue)
         {
             var allAppts = await _apptRepo.GetAllAsync(ct);
-            return allAppts.Any(a =>
-                a.DoctorId == doctorProfile.Id &&
-                a.PatientId == record.PatientId &&
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var recordPatient = allPatients.FirstOrDefault(p =>
+                p.Id == record.PatientId.Value || p.UserId == record.PatientId.Value);
+            var recordIdentifiers = new HashSet<Guid> { record.PatientId.Value };
+            if (recordPatient != null)
+            {
+                recordIdentifiers.Add(recordPatient.Id);
+                recordIdentifiers.Add(recordPatient.UserId);
+            }
+
+            return allAppts.Any(a => a.PatientId.HasValue &&
+                MatchesDoctor(a.DoctorId, doctorProfile) &&
+                recordIdentifiers.Contains(a.PatientId.Value) &&
                 a.Status != AppointmentStatus.Cancelled &&
                 a.Status != AppointmentStatus.Rejected);
         }
@@ -122,7 +213,7 @@ public class PatientRecordService : IPatientRecordService
         if (doctorProfile == null) return new List<PatientRecordDto>();
 
         var entities = await _repo.GetAllAsync(ct);
-        entities = entities.Where(x => x.DoctorId == doctorProfile.Id).ToList();
+        entities = entities.Where(x => MatchesDoctor(x.DoctorId, doctorProfile)).ToList();
         var dtos = _mapper.Map<List<PatientRecordDto>>(entities.OrderByDescending(x => x.CreatedAt));
         await EnrichPatientRecordDtosAsync(dtos, ct);
         return dtos;

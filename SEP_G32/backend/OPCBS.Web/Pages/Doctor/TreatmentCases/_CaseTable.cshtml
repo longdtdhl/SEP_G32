@@ -1,0 +1,78 @@
+@model List<OPCBS.Web.DTOs.TreatmentCaseListWebDto>
+@{
+    var riskMap = ViewData["RiskMap"] as Dictionary<Guid, OPCBS.Web.DTOs.TreatmentCaseRiskWebDto>;
+}
+
+<div class="tc-section">
+    <div class="table-responsive">
+        <table class="table tc-table align-middle">
+            <thead>
+                <tr>
+                    <th style="padding-left:1.25rem;">Case Name</th>
+                    <th>Patient</th>
+                    <th>Sessions</th>
+                    <th>Progress</th>
+                    <th>Risk</th>
+                    <th>Status</th>
+                    <th>Started</th>
+                    <th class="text-end" style="padding-right:1.25rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var pColor = c.OverallProgressPercent >= 75 ? "#10b981" : c.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                    var badgeCls = c.Status == 0 ? "active" : c.Status == 1 ? "hold" : c.Status == 2 ? "completed" : c.Status == 3 ? "terminated" : "cancelled";
+                    var statusLabel = c.Status == 0 ? "Active" : c.Status == 1 ? "On Hold" : c.Status == 2 ? "Completed" : c.Status == 3 ? "Terminated" : c.Status == 5 ? "Cancelled" : "Other";
+                    var risk = riskMap?.GetValueOrDefault(c.Id);
+                    <tr onclick="window.location.href='/Doctor/TreatmentCases/Details?id=@c.Id'">
+                        <td style="padding-left:1.25rem;">
+                            <div class="fw-semibold text-dark text-truncate" style="max-width:200px;" title="@c.CaseName">@c.CaseName</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width:28px; height:28px; background:#ccfbf1; color:#0d9488; font-weight:700; font-size:0.72rem;">
+                                    @(string.IsNullOrEmpty(c.PatientName) ? "?" : c.PatientName[..1].ToUpper())
+                                </div>
+                                <span class="text-dark" style="font-size:0.84rem;">@(c.PatientName ?? "Unknown")</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">@c.CompletedSessions</span><span class="text-muted">/@c.TotalSessions</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="tc-progress" style="width:55px;">
+                                    <div class="tc-progress-fill" style="width:@(c.OverallProgressPercent)%; background:@pColor;"></div>
+                                </div>
+                                <span style="font-size:0.75rem; font-weight:700; color:@pColor; min-width:30px; text-align:right;">@(c.OverallProgressPercent)%</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (risk != null)
+                            {
+                                <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
+                                    @if (risk.Level == "High" || risk.Level == "Critical") { <i class="bi bi-exclamation-triangle-fill me-1"></i> }
+                                    @risk.Level
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted" style="font-size:0.72rem;">—</span>
+                            }
+                        </td>
+                        <td><span class="tc-badge @badgeCls">@statusLabel</span></td>
+                        <td class="text-muted" style="font-size:0.8rem;">@c.StartDate.ToString("MMM dd, yyyy")</td>
+                        <td class="text-end" style="padding-right:1.25rem;">
+                            <a href="/Doctor/TreatmentCases/Details?id=@c.Id" class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;"
+                               onclick="event.stopPropagation();">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

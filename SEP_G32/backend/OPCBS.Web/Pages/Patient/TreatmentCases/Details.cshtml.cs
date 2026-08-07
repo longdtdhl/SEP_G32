@@ -8,10 +8,12 @@ namespace OPCBS.Web.Pages.Patient.TreatmentCases;
 public class DetailsModel : PageModel
 {
     private readonly ITreatmentCaseApiService _api;
+    private readonly IPsychometricApiService _psychApi;
 
-    public DetailsModel(ITreatmentCaseApiService api)
+    public DetailsModel(ITreatmentCaseApiService api, IPsychometricApiService psychApi)
     {
         _api = api;
+        _psychApi = psychApi;
     }
 
     public TreatmentCaseWebDto? Case { get; set; }
@@ -21,6 +23,7 @@ public class DetailsModel : PageModel
     public List<MoodEntryWebDto> MoodEntries { get; set; } = new();
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
+    public List<PsychometricSubmissionDto> RecentAssessments { get; set; } = new();
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
     public string ActiveTab { get; set; } = "overview";
@@ -55,6 +58,22 @@ public class DetailsModel : PageModel
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data;
 
+        // Load psychometric assessments
+        try
+        {
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(id);
+            if (caseSubs != null && caseSubs.Any())
+            {
+                RecentAssessments = caseSubs.Take(5).ToList();
+            }
+            else
+            {
+                var (mySubs, _) = await _psychApi.GetMySubmissionsAsync();
+                RecentAssessments = mySubs != null ? mySubs.Take(5).ToList() : new();
+            }
+        }
+        catch { }
+
         return Page();
     }
 
@@ -82,6 +101,21 @@ public class DetailsModel : PageModel
         MoodEntries = moodTask.Result.Data;
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data;
+
+        try
+        {
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(caseId);
+            if (caseSubs != null && caseSubs.Any())
+            {
+                RecentAssessments = caseSubs.Take(5).ToList();
+            }
+            else
+            {
+                var (mySubs, _) = await _psychApi.GetMySubmissionsAsync();
+                RecentAssessments = mySubs != null ? mySubs.Take(5).ToList() : new();
+            }
+        }
+        catch { }
     }
 
     public async Task<IActionResult> OnPostSubmitHomeworkAsync(Guid caseId, Guid homeworkId, string? patientSubmission, string? patientSubmissionUrl)

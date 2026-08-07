@@ -212,6 +212,9 @@ public class TreatmentGoal : BaseEntity
     /// <summary>FK to TreatmentCase this goal belongs to</summary>
     public Guid TreatmentCaseId { get; set; }
 
+    /// <summary>Optional source-template identifier retained when this goal is copied into a case.</summary>
+    public Guid? TemplateId { get; set; }
+
     /// <summary>FK to DoctorProfile who created the goal</summary>
     public Guid? CreatedByDoctorId { get; set; }
 
@@ -229,11 +232,17 @@ public class TreatmentGoal : BaseEntity
     /// <summary>Goal priority level</summary>
     public GoalPriority Priority { get; set; } = GoalPriority.Medium;
 
+    /// <summary>Display order within the treatment case.</summary>
+    public int OrderIndex { get; set; }
+
     /// <summary>Current status of the goal</summary>
     public GoalStatus Status { get; set; } = GoalStatus.NotStarted;
 
     /// <summary>Progress percentage toward this goal (0-100)</summary>
     public int ProgressPercent { get; set; } = 0;
+
+    /// <summary>Date the goal became active.</summary>
+    public DateTime? StartDate { get; set; }
 
     /// <summary>Target numeric value for measurable goals</summary>
     public decimal? TargetValue { get; set; }
@@ -261,8 +270,61 @@ public class TreatmentGoal : BaseEntity
     /// <summary>Navigation: progress history entries</summary>
     public virtual ICollection<TreatmentGoalProgress> ProgressHistory { get; set; } = new List<TreatmentGoalProgress>();
 
-    /// <summary>Navigation: session-goal links</summary>
+    /// <summary>Navigation: actionable milestones for this goal.</summary>
+    public virtual ICollection<GoalDetail> Details { get; set; } = new List<GoalDetail>();
+
+    /// <summary>Navigation: objective completion criteria.</summary>
+    public virtual ICollection<GoalSuccessCriteria> SuccessCriteria { get; set; } = new List<GoalSuccessCriteria>();
+}
+
+/// <summary>A concrete therapeutic milestone that contributes to a treatment goal.</summary>
+public class GoalDetail : BaseEntity
+{
+    public Guid GoalId { get; set; }
+    public required string Title { get; set; }
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int OrderIndex { get; set; }
+    public int ProgressPercent { get; set; }
+    public GoalDetailStatus Status { get; set; } = GoalDetailStatus.NotStarted;
+    public int? EstimatedSessions { get; set; }
+    public DateTime? CompletedDate { get; set; }
+
+    public virtual required TreatmentGoal Goal { get; set; }
     public virtual ICollection<TreatmentSessionGoal> SessionGoals { get; set; } = new List<TreatmentSessionGoal>();
+    public virtual ICollection<TreatmentGoalProgress> ProgressHistory { get; set; } = new List<TreatmentGoalProgress>();
+}
+
+/// <summary>A measurable condition required to mark a treatment goal as achieved.</summary>
+public class GoalSuccessCriteria : BaseEntity
+{
+    public Guid GoalId { get; set; }
+    public GoalSuccessCriteriaType CriteriaType { get; set; }
+    public GoalCriteriaDataSource DataSource { get; set; } = GoalCriteriaDataSource.Manual;
+    public GoalCriteriaOperator Operator { get; set; } = GoalCriteriaOperator.GreaterThanOrEqual;
+    public decimal? TargetValue { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public decimal Weight { get; set; } = 1;
+    public bool IsRequired { get; set; } = true;
+    public string? Description { get; set; }
+
+    public virtual required TreatmentGoal Goal { get; set; }
+    public virtual ICollection<SuccessCriteriaEvaluation> Evaluations { get; set; } = new List<SuccessCriteriaEvaluation>();
+}
+
+/// <summary>Immutable audit entry for one evaluation of a goal success criterion.</summary>
+public class SuccessCriteriaEvaluation : ImmutableEntity
+{
+    public Guid SuccessCriteriaId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public bool IsPassed { get; set; }
+    public DateTime EvaluatedAt { get; set; } = DateTime.UtcNow;
+    public Guid? EvaluatedBy { get; set; }
+
+    public virtual required GoalSuccessCriteria SuccessCriteria { get; set; }
+    public virtual TreatmentSession? TreatmentSession { get; set; }
 }
 
 /// <summary>
@@ -321,6 +383,9 @@ public class TreatmentGoalProgress : BaseEntity
     /// <summary>FK to TreatmentSession (nullable - progress may be recorded outside a session)</summary>
     public Guid? TreatmentSessionId { get; set; }
 
+    /// <summary>Optional milestone updated by this progress entry.</summary>
+    public Guid? GoalDetailId { get; set; }
+
     /// <summary>Progress percentage at this point in time</summary>
     public int ProgressPercent { get; set; }
 
@@ -339,21 +404,27 @@ public class TreatmentGoalProgress : BaseEntity
 
     /// <summary>Navigation to linked Session (optional)</summary>
     public virtual TreatmentSession? TreatmentSession { get; set; }
+
+    /// <summary>Navigation to the updated goal detail.</summary>
+    public virtual GoalDetail? GoalDetail { get; set; }
 }
 
 /// <summary>
 /// Many-to-many join entity: links a TreatmentSession to a TreatmentGoal.
 /// Represents which goals are being addressed in a given session.
 /// </summary>
-public class TreatmentSessionGoal
+public class TreatmentSessionGoal : BaseEntity
 {
     /// <summary>FK to TreatmentSession</summary>
     public Guid TreatmentSessionId { get; set; }
 
-    /// <summary>FK to TreatmentGoal</summary>
-    public Guid TreatmentGoalId { get; set; }
+    /// <summary>FK to GoalDetail. A milestone can be planned across several sessions.</summary>
+    public Guid GoalDetailId { get; set; }
+
+    public int OrderIndex { get; set; }
+    public string? PlannedActivity { get; set; }
 
     // Navigation
     public virtual required TreatmentSession TreatmentSession { get; set; }
-    public virtual required TreatmentGoal TreatmentGoal { get; set; }
+    public virtual required GoalDetail GoalDetail { get; set; }
 }

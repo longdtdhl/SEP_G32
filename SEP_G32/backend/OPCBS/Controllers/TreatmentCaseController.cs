@@ -65,6 +65,15 @@ public class TreatmentCaseController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/treatment-cases/doctor/dashboard - Doctor dashboard counters and attention cases.</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpGet("doctor/dashboard")]
+    public async Task<IActionResult> GetDoctorDashboard()
+    {
+        var result = await _caseService.GetDoctorDashboardAsync(GetCurrentUserId());
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
     /// <summary>GET /api/v1/treatment-cases/patient/{patientUserId} - Get all cases for a patient</summary>
     [Authorize(Roles = "Patient")]
     [HttpGet("patient/{patientUserId:guid}")]
@@ -186,7 +195,7 @@ public class TreatmentCaseController : ControllerBase
     [HttpPost("goals")]
     public async Task<IActionResult> CreateGoal([FromBody] CreateGoalDto dto)
     {
-        var result = await _caseService.CreateGoalAsync(dto);
+        var result = await _caseService.CreateGoalAsync(dto, GetCurrentUserId());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -195,7 +204,7 @@ public class TreatmentCaseController : ControllerBase
     [HttpPut("goals/{id:guid}")]
     public async Task<IActionResult> UpdateGoal(Guid id, [FromBody] UpdateGoalDto dto)
     {
-        var result = await _caseService.UpdateGoalAsync(id, dto);
+        var result = await _caseService.UpdateGoalAsync(id, dto, GetCurrentUserId());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -215,7 +224,7 @@ public class TreatmentCaseController : ControllerBase
     [HttpPost("goals/progress")]
     public async Task<IActionResult> RecordGoalProgress([FromBody] CreateGoalProgressDto dto)
     {
-        var result = await _caseService.RecordGoalProgressAsync(dto);
+        var result = await _caseService.RecordGoalProgressAsync(dto, GetCurrentUserId());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -223,8 +232,64 @@ public class TreatmentCaseController : ControllerBase
     [HttpGet("goals/{goalId:guid}/progress")]
     public async Task<IActionResult> GetGoalProgressHistory(Guid goalId)
     {
-        var result = await _caseService.GetGoalProgressHistoryAsync(goalId);
-        return Ok(result);
+        var result = await _caseService.GetGoalProgressHistoryAsync(goalId, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPost("goals/{goalId:guid}/details")]
+    public async Task<IActionResult> CreateGoalDetail(Guid goalId, [FromBody] CreateGoalDetailDto dto)
+    {
+        var result = await _caseService.CreateGoalDetailAsync(goalId, dto, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPut("goal-details/{detailId:guid}")]
+    public async Task<IActionResult> UpdateGoalDetail(Guid detailId, [FromBody] UpdateGoalDetailDto dto)
+    {
+        var result = await _caseService.UpdateGoalDetailAsync(detailId, dto, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpDelete("goal-details/{detailId:guid}")]
+    public async Task<IActionResult> DeleteGoalDetail(Guid detailId)
+    {
+        var result = await _caseService.DeleteGoalDetailAsync(detailId, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPost("goals/{goalId:guid}/success-criteria")]
+    public async Task<IActionResult> CreateSuccessCriteria(Guid goalId, [FromBody] CreateGoalSuccessCriteriaDto dto)
+    {
+        var result = await _caseService.CreateSuccessCriteriaAsync(goalId, dto, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPut("success-criteria/{criteriaId:guid}")]
+    public async Task<IActionResult> UpdateSuccessCriteria(Guid criteriaId, [FromBody] UpdateGoalSuccessCriteriaDto dto)
+    {
+        var result = await _caseService.UpdateSuccessCriteriaAsync(criteriaId, dto, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpDelete("success-criteria/{criteriaId:guid}")]
+    public async Task<IActionResult> DeleteSuccessCriteria(Guid criteriaId)
+    {
+        var result = await _caseService.DeleteSuccessCriteriaAsync(criteriaId, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPost("success-criteria/{criteriaId:guid}/evaluations")]
+    public async Task<IActionResult> EvaluateSuccessCriteria(Guid criteriaId, [FromBody] CreateSuccessCriteriaEvaluationDto dto)
+    {
+        var result = await _caseService.EvaluateSuccessCriteriaAsync(criteriaId, dto, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     // ==================== Homework / Therapy Assignments ====================
@@ -288,6 +353,30 @@ public class TreatmentCaseController : ControllerBase
         if (!result.Success && result.Message != null && result.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
             return Forbid();
         return Ok(result);
+    }
+
+    // ==================== Doctor Attention Risk & Patient Files ====================
+
+    /// <summary>GET /api/v1/treatment-cases/{caseId}/risk - Doctor-only operational attention signals. This is not a diagnosis.</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpGet("{caseId:guid}/risk")]
+    public async Task<IActionResult> GetCaseRisk(Guid caseId)
+    {
+        var result = await _caseService.GetCaseRiskAsync(caseId, GetCurrentUserId());
+        if (!result.Success && result.Message?.Contains("Access denied", StringComparison.OrdinalIgnoreCase) == true)
+            return Forbid();
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>GET /api/v1/treatment-cases/{caseId}/files - Patient homework files for the case patient and treating doctor.</summary>
+    [Authorize(Roles = "Doctor,Patient")]
+    [HttpGet("{caseId:guid}/files")]
+    public async Task<IActionResult> GetPatientFiles(Guid caseId)
+    {
+        var result = await _caseService.GetPatientFilesAsync(caseId, GetCurrentUserId());
+        if (!result.Success && result.Message?.Contains("Access denied", StringComparison.OrdinalIgnoreCase) == true)
+            return Forbid();
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     // ==================== Progress & Timeline ====================

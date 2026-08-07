@@ -83,8 +83,42 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
         var (data, error) = await PostAsync<int>($"{ApiRoutes.Schedules}/generate-weekly", dto);
         return (data, error);
     }
-}
 
+    public async Task<(AppointmentSlotDto? Data, string? Error)> AssignTreatmentSlotAsync(AssignTreatmentSlotDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentSlotDto>($"{ApiRoutes.Schedules}/assign-treatment-slot", dto);
+        return (data, error);
+    }
+
+    public async Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10)
+    {
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrWhiteSpace(category)) queryParams.Add($"category={Uri.EscapeDataString(category)}");
+        if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = "api/v1/schedule-notes?" + string.Join("&", queryParams);
+        var (data, _, error) = await GetAsync<List<ScheduleNoteWebDto>>(url);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(ScheduleNoteWebDto? Data, string? Error)> CreateNoteAsync(CreateScheduleNoteWebDto dto)
+    {
+        var (data, error) = await PostAsync<ScheduleNoteWebDto>("api/v1/schedule-notes", dto);
+        return (data, error);
+    }
+
+    public async Task<(ScheduleNoteWebDto? Data, string? Error)> UpdateNoteAsync(Guid id, UpdateScheduleNoteWebDto dto)
+    {
+        var (data, error) = await PutAsync<ScheduleNoteWebDto>($"api/v1/schedule-notes/{id}", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteNoteAsync(Guid id) => await base.DeleteAsync($"api/v1/schedule-notes/{id}");
+}
 // --- Consultation Record ---
 public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
 {
@@ -136,7 +170,6 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
         return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
     }
 }
-
 public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiService
 {
     public ConsultationNoteApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
@@ -470,6 +503,12 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
         var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/my");
         return (data ?? new(), error);
     }
+
+    public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/case/{caseId}");
+        return (data ?? new(), error);
+    }
 }
 
 // --- Notification ---
@@ -715,10 +754,39 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
         return (data ?? new(), error);
     }
 
+    // Goal Details (Milestones)
+    public async Task<(bool Success, string? Error)> CreateGoalDetailAsync(Guid goalId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}/details", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateGoalDetailAsync(Guid detailId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/goal-details/{detailId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteGoalDetailAsync(Guid detailId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/goal-details/{detailId}");
+
+    // Goal Success Criteria
+    public async Task<(bool Success, string? Error)> CreateSuccessCriteriaAsync(Guid goalId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}/success-criteria", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateSuccessCriteriaAsync(Guid criteriaId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteSuccessCriteriaAsync(Guid criteriaId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}");
+
+    public async Task<(bool Success, string? Error)> EvaluateSuccessCriteriaAsync(Guid criteriaId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}/evaluations", dto);
+
     // Homework
     public async Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId)
     {
         var (data, _, error) = await GetAsync<List<HomeworkWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/homework");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<TreatmentCaseFileWebDto> Data, string? Error)> GetPatientFilesAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseFileWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/files");
         return (data ?? new(), error);
     }
 
@@ -752,5 +820,18 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     {
         var (data, _, error) = await GetAsync<List<TreatmentTimelineWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/timeline");
         return (data ?? new(), error);
+    }
+
+    // Dashboard & Risk
+    public async Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorTreatmentDashboardWebDto>($"{ApiRoutes.TreatmentCases}/doctor/dashboard");
+        return (data, error);
+    }
+
+    public async Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<TreatmentCaseRiskWebDto>($"{ApiRoutes.TreatmentCases}/{caseId}/risk");
+        return (data, error);
     }
 }

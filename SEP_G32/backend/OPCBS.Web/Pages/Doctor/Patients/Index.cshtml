@@ -3,7 +3,8 @@
 @{
     ViewData["Title"] = "Patient Records";
     
-    Layout = "_DashboardLayout";var allPatients = Model.Patients;
+    Layout = "_DashboardLayout";
+    var allPatients = Model.Patients;
     var totalAll = allPatients.Count;
     var currentTab = Model.Tab ?? "all";
 }
@@ -302,7 +303,7 @@
                 <tbody>
                     @foreach (var patient in Model.Patients)
                     {
-                        var initial = (patient.DisplayName ?? "?").Substring(0, 1).ToUpper();
+                        var initial = patient.ResolvedDisplayName.Substring(0, 1).ToUpper();
                         var bgColor = patient.IsGuest ? "#fef3c7" : "#dcfce7";
                         var txColor = patient.IsGuest ? "#b45309" : "#15803d";
                         var noteCount = Model.GetNoteCount(patient.Id);
@@ -313,7 +314,7 @@
                                     <div class="patient-avatar" style="background:@bgColor; color:@txColor;">@initial</div>
                                     <div>
                                         <a asp-page="./Details" asp-route-id="@patient.Id" class="patient-name">
-                                            @patient.DisplayName
+                                            @patient.ResolvedDisplayName
                                         </a>
                                         <div class="patient-subtext">ID: @patient.Id.ToString().Substring(0, 8)...</div>
                                     </div>
@@ -327,15 +328,15 @@
                             </td>
                             <td>
                                 <div>
-                                    @if (!string.IsNullOrEmpty(patient.DisplayEmail))
+                                    @if (!string.IsNullOrEmpty(patient.ResolvedDisplayEmail))
                                     {
-                                        <div style="font-size:0.83rem;"><i class="bi bi-envelope me-1 text-muted"></i>@patient.DisplayEmail</div>
+                                        <div style="font-size:0.83rem;"><i class="bi bi-envelope me-1 text-muted"></i>@patient.ResolvedDisplayEmail</div>
                                     }
-                                    @if (!string.IsNullOrEmpty(patient.DisplayPhone))
+                                    @if (!string.IsNullOrEmpty(patient.ResolvedDisplayPhone))
                                     {
-                                        <div style="font-size:0.8rem;" class="text-muted"><i class="bi bi-telephone me-1"></i>@patient.DisplayPhone</div>
+                                        <div style="font-size:0.8rem;" class="text-muted"><i class="bi bi-telephone me-1"></i>@patient.ResolvedDisplayPhone</div>
                                     }
-                                    @if (string.IsNullOrEmpty(patient.DisplayEmail) && string.IsNullOrEmpty(patient.DisplayPhone))
+                                    @if (string.IsNullOrEmpty(patient.ResolvedDisplayEmail) && string.IsNullOrEmpty(patient.ResolvedDisplayPhone))
                                     {
                                         <span class="text-muted small">No contact info</span>
                                     }

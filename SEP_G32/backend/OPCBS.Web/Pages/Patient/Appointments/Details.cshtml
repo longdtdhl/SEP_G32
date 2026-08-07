@@ -116,6 +116,18 @@
     .action-btn.a-chat       { background: #fff; border-color: #a5f3fc; color: #0891b2; }
     .action-btn.a-chat:hover { background: #ecfeff; }
 
+    .treatment-context {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .treatment-context-title { color: #115e59; font-size: .92rem; font-weight: 700; }
+    .treatment-context-meta { color: #475569; font-size: .8rem; }
+    .treatment-context-progress { height: 7px; background: #ccfbf1; border-radius: 99px; overflow: hidden; }
+    .treatment-context-progress > span { display: block; height: 100%; background: #0d9488; border-radius: inherit; }
+
     /* Sticky Sidebar & Back to Top Button */
     .sticky-sidebar {
         position: sticky;
@@ -434,6 +446,31 @@
                             </div>
                         </div>
                     }
+
+                    @if (Model.ClinicalContext?.TreatmentCaseContext is { } treatmentCase)
+                    {
+                        var progress = Math.Clamp(treatmentCase.OverallProgressPercent, 0, 100);
+                        <div class="treatment-context">
+                            <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                <div>
+                                    <div class="treatment-context-title"><i class="bi bi-heart-pulse me-2"></i>Connected treatment plan</div>
+                                    <div class="fw-semibold mt-1" style="color:#1e293b;">@treatmentCase.CaseName</div>
+                                </div>
+                                <span class="badge" style="background:#ccfbf1; color:#115e59;">@treatmentCase.Status</span>
+                            </div>
+                            <div class="d-flex justify-content-between gap-2 mt-3 treatment-context-meta">
+                                <span>Session @(treatmentCase.CurrentSessionNumber?.ToString() ?? "-")</span>
+                                <strong>@treatmentCase.CompletedSessions / @treatmentCase.TotalSessions completed</strong>
+                            </div>
+                            <div class="treatment-context-progress mt-2" aria-label="Treatment progress">
+                                <span style="width:@progress%;"></span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mt-2 treatment-context-meta">
+                                <span>@progress% overall progress</span>
+                                <a asp-page="/Patient/TreatmentCases/Details" asp-route-id="@treatmentCase.TreatmentCaseId" class="text-decoration-none fw-semibold" style="color:#0f766e;">View treatment progress <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -609,11 +646,9 @@
                     <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-outline">
                         <i class="bi bi-calendar-plus"></i> Book Again
                     </a>
-                    <div class="text-center mt-2 pt-1">
-                        <a asp-page="/Patient/Appointments/Report" asp-route-id="@apt.Id" class="text-secondary small text-decoration-none" style="font-size:0.75rem;">
-                            <i class="bi bi-flag me-1 text-muted"></i>Report user / issue
-                        </a>
-                    </div>
+                    <a asp-page="/Patient/Appointments/Report" asp-route-id="@apt.Id" class="action-btn a-danger" style="font-size:.8rem;">
+                        <i class="bi bi-flag"></i>Report an issue
+                    </a>
                 </div>
             </div>
 

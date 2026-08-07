@@ -15,7 +15,7 @@
 <style>
     /* Scope styles with prefix doctor-schedule- */
     .doctor-schedule-container { max-width: 100%; margin: 0 auto; }
-    .modal-content.schedule-modal { border: 1px solid #dbe7e4 !important; border-radius: 8px !important; }
+    .modal-content.schedule-modal { border: 1px solid #dbe7e4 !important; border-radius: 12px !important; }
     .schedule-modal .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb !important; }
     .schedule-modal .modal-body { padding: 1.5rem; }
     .schedule-modal .modal-footer { padding: 1rem 1.5rem 1.25rem; border-top: 1px solid #e5e7eb !important; }
@@ -62,6 +62,31 @@
     .doctor-schedule-stat-val { font-size: 1.4rem; font-weight: 700; color: #1f2937; line-height: 1.1; }
     .doctor-schedule-stat-lbl { font-size: 0.78rem; color: #6b7280; margin-top: 2px; }
 
+    /* Main Tab Navigation */
+    .doctor-schedule-main-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+    }
+    .doctor-schedule-main-tabs .nav-link-tab {
+        font-weight: 700;
+        font-size: 0.92rem;
+        padding: 10px 22px;
+        border-radius: 10px 10px 0 0;
+        color: #64748b;
+        text-decoration: none;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-bottom: none;
+        transition: all 0.15s ease;
+    }
+    .doctor-schedule-main-tabs .nav-link-tab.active {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0d9488;
+    }
+
     /* Toolbar styling */
     .doctor-schedule-toolbar {
         background: #ffffff;
@@ -92,6 +117,7 @@
         padding: 5px 14px;
         border-radius: 8px;
         transition: all 0.15s ease;
+        text-decoration: none;
     }
     .doctor-schedule-segmented .btn-segment.active {
         background: #ffffff;
@@ -115,17 +141,93 @@
     .fc-theme-standard th { background: #f8fafc; padding: 10px 0; font-weight: 600; color: #334155; }
     .fc-event { cursor: pointer; border-radius: 8px !important; transition: transform 0.15s ease; }
     .fc-event:hover { transform: scale(1.01); }
-    .fc-timegrid-slot { height: 3.2em; }
+    .fc-timegrid-slot { height: 3.4em; }
     .fc-day-today { background-color: rgba(13, 148, 136, 0.04) !important; }
 
-    /* Event Colors */
-    .event-available { background-color: #ccfbf1 !important; border-color: #99f6e4 !important; color: #0f766e !important; }
-    .event-confirmed { background-color: #dcfce7 !important; border-color: #bbf7d0 !important; color: #166534 !important; }
-    .event-pending { background-color: #fef3c7 !important; border-color: #fde68a !important; color: #92400e !important; }
-    .event-completed { background-color: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #334155 !important; }
-    .event-blocked { background-color: #fee2e2 !important; border-color: #fecaca !important; color: #991b1b !important; }
-    .event-dayoff { background-color: #fee2e2 !important; border-color: #fca5a5 !important; color: #b91c1c !important; }
-    .event-note { background-color: #e0e7ff !important; border-color: #c7d2fe !important; color: #3730a3 !important; }
+    /* Custom Event Styles - High contrast & clean hierarchy */
+    .fc-event {
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 3px 5px !important;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .fc-event-available {
+        background-color: #CCFBF1 !important;
+        color: #134E4A !important;
+        border-left: 4px solid #0D9488 !important;
+    }
+    .fc-event-partial {
+        background-color: #FEF3C7 !important;
+        color: #78350F !important;
+        border-left: 4px solid #D97706 !important;
+    }
+    .fc-event-booked, .fc-event-appointment {
+        background-color: #DCFCE7 !important;
+        color: #064E3B !important;
+        border-left: 4px solid #059669 !important;
+    }
+    .fc-event-blocked {
+        background-color: #FEE2E2 !important;
+        color: #7F1D1D !important;
+        border-left: 4px solid #DC2626 !important;
+    }
+    .fc-event-pending {
+        background-color: #FEF3C7 !important;
+        color: #78350F !important;
+        border-left: 4px solid #D97706 !important;
+    }
+    .fc-event-inprogress {
+        background-color: #DBEAFE !important;
+        color: #1E3A8A !important;
+        border-left: 4px solid #2563EB !important;
+    }
+    .fc-event-completed {
+        background-color: #F1F5F9 !important;
+        color: #334155 !important;
+        border-left: 4px solid #64748B !important;
+    }
+    .fc-event-expired {
+        background-color: #F1F5F9 !important;
+        color: #64748B !important;
+        border-left: 4px solid #94A3B8 !important;
+        opacity: 0.82;
+    }
+    .fc-event-cancelled {
+        background-color: #FFE4E6 !important;
+        color: #9F1239 !important;
+        border-left: 4px solid #E11D48 !important;
+        opacity: 0.86;
+    }
+
+    .fc-custom-event-container {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        line-height: 1.25;
+    }
+    .fc-custom-event-time {
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .fc-custom-event-title {
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .fc-custom-event-sub {
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.9;
+    }
 
     /* Legend Bar */
     .doctor-schedule-legend {
@@ -172,140 +274,21 @@
     .year-days-table td:hover { background: #e2e8f0; }
     .year-days-table td.has-available { background: #ccfbf1; color: #0f766e; font-weight: 700; }
     .year-days-table td.has-appt { background: #dcfce7; color: #166534; font-weight: 700; }
-    .year-days-table td.has-dayoff { background: #fee2e2; color: #991b1b; font-weight: 700; }
 
-    /* Schedule Notes Table Section */
-    .doctor-schedule-notes-card {
+    /* Dedicated Schedule Notes Screen */
+    .doctor-notes-container {
         background: #ffffff;
         border-radius: 16px;
         border: 1px solid #e5e7eb;
-        padding: 1.25rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
-    .doctor-schedule-note-preview {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 0.82rem;
-        color: #4b5563;
-        line-height: 1.4;
-    }
-
-    /* Custom Event Styles - Explicit high-contrast colors & font hierarchy */
-    .fc-event {
-        border: none !important;
-        border-radius: 6px !important;
-        padding: 2px 4px !important;
-        cursor: pointer;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .fc-event-available {
-        background-color: #CCFBF1 !important;
-        color: #134E4A !important;
-        border-left: 4px solid #2A8C7D !important;
-    }
-    .fc-event-available .fc-custom-event-time,
-    .fc-event-available .fc-custom-event-title {
-        color: #134E4A !important;
-    }
-
-    .fc-event-partial {
-        background-color: #FEF3C7 !important;
-        color: #78350F !important;
-        border-left: 4px solid #D97706 !important;
-    }
-    .fc-event-partial .fc-custom-event-time,
-    .fc-event-partial .fc-custom-event-title {
-        color: #78350F !important;
-    }
-
-    .fc-event-booked, .fc-event-appointment {
-        background-color: #D1FAE5 !important;
-        color: #064E3B !important;
-        border-left: 4px solid #059669 !important;
-    }
-    .fc-event-booked .fc-custom-event-time,
-    .fc-event-booked .fc-custom-event-title,
-    .fc-event-appointment .fc-custom-event-time,
-    .fc-event-appointment .fc-custom-event-title {
-        color: #064E3B !important;
-    }
-
-    .fc-event-blocked {
-        background-color: #FEE2E2 !important;
-        color: #7F1D1D !important;
-        border-left: 4px solid #DC2626 !important;
-    }
-    .fc-event-blocked .fc-custom-event-time,
-    .fc-event-blocked .fc-custom-event-title {
-        color: #7F1D1D !important;
-    }
-
-    .fc-event-pending {
-        background-color: #FEF3C7 !important;
-        color: #78350F !important;
-        border-left: 4px solid #D97706 !important;
-    }
-    .fc-event-inprogress {
-        background-color: #DBEAFE !important;
-        color: #1E3A8A !important;
-        border-left: 4px solid #2563EB !important;
-    }
-    .fc-event-completed {
-        background-color: #E2E8F0 !important;
-        color: #334155 !important;
-        border-left: 4px solid #64748B !important;
-    }
-    .fc-event-expired {
-        background-color: #F1F5F9 !important;
-        color: #64748B !important;
-        border-left: 4px solid #94A3B8 !important;
-        opacity: 0.82;
-    }
-    .fc-event-cancelled {
-        background-color: #FFE4E6 !important;
-        color: #9F1239 !important;
-        border-left: 4px solid #E11D48 !important;
-        opacity: 0.86;
-    }
-    .fc-event-pending .fc-custom-event-time,
-    .fc-event-pending .fc-custom-event-title,
-    .fc-event-inprogress .fc-custom-event-time,
-    .fc-event-inprogress .fc-custom-event-title,
-    .fc-event-completed .fc-custom-event-time,
-    .fc-event-completed .fc-custom-event-title,
-    .fc-event-expired .fc-custom-event-time,
-    .fc-event-expired .fc-custom-event-title,
-    .fc-event-cancelled .fc-custom-event-time,
-    .fc-event-cancelled .fc-custom-event-title {
-        color: inherit !important;
-    }
-
-    .fc-custom-event-container {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        line-height: 1.25;
-    }
-    .fc-custom-event-time {
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .fc-custom-event-title {
-        font-size: 13px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .fc-custom-event-note-icon {
-        font-size: 11px;
-        margin-left: 3px;
+    .doctor-notes-filter-bar {
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
     }
 
     @@media (max-width: 1024px) {
@@ -336,9 +319,9 @@
                 <i class="bi bi-gear-wide-connected me-1"></i>Configure Weekly Schedule
             </button>
             <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createSlotModal" style="background:var(--mb-primary, #0f766e); border-color:var(--mb-primary, #0f766e);">
-                <i class="bi bi-plus-lg me-1"></i>Add Availability
+                <i class="bi bi-plus-lg me-1"></i>Add Availability / Appointment
             </button>
-            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createNoteModal">
+            <button class="btn btn-outline-indigo btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createNoteModal" style="color:#4f46e5; border-color:#4f46e5;">
                 <i class="bi bi-journal-plus me-1"></i>Add Schedule Note
             </button>
             <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Are you sure you want to delete all available slots? (Booked and blocked slots will be kept)');">
@@ -365,231 +348,313 @@
         </div>
     }
 
-    <!-- Toolbar -->
-    <div class="doctor-schedule-toolbar">
-        <!-- View Switch Segmented Controls -->
-        <div class="doctor-schedule-segmented">
-            <a href="?view=day&date=@selectedDateStr" class="btn-segment @(Model.View == "day" ? "active" : "")">Day</a>
-            <a href="?view=week&date=@selectedDateStr" class="btn-segment @(Model.View == "week" ? "active" : "")">Week</a>
-            <a href="?view=month&date=@selectedDateStr" class="btn-segment @(Model.View == "month" ? "active" : "")">Month</a>
-            <a href="?view=year&date=@selectedDateStr" class="btn-segment @(Model.View == "year" ? "active" : "")">Year</a>
-        </div>
+    <!-- Main Navigation Tabs: Schedule vs Notes -->
+    <div class="doctor-schedule-main-tabs">
+        <a href="?tab=schedule&view=@Model.View&date=@selectedDateStr" class="nav-link-tab @(Model.Tab != "notes" ? "active" : "")">
+            <i class="bi bi-calendar3 me-2"></i>Schedule & Calendar
+        </a>
+        <a href="?tab=notes&view=@Model.View&date=@selectedDateStr" class="nav-link-tab @(Model.Tab == "notes" ? "active" : "")">
+            <i class="bi bi-journal-text me-2"></i>Schedule Notes <span class="badge rounded-pill @(Model.Tab == "notes" ? "bg-white text-teal" : "bg-teal text-white") ms-1" style="font-size:0.72rem;">@Model.TotalNoteItems</span>
+        </a>
+    </div>
 
-        <!-- Date Navigation & Jump Picker -->
-        <div class="d-flex align-items-center gap-2">
-            <div class="btn-group">
-                <button id="btnPrev" class="btn btn-outline-secondary btn-sm" style="border-radius:8px 0 0 8px;"><i class="bi bi-chevron-left"></i></button>
-                <button id="btnToday" class="btn btn-outline-secondary btn-sm">Today</button>
-                <button id="btnNext" class="btn btn-outline-secondary btn-sm" style="border-radius:0 8px 8px 0;"><i class="bi bi-chevron-right"></i></button>
+    @if (Model.Tab != "notes")
+    {
+        <!-- ══ TAB 1: SCHEDULE & CALENDAR VIEW ══ -->
+
+        <!-- Toolbar -->
+        <div class="doctor-schedule-toolbar">
+            <!-- View Switch Segmented Controls -->
+            <div class="doctor-schedule-segmented">
+                <a href="?tab=schedule&view=day&date=@selectedDateStr" class="btn-segment @(Model.View == "day" ? "active" : "")">Day</a>
+                <a href="?tab=schedule&view=week&date=@selectedDateStr" class="btn-segment @(Model.View == "week" ? "active" : "")">Week</a>
+                <a href="?tab=schedule&view=month&date=@selectedDateStr" class="btn-segment @(Model.View == "month" ? "active" : "")">Month</a>
+                <a href="?tab=schedule&view=year&date=@selectedDateStr" class="btn-segment @(Model.View == "year" ? "active" : "")">Year</a>
             </div>
-            
-            @if (Model.View == "day")
-            {
-                <input type="date" id="calendarDatePicker" class="form-control form-control-sm" value="@selectedDateStr" style="border-radius:8px; width:auto;" />
-            }
-        </div>
 
-        <!-- Event Filter Dropdown -->
-        <div class="d-flex align-items-center gap-2">
-            <select id="eventFilterSelect" class="form-select form-select-sm" style="border-radius:8px; width:auto;">
-                <option value="all">Filter: All Events</option>
-                <option value="Availability">Available Slots</option>
-                <option value="Appointment">Appointments Only</option>
-                <option value="Blocked">Blocked Slots</option>
-                <option value="Expired">Expired Slots</option>
-                <option value="Cancelled">Cancelled Slots</option>
-                <option value="Completed">Completed Slots</option>
-                <option value="Note">Schedule Notes</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Main Calendar Container -->
-    <div class="doctor-schedule-card">
-        <div class="doctor-schedule-card-body">
-            <!-- FullCalendar Container for Day, Week, Month -->
-            <div id="calendar" style="@(Model.View == "year" ? "display:none;" : "")"></div>
-
-            <!-- Year View Overview Container -->
-            <div id="yearCalendarGrid" class="doctor-schedule-year-grid" style="@(Model.View == "year" ? "" : "display:none;")"></div>
-        </div>
-    </div>
-
-    <!-- Event Legend Bar -->
-    <div class="doctor-schedule-legend">
-        <div class="legend-dots">
-            <span class="fw-semibold text-dark small"><i class="bi bi-palette me-1"></i>Legend:</span>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ccfbf1; border:1px solid #99f6e4;"></div>Available Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dcfce7; border:1px solid #bbf7d0;"></div>Confirmed Appt</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fef3c7; border:1px solid #fde68a;"></div>Pending Appt</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #93c5fd;"></div>In Progress</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #e2e8f0;"></div>Completed Appt</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fee2e2; border:1px solid #fecaca;"></div>Blocked Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #cbd5e1;"></div>Expired Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ffe4e6; border:1px solid #fda4af;"></div>Cancelled Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#e0e7ff; border:1px solid #c7d2fe;"></div>Schedule Note</div>
-        </div>
-        <div class="text-muted small"><i class="bi bi-mouse me-1"></i>Click any slot or event to view details or manage.</div>
-    </div>
-
-    <!-- Schedule Notes Table Section -->
-    <div class="doctor-schedule-notes-card mb-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <div>
-                <h5 class="fw-bold m-0 text-dark" style="font-size:1.1rem;">
-                    <i class="bi bi-journal-text me-2 text-indigo" style="color:#4f46e5;"></i>Schedule Notes
-                </h5>
-                <p class="text-muted small m-0">Summary of notes attached to your schedule slots and consultation availability.</p>
-            </div>
+            <!-- Date Navigation & Jump Picker -->
             <div class="d-flex align-items-center gap-2">
-                <form method="get" class="d-flex gap-2 m-0">
-                    <input type="hidden" name="view" value="@Model.View" />
-                    <input type="hidden" name="date" value="@selectedDateStr" />
-                    <input type="text" name="SearchNote" value="@Model.SearchNote" placeholder="Search notes..." class="form-control form-control-sm" style="border-radius:8px; width:200px;" />
-                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded-2"><i class="bi bi-search"></i></button>
-                </form>
-                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createNoteModal">
-                    <i class="bi bi-plus-lg me-1"></i>Add Note
-                </button>
-            </div>
-        </div>
-
-        @if (!Model.ScheduleNotes.Any())
-        {
-            <div class="text-center py-4 my-2" style="background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
-                <i class="bi bi-journal-x display-6 text-muted mb-2"></i>
-                <h6 class="fw-semibold text-secondary">No schedule notes found.</h6>
-                <p class="text-muted small mb-3">You haven't recorded any notes for the current selected period.</p>
-                <button class="btn btn-primary btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createNoteModal" style="background:var(--mb-primary, #0f766e); border-color:var(--mb-primary, #0f766e);">
-                    <i class="bi bi-journal-plus me-1"></i>Add Note
-                </button>
-            </div>
-        }
-        else
-        {
-            <!-- Desktop Table -->
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
-                    <thead class="table-light text-secondary">
-                        <tr>
-                            <th style="width:120px;">Date</th>
-                            <th style="width:130px;">Time Range</th>
-                            <th style="width:180px;">Title</th>
-                            <th>Note Content</th>
-                            <th style="width:140px;">Category</th>
-                            <th style="width:110px;" class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var note in Model.ScheduleNotes)
-                        {
-                            <tr>
-                                <td class="fw-semibold text-dark">@note.Date</td>
-                                <td class="text-muted"><i class="bi bi-clock me-1"></i>@note.TimeRange</td>
-                                <td class="fw-medium text-dark">@note.Title</td>
-                                <td>
-                                    <div class="doctor-schedule-note-preview">@note.Content</div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-secondary border px-2 py-1" style="font-size:0.75rem; border-radius:6px;">@note.Category</span>
-                                </td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-light text-primary py-0 px-2" title="View Note" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-light text-secondary py-0 px-2" title="Edit Note" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <form method="post" asp-page-handler="DeleteNote" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this note?');">
-                                        <input type="hidden" name="slotId" value="@note.SlotId" />
-                                        <button type="submit" class="btn btn-sm btn-light text-danger py-0 px-2" title="Delete Note">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Compact Cards -->
-            <div class="d-block d-md-none">
-                @foreach (var note in Model.ScheduleNotes)
+                <div class="btn-group">
+                    <button id="btnPrev" class="btn btn-outline-secondary btn-sm" style="border-radius:8px 0 0 8px;"><i class="bi bi-chevron-left"></i></button>
+                    <button id="btnToday" class="btn btn-outline-secondary btn-sm">Today</button>
+                    <button id="btnNext" class="btn btn-outline-secondary btn-sm" style="border-radius:0 8px 8px 0;"><i class="bi bi-chevron-right"></i></button>
+                </div>
+                
+                @if (Model.View == "day")
                 {
-                    <div class="p-3 mb-2 rounded-3 border background-white shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-dark small"><i class="bi bi-calendar-event me-1 text-primary"></i>@note.Date</span>
-                            <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">@note.TimeRange</span>
-                        </div>
-                        <div class="fw-semibold text-dark mb-1">@note.Title</div>
-                        <p class="text-muted small mb-2" style="font-size:0.8rem;">@note.Content</p>
-                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
-                            <span class="text-muted" style="font-size:0.72rem;">@note.Category</span>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">View</button>
-                                <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">Edit</button>
-                            </div>
-                        </div>
-                    </div>
+                    <input type="date" id="calendarDatePicker" class="form-control form-control-sm" value="@selectedDateStr" style="border-radius:8px; width:auto;" />
                 }
             </div>
-        }
-    </div>
+
+            <!-- Event Filter Dropdown -->
+            <div class="d-flex align-items-center gap-2">
+                <select id="eventFilterSelect" class="form-select form-select-sm" style="border-radius:8px; width:auto;">
+                    <option value="all">Filter: All Events</option>
+                    <option value="Availability">Available Slots</option>
+                    <option value="Appointment">Appointments Only</option>
+                    <option value="Blocked">Blocked Slots</option>
+                    <option value="Expired">Expired Slots</option>
+                    <option value="Cancelled">Cancelled Slots</option>
+                    <option value="Completed">Completed Slots</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Calendar Container -->
+        <div class="doctor-schedule-card">
+            <div class="doctor-schedule-card-body">
+                <!-- FullCalendar Container for Day, Week, Month -->
+                <div id="calendar" style="@(Model.View == "year" ? "display:none;" : "")"></div>
+
+                <!-- Year View Overview Container -->
+                <div id="yearCalendarGrid" class="doctor-schedule-year-grid" style="@(Model.View == "year" ? "" : "display:none;")"></div>
+            </div>
+        </div>
+
+        <!-- Event Legend Bar -->
+        <div class="doctor-schedule-legend">
+            <div class="legend-dots">
+                <span class="fw-semibold text-dark small"><i class="bi bi-palette me-1"></i>Legend:</span>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ccfbf1; border:1px solid #0d9488;"></div>Available Slot</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dcfce7; border:1px solid #059669;"></div>Treatment / Confirmed Appt</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fef3c7; border:1px solid #d97706;"></div>Pending / Booked</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>In Progress</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #64748b;"></div>Completed Appt</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fee2e2; border:1px solid #dc2626;"></div>Blocked Slot</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #cbd5e1;"></div>Expired Slot</div>
+                <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ffe4e6; border:1px solid #e11d48;"></div>Cancelled Slot</div>
+            </div>
+            <div class="text-muted small"><i class="bi bi-mouse me-1"></i>Click any slot to open slot options or schedule a session.</div>
+        </div>
+    }
+    else
+    {
+        <!-- ══ TAB 2: DEDICATED SCHEDULE NOTES MANAGEMENT SCREEN ══ -->
+        <div class="doctor-notes-container mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="fw-bold m-0 text-dark" style="font-size:1.2rem;">
+                        <i class="bi bi-journal-text me-2" style="color:#4f46e5;"></i>Schedule Notes Management
+                    </h4>
+                    <p class="text-muted small m-0">Search, filter, and organize notes attached to consultation slots and availability.</p>
+                </div>
+                <button class="btn btn-indigo btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createNoteModal" style="background:#4f46e5; color:#fff; border:none;">
+                    <i class="bi bi-plus-lg me-1"></i>Create New Note
+                </button>
+            </div>
+
+            <!-- Notes Filter & Search Toolbar -->
+            <form method="get" class="doctor-notes-filter-bar mb-3">
+                <input type="hidden" name="tab" value="notes" />
+                <input type="hidden" name="view" value="@Model.View" />
+                <input type="hidden" name="date" value="@selectedDateStr" />
+                
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white text-muted border-end-0" style="border-radius:8px 0 0 8px;"><i class="bi bi-search"></i></span>
+                            <input type="text" name="SearchNote" value="@Model.SearchNote" placeholder="Search by content or patient name..." class="form-control form-control-sm border-start-0" style="border-radius:0 8px 8px 0;" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="NoteCategory" class="form-select form-select-sm" style="border-radius:8px;" onchange="this.form.submit()">
+                            <option value="">All Categories</option>
+                            <option value="Availability Note" selected="@(Model.NoteCategory == "Availability Note")">Availability Notes</option>
+                            <option value="Booked Slot Note" selected="@(Model.NoteCategory == "Booked Slot Note")">Booked Slot Notes</option>
+                            <option value="Blocked Slot Note" selected="@(Model.NoteCategory == "Blocked Slot Note")">Blocked Slot Notes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" name="NoteDate" value="@Model.NoteDate" class="form-control form-control-sm" style="border-radius:8px;" onchange="this.form.submit()" placeholder="Filter Date" />
+                    </div>
+                    <div class="col-md-2">
+                        <select name="NoteSort" class="form-select form-select-sm" style="border-radius:8px;" onchange="this.form.submit()">
+                            <option value="newest" selected="@(Model.NoteSort != "oldest")">Newest First</option>
+                            <option value="oldest" selected="@(Model.NoteSort == "oldest")">Oldest First</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <a href="?tab=notes" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px;" title="Reset Filters"><i class="bi bi-x-circle"></i></a>
+                    </div>
+                </div>
+            </form>
+
+            @if (!Model.PaginatedNotes.Any())
+            {
+                <div class="text-center py-5 my-2" style="background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+                    <i class="bi bi-journal-x display-5 text-muted mb-2"></i>
+                    <h6 class="fw-semibold text-secondary">No schedule notes found.</h6>
+                    <p class="text-muted small mb-3">No notes matched your query or filter criteria.</p>
+                    <button class="btn btn-indigo btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createNoteModal" style="background:#4f46e5; color:#fff; border:none;">
+                        <i class="bi bi-journal-plus me-1"></i>Add Schedule Note
+                    </button>
+                </div>
+            }
+            else
+            {
+                <!-- Desktop Table View -->
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0" style="font-size:0.86rem;">
+                        <thead class="table-light text-secondary">
+                            <tr>
+                                <th style="width:130px;">Date</th>
+                                <th style="width:140px;">Time Range</th>
+                                <th style="width:200px;">Patient / Info</th>
+                                <th>Note Content</th>
+                                <th style="width:150px;">Category</th>
+                                <th style="width:120px;" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var note in Model.PaginatedNotes)
+                            {
+                                <tr>
+                                    <td class="fw-semibold text-dark"><i class="bi bi-calendar-event me-1 text-teal" style="color:#0d9488;"></i>@note.Date</td>
+                                    <td class="text-muted"><i class="bi bi-clock me-1"></i>@note.TimeRange</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@note.PatientName</div>
+                                        <div class="text-muted small">@note.TreatmentInfo</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium text-dark mb-1">@note.Title</div>
+                                        <div class="text-secondary small" style="white-space:pre-wrap;">@note.Content</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-indigo border px-2 py-1" style="font-size:0.75rem; border-radius:6px; color:#4f46e5; border-color:#c7d2fe !important;">@note.Category</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-light text-primary py-1 px-2 me-1" title="View Note" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-light text-secondary py-1 px-2 me-1" title="Edit Note" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form method="post" asp-page-handler="DeleteNote" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this note?');">
+                                            <input type="hidden" name="slotId" value="@note.SlotId" />
+                                            <button type="submit" class="btn btn-sm btn-light text-danger py-1 px-2" title="Delete Note">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Compact Cards -->
+                <div class="d-block d-md-none">
+                    @foreach (var note in Model.PaginatedNotes)
+                    {
+                        <div class="p-3 mb-2 rounded-3 border bg-white shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark small"><i class="bi bi-calendar-event me-1 text-primary"></i>@note.Date</span>
+                                <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">@note.TimeRange</span>
+                            </div>
+                            <div class="fw-semibold text-dark mb-1">@note.PatientName — @note.Title</div>
+                            <p class="text-muted small mb-2" style="font-size:0.8rem;">@note.Content</p>
+                            <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
+                                <span class="badge bg-light text-indigo border" style="font-size:0.7rem;">@note.Category</span>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">View</button>
+                                    <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination Control -->
+                @if (Model.TotalNotePages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top fs-7 text-secondary">
+                        <div>Showing Page <strong>@Model.NotePage</strong> of <strong>@Model.TotalNotePages</strong> (@Model.TotalNoteItems total notes)</div>
+                        <ul class="pagination pagination-sm m-0">
+                            <li class="page-item @(Model.NotePage <= 1 ? "disabled" : "")">
+                                <a class="page-link" href="?tab=notes&NotePage=@(Model.NotePage - 1)&SearchNote=@Model.SearchNote&NoteCategory=@Model.NoteCategory&NoteDate=@Model.NoteDate&NoteSort=@Model.NoteSort">Prev</a>
+                            </li>
+                            @for (int p = 1; p <= Model.TotalNotePages; p++)
+                            {
+                                <li class="page-item @(p == Model.NotePage ? "active" : "")">
+                                    <a class="page-link" href="?tab=notes&NotePage=@p&SearchNote=@Model.SearchNote&NoteCategory=@Model.NoteCategory&NoteDate=@Model.NoteDate&NoteSort=@Model.NoteSort">@p</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.NotePage >= Model.TotalNotePages ? "disabled" : "")">
+                                <a class="page-link" href="?tab=notes&NotePage=@(Model.NotePage + 1)&SearchNote=@Model.SearchNote&NoteCategory=@Model.NoteCategory&NoteDate=@Model.NoteDate&NoteSort=@Model.NoteSort">Next</a>
+                            </li>
+                        </ul>
+                    </div>
+                }
+            }
+        </div>
+    }
 
 </div>
 
-<!-- Modals -->
+<!-- ══ MODALS ══ -->
 
-<!-- Create Slot Modal -->
+<!-- Enhanced Create Slot / Treatment Appointment Modal -->
 <div class="modal fade" id="createSlotModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content schedule-modal" style="box-shadow:0 20px 40px rgba(0,0,0,0.15);">
             <form id="createSlotForm" method="post" asp-page-handler="CreateSlot">
                 <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-plus-circle me-2 text-teal" style="color:var(--mb-primary, #0f766e);"></i>Add Schedule Slot</h5>
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-plus-circle me-2 text-teal" style="color:var(--mb-primary, #0f766e);"></i>Schedule Consultation / Treatment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Slot Type Mode Selector -->
+                    
+                    <!-- Inline Form Alert for Validation Feedback -->
+                    <div id="slotFormAlert" class="alert alert-danger d-none rounded-3 py-2 small mb-3"></div>
+
+                    <!-- Slot Type Segmented Control -->
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Slot Type</label>
+                        <label class="form-label small fw-semibold text-secondary">Schedule Mode</label>
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="slotTypeToggle" id="typeGeneral" value="general" checked onchange="onSlotTypeChanged(this.value)">
-                            <label class="btn btn-outline-primary" for="typeGeneral"><i class="bi bi-calendar-check me-1"></i>General Availability</label>
+                            <label class="btn btn-outline-primary py-2 fw-semibold" for="typeGeneral"><i class="bi bi-calendar-check me-1"></i>General Availability</label>
                             
                             <input type="radio" class="btn-check" name="slotTypeToggle" id="typeTreatment" value="treatment" onchange="onSlotTypeChanged(this.value)">
-                            <label class="btn btn-outline-success" for="typeTreatment"><i class="bi bi-person-badge-fill me-1"></i>Treatment Appointment</label>
+                            <label class="btn btn-outline-teal py-2 fw-semibold" for="typeTreatment"><i class="bi bi-journal-medical me-1"></i>Treatment Appointment</label>
                         </div>
                     </div>
 
-                    <!-- Treatment Patient Selector (Shown in Treatment mode) -->
+                    <!-- Treatment Appointment Panel (Shown when Treatment Appointment mode active) -->
                     <div id="treatmentPatientContainer" class="d-none mb-3 p-3 bg-light rounded-3 border">
-                        <label class="form-label small fw-semibold text-dark"><i class="bi bi-search me-1"></i>Select Patient with Active Treatment Package</label>
-                        <select id="treatmentPatientSelect" class="form-select" onchange="onTreatmentPatientSelected(this)" style="border-radius:10px;">
-                            <option value="">-- Choose Patient --</option>
-                            @foreach (var p in Model.EligiblePatients)
-                            {
-                                <option value="@p.PatientId" 
-                                        data-case-id="@p.TreatmentCaseId" 
-                                        data-session-id="@p.NextUnscheduledSessionId" 
-                                        data-package="@p.PackageName" 
-                                        data-session-num="@p.NextSessionNumber" 
-                                        data-completed="@p.CompletedSessions" 
-                                        data-total="@p.TotalSessions">
-                                    @p.PatientName — @p.PackageName (Next: Session #@p.NextSessionNumber)
-                                </option>
-                            }
-                        </select>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark"><i class="bi bi-person-fill me-1 text-teal" style="color:#0d9488;"></i>Select Patient (Active Treatment Cases Only)</label>
+                            <select id="treatmentPatientSelect" class="form-select" onchange="onTreatmentPatientSelected(this)" style="border-radius:10px;">
+                                <option value="">-- Choose Patient with Active Treatment --</option>
+                                @foreach (var p in Model.EligiblePatients.GroupBy(x => x.PatientId).Select(g => g.First()))
+                                {
+                                    <option value="@p.PatientId">@p.PatientName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Case selector if patient has multiple active cases -->
+                        <div id="caseSelectContainer" class="mb-3 d-none">
+                            <label class="form-label small fw-semibold text-dark"><i class="bi bi-box-seam me-1 text-teal" style="color:#0d9488;"></i>Select Active Treatment Case</label>
+                            <select id="treatmentCaseSelect" class="form-select" onchange="onTreatmentCaseSelected(this)" style="border-radius:10px;">
+                                <option value="">-- Select Active Case --</option>
+                            </select>
+                        </div>
 
                         <!-- Hidden fields for Treatment Appointment post -->
                         <input type="hidden" name="patientId" id="treatPatientId" />
                         <input type="hidden" name="treatmentCaseId" id="treatCaseId" />
                         <input type="hidden" name="treatmentSessionId" id="treatSessionId" />
 
-                        <div id="patientTreatmentInfoCard" class="alert alert-info mt-2 mb-0 py-2 small d-none" style="border-radius:10px;">
-                            <div><strong>Package:</strong> <span id="infoPackageName"></span></div>
-                            <div><strong>Session Progress:</strong> Completed <span id="infoCompleted"></span>/<span id="infoTotal"></span> (Scheduling Session #<span id="infoSessionNum"></span>)</div>
+                        <!-- Case Details Summary Card -->
+                        <div id="patientTreatmentInfoCard" class="alert alert-teal mt-2 mb-0 py-2.5 px-3 small d-none" style="border-radius:10px; background:#f0fdfa; border:1px solid #99f6e4;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div><strong>Package/Case:</strong> <span id="infoPackageName" class="fw-semibold text-teal" style="color:#0d9488;"></span></div>
+                                <span class="badge bg-teal text-white px-2 py-1" style="font-size:0.72rem; background:#0d9488;">Active</span>
+                            </div>
+                            <div class="row g-2 mt-1">
+                                <div class="col-6"><strong>Completed Sessions:</strong> <span id="infoCompleted">0</span>/<span id="infoTotal">0</span></div>
+                                <div class="col-6"><strong>Scheduling Session:</strong> #<span id="infoSessionNum">1</span></div>
+                            </div>
                         </div>
                     </div>
 
@@ -614,7 +679,7 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary">Notes (optional)</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Internal note for this slot..." style="border-radius:10px; resize:none;"></textarea>
+                        <textarea name="notes" id="createSlotNotes" class="form-control" rows="2" placeholder="Internal note for this slot..." style="border-radius:10px; resize:none;"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0">
@@ -671,7 +736,7 @@
                         </div>
                     </div>
 
-                    <!-- One continuous daily working range. Slot duration divides this range without breaks. -->
+                    <!-- One continuous daily working range -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-secondary">Daily Working Hours</label>
                         <div class="weekly-time-panel">
@@ -896,8 +961,10 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <script>
         var rawEvents = @Html.Raw(eventsJson);
+        var eligiblePatientsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EligiblePatients, jsonOptions));
         var currentView = '@Model.View';
         var selectedDateStr = '@selectedDateStr';
+
         function isPastSlot(dateStr, timeStr) {
             if (!dateStr || !timeStr) return true;
             return new Date(dateStr + 'T' + timeStr + ':00') <= new Date();
@@ -921,6 +988,8 @@
             var pContainer = document.getElementById('treatmentPatientContainer');
             var maxContainer = document.getElementById('maxPatientsContainer');
             var btnSave = document.getElementById('btnSaveSlot');
+            var alertBox = document.getElementById('slotFormAlert');
+            alertBox.classList.add('d-none');
 
             if (mode === 'treatment') {
                 form.action = '?handler=CreateTreatmentAppointment';
@@ -937,25 +1006,66 @@
         }
 
         function onTreatmentPatientSelected(selectEl) {
-            var opt = selectEl.options[selectEl.selectedIndex];
+            var patId = selectEl.value;
+            var caseSelectContainer = document.getElementById('caseSelectContainer');
+            var caseSelect = document.getElementById('treatmentCaseSelect');
             var infoCard = document.getElementById('patientTreatmentInfoCard');
 
-            if (!opt || !opt.value) {
+            caseSelect.innerHTML = '<option value="">-- Select Active Case --</option>';
+
+            if (!patId) {
+                caseSelectContainer.classList.add('d-none');
+                infoCard.classList.add('d-none');
                 document.getElementById('treatPatientId').value = '';
                 document.getElementById('treatCaseId').value = '';
                 document.getElementById('treatSessionId').value = '';
+                return;
+            }
+
+            var matchingCases = eligiblePatientsData.filter(function(item) {
+                return item.patientId === patId || item.PatientId === patId;
+            });
+
+            if (matchingCases.length === 0) {
+                caseSelectContainer.classList.add('d-none');
                 infoCard.classList.add('d-none');
                 return;
             }
 
-            document.getElementById('treatPatientId').value = opt.value;
-            document.getElementById('treatCaseId').value = opt.getAttribute('data-case-id') || '';
-            document.getElementById('treatSessionId').value = opt.getAttribute('data-session-id') || '';
+            if (matchingCases.length === 1) {
+                caseSelectContainer.classList.add('d-none');
+                populateCaseDetails(matchingCases[0]);
+            } else {
+                matchingCases.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.treatmentCaseId || item.TreatmentCaseId;
+                    opt.textContent = (item.packageName || item.PackageName) + ' (Remaining: ' + (item.remainingSessions || item.RemainingSessions) + ')';
+                    opt.setAttribute('data-item', JSON.stringify(item));
+                    caseSelect.appendChild(opt);
+                });
+                caseSelectContainer.classList.remove('d-none');
+                populateCaseDetails(matchingCases[0]);
+            }
+        }
 
-            document.getElementById('infoPackageName').textContent = opt.getAttribute('data-package') || '';
-            document.getElementById('infoSessionNum').textContent = opt.getAttribute('data-session-num') || '1';
-            document.getElementById('infoCompleted').textContent = opt.getAttribute('data-completed') || '0';
-            document.getElementById('infoTotal').textContent = opt.getAttribute('data-total') || '0';
+        function onTreatmentCaseSelected(selectEl) {
+            var opt = selectEl.options[selectEl.selectedIndex];
+            if (opt && opt.getAttribute('data-item')) {
+                var item = JSON.parse(opt.getAttribute('data-item'));
+                populateCaseDetails(item);
+            }
+        }
+
+        function populateCaseDetails(item) {
+            var infoCard = document.getElementById('patientTreatmentInfoCard');
+            document.getElementById('treatPatientId').value = item.patientId || item.PatientId || '';
+            document.getElementById('treatCaseId').value = item.treatmentCaseId || item.TreatmentCaseId || '';
+            document.getElementById('treatSessionId').value = item.nextUnscheduledSessionId || item.NextUnscheduledSessionId || '';
+
+            document.getElementById('infoPackageName').textContent = item.packageName || item.PackageName || 'Treatment Case';
+            document.getElementById('infoCompleted').textContent = item.completedSessions !== undefined ? item.completedSessions : (item.CompletedSessions || 0);
+            document.getElementById('infoTotal').textContent = item.totalSessions !== undefined ? item.totalSessions : (item.TotalSessions || 0);
+            document.getElementById('infoSessionNum').textContent = item.nextSessionNumber !== undefined ? item.nextSessionNumber : (item.NextSessionNumber || 1);
 
             infoCard.classList.remove('d-none');
         }
@@ -1070,6 +1180,7 @@
 
         function renderYearView(year, eventsList) {
             var grid = document.getElementById('yearCalendarGrid');
+            if (!grid) return;
             grid.innerHTML = '';
             var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1083,7 +1194,7 @@
                 (function(monthIdx) {
                     title.onclick = function() {
                         var targetDate = year + '-' + String(monthIdx + 1).padStart(2, '0') + '-01';
-                        window.location.href = '?view=month&date=' + targetDate;
+                        window.location.href = '?tab=schedule&view=month&date=' + targetDate;
                     };
                 })(m);
                 card.appendChild(title);
@@ -1111,7 +1222,6 @@
                     cell.textContent = day;
                     var dateKey = year + '-' + String(m + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
 
-                    // Check day status
                     var hasAppt = eventsList.some(e => e.start && e.start.startsWith(dateKey) && e.eventType === 'Appointment');
                     var hasAvailable = eventsList.some(e => e.start && e.start.startsWith(dateKey) && e.eventType === 'Availability');
                     if (hasAppt) cell.className = 'has-appt';
@@ -1185,10 +1295,10 @@
             var fcView = currentView === 'day' ? 'timeGridDay' : currentView === 'month' ? 'dayGridMonth' : 'timeGridWeek';
             var calendarEl = document.getElementById('calendar');
 
-            if (currentView === 'year') {
+            if (calendarEl && currentView === 'year') {
                 var year = new Date(selectedDateStr).getFullYear();
                 renderYearView(year, rawEvents);
-            } else {
+            } else if (calendarEl) {
                 var fcEvents = formatEventsForFC(rawEvents, 'all');
 
                 var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -1219,12 +1329,8 @@
                         if (status.includes('completed')) return ['fc-event-completed'];
                         if (status.includes('inprogress') || status.includes('in progress')) return ['fc-event-inprogress'];
                         if (status.includes('pending') || status.includes('reschedule')) return ['fc-event-pending'];
-                        if (status.includes('partial')) {
-                            return ['fc-event-partial'];
-                        }
-                        if (type === 'blocked' || status.includes('blocked')) {
-                            return ['fc-event-blocked'];
-                        }
+                        if (status.includes('partial')) return ['fc-event-partial'];
+                        if (type === 'blocked' || status.includes('blocked')) return ['fc-event-blocked'];
                         if (type === 'appointment' || type === 'booked' || status.includes('booked') || status.includes('approved') || status.includes('confirmed')) {
                             return ['fc-event-booked'];
                         }
@@ -1239,13 +1345,18 @@
                         var container = document.createElement('div');
                         container.className = 'fc-custom-event-container';
 
+                        // Tooltip WITHOUT AppointmentId
                         var tooltipParts = [];
                         if (props.bookingCode) tooltipParts.push('[' + props.bookingCode + ']');
-                        if (props.appointmentId) tooltipParts.push('ApptId: ' + props.appointmentId);
-                        else if (props.slotId) tooltipParts.push('SlotId: ' + props.slotId);
+                        if (props.patientName) tooltipParts.push(props.patientName);
+                        if (props.treatmentCaseName) tooltipParts.push('(' + props.treatmentCaseName + ')');
                         if (tooltipParts.length > 0) {
                             container.setAttribute('title', tooltipParts.join(' '));
                         }
+
+                        var startTime = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
+                        var endTime = event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
+                        var timeRangeStr = (startTime && endTime) ? (startTime + ' - ' + endTime) : event.title;
 
                         if (viewType === 'dayGridMonth') {
                             var monthTitle = document.createElement('div');
@@ -1257,24 +1368,26 @@
                         } else {
                             var timeEl = document.createElement('div');
                             timeEl.className = 'fc-custom-event-time';
-                            var startTime = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
-                            var endTime = event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
-                            timeEl.textContent = (startTime && endTime) ? (startTime + ' - ' + endTime) : event.title;
+                            timeEl.textContent = timeRangeStr + (props.bookingCode ? ' [' + props.bookingCode + ']' : '');
                             container.appendChild(timeEl);
 
                             var titleEl = document.createElement('div');
                             titleEl.className = 'fc-custom-event-title';
-                            titleEl.textContent = props.patientName
-                                ? props.patientName + (displayStatus ? ' - ' + displayStatus : '')
-                                : event.title;
-
-                            if (props.hasNotes || (props.description && props.description.trim() !== '')) {
-                                var noteIcon = document.createElement('span');
-                                noteIcon.className = 'fc-custom-event-note-icon';
-                                noteIcon.textContent = ' 📝';
-                                titleEl.appendChild(noteIcon);
+                            if (props.patientName) {
+                                titleEl.textContent = props.patientName;
+                            } else if (props.eventType === 'Availability') {
+                                titleEl.textContent = 'Available (' + (props.currentBookings || 0) + '/' + (props.maxPatients || 1) + ')';
+                            } else {
+                                titleEl.textContent = event.title;
                             }
                             container.appendChild(titleEl);
+
+                            if (props.treatmentCaseName || props.sessionNumber) {
+                                var subEl = document.createElement('div');
+                                subEl.className = 'fc-custom-event-sub';
+                                subEl.textContent = (props.treatmentCaseName || 'Treatment Case') + (props.sessionNumber ? ' (Session #' + props.sessionNumber + ')' : '');
+                                container.appendChild(subEl);
+                            }
                         }
 
                         return { domNodes: [container] };
@@ -1283,8 +1396,6 @@
                         var props = info.event.extendedProps;
                         if (props.eventType === 'Appointment' && props.appointmentId) {
                             window.location.href = '/Doctor/Appointments/Details/' + encodeURIComponent(props.appointmentId);
-                        } else if (props.eventType === 'Note') {
-                            openViewNoteModal(props.start.split('T')[0], 'Note', props.title, props.description || props.title);
                         } else if (props.slotId) {
                             document.getElementById('detailSlotId').value = props.slotId;
                             document.getElementById('deleteSlotId').value = props.slotId;
@@ -1363,57 +1474,86 @@
             }
 
             // Toolbar Controls
-            document.getElementById('btnPrev').addEventListener('click', function() {
-                var dt = new Date(selectedDateStr);
-                if (currentView === 'day') dt.setDate(dt.getDate() - 1);
-                else if (currentView === 'month') dt.setMonth(dt.getMonth() - 1);
-                else if (currentView === 'year') dt.setFullYear(dt.getFullYear() - 1);
-                else dt.setDate(dt.getDate() - 7);
-                var newDate = dt.toISOString().split('T')[0];
-                window.location.href = '?view=' + currentView + '&date=' + newDate;
-            });
+            var btnPrev = document.getElementById('btnPrev');
+            if (btnPrev) {
+                btnPrev.addEventListener('click', function() {
+                    var dt = new Date(selectedDateStr);
+                    if (currentView === 'day') dt.setDate(dt.getDate() - 1);
+                    else if (currentView === 'month') dt.setMonth(dt.getMonth() - 1);
+                    else if (currentView === 'year') dt.setFullYear(dt.getFullYear() - 1);
+                    else dt.setDate(dt.getDate() - 7);
+                    var newDate = dt.toISOString().split('T')[0];
+                    window.location.href = '?tab=schedule&view=' + currentView + '&date=' + newDate;
+                });
+            }
 
-            document.getElementById('btnToday').addEventListener('click', function() {
-                var todayStr = new Date().toISOString().split('T')[0];
-                window.location.href = '?view=' + currentView + '&date=' + todayStr;
-            });
+            var btnToday = document.getElementById('btnToday');
+            if (btnToday) {
+                btnToday.addEventListener('click', function() {
+                    var todayStr = new Date().toISOString().split('T')[0];
+                    window.location.href = '?tab=schedule&view=' + currentView + '&date=' + todayStr;
+                });
+            }
 
-            document.getElementById('btnNext').addEventListener('click', function() {
-                var dt = new Date(selectedDateStr);
-                if (currentView === 'day') dt.setDate(dt.getDate() + 1);
-                else if (currentView === 'month') dt.setMonth(dt.getMonth() + 1);
-                else if (currentView === 'year') dt.setFullYear(dt.getFullYear() + 1);
-                else dt.setDate(dt.getDate() + 7);
-                var newDate = dt.toISOString().split('T')[0];
-                window.location.href = '?view=' + currentView + '&date=' + newDate;
-            });
+            var btnNext = document.getElementById('btnNext');
+            if (btnNext) {
+                btnNext.addEventListener('click', function() {
+                    var dt = new Date(selectedDateStr);
+                    if (currentView === 'day') dt.setDate(dt.getDate() + 1);
+                    else if (currentView === 'month') dt.setMonth(dt.getMonth() + 1);
+                    else if (currentView === 'year') dt.setFullYear(dt.getFullYear() + 1);
+                    else dt.setDate(dt.getDate() + 7);
+                    var newDate = dt.toISOString().split('T')[0];
+                    window.location.href = '?tab=schedule&view=' + currentView + '&date=' + newDate;
+                });
+            }
 
             var calendarDatePicker = document.getElementById('calendarDatePicker');
             if (calendarDatePicker) {
                 calendarDatePicker.addEventListener('change', function() {
-                    window.location.href = '?view=day&date=' + this.value;
+                    window.location.href = '?tab=schedule&view=day&date=' + this.value;
                 });
             }
 
             var createSlotForm = document.getElementById('createSlotForm');
             if (createSlotForm) {
                 createSlotForm.addEventListener('submit', function(event) {
+                    var alertBox = document.getElementById('slotFormAlert');
                     var dateValue = document.getElementById('createSlotDate').value;
                     var startValue = document.getElementById('createStartTime').value;
+                    
                     if (isPastSlot(dateValue, startValue)) {
                         event.preventDefault();
-                        window.alert('Cannot create a slot or appointment in the past.');
+                        alertBox.textContent = 'Cannot schedule a slot or appointment in the past.';
+                        alertBox.classList.remove('d-none');
+                        return;
                     }
+
+                    var isTreatmentMode = document.getElementById('typeTreatment').checked;
+                    if (isTreatmentMode) {
+                        var patVal = document.getElementById('treatPatientId').value;
+                        var caseVal = document.getElementById('treatCaseId').value;
+                        if (!patVal || !caseVal) {
+                            event.preventDefault();
+                            alertBox.textContent = 'Please select a patient and active treatment case before saving.';
+                            alertBox.classList.remove('d-none');
+                            return;
+                        }
+                    }
+                    alertBox.classList.add('d-none');
                 });
             }
 
-            document.getElementById('eventFilterSelect').addEventListener('change', function() {
-                if (window.fcObj) {
-                    window.fcObj.removeAllEvents();
-                    var filtered = formatEventsForFC(rawEvents, this.value);
-                    window.fcObj.addEventSource(filtered);
-                }
-            });
+            var eventFilterSelect = document.getElementById('eventFilterSelect');
+            if (eventFilterSelect) {
+                eventFilterSelect.addEventListener('change', function() {
+                    if (window.fcObj) {
+                        window.fcObj.removeAllEvents();
+                        var filtered = formatEventsForFC(rawEvents, this.value);
+                        window.fcObj.addEventSource(filtered);
+                    }
+                });
+            }
         });
     </script>
 }

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using OPCBS.Web.DTOs;
 using OPCBS.Domain.Constants;
+using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 using System;
 using System.Collections.Generic;
@@ -17,58 +17,183 @@ public class DetailsModel : PageModel
     private readonly IPatientRecordApiService _patientService;
     private readonly IConsultationNoteApiService _noteService;
     private readonly ITreatmentPackageApiService _pkgService;
+    private readonly ITreatmentCaseApiService _caseApi;
+    private readonly IAppointmentApiService _appointmentApi;
+    private readonly IPsychometricApiService _psychoApi;
 
     public DetailsModel(
-        IPatientRecordApiService patientService, 
+        IPatientRecordApiService patientService,
         IConsultationNoteApiService noteService,
-        ITreatmentPackageApiService pkgService)
+        ITreatmentPackageApiService pkgService,
+        ITreatmentCaseApiService caseApi,
+        IAppointmentApiService appointmentApi,
+        IPsychometricApiService psychoApi)
     {
         _patientService = patientService;
         _noteService = noteService;
         _pkgService = pkgService;
+        _caseApi = caseApi;
+        _appointmentApi = appointmentApi;
+        _psychoApi = psychoApi;
     }
 
     public PatientRecordDto PatientRecord { get; set; } = default!;
     public List<ConsultationNoteDto> ConsultationNotes { get; set; } = new();
     public List<TreatmentPackageDto> TreatmentPackages { get; set; } = new();
     public List<TreatmentPackageDto> TemplatePackages { get; set; } = new();
-    public string? Error { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(Guid id)
+    // Treatment & Risk Data
+    public List<TreatmentCaseListWebDto> PatientCases { get; set; } = new();
+    public Dictionary<Guid, TreatmentCaseRiskWebDto> CaseRisks { get; set; } = new();
+    public List<TreatmentGoalWebDto> ActiveGoals { get; set; } = new();
+    public List<MoodEntryWebDto> RecentMoodEntries { get; set; } = new();
+    public List<TreatmentCaseFileWebDto> PatientFiles { get; set; } = new();
+    public List<HomeworkWebDto> OverdueHomework { get; set; } = new();
+    public List<PsychometricSubmissionDto> PsychoSubmissions { get; set; } = new();
+
+    // Appointment Data
+    public List<AppointmentListItemDto> PatientAppointments { get; set; } = new();
+    public AppointmentListItemDto? NextAppointment { get; set; }
+    public int NoShowCount { get; set; }
+
+    public string? Error { get; set; }
+    public bool IsLoading { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string ActiveTab { get; set; } = "overview";
+
+    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
     {
+        ActiveTab = string.IsNullOrWhiteSpace(tab) ? "overview" : tab;
+        IsLoading = true;
+
         var recordResult = await _patientService.GetByIdAsync(id);
         if (recordResult.Error != null || recordResult.Data == null)
         {
-            TempData["ErrorMessage"] = "Patient record not found.";
+            Error = recordResult.Error ?? "Patient record not found.";
+            TempData["ErrorMessage"] = Error;
             return RedirectToPage("./Index");
         }
 
         PatientRecord = recordResult.Data;
 
+        // Fetch Consultation Notes
         var notesResult = await _noteService.GetByPatientRecordIdAsync(id);
-        if (notesResult.Error == null)
+        if (notesResult.Error == null && notesResult.Data != null)
         {
-            ConsultationNotes = notesResult.Data;
+            ConsultationNotes = notesResult.Data.OrderByDescending(n => n.DisplayConsultationDate).ToList();
         }
 
         if (PatientRecord.PatientId.HasValue)
         {
-            var (pkgs, _, _) = await _pkgService.GetAllAsync(1, 200);
-            if (pkgs != null)
-            {
-                // Active packages for this patient (exclude cancelled/rejected)
-                TreatmentPackages = pkgs
-                    .Where(p => p.PatientId == PatientRecord.PatientId.Value 
-                                && p.Status != "Cancelled" && p.Status != "Rejected")
-                    .ToList();
+            var patientGuid = PatientRecord.PatientId.Value;
 
-                // Template packages (no patient assigned) that can be assigned
-                TemplatePackages = pkgs
-                    .Where(p => !p.PatientId.HasValue && p.Status == "Created")
-                    .ToList();
+            // 1. Fetch Appointments for this patient
+            try
+            {
+                var (allAppts, _, _) = await _appointmentApi.GetDoctorAppointmentsAsync(new AppointmentFilterDto { PageSize = 200 });
+                if (allAppts != null)
+                {
+                    PatientAppointments = allAppts
+                        .Where(a => a.PatientId == patientGuid)
+                        .OrderByDescending(a => a.StartAt)
+                        .ToList();
+
+                    NoShowCount = PatientAppointments.Count(a => a.Status == 8);
+
+                    NextAppointment = PatientAppointments
+                        .Where(a => (a.Status == 0 || a.Status == 1 || a.Status == 3) && a.StartAt >= DateTimeOffset.UtcNow)
+                        .OrderBy(a => a.StartAt)
+                        .FirstOrDefault();
+                }
             }
+            catch { }
+
+            // 2. Fetch Packages
+            try
+            {
+                var (pkgs, _, _) = await _pkgService.GetAllAsync(1, 200);
+                if (pkgs != null)
+                {
+                    TreatmentPackages = pkgs
+                        .Where(p => p.PatientId == patientGuid && p.Status != "Cancelled" && p.Status != "Rejected")
+                        .ToList();
+
+                    TemplatePackages = pkgs
+                        .Where(p => !p.PatientId.HasValue && p.Status == "Created")
+                        .ToList();
+                }
+            }
+            catch { }
+
+            // 3. Fetch Treatment Cases (strictly by PatientId Guid)
+            try
+            {
+                var (allCases, _) = await _caseApi.GetMyDoctorCasesAsync();
+                if (allCases != null)
+                {
+                    PatientCases = allCases
+                        .Where(c => c.PatientId == patientGuid)
+                        .ToList();
+
+                    var allGoals = new List<TreatmentGoalWebDto>();
+                    var allMood = new List<MoodEntryWebDto>();
+                    var allHomework = new List<HomeworkWebDto>();
+                    var allFiles = new List<TreatmentCaseFileWebDto>();
+                    var allSubmissions = new List<PsychometricSubmissionDto>();
+
+                    var caseData = await Task.WhenAll(PatientCases.Select(async tc =>
+                    {
+                        var riskTask = _caseApi.GetCaseRiskAsync(tc.Id);
+                        var goalsTask = _caseApi.GetGoalsAsync(tc.Id);
+                        var moodTask = _caseApi.GetMoodEntriesAsync(tc.Id);
+                        var homeworkTask = _caseApi.GetHomeworkAsync(tc.Id);
+                        var filesTask = _caseApi.GetPatientFilesAsync(tc.Id);
+                        var submissionsTask = _psychoApi.GetSubmissionsByCaseAsync(tc.Id);
+
+                        await Task.WhenAll(riskTask, goalsTask, moodTask, homeworkTask, filesTask, submissionsTask);
+                        return (CaseId: tc.Id, Risk: await riskTask, Goals: await goalsTask, Mood: await moodTask,
+                            Homework: await homeworkTask, Files: await filesTask, Submissions: await submissionsTask);
+                    }));
+
+                    foreach (var data in caseData)
+                    {
+                        if (data.Risk.Data != null) CaseRisks[data.CaseId] = data.Risk.Data;
+                        allGoals.AddRange(data.Goals.Data);
+                        allMood.AddRange(data.Mood.Data);
+                        allHomework.AddRange(data.Homework.Data);
+                        allFiles.AddRange(data.Files.Data);
+                        allSubmissions.AddRange(data.Submissions.Data);
+                    }
+
+                    ActiveGoals = allGoals
+                        .Where(g => g.Status == 0 || g.Status == 1)
+                        .OrderByDescending(g => g.Priority)
+                        .ThenBy(g => g.TargetDate)
+                        .ToList();
+
+                    RecentMoodEntries = allMood
+                        .OrderByDescending(m => m.RecordedAt)
+                        .Take(30)
+                        .ToList();
+
+                    OverdueHomework = allHomework
+                        .Where(h => h.IsOverdue)
+                        .ToList();
+
+                    PatientFiles = allFiles
+                        .OrderByDescending(file => file.UploadedAt)
+                        .ToList();
+
+                    PsychoSubmissions = allSubmissions
+                        .OrderByDescending(s => s.SubmittedAt)
+                        .ToList();
+                }
+            }
+            catch { }
         }
 
+        IsLoading = false;
         return Page();
     }
 
@@ -85,7 +210,6 @@ public class DetailsModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        // Get the template package details
         var (templatePkg, tplError) = await _pkgService.GetByIdAsync(AssignTemplateId);
         if (templatePkg == null)
         {
@@ -93,7 +217,6 @@ public class DetailsModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        // Get patient record to get PatientId
         var (patientRecord, _) = await _patientService.GetByIdAsync(id);
         if (patientRecord == null || !patientRecord.PatientId.HasValue)
         {
@@ -101,7 +224,6 @@ public class DetailsModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        // Create a new package from template for this patient
         var dto = new CreateTreatmentPackageDto
         {
             Name = templatePkg.Name,

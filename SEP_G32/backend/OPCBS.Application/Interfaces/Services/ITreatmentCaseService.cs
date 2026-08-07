@@ -24,6 +24,9 @@ public interface ITreatmentCaseService
     /// <summary>Get all Treatment Cases for a patient</summary>
     Task<ApiResponse<List<TreatmentCaseListDto>>> GetByPatientAsync(Guid patientUserId, CancellationToken ct = default);
 
+    /// <summary>Get doctor-facing treatment dashboard data, including attention risk and unread messages.</summary>
+    Task<ApiResponse<DoctorTreatmentDashboardDto>> GetDoctorDashboardAsync(Guid doctorUserId, CancellationToken ct = default);
+
     /// <summary>Update Treatment Case info</summary>
     Task<ApiResponse<TreatmentCaseDto>> UpdateAsync(Guid caseId, UpdateTreatmentCaseDto dto, CancellationToken ct = default);
 
@@ -58,19 +61,27 @@ public interface ITreatmentCaseService
     // === Goals ===
 
     /// <summary>Create a new treatment goal</summary>
-    Task<ApiResponse<TreatmentGoalDto>> CreateGoalAsync(CreateGoalDto dto, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentGoalDto>> CreateGoalAsync(CreateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
 
     /// <summary>Update goal info, status, or overall progress</summary>
-    Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
 
     /// <summary>Get all goals for a Treatment Case</summary>
     Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     /// <summary>Record a new goal progress evaluation history entry</summary>
-    Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentGoalProgressDto>> RecordGoalProgressAsync(CreateGoalProgressDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
 
     /// <summary>Get progress evaluation history for a goal</summary>
-    Task<ApiResponse<List<TreatmentGoalProgressDto>>> GetGoalProgressHistoryAsync(Guid goalId, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentGoalProgressDto>>> GetGoalProgressHistoryAsync(Guid goalId, Guid? requestingUserId = null, CancellationToken ct = default);
+
+    Task<ApiResponse<GoalDetailDto>> CreateGoalDetailAsync(Guid goalId, CreateGoalDetailDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse<GoalDetailDto>> UpdateGoalDetailAsync(Guid detailId, UpdateGoalDetailDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse> DeleteGoalDetailAsync(Guid detailId, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse<GoalSuccessCriteriaDto>> CreateSuccessCriteriaAsync(Guid goalId, CreateGoalSuccessCriteriaDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse<GoalSuccessCriteriaDto>> UpdateSuccessCriteriaAsync(Guid criteriaId, UpdateGoalSuccessCriteriaDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse> DeleteSuccessCriteriaAsync(Guid criteriaId, Guid? doctorUserId = null, CancellationToken ct = default);
+    Task<ApiResponse<SuccessCriteriaEvaluationDto>> EvaluateSuccessCriteriaAsync(Guid criteriaId, CreateSuccessCriteriaEvaluationDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
 
     // === Homework / Therapy Assignments ===
 
@@ -93,6 +104,14 @@ public interface ITreatmentCaseService
 
     /// <summary>Get mood entries for a treatment case</summary>
     Task<ApiResponse<List<MoodEntryDto>>> GetMoodEntriesAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
+
+    // === Doctor attention risk and patient files ===
+
+    /// <summary>Get operational attention-risk signals for a treatment case. Doctor access only.</summary>
+    Task<ApiResponse<TreatmentCaseRiskDto>> GetCaseRiskAsync(Guid caseId, Guid doctorUserId, CancellationToken ct = default);
+
+    /// <summary>Get patient-submitted files that belong to a treatment case.</summary>
+    Task<ApiResponse<List<TreatmentCaseFileDto>>> GetPatientFilesAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 
     // === Progress & Timeline ===
 

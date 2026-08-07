@@ -30,15 +30,25 @@ public class IndexModel : PageModel
     private readonly IScheduleApiService _api;
     public IndexModel(IScheduleApiService api) => _api = api;
 
+    [BindProperty(SupportsGet = true)] public string Tab { get; set; } = "schedule";
     [BindProperty(SupportsGet = true)] public string View { get; set; } = "week";
     [BindProperty(SupportsGet = true)] public string Date { get; set; } = "";
     [BindProperty(SupportsGet = true)] public string SearchNote { get; set; } = "";
+    [BindProperty(SupportsGet = true)] public string NoteCategory { get; set; } = "";
+    [BindProperty(SupportsGet = true)] public string NoteDate { get; set; } = "";
+    [BindProperty(SupportsGet = true)] public string NoteSort { get; set; } = "newest";
+    [BindProperty(SupportsGet = true)] public int NotePage { get; set; } = 1;
 
     public List<DayOffDto> DaysOff { get; set; } = new();
     public List<AppointmentSlotDto> ActualSlots { get; set; } = new();
     public List<CalendarEventDto> CalendarEvents { get; set; } = new();
     public List<ScheduleNoteItemDto> ScheduleNotes { get; set; } = new();
+    public List<ScheduleNoteItemDto> PaginatedNotes { get; set; } = new();
     public List<EligibleTreatmentPatientDto> EligiblePatients { get; set; } = new();
+
+    public int TotalNoteItems { get; set; }
+    public int TotalNotePages { get; set; }
+    public int PageSize { get; set; } = 10;
 
     public string? Error { get; set; }
     public string? Success { get; set; }
@@ -100,11 +110,14 @@ public class IndexModel : PageModel
         var (events, err1) = await _api.GetCalendarEventsAsync(PeriodStart, PeriodEnd);
         var (slotsData, err3) = await _api.GetMySlotsAsync();
         var (eligiblePatients, _) = await _api.GetEligibleTreatmentPatientsAsync();
+        var (notesData, err4) = await _api.GetNotesAsync(SearchNote, NoteCategory, null, null, 1, 1000);
 
-        CalendarEvents = events.Where(e => !string.Equals(e.EventType, "DayOff", StringComparison.OrdinalIgnoreCase)).ToList();
+        // Calendar events excluding DayOff and Note events (notes live in dedicated Notes tab)
+        CalendarEvents = events.Where(e => !string.Equals(e.EventType, "DayOff", StringComparison.OrdinalIgnoreCase) &&
+                                           !string.Equals(e.EventType, "Note", StringComparison.OrdinalIgnoreCase)).ToList();
         ActualSlots = slotsData?.Slots ?? new();
         EligiblePatients = eligiblePatients ?? new();
-        Error = Error ?? err1 ?? err3;
+        Error = Error ?? err1 ?? err3 ?? err4;
 
         // Calculate summary statistics strictly for current period
         var pStart = DateOnly.FromDateTime(PeriodStart);
@@ -116,45 +129,50 @@ public class IndexModel : PageModel
         PeriodBlockedSlots = ActualSlots.Count(s => DateOnly.TryParse(s.Date, out var d) && d >= pStart && d < pEnd && s.Status == 2);
         PeriodDaysOffCount = DaysOff.Count(d => d.StartDate.Date < PeriodEnd && d.EndDate.Date >= PeriodStart);
 
-        // Build Schedule Notes list from slots with notes & standalone notes
-        var notesList = new List<ScheduleNoteItemDto>();
-        foreach (var slot in ActualSlots.Where(s => !string.IsNullOrWhiteSpace(s.Notes)))
+        // Build Schedule Notes list from dedicated ScheduleNote API
+        var notesList = (notesData ?? new()).Select(n => new ScheduleNoteItemDto
         {
-            var relatedEvent = CalendarEvents.FirstOrDefault(e => e.SlotId == slot.Id);
-            var patName = relatedEvent?.PatientName ?? "General availability";
-            var patId = relatedEvent?.PatientId;
-            var apptId = relatedEvent?.AppointmentId;
-            var apptStatus = relatedEvent?.Status ?? "";
+            Id = n.Id,
+            SlotId = Guid.Empty,
+            Date = n.Date,
+            TimeRange = !string.IsNullOrWhiteSpace(n.StartTime) && !string.IsNullOrWhiteSpace(n.EndTime) ? $"{n.StartTime} - {n.EndTime}" : "All day",
+            Title = n.Title,
+            Content = n.Content,
+            Category = n.Category,
+            CreatedAtDisplay = n.CreatedAt.ToString("MMM dd, yyyy HH:mm"),
+            PatientName = n.PatientName ?? "General availability",
+            PatientId = n.PatientId,
+            TreatmentInfo = n.TreatmentCaseName ?? "N/A"
+        }).ToList();
 
-            notesList.Add(new ScheduleNoteItemDto
-            {
-                Id = slot.Id,
-                SlotId = slot.Id,
-                Date = slot.Date,
-                TimeRange = $"{slot.StartTime} - {slot.EndTime}",
-                Title = slot.Notes!.Length > 30 ? slot.Notes.Substring(0, 30) + "..." : slot.Notes,
-                Content = slot.Notes,
-                Category = slot.Status == 0 ? "Availability Note" : slot.Status == 1 ? "Booked Slot Note" : "Blocked Slot Note",
-                CreatedAtDisplay = slot.Date,
-                PatientName = patName,
-                PatientId = patId,
-                RelatedAppointmentId = apptId,
-                AppointmentStatus = apptStatus,
-                TreatmentInfo = relatedEvent?.TreatmentCaseId != null ? "Treatment Case" : "N/A"
-            });
+        // Apply Date filter
+        if (!string.IsNullOrWhiteSpace(NoteDate))
+        {
+            notesList = notesList.Where(n => n.Date == NoteDate).ToList();
         }
 
-        // Filter notes search
-        if (!string.IsNullOrWhiteSpace(SearchNote))
+        // Apply Sorting
+        if (NoteSort == "oldest")
         {
-            var search = SearchNote.Trim().ToLowerInvariant();
-            notesList = notesList.Where(n => n.Title.ToLowerInvariant().Contains(search) ||
-                                            n.Content.ToLowerInvariant().Contains(search) ||
-                                            n.Date.Contains(search)).ToList();
+            notesList = notesList.OrderBy(n => n.Date).ThenBy(n => n.TimeRange).ToList();
+        }
+        else
+        {
+            notesList = notesList.OrderByDescending(n => n.Date).ThenByDescending(n => n.TimeRange).ToList();
         }
 
-        ScheduleNotes = notesList.OrderByDescending(n => n.Date).ToList();
+        ScheduleNotes = notesList;
         PeriodNotesCount = ScheduleNotes.Count;
+
+        // Pagination
+        PageSize = 10;
+        TotalNoteItems = ScheduleNotes.Count;
+        TotalNotePages = (int)Math.Ceiling(TotalNoteItems / (double)PageSize);
+        if (TotalNotePages < 1) TotalNotePages = 1;
+        if (NotePage < 1) NotePage = 1;
+        if (NotePage > TotalNotePages) NotePage = TotalNotePages;
+
+        PaginatedNotes = ScheduleNotes.Skip((NotePage - 1) * PageSize).Take(PageSize).ToList();
     }
 
     public async Task<IActionResult> OnPostCreateSlotAsync(string date, string startTime, string endTime, string? notes, int? maxPatients)
@@ -227,38 +245,65 @@ public class IndexModel : PageModel
         return RedirectToPage(new { view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostCreateNoteAsync(string date, string? startTime, string? endTime, string noteTitle, string? noteContent)
+    public async Task<IActionResult> OnPostCreateNoteAsync(string date, string? startTime, string? endTime, string noteTitle, string noteContent, string? category, Guid? patientId, Guid? treatmentCaseId)
     {
-        var content = string.IsNullOrWhiteSpace(noteTitle) ? noteContent : $"{noteTitle}: {noteContent}";
-        var start = string.IsNullOrWhiteSpace(startTime) ? "08:00" : startTime;
-        var end = string.IsNullOrWhiteSpace(endTime) ? "09:00" : endTime;
-
-        var dto = new CreateSlotDto
+        var dto = new CreateScheduleNoteWebDto
         {
             Date = date,
-            StartTime = start,
-            EndTime = end,
-            Notes = content
+            StartTime = startTime,
+            EndTime = endTime,
+            Title = noteTitle,
+            Content = noteContent,
+            Category = category,
+            PatientId = patientId,
+            TreatmentCaseId = treatmentCaseId
         };
-        var (data, error) = await _api.CreateSlotAsync(dto);
+        var (data, error) = await _api.CreateNoteAsync(dto);
         if (error != null) TempData["Error"] = error;
-        else TempData["Success"] = "Schedule note added successfully.";
-        return RedirectToPage(new { view = View, date = Date });
+        else TempData["Success"] = "Schedule note created successfully.";
+        return RedirectToPage(new { tab = "notes", view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostUpdateNoteAsync(Guid slotId, string? notes)
+    public async Task<IActionResult> OnPostUpdateNoteAsync(Guid noteId, string date, string? startTime, string? endTime, string noteTitle, string noteContent, string? category, Guid? patientId, Guid? treatmentCaseId)
     {
-        var (success, error) = await _api.UpdateSlotNotesAsync(slotId, notes);
-        if (!success) TempData["Error"] = error;
+        var dto = new UpdateScheduleNoteWebDto
+        {
+            Date = date,
+            StartTime = startTime,
+            EndTime = endTime,
+            Title = noteTitle,
+            Content = noteContent,
+            Category = category,
+            PatientId = patientId,
+            TreatmentCaseId = treatmentCaseId
+        };
+        var (data, error) = await _api.UpdateNoteAsync(noteId, dto);
+        if (error != null) TempData["Error"] = error;
         else TempData["Success"] = "Schedule note updated successfully.";
-        return RedirectToPage(new { view = View, date = Date });
+        return RedirectToPage(new { tab = "notes", view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostDeleteNoteAsync(Guid slotId)
+    public async Task<IActionResult> OnPostDeleteNoteAsync(Guid noteId)
     {
-        var (success, error) = await _api.UpdateSlotNotesAsync(slotId, null);
+        var (success, error) = await _api.DeleteNoteAsync(noteId);
         if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Schedule note removed.";
+        else TempData["Success"] = "Schedule note deleted.";
+        return RedirectToPage(new { tab = "notes", view = View, date = Date });
+    }
+
+    public async Task<IActionResult> OnPostAssignTreatmentSlotAsync(Guid slotId, Guid patientId, Guid treatmentCaseId, Guid treatmentSessionId, string? notes)
+    {
+        var dto = new AssignTreatmentSlotDto
+        {
+            SlotId = slotId,
+            PatientId = patientId,
+            TreatmentCaseId = treatmentCaseId,
+            TreatmentSessionId = treatmentSessionId,
+            Notes = notes
+        };
+        var (data, error) = await _api.AssignTreatmentSlotAsync(dto);
+        if (error != null) TempData["Error"] = error;
+        else TempData["Success"] = "Treatment patient assigned to slot successfully.";
         return RedirectToPage(new { view = View, date = Date });
     }
 

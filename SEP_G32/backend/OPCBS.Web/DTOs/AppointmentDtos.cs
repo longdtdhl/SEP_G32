@@ -16,6 +16,8 @@ public class CalendarEventDto
     public Guid? PatientId { get; set; }
     public Guid? TreatmentCaseId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public string? TreatmentCaseName { get; set; }
+    public int? SessionNumber { get; set; }
     public string? Description { get; set; }
     public string? BookingCode { get; set; }
     public bool HasNotes { get; set; }
@@ -51,6 +53,8 @@ public class AppointmentDto
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
     public string? TreatmentPackageName { get; set; }
     public int VisitCount { get; set; }
     public Guid? ProposedSlotId { get; set; }

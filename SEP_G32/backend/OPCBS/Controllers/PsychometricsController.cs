@@ -83,6 +83,17 @@ public class PsychometricsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/psychometrics/submissions/case/{caseId} - Get submissions for a treatment case</summary>
+    [Authorize]
+    [HttpGet("submissions/case/{caseId:guid}")]
+    public async Task<IActionResult> GetSubmissionsByCase(Guid caseId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _psychService.GetSubmissionsByCaseIdAsync(caseId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -73,8 +73,13 @@ public class TreatmentCaseDto
 public class TreatmentCaseListDto
 {
     public Guid Id { get; set; }
+    public Guid TreatmentPackageId { get; set; }
+    public Guid DoctorId { get; set; }
+    /// <summary>Canonical Patient UserId, including for legacy cases created with a profile ID.</summary>
+    public Guid PatientId { get; set; }
     public string CaseName { get; set; } = string.Empty;
     public string? PackageNameSnapshot { get; set; }
+    public string? PackageName { get; set; }
     public string? PatientName { get; set; }
     public string? DoctorName { get; set; }
     public int TotalSessions { get; set; }
@@ -176,6 +181,7 @@ public class TreatmentSessionDto
     public string? BookingCode { get; set; }
     public List<HomeworkDto> HomeworkList { get; set; } = new();
     public List<TreatmentGoalDto> LinkedGoals { get; set; } = new();
+    public List<GoalDetailDto> LinkedGoalDetails { get; set; } = new();
 
     public string StatusText => Status switch
     {
@@ -209,6 +215,7 @@ public class UpdateSessionDto
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
     public List<Guid>? LinkedGoalIds { get; set; }
+    public List<Guid>? LinkedGoalDetailIds { get; set; }
 }
 
 /// <summary>DTO to complete/update a session after it ends</summary>
@@ -225,6 +232,7 @@ public class CompleteSessionDto
     public int? MoodBefore { get; set; }
     public int? MoodAfter { get; set; }
     public List<Guid>? LinkedGoalIds { get; set; }
+    public List<Guid>? LinkedGoalDetailIds { get; set; }
 }
 
 /// <summary>DTO to reorder sessions</summary>
@@ -241,12 +249,14 @@ public class TreatmentGoalDto
 {
     public Guid Id { get; set; }
     public Guid TreatmentCaseId { get; set; }
+    public Guid? TemplateId { get; set; }
     public Guid? CreatedByDoctorId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int Category { get; set; }
     public string CategoryText { get; set; } = string.Empty;
     public int Priority { get; set; }
+    public int OrderIndex { get; set; }
     public int Status { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? TargetValue { get; set; }
@@ -254,11 +264,14 @@ public class TreatmentGoalDto
     public string? Unit { get; set; }
     public DateTime? TargetDate { get; set; }
     public DateTime? AchievedDate { get; set; }
+    public DateTime? StartDate { get; set; }
     public string? DoctorNotes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
     public List<TreatmentGoalProgressDto> ProgressHistory { get; set; } = new();
+    public List<GoalDetailDto> Details { get; set; } = new();
+    public List<GoalSuccessCriteriaDto> SuccessCriteria { get; set; } = new();
 
     public string PriorityText => Priority switch
     {
@@ -274,8 +287,9 @@ public class TreatmentGoalDto
         0 => "Not Started",
         1 => "In Progress",
         2 => "Achieved",
-        3 => "Deferred",
+        3 => "On Hold",
         4 => "Cancelled",
+        5 => "Draft",
         _ => "Unknown"
     };
 }
@@ -292,6 +306,11 @@ public class CreateGoalDto
     public decimal? CurrentValue { get; set; }
     public string? Unit { get; set; }
     public DateTime? TargetDate { get; set; }
+    public DateTime? StartDate { get; set; }
+    public Guid? TemplateId { get; set; }
+    public int? OrderIndex { get; set; }
+    public List<CreateGoalDetailDto> Details { get; set; } = new();
+    public List<CreateGoalSuccessCriteriaDto> SuccessCriteria { get; set; } = new();
 }
 
 /// <summary>DTO to update goal info or status</summary>
@@ -307,6 +326,8 @@ public class UpdateGoalDto
     public decimal? TargetValue { get; set; }
     public string? Unit { get; set; }
     public string? DoctorNotes { get; set; }
+    public DateTime? StartDate { get; set; }
+    public int? OrderIndex { get; set; }
 }
 
 /// <summary>Treatment goal progress evaluation record</summary>
@@ -315,6 +336,7 @@ public class TreatmentGoalProgressDto
     public Guid Id { get; set; }
     public Guid GoalId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public Guid? GoalDetailId { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? CurrentValue { get; set; }
     public string? DoctorComment { get; set; }
@@ -326,9 +348,115 @@ public class CreateGoalProgressDto
 {
     public Guid GoalId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public Guid? GoalDetailId { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? CurrentValue { get; set; }
     public string? DoctorComment { get; set; }
+}
+
+/// <summary>Goal milestone response DTO.</summary>
+public class GoalDetailDto
+{
+    public Guid Id { get; set; }
+    public Guid GoalId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int OrderIndex { get; set; }
+    public int ProgressPercent { get; set; }
+    public int Status { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public DateTime? CompletedDate { get; set; }
+    public List<TreatmentSessionGoalDto> Sessions { get; set; } = new();
+}
+
+public class CreateGoalDetailDto
+{
+    public Guid? GoalId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int? OrderIndex { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public List<Guid> TreatmentSessionIds { get; set; } = new();
+}
+
+public class UpdateGoalDetailDto
+{
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int? OrderIndex { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public int? Status { get; set; }
+    public List<Guid>? TreatmentSessionIds { get; set; }
+}
+
+public class TreatmentSessionGoalDto
+{
+    public Guid Id { get; set; }
+    public Guid TreatmentSessionId { get; set; }
+    public Guid GoalDetailId { get; set; }
+    public int OrderIndex { get; set; }
+    public string? PlannedActivity { get; set; }
+}
+
+public class GoalSuccessCriteriaDto
+{
+    public Guid Id { get; set; }
+    public Guid GoalId { get; set; }
+    public int CriteriaType { get; set; }
+    public int DataSource { get; set; }
+    public int Operator { get; set; }
+    public decimal? TargetValue { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public decimal Weight { get; set; }
+    public bool IsRequired { get; set; }
+    public string? Description { get; set; }
+    public List<SuccessCriteriaEvaluationDto> Evaluations { get; set; } = new();
+}
+
+public class CreateGoalSuccessCriteriaDto
+{
+    public Guid? GoalId { get; set; }
+    public int CriteriaType { get; set; }
+    public int DataSource { get; set; }
+    public int Operator { get; set; } = 1;
+    public decimal? TargetValue { get; set; }
+    public decimal Weight { get; set; } = 1;
+    public bool IsRequired { get; set; } = true;
+    public string? Description { get; set; }
+}
+
+public class UpdateGoalSuccessCriteriaDto
+{
+    public int? CriteriaType { get; set; }
+    public int? DataSource { get; set; }
+    public int? Operator { get; set; }
+    public decimal? TargetValue { get; set; }
+    public decimal? Weight { get; set; }
+    public bool? IsRequired { get; set; }
+    public string? Description { get; set; }
+}
+
+public class SuccessCriteriaEvaluationDto
+{
+    public Guid Id { get; set; }
+    public Guid SuccessCriteriaId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public bool IsPassed { get; set; }
+    public DateTime EvaluatedAt { get; set; }
+    public Guid? EvaluatedBy { get; set; }
+}
+
+public class CreateSuccessCriteriaEvaluationDto
+{
+    public Guid? TreatmentSessionId { get; set; }
+    public decimal? CurrentValue { get; set; }
 }
 
 // ==================== Homework / TherapyAssignment DTOs ====================
@@ -415,6 +543,58 @@ public class CreateMoodEntryDto
     public string? Note { get; set; }
 }
 
+// ==================== Doctor Dashboard, Risk & Files DTOs ====================
+
+/// <summary>
+/// Operational dashboard data for a doctor. Risk is an attention aid only and is not a clinical diagnosis.
+/// </summary>
+public class DoctorTreatmentDashboardDto
+{
+    public int ActiveCaseCount { get; set; }
+    public int HighRiskCaseCount { get; set; }
+    public int AttentionCaseCount { get; set; }
+    public int UnreadMessageCount { get; set; }
+    public List<TreatmentCaseRiskDto> AttentionCases { get; set; } = new();
+}
+
+/// <summary>Transparent, doctor-only attention indicators derived from existing treatment data.</summary>
+public class TreatmentCaseRiskDto
+{
+    public Guid TreatmentCaseId { get; set; }
+    public string CaseName { get; set; } = string.Empty;
+    public string? PatientName { get; set; }
+    public string Level { get; set; } = "Low";
+    public int Score { get; set; }
+    public int ConsecutiveNoShows { get; set; }
+    public decimal? RecentAverageMood { get; set; }
+    public decimal? PreviousAverageMood { get; set; }
+    public string? LatestAssessment { get; set; }
+    public DateTime? LatestAssessmentAt { get; set; }
+    public List<TreatmentRiskFactorDto> Factors { get; set; } = new();
+}
+
+public class TreatmentRiskFactorDto
+{
+    public string Code { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Severity { get; set; } = "Medium";
+    public string? Detail { get; set; }
+}
+
+/// <summary>Patient-owned homework submission file available to the case patient and treating doctor.</summary>
+public class TreatmentCaseFileDto
+{
+    public Guid Id { get; set; }
+    public Guid TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public Guid HomeworkId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FileUrl { get; set; } = string.Empty;
+    public string SourceType { get; set; } = "HomeworkSubmission";
+    public string HomeworkTitle { get; set; } = string.Empty;
+    public DateTime UploadedAt { get; set; }
+}
+
 // ==================== Progress & Timeline DTOs ====================
 
 /// <summary>Aggregated treatment progress overview</summary>
@@ -458,6 +638,10 @@ public class MoodTrendItem
     public int? MoodBefore { get; set; }
     public int? MoodAfter { get; set; }
     public int? MoodScore { get; set; }
+    public int? AnxietyScore { get; set; }
+    public int? StressScore { get; set; }
+    public int? SleepQualityScore { get; set; }
+    public string? Note { get; set; }
     public DateTime Date { get; set; }
 }
 

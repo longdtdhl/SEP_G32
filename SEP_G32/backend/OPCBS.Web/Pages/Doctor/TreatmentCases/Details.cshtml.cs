@@ -79,20 +79,25 @@ public class DetailsModel : PageModel
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
 
-        // Load psychometric assessments associated with appointment sessions if available
+        // Load psychometric assessments associated with this treatment case
         try
         {
-            var apptIds = Sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToList();
-            var assessments = new List<PsychometricSubmissionDto>();
-            foreach (var apptId in apptIds.Take(5))
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(id);
+            if (caseSubs != null && caseSubs.Any())
             {
-                var (sub, _) = await _psychApi.GetSubmissionByAppointmentAsync(apptId);
-                if (sub != null)
-                {
-                    assessments.Add(sub);
-                }
+                RecentAssessments = caseSubs.Take(5).ToList();
             }
-            RecentAssessments = assessments;
+            else
+            {
+                var apptIds = Sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToList();
+                var assessments = new List<PsychometricSubmissionDto>();
+                foreach (var apptId in apptIds.Take(5))
+                {
+                    var (sub, _) = await _psychApi.GetSubmissionByAppointmentAsync(apptId);
+                    if (sub != null) assessments.Add(sub);
+                }
+                RecentAssessments = assessments;
+            }
         }
         catch { }
 
@@ -141,12 +146,13 @@ public class DetailsModel : PageModel
 
     // POST: Record Goal Progress
     public async Task<IActionResult> OnPostRecordGoalProgressAsync(
-        Guid caseId, Guid goalId, Guid? sessionId, int progressPercent, decimal? currentValue, string? doctorComment)
+        Guid caseId, Guid goalId, Guid? sessionId, Guid? goalDetailId, int progressPercent, decimal? currentValue, string? doctorComment)
     {
         var dto = new CreateGoalProgressWebDto
         {
             GoalId = goalId,
             TreatmentSessionId = sessionId,
+            GoalDetailId = goalDetailId,
             ProgressPercent = progressPercent,
             CurrentValue = currentValue,
             DoctorComment = doctorComment
@@ -160,6 +166,83 @@ public class DetailsModel : PageModel
         {
             TempData["SuccessMessage"] = "Goal progress recorded successfully.";
         }
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Create Goal Detail (Milestone)
+    public async Task<IActionResult> OnPostCreateGoalDetailAsync(
+        Guid caseId, Guid goalId, string title, string? description, string? objective,
+        string? expectedOutcome, int? orderIndex, int? estimatedSessions)
+    {
+        var dto = new CreateGoalDetailWebDto
+        {
+            GoalId = goalId,
+            Title = title,
+            Description = description,
+            Objective = objective,
+            ExpectedOutcome = expectedOutcome,
+            OrderIndex = orderIndex,
+            EstimatedSessions = estimatedSessions
+        };
+        var (success, error) = await _api.CreateGoalDetailAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Milestone added." : (error ?? "Failed to add milestone.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Update Goal Detail Status
+    public async Task<IActionResult> OnPostUpdateGoalDetailAsync(
+        Guid caseId, Guid detailId, string? title, int? status, int? orderIndex)
+    {
+        var dto = new UpdateGoalDetailWebDto { Title = title, Status = status, OrderIndex = orderIndex };
+        var (success, error) = await _api.UpdateGoalDetailAsync(detailId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Milestone updated." : (error ?? "Failed to update milestone.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Delete Goal Detail
+    public async Task<IActionResult> OnPostDeleteGoalDetailAsync(Guid caseId, Guid detailId)
+    {
+        var (success, error) = await _api.DeleteGoalDetailAsync(detailId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Milestone deleted." : (error ?? "Failed to delete milestone.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Create Success Criteria
+    public async Task<IActionResult> OnPostCreateSuccessCriteriaAsync(
+        Guid caseId, Guid goalId, int criteriaType, string? description, decimal? targetValue, int operatorType)
+    {
+        var dto = new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = criteriaType,
+            Description = description,
+            TargetValue = targetValue,
+            Operator = operatorType
+        };
+        var (success, error) = await _api.CreateSuccessCriteriaAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Success criteria added." : (error ?? "Failed to add criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Delete Success Criteria
+    public async Task<IActionResult> OnPostDeleteSuccessCriteriaAsync(Guid caseId, Guid criteriaId)
+    {
+        var (success, error) = await _api.DeleteSuccessCriteriaAsync(criteriaId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria removed." : (error ?? "Failed to remove criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Evaluate Success Criteria
+    public async Task<IActionResult> OnPostEvaluateSuccessCriteriaAsync(
+        Guid caseId, Guid criteriaId, decimal? currentValue, Guid? sessionId)
+    {
+        var dto = new CreateSuccessCriteriaEvaluationWebDto
+        {
+            TreatmentSessionId = sessionId,
+            CurrentValue = currentValue
+        };
+        var (success, error) = await _api.EvaluateSuccessCriteriaAsync(criteriaId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria evaluated." : (error ?? "Failed to evaluate criteria.");
         return RedirectToPage(new { id = caseId, tab = "goals" });
     }
 
@@ -228,3 +311,4 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id = caseId, tab = "activities", subTab = "homework" });
     }
 }
+

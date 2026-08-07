@@ -73,6 +73,7 @@ public class TreatmentCaseListWebDto
 {
     public Guid Id { get; set; }
     public Guid TreatmentPackageId { get; set; }
+    public Guid PatientId { get; set; }
     public string? PackageName { get; set; }
     public string? PackageNameSnapshot { get; set; }
     public string CaseName { get; set; } = string.Empty;
@@ -226,23 +227,28 @@ public class TreatmentGoalWebDto
     public Guid Id { get; set; }
     public Guid TreatmentCaseId { get; set; }
     public Guid? CreatedByDoctorId { get; set; }
+    public Guid? TemplateId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int Category { get; set; }
     public string CategoryText { get; set; } = string.Empty;
     public int Priority { get; set; }
+    public int OrderIndex { get; set; }
     public int Status { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? TargetValue { get; set; }
     public decimal? CurrentValue { get; set; }
     public string? Unit { get; set; }
     public DateTime? TargetDate { get; set; }
+    public DateTime? StartDate { get; set; }
     public DateTime? AchievedDate { get; set; }
     public string? DoctorNotes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
     public List<TreatmentGoalProgressWebDto> ProgressHistory { get; set; } = new();
+    public List<GoalDetailWebDto> Details { get; set; } = new();
+    public List<GoalSuccessCriteriaWebDto> SuccessCriteria { get; set; } = new();
 
     public string PriorityText => Priority switch
     {
@@ -267,8 +273,9 @@ public class TreatmentGoalWebDto
         0 => "Not Started",
         1 => "In Progress",
         2 => "Achieved",
-        3 => "Deferred",
+        3 => "On Hold",
         4 => "Cancelled",
+        5 => "Draft",
         _ => "Unknown"
     };
 
@@ -279,6 +286,7 @@ public class TreatmentGoalWebDto
         2 => "badge bg-success",
         3 => "badge bg-warning text-dark",
         4 => "badge bg-danger",
+        5 => "badge bg-light text-dark border",
         _ => "badge bg-secondary"
     };
 }
@@ -315,6 +323,7 @@ public class TreatmentGoalProgressWebDto
     public Guid Id { get; set; }
     public Guid GoalId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public Guid? GoalDetailId { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? CurrentValue { get; set; }
     public string? DoctorComment { get; set; }
@@ -325,6 +334,7 @@ public class CreateGoalProgressWebDto
 {
     public Guid GoalId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
+    public Guid? GoalDetailId { get; set; }
     public int ProgressPercent { get; set; }
     public decimal? CurrentValue { get; set; }
     public string? DoctorComment { get; set; }
@@ -392,6 +402,28 @@ public class ReviewHomeworkWebDto
     public string? DoctorFeedback { get; set; }
 }
 
+public class TreatmentCaseFileWebDto
+{
+    public Guid Id { get; set; }
+    public Guid TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public Guid HomeworkId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FileUrl { get; set; } = string.Empty;
+    public string SourceType { get; set; } = string.Empty;
+    public string HomeworkTitle { get; set; } = string.Empty;
+    public DateTime UploadedAt { get; set; }
+
+    // Presentation aliases keep legacy Razor file rows compatible while using the file API as source of truth.
+    public string Title => FileName;
+    public DateTime? DueDate => null;
+    public DateTime? SubmittedAt => UploadedAt;
+    public string StatusText => "Submitted";
+    public string StatusBadgeClass => "badge bg-info";
+    public string? PatientSubmission => HomeworkTitle;
+    public string? PatientSubmissionUrl => FileUrl;
+}
+
 public class MoodEntryWebDto
 {
     public Guid Id { get; set; }
@@ -448,6 +480,10 @@ public class MoodTrendWebItem
     public int? MoodBefore { get; set; }
     public int? MoodAfter { get; set; }
     public int? MoodScore { get; set; }
+    public int? AnxietyScore { get; set; }
+    public int? StressScore { get; set; }
+    public int? SleepQualityScore { get; set; }
+    public string? Note { get; set; }
     public DateTime Date { get; set; }
 }
 
@@ -460,4 +496,206 @@ public class TreatmentTimelineWebDto
     public string? Description { get; set; }
     public string? Status { get; set; }
     public string? IconCss { get; set; }
+}
+
+// ==================== Goal Detail DTOs ====================
+
+public class GoalDetailWebDto
+{
+    public Guid Id { get; set; }
+    public Guid GoalId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int OrderIndex { get; set; }
+    public int ProgressPercent { get; set; }
+    public int Status { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public DateTime? CompletedDate { get; set; }
+    public List<TreatmentSessionGoalWebDto> Sessions { get; set; } = new();
+
+    public string StatusText => Status switch
+    {
+        0 => "Not Started",
+        1 => "In Progress",
+        2 => "Completed",
+        3 => "On Hold",
+        4 => "Cancelled",
+        _ => "Unknown"
+    };
+
+    public string StatusBadgeClass => Status switch
+    {
+        0 => "badge bg-secondary",
+        1 => "badge bg-info",
+        2 => "badge bg-success",
+        3 => "badge bg-warning text-dark",
+        4 => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+}
+
+public class TreatmentSessionGoalWebDto
+{
+    public Guid Id { get; set; }
+    public Guid TreatmentSessionId { get; set; }
+    public Guid GoalDetailId { get; set; }
+    public int OrderIndex { get; set; }
+    public string? PlannedActivity { get; set; }
+}
+
+public class CreateGoalDetailWebDto
+{
+    public Guid? GoalId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int? OrderIndex { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public List<Guid> TreatmentSessionIds { get; set; } = new();
+}
+
+public class UpdateGoalDetailWebDto
+{
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+    public string? ExpectedOutcome { get; set; }
+    public int? OrderIndex { get; set; }
+    public int? EstimatedSessions { get; set; }
+    public int? Status { get; set; }
+    public List<Guid>? TreatmentSessionIds { get; set; }
+}
+
+// ==================== Goal Success Criteria DTOs ====================
+
+public class GoalSuccessCriteriaWebDto
+{
+    public Guid Id { get; set; }
+    public Guid GoalId { get; set; }
+    public int CriteriaType { get; set; }
+    public int DataSource { get; set; }
+    public int Operator { get; set; }
+    public decimal? TargetValue { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public decimal Weight { get; set; }
+    public bool IsRequired { get; set; }
+    public string? Description { get; set; }
+    public List<SuccessCriteriaEvaluationWebDto> Evaluations { get; set; } = new();
+
+    public string CriteriaTypeText => CriteriaType switch
+    {
+        0 => "Progress %",
+        1 => "Homework Completion",
+        2 => "Attendance",
+        3 => "Doctor Approval",
+        4 => "Assessment Score",
+        99 => "Custom",
+        _ => "Unknown"
+    };
+
+    public string OperatorText => Operator switch
+    {
+        0 => ">",
+        1 => ">=",
+        2 => "<",
+        3 => "<=",
+        4 => "=",
+        _ => "?"
+    };
+
+    public bool IsPassed => CurrentValue.HasValue && TargetValue.HasValue && Operator switch
+    {
+        0 => CurrentValue > TargetValue,
+        1 => CurrentValue >= TargetValue,
+        2 => CurrentValue < TargetValue,
+        3 => CurrentValue <= TargetValue,
+        4 => CurrentValue == TargetValue,
+        _ => false
+    };
+}
+
+public class CreateGoalSuccessCriteriaWebDto
+{
+    public Guid? GoalId { get; set; }
+    public int CriteriaType { get; set; }
+    public int DataSource { get; set; }
+    public int Operator { get; set; } = 1;
+    public decimal? TargetValue { get; set; }
+    public decimal Weight { get; set; } = 1;
+    public bool IsRequired { get; set; } = true;
+    public string? Description { get; set; }
+}
+
+public class UpdateGoalSuccessCriteriaWebDto
+{
+    public int? CriteriaType { get; set; }
+    public int? DataSource { get; set; }
+    public int? Operator { get; set; }
+    public decimal? TargetValue { get; set; }
+    public decimal? Weight { get; set; }
+    public bool? IsRequired { get; set; }
+    public string? Description { get; set; }
+}
+
+public class SuccessCriteriaEvaluationWebDto
+{
+    public Guid Id { get; set; }
+    public Guid SuccessCriteriaId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public decimal? CurrentValue { get; set; }
+    public bool IsPassed { get; set; }
+    public DateTime EvaluatedAt { get; set; }
+    public Guid? EvaluatedBy { get; set; }
+}
+
+public class CreateSuccessCriteriaEvaluationWebDto
+{
+    public Guid? TreatmentSessionId { get; set; }
+    public decimal? CurrentValue { get; set; }
+}
+
+// ==================== Doctor Dashboard & Risk DTOs ====================
+
+public class DoctorTreatmentDashboardWebDto
+{
+    public int ActiveCaseCount { get; set; }
+    public int HighRiskCaseCount { get; set; }
+    public int AttentionCaseCount { get; set; }
+    public int UnreadMessageCount { get; set; }
+    public List<TreatmentCaseRiskWebDto> AttentionCases { get; set; } = new();
+}
+
+public class TreatmentCaseRiskWebDto
+{
+    public Guid TreatmentCaseId { get; set; }
+    public string CaseName { get; set; } = string.Empty;
+    public string? PatientName { get; set; }
+    public string Level { get; set; } = "Low";
+    public int Score { get; set; }
+    public int ConsecutiveNoShows { get; set; }
+    public decimal? RecentAverageMood { get; set; }
+    public decimal? PreviousAverageMood { get; set; }
+    public string? LatestAssessment { get; set; }
+    public DateTime? LatestAssessmentAt { get; set; }
+    public List<TreatmentRiskFactorWebDto> Factors { get; set; } = new();
+
+    public string LevelBadgeClass => Level switch
+    {
+        "Low" => "badge bg-success",
+        "Medium" => "badge bg-warning text-dark",
+        "High" => "badge bg-danger",
+        "Critical" => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+}
+
+public class TreatmentRiskFactorWebDto
+{
+    public string Code { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Severity { get; set; } = "Medium";
+    public string? Detail { get; set; }
 }
