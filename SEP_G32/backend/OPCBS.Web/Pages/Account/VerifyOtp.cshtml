@@ -9,6 +9,9 @@
     <h2>Verify Your Email</h2>
     <p class="auth-subtitle">We sent a verification code to your email. Please enter it below.</p>
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage)) {
+        <div class="alert alert-success"><i class="bi bi-envelope-check me-2"></i>@Model.StatusMessage</div>
+    }
     <form method="post">
         <div class="mb-3">
             <label asp-for="Input.Email" class="form-label">Email</label>
@@ -25,4 +28,8 @@
     <p class="text-center mt-3" style="font-size:0.875rem;">
         <i class="bi bi-envelope-check me-1"></i>An OTP code has been sent to your email. Please check your inbox (or Spam folder).
     </p>
+    <form method="post" asp-page-handler="Resend" class="text-center mt-2">
+        <input type="hidden" asp-for="Input.Email" />
+        <button type="submit" class="btn btn-link p-0">Resend verification code</button>
+    </form>
 </div>

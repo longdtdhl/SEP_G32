@@ -37,25 +37,35 @@ public class PatientRecordDto
     [JsonPropertyName("displayEmail")]
     public string? ApiDisplayEmail { get; set; }
 
+    [JsonIgnore]
     public string ResolvedDisplayName => !string.IsNullOrWhiteSpace(ApiDisplayName)
         ? ApiDisplayName
         : (!string.IsNullOrWhiteSpace(GuestName) ? GuestName : "Not recorded");
 
+    [JsonIgnore]
     public string? ResolvedDisplayPhone => !string.IsNullOrWhiteSpace(ApiDisplayPhone)
         ? ApiDisplayPhone
         : GuestPhone;
 
+    [JsonIgnore]
     public string? ResolvedDisplayEmail => !string.IsNullOrWhiteSpace(ApiDisplayEmail)
         ? ApiDisplayEmail
         : GuestEmail;
 
+    [JsonIgnore]
     public DateTime? ResolvedDateOfBirth => DateOfBirth ?? GuestDateOfBirth;
+    [JsonIgnore]
     public string? ResolvedGender => Gender ?? GuestGender;
+    [JsonIgnore]
     public string? ResolvedAddress => Address ?? GuestAddress;
 
+    [JsonIgnore]
     public string DisplayName => string.IsNullOrEmpty(GuestName) ? "Chưa cập nhật" : GuestName;
+    [JsonIgnore]
     public string DisplayPhone => string.IsNullOrEmpty(GuestPhone) ? "Chưa cập nhật" : GuestPhone;
+    [JsonIgnore]
     public string DisplayEmail => string.IsNullOrEmpty(GuestEmail) ? "Chưa cập nhật" : GuestEmail;
+    [JsonIgnore]
     public bool IsGuest => !PatientId.HasValue;
 }
 

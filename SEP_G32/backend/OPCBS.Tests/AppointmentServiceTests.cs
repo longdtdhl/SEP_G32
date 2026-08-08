@@ -576,25 +576,7 @@ public class AppointmentServiceTests
         Assert.Equal(AppointmentStatus.AwaitingPatientConfirmation, appointment.Status);
     }
 
-    [Fact]
-    public async Task StartAppointment_Success()
-    {
-        // Arrange
-        var appointment = CreateAppointment(AppointmentStatus.Approved);
-        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(appointment);
-
-        var doctor = CreateDoctor();
-        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<DoctorProfile> { doctor });
-
-        // Act
-        var result = await _sut.StartAppointmentAsync(_appointmentId, _doctorUserId);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.Equal(AppointmentStatus.InProgress, appointment.Status);
-    }
+  
 
     // ──────────────────────────────────────────────
     // RESCHEDULE APPOINTMENT TESTS

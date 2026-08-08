@@ -37,6 +37,7 @@ public class BlogApiService : ApiServiceBase, IBlogApiService
         {
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(filter.Status)) parts.Add($"status={filter.Status}");
+            if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
             parts.Add($"page={filter.Page}");
             parts.Add($"pageSize={filter.PageSize}");
             if (parts.Count > 0) url += "?" + string.Join("&", parts);

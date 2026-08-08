@@ -9,6 +9,7 @@ public class ScheduleNoteItemDto
 {
     public Guid Id { get; set; }
     public Guid SlotId { get; set; }
+    public bool IsSlotNote { get; set; }
     public string Date { get; set; } = string.Empty;
     public string TimeRange { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -110,7 +111,7 @@ public class IndexModel : PageModel
         var (events, err1) = await _api.GetCalendarEventsAsync(PeriodStart, PeriodEnd);
         var (slotsData, err3) = await _api.GetMySlotsAsync();
         var (eligiblePatients, _) = await _api.GetEligibleTreatmentPatientsAsync();
-        var (notesData, err4) = await _api.GetNotesAsync(SearchNote, NoteCategory, null, null, 1, 1000);
+        var (notesData, err4) = await _api.GetNotesAsync(null, null, null, null, 1, 1000);
 
         // Calendar events excluding DayOff and Note events (notes live in dedicated Notes tab)
         CalendarEvents = events.Where(e => !string.Equals(e.EventType, "DayOff", StringComparison.OrdinalIgnoreCase) &&
@@ -134,6 +135,7 @@ public class IndexModel : PageModel
         {
             Id = n.Id,
             SlotId = Guid.Empty,
+            IsSlotNote = false,
             Date = n.Date,
             TimeRange = !string.IsNullOrWhiteSpace(n.StartTime) && !string.IsNullOrWhiteSpace(n.EndTime) ? $"{n.StartTime} - {n.EndTime}" : "All day",
             Title = n.Title,
@@ -144,6 +146,39 @@ public class IndexModel : PageModel
             PatientId = n.PatientId,
             TreatmentInfo = n.TreatmentCaseName ?? "N/A"
         }).ToList();
+
+        // Older availability and treatment slot notes were stored on AppointmentSlot.Notes.
+        // Keep them visible in the dedicated notes tab while preserving the correct update target.
+        notesList.AddRange(ActualSlots
+            .Where(slot => !string.IsNullOrWhiteSpace(slot.Notes))
+            .Select(slot => new ScheduleNoteItemDto
+            {
+                Id = slot.Id,
+                SlotId = slot.Id,
+                IsSlotNote = true,
+                Date = slot.Date,
+                TimeRange = $"{slot.StartTime} - {slot.EndTime}",
+                Title = "Schedule slot note",
+                Content = slot.Notes!.Trim(),
+                Category = "Slot note",
+                CreatedAtDisplay = slot.Date,
+                PatientName = "Related schedule slot",
+                TreatmentInfo = "Availability or treatment scheduling"
+            }));
+
+        if (!string.IsNullOrWhiteSpace(SearchNote))
+        {
+            var term = SearchNote.Trim();
+            notesList = notesList.Where(note =>
+                note.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                note.Content.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                note.PatientName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(NoteCategory))
+        {
+            notesList = notesList.Where(note => string.Equals(note.Category, NoteCategory, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
 
         // Apply Date filter
         if (!string.IsNullOrWhiteSpace(NoteDate))
@@ -264,30 +299,55 @@ public class IndexModel : PageModel
         return RedirectToPage(new { tab = "notes", view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostUpdateNoteAsync(Guid noteId, string date, string? startTime, string? endTime, string noteTitle, string noteContent, string? category, Guid? patientId, Guid? treatmentCaseId)
+    public async Task<IActionResult> OnPostUpdateNoteAsync(Guid? noteId, Guid? slotId, bool isSlotNote, string noteContent)
     {
-        var dto = new UpdateScheduleNoteWebDto
+        if (isSlotNote)
         {
-            Date = date,
-            StartTime = startTime,
-            EndTime = endTime,
-            Title = noteTitle,
-            Content = noteContent,
-            Category = category,
-            PatientId = patientId,
-            TreatmentCaseId = treatmentCaseId
-        };
-        var (data, error) = await _api.UpdateNoteAsync(noteId, dto);
-        if (error != null) TempData["Error"] = error;
-        else TempData["Success"] = "Schedule note updated successfully.";
+            if (!slotId.HasValue)
+            {
+                TempData["Error"] = "Schedule slot note was not found.";
+            }
+            else
+            {
+                var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, noteContent);
+                TempData[success ? "Success" : "Error"] = success ? "Schedule slot note updated." : error;
+            }
+        }
+        else if (!noteId.HasValue)
+        {
+            TempData["Error"] = "Schedule note was not found.";
+        }
+        else
+        {
+            var (data, error) = await _api.UpdateNoteAsync(noteId.Value, new UpdateScheduleNoteWebDto { Content = noteContent });
+            TempData[data != null ? "Success" : "Error"] = data != null ? "Schedule note updated successfully." : error ?? "Unable to update the schedule note.";
+        }
         return RedirectToPage(new { tab = "notes", view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostDeleteNoteAsync(Guid noteId)
+    public async Task<IActionResult> OnPostDeleteNoteAsync(Guid? noteId, Guid? slotId, bool isSlotNote)
     {
-        var (success, error) = await _api.DeleteNoteAsync(noteId);
-        if (!success) TempData["Error"] = error;
-        else TempData["Success"] = "Schedule note deleted.";
+        if (isSlotNote)
+        {
+            if (!slotId.HasValue)
+            {
+                TempData["Error"] = "Schedule slot note was not found.";
+            }
+            else
+            {
+                var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, null);
+                TempData[success ? "Success" : "Error"] = success ? "Schedule slot note removed." : error;
+            }
+        }
+        else if (!noteId.HasValue)
+        {
+            TempData["Error"] = "Schedule note was not found.";
+        }
+        else
+        {
+            var (success, error) = await _api.DeleteNoteAsync(noteId.Value);
+            TempData[success ? "Success" : "Error"] = success ? "Schedule note deleted." : error;
+        }
         return RedirectToPage(new { tab = "notes", view = View, date = Date });
     }
 

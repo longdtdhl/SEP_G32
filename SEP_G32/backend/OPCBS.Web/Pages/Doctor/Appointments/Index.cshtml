@@ -90,14 +90,33 @@
     .empty-state p { color: #adb5bd; font-size: 0.9rem; }
 
     .action-btn {
-        width: 34px; height: 34px;
+        width: 38px; height: 38px;
         border-radius: 8px;
         display: inline-flex; align-items: center; justify-content: center;
         font-size: 0.85rem;
         padding: 0;
+        background: #fff;
+        border-width: 1px;
+        box-shadow: 0 1px 2px rgba(15, 67, 72, 0.08);
         transition: all 0.15s ease;
     }
-    .action-btn:hover { transform: scale(1.1); }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(15, 67, 72, 0.12); }
+    .appointment-actions {
+        min-width: 152px;
+        justify-content: flex-end;
+    }
+    .appointment-actions .action-label-btn {
+        min-height: 38px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(15, 67, 72, 0.08);
+    }
+    .appointment-actions .action-btn:disabled {
+        opacity: 0.48;
+        cursor: not-allowed;
+        transform: none;
+    }
 </style>
 
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
@@ -213,6 +232,11 @@
                     var initials = string.IsNullOrEmpty(apt.PatientName) ? "?" :
                         string.Join("", apt.PatientName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                             .Take(2).Select(w => w[0])).ToUpper();
+                    var canStartConsultation = DateTime.TryParse(apt.AppointmentDate, out var scheduledDate)
+                        && scheduledDate.Date <= DateTime.Today;
+                    var startAvailabilityTitle = scheduledDate == default
+                        ? "Appointment date is unavailable"
+                        : $"Available on {scheduledDate:dd/MM/yyyy}";
 
                     <div class="card appt-card shadow-sm @statusClass">
                         <div class="card-body py-3 px-3">
@@ -269,7 +293,7 @@
                                 </div>
 
                                 <!-- Actions -->
-                                <div class="d-flex gap-1 ms-auto align-items-center" style="min-width: 140px; justify-content: flex-end;">
+                                <div class="d-flex gap-1 ms-auto align-items-center appointment-actions">
                                     <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-primary" title="View Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
@@ -277,13 +301,13 @@
                                     {
                                         <form method="post" asp-page-handler="ApproveReschedule" class="d-inline">
                                             <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="btn btn-success btn-sm px-2.5 rounded-2 fw-semibold" title="Approve Reschedule Request">
+                                            <button type="submit" class="btn btn-success btn-sm px-3 action-label-btn" title="Approve Reschedule Request">
                                                 <i class="bi bi-check-lg me-1"></i>Approve
                                             </button>
                                         </form>
                                         <form method="post" asp-page-handler="RejectReschedule" class="d-inline">
                                             <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="btn btn-outline-danger btn-sm px-2 rounded-2" title="Decline Reschedule Request" onclick="return confirm('Decline reschedule request and keep current slot?')">
+                                            <button type="submit" class="action-btn btn btn-outline-danger" title="Decline Reschedule Request" onclick="return confirm('Decline reschedule request and keep current slot?')">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         </form>
@@ -303,15 +327,24 @@
                                             </button>
                                         </form>
                                     }
-                                    @if (apt.Status == 1)
-                                    {
-                                        <form method="post" asp-page-handler="Start" class="d-inline">
-                                            <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="action-btn btn btn-outline-primary" title="Start Consultation">
-                                                <i class="bi bi-play-fill"></i>
-                                            </button>
-                                        </form>
-                                    }
+                    @if (apt.Status == 1)
+                    {
+                        @if (canStartConsultation)
+                        {
+                            <form method="post" asp-page-handler="Start" class="d-inline">
+                                <input type="hidden" name="id" value="@apt.Id" />
+                                <button type="submit" class="action-btn btn btn-outline-primary" title="Start Consultation">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="action-btn btn btn-outline-secondary" disabled title="@startAvailabilityTitle">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                        }
+                    }
                                     @if (apt.Status == 3)
                                     {
                                         <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-success" title="Complete Appointment">

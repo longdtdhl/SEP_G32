@@ -1789,6 +1789,13 @@ public class AppointmentService : IAppointmentService
         if (appointment.Status != AppointmentStatus.Approved)
             return ApiResponse.ErrorResponse("Only approved appointments can be started");
 
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (slot == null || slot.IsDeleted)
+            return ApiResponse.ErrorResponse("The appointment slot is no longer available.");
+
+        if (slot.SlotDate > DateOnly.FromDateTime(DateTime.Today))
+            return ApiResponse.ErrorResponse("An appointment can only be started on its scheduled date.");
+
         var prevStatus = appointment.Status;
         appointment.Status = AppointmentStatus.InProgress;
         appointment.UpdatedAt = DateTime.UtcNow;

@@ -204,6 +204,39 @@ public class AuthService : IAuthService
         return ApiResponse.SuccessResponse("Email verified successfully");
     }
 
+    public async Task<ApiResponse> ResendVerificationOtpAsync(ForgotPasswordDto dto, CancellationToken ct = default)
+    {
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => string.Equals(u.Email, dto.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (user == null)
+            return ApiResponse.SuccessResponse("If the account exists, a verification code has been sent.");
+
+        if (user.IsEmailVerified)
+            return ApiResponse.ErrorResponse("This email has already been verified. Please log in.");
+
+        var allOtps = await _otpRepo.GetAllAsync(ct);
+        var lastOtp = allOtps
+            .Where(o => o.UserId == user.Id && !o.IsUsed)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefault();
+
+        if (lastOtp != null && lastOtp.CreatedAt > DateTime.UtcNow.AddSeconds(-60))
+            return ApiResponse.ErrorResponse("Please wait 60 seconds before requesting another code.");
+
+        var otpCode = GenerateOtp();
+        await _otpRepo.AddAsync(new OtpVerification
+        {
+            UserId = user.Id,
+            Code = otpCode,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            User = user
+        }, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        _ = _emailService.SendOtpEmailAsync(user.Email, otpCode, ct);
+        return ApiResponse.SuccessResponse("A new verification code has been sent. It expires in 10 minutes.");
+    }
+
     public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto dto, CancellationToken ct = default)
     {
         var allUsers = await _userRepo.GetAllAsync(ct);

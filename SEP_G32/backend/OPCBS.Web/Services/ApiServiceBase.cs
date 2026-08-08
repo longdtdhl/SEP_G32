@@ -308,7 +308,7 @@ public abstract class ApiServiceBase
                 return (default, null, $"Server error ({(int)response.StatusCode}). Please try again.");
             }
 
-            return (default, null, null);
+            return (default, null, "Unable to read the server response. Please try again or contact support.");
         }
     }
 

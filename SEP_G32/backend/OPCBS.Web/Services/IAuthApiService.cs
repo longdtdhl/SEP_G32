@@ -8,6 +8,7 @@ public interface IAuthApiService
     Task<(bool Success, string? Error)> RegisterAsync(RegisterRequestDto model);
     Task<(bool Success, string? Error)> RegisterDoctorAsync(RegisterDoctorRequestDto model);
     Task<(bool Success, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto model);
+    Task<(bool Success, string? Error)> ResendVerificationOtpAsync(ForgotPasswordRequestDto model);
     Task<(bool Success, string? Error)> ForgotPasswordAsync(ForgotPasswordRequestDto model);
     Task<(bool Success, string? Error)> ResetPasswordAsync(ResetPasswordRequestDto model);
     Task<(bool Success, string? Error)> ChangePasswordAsync(ChangePasswordRequestDto model);

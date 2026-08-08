@@ -82,11 +82,11 @@ public class BlogsController : ControllerBase
     /// <summary>GET /api/v1/blogs/my-blogs — Get doctor's own blogs</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpGet("my-blogs")]
-    public async Task<IActionResult> GetMyBlogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetMyBlogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _blogService.GetDoctorBlogsAsync(userId.Value, page, pageSize);
+        var result = await _blogService.GetDoctorBlogsAsync(userId.Value, page, pageSize, status, search);
         return Ok(result);
     }
 

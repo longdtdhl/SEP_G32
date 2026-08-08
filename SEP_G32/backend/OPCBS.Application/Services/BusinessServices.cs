@@ -105,13 +105,32 @@ public class BlogService : IBlogService
         return ApiResponse.SuccessResponse("Blog submitted for review");
     }
 
-    public async Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page, int pageSize, CancellationToken ct)
+    public async Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page, int pageSize, string? status, string? search, CancellationToken ct)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
         if (doctor == null) return ApiResponse<List<BlogPostDto>>.ErrorResponse("Doctor not found");
         var all = await _blogRepo.GetAllAsync(ct);
         var blogs = all.Where(b => b.DoctorId == doctor.Id && !b.IsDeleted).ToList();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var normalizedStatus = status.Equals("PendingApproval", StringComparison.OrdinalIgnoreCase)
+                ? BlogStatus.Pending.ToString()
+                : status;
+            if (Enum.TryParse<BlogStatus>(normalizedStatus, true, out var requestedStatus))
+                blogs = blogs.Where(b => b.Status == requestedStatus).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            blogs = blogs.Where(b =>
+                b.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(b.Excerpt) && b.Excerpt.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                b.Content.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
         var total = blogs.Count;
         var items = blogs.OrderByDescending(b => b.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return ApiResponse<List<BlogPostDto>>.SuccessResponse(_mapper.Map<List<BlogPostDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
@@ -1870,6 +1889,33 @@ public class SubscriptionService : ISubscriptionService
         return latestExpiration > now ? latestExpiration : now;
     }
 
+    // Purchases are queued as consecutive subscription records to preserve payment history.
+    // The current-plan screen must still show the end of the uninterrupted entitlement.
+    private static DateTime GetEffectiveSubscriptionExpiration(
+        IEnumerable<DoctorSubscription> subscriptions,
+        Guid doctorProfileId,
+        DoctorSubscription activeSubscription,
+        DateTime now)
+    {
+        var coverageEnd = activeSubscription.ExpirationDate;
+        var queuedSubscriptions = subscriptions
+            .Where(s => s.DoctorProfileId == doctorProfileId
+                     && s.Status == SubscriptionStatus.Active
+                     && s.ExpirationDate > now
+                     && s.Id != activeSubscription.Id)
+            .OrderBy(s => s.StartDate)
+            .ToList();
+
+        foreach (var queued in queuedSubscriptions)
+        {
+            if (queued.StartDate > coverageEnd) break;
+            if (queued.ExpirationDate > coverageEnd)
+                coverageEnd = queued.ExpirationDate;
+        }
+
+        return coverageEnd;
+    }
+
     private static string GetDisplayStatus(DoctorSubscription subscription, DateTime now) =>
         subscription.Status == SubscriptionStatus.Active && subscription.ExpirationDate <= now
             ? SubscriptionStatus.Expired.ToString()
@@ -2060,6 +2106,7 @@ public class SubscriptionService : ISubscriptionService
         }
 
         var pkg = await _pkgRepo.GetByIdAsync(activeSub.ServicePackageId, ct);
+        var effectiveExpiration = GetEffectiveSubscriptionExpiration(allSubs, doctor.Id, activeSub, now);
         return ApiResponse<SubscriptionDto>.SuccessResponse(new SubscriptionDto
         {
             Id = activeSub.Id,
@@ -2068,8 +2115,8 @@ public class SubscriptionService : ISubscriptionService
             PackageName = pkg?.Name ?? "Unknown",
             Status = GetDisplayStatus(activeSub, now),
             StartDate = activeSub.StartDate,
-            ExpirationDate = activeSub.ExpirationDate,
-            EndDate = activeSub.ExpirationDate,
+            ExpirationDate = effectiveExpiration,
+            EndDate = effectiveExpiration,
             AmountPaid = pkg?.Price ?? 0,
             MaxDailySlotsCapacity = pkg?.MaxDailySlotsCapacity,
             MaxPatientCapacity = pkg?.MaxPatientCapacity,

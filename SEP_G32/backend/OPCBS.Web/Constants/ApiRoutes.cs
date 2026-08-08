@@ -10,6 +10,7 @@ public static class ApiRoutes
     public const string Register = $"{Auth}/register";
     public const string RegisterDoctor = $"{Auth}/register-doctor";
     public const string VerifyOtp = $"{Auth}/verify-otp";
+    public const string ResendVerificationOtp = $"{Auth}/resend-verification-otp";
     public const string ForgotPassword = $"{Auth}/forgot-password";
     public const string ResetPassword = $"{Auth}/reset-password";
     public const string ChangePassword = $"{Auth}/change-password";

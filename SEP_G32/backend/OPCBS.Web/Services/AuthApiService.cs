@@ -33,6 +33,9 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(bool Success, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto model)
         => await PostAsync(ApiRoutes.VerifyOtp, model);
 
+    public async Task<(bool Success, string? Error)> ResendVerificationOtpAsync(ForgotPasswordRequestDto model)
+        => await PostAsync(ApiRoutes.ResendVerificationOtp, model);
+
     public async Task<(bool Success, string? Error)> ForgotPasswordAsync(ForgotPasswordRequestDto model)
         => await PostAsync(ApiRoutes.ForgotPassword, model);
 

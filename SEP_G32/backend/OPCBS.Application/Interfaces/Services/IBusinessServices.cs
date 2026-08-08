@@ -274,7 +274,7 @@ public interface IBlogService
     Task<ApiResponse<BlogPostDto>> UpdateBlogAsync(Guid blogId, Guid doctorUserId, UpdateBlogPostDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteBlogAsync(Guid blogId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> SubmitBlogForReviewAsync(Guid blogId, Guid doctorUserId, CancellationToken ct = default);
-    Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default);
     Task<ApiResponse<List<BlogPostDto>>> GetPendingBlogsAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse> ApproveBlogAsync(Guid blogId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectBlogAsync(Guid blogId, Guid supportUserId, string? reason, CancellationToken ct = default);

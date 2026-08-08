@@ -148,85 +148,106 @@
     .fc-event {
         border: none !important;
         border-radius: 6px !important;
-        padding: 3px 5px !important;
+        padding: 5px 7px !important;
         cursor: pointer;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.10);
+        text-shadow: none !important;
     }
     .fc-event-available {
-        background-color: #CCFBF1 !important;
+        background-color: #BDF3E7 !important;
         color: #134E4A !important;
+        --fc-event-text-color: #134E4A !important;
         border-left: 4px solid #0D9488 !important;
     }
     .fc-event-partial {
         background-color: #FEF3C7 !important;
         color: #78350F !important;
+        --fc-event-text-color: #78350F !important;
         border-left: 4px solid #D97706 !important;
     }
     .fc-event-booked, .fc-event-appointment {
-        background-color: #DCFCE7 !important;
+        background-color: #C8F3D5 !important;
         color: #064E3B !important;
+        --fc-event-text-color: #064E3B !important;
         border-left: 4px solid #059669 !important;
     }
     .fc-event-blocked {
         background-color: #FEE2E2 !important;
         color: #7F1D1D !important;
+        --fc-event-text-color: #7F1D1D !important;
         border-left: 4px solid #DC2626 !important;
     }
     .fc-event-pending {
         background-color: #FEF3C7 !important;
         color: #78350F !important;
+        --fc-event-text-color: #78350F !important;
         border-left: 4px solid #D97706 !important;
     }
     .fc-event-inprogress {
         background-color: #DBEAFE !important;
         color: #1E3A8A !important;
+        --fc-event-text-color: #1E3A8A !important;
         border-left: 4px solid #2563EB !important;
     }
     .fc-event-completed {
         background-color: #F1F5F9 !important;
         color: #334155 !important;
+        --fc-event-text-color: #334155 !important;
         border-left: 4px solid #64748B !important;
     }
     .fc-event-expired {
         background-color: #F1F5F9 !important;
         color: #64748B !important;
+        --fc-event-text-color: #64748B !important;
         border-left: 4px solid #94A3B8 !important;
         opacity: 0.82;
     }
     .fc-event-cancelled {
         background-color: #FFE4E6 !important;
         color: #9F1239 !important;
+        --fc-event-text-color: #9F1239 !important;
         border-left: 4px solid #E11D48 !important;
         opacity: 0.86;
+    }
+
+    /* FullCalendar sets its own text variable on nested elements; force the
+       state color through every visible event label for readable slots. */
+    .fc-event .fc-event-main,
+    .fc-event .fc-custom-event-container,
+    .fc-event .fc-custom-event-time,
+    .fc-event .fc-custom-event-title,
+    .fc-event .fc-custom-event-sub {
+        color: var(--fc-event-text-color) !important;
+        opacity: 1 !important;
     }
 
     .fc-custom-event-container {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        line-height: 1.25;
+        line-height: 1.3;
     }
     .fc-custom-event-time {
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 800;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     .fc-custom-event-title {
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     .fc-custom-event-sub {
         font-size: 11px;
-        font-weight: 500;
+        font-weight: 650;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        opacity: 0.9;
+        opacity: 1;
     }
 
     /* Legend Bar */
@@ -526,11 +547,13 @@
                                         <button class="btn btn-sm btn-light text-primary py-1 px-2 me-1" title="View Note" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-light text-secondary py-1 px-2 me-1" title="Edit Note" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">
+                                        <button class="btn btn-sm btn-light text-secondary py-1 px-2 me-1" title="Edit Note" onclick="openEditNoteModal('@note.Id', '@note.SlotId', @(note.IsSlotNote ? "true" : "false"), '@JavaScriptEncoder.Default.Encode(note.Content)')">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <form method="post" asp-page-handler="DeleteNote" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this note?');">
+                                            <input type="hidden" name="noteId" value="@note.Id" />
                                             <input type="hidden" name="slotId" value="@note.SlotId" />
+                                            <input type="hidden" name="isSlotNote" value="@note.IsSlotNote.ToString().ToLowerInvariant()" />
                                             <button type="submit" class="btn btn-sm btn-light text-danger py-1 px-2" title="Delete Note">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -557,7 +580,7 @@
                                 <span class="badge bg-light text-indigo border" style="font-size:0.7rem;">@note.Category</span>
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="openViewNoteModal('@note.Date', '@note.TimeRange', '@JavaScriptEncoder.Default.Encode(note.Title)', '@JavaScriptEncoder.Default.Encode(note.Content)')">View</button>
-                                    <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openEditNoteModal('@note.SlotId', '@JavaScriptEncoder.Default.Encode(note.Content)')">Edit</button>
+                                    <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openEditNoteModal('@note.Id', '@note.SlotId', @(note.IsSlotNote ? "true" : "false"), '@JavaScriptEncoder.Default.Encode(note.Content)')">Edit</button>
                                 </div>
                             </div>
                         </div>
@@ -878,7 +901,9 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content" style="border-radius:16px; border:none;">
             <form method="post" asp-page-handler="UpdateNote">
+                <input type="hidden" name="noteId" id="eNoteId" />
                 <input type="hidden" name="slotId" id="eNoteSlotId" />
+                <input type="hidden" name="isSlotNote" id="eNoteIsSlotNote" />
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Schedule Note</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -886,7 +911,7 @@
                 <div class="modal-body">
                     <div class="mb-0">
                         <label class="form-label small fw-semibold text-secondary">Note Content</label>
-                        <textarea name="notes" id="eNoteContent" class="form-control" rows="4" required style="border-radius:10px; resize:none;"></textarea>
+                        <textarea name="noteContent" id="eNoteContent" class="form-control" rows="4" required style="border-radius:10px; resize:none;"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1171,8 +1196,10 @@
             m.show();
         }
 
-        function openEditNoteModal(slotId, content) {
+        function openEditNoteModal(noteId, slotId, isSlotNote, content) {
+            document.getElementById('eNoteId').value = noteId;
             document.getElementById('eNoteSlotId').value = slotId;
+            document.getElementById('eNoteIsSlotNote').value = isSlotNote;
             document.getElementById('eNoteContent').value = content;
             var m = new bootstrap.Modal(document.getElementById('editNoteModal'));
             m.show();
@@ -1368,7 +1395,7 @@
                         } else {
                             var timeEl = document.createElement('div');
                             timeEl.className = 'fc-custom-event-time';
-                            timeEl.textContent = timeRangeStr + (props.bookingCode ? ' [' + props.bookingCode + ']' : '');
+                            timeEl.textContent = timeRangeStr;
                             container.appendChild(timeEl);
 
                             var titleEl = document.createElement('div');
