@@ -1,0 +1,261 @@
+using OPCBS.Domain.Enums;
+
+namespace OPCBS.Application.DTOs.Appointments;
+
+/// <summary>
+/// Create appointment request DTO
+/// </summary>
+public class CreateAppointmentDto
+{
+    public Guid DoctorId { get; set; }
+    public Guid AppointmentSlotId { get; set; }
+    public string? Notes { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+
+    // Pre-evaluation fields
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
+    
+    // For guest bookings
+    public string? GuestName { get; set; }
+    public string? GuestEmail { get; set; }
+    public string? GuestPhoneNumber { get; set; }
+}
+
+/// <summary>
+/// Appointment details response DTO
+/// </summary>
+public class AppointmentDto
+{
+    public Guid Id { get; set; }
+    public required string BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
+    public required string DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
+    public string? PatientName { get; set; }
+    public required string AppointmentDate { get; set; }
+    public required string StartTime { get; set; }
+    public required string EndTime { get; set; }
+    public AppointmentStatus Status { get; set; }
+    public string? Notes { get; set; }
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public string? TreatmentPackageName { get; set; }
+    public int VisitCount { get; set; }
+    public string? Specialization { get; set; }
+    public string? CancellationReason { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public string? RescheduleReason { get; set; }
+    public bool CanReschedule { get; set; }
+}
+
+/// <summary>
+/// Appointment list item DTO
+/// </summary>
+public class AppointmentListItemDto
+{
+    public Guid Id { get; set; }
+    public required string BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
+    public required string DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
+    public string? PatientName { get; set; }
+    public string? Specialization { get; set; }
+    public required string AppointmentDate { get; set; }
+    public required string StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public AppointmentStatus Status { get; set; }
+    public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public bool CanReschedule { get; set; }
+}
+
+/// <summary>
+/// Track appointment request DTO
+/// </summary>
+public class TrackAppointmentDto
+{
+    public required string BookingCode { get; set; }
+    public required string Email { get; set; }
+}
+
+/// <summary>
+/// Cancel appointment request DTO
+/// </summary>
+public class CancelAppointmentDto
+{
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Approve/Reject appointment request DTO
+/// </summary>
+public class ApproveAppointmentDto
+{
+    // Empty - just ID in route
+}
+
+public class RejectAppointmentDto
+{
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Reschedule appointment request DTO
+/// </summary>
+public class RescheduleAppointmentDto
+{
+    public Guid NewSlotId { get; set; }
+    public string? Reason { get; set; }
+}
+
+
+/// <summary>
+/// Complete appointment request DTO
+/// </summary>
+public class CompleteAppointmentDto
+{
+    // Empty - just ID in route
+}
+
+/// <summary>
+/// Appointment slot DTO
+/// </summary>
+public class AppointmentSlotDto
+{
+    public Guid Id { get; set; }
+    public required string Date { get; set; }
+    public required string StartTime { get; set; }
+    public required string EndTime { get; set; }
+    public AppointmentSlotStatus Status { get; set; }
+    public decimal? Price { get; set; }
+    public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
+}
+
+/// <summary>
+/// Available slots list DTO
+/// </summary>
+public class AvailableSlotsDto
+{
+    public Guid DoctorId { get; set; }
+    public required string DoctorName { get; set; }
+    public List<AppointmentSlotDto>? Slots { get; set; }
+}
+
+/// <summary>
+/// Consultation record DTO
+/// </summary>
+public class ConsultationNoteDto
+{
+    public Guid Id { get; set; }
+    public Guid? AppointmentId { get; set; }
+    public Guid DoctorId { get; set; }
+    public string? DoctorName { get; set; }
+    public Guid PatientRecordId { get; set; }
+    public string? PatientName { get; set; }
+    public string? ConsultationSummary { get; set; }
+    public string? Diagnosis { get; set; }
+    public string? Recommendation { get; set; }
+    public string? FollowUpNotes { get; set; }
+    public string? TherapyPlan { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public string? PackageName { get; set; }
+
+    // Walk-in patient fields
+    public string? WalkInPatientName { get; set; }
+    public string? WalkInPatientPhone { get; set; }
+    public string? WalkInPatientEmail { get; set; }
+}
+
+public class PatientRecordDto
+{
+    public Guid Id { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid? PatientId { get; set; }
+    
+    // Guest info
+    public string? GuestName { get; set; }
+    public string? GuestPhone { get; set; }
+    public string? GuestEmail { get; set; }
+
+    // Health info
+    public string? PsychologicalHistory { get; set; }
+    public string? CurrentSymptoms { get; set; }
+    public string? StressFactors { get; set; }
+    public string? GeneralNotes { get; set; }
+
+    // Calculated fields
+    public string? DisplayName { get; set; }
+    public string? DisplayPhone { get; set; }
+    public string? DisplayEmail { get; set; }
+    public bool IsGuest => PatientId == null;
+
+    public DateTime CreatedAt { get; set; }
+}
+
+public class CreatePatientRecordDto
+{
+    public Guid? PatientId { get; set; }
+    public string? GuestName { get; set; }
+    public string? GuestPhone { get; set; }
+    public string? GuestEmail { get; set; }
+    public string? PsychologicalHistory { get; set; }
+    public string? CurrentSymptoms { get; set; }
+    public string? StressFactors { get; set; }
+    public string? GeneralNotes { get; set; }
+}
+
+public class UpdatePatientRecordDto : CreatePatientRecordDto
+{
+}
+
+/// <summary>
+/// Create consultation record request DTO
+/// </summary>
+public class CreateConsultationNoteDto
+{
+    public Guid? AppointmentId { get; set; }
+    public Guid PatientRecordId { get; set; }
+    public required string ConsultationSummary { get; set; }
+    public string? Diagnosis { get; set; }
+    public string? Recommendation { get; set; }
+    public string? FollowUpNotes { get; set; }
+    public string? TherapyPlan { get; set; }
+    public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+}
+
+/// <summary>
+/// Update consultation record request DTO
+/// </summary>
+public class UpdateConsultationNoteDto
+{
+    public required string ConsultationSummary { get; set; }
+    public string? Diagnosis { get; set; }
+    public string? Recommendation { get; set; }
+    public string? FollowUpNotes { get; set; }
+    public string? TherapyPlan { get; set; }
+    public DateTime? ConsultationDate { get; set; }
+    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+}
+
