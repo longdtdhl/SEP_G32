@@ -1,0 +1,131 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Doctor.Appointments.DetailsModel
+@{
+    ViewData["Title"] = "Chi tiết lịch hẹn";
+    ViewData["UseDashboardLayout"] = true;
+}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <h1>Chi tiết lịch hẹn</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+</div>
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning">@Model.Error</div>
+}
+
+@if (Model.Appointment != null)
+{
+    var apt = Model.Appointment;
+    var badgeClass = apt.Status switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "Approved" => "bg-info text-white",
+        "Completed" => "bg-success",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between">
+                    <h5 class="mb-0">Thông tin lịch hẹn</h5>
+                    <span class="badge @badgeClass fs-6">@apt.Status</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Bệnh nhân</div>
+                        <div class="col-sm-8"><strong>@(apt.PatientName ?? "N/A")</strong></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Thời gian bắt đầu</div>
+                        <div class="col-sm-8">@apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Thời gian kết thúc</div>
+                        <div class="col-sm-8">@apt.EndAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Chuyên khoa</div>
+                        <div class="col-sm-8">@(apt.Specialization ?? "-")</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Phí tư vấn</div>
+                        <div class="col-sm-8">@(apt.Fee?.ToString("N0") ?? "-") ₫</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(apt.Notes))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted">Ghi chú</div>
+                            <div class="col-sm-8">@apt.Notes</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(apt.CancellationReason))
+                    {
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted">Lý do hủy</div>
+                            <div class="col-sm-8 text-danger">@apt.CancellationReason</div>
+                        </div>
+                    }
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Ngày tạo</div>
+                        <div class="col-sm-8">@apt.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white"><h5 class="mb-0">Hành động</h5></div>
+                <div class="card-body d-grid gap-2">
+                    @if (apt.Status == "Pending")
+                    {
+                        <form method="post" asp-page-handler="Confirm">
+                            <input type="hidden" name="id" value="@apt.Id" />
+                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg me-1"></i>Duyệt lịch hẹn</button>
+                        </form>
+                    }
+                    @if (apt.Status == "Approved")
+                    {
+                        <form method="post" asp-page-handler="Complete">
+                            <input type="hidden" name="id" value="@apt.Id" />
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-all me-1"></i>Hoàn thành</button>
+                        </form>
+                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
+                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
+                        </a>
+                    }
+                    @if (apt.Status == "Completed")
+                    {
+                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
+                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
+                        </a>
+                    }
+                    @if (apt.Status is "Pending" or "Approved")
+                    {
+                        <hr />
+                        <form method="post" asp-page-handler="Cancel">
+                            <input type="hidden" name="id" value="@apt.Id" />
+                            <div class="mb-2">
+                                <input name="reason" class="form-control form-control-sm" placeholder="Lý do hủy (tùy chọn)" />
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Bạn có chắc muốn hủy?')">
+                                <i class="bi bi-x-lg me-1"></i>Hủy lịch hẹn
+                            </button>
+                        </form>
+                    }
+                    @if (apt.Status is "Completed" or "Cancelled")
+                    {
+                        <div class="text-center text-muted py-2">
+                            <i class="bi bi-info-circle"></i> Lịch hẹn đã kết thúc
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
