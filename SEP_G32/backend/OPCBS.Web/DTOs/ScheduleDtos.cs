@@ -32,6 +32,7 @@ public class CreateScheduleDto
     public string StartTime { get; set; } = "08:00";
     public string EndTime { get; set; } = "17:00";
     public int SlotDuration { get; set; } = 60;
+    public int WeeksAhead { get; set; } = 4;
 }
 
 public class UpdateScheduleDto
@@ -41,6 +42,7 @@ public class UpdateScheduleDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public int? SlotDuration { get; set; }
+    public int? WeeksAhead { get; set; }
 }
 
 public class DayOffDto
@@ -65,4 +67,21 @@ public class TimeSlotDto
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
     public bool IsAvailable { get; set; }
+}
+
+public class CreateSlotDto
+{
+    public required string Date { get; set; }
+    public required string StartTime { get; set; }
+    public required string EndTime { get; set; }
+    public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+}
+
+public class UpdateSlotDto
+{
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public string? Notes { get; set; }
+    public int? MaxPatients { get; set; }
 }

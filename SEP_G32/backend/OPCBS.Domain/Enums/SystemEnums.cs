@@ -36,7 +36,10 @@ public enum AppointmentStatus
     Completed = 4,
     
     /// <summary>Appointment cancelled</summary>
-    Cancelled = 5
+    Cancelled = 5,
+    
+    /// <summary>Reschedule requested by patient, pending doctor approval</summary>
+    RescheduleRequested = 6
 }
 
 /// <summary>
@@ -186,7 +189,16 @@ public enum NotificationType
     Package = 4,
     
     /// <summary>System notifications</summary>
-    System = 5
+    System = 5,
+
+    /// <summary>Appointment reminder (1 hour before)</summary>
+    Reminder = 6,
+
+    /// <summary>Consultation record notification</summary>
+    ConsultationNote = 7,
+
+    /// <summary>New message notification</summary>
+    Message = 8
 }
 
 /// <summary>
@@ -284,4 +296,106 @@ public enum AuditAction
     
     /// <summary>Custom action specific to the entity type</summary>
     Custom = 3
+}
+
+/// <summary>
+/// Conversation status for doctor-patient messaging
+/// </summary>
+public enum ConversationStatus
+{
+    /// <summary>Conversation is open and active</summary>
+    Open = 0,
+
+    /// <summary>Conversation is closed and read-only</summary>
+    Closed = 1
+}
+
+/// <summary>
+/// Treatment case lifecycle status
+/// </summary>
+public enum TreatmentCaseStatus
+{
+    /// <summary>Case is currently active and in progress</summary>
+    Active = 0,
+
+    /// <summary>Case is temporarily on hold</summary>
+    OnHold = 1,
+
+    /// <summary>Case completed successfully (all sessions done)</summary>
+    Completed = 2,
+
+    /// <summary>Case terminated early by doctor or patient</summary>
+    Terminated = 3,
+
+    /// <summary>Case transferred to another doctor</summary>
+    Transferred = 4
+}
+
+/// <summary>
+/// Treatment session status within a case
+/// </summary>
+public enum TreatmentSessionStatus
+{
+    /// <summary>Session scheduled but not yet started</summary>
+    Scheduled = 0,
+
+    /// <summary>Session currently in progress</summary>
+    InProgress = 1,
+
+    /// <summary>Session completed successfully</summary>
+    Completed = 2,
+
+    /// <summary>Session was cancelled</summary>
+    Cancelled = 3,
+
+    /// <summary>Patient did not attend the session</summary>
+    NoShow = 4
+}
+
+/// <summary>
+/// Treatment goal priority level
+/// </summary>
+public enum GoalPriority
+{
+    /// <summary>Low priority goal</summary>
+    Low = 0,
+
+    /// <summary>Medium priority goal</summary>
+    Medium = 1,
+
+    /// <summary>High priority goal</summary>
+    High = 2
+}
+
+/// <summary>
+/// Treatment goal completion status
+/// </summary>
+public enum GoalStatus
+{
+    /// <summary>Goal has not been started</summary>
+    NotStarted = 0,
+
+    /// <summary>Goal is actively being worked on</summary>
+    InProgress = 1,
+
+    /// <summary>Goal has been achieved</summary>
+    Achieved = 2,
+
+    /// <summary>Goal has been deferred to a later time</summary>
+    Deferred = 3,
+
+    /// <summary>Goal has been cancelled</summary>
+    Cancelled = 4
+}
+
+/// <summary>
+/// Consultation note visibility - controls who can view the note
+/// </summary>
+public enum NoteVisibility
+{
+    /// <summary>Only the doctor can see this note (clinical hypotheses, internal observations)</summary>
+    DoctorOnly = 0,
+
+    /// <summary>Both doctor and patient can see this note (session summary, advice, homework)</summary>
+    PatientVisible = 1
 }

@@ -26,7 +26,8 @@ RegisterApi<IDoctorApiService, DoctorApiService>(builder.Services);
 RegisterApi<IAppointmentApiService, AppointmentApiService>(builder.Services);
 RegisterApi<IBlogApiService, BlogApiService>(builder.Services);
 RegisterApi<IScheduleApiService, ScheduleApiService>(builder.Services);
-RegisterApi<IConsultationRecordApiService, ConsultationRecordApiService>(builder.Services);
+RegisterApi<IConsultationNoteApiService, ConsultationNoteApiService>(builder.Services);
+RegisterApi<IPatientRecordApiService, PatientRecordApiService>(builder.Services);
 RegisterApi<ITreatmentPackageApiService, TreatmentPackageApiService>(builder.Services);
 RegisterApi<IReviewApiService, ReviewApiService>(builder.Services);
 RegisterApi<IVerificationApiService, VerificationApiService>(builder.Services);
@@ -35,6 +36,12 @@ RegisterApi<ISubscriptionApiService, SubscriptionApiService>(builder.Services);
 RegisterApi<IAdminApiService, AdminApiService>(builder.Services);
 RegisterApi<ICustomerSupportApiService, CustomerSupportApiService>(builder.Services);
 RegisterApi<IBusinessManagerApiService, BusinessManagerApiService>(builder.Services);
+RegisterApi<IPsychometricApiService, PsychometricApiService>(builder.Services);
+RegisterApi<INotificationApiService, NotificationApiService>(builder.Services);
+RegisterApi<ITherapyApiService, TherapyApiService>(builder.Services);
+RegisterApi<IFavoriteApiService, FavoriteApiService>(builder.Services);
+RegisterApi<IMessagingApiService, MessagingApiService>(builder.Services);
+RegisterApi<ITreatmentCaseApiService, TreatmentCaseApiService>(builder.Services);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

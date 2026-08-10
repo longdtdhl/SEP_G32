@@ -79,6 +79,12 @@ public class ConsultationNote : BaseEntity
     /// <summary>Next appointment recommendation date (if applicable)</summary>
     public DateTime? NextAppointmentRecommendedDate { get; set; }
 
+    /// <summary>Date of the consultation. Auto-filled from appointment if linked, otherwise doctor inputs manually.</summary>
+    public DateTime? ConsultationDate { get; set; }
+
+    /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
+    public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
+
     /// <summary>Navigation property to Appointment</summary>
     public virtual Appointment? Appointment { get; set; }
 
@@ -97,14 +103,23 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Foreign key to DoctorProfile who created this package</summary>
     public Guid DoctorId { get; set; }
 
-    /// <summary>Foreign key to PatientProfile to whom package is assigned</summary>
-    public Guid PatientId { get; set; }
+    /// <summary>Foreign key to PatientProfile to whom package is assigned (nullable for doctor template packages)</summary>
+    public Guid? PatientId { get; set; }
 
     /// <summary>Package name</summary>
     public required string Name { get; set; }
 
     /// <summary>Package description and details</summary>
     public string? Description { get; set; }
+
+    /// <summary>Target outcomes / Goal of the treatment package</summary>
+    public string? TargetOutcome { get; set; }
+
+    /// <summary>Recommended exercises and therapeutic activities</summary>
+    public string? RecommendedExercises { get; set; }
+
+    /// <summary>Instructions and guidance for the patient</summary>
+    public string? Instructions { get; set; }
 
     /// <summary>Total number of counseling sessions in package</summary>
     public int SessionQuantity { get; set; }
@@ -140,7 +155,10 @@ public class TreatmentPackage : BaseEntity
     public virtual required DoctorProfile Doctor { get; set; }
 
     /// <summary>Navigation property to Patient</summary>
-    public virtual required PatientProfile Patient { get; set; }
+    public virtual PatientProfile? Patient { get; set; }
+
+    /// <summary>Navigation property: treatment cases created from this package template</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
 
     /// <summary>Navigation property: appointments using this package</summary>
     public virtual ICollection<Appointment>? Appointments { get; set; }

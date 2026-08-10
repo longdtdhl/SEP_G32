@@ -796,3 +796,324 @@ public class SubscriptionService : ISubscriptionService
         return ApiResponse.ErrorResponse("Invalid payment callback");
     }
 }
+
+public class ConsultationNoteService : IConsultationNoteService
+{
+    private readonly IRepository<ConsultationNote> _recordRepo;
+    private readonly IRepository<Appointment> _apptRepo;
+    private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IRepository<PatientProfile> _patientRepo;
+    private readonly IRepository<PatientRecord> _patientRecordRepo;
+    private readonly IRepository<User> _userRepo;
+    private readonly IRepository<TreatmentPackage> _packageRepo;
+    private readonly INotificationService _notificationService;
+    private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
+
+    public ConsultationNoteService(
+        IRepository<ConsultationNote> recordRepo,
+        IRepository<Appointment> apptRepo,
+        IRepository<DoctorProfile> doctorRepo,
+        IRepository<PatientProfile> patientRepo,
+        IRepository<PatientRecord> patientRecordRepo,
+        IRepository<User> userRepo,
+        IRepository<TreatmentPackage> packageRepo,
+        INotificationService notificationService,
+        IUnitOfWork uow,
+        IMapper mapper)
+    {
+        _recordRepo = recordRepo;
+        _apptRepo = apptRepo;
+        _doctorRepo = doctorRepo;
+        _patientRepo = patientRepo;
+        _patientRecordRepo = patientRecordRepo;
+        _userRepo = userRepo;
+        _packageRepo = packageRepo;
+        _notificationService = notificationService;
+        _uow = uow;
+        _mapper = mapper;
+    }
+
+    private async Task EnrichRecordsAsync(List<ConsultationNoteDto> dtos, CancellationToken ct)
+    {
+        if (!dtos.Any()) return;
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+        var allNotes = await _recordRepo.GetAllAsync(ct);
+
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
+        var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
+        var patientUserMap = allPatients.ToDictionary(p => p.Id, p => p.UserId);
+        var patientRecordMap = allPatientRecords.ToDictionary(pr => pr.Id);
+
+        // Build appointment → package name lookup
+        Dictionary<Guid, string> apptPackageMap = new();
+        try
+        {
+            var allAppts = await _apptRepo.GetAllAsync(ct);
+            var allPackages = await _packageRepo.GetAllAsync(ct);
+            var packageDict = allPackages.ToDictionary(p => p.Id, p => p.Name);
+            foreach (var appt in allAppts.Where(a => a.TreatmentPackageId.HasValue))
+            {
+                if (appt.TreatmentPackageId.HasValue && packageDict.TryGetValue(appt.TreatmentPackageId.Value, out var pkgName))
+                    apptPackageMap[appt.Id] = pkgName;
+            }
+        }
+        catch { }
+
+        foreach (var dto in dtos)
+        {
+            // Enrich from entity for fields AutoMapper may miss
+            var entity = allNotes.FirstOrDefault(n => n.Id == dto.Id);
+            if (entity != null)
+            {
+                dto.ConsultationDate = entity.ConsultationDate;
+                dto.Visibility = (int)entity.Visibility;
+            }
+
+            if (string.IsNullOrEmpty(dto.DoctorName) && doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
+                dto.DoctorName = docName;
+                
+            if (patientRecordMap.TryGetValue(dto.PatientRecordId, out var pr))
+            {
+                if (pr.PatientId.HasValue && patientUserMap.TryGetValue(pr.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
+                {
+                    dto.PatientName = patName;
+                }
+                else
+                {
+                    dto.WalkInPatientName = pr.GuestName;
+                    dto.WalkInPatientPhone = pr.GuestPhone;
+                    dto.WalkInPatientEmail = pr.GuestEmail;
+                }
+            }
+
+            // Enrich package name from appointment
+            if (dto.AppointmentId.HasValue && apptPackageMap.TryGetValue(dto.AppointmentId.Value, out var packageName))
+                dto.PackageName = packageName;
+        }
+    }
+
+    public async Task<ApiResponse<ConsultationNoteDto>> CreateAsync(Guid doctorUserId, CreateConsultationNoteDto dto, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Doctor not found");
+
+        if (dto.NextAppointmentRecommendedDate.HasValue && dto.NextAppointmentRecommendedDate.Value.Date < DateTime.Today)
+        {
+            return ApiResponse<ConsultationNoteDto>.ErrorResponse("Recommended follow-up date cannot be in the past.");
+        }
+
+        PatientRecord? patientRecord = null;
+        if (dto.PatientRecordId != Guid.Empty)
+        {
+            patientRecord = await _patientRecordRepo.GetByIdAsync(dto.PatientRecordId, ct);
+        }
+
+        // Auto-create PatientRecord if missing (e.g., guest booking)
+        if (patientRecord == null && dto.AppointmentId.HasValue)
+        {
+            var appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
+            if (appointment != null)
+            {
+                if (appointment.PatientId.HasValue)
+                {
+                    // Check if patient already has a record with this doctor
+                    var allRecords = await _patientRecordRepo.GetAllAsync(ct);
+                    patientRecord = allRecords.FirstOrDefault(r => r.PatientId == appointment.PatientId && r.DoctorId == doctor.Id);
+                }
+
+                if (patientRecord == null)
+                {
+                    patientRecord = new PatientRecord
+                    {
+                        DoctorId = doctor.Id,
+                        PatientId = appointment.PatientId,
+                        Doctor = doctor,
+                        GuestName = appointment.GuestName,
+                        GuestEmail = appointment.GuestEmail,
+                        GuestPhone = appointment.GuestPhoneNumber,
+                        GeneralNotes = $"Auto-created from appointment {appointment.BookingCode}"
+                    };
+                    if (appointment.PatientId.HasValue)
+                    {
+                        var allPatients = await _patientRepo.GetAllAsync(ct);
+                        var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                        if (pat != null) patientRecord.Patient = pat;
+                    }
+                    await _patientRecordRepo.AddAsync(patientRecord, ct);
+                    await _uow.SaveChangesAsync(ct);
+                }
+            }
+        }
+
+        if (patientRecord == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Could not resolve or create patient record");
+
+        var record = new ConsultationNote
+        {
+            AppointmentId = dto.AppointmentId,
+            DoctorId = doctor.Id,
+            PatientRecordId = patientRecord.Id,
+            ConsultationSummary = dto.ConsultationSummary,
+            Diagnosis = dto.Diagnosis,
+            Recommendation = dto.Recommendation,
+            FollowUpNotes = dto.FollowUpNotes,
+            TherapyPlan = dto.TherapyPlan,
+            NextAppointmentRecommendedDate = dto.NextAppointmentRecommendedDate,
+            ConsultationDate = dto.ConsultationDate,
+            Visibility = (NoteVisibility)dto.Visibility,
+            Doctor = doctor,
+            PatientRecord = patientRecord
+        };
+        if (dto.AppointmentId.HasValue)
+        {
+            var appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
+            if (appointment != null)
+            {
+                record.Appointment = appointment;
+                // Auto-fill ConsultationDate from appointment date if not set
+                if (!record.ConsultationDate.HasValue)
+                    record.ConsultationDate = appointment.AppointmentDate;
+                if (appointment.PatientId.HasValue)
+                {
+                    try
+                    {
+                        var allPatients = await _patientRepo.GetAllAsync(ct);
+                        var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                        var allUsers = await _userRepo.GetAllAsync(ct);
+                        var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                        if (pat != null)
+                        {
+                            await _notificationService.CreateNotificationAsync(
+                                pat.UserId,
+                                "📋 New Consultation Record",
+                                $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a consultation record for your appointment. Please review it.",
+                                Domain.Enums.NotificationType.ConsultationNote,
+                                record.Id, // this might be empty guid since not saved yet
+                                "ConsultationNote",
+                                ct);
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+        await _recordRepo.AddAsync(record, ct);
+        await _uow.SaveChangesAsync(ct);
+        var createdLinkedDto = _mapper.Map<ConsultationNoteDto>(record);
+        await EnrichRecordsAsync(new List<ConsultationNoteDto> { createdLinkedDto }, ct);
+
+        return ApiResponse<ConsultationNoteDto>.SuccessResponse(createdLinkedDto, "Record created");
+    }
+
+    public async Task<ApiResponse<ConsultationNoteDto>> UpdateAsync(Guid recordId, Guid doctorUserId, UpdateConsultationNoteDto dto, CancellationToken ct)
+    {
+        var record = await _recordRepo.GetByIdAsync(recordId, ct);
+        if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Record not found");
+        record.ConsultationSummary = dto.ConsultationSummary;
+        record.Diagnosis = dto.Diagnosis;
+        record.Recommendation = dto.Recommendation;
+        record.FollowUpNotes = dto.FollowUpNotes;
+        record.TherapyPlan = dto.TherapyPlan;
+        record.Visibility = (NoteVisibility)dto.Visibility;
+        // Only allow updating ConsultationDate if not linked to an appointment
+        if (!record.AppointmentId.HasValue && dto.ConsultationDate.HasValue)
+            record.ConsultationDate = dto.ConsultationDate;
+        record.UpdatedAt = DateTime.UtcNow;
+        _recordRepo.Update(record);
+        await _uow.SaveChangesAsync(ct);
+        var updatedDto = _mapper.Map<ConsultationNoteDto>(record);
+        await EnrichRecordsAsync(new List<ConsultationNoteDto> { updatedDto }, ct);
+        return ApiResponse<ConsultationNoteDto>.SuccessResponse(updatedDto, "Record updated");
+    }
+
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    {
+        var records = await _recordRepo.GetAllAsync(ct);
+        var filtered = records.Where(x => x.PatientRecordId == patientRecordId).OrderByDescending(x => x.CreatedAt);
+
+        var total = filtered.Count();
+        var paged = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(paged);
+        await EnrichRecordsAsync(dtos, ct);
+
+        var pagination = new PaginationMetadata
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
+
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, "Records retrieved successfully", pagination);
+    }
+
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    {
+        var patientRecord = await _patientRecordRepo.GetByIdAsync(patientUserId, ct);
+        if (patientRecord == null)
+        {
+            // Try to find by patient UserId
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+            if (patient != null)
+            {
+                var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+                patientRecord = allPatientRecords.FirstOrDefault(pr => pr.PatientId == patient.Id);
+            }
+        }
+        
+        if (patientRecord == null) return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Patient record not found");
+        var all = await _recordRepo.GetAllAsync(ct);
+        var records = all.Where(r => r.PatientRecordId == patientRecord.Id).ToList();
+        var total = records.Count;
+        var items = records.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(items);
+        await EnrichRecordsAsync(dtos, ct);
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+    }
+
+    public async Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct)
+    {
+        var record = await _recordRepo.GetByIdAsync(recordId, ct);
+        if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Record not found");
+        var dto = _mapper.Map<ConsultationNoteDto>(record);
+        await EnrichRecordsAsync(new List<ConsultationNoteDto> { dto }, ct);
+        return ApiResponse<ConsultationNoteDto>.SuccessResponse(dto);
+    }
+
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Doctor not found");
+
+        var all = await _recordRepo.GetAllAsync(ct);
+        var records = all.Where(r => r.AppointmentId == appointmentId && r.DoctorId == doctor.Id).ToList();
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(records);
+        await EnrichRecordsAsync(dtos, ct);
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos);
+    }
+
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByDoctorAsync(Guid doctorUserId, int page, int pageSize, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null) return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Doctor not found");
+
+        var all = await _recordRepo.GetAllAsync(ct);
+        var records = all.Where(r => r.DoctorId == doctor.Id).ToList();
+        var total = records.Count;
+        var items = records.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(items);
+        await EnrichRecordsAsync(dtos, ct);
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(
+            dtos,
+            pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+    }
+}
+

@@ -2,6 +2,7 @@ using AutoMapper;
 using Moq;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.Interfaces.Repositories;
+using OPCBS.Application.Interfaces.Services;
 using OPCBS.Application.Services;
 using OPCBS.Domain.Entities;
 using OPCBS.Domain.Enums;
@@ -19,8 +20,13 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<AppointmentSlot>> _slotRepo;
     private readonly Mock<IRepository<AppointmentHistory>> _historyRepo;
     private readonly Mock<IRepository<DoctorProfile>> _doctorRepo;
+    private readonly Mock<IRepository<User>> _userRepo;
     private readonly Mock<IRepository<PatientProfile>> _patientRepo;
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
+    private readonly Mock<IRepository<TreatmentPackage>> _packageRepo;
+    private readonly Mock<IRepository<ConsultationNote>> _consultationNoteRepo;
+    private readonly Mock<INotificationService> _notificationService;
+    private readonly Mock<IEmailService> _emailService;
     private readonly Mock<IUnitOfWork> _uow;
     private readonly Mock<IMapper> _mapperMock;
     private readonly AppointmentService _sut;
@@ -39,8 +45,13 @@ public class AppointmentServiceTests
         _slotRepo = new Mock<IRepository<AppointmentSlot>>();
         _historyRepo = new Mock<IRepository<AppointmentHistory>>();
         _doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        _userRepo = new Mock<IRepository<User>>();
         _patientRepo = new Mock<IRepository<PatientProfile>>();
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
+        _packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        _consultationNoteRepo = new Mock<IRepository<ConsultationNote>>();
+        _notificationService = new Mock<INotificationService>();
+        _emailService = new Mock<IEmailService>();
         _uow = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
 
@@ -63,8 +74,13 @@ public class AppointmentServiceTests
             _slotRepo.Object,
             _historyRepo.Object,
             _doctorRepo.Object,
+            _userRepo.Object,
             _patientRepo.Object,
             _subscriptionRepo.Object,
+            _packageRepo.Object,
+            _consultationNoteRepo.Object,
+            _notificationService.Object,
+            _emailService.Object,
             _uow.Object,
             _mapperMock.Object);
     }

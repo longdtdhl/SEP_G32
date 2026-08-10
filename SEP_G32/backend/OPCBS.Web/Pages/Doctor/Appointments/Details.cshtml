@@ -1,18 +1,144 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.Appointments.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết lịch hẹn";
+    ViewData["Title"] = "Appointment Details";
     ViewData["UseDashboardLayout"] = true;
 }
 
+<style>
+    .appointment-status-banner {
+        padding: 1rem 1.5rem;
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+    .status-pending { background: linear-gradient(135deg, #fef3c7, #fffbeb); color: #92400e; border: 1px solid #fde68a; }
+    .status-approved { background: linear-gradient(135deg, #e0f2fe, #f0f9ff); color: #0369a1; border: 1px solid #bae6fd; }
+    .status-inprogress { background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #c2410c; border: 1px solid #fed7aa; }
+    .status-completed { background: linear-gradient(135deg, #dcfce7, #f0fdf4); color: #15803d; border: 1px solid #bbf7d0; }
+    .status-rejected { background: linear-gradient(135deg, #f3f4f6, #f9fafb); color: #4b5563; border: 1px solid #e5e7eb; }
+    .status-cancelled { background: linear-gradient(135deg, #fee2e2, #fef2f2); color: #b91c1c; border: 1px solid #fecaca; }
+
+    .detail-card {
+        border-radius: 18px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        background: #fff;
+        overflow: hidden;
+    }
+    .detail-card-header {
+        background: linear-gradient(135deg, #fbfcfe, #ffffff);
+        border-bottom: 1px solid #f0f2f5;
+        padding: 1.5rem;
+    }
+    .detail-card-body {
+        padding: 2rem;
+    }
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f0f2f5;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-row-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    .info-row-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.1rem;
+    }
+    .info-row-val {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .bg-icon-primary { background: rgba(66, 153, 225, 0.15); color: #3182ce; }
+    .bg-icon-success { background: rgba(72, 187, 120, 0.15); color: #38a169; }
+    .bg-icon-info { background: rgba(0, 180, 216, 0.15); color: #0077b6; }
+    .bg-icon-purple { background: rgba(159, 122, 234, 0.15); color: #805ad5; }
+    .bg-icon-orange { background: rgba(237, 137, 54, 0.15); color: #dd6b20; }
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.08); }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1); }
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.08); }
+    
+    .evaluation-section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .evaluation-item {
+        margin-bottom: 1.25rem;
+    }
+    .evaluation-item:last-child {
+        margin-bottom: 0;
+    }
+    .evaluation-bubble {
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        border: 1px solid transparent;
+        line-height: 1.6;
+    }
+    .bubble-symptoms { background-color: #fff5f5; border-color: #feb2b2; color: #9b2c2c; }
+    .bubble-history { background-color: #ebf8ff; border-color: #90cdf4; color: #2b6cb0; }
+    .bubble-expectations { background-color: #f0fff4; border-color: #9ae6b4; color: #22543d; }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #edf2f7;
+    }
+    .progress-bar-custom .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #48bb78, #38a169);
+    }
+    
+    .dass-badge {
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+</style>
+
 <div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Chi tiết lịch hẹn</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+    <h1>Appointment Details</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-warning">@Model.Error</div>
+    <div class="alert alert-warning alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Success != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill me-2"></i>@Model.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 @if (Model.Appointment != null)
@@ -20,112 +146,684 @@
     var apt = Model.Appointment;
     var badgeClass = apt.Status switch
     {
-        "Pending" => "bg-warning text-dark",
-        "Approved" => "bg-info text-white",
-        "Completed" => "bg-success",
-        "Cancelled" => "bg-danger",
+        0 => "bg-warning text-dark",
+        1 => "bg-info text-white",
+        3 => "bg-warning text-dark",
+        4 => "bg-success text-white",
+        5 => "bg-danger text-white",
+        2 => "bg-secondary text-white",
+        6 => "bg-warning text-dark",
         _ => "bg-secondary"
     };
 
+    var statusBannerClass = apt.Status switch
+    {
+        0 => "status-pending",
+        1 => "status-approved",
+        3 => "status-inprogress",
+        4 => "status-completed",
+        5 => "status-cancelled",
+        2 => "status-rejected",
+        6 => "status-pending",
+        _ => "status-rejected"
+    };
+
+    @* Issue 6: Treatment Package Banner *@
+    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
+    {
+        <div class="alert d-flex align-items-center gap-2 mb-3" style="background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border: 1px solid #a5d6a7; border-radius: 12px; padding: 1rem 1.5rem;">
+            <i class="bi bi-box-seam-fill fs-4" style="color:#2e7d32;"></i>
+            <div>
+                <strong style="color:#2e7d32;">Treatment Package Appointment</strong>
+                <div class="small text-muted">This appointment is part of package: <strong class="text-dark">@apt.TreatmentPackageName</strong></div>
+            </div>
+        </div>
+    }
+
+    <!-- Status Banner -->
+    <div class="appointment-status-banner @statusBannerClass">
+        <div class="d-flex align-items-center gap-2">
+            @if (apt.Status == 0)
+            {
+                <i class="bi bi-hourglass-split"></i>
+                <span><strong>Pending Approval</strong> — Review the appointment details and approve or reject this booking request.</span>
+            }
+            else if (apt.Status == 1)
+            {
+                <i class="bi bi-calendar-check"></i>
+                <span><strong>Approved</strong> — This appointment is confirmed. Click "Start Consultation" when the session begins.</span>
+                @if (apt.PatientId.HasValue)
+                {
+                    <a asp-page="/Doctor/Messages/Index" asp-route-patientId="@apt.PatientId" class="btn btn-sm btn-info text-white ms-auto" style="border-radius:10px;white-space:nowrap;">
+                        <i class="bi bi-chat-dots-fill me-1"></i>Chat with Patient
+                    </a>
+                }
+            }
+            else if (apt.Status == 3)
+            {
+                <i class="bi bi-play-circle-fill text-warning"></i>
+                <span><strong>In Progress</strong> — The consultation session is currently ongoing. Click "Complete Appointment" to finalize.</span>
+            }
+            else if (apt.Status == 4)
+            {
+                <i class="bi bi-patch-check-fill text-success"></i>
+                <span><strong>Completed</strong> — This appointment has been successfully concluded.</span>
+            }
+            else if (apt.Status == 2)
+            {
+                <i class="bi bi-x-octagon-fill"></i>
+                <span><strong>Rejected</strong> — You have declined this booking request.</span>
+            }
+            else if (apt.Status == 6)
+            {
+                <i class="bi bi-arrow-repeat text-warning fs-4 me-2"></i>
+                <div>
+                    <strong>Reschedule Requested</strong> — Patient requested to move appointment to <strong>@(apt.ProposedSlotDate ?? "New date") (@(apt.ProposedSlotStartTime ?? "") - @(apt.ProposedSlotEndTime ?? ""))</strong>.
+                    @if (!string.IsNullOrEmpty(apt.RescheduleReason))
+                    {
+                        <div class="small opacity-75 mt-1">Reason: "@apt.RescheduleReason"</div>
+                    }
+                </div>
+            }
+            else if (apt.Status == 5)
+            {
+                <i class="bi bi-x-circle-fill"></i>
+                <span><strong>Cancelled</strong> — This appointment was cancelled.</span>
+            }
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between">
-                    <h5 class="mb-0">Thông tin lịch hẹn</h5>
-                    <span class="badge @badgeClass fs-6">@apt.Status</span>
+            <div class="detail-card mb-4">
+                <div class="detail-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1 fw-bold text-dark"><i class="bi bi-calendar2-heart text-primary me-2"></i>Appointment Details</h5>
+                        <div class="text-muted small">Booking Code: <strong class="text-dark">@apt.BookingCode</strong></div>
+                    </div>
+                    <span class="badge @badgeClass px-3 py-2 rounded-pill fs-6 fw-semibold shadow-sm">@apt.StatusText</span>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Bệnh nhân</div>
-                        <div class="col-sm-8"><strong>@(apt.PatientName ?? "N/A")</strong></div>
+                <div class="detail-card-body">
+                    
+                    <!-- Information Grid -->
+                    <!-- Appointment Info Rows -->
+                    <div class="bg-white rounded-3 border mb-4" style="overflow:hidden;">
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-primary"><i class="bi bi-person-fill"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Patient Name</div>
+                                <div class="info-row-val">@(apt.PatientName ?? "N/A")</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-purple"><i class="bi bi-clock-fill"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Schedule Time</div>
+                                <div class="info-row-val">@apt.StartAt.LocalDateTime.ToString("MM/dd/yyyy") &nbsp; <span style="color:#4f46e5; font-weight:500;">@apt.StartAt.LocalDateTime.ToString("HH:mm") – @apt.EndAt.LocalDateTime.ToString("HH:mm")</span></div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-success"><i class="bi bi-activity"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Specialization</div>
+                                <div class="info-row-val">@(apt.Specialization ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-icon bg-icon-info"><i class="bi bi-arrow-repeat"></i></div>
+                            <div style="flex:1;">
+                                <div class="info-row-label">Visit History</div>
+                                <div class="info-row-val">
+                                    @if (apt.VisitCount == 0)
+                                    {
+                                        <i class="bi bi-person-plus" style="color:#0d9488; margin-right:4px;"></i>
+                                        <text>First Consultation</text>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-arrow-repeat" style="color:#a5ca38; margin-right:4px;"></i>
+                                        <text>Visit :@apt.VisitCount times</text>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Thời gian bắt đầu</div>
-                        <div class="col-sm-8">@apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Thời gian kết thúc</div>
-                        <div class="col-sm-8">@apt.EndAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Chuyên khoa</div>
-                        <div class="col-sm-8">@(apt.Specialization ?? "-")</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Phí tư vấn</div>
-                        <div class="col-sm-8">@(apt.Fee?.ToString("N0") ?? "-") ₫</div>
-                    </div>
+
+                    @* Associated Treatment Package *@
+                    @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
+                    {
+                        <div class="p-3 mb-4 rounded-3 border d-flex align-items-center gap-3" style="background:#f0fdf4; border-color:#bbf7d0;">
+                            <div class="bg-icon-success p-2 rounded-3 text-success d-flex align-items-center justify-content-center" style="width:45px; height:45px; font-size:1.5rem; background: rgba(72, 187, 120, 0.15);">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small uppercase fw-semibold" style="font-size:0.8rem;">Associated Treatment Package</div>
+                                <strong class="text-success fs-5">@apt.TreatmentPackageName</strong>
+                            </div>
+                        </div>
+                    }
+
                     @if (!string.IsNullOrEmpty(apt.Notes))
                     {
-                        <div class="row mb-3">
-                            <div class="col-sm-4 text-muted">Ghi chú</div>
-                            <div class="col-sm-8">@apt.Notes</div>
+                        <div class="mb-4">
+                            <div class="fw-semibold text-muted mb-2"><i class="bi bi-chat-left-text me-2 text-primary"></i>Booking Notes</div>
+                            <div class="bg-light p-3 rounded-3 text-secondary" style="font-size:0.95rem; border: 1px solid #edf2f7;">@apt.Notes</div>
                         </div>
                     }
+
+                    <!-- Pre-Appointment Evaluation -->
+                    @{
+                        var hasAptEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                        var pRec = Model.PatientRecord;
+                        var hasProfileEval = pRec != null && (!string.IsNullOrEmpty(pRec.CurrentSymptoms) || !string.IsNullOrEmpty(pRec.PsychologicalHistory) || !string.IsNullOrEmpty(pRec.StressFactors));
+                    }
+                    <div class="evaluation-section mb-4 p-4 rounded-4 border shadow-sm bg-white">
+                        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                            <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
+                        </h5>
+                        
+                        @if (hasAptEval)
+                        {
+                            @if (!string.IsNullOrEmpty(apt.Symptoms))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-activity text-danger me-1"></i>Current Symptoms</div>
+                                    <div class="evaluation-bubble bubble-symptoms">@apt.Symptoms</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(apt.MedicalHistory))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-journal-medical text-primary me-1"></i>Medical History</div>
+                                    <div class="evaluation-bubble bubble-history">@apt.MedicalHistory</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(apt.Expectations))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-bullseye text-success me-1"></i>Expectations</div>
+                                    <div class="evaluation-bubble bubble-expectations">@apt.Expectations</div>
+                                </div>
+                            }
+                        }
+                        else if (hasProfileEval)
+                        {
+                            <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>Patient Profile Clinical Data (Returning Patient)</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(pRec!.CurrentSymptoms))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-activity text-danger me-1"></i>Recorded Symptoms</div>
+                                    <div class="evaluation-bubble bubble-symptoms">@pRec.CurrentSymptoms</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(pRec.PsychologicalHistory))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-journal-medical text-primary me-1"></i>Psychological History</div>
+                                    <div class="evaluation-bubble bubble-history">@pRec.PsychologicalHistory</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(pRec.StressFactors))
+                            {
+                                <div class="evaluation-item mb-3">
+                                    <div class="small fw-semibold text-muted mb-1"><i class="bi bi-lightning text-warning me-1"></i>Stress Factors</div>
+                                    <div class="evaluation-bubble bubble-expectations">@pRec.StressFactors</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No pre-appointment evaluation was submitted for this appointment (Follow-up visit or skipped during booking).</p>
+                        }
+                    </div>
+
+                    <!-- Psychometric Test Result -->
+                    <div class="mb-4 p-4 rounded-4 border shadow-sm bg-white">
+                        <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-2">
+                            <i class="bi bi-clipboard-data text-primary fs-4"></i>
+                            <h5 class="mb-0 fw-bold">Patient Assessment Screening</h5>
+                            @if (Model.PsychometricSubmission != null)
+                            {
+                                <span class="badge bg-success text-white ms-auto px-3 py-1.5 rounded-pill">Completed</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary text-white ms-auto px-3 py-1.5 rounded-pill">Not Taken</span>
+                            }
+                        </div>
+
+                        @if (Model.PsychometricSubmission != null)
+                        {
+                            @if (Model.IsUsingFallbackPsych)
+                            {
+                                <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2" style="border-radius:10px;">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>Showing the patient's most recent assessment (not linked to this appointment)</span>
+                                </div>
+                            }
+                            <div class="p-3 bg-light rounded-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong class="text-primary fs-5">@Model.PsychometricSubmission.TestTitle</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Result Interpretation:</span> 
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle fs-6 px-3 py-1 ms-1">@Model.PsychometricSubmission.Interpretation</span>
+                                </div>
+                                <div class="text-muted small">
+                                    Total Score: <strong class="text-dark">@Model.PsychometricSubmission.TotalScore</strong>
+                                </div>
+                            </div>
+                            
+                            @if (Model.PsychometricSubmission.TestType == "DASS21")
+                            {
+                                int depScore = 0, anxScore = 0, strScore = 0;
+                                try
+                                {
+                                    var doc = System.Text.Json.JsonDocument.Parse(Model.PsychometricSubmission.ScoreDataJson);
+                                    var root = doc.RootElement;
+                                    if (root.TryGetProperty("Depression", out var dep)) depScore = dep.GetInt32();
+                                    if (root.TryGetProperty("Anxiety", out var anx)) anxScore = anx.GetInt32();
+                                    if (root.TryGetProperty("Stress", out var str)) strScore = str.GetInt32();
+                                }
+                                catch { }
+                                <div class="mt-3">
+                                    <div class="row g-3">
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-danger text-danger text-center">
+                                                <div class="small text-muted mb-1">Depression</div>
+                                                <strong class="fs-4">@depScore</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-warning text-warning text-center">
+                                                <div class="small text-muted mb-1">Anxiety</div>
+                                                <strong class="fs-4">@anxScore</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="dass-badge bg-soft-info text-info text-center">
+                                                <div class="small text-muted mb-1">Stress</div>
+                                                <strong class="fs-4">@strScore</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No mental health psychometric assessment was completed for this appointment.</p>
+                        }
+                    </div>
+
+                    @* Previous Consultation Summary (from earlier visits) *@
+                    @if (Model.LatestConsultationNote != null)
+                    {
+                        <div class="mb-4 p-4 rounded-4 border bg-white shadow-sm" style="border-left: 5px solid #6366f1 !important;">
+                            <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                                <i class="bi bi-clock-history text-indigo"></i>
+                                <span>Previous Consultation (Latest)</span>
+                                <span class="ms-auto text-muted small"><i class="bi bi-calendar3 me-1"></i>@Model.LatestConsultationNote.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </h5>
+                            <div class="p-3 rounded-3" style="background:#f5f3ff;">
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Diagnosis))
+                                {
+                                    <div class="mb-2"><strong>Diagnosis:</strong> <span class="text-dark">@Model.LatestConsultationNote.Diagnosis</span></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.ConsultationSummary))
+                                {
+                                    <div class="mb-2"><strong>Session Notes:</strong> <p class="text-secondary small mb-0 mt-1 bg-white p-2.5 rounded-2 border">@Model.LatestConsultationNote.ConsultationSummary</p></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.Recommendation))
+                                {
+                                    <div class="mb-2"><strong>Recommendations:</strong> <span class="text-dark">@Model.LatestConsultationNote.Recommendation</span></div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.LatestConsultationNote.TherapyPlan))
+                                {
+                                    <div class="mb-0"><strong>Therapy Plan:</strong> <span class="text-dark">@Model.LatestConsultationNote.TherapyPlan</span></div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @* Active Treatment Package *@
+                    @if (Model.ActiveTreatmentPackage != null)
+                    {
+                        <div class="mb-4 p-4 rounded-4 border bg-white shadow-sm" style="border-left: 5px solid #10b981 !important;">
+                            <h5 class="fw-bold text-success mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-box-seam-fill text-success"></i>
+                                <span>Active Treatment Package</span>
+                                <span class="ms-auto badge bg-success bg-opacity-10 text-success border border-success-subtle">Active</span>
+                            </h5>
+                            <div class="p-3 rounded-3" style="background:#ecfdf5;">
+                                <div class="fw-bold fs-5 text-dark mb-2">@Model.ActiveTreatmentPackage.Name</div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between text-muted small mb-1">
+                                        <span>Completion Progress</span>
+                                        <strong>@Model.ActiveTreatmentPackage.CompletedSessions / @Model.ActiveTreatmentPackage.TotalSessions Sessions</strong>
+                                    </div>
+                                    <div class="progress-bar-custom">
+                                        @{
+                                            var pct = Model.ActiveTreatmentPackage.TotalSessions > 0 
+                                                ? (double)Model.ActiveTreatmentPackage.CompletedSessions / Model.ActiveTreatmentPackage.TotalSessions * 100 
+                                                : 0;
+                                        }
+                                        <div class="progress-fill" style="width: @(pct)%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="row text-center mt-3 g-2">
+                                    <div class="col-6">
+                                        <div class="bg-white p-2 rounded-2 border">
+                                            <div class="text-muted small" style="font-size: 0.8rem;">Remaining Sessions</div>
+                                            <strong class="text-primary fs-5">@Model.ActiveTreatmentPackage.RemainingSessions</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-white p-2 rounded-2 border">
+                                            <div class="text-muted small" style="font-size: 0.8rem;">Expiration Date</div>
+                                            <strong class="text-dark">@Model.ActiveTreatmentPackage.ExpirationDate.ToString("dd/MM/yyyy")</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
                     @if (!string.IsNullOrEmpty(apt.CancellationReason))
                     {
-                        <div class="row mb-3">
-                            <div class="col-sm-4 text-muted">Lý do hủy</div>
-                            <div class="col-sm-8 text-danger">@apt.CancellationReason</div>
+                        <div class="p-3 mb-4 rounded-3 bg-danger bg-opacity-10 border border-danger-subtle text-danger">
+                            <h6 class="fw-bold mb-1"><i class="bi bi-x-circle me-1"></i>Cancellation Reason</h6>
+                            <p class="mb-0 fw-semibold">@apt.CancellationReason</p>
                         </div>
                     }
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Ngày tạo</div>
-                        <div class="col-sm-8">@apt.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
-                    </div>
+                    
+                    @if (Model.AssociatedRecord != null)
+                    {
+                        <div class="p-4 rounded-4 border bg-white shadow-sm mb-0">
+                            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical-fill text-primary me-2"></i>Consultation Summary</h5>
+                            <div class="p-3 bg-light rounded-3">
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Diagnosis / Findings:</h6>
+                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Diagnosis ?? "No diagnosis recorded")</p>
+                                
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Session Notes:</h6>
+                                <p class="mb-3 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.ConsultationSummary ?? "No summary recorded")</p>
+                                
+                                <h6 class="fw-bold text-primary mb-1" style="font-size:0.9rem;">Recommendations:</h6>
+                                <p class="mb-0 text-dark bg-white p-2.5 rounded border small">@(Model.AssociatedRecord.Recommendation ?? "No recommendation recorded")</p>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
 
-        <!-- Actions -->
+        <!-- Sidebar Actions -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white"><h5 class="mb-0">Hành động</h5></div>
+                <div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold">Session Actions</h5></div>
                 <div class="card-body d-grid gap-2">
-                    @if (apt.Status == "Pending")
+                    <!-- Reschedule Request Approval/Decline -->
+                    @if (apt.Status == 6)
+                    {
+                        <div class="p-3 bg-warning bg-opacity-10 border border-warning-subtle rounded-3 mb-2">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-arrow-repeat text-warning me-1"></i>Reschedule Requested</h6>
+                            <div class="small text-muted mb-1">Proposed New Slot:</div>
+                            <div class="fw-bold text-dark mb-2">@(apt.ProposedSlotDate ?? "New date") (@(apt.ProposedSlotStartTime ?? "") - @(apt.ProposedSlotEndTime ?? ""))</div>
+                            @if (!string.IsNullOrEmpty(apt.RescheduleReason))
+                            {
+                                <div class="small text-muted mb-3">Reason: <em>"@apt.RescheduleReason"</em></div>
+                            }
+                            <div class="d-flex gap-2">
+                                <form method="post" asp-page-handler="ApproveReschedule" class="flex-grow-1">
+                                    <input type="hidden" name="id" value="@apt.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm w-100 py-2 rounded-2 fw-semibold">
+                                        <i class="bi bi-check-lg me-1"></i>Approve
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-outline-danger btn-sm flex-grow-1 py-2 rounded-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal">
+                                    <i class="bi bi-x-lg me-1"></i>Decline
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Confirm/Approve -->
+                    @if (apt.Status == 0)
                     {
                         <form method="post" asp-page-handler="Confirm">
                             <input type="hidden" name="id" value="@apt.Id" />
-                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-check-lg me-1"></i>Duyệt lịch hẹn</button>
+                            <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold"><i class="bi bi-check-lg me-1"></i>Approve Appointment</button>
                         </form>
                     }
-                    @if (apt.Status == "Approved")
+
+                    <!-- Start Consultation -->
+                    @if (apt.Status == 1)
                     {
-                        <form method="post" asp-page-handler="Complete">
+                        <form method="post" asp-page-handler="Start">
                             <input type="hidden" name="id" value="@apt.Id" />
-                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-all me-1"></i>Hoàn thành</button>
+                            <button type="submit" class="btn btn-primary w-100 py-2.5 rounded-3 fw-semibold"><i class="bi bi-play-circle me-1"></i>Start Consultation</button>
                         </form>
-                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
-                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
-                        </a>
                     }
-                    @if (apt.Status == "Completed")
+
+                    <!-- In Progress Flow -->
+                    @if (apt.Status == 3)
                     {
-                        <a asp-page="/Doctor/ConsultationRecords/Create" asp-route-appointmentId="@apt.Id" class="btn btn-outline-primary">
-                            <i class="bi bi-file-earmark-medical me-1"></i>Tạo hồ sơ tư vấn
-                        </a>
+                        @if (Model.HasConsultationNote)
+                        {
+                            <div class="alert alert-success py-2 mb-2 small d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Consultation note created!</span>
+                            </div>
+                            <form method="post" asp-page-handler="Complete">
+                                <input type="hidden" name="id" value="@apt.Id" />
+                                <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold mb-2"><i class="bi bi-check-all me-1"></i>Complete Appointment</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning py-2 mb-2 small d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Note required before completion.</span>
+                            </div>
+                            <button class="btn btn-success w-100 py-2.5 rounded-3 fw-semibold mb-2" data-bs-toggle="modal" data-bs-target="#createNoteModal">
+                                <i class="bi bi-check-all me-1"></i>Complete Appointment
+                            </button>
+                        }
+
+                        @if (Model.AssociatedRecord != null)
+                        {
+                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success w-100 rounded-3">
+                                <i class="bi bi-file-earmark-medical me-1"></i>View/Edit Note
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-primary w-100 rounded-3" data-bs-toggle="modal" data-bs-target="#createNoteModal">
+                                <i class="bi bi-file-earmark-medical me-1"></i>Write Consultation Note
+                            </button>
+                        }
                     }
-                    @if (apt.Status is "Pending" or "Approved")
+
+                    <!-- Completed Flow -->
+                    @if (apt.Status == 4)
+                    {
+                        @if (Model.AssociatedRecord != null)
+                        {
+                            <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-outline-success w-100 rounded-3">
+                                <i class="bi bi-file-earmark-medical me-1"></i>View/Edit Consultation Note
+                            </a>
+                        }
+                        @* Issue 5: Toggle Create/View Package button *@
+                        @if (apt.PatientId.HasValue)
+                        {
+                            @if (Model.ActiveTreatmentPackage != null)
+                            {
+                                <a asp-page="/Doctor/TreatmentPackages/Edit" asp-route-id="@Model.ActiveTreatmentPackage.Id" class="btn btn-outline-success w-100 rounded-3 mt-2">
+                                    <i class="bi bi-box-seam me-1"></i>View Package Details
+                                    <span class="badge bg-success ms-1">@Model.ActiveTreatmentPackage.RemainingSessions left</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@apt.PatientId" class="btn btn-outline-info w-100 rounded-3 mt-2">
+                                    <i class="bi bi-box-seam me-1"></i>Create Treatment Package
+                                </a>
+                            }
+                        }
+                    }
+
+                    <!-- Cancel Button (only for Pending or Approved) -->
+                    @if (apt.Status is 0 or 1)
                     {
                         <hr />
-                        <form method="post" asp-page-handler="Cancel">
-                            <input type="hidden" name="id" value="@apt.Id" />
-                            <div class="mb-2">
-                                <input name="reason" class="form-control form-control-sm" placeholder="Lý do hủy (tùy chọn)" />
-                            </div>
-                            <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Bạn có chắc muốn hủy?')">
-                                <i class="bi bi-x-lg me-1"></i>Hủy lịch hẹn
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-outline-danger w-100 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#doctorCancelModal">
+                            <i class="bi bi-x-lg me-1"></i>Cancel Appointment
+                        </button>
                     }
-                    @if (apt.Status is "Completed" or "Cancelled")
+                    @if (apt.Status is 4 or 5 or 2)
                     {
-                        <div class="text-center text-muted py-2">
-                            <i class="bi bi-info-circle"></i> Lịch hẹn đã kết thúc
+                        <div class="text-center text-muted py-2 small">
+                            <i class="bi bi-info-circle me-1"></i> Appointment session has ended.
                         </div>
                     }
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Create Note & Complete Modal -->
+    @if (apt.Status == 3)
+    {
+        <div class="modal fade" id="createNoteModal" tabindex="-1" aria-labelledby="createNoteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content" style="border-radius:18px; border:none;">
+                    <form method="post" asp-page-handler="CreateNoteAndComplete">
+                        <input type="hidden" name="id" value="@apt.Id" />
+                        <input type="hidden" asp-for="NoteInput.PatientRecordId" />
+                        
+                        <div class="modal-header border-0 pb-0 px-4 pt-4">
+                            <h5 class="modal-title fw-bold" id="createNoteModalLabel"><i class="bi bi-file-earmark-medical text-primary me-2"></i>Consultation Note & Completion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        
+                        <div class="modal-body px-4">
+                            <p class="text-muted small mb-3">Please fill in the consultation note below to complete and finalize the appointment record.</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Consultation Summary (Chief Complaint & Session Notes) <span class="text-danger">*</span></label>
+                                <textarea asp-for="NoteInput.ConsultationSummary" class="form-control" rows="4" required placeholder="Write a summary of the patient's complaints and counselling session..." style="border-radius:10px;"></textarea>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Diagnosis / Assessment findings</label>
+                                    <textarea asp-for="NoteInput.Diagnosis" class="form-control" rows="3" placeholder="Enter counselling diagnosis or assessment findings..." style="border-radius:10px;"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Recommendations</label>
+                                    <textarea asp-for="NoteInput.Recommendation" class="form-control" rows="3" placeholder="Enter treatment recommendations..." style="border-radius:10px;"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Therapy Plan</label>
+                                    <textarea asp-for="NoteInput.TherapyPlan" class="form-control" rows="3" placeholder="Enter therapy intervention plan..." style="border-radius:10px;"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Follow-up Notes</label>
+                                    <textarea asp-for="NoteInput.FollowUpNotes" class="form-control" rows="3" placeholder="Enter follow-up instructions..." style="border-radius:10px;"></textarea>
+                                </div>
+                            </div>
+
+                            @* Issue 1: Follow-up date field *@
+                            <div class="mb-3 mt-3 pt-3" style="border-top:1px solid #dee2e6;">
+                                <label class="form-label fw-semibold"><i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date</label>
+                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" style="border-radius:10px;" />
+                                <div class="form-text">Set a recommended date for the patient's next visit. An email reminder will be sent 1 day before.</div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold"><i class="bi bi-check-all me-1"></i>Save & Complete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (apt.Status is 0 or 1)
+    {
+        <!-- Doctor Cancel Modal -->
+        <div class="modal fade" id="doctorCancelModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:16px;border:none;">
+                    <form method="post" asp-page-handler="Cancel">
+                        <input type="hidden" name="id" value="@apt.Id" />
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted">Cancel the appointment with <strong>@(apt.PatientName ?? "this patient")</strong> on <strong>@apt.AppointmentDate</strong>?</p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Cancellation Reason</label>
+                                <select class="form-select mb-2" name="cancelCategory">
+                                    <option value="" disabled selected>Select a reason...</option>
+                                    <option value="Schedule Conflict">Schedule Conflict</option>
+                                    <option value="Emergency">Emergency</option>
+                                    <option value="Patient Request">Patient Request</option>
+                                    <option value="Unavailable">Unavailable</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <textarea name="reason" class="form-control" rows="3" placeholder="Additional details (optional)" style="border-radius:10px;"></textarea>
+                            </div>
+                            <div class="alert alert-info py-2 small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>Both doctors and patients must cancel at least 24 hours before the scheduled time.
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Confirm Cancellation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (apt.Status == 6)
+    {
+        <!-- Reject Reschedule Modal -->
+        <div class="modal fade" id="rejectRescheduleModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0">
+                    <form method="post" asp-page-handler="RejectReschedule" asp-route-id="@apt.Id">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Decline Reschedule Request</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">Declining this request will retain the patient's appointment at the originally scheduled date and time.</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-dark">Reason for declining (Optional)</label>
+                                <textarea name="reason" class="form-control rounded-3" rows="3" placeholder="Explain why you cannot accommodate this new slot..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light rounded-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger rounded-2"><i class="bi bi-x-lg me-1"></i>Decline Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }
