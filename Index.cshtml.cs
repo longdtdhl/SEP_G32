@@ -3,42 +3,38 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
-namespace OPCBS.Web.Pages.Doctor.Appointments;
+namespace OPCBS.Web.Pages.Doctor.Blogs;
 
 public class IndexModel : PageModel
 {
-    private readonly IAppointmentApiService _api;
-    public IndexModel(IAppointmentApiService api) => _api = api;
+    private readonly IBlogApiService _api;
+    public IndexModel(IBlogApiService api) => _api = api;
 
-    public List<AppointmentListItemDto> Appointments { get; set; } = new();
+    public List<BlogListItemDto> Blogs { get; set; } = new();
     public PaginationDto? Pagination { get; set; }
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public int CurrentPage { get; set; } = 1;
     public string? Error { get; set; }
 
     public async Task OnGetAsync()
     {
-        var filter = new AppointmentFilterDto { Status = Status, Search = Search, Page = CurrentPage, PageSize = 10 };
-        var (data, pagination, error) = await _api.GetDoctorAppointmentsAsync(filter);
-        Appointments = data; Pagination = pagination; Error = error;
+        Error = TempData["Error"] as string;
+        var filter = new BlogFilterDto { Status = Status, Page = CurrentPage, PageSize = 10 };
+        var (data, pagination, error) = await _api.GetMyBlogsAsync(filter);
+        Blogs = data; Pagination = pagination; Error ??= error;
     }
 
-    public async Task<IActionResult> OnPostConfirmAsync(Guid id)
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id)
     {
-        await _api.ConfirmAsync(id);
+        var (success, error) = await _api.DeleteAsync(id);
+        if (!success) TempData["Error"] = error;
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostCompleteAsync(Guid id)
+    public async Task<IActionResult> OnPostSubmitAsync(Guid id)
     {
-        await _api.CompleteAsync(id);
-        return RedirectToPage();
-    }
-
-    public async Task<IActionResult> OnPostCancelAsync(Guid id, string? reason)
-    {
-        await _api.CancelAsync(id, new CancelAppointmentDto { Reason = reason });
+        var (success, error) = await _api.SubmitForReviewAsync(id);
+        if (!success) TempData["Error"] = error;
         return RedirectToPage();
     }
 }

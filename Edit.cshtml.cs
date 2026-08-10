@@ -3,34 +3,36 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
-namespace OPCBS.Web.Pages.Doctor.ConsultationRecords;
+namespace OPCBS.Web.Pages.Doctor.Blogs;
 
 public class EditModel : PageModel
 {
-    private readonly IConsultationRecordApiService _api;
-    public EditModel(IConsultationRecordApiService api) => _api = api;
-
-    [BindProperty] public UpdateConsultationRecordDto Input { get; set; } = new();
-    public ConsultationRecordDto? Record { get; set; }
-    public Guid RecordId { get; set; }
+    private readonly IBlogApiService _api;
+    public EditModel(IBlogApiService api) => _api = api;
+    [BindProperty] public UpdateBlogDto Input { get; set; } = new();
+    [BindProperty] public string? TagsInput { get; set; }
+    public Guid BlogId { get; set; }
+    public string? CurrentStatus { get; set; }
     public string? Error { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        RecordId = id;
+        BlogId = id;
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
-        Record = data;
-        Input = new UpdateConsultationRecordDto { Diagnosis = data.Diagnosis, Notes = data.Notes, Prescription = data.Prescription, Recommendations = data.Recommendations };
+        CurrentStatus = data.Status;
+        Input = new UpdateBlogDto { Title = data.Title, Summary = data.Summary, Content = data.Content ?? "", Category = data.Category, ImageUrl = data.ImageUrl, Tags = data.Tags };
+        TagsInput = string.Join(", ", data.Tags);
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
-        RecordId = id;
+        BlogId = id;
+        if (!string.IsNullOrEmpty(TagsInput))
+            Input.Tags = TagsInput.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
-        TempData["Success"] = "Đã cập nhật hồ sơ.";
         return RedirectToPage("Index");
     }
 }
