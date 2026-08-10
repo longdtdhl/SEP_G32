@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OPCBS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using OPCBS.Infrastructure.Persistence;
 namespace OPCBS.Infrastructure.Migrations
 {
     [DbContext(typeof(OpcbsDbContext))]
-    partial class OpcbsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726130408_AddTreatmentCaseEntities")]
+    partial class AddTreatmentCaseEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -463,9 +466,6 @@ namespace OPCBS.Infrastructure.Migrations
                     b.Property<Guid?>("AppointmentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ConsultationDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("ConsultationSummary")
                         .IsRequired()
                         .HasMaxLength(5000)
@@ -516,9 +516,6 @@ namespace OPCBS.Infrastructure.Migrations
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Visibility")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
