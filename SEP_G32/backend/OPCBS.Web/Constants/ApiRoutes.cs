@@ -10,6 +10,7 @@ public static class ApiRoutes
     public const string Register = $"{Auth}/register";
     public const string RegisterDoctor = $"{Auth}/register-doctor";
     public const string VerifyOtp = $"{Auth}/verify-otp";
+    public const string ResendVerificationOtp = $"{Auth}/resend-verification-otp";
     public const string ForgotPassword = $"{Auth}/forgot-password";
     public const string ResetPassword = $"{Auth}/reset-password";
     public const string ChangePassword = $"{Auth}/change-password";
@@ -30,8 +31,11 @@ public static class ApiRoutes
     public const string Schedules = $"{Base}/schedules";
     public const string ScheduleDaysOff = $"{Schedules}/days-off";
 
+    // Patient Records
+    public const string PatientRecords = $"{Base}/patient-records";
+
     // Consultation Records
-    public const string ConsultationRecords = $"{Base}/consultation-records";
+    public const string ConsultationNotes = $"{Base}/consultation-notes";
 
     // Treatment Packages
     public const string TreatmentPackages = $"{Base}/treatment-packages";
@@ -43,13 +47,16 @@ public static class ApiRoutes
     public const string Reviews = $"{Base}/reviews";
 
     // Verification
-    public const string Verification = $"{Base}/verification";
+    public const string Verification = $"{Base}/verifications";
 
     // Service Packages
     public const string ServicePackages = $"{Base}/service-packages";
 
     // Subscriptions
     public const string Subscriptions = $"{Base}/subscriptions";
+
+    // Payments
+    public const string Payments = $"{Base}/payments";
 
     // Notifications
     public const string Notifications = $"{Base}/notifications";
@@ -71,4 +78,23 @@ public static class ApiRoutes
     // Business Manager
     public const string BMAnalytics = $"{Base}/business-manager/analytics";
     public const string BMReports = $"{Base}/business-manager/reports";
+
+    // Psychometrics
+    public const string Psychometrics = $"{Base}/psychometrics";
+
+    // Therapy (Assignments & Journals)
+    public const string Therapy = $"{Base}/therapy";
+
+    // Favorites
+    public const string Favorites = $"{Base}/favorites";
+
+    // Messages
+    public const string Messages = $"{Base}/messages";
+
+    // Treatment Cases
+    public const string TreatmentCases = $"{Base}/treatment-cases";
+
+    // Violation Reports
+    public const string ViolationReports = $"{Base}/violation-reports";
 }
+

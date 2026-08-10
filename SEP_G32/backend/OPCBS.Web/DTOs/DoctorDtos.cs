@@ -38,6 +38,13 @@ public class DoctorDto
     public string? PhoneNumber { get; set; }
     public string? Gender { get; set; }
     public string? Address { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Education { get; set; }
+    public string? CareerBackground { get; set; }
+    public string? CareApproach { get; set; }
+    public string? Languages { get; set; }
+    public string? ConsultationTypes { get; set; }
+    public string? LicenseNumber { get; set; }
 }
 
 public class DoctorListItemDto
@@ -49,6 +56,10 @@ public class DoctorListItemDto
     // Backend returns "professionalTitle" 
     [JsonPropertyName("professionalTitle")]
     public string? Specialization { get; set; }
+
+    // Backend returns "biography"
+    [JsonPropertyName("biography")]
+    public string? Biography { get; set; }
 
     // Backend returns "averageRating"
     [JsonPropertyName("averageRating")]
@@ -66,6 +77,16 @@ public class DoctorListItemDto
     public bool IsVerified => VerificationStatusRaw == 2;
 
     public List<string>? Specializations { get; set; }
+
+    public string? Gender { get; set; }
+    public string? Address { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Education { get; set; }
+    public string? CareerBackground { get; set; }
+    public string? CareApproach { get; set; }
+    public string? Languages { get; set; }
+    public string? ConsultationTypes { get; set; }
+    public string? LicenseNumber { get; set; }
 }
 
 public class DoctorFilterDto
@@ -94,5 +115,35 @@ public class UpdateDoctorProfileDto
     public List<Guid>? SpecializationIds { get; set; }
 
     [JsonPropertyName("isVisible")]
-    public bool? IsVisible { get; set; }
+    public bool IsVisible { get; set; }
+
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
+
+    [JsonPropertyName("dateOfBirth")]
+    public DateTime? DateOfBirth { get; set; }
+
+    [JsonPropertyName("address")]
+    public string? Address { get; set; }
+
+    [JsonPropertyName("education")]
+    public string? Education { get; set; }
+
+    [JsonPropertyName("careerBackground")]
+    public string? CareerBackground { get; set; }
+
+    [JsonPropertyName("consultationFee")]
+    public decimal? ConsultationFee { get; set; }
+
+    [JsonPropertyName("careApproach")]
+    public string? CareApproach { get; set; }
+
+    [JsonPropertyName("languages")]
+    public string? Languages { get; set; }
+
+    [JsonPropertyName("consultationTypes")]
+    public string? ConsultationTypes { get; set; }
+
+    [JsonPropertyName("licenseNumber")]
+    public string? LicenseNumber { get; set; }
 }

@@ -1,7 +1,9 @@
 ﻿@page
 @model OPCBS.Web.Pages.Doctors.IndexModel
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
     ViewData["Title"] = "Search specialist";
+    var isPatient = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Patient", StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
@@ -91,13 +93,61 @@
     .star-empty {
         color: #cbd5e1;
     }
+
+    .fav-heart-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 1rem;
+        color: #cbd5e1;
+    }
+
+        .fav-heart-btn:hover {
+            transform: scale(1.15);
+            background: #fff;
+        }
+
+        .fav-heart-btn.active {
+            color: #ef4444;
+        }
+
+            .fav-heart-btn.active:hover {
+                color: #dc2626;
+            }
+
+    .doctor-bio-snippet {
+        font-size: 0.78rem;
+        color: #64748b;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 6px 0 10px;
+        text-align: center;
+        padding: 0 0.25rem;
+        min-height: 2.34em;
+    }
 </style>
 
 <div class="mb-page-header mb-4">
     <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search specialist therapy
+        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search Specialist Therapy
     </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lựa select doctor and specialist psyforlogy matching with tình trạng your</p>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Select a doctor and psychological specialist that matches your needs</p>
 </div>
 
 <!-- Search & Filter Block -->
@@ -107,7 +157,7 @@
             <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
                 <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
                 <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
-                       placeholder="Find theo tên doctor hoặc chuyên khoa..."
+                       placeholder="Search by doctor name or specialization..."
                        style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
                 <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
             </form>
@@ -118,7 +168,7 @@
                 <select name="specialization" class="form-select"
                         style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
                         onchange="this.form.submit()">
-                    <option value="">All chuyên khoa</option>
+                    <option value="">All Specializations</option>
                     @foreach (var s in Model.Specializations)
                     {
                         <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
@@ -137,7 +187,13 @@
         {
             var initials = string.Join("", (doc.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
 
-            <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-lg-4 col-xl-3" style="position:relative;">
+                @if (isPatient)
+                {
+                    <button class="fav-heart-btn" data-doctor-id="@doc.Id" onclick="toggleFavorite(event, this)" title="Add to Favorites">
+                        <i class="bi bi-heart"></i>
+                    </button>
+                }
                 <a asp-page="Details" asp-route-id="@doc.Id" class="doctor-card-modern">
                     <!-- Avatar -->
                     <div class="avatar-wrapper">
@@ -165,6 +221,30 @@
                     <div class="d-inline-block">
                         <span class="doctor-spec-modern">@(doc.Specialization ?? "Therapist")</span>
                     </div>
+
+                    @if (doc.Specializations != null && doc.Specializations.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-1 justify-content-center mb-2" style="max-height: 48px; overflow: hidden;">
+                            @foreach (var s in doc.Specializations.Take(2))
+                            {
+                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">@s</span>
+                            }
+                            @if (doc.Specializations.Count > 2)
+                            {
+                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">+@(doc.Specializations.Count - 2)</span>
+                            }
+                        </div>
+                    }
+
+                    <!-- Bio Snippet -->
+                    @if (!string.IsNullOrEmpty(doc.Biography))
+                    {
+                        <div class="doctor-bio-snippet">@doc.Biography</div>
+                    }
+                    else
+                    {
+                        <div class="doctor-bio-snippet" style="color:#cbd5e1;font-style:italic;">Professional therapist dedicated to your well-being</div>
+                    }
 
                     <!-- Rating -->
                     <div class="d-flex align-items-center gap-1 justify-content-center mb-3">
@@ -196,7 +276,7 @@
 
                     <!-- Experience & Fee Meta -->
                     <div class="mt-auto d-flex justify-content-between w-100 border-top pt-3" style="font-size:0.8rem; color:#64748b;">
-                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years KN</span>
+                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years experience</span>
                         @if (doc.ConsultationFee > 0)
                         {
                             <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
@@ -217,8 +297,53 @@ else
     <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px;">
         <div class="card-body">
             <i class="bi bi-search text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold">Not found doctor nào</h5>
-            <p class="text-muted small mb-0">Thử thay đổi keyword search hoặc chuyên khoa your.</p>
+            <h5 class="fw-bold">No Doctors Found</h5>
+            <p class="text-muted small mb-0">Try changing your search keywords or selected specialization.</p>
         </div>
     </div>
+}
+
+@if (isPatient)
+{
+    <script>
+        async function toggleFavorite(e, btn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var doctorId = btn.dataset.doctorId;
+            try {
+                var res = await fetch('/Patient/Favorites?handler=Toggle&doctorId=' + doctorId, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+                });
+                if (res.ok) {
+                    var data = await res.json();
+                    btn.classList.toggle('active', data.isFavorite);
+                    var icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = data.isFavorite ? 'bi bi-heart-fill' : 'bi bi-heart';
+                    }
+                    btn.title = data.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+                }
+            } catch(err) { console.error('Favorite toggle failed', err); }
+        }
+
+        // Load favorite statuses on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            var btns = document.querySelectorAll('.fav-heart-btn');
+            for (var btn of btns) {
+                try {
+                    var res = await fetch('/Patient/Favorites?handler=Check&doctorId=' + btn.dataset.doctorId);
+                    if (res.ok) {
+                        var data = await res.json();
+                        btn.classList.toggle('active', data.isFavorite);
+                        var icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = data.isFavorite ? 'bi bi-heart-fill' : 'bi bi-heart';
+                        }
+                        btn.title = data.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+                    }
+                } catch(e) {}
+            }
+        });
+    </script>
 }

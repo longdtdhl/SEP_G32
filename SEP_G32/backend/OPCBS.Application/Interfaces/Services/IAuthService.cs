@@ -11,6 +11,7 @@ public interface IAuthService
     Task<ApiResponse<AuthResponseDto>> RegisterAsync(RegisterDto dto, CancellationToken ct = default);
     Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(RegisterDoctorDto dto, CancellationToken ct = default);
     Task<ApiResponse> VerifyOtpAsync(VerifyOtpDto dto, CancellationToken ct = default);
+    Task<ApiResponse> ResendVerificationOtpAsync(ForgotPasswordDto dto, CancellationToken ct = default);
     Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto dto, CancellationToken ct = default);
     Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken ct = default);
     Task<ApiResponse> ResetPasswordAsync(ResetPasswordDto dto, CancellationToken ct = default);

@@ -39,7 +39,57 @@ public enum AppointmentStatus
     Cancelled = 5,
 
     /// <summary>Reschedule requested by patient, pending doctor approval</summary>
-    RescheduleRequested = 6
+    RescheduleRequested = 6,
+
+    /// <summary>Doctor requested the patient's confirmation before completion</summary>
+    AwaitingPatientConfirmation = 7,
+
+    /// <summary>Patient did not attend the appointment</summary>
+    NoShow = 8,
+
+    /// <summary>Guest booking is waiting for email confirmation before doctor review</summary>
+    AwaitingGuestConfirmation = 9
+}
+
+/// <summary>Patient response to a doctor's appointment-completion request.</summary>
+public enum AppointmentCompletionConfirmationStatus
+{
+    Pending = 0,
+    Confirmed = 1,
+    ExpiredAndAccountLocked = 2,
+    Cancelled = 3
+}
+
+/// <summary>Origin of a violation report.</summary>
+public enum ViolationReportSource
+{
+    Patient = 0,
+    Doctor = 1,
+    System = 2
+}
+
+/// <summary>Reason categories used for report routing and policy analytics.</summary>
+public enum ViolationReason
+{
+    Other = 0,
+    RepeatedNoShow = 1,
+    AppointmentCompletionDispute = 2,
+    HarassmentOrAbuse = 3,
+    FraudOrImpersonation = 4,
+    ProfessionalConduct = 5,
+    PolicyViolation = 6
+}
+
+/// <summary>Lifecycle of a report as it moves from Customer Support to Admin.</summary>
+public enum ViolationReportStatus
+{
+    Submitted = 0,
+    UnderCustomerSupportReview = 1,
+    WarningIssued = 2,
+    EscalatedToAdmin = 3,
+    AccountDisabled = 4,
+    Dismissed = 5,
+    Resolved = 6
 }
 
 /// <summary>
@@ -81,7 +131,10 @@ public enum VerificationStatus
     Approved = 2,
 
     /// <summary>Rejected by customer support - can resubmit</summary>
-    Rejected = 3
+    Rejected = 3,
+
+    /// <summary>Additional information or document requested by customer support</summary>
+    RequiresAdditionalInfo = 4
 }
 
 /// <summary>
@@ -138,7 +191,10 @@ public enum TreatmentPackageStatus
     Cancelled = 7,
 
     /// <summary>Package template archived and no longer available for assignment</summary>
-    Archived = 8
+    Archived = 8,
+
+    /// <summary>Cancellation requested by one party and awaiting confirmation from the other.</summary>
+    CancellationPending = 9
 }
 
 /// <summary>
@@ -361,7 +417,10 @@ public enum TreatmentSessionStatus
     NoShow = 4,
 
     /// <summary>Patient missed the session (alias for NoShow in some contexts)</summary>
-    Missed = 5
+    Missed = 5,
+
+    /// <summary>Session planned but not yet linked to an appointment slot</summary>
+    Planned = 6
 }
 
 /// <summary>
@@ -396,11 +455,56 @@ public enum GoalStatus
     /// <summary>Goal has been achieved</summary>
     Achieved = 2,
 
-    /// <summary>Goal has been deferred to a later time</summary>
-    Deferred = 3,
+    /// <summary>Goal is temporarily paused by the treating doctor</summary>
+    OnHold = 3,
 
     /// <summary>Goal has been cancelled</summary>
+    Cancelled = 4,
+
+    /// <summary>Goal is being prepared and is not yet visible in the active treatment plan</summary>
+    Draft = 5
+}
+
+/// <summary>Execution status for a concrete milestone under a treatment goal.</summary>
+public enum GoalDetailStatus
+{
+    NotStarted = 0,
+    InProgress = 1,
+    Completed = 2,
+    OnHold = 3,
     Cancelled = 4
+}
+
+/// <summary>Clinical or operational measurement represented by a goal success criterion.</summary>
+public enum GoalSuccessCriteriaType
+{
+    ProgressPercentage = 0,
+    HomeworkCompletion = 1,
+    Attendance = 2,
+    DoctorApproval = 3,
+    AssessmentScore = 4,
+    Custom = 99
+}
+
+/// <summary>Source used to synchronize a criterion's current value.</summary>
+public enum GoalCriteriaDataSource
+{
+    Manual = 0,
+    GoalProgress = 1,
+    Homework = 2,
+    Attendance = 3,
+    Assessment = 4,
+    DoctorApproval = 5
+}
+
+/// <summary>Comparison applied to a criterion target and current value.</summary>
+public enum GoalCriteriaOperator
+{
+    GreaterThan = 0,
+    GreaterThanOrEqual = 1,
+    LessThan = 2,
+    LessThanOrEqual = 3,
+    Equal = 4
 }
 
 /// <summary>

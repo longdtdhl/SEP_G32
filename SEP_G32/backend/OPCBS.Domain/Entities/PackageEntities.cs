@@ -85,6 +85,21 @@ public class ConsultationNote : BaseEntity
     /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
     public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
 
+    /// <summary>Whether patient has confirmed reviewing these consultation notes</summary>
+    public bool IsPatientConfirmed { get; set; } = false;
+
+    /// <summary>Timestamp when patient confirmed the consultation notes</summary>
+    public DateTime? PatientConfirmedAt { get; set; }
+
+    /// <summary>User ID of the patient who confirmed</summary>
+    public Guid? PatientConfirmedById { get; set; }
+
+    /// <summary>Timestamp when notes were last edited by doctor</summary>
+    public DateTime? LastEditedAt { get; set; }
+
+    /// <summary>Doctor Profile ID of the doctor who last edited</summary>
+    public Guid? LastEditedByDoctorId { get; set; }
+
     /// <summary>Navigation property to Appointment</summary>
     public virtual Appointment? Appointment { get; set; }
 
@@ -130,6 +145,9 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Validity period in days</summary>
     public int ValidityDays { get; set; }
 
+    /// <summary>Recommended sessions per week (default 1, max 7)</summary>
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
+
     /// <summary>Expiration date of the package</summary>
     public DateTime ExpirationDate { get; set; }
 
@@ -150,6 +168,15 @@ public class TreatmentPackage : BaseEntity
 
     /// <summary>Reason if package was rejected</summary>
     public string? RejectionReason { get; set; }
+
+    /// <summary>User who initiated the cancellation request. The other party must confirm it.</summary>
+    public Guid? CancellationRequestedByUserId { get; set; }
+
+    /// <summary>When the cancellation request was submitted.</summary>
+    public DateTime? CancellationRequestedAt { get; set; }
+
+    /// <summary>Optional reason supplied by the cancellation requester.</summary>
+    public string? CancellationReason { get; set; }
 
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }

@@ -9,15 +9,19 @@ public class VerifyOtpModel : PageModel
 {
     private readonly IAuthApiService _authService;
     [BindProperty] public VerifyOtpRequestDto Input { get; set; } = new();
+    [TempData] public string? StatusMessage { get; set; }
 
     public VerifyOtpModel(IAuthApiService authService) { _authService = authService; }
 
-    public void OnGet()
+    public void OnGet(string? email)
     {
-        // Pre-fill email from registration flow
-        if (TempData["RegisterEmail"] is string email)
+        if (!string.IsNullOrWhiteSpace(email))
         {
             Input.Email = email;
+        }
+        else if (TempData["RegisterEmail"] is string registeredEmail)
+        {
+            Input.Email = registeredEmail;
         }
     }
 
@@ -28,5 +32,25 @@ public class VerifyOtpModel : PageModel
         if (!success) { ModelState.AddModelError("", error ?? "Invalid or expired OTP."); return Page(); }
         TempData["SuccessMessage"] = "Email verified successfully! Please log in.";
         return RedirectToPage("/Account/Login");
+    }
+
+    public async Task<IActionResult> OnPostResendAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Input.Email))
+        {
+            ModelState.AddModelError("Input.Email", "Enter your email before requesting another code.");
+            return Page();
+        }
+
+        var (success, error) = await _authService.ResendVerificationOtpAsync(
+            new ForgotPasswordRequestDto { Email = Input.Email.Trim() });
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Unable to resend the verification code.");
+            return Page();
+        }
+
+        StatusMessage = "A new verification code has been sent. Please check your inbox.";
+        return RedirectToPage(new { email = Input.Email.Trim() });
     }
 }

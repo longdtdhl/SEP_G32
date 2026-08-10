@@ -81,6 +81,19 @@ public class AuthController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>POST /api/v1/auth/resend-verification-otp</summary>
+    [HttpPost("resend-verification-otp")]
+    public async Task<IActionResult> ResendVerificationOtp([FromBody] ForgotPasswordDto dto)
+    {
+        var validation = await _forgotValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(ApiResponse.ErrorResponse(validation.Errors.First().ErrorMessage,
+                validation.Errors.Select(e => e.ErrorMessage).ToList()));
+
+        var result = await _authService.ResendVerificationOtpAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>POST /api/v1/auth/login</summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)

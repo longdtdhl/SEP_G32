@@ -1,4 +1,4 @@
-using OPCBS.Domain.Enums;
+﻿using OPCBS.Domain.Enums;
 
 namespace OPCBS.Application.DTOs.Appointments;
 
@@ -35,6 +35,9 @@ public class AppointmentDto
     public required string DoctorName { get; set; }
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
+    public string? PatientEmail { get; set; }
+    public string? GuestEmail { get; set; }
+    public string ConsultationMode { get; set; } = "Tư vấn Trực tuyến (Online)";
     public required string AppointmentDate { get; set; }
     public required string StartTime { get; set; }
     public required string EndTime { get; set; }
@@ -46,6 +49,8 @@ public class AppointmentDto
     public DateTime CreatedAt { get; set; }
     public decimal? Fee { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
     public string? TreatmentPackageName { get; set; }
     public int VisitCount { get; set; }
     public string? Specialization { get; set; }
@@ -88,6 +93,21 @@ public class AppointmentListItemDto
 /// Track appointment request DTO
 /// </summary>
 public class TrackAppointmentDto
+{
+    public required string BookingCode { get; set; }
+    public required string Email { get; set; }
+}
+
+/// <summary>Anonymous guest confirmation request using the single-use email token.</summary>
+public class ConfirmGuestAppointmentDto
+{
+    public required string Token { get; set; }
+}
+
+/// <summary>
+/// Resend confirmation request DTO
+/// </summary>
+public class ResendConfirmationDto
 {
     public required string BookingCode { get; set; }
     public required string Email { get; set; }
@@ -180,6 +200,14 @@ public class ConsultationNoteDto
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
     public string? PackageName { get; set; }
 
+    // Patient confirmation & audit fields
+    public bool IsPatientConfirmed { get; set; }
+    public DateTime? PatientConfirmedAt { get; set; }
+    public Guid? PatientConfirmedById { get; set; }
+    public string? PatientConfirmedByName { get; set; }
+    public DateTime? LastEditedAt { get; set; }
+    public Guid? LastEditedByDoctorId { get; set; }
+
     // Walk-in patient fields
     public string? WalkInPatientName { get; set; }
     public string? WalkInPatientPhone { get; set; }
@@ -208,6 +236,13 @@ public class PatientRecordDto
     public string? DisplayPhone { get; set; }
     public string? DisplayEmail { get; set; }
     public bool IsGuest => PatientId == null;
+
+    // Enriched from PatientProfile for registered patients. Guest records intentionally remain null.
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? Address { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }
@@ -272,6 +307,8 @@ public class RecentConsultationDto
     public string? ConsultationSummary { get; set; }
     public string? Recommendation { get; set; }
     public string? TherapyPlan { get; set; }
+    public bool IsPatientConfirmed { get; set; }
+    public DateTime? PatientConfirmedAt { get; set; }
 }
 
 public class RecentAssessmentResultDto
