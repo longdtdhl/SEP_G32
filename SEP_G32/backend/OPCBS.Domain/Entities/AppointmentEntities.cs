@@ -77,6 +77,15 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Price/consultation fee for this slot (if not using packages)</summary>
     public decimal? Price { get; set; }
 
+    /// <summary>Optional notes/description for the slot</summary>
+    public string? Notes { get; set; }
+
+    /// <summary>Maximum number of patients that can book this slot (default 1). Slot auto-locks when CurrentBookings >= MaxPatients.</summary>
+    public int MaxPatients { get; set; } = 1;
+
+    /// <summary>Current number of bookings for this slot</summary>
+    public int CurrentBookings { get; set; } = 0;
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 
@@ -110,8 +119,29 @@ public class Appointment : BaseEntity
     /// <summary>Guest phone number (required if PatientId is null)</summary>
     public string? GuestPhoneNumber { get; set; }
 
+    /// <summary>SHA-256 hash of the email confirmation token for guest bookings.</summary>
+    public string? GuestConfirmationTokenHash { get; set; }
+
+    /// <summary>Latest time a guest confirmation email was sent.</summary>
+    public DateTime? GuestConfirmationLastSentAt { get; set; }
+
+    /// <summary>Total guest confirmation emails sent for this booking.</summary>
+    public int GuestConfirmationSendCount { get; set; }
+
+    /// <summary>Timestamp when the guest confirmed their email booking.</summary>
+    public DateTime? GuestConfirmedAt { get; set; }
+
     /// <summary>Optional appointment notes/reason</summary>
     public string? Notes { get; set; }
+
+    /// <summary>Symptoms or current condition described by patient</summary>
+    public string? Symptoms { get; set; }
+
+    /// <summary>Medical history / past treatments</summary>
+    public string? MedicalHistory { get; set; }
+
+    /// <summary>Expectations/goals for the consultation session</summary>
+    public string? Expectations { get; set; }
 
     /// <summary>Current appointment status (Pending, Approved, Rejected, etc.)</summary>
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
@@ -121,6 +151,12 @@ public class Appointment : BaseEntity
 
     /// <summary>Foreign key to TreatmentPackage if appointment is part of a package</summary>
     public Guid? TreatmentPackageId { get; set; }
+
+    /// <summary>Foreign key to TreatmentCase if appointment is part of a treatment case</summary>
+    public Guid? TreatmentCaseId { get; set; }
+
+    /// <summary>Foreign key to TreatmentSession if appointment is part of a treatment session</summary>
+    public Guid? TreatmentSessionId { get; set; }
 
     /// <summary>Timestamp when appointment was approved by doctor</summary>
     public DateTime? ApprovedAt { get; set; }
@@ -134,8 +170,17 @@ public class Appointment : BaseEntity
     /// <summary>Reason for cancellation</summary>
     public string? CancellationReason { get; set; }
 
+    /// <summary>Foreign key to proposed AppointmentSlot when patient requests a reschedule</summary>
+    public Guid? ProposedSlotId { get; set; }
+
+    /// <summary>Reason provided by patient for rescheduling</summary>
+    public string? RescheduleReason { get; set; }
+
     /// <summary>Navigation property to AppointmentSlot</summary>
     public virtual required AppointmentSlot AppointmentSlot { get; set; }
+
+    /// <summary>Navigation property to proposed AppointmentSlot for reschedule</summary>
+    public virtual AppointmentSlot? ProposedSlot { get; set; }
 
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }
@@ -146,8 +191,14 @@ public class Appointment : BaseEntity
     /// <summary>Navigation property to TreatmentPackage (if applicable)</summary>
     public virtual TreatmentPackage? TreatmentPackage { get; set; }
 
-    /// <summary>Navigation property: consultation record for this appointment</summary>
-    public virtual ConsultationRecord? ConsultationRecord { get; set; }
+    /// <summary>Navigation property to TreatmentCase (if applicable)</summary>
+    public virtual TreatmentCase? TreatmentCase { get; set; }
+
+    /// <summary>Navigation property to TreatmentSession (if applicable)</summary>
+    public virtual TreatmentSession? TreatmentSession { get; set; }
+
+    /// <summary>Navigation property: consultation note for this appointment</summary>
+    public virtual ConsultationNote? ConsultationNote { get; set; }
 
     /// <summary>Navigation property: review for this appointment (one per appointment)</summary>
     public virtual Review? Review { get; set; }
@@ -180,4 +231,24 @@ public class AppointmentHistory : ImmutableEntity
 
     /// <summary>Navigation property to Appointment</summary>
     public virtual required Appointment Appointment { get; set; }
+}
+
+/// <summary>
+/// Dedicated schedule note entity for doctor personal notes, reminders, or case notes
+/// </summary>
+public class ScheduleNote : BaseEntity
+{
+    public Guid DoctorProfileId { get; set; }
+    public DateOnly NoteDate { get; set; }
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+    public required string Title { get; set; }
+    public required string Content { get; set; }
+    public string Category { get; set; } = "General";
+    public Guid? PatientId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+
+    public virtual DoctorProfile? DoctorProfile { get; set; }
+    public virtual PatientProfile? Patient { get; set; }
+    public virtual TreatmentCase? TreatmentCase { get; set; }
 }
