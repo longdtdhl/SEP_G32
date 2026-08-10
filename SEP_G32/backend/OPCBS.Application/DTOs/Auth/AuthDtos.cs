@@ -78,6 +78,7 @@ public class AuthResponseDto
     public Guid UserId { get; set; }
     public required string Email { get; set; }
     public required string FullName { get; set; }
+    public string? AvatarUrl { get; set; }
     public required string Role { get; set; }
     public required string AccessToken { get; set; }
     public required string RefreshToken { get; set; }
@@ -125,6 +126,19 @@ public class DoctorProfileDto
     public int ReviewCount { get; set; }
     public string? AvatarUrl { get; set; }
     public List<string>? Specializations { get; set; }
+
+    public string? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Address { get; set; }
+    public string? Education { get; set; }
+    public string? CareerBackground { get; set; }
+    public decimal ConsultationFee { get; set; }
+    public string? CareApproach { get; set; }
+    public string? Languages { get; set; }
+    public string? ConsultationTypes { get; set; }
+    public string? LicenseNumber { get; set; }
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
 }
 
 /// <summary>
@@ -153,4 +167,15 @@ public class UpdateDoctorProfileDto
     public int? ExperienceYears { get; set; }
     public List<Guid>? SpecializationIds { get; set; }
     public bool? IsVisible { get; set; }
+
+    public string? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Address { get; set; }
+    public string? Education { get; set; }
+    public string? CareerBackground { get; set; }
+    public decimal? ConsultationFee { get; set; }
+    public string? CareApproach { get; set; }
+    public string? Languages { get; set; }
+    public string? ConsultationTypes { get; set; }
+    public string? LicenseNumber { get; set; }
 }

@@ -1,0 +1,377 @@
+﻿@page
+@model OPCBS.Web.Pages.Doctor.Patients.IndexModel
+@{
+    ViewData["Title"] = "Patient Records";
+
+    Layout = "_DashboardLayout";
+    var allPatients = Model.Patients;
+    var totalAll = allPatients.Count;
+    var currentTab = Model.Tab ?? "all";
+}
+
+<style>
+    .patient-container {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(78, 139, 112, 0.12);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+    }
+
+    .patient-header-bar {
+        padding: 1.25rem 1.5rem;
+        background: #fafcfb;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .tab-pills {
+        display: flex;
+        gap: 6px;
+        background: #eef2f0;
+        border-radius: 10px;
+        padding: 4px;
+    }
+
+    .tab-pill {
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 0.83rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #64748b;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .tab-pill.active {
+            background: white;
+            color: var(--mb-primary);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .tab-pill:hover:not(.active) {
+            color: #1e293b;
+        }
+
+    .badge-count {
+        font-size: 0.7rem;
+        background: rgba(78, 139, 112, 0.12);
+        color: var(--mb-primary);
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    .search-box {
+        position: relative;
+        min-width: 260px;
+    }
+
+        .search-box input {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 7px 12px 7px 36px;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+            .search-box input:focus {
+                border-color: var(--mb-primary);
+                box-shadow: 0 0 0 3px rgba(78, 139, 112, 0.12);
+                outline: none;
+            }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+    /* Table styling */
+    .patient-table {
+        margin: 0;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+        .patient-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .patient-table td {
+            padding: 16px 20px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.88rem;
+            color: #334155;
+        }
+
+        .patient-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .patient-table tr:hover td {
+            background: #f8fffe;
+        }
+
+    .patient-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
+
+    .patient-name {
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 0.93rem;
+        text-decoration: none;
+    }
+
+        .patient-name:hover {
+            color: var(--mb-primary);
+        }
+
+    .patient-subtext {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .badge-patient-type {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .type-system {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .type-guest {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .badge-notes {
+        background: #e0f2fe;
+        color: #0369a1;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .action-btn-group {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 1rem;
+            opacity: 0.35;
+        }
+
+    @@media (max-width: 768px) {
+        .patient-header-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .patient-table th:nth-child(3),
+        .patient-table td:nth-child(3) {
+            display: none;
+        }
+    }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Patient Records
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage patient profiles and consultation history</p>
+    </div>
+    <div>
+        <a asp-page="./Create" class="btn btn-primary px-3 py-2 fw-semibold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+            <i class="bi bi-person-plus me-1"></i>Add Patient
+        </a>
+    </div>
+</div>
+
+<div class="patient-container">
+    <div class="patient-header-bar">
+        <!-- Tabs -->
+        <div class="tab-pills">
+            <a asp-page="./Index" asp-route-tab="all" asp-route-search="@Model.Search" class="tab-pill @(currentTab == "all" ? "active" : "")">
+                <i class="bi bi-grid-fill"></i>All
+                <span class="badge-count">@totalAll</span>
+            </a>
+            <a asp-page="./Index" asp-route-tab="system" asp-route-search="@Model.Search" class="tab-pill @(currentTab == "system" ? "active" : "")">
+                <i class="bi bi-person-check-fill"></i>Registered
+            </a>
+            <a asp-page="./Index" asp-route-tab="guest" asp-route-search="@Model.Search" class="tab-pill @(currentTab == "guest" ? "active" : "")">
+                <i class="bi bi-person-fill"></i>Guest
+            </a>
+        </div>
+
+        <!-- Search Box -->
+        <form method="get" class="m-0">
+            <input type="hidden" name="tab" value="@currentTab" />
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" name="search" value="@Model.Search" placeholder="Search by name, email, phone..." />
+            </div>
+        </form>
+    </div>
+
+    @if (Model.Patients.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <h6 class="fw-semibold text-dark">No patients found for "@Model.Search"</h6>
+                <p class="small text-muted mb-3">Try checking for spelling errors or clear the search filter.</p>
+                <a asp-page="./Index" asp-route-tab="@currentTab" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;">Clear Search</a>
+            }
+            else
+            {
+                <h6 class="fw-semibold text-dark">No patient records found</h6>
+                <p class="small text-muted">Patients will appear here automatically when they book appointments or when you create a record.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patient-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Type</th>
+                        <th>Contact</th>
+                        <th>Consultations</th>
+                        <th>Created Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var patient in Model.Patients)
+                    {
+                        var initial = patient.ResolvedDisplayName.Substring(0, 1).ToUpper();
+                        var bgColor = patient.IsGuest ? "#fef3c7" : "#dcfce7";
+                        var txColor = patient.IsGuest ? "#b45309" : "#15803d";
+                        var noteCount = Model.GetNoteCount(patient.Id);
+
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="patient-avatar" style="background:@bgColor; color:@txColor;">@initial</div>
+                                    <div>
+                                        <a asp-page="./Details" asp-route-id="@patient.Id" class="patient-name">
+                                            @patient.ResolvedDisplayName
+                                        </a>
+                                        <div class="patient-subtext">ID: @patient.Id.ToString().Substring(0, 8)...</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-patient-type @(patient.IsGuest ? "type-guest" : "type-system")">
+                                    <i class="bi @(patient.IsGuest ? "bi-person" : "bi-person-check")"></i>
+                                    @(patient.IsGuest ? "Guest" : "Registered")
+                                </span>
+                            </td>
+                            <td>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(patient.ResolvedDisplayEmail))
+                                    {
+                                        <div style="font-size:0.83rem;"><i class="bi bi-envelope me-1 text-muted"></i>@patient.ResolvedDisplayEmail</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(patient.ResolvedDisplayPhone))
+                                    {
+                                        <div style="font-size:0.8rem;" class="text-muted"><i class="bi bi-telephone me-1"></i>@patient.ResolvedDisplayPhone</div>
+                                    }
+                                    @if (string.IsNullOrEmpty(patient.ResolvedDisplayEmail) && string.IsNullOrEmpty(patient.ResolvedDisplayPhone))
+                                    {
+                                        <span class="text-muted small">No contact info</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                @if (noteCount > 0)
+                                {
+                                    <span class="badge-notes">
+                                        <i class="bi bi-journal-medical"></i>@noteCount Notes
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">No notes</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="text-muted" style="font-size:0.83rem;">
+                                    <i class="bi bi-calendar3 me-1"></i>@patient.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-btn-group">
+                                    <a asp-page="./Details" asp-route-id="@patient.Id" class="btn btn-sm btn-outline-primary fw-semibold" style="border-radius:8px; font-size:0.8rem;">
+                                        <i class="bi bi-eye me-1"></i>Profile &amp; Notes
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
