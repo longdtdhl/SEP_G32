@@ -517,6 +517,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly IRepository<TreatmentPackage> _packageRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
+    private readonly IRepository<TreatmentCase> _caseRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -524,12 +525,14 @@ public class TreatmentPackageService : ITreatmentPackageService
         IRepository<TreatmentPackage> packageRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<PatientProfile> patientRepo,
+        IRepository<TreatmentCase> caseRepo,
         IUnitOfWork uow,
         IMapper mapper)
     {
         _packageRepo = packageRepo;
         _doctorRepo = doctorRepo;
         _patientRepo = patientRepo;
+        _caseRepo = caseRepo;
         _uow = uow;
         _mapper = mapper;
     }
@@ -622,8 +625,39 @@ public class TreatmentPackageService : ITreatmentPackageService
         package.ActiveDate = DateTime.UtcNow;
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
+
+        // Auto-create Treatment Case when package becomes Active
+        var allCases = await _caseRepo.GetAllAsync(ct);
+        var existingCase = allCases.FirstOrDefault(c =>
+            c.TreatmentPackageId == package.Id &&
+            c.DoctorId == package.DoctorId &&
+            c.PatientId == patient.Id &&
+            !c.IsDeleted);
+
+        if (existingCase == null)
+        {
+            var treatmentCase = new TreatmentCase
+            {
+                TreatmentPackageId = package.Id,
+                DoctorId = package.DoctorId,
+                PatientId = patient.Id,
+                CaseName = package.Name,
+                CaseDescription = package.Description,
+                PrimaryConcern = package.TargetOutcome,
+                TotalSessions = package.SessionQuantity,
+                RemainingSessions = package.SessionQuantity,
+                StartDate = DateTime.UtcNow,
+                ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays),
+                Status = TreatmentCaseStatus.Active,
+                TreatmentPackage = package,
+                Doctor = (await _doctorRepo.GetByIdAsync(package.DoctorId, ct))!,
+                Patient = patient
+            };
+            await _caseRepo.AddAsync(treatmentCase, ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse.SuccessResponse("Treatment package accepted and is now active");
+        return ApiResponse.SuccessResponse("Treatment package accepted and treatment case created.");
     }
 
     public async Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct)
