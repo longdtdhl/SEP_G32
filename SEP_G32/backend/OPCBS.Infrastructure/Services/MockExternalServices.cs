@@ -15,6 +15,21 @@ public class MockEmailService : IEmailService
         _logger = logger;
     }
 
+    public Task SendAppointmentCancelledEmailAsync(string to, string recipientName, string cancelledBy, string date, string reason, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task SendEmailAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[MockEmail] To: {To}, Subject: {Subject}", to, subject);

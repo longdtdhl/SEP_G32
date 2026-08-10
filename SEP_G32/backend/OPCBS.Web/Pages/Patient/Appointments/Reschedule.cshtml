@@ -1,33 +1,123 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Patient.Appointments.RescheduleModel
 @{
-    ViewData["Title"] = "Đổi lịch hẹn";
+    ViewData["Title"] = "Request Appointment Reschedule";
     ViewData["UseDashboardLayout"] = true;
+    var selectedDateStr = !string.IsNullOrEmpty(Model.Date) ? Model.Date : DateTime.Today.ToString("yyyy-MM-dd");
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Đổi lịch hẹn</h1>
-    <a asp-page="Details" asp-route-id="@ViewContext.HttpContext.Request.RouteValues["id"]" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-arrow-repeat text-primary me-2"></i>Request Reschedule</h1>
+        <p class="text-muted small mb-0">Select a new date and time slot for your appointment session.</p>
+    </div>
+    <a asp-page="Details" asp-route-id="@ViewContext.HttpContext.Request.RouteValues["id"]" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;">
+        <i class="bi bi-arrow-left me-1"></i>Back to Details
+    </a>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px;">
+        <i class="bi bi-exclamation-octagon me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (Model.Appointment != null)
 {
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <div class="alert alert-info mb-4">
-                <i class="bi bi-info-circle me-1"></i>
-                Lịch hẹn hiện tại: <strong>@Model.Appointment.DoctorName</strong> — @Model.Appointment.AppointmentDate @Model.Appointment.StartTime
-            </div>
-            <form method="post" asp-route-id="@Model.Appointment.Id">
-                <div class="mb-3">
-                    <label class="form-label">Lý do đổi lịch</label>
-                    <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Nhập lý do..."></textarea>
+    <div class="row g-4">
+        <!-- Left: Current Appointment Info -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <h6 class="fw-bold text-muted small text-uppercase mb-3"><i class="bi bi-calendar-check me-1"></i>Current Booking</h6>
+                <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-light rounded-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:48px; height:48px; font-size:1.25rem;">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark mb-0">Dr. @Model.Appointment.DoctorName</div>
+                        <div class="text-muted small">@(Model.Appointment.Specialization ?? "Specialist")</div>
+                    </div>
                 </div>
-                <p class="text-muted small"><i class="bi bi-info-circle me-1"></i>Vui lòng liên hệ bác sĩ để chọn slot mới phù hợp.</p>
-                <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Gửi yêu cầu đổi lịch</button>
-            </form>
+
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Booking Reference</div>
+                    <div class="fw-semibold font-monospace text-primary bg-primary bg-opacity-10 px-2 py-1 rounded d-inline-block small">@Model.Appointment.BookingCode</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Current Scheduled Time</div>
+                    <div class="fw-semibold text-dark"><i class="bi bi-clock me-1 text-primary"></i>@Model.Appointment.AppointmentDate @Model.Appointment.StartTime - @Model.Appointment.EndTime</div>
+                </div>
+
+                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Your current slot remains booked until your doctor approves the new proposed time.
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Slot Selector Form -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-calendar2-plus me-2 text-primary"></i>Select New Time Slot</h5>
+
+                <!-- Date Picker Filter -->
+                <form method="get" class="row g-2 align-items-center mb-4">
+                    <input type="hidden" name="id" value="@Model.Appointment.Id" />
+                    <div class="col-sm-6 col-md-5">
+                        <label class="form-label small fw-semibold text-muted mb-1">Select Reschedule Date</label>
+                        <input type="date" name="Date" class="form-control" value="@selectedDateStr" min="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="this.form.submit()" style="border-radius:10px;" />
+                    </div>
+                    <div class="col-sm-6 col-md-4 align-self-end">
+                        <button type="submit" class="btn btn-outline-primary w-100" style="border-radius:10px;">
+                            <i class="bi bi-search me-1"></i>View Slots
+                        </button>
+                    </div>
+                </form>
+
+                <form method="post" asp-route-id="@Model.Appointment.Id">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark mb-2">Available Time Slots for @selectedDateStr</label>
+                        @if (Model.AvailableSlots?.Slots != null && Model.AvailableSlots.Slots.Any(s => s.Status == 0))
+                        {
+                            <div class="row g-2">
+                                @foreach (var slot in Model.AvailableSlots.Slots.Where(s => s.Status == 0))
+                                {
+                                    <div class="col-6 col-sm-4 col-md-3">
+                                        <input type="radio" class="btn-check" name="NewSlotId" id="slot_@slot.Id" value="@slot.Id" required />
+                                        <label class="btn btn-outline-primary w-100 p-2.5 rounded-3 text-center" for="slot_@slot.Id">
+                                            <div class="fw-bold fs-6">@slot.StartTime</div>
+                                            <div class="small opacity-75">until @slot.EndTime</div>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center bg-light rounded-4 border border-dashed">
+                                <i class="bi bi-calendar-x text-muted fs-3 mb-2 d-block"></i>
+                                <div class="fw-medium text-muted mb-1">No available time slots on this date</div>
+                                <p class="text-muted small mb-0">Please select another date using the date filter above.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark mb-1">Reason for Rescheduling <span class="text-muted font-normal">(Optional)</span></label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Briefly state your reason for requesting a new time slot..." style="border-radius:12px;"></textarea>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                        <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius:10px;" @(Model.AvailableSlots?.Slots == null || !Model.AvailableSlots.Slots.Any(s => s.Status == 0) ? "disabled" : "")>
+                            <i class="bi bi-send-fill me-1"></i>Submit Reschedule Request
+                        </button>
+                        <a asp-page="Details" asp-route-id="@Model.Appointment.Id" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">Cancel</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 }

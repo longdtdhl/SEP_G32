@@ -1,5 +1,6 @@
 namespace OPCBS.Web.DTOs;
 
+// AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -7,6 +8,7 @@ public class AppointmentDto
     public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
     public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public string? DoctorName { get; set; }
     public string? DoctorAvatarUrl { get; set; }
     public string? Specialization { get; set; }
@@ -14,10 +16,34 @@ public class AppointmentDto
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
     public string? Notes { get; set; }
-    public string Status { get; set; } = "Pending";
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
+    public int Status { get; set; }
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public string? TreatmentPackageName { get; set; }
+    public int VisitCount { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public string? RescheduleReason { get; set; }
+    public bool CanReschedule { get; set; }
+
+    public string StatusText => Status switch
+    {
+        0 => "Pending",
+        1 => "Approved",
+        2 => "Rejected",
+        3 => "In Progress",
+        4 => "Completed",
+        5 => "Cancelled",
+        6 => "Reschedule Requested",
+        _ => "Unknown"
+    };
 
     // Aliases for views
     public DateTimeOffset StartAt => ParseDateTime();
@@ -38,13 +64,35 @@ public class AppointmentListItemDto
 {
     public Guid Id { get; set; }
     public string? BookingCode { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
     public string? DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
     public string? PatientName { get; set; }
     public string? Specialization { get; set; }
     public string? AppointmentDate { get; set; }
     public string? StartTime { get; set; }
-    public string Status { get; set; } = "Pending";
+    public string? EndTime { get; set; }
+    public int Status { get; set; }
     public decimal? Fee { get; set; }
+    public Guid? TreatmentPackageId { get; set; }
+    public Guid? ProposedSlotId { get; set; }
+    public string? ProposedSlotDate { get; set; }
+    public string? ProposedSlotStartTime { get; set; }
+    public string? ProposedSlotEndTime { get; set; }
+    public bool CanReschedule { get; set; }
+
+    public string StatusText => Status switch
+    {
+        0 => "Pending",
+        1 => "Approved",
+        2 => "Rejected",
+        3 => "In Progress",
+        4 => "Completed",
+        5 => "Cancelled",
+        6 => "Reschedule Requested",
+        _ => "Unknown"
+    };
 
     // Alias
     public DateTimeOffset StartAt
@@ -63,6 +111,11 @@ public class CreateAppointmentDto
     public Guid AppointmentSlotId { get; set; }
     public string? Notes { get; set; }
     public Guid? TreatmentPackageId { get; set; }
+
+    // Pre-evaluation fields
+    public string? Symptoms { get; set; }
+    public string? MedicalHistory { get; set; }
+    public string? Expectations { get; set; }
 
     // Guest booking
     public string? GuestName { get; set; }
@@ -105,8 +158,12 @@ public class AppointmentSlotDto
     public string Date { get; set; } = string.Empty;
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
+    // Backend returns AppointmentSlotStatus as int (0=Available, 1=Booked, 2=Unavailable)
+    public int Status { get; set; }
     public decimal? Price { get; set; }
+    public string? Notes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
 }
 
 public class AvailableSlotsDto

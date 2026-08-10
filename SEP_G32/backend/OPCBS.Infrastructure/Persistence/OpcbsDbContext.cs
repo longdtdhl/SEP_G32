@@ -42,8 +42,9 @@ public class OpcbsDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentHistory> AppointmentHistories => Set<AppointmentHistory>();
 
-    // Consultations
-    public DbSet<ConsultationRecord> ConsultationRecords => Set<ConsultationRecord>();
+    // Consultations & Patient Records
+    public DbSet<PatientRecord> PatientRecords => Set<PatientRecord>();
+    public DbSet<ConsultationNote> ConsultationNotes => Set<ConsultationNote>();
 
     // Packages
     public DbSet<TreatmentPackage> TreatmentPackages => Set<TreatmentPackage>();
@@ -359,22 +360,23 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(500);
         });
 
-        // ConsultationRecord
-        modelBuilder.Entity<ConsultationRecord>(entity =>
+        // ConsultationNote
+        modelBuilder.Entity<ConsultationNote>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Appointment)
-                .WithOne(a => a.ConsultationRecord)
-                .HasForeignKey<ConsultationRecord>(e => e.AppointmentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(a => a.ConsultationNote)
+                .HasForeignKey<ConsultationNote>(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
             entity.HasOne(e => e.Doctor)
-                .WithMany(d => d.ConsultationRecords)
+                .WithMany() // Or add a collection to DoctorProfile
                 .HasForeignKey(e => e.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.Patient)
-                .WithMany(p => p.ConsultationRecords)
-                .HasForeignKey(e => e.PatientId)
-                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.PatientRecord)
+                .WithMany(p => p.ConsultationNotes)
+                .HasForeignKey(e => e.PatientRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.ConsultationSummary)
                 .IsRequired()
                 .HasMaxLength(5000);
@@ -384,7 +386,7 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(5000);
             entity.Property(e => e.FollowUpNotes)
                 .HasMaxLength(5000);
-            entity.Property(e => e.Prescription)
+            entity.Property(e => e.TherapyPlan)
                 .HasMaxLength(2000);
         });
     }

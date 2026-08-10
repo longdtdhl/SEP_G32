@@ -471,32 +471,50 @@ public static class SeedData
         // ═══════════════════════════════════════════════
         if (completedApts.Count > 0)
         {
-            context.ConsultationRecords.Add(new ConsultationRecord
+            var pRecord1 = new PatientRecord
+            {
+                DoctorId = completedApts[0].DoctorId,
+                PatientId = completedApts[0].PatientId,
+                Doctor = completedApts[0].Doctor,
+                Patient = completedApts[0].Patient,
+                GeneralNotes = "Created from Seed data"
+            };
+            context.PatientRecords.Add(pRecord1);
+
+            context.ConsultationNotes.Add(new ConsultationNote
             {
                 AppointmentId = completedApts[0].Id,
                 DoctorId = completedApts[0].DoctorId,
-                PatientId = completedApts[0].PatientId!.Value,
+                PatientRecord = pRecord1,
                 ConsultationSummary = "Bệnh nhân có biểu hiện lo lắng quá mức, mất ngủ, khó tập trung. Đã tiến hành CBT phiên 1. Hướng dẫn kỹ thuật thở sâu và ghi nhật ký lo âu.",
                 Diagnosis = "Rối loạn lo âu lan tỏa (GAD)",
                 Recommendation = "Tiếp tục CBT trong 6-8 phiên. Tập thở sâu 10 phút/ngày. Ghi nhật ký lo âu hàng ngày. Tái khám sau 2 tuần.",
                 Appointment = completedApts[0],
-                Doctor = completedApts[0].Doctor,
-                Patient = completedApts[0].Patient!
+                Doctor = completedApts[0].Doctor
             });
         }
         if (completedApts.Count > 2)
         {
-            context.ConsultationRecords.Add(new ConsultationRecord
+            var pRecord2 = new PatientRecord
+            {
+                DoctorId = completedApts[2].DoctorId,
+                PatientId = completedApts[2].PatientId,
+                Doctor = completedApts[2].Doctor,
+                Patient = completedApts[2].Patient,
+                GeneralNotes = "Created from Seed data"
+            };
+            context.PatientRecords.Add(pRecord2);
+
+            context.ConsultationNotes.Add(new ConsultationNote
             {
                 AppointmentId = completedApts[2].Id,
                 DoctorId = completedApts[2].DoctorId,
-                PatientId = completedApts[2].PatientId!.Value,
+                PatientRecord = pRecord2,
                 ConsultationSummary = "Gia đình có xung đột giữa vợ chồng liên quan đến cách nuôi dạy con. Đã tiến hành phiên tham vấn gia đình. Xác định các mẫu giao tiếp tiêu cực.",
                 Diagnosis = "Xung đột gia đình - vấn đề giao tiếp",
                 Recommendation = "Lên lịch 4 phiên trị liệu gia đình. Tập luyện kỹ năng giao tiếp bất bạo lực. Cả hai vợ chồng cùng tham gia.",
                 Appointment = completedApts[2],
-                Doctor = completedApts[2].Doctor,
-                Patient = completedApts[2].Patient!
+                Doctor = completedApts[2].Doctor
             });
         }
         await context.SaveChangesAsync();

@@ -8,6 +8,9 @@ public interface IEmailService
     Task SendEmailAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default);
     Task SendOtpEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default);
     Task SendPasswordResetEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default);
+    Task SendAppointmentCancelledEmailAsync(string to, string recipientName, string cancelledBy, string date, string reason, CancellationToken cancellationToken = default);
+    Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
+    Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
