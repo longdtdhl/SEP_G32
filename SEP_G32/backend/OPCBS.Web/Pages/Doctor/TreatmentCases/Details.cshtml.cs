@@ -66,6 +66,14 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id = caseId });
     }
 
+    // POST: Update Case
+    public async Task<IActionResult> OnPostUpdateCaseAsync(Guid caseId, string? caseDescription, string? primaryConcern, int? status)
+    {
+        var dto = new { CaseDescription = caseDescription, PrimaryConcern = primaryConcern, Status = status };
+        await _api.UpdateAsync(caseId, dto);
+        return RedirectToPage(new { id = caseId });
+    }
+
     // POST: Close Case
     public async Task<IActionResult> OnPostCloseCaseAsync(Guid caseId, string? closureNote, int closeStatus)
     {
