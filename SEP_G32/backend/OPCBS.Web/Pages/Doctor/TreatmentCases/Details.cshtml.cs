@@ -9,14 +9,16 @@ namespace OPCBS.Web.Pages.Doctor.TreatmentCases;
 public class DetailsModel : PageModel
 {
     private readonly ITreatmentCaseApiService _api;
+    private readonly ITherapyApiService _therapyApi;
     private readonly JwtCookieService _jwt;
-    public DetailsModel(ITreatmentCaseApiService api, JwtCookieService jwt) { _api = api; _jwt = jwt; }
+    public DetailsModel(ITreatmentCaseApiService api, ITherapyApiService therapyApi, JwtCookieService jwt) { _api = api; _therapyApi = therapyApi; _jwt = jwt; }
 
     public TreatmentCaseWebDto? Case { get; set; }
     public List<TreatmentSessionWebDto> Sessions { get; set; } = new();
     public List<TreatmentGoalWebDto> Goals { get; set; } = new();
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
+    public List<TherapyAssignmentDto> Assignments { get; set; } = new();
     public string? ErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
@@ -30,15 +32,26 @@ public class DetailsModel : PageModel
         var goalsTask = _api.GetGoalsAsync(id);
         var progressTask = _api.GetProgressAsync(id);
         var timelineTask = _api.GetTimelineAsync(id);
+        var assignmentsTask = _therapyApi.GetAssignmentsByPackageAsync(caseData.TreatmentPackageId);
 
-        await Task.WhenAll(sessionsTask, goalsTask, progressTask, timelineTask);
+        await Task.WhenAll(sessionsTask, goalsTask, progressTask, timelineTask, assignmentsTask);
 
         Sessions = sessionsTask.Result.Data;
         Goals = goalsTask.Result.Data;
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data;
+        Assignments = assignmentsTask.Result.Data;
 
         return Page();
+    }
+
+    // POST: Create Assignment
+    public async Task<IActionResult> OnPostCreateAssignmentAsync(Guid caseId, Guid treatmentPackageId, string title, string? description, string? detailedInstructions, string? resourceUrl, string? dueDate)
+    {
+        DateTime? parsedDate = string.IsNullOrEmpty(dueDate) ? null : DateTime.Parse(dueDate);
+        var dto = new CreateAssignmentDto { TreatmentPackageId = treatmentPackageId, Title = title, Description = description, DetailedInstructions = detailedInstructions, ResourceUrl = resourceUrl, DueDate = parsedDate };
+        await _therapyApi.CreateAssignmentAsync(dto);
+        return RedirectToPage(new { id = caseId });
     }
 
     // POST: Complete Session
