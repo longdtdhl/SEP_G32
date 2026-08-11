@@ -1,0 +1,61 @@
+@page
+@model OPCBS.Web.Pages.Patient.TreatmentCases.IndexModel
+@{ ViewData["Title"] = "My Treatment Cases"; }
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold"><i class="bi bi-heart-pulse me-2"></i>My Treatment Cases</h2>
+        <p class="text-muted">Track your therapy progress and treatment plans</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage</div>
+    }
+
+    @if (!Model.Cases.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-heart-pulse display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No Active Treatment Cases</h4>
+            <p class="text-muted">When your therapist starts a treatment plan for you, it will appear here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var c in Model.Cases)
+            {
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0" style="border-radius: 12px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="fw-bold mb-0">@c.CaseName</h5>
+                                <span class="@c.StatusBadgeClass">@c.StatusText</span>
+                            </div>
+                            <p class="text-muted small"><i class="bi bi-person-badge me-1"></i>Dr. @(c.DoctorName ?? "Unknown")</p>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Progress</span><span class="fw-bold">@c.OverallProgressPercent%</span>
+                                </div>
+                                <div class="progress" style="height: 10px; border-radius: 5px;">
+                                    <div class="progress-bar bg-gradient" role="progressbar" style="width: @c.OverallProgressPercent%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 5px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between small text-muted mb-3">
+                                <span><i class="bi bi-camera-video me-1"></i>@c.CompletedSessions / @c.TotalSessions sessions</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>@c.StartDate.ToString("MMM dd, yyyy")</span>
+                            </div>
+
+                            <a href="/Patient/TreatmentCases/Details?id=@c.Id" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-graph-up me-1"></i>View Progress
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
