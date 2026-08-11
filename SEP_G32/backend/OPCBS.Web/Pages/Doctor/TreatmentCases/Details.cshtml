@@ -203,6 +203,9 @@
                                         <span class="text-muted small ms-2"><i class="bi bi-calendar3 me-1"></i>Due @a.DueDate.Value.ToString("MMM dd, yyyy")</span>
                                     }
                                 </div>
+                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#assignmentDetails-@a.Id">
+                                    <i class="bi bi-eye me-1"></i>Details
+                                </button>
                             </div>
                             @if (!string.IsNullOrEmpty(a.PatientSubmission))
                             {
@@ -213,6 +216,41 @@
                                 <p class="small mt-1 mb-0"><strong>Feedback:</strong> @a.DoctorFeedback</p>
                             }
                         </div>
+                    </div>
+
+                    <!-- Assignment Details Modal -->
+                    <div class="modal fade" id="assignmentDetails-@a.Id" tabindex="-1">
+                        <div class="modal-dialog"><div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">@a.Title</h5>
+                                <span class="@a.StatusBadgeClass ms-2">@a.StatusText</span>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Description:</strong> @(a.Description ?? "N/A")</p>
+                                <p><strong>Instructions:</strong> @(a.DetailedInstructions ?? "N/A")</p>
+                                @if (!string.IsNullOrEmpty(a.ResourceUrl))
+                                {
+                                    <p><strong>Resource:</strong> <a href="@a.ResourceUrl" target="_blank" rel="noopener">@a.ResourceUrl</a></p>
+                                }
+                                <p><strong>Due Date:</strong> @(a.DueDate?.ToString("MMMM dd, yyyy") ?? "N/A")</p>
+                                <hr />
+                                <p><strong>Patient Submission:</strong> @(a.PatientSubmission ?? "Not submitted yet")</p>
+                                @if (!string.IsNullOrEmpty(a.PatientSubmissionUrl))
+                                {
+                                    <p><strong>Submission Link:</strong> <a href="@a.PatientSubmissionUrl" target="_blank" rel="noopener">@a.PatientSubmissionUrl</a></p>
+                                }
+                                @if (a.SubmittedAt.HasValue)
+                                {
+                                    <p><strong>Submitted At:</strong> @a.SubmittedAt.Value.ToString("MMMM dd, yyyy HH:mm")</p>
+                                }
+                                <p><strong>Doctor Feedback:</strong> @(a.DoctorFeedback ?? "No feedback yet")</p>
+                                @if (a.FeedbackAt.HasValue)
+                                {
+                                    <p><strong>Feedback At:</strong> @a.FeedbackAt.Value.ToString("MMMM dd, yyyy HH:mm")</p>
+                                }
+                            </div>
+                            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+                        </div></div>
                     </div>
                 }
             }
