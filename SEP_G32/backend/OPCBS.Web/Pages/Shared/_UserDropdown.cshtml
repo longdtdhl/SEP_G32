@@ -1,10 +1,19 @@
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
+@inject OPCBS.Web.Services.IAuthApiService AuthService
 
 @{
-    var fullName = JwtService.GetFullName() ?? "User";
+    var display = JwtService.GetUserDisplay();
+    if (display == null && JwtService.IsLoggedIn)
+    {
+        var (profile, _) = await AuthService.GetProfileAsync();
+        if (profile != null)
+            display = new OPCBS.Web.Helpers.UserDisplayInfo(profile.FullName, profile.AvatarUrl);
+    }
+
+    var fullName = JwtService.GetFullName() ?? display?.FullName ?? "User";
     var role = JwtService.GetRole();
     var email = JwtService.GetEmail() ?? "";
-    var avatarUrl = JwtService.GetAvatarUrl();
+    var avatarUrl = JwtService.GetAvatarUrl() ?? display?.AvatarUrl;
     var initials = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "U";
     
     var roleBadge = role switch

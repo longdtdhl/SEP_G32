@@ -30,6 +30,42 @@ public class PsychometricsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/psychometrics/tests/{testId} - Get test detail with questions</summary>
+    [AllowAnonymous]
+    [HttpGet("tests/{testId:guid}")]
+    public async Task<IActionResult> GetTestById(Guid testId)
+    {
+        var result = await _psychService.GetTestByIdAsync(testId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/psychometrics/tests - Create a new psychometric test</summary>
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [HttpPost("tests")]
+    public async Task<IActionResult> CreateTest([FromBody] CreatePsychometricTestDto dto)
+    {
+        var result = await _psychService.CreateTestAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/psychometrics/tests/{testId} - Update a psychometric test</summary>
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [HttpPut("tests/{testId:guid}")]
+    public async Task<IActionResult> UpdateTest(Guid testId, [FromBody] UpdatePsychometricTestDto dto)
+    {
+        var result = await _psychService.UpdateTestAsync(testId, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>DELETE /api/v1/psychometrics/tests/{testId} - Delete a psychometric test</summary>
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [HttpDelete("tests/{testId:guid}")]
+    public async Task<IActionResult> DeleteTest(Guid testId)
+    {
+        var result = await _psychService.DeleteTestAsync(testId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>GET /api/v1/psychometrics/tests/{testId}/questions - Get test questions</summary>
     [AllowAnonymous]
     [HttpGet("tests/{testId:guid}/questions")]

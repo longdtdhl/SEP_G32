@@ -934,18 +934,6 @@
             <form method="post" asp-page-handler="UpdateSlot" class="m-0">
                 <div class="modal-body">
                     <input type="hidden" name="slotId" id="detailSlotId" />
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Slot Status</label>
-                        <select name="status" id="detailStatus" class="form-select" style="border-radius:10px;">
-                            <option value="0">Available</option>
-                            <option value="1" disabled>Booked (managed by appointment)</option>
-                            <option value="2">Blocked</option>
-                            <option value="3" disabled>Expired (automatic)</option>
-                            <option value="4">Cancelled</option>
-                            <option value="5" disabled>Completed (managed by appointment)</option>
-                        </select>
-                        <div id="detailStatusHint" class="form-text"></div>
-                    </div>
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label small fw-semibold text-secondary">Start Time</label>
@@ -973,6 +961,10 @@
                 </div>
             </form>
             <div class="px-3 pb-3 d-flex gap-2">
+                <form method="post" asp-page-handler="ToggleBlock" class="flex-fill m-0">
+                    <input type="hidden" name="slotId" id="blockSlotId" />
+                    <button type="submit" id="detailBlockButton" class="btn btn-outline-warning w-100 rounded-pill"><i class="bi bi-slash-circle me-1"></i>Block Slot</button>
+                </form>
                 <form method="post" asp-page-handler="DeleteSlot" class="flex-fill m-0" onsubmit="return confirm('Delete this slot?');">
                     <input type="hidden" name="slotId" id="deleteSlotId" />
                     <button type="submit" id="detailDeleteButton" class="btn btn-outline-danger w-100 rounded-pill"><i class="bi bi-trash me-1"></i>Delete Slot</button>
@@ -1426,6 +1418,7 @@
                         } else if (props.slotId) {
                             document.getElementById('detailSlotId').value = props.slotId;
                             document.getElementById('deleteSlotId').value = props.slotId;
+                            document.getElementById('blockSlotId').value = props.slotId;
                             if (props.start && props.start.includes('T')) {
                                 var sVal = props.start.split('T')[1].substring(0, 5);
                                 document.getElementById('detailStartTime').value = sVal;
@@ -1440,18 +1433,6 @@
                             document.getElementById('detailNotes').value = props.description || '';
 
                             var normalizedStatus = (props.status || 'Available').toLowerCase();
-                            var statusValues = {
-                                available: '0',
-                                partial: '0',
-                                booked: '1',
-                                blocked: '2',
-                                expired: '3',
-                                cancelled: '4',
-                                completed: '5'
-                            };
-                            var statusSelect = document.getElementById('detailStatus');
-                            statusSelect.value = statusValues[normalizedStatus] || '0';
-
                             var hasBookings = Number(props.currentBookings || 0) > 0;
                             var slotHasEnded = props.end ? new Date(props.end) <= new Date() : false;
                             var doctorManagedStatus = normalizedStatus === 'available' ||
@@ -1459,20 +1440,21 @@
                                 normalizedStatus === 'cancelled';
                             var canManageSlot = doctorManagedStatus && !hasBookings && !slotHasEnded;
 
-                            statusSelect.disabled = !canManageSlot;
                             document.getElementById('detailStartTime').disabled = !canManageSlot;
                             document.getElementById('detailEndTime').disabled = !canManageSlot;
                             document.getElementById('detailMaxPatients').disabled = !canManageSlot;
                             document.getElementById('detailNotes').disabled = !canManageSlot;
                             document.getElementById('detailSaveButton').classList.toggle('d-none', !canManageSlot);
                             document.getElementById('detailDeleteButton').disabled = hasBookings || normalizedStatus === 'booked' || normalizedStatus === 'completed';
-
-                            var statusHint = document.getElementById('detailStatusHint');
-                            statusHint.textContent = canManageSlot
-                                ? 'Available, blocked, and cancelled can be changed by the doctor.'
-                                : hasBookings
-                                    ? 'This slot has a patient booking. Manage its status from Appointment Details.'
-                                    : 'This status is managed automatically and is read-only.';
+                            var blockButton = document.getElementById('detailBlockButton');
+                            var isBlocked = normalizedStatus === 'blocked';
+                            blockButton.disabled = !canManageSlot;
+                            blockButton.className = isBlocked
+                                ? 'btn btn-outline-success w-100 rounded-pill'
+                                : 'btn btn-outline-warning w-100 rounded-pill';
+                            blockButton.innerHTML = isBlocked
+                                ? '<i class="bi bi-unlock me-1"></i>Unblock Slot'
+                                : '<i class="bi bi-slash-circle me-1"></i>Block Slot';
                             updateDurationText(document.getElementById('detailStartTime').value, document.getElementById('detailEndTime').value, 'detailSlotDurationPreview');
                             var modal = new bootstrap.Modal(document.getElementById('slotDetailModal'));
                             modal.show();

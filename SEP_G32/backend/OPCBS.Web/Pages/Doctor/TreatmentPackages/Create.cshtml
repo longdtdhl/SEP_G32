@@ -85,11 +85,11 @@
                             <input type="hidden" asp-for="Input.PatientId" value="@Model.PrefilledPatient.PatientId" />
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar bg-teal text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:36px; height:36px; background:#0d9488;">
-                                    @((Model.PrefilledPatient.DisplayName ?? "P").Substring(0, 1).ToUpper())
+                                    @(Model.PrefilledPatient.ResolvedDisplayName.Substring(0, 1).ToUpper())
                                 </div>
                                 <div>
-                                    <div class="fw-bold text-dark fs-7">@Model.PrefilledPatient.DisplayName</div>
-                                    <div class="fs-8 text-muted">@Model.PrefilledPatient.DisplayEmail</div>
+                                    <div class="fw-bold text-dark fs-7">@Model.PrefilledPatient.ResolvedDisplayName</div>
+                                    <div class="fs-8 text-muted">@(Model.PrefilledPatient.ResolvedDisplayEmail ?? "No email recorded")</div>
                                 </div>
                                 <span class="badge bg-success ms-auto">Patient Pre-selected</span>
                             </div>
@@ -103,7 +103,7 @@
                                 <option value="">None (Save as reusable Template)</option>
                                 @foreach (var p in Model.DoctorPatients)
                                 {
-                                    <option value="@p.PatientId">@p.DisplayName (@p.DisplayEmail)</option>
+                                    <option value="@p.PatientId">@p.ResolvedDisplayName (@(p.ResolvedDisplayEmail ?? "No email"))</option>
                                 }
                             </select>
                             <small class="text-muted fs-8">Leave empty to keep this package as a reusable template for any patient.</small>

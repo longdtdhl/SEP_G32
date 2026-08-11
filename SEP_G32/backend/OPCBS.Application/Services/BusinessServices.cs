@@ -1490,9 +1490,10 @@ public class TreatmentPackageService : ITreatmentPackageService
             var existingActive = allPackages.FirstOrDefault(p =>
                 p.PatientId == dto.PatientId.Value &&
                 !p.IsDeleted &&
-                p.Status != TreatmentPackageStatus.Completed &&
-                p.Status != TreatmentPackageStatus.Cancelled &&
-                p.Status != TreatmentPackageStatus.Rejected);
+                p.Status is TreatmentPackageStatus.Assigned
+                    or TreatmentPackageStatus.Accepted
+                    or TreatmentPackageStatus.Active
+                    or TreatmentPackageStatus.CancellationPending);
             if (existingActive != null)
                 return ApiResponse<TreatmentPackageDto>.ErrorResponse("Bệnh nhân này đã có gói điều trị đang hoạt động. Vui lòng hủy gói cũ trước khi tạo gói mới.");
         }
@@ -1593,6 +1594,11 @@ public class TreatmentPackageService : ITreatmentPackageService
                 dto.PatientId = patUserId;
                 if (string.IsNullOrEmpty(dto.PatientName) && userDict.TryGetValue(patUserId, out var patName))
                     dto.PatientName = patName;
+            }
+            if (dto.CancellationRequestedByUserId.HasValue &&
+                userDict.TryGetValue(dto.CancellationRequestedByUserId.Value, out var requestedByName))
+            {
+                dto.CancellationRequestedByName = requestedByName;
             }
         }
     }
@@ -1810,14 +1816,51 @@ public class TreatmentPackageService : ITreatmentPackageService
         if (!isDoctor && !isPatient)
             return ApiResponse.ErrorResponse("Not authorized to cancel this package");
 
-        // Only non-completed, non-cancelled packages can be cancelled
-        if (package.Status == TreatmentPackageStatus.Completed || package.Status == TreatmentPackageStatus.Cancelled)
+        // Only active proposals and treatment packages support the two-party cancellation flow.
+        if (package.Status is TreatmentPackageStatus.Completed
+            or TreatmentPackageStatus.Cancelled
+            or TreatmentPackageStatus.Rejected
+            or TreatmentPackageStatus.Expired)
             return ApiResponse.ErrorResponse("This package cannot be cancelled");
 
+        if (package.Status != TreatmentPackageStatus.CancellationPending)
+        {
+            package.Status = TreatmentPackageStatus.CancellationPending;
+            package.CancellationRequestedByUserId = userId;
+            package.CancellationRequestedAt = DateTime.UtcNow;
+            package.CancellationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+            package.UpdatedAt = DateTime.UtcNow;
+            _packageRepo.Update(package);
+            await _uow.SaveChangesAsync(ct);
+
+            var recipientUserId = isDoctor ? patient!.UserId : doctor!.UserId;
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    recipientUserId,
+                    "Treatment package cancellation requested",
+                    $"The {(isDoctor ? "doctor" : "patient")} requested cancellation for \"{package.Name}\". Please review the package and confirm cancellation.",
+                    Domain.Enums.NotificationType.Package,
+                    package.Id,
+                    "TreatmentPackage",
+                    ct);
+            }
+            catch { }
+
+            return ApiResponse.SuccessResponse("Cancellation request sent. The package remains active until the other party confirms.");
+        }
+
+        if (package.CancellationRequestedByUserId == userId)
+            return ApiResponse.ErrorResponse("Cancellation is awaiting confirmation from the other party.");
+
         package.Status = TreatmentPackageStatus.Cancelled;
+        package.CancellationReason ??= "Cancelled after confirmation by both parties.";
         package.RejectionReason = reason ?? "Đã hủy bởi " + (isDoctor ? "bác sĩ" : "bệnh nhân");
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
+
+        // Keep the original request reason in the final package history.
+        package.RejectionReason = package.CancellationReason ?? reason ?? "Cancelled after confirmation by both parties.";
 
         // Cascade cancel to any linked active TreatmentCase
         var allCases = await _caseRepo.GetAllAsync(ct);

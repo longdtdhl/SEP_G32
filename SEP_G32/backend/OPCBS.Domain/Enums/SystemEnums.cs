@@ -191,7 +191,10 @@ public enum TreatmentPackageStatus
     Cancelled = 7,
 
     /// <summary>Package template archived and no longer available for assignment</summary>
-    Archived = 8
+    Archived = 8,
+
+    /// <summary>Cancellation requested by one party and awaiting confirmation from the other.</summary>
+    CancellationPending = 9
 }
 
 /// <summary>

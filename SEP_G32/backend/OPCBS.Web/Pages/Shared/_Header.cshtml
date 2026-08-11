@@ -38,19 +38,27 @@
         <div class="collapse navbar-collapse" id="navbarMain">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link @(currentPath == "/" ? "active" : "")" asp-page="/Index">Home</a>
+                    <a class="nav-link @(currentPath == "/" ? "active" : "")" asp-page="/Index">
+                        <i class="bi bi-house-door me-1"></i>Home
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/doctors") ? "active" : "")"
-                       asp-page="/Doctors/Index">Find a Therapist</a>
+                       asp-page="/Doctors/Index">
+                        <i class="bi bi-person-badge me-1"></i>Find a Therapist
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")"
-                       asp-page="/Blog/Index">Resources</a>
+                       asp-page="/Blog/Index">
+                        <i class="bi bi-journal-text me-1"></i>Resources
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")"
-                       asp-page="/Appointment/Track">Track Appointment</a>
+                       asp-page="/Appointment/Track">
+                        <i class="bi bi-geo-alt me-1"></i>Track Appointment
+                    </a>
                 </li>
             </ul>
 
@@ -73,10 +81,14 @@
                 else
                 {
                     <li class="nav-item">
-                        <a class="nav-link" asp-page="/Account/Login">Log in</a>
+                        <a class="nav-link" asp-page="/Account/Login">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Log in
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-get-started" asp-page="/Account/Register">Get Started</a>
+                        <a class="btn btn-get-started" asp-page="/Account/Register">
+                            <i class="bi bi-person-plus me-1"></i>Get Started
+                        </a>
                     </li>
                 }
             </ul>

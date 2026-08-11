@@ -110,7 +110,7 @@ public class IndexModel : PageModel
         // Load data from API
         var (events, err1) = await _api.GetCalendarEventsAsync(PeriodStart, PeriodEnd);
         var (slotsData, err3) = await _api.GetMySlotsAsync();
-        var (eligiblePatients, _) = await _api.GetEligibleTreatmentPatientsAsync();
+        var (eligiblePatients, err2) = await _api.GetEligibleTreatmentPatientsAsync();
         var (notesData, err4) = await _api.GetNotesAsync(null, null, null, null, 1, 1000);
 
         // Calendar events excluding DayOff and Note events (notes live in dedicated Notes tab)
@@ -118,7 +118,7 @@ public class IndexModel : PageModel
                                            !string.Equals(e.EventType, "Note", StringComparison.OrdinalIgnoreCase)).ToList();
         ActualSlots = slotsData?.Slots ?? new();
         EligiblePatients = eligiblePatients ?? new();
-        Error = Error ?? err1 ?? err3 ?? err4;
+        Error = Error ?? err1 ?? err2 ?? err3 ?? err4;
 
         // Calculate summary statistics strictly for current period
         var pStart = DateOnly.FromDateTime(PeriodStart);

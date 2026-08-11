@@ -3193,8 +3193,17 @@ public class ScheduleService : IScheduleService
                                       .OrderBy(s => s.SessionNumber)
                                       .ToList();
 
-            var unscheduled = sessions.FirstOrDefault(s => s.AppointmentId == null && s.Status != TreatmentSessionStatus.Completed && s.Status != TreatmentSessionStatus.Cancelled);
-            var canCreateNextSession = unscheduled == null && sessions.Count < c.TotalSessions && c.RemainingSessions > 0;
+            var unscheduled = sessions.FirstOrDefault(s =>
+                s.AppointmentId == null && s.Status != TreatmentSessionStatus.Completed && s.Status != TreatmentSessionStatus.Cancelled);
+
+            // A cancelled session has no appointment and can be scheduled again. Legacy cases may
+            // contain cancelled duplicate sessions, so do not use the raw session count as capacity.
+            unscheduled ??= sessions.FirstOrDefault(s =>
+                s.AppointmentId == null && s.Status == TreatmentSessionStatus.Cancelled);
+            var plannedSessionCount = sessions.Count(s => s.Status != TreatmentSessionStatus.Cancelled);
+            var canCreateNextSession = unscheduled == null &&
+                                       plannedSessionCount < c.TotalSessions &&
+                                       c.RemainingSessions > 0;
             if (unscheduled == null && !canCreateNextSession) continue;
 
             var patient = c.Patient ?? allPatients.FirstOrDefault(p => p.UserId == c.PatientId || p.Id == c.PatientId);
@@ -3260,14 +3269,15 @@ public class ScheduleService : IScheduleService
 
         if (session != null && session.TreatmentCaseId != caseItem.Id)
             return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment session not found");
-        if (session != null && (session.AppointmentId != null || session.Status == TreatmentSessionStatus.Completed || session.Status == TreatmentSessionStatus.Cancelled))
+        if (session != null && (session.AppointmentId != null || session.Status == TreatmentSessionStatus.Completed))
             return ApiResponse<AppointmentSlotDto>.ErrorResponse("Treatment session is already scheduled or completed");
 
         if (session == null)
         {
             var allSessions = await _sessionRepo.GetAllAsync(ct);
             var caseSessions = allSessions.Where(s => s.TreatmentCaseId == caseItem.Id && !s.IsDeleted).ToList();
-            if (caseSessions.Count >= caseItem.TotalSessions || caseItem.RemainingSessions <= 0)
+            var plannedSessionCount = caseSessions.Count(s => s.Status != TreatmentSessionStatus.Cancelled);
+            if (plannedSessionCount >= caseItem.TotalSessions || caseItem.RemainingSessions <= 0)
                 return ApiResponse<AppointmentSlotDto>.ErrorResponse("This treatment case has no remaining session to schedule");
 
             var nextNumber = caseSessions.Count == 0 ? 1 : caseSessions.Max(s => s.SessionNumber) + 1;

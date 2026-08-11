@@ -6,7 +6,12 @@ namespace OPCBS.Web.Services;
 
 public class DoctorApiService : ApiServiceBase, IDoctorApiService
 {
-    public DoctorApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+    private readonly JwtCookieService _jwt;
+
+    public DoctorApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt)
+    {
+        _jwt = jwt;
+    }
 
     public async Task<(List<DoctorListItemDto> Data, PaginationDto? Pagination, string? Error)> GetAllAsync(DoctorFilterDto? filter = null)
     {
@@ -67,7 +72,12 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
         await PutAsync("api/v1/doctor-profile", dto);
 
     public async Task<(string? Url, string? Error)> UploadAvatarAsync(Stream fileStream, string fileName)
-        => await UploadFileAsync("api/v1/doctor-profile/avatar", fileStream, fileName, "avatarUrl");
+    {
+        var result = await UploadFileAsync("api/v1/doctor-profile/avatar", fileStream, fileName, "avatarUrl");
+        if (!string.IsNullOrWhiteSpace(result.Url))
+            _jwt.StoreUserDisplay(_jwt.GetFullName(), result.Url);
+        return result;
+    }
 
     public async Task<(string? Url, string? Error)> UploadCertificateAsync(Stream fileStream, string fileName)
         => await UploadFileAsync("api/v1/doctor-profile/certificates", fileStream, fileName, "certificateUrl");

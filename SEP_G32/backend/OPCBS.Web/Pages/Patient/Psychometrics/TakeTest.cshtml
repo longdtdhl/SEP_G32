@@ -2,6 +2,7 @@
 @model OPCBS.Web.Pages.Patient.Psychometrics.TakeTestModel
 @{
     ViewData["Title"] = Model.Test?.Title ?? "Psychometric Screening";
+    Layout = "_DashboardLayout";
 }
 
 @if (Model.Test != null)

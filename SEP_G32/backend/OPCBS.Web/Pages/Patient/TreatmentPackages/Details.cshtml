@@ -85,6 +85,7 @@
     var docName = string.IsNullOrWhiteSpace(pkg.DoctorName) ? "Your Therapist" : pkg.DoctorName;
     var isPending = pkg.Status == "Pending" || pkg.Status == "Assigned";
     var isActive = pkg.Status == "Active" || pkg.Status == "Accepted";
+    var isCancellationPending = pkg.IsCancellationPending;
 
     <!-- Pending Banner -->
     @if (isPending)
@@ -230,6 +231,26 @@
                             </button>
                         </form>
                     }
+                    else if (isCancellationPending)
+                    {
+                        <div class="rounded-3 p-3 mb-2" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:.82rem;">
+                            <i class="bi bi-hourglass-split me-1"></i>
+                            @if (Model.IsCancellationRequester)
+                            {
+                                <span>Cancellation request sent. Waiting for your doctor to confirm.</span>
+                            }
+                            else
+                            {
+                                <span>Your doctor requested cancellation. Confirm to end this treatment package.</span>
+                            }
+                        </div>
+                        @if (!Model.IsCancellationRequester)
+                        {
+                            <button type="button" class="pd-decline-btn" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-check2-circle me-1"></i>Confirm Cancellation
+                            </button>
+                        }
+                    }
                     else
                     {
                         <a asp-page="Index" class="btn btn-outline-secondary w-100 py-2" style="border-radius:10px; font-weight:600;">
@@ -267,26 +288,29 @@
     </div>
 
     <!-- ── Cancel Modal ── -->
-    @if (isActive)
+    @if (isActive || (isCancellationPending && !Model.IsCancellationRequester))
     {
         <div class="modal fade" id="cancelModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content" style="border-radius:14px;">
                     <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
                         <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title fw-bold" style="color:#dc2626;"><i class="bi bi-x-octagon me-2"></i>Cancel Treatment Package</h5>
+                            <h5 class="modal-title fw-bold" style="color:#dc2626;"><i class="bi bi-x-octagon me-2"></i>@(isCancellationPending ? "Confirm Cancellation" : "Cancel Treatment Package")</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="small text-secondary mb-3">This will cancel your active treatment. Any remaining sessions will not be available.</p>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Reason for cancellation <span class="fw-normal text-muted">(optional)</span></label>
-                                <textarea name="reason" class="form-control" rows="3" placeholder="Tell us why..." style="border-radius:8px;"></textarea>
-                            </div>
+                            <p class="small text-secondary mb-3">@(isCancellationPending ? "Confirming will end this package and the related active treatment case." : "The package remains active until your doctor confirms this request.")</p>
+                            @if (!isCancellationPending)
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Reason for cancellation <span class="fw-normal text-muted">(optional)</span></label>
+                                    <textarea name="reason" class="form-control" rows="3" placeholder="Tell us why..." style="border-radius:8px;"></textarea>
+                                </div>
+                            }
                         </div>
                         <div class="modal-footer border-0 pt-0">
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Keep Package</button>
-                            <button type="submit" class="btn btn-danger btn-sm px-3" style="border-radius:8px;">Confirm Cancel</button>
+                            <button type="submit" class="btn btn-danger btn-sm px-3" style="border-radius:8px;">@(isCancellationPending ? "Confirm Cancellation" : "Send Request")</button>
                         </div>
                     </form>
                 </div>

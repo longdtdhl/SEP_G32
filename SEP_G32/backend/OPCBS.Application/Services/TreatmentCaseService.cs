@@ -954,9 +954,7 @@ public class TreatmentCaseService : ITreatmentCaseService
 
             if (treatmentCase.RemainingSessions <= 0)
             {
-                treatmentCase.Status = TreatmentCaseStatus.Completed;
-                treatmentCase.ActualEndDate = DateTime.UtcNow;
-                treatmentCase.OverallProgressPercent = 100;
+                await CompleteCaseAndPackageAsync(treatmentCase, ct);
             }
         }
 
@@ -1684,9 +1682,7 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         if (treatmentCase.TotalSessions > 0 && treatmentCase.CompletedSessions >= treatmentCase.TotalSessions)
         {
-            treatmentCase.Status = TreatmentCaseStatus.Completed;
-            treatmentCase.ActualEndDate ??= DateTime.UtcNow;
-            treatmentCase.OverallProgressPercent = 100;
+            await CompleteCaseAndPackageAsync(treatmentCase, ct);
         }
 
         _caseRepo.Update(treatmentCase);
@@ -2158,6 +2154,23 @@ public class TreatmentCaseService : ITreatmentCaseService
         IsPassed = evaluation.IsPassed, EvaluatedAt = evaluation.EvaluatedAt, EvaluatedBy = evaluation.EvaluatedBy
     };
 
+    private async Task CompleteCaseAndPackageAsync(TreatmentCase treatmentCase, CancellationToken ct)
+    {
+        treatmentCase.Status = TreatmentCaseStatus.Completed;
+        treatmentCase.ActualEndDate ??= DateTime.UtcNow;
+        treatmentCase.OverallProgressPercent = 100;
+
+        var package = await _packageRepo.GetByIdAsync(treatmentCase.TreatmentPackageId, ct);
+        if (package != null && !package.IsDeleted &&
+            package.Status is TreatmentPackageStatus.Active or TreatmentPackageStatus.Accepted)
+        {
+            package.Status = TreatmentPackageStatus.Completed;
+            package.RemainingSessions = 0;
+            package.UpdatedAt = DateTime.UtcNow;
+            _packageRepo.Update(package);
+        }
+    }
+
     private async Task RecalculateProgressAsync(TreatmentCase treatmentCase, CancellationToken ct)
     {
         var allSessions = await _sessionRepo.GetAllAsync(ct);
@@ -2192,6 +2205,11 @@ public class TreatmentCaseService : ITreatmentCaseService
         }
 
         treatmentCase.OverallProgressPercent = Math.Min(100, Math.Max(0, overall));
+        if (treatmentCase.OverallProgressPercent >= 100 &&
+            treatmentCase.Status is TreatmentCaseStatus.Active or TreatmentCaseStatus.OnHold)
+        {
+            await CompleteCaseAndPackageAsync(treatmentCase, ct);
+        }
         treatmentCase.UpdatedAt = DateTime.UtcNow;
     }
 

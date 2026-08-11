@@ -20,6 +20,9 @@ public class IndexModel : PageModel
     public List<PsychometricSubmissionDto> PsychSubmissions { get; set; } = new();
     public string? Error { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public Guid? CaseId { get; set; }
+
     [BindProperty] public string Title { get; set; } = string.Empty;
     [BindProperty] public new string? Content { get; set; }
     [BindProperty] public int MoodScale { get; set; }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
+using OPCBS.Web.Helpers;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Patient.TreatmentPackages;
@@ -8,14 +9,18 @@ namespace OPCBS.Web.Pages.Patient.TreatmentPackages;
 public class DetailsModel : PageModel
 {
     private readonly ITreatmentPackageApiService _service;
+    private readonly JwtCookieService _jwtCookieService;
 
-    public DetailsModel(ITreatmentPackageApiService service)
+    public DetailsModel(ITreatmentPackageApiService service, JwtCookieService jwtCookieService)
     {
         _service = service;
+        _jwtCookieService = jwtCookieService;
     }
 
     public TreatmentPackageDto? Package { get; set; }
     public string? Error { get; set; }
+    public bool IsCancellationRequester => Package?.CancellationRequestedByUserId.HasValue == true &&
+        Guid.TryParse(_jwtCookieService.GetUserId(), out var userId) && Package.CancellationRequestedByUserId == userId;
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
@@ -61,7 +66,7 @@ public class DetailsModel : PageModel
             return Page();
         }
 
-        TempData["SuccessMessage"] = "Successfully cancelled treatment package.";
-        return RedirectToPage("/Patient/TreatmentPackages/Index");
+        TempData["SuccessMessage"] = "Cancellation request processed successfully.";
+        return RedirectToPage(new { id });
     }
 }

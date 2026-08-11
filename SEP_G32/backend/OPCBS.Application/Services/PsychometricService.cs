@@ -49,15 +49,222 @@ public class PsychometricService : IPsychometricService
     public async Task<ApiResponse<List<PsychometricTestDto>>> GetTestsAsync(CancellationToken ct = default)
     {
         var tests = await _testRepo.GetAllAsync(ct);
+        var questions = await _questionRepo.GetAllAsync(ct);
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+
+        var qCounts = questions.Where(q => !q.IsDeleted).GroupBy(q => q.TestId).ToDictionary(g => g.Key, g => g.Count());
+        var sCounts = submissions.Where(s => !s.IsDeleted).GroupBy(s => s.TestId).ToDictionary(g => g.Key, g => g.Count());
+
         var dtos = tests.Where(t => !t.IsDeleted).Select(t => new PsychometricTestDto
         {
             Id = t.Id,
             Title = t.Title,
             Description = t.Description,
-            TestType = t.TestType
-        }).ToList();
+            TestType = t.TestType,
+            CreatedAt = t.CreatedAt,
+            QuestionCount = qCounts.GetValueOrDefault(t.Id, 0),
+            SubmissionCount = sCounts.GetValueOrDefault(t.Id, 0)
+        }).OrderBy(t => t.Title).ToList();
 
         return ApiResponse<List<PsychometricTestDto>>.SuccessResponse(dtos);
+    }
+
+    public async Task<ApiResponse<PsychometricTestDetailDto>> GetTestByIdAsync(Guid testId, CancellationToken ct = default)
+    {
+        var test = await _testRepo.GetByIdAsync(testId, ct);
+        if (test == null || test.IsDeleted)
+            return ApiResponse<PsychometricTestDetailDto>.ErrorResponse("Psychometric test not found.");
+
+        var questions = (await _questionRepo.GetAllAsync(ct))
+            .Where(q => q.TestId == testId && !q.IsDeleted)
+            .OrderBy(q => q.QuestionNumber)
+            .Select(q => new PsychometricQuestionDto
+            {
+                Id = q.Id,
+                TestId = q.TestId,
+                QuestionText = q.QuestionText,
+                QuestionNumber = q.QuestionNumber,
+                Category = q.Category
+            }).ToList();
+
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+        int submissionCount = submissions.Count(s => s.TestId == testId && !s.IsDeleted);
+
+        var dto = new PsychometricTestDetailDto
+        {
+            Id = test.Id,
+            Title = test.Title,
+            Description = test.Description,
+            TestType = test.TestType,
+            CreatedAt = test.CreatedAt,
+            QuestionCount = questions.Count,
+            SubmissionCount = submissionCount,
+            Questions = questions
+        };
+
+        return ApiResponse<PsychometricTestDetailDto>.SuccessResponse(dto);
+    }
+
+    public async Task<ApiResponse<PsychometricTestDto>> CreateTestAsync(CreatePsychometricTestDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Test title is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.TestType))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Test code / type is required.");
+
+        if (dto.Questions == null || !dto.Questions.Any(q => !string.IsNullOrWhiteSpace(q.QuestionText)))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("At least one question is required.");
+
+        var test = new PsychometricTest
+        {
+            Title = dto.Title.Trim(),
+            Description = dto.Description?.Trim(),
+            TestType = dto.TestType.Trim().ToUpper()
+        };
+
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            await _testRepo.AddAsync(test, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            int qNum = 1;
+            foreach (var q in dto.Questions)
+            {
+                if (string.IsNullOrWhiteSpace(q.QuestionText))
+                    continue;
+
+                var questionEntity = new PsychometricQuestion
+                {
+                    TestId = test.Id,
+                    QuestionText = q.QuestionText.Trim(),
+                    QuestionNumber = q.QuestionNumber > 0 ? q.QuestionNumber : qNum++,
+                    Category = string.IsNullOrWhiteSpace(q.Category) ? null : q.Category.Trim(),
+                    Test = test
+                };
+                await _questionRepo.AddAsync(questionEntity, ct);
+            }
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+        }
+        catch (Exception)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
+        }
+
+        var resultDto = new PsychometricTestDto
+        {
+            Id = test.Id,
+            Title = test.Title,
+            Description = test.Description,
+            TestType = test.TestType,
+            CreatedAt = test.CreatedAt,
+            QuestionCount = dto.Questions.Count(q => !string.IsNullOrWhiteSpace(q.QuestionText)),
+            SubmissionCount = 0
+        };
+
+        return ApiResponse<PsychometricTestDto>.SuccessResponse(resultDto);
+    }
+
+    public async Task<ApiResponse<PsychometricTestDto>> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto, CancellationToken ct = default)
+    {
+        var test = await _testRepo.GetByIdAsync(id, ct);
+        if (test == null || test.IsDeleted)
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Psychometric test not found.");
+
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Test title is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.TestType))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Test code / type is required.");
+
+        if (dto.Questions == null || !dto.Questions.Any(q => !string.IsNullOrWhiteSpace(q.QuestionText)))
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("At least one question is required.");
+
+        test.Title = dto.Title.Trim();
+        test.Description = dto.Description?.Trim();
+        test.TestType = dto.TestType.Trim().ToUpper();
+
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            _testRepo.Update(test);
+
+            // Existing questions
+            var existingQuestions = (await _questionRepo.GetAllAsync(ct))
+                .Where(q => q.TestId == id && !q.IsDeleted)
+                .ToList();
+
+            foreach (var eq in existingQuestions)
+            {
+                eq.IsDeleted = true;
+                _questionRepo.Update(eq);
+            }
+
+            int qNum = 1;
+            foreach (var q in dto.Questions)
+            {
+                if (string.IsNullOrWhiteSpace(q.QuestionText))
+                    continue;
+
+                var questionEntity = new PsychometricQuestion
+                {
+                    TestId = test.Id,
+                    QuestionText = q.QuestionText.Trim(),
+                    QuestionNumber = q.QuestionNumber > 0 ? q.QuestionNumber : qNum++,
+                    Category = string.IsNullOrWhiteSpace(q.Category) ? null : q.Category.Trim(),
+                    Test = test
+                };
+                await _questionRepo.AddAsync(questionEntity, ct);
+            }
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+        }
+        catch (Exception)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
+        }
+
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+        int submissionCount = submissions.Count(s => s.TestId == id && !s.IsDeleted);
+
+        var resultDto = new PsychometricTestDto
+        {
+            Id = test.Id,
+            Title = test.Title,
+            Description = test.Description,
+            TestType = test.TestType,
+            CreatedAt = test.CreatedAt,
+            QuestionCount = dto.Questions.Count(q => !string.IsNullOrWhiteSpace(q.QuestionText)),
+            SubmissionCount = submissionCount
+        };
+
+        return ApiResponse<PsychometricTestDto>.SuccessResponse(resultDto);
+    }
+
+    public async Task<ApiResponse<bool>> DeleteTestAsync(Guid id, CancellationToken ct = default)
+    {
+        var test = await _testRepo.GetByIdAsync(id, ct);
+        if (test == null || test.IsDeleted)
+            return ApiResponse<bool>.ErrorResponse("Psychometric test not found.");
+
+        test.IsDeleted = true;
+        _testRepo.Update(test);
+
+        var questions = (await _questionRepo.GetAllAsync(ct)).Where(q => q.TestId == id && !q.IsDeleted).ToList();
+        foreach (var q in questions)
+        {
+            q.IsDeleted = true;
+            _questionRepo.Update(q);
+        }
+
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<bool>.SuccessResponse(true);
     }
 
     public async Task<ApiResponse<List<PsychometricQuestionDto>>> GetQuestionsAsync(Guid testId, CancellationToken ct = default)
@@ -139,7 +346,22 @@ public class PsychometricService : IPsychometricService
         }
         else
         {
-            return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("Loại bài trắc nghiệm không được hỗ trợ.");
+            totalScore = dto.Answers.Sum(a => a.Score);
+            var qDict = questions.ToDictionary(q => q.Id, q => q);
+            var categoryScores = dto.Answers
+                .GroupBy(a => qDict.TryGetValue(a.QuestionId, out var q) && !string.IsNullOrEmpty(q.Category) ? q.Category : "General")
+                .ToDictionary(g => g.Key, g => g.Sum(a => a.Score));
+
+            string catBreakdown = string.Join(", ", categoryScores.Select(kv => $"{kv.Key}: {kv.Value}"));
+            interpretation = categoryScores.Count > 1
+                ? $"Total Score: {totalScore} ({catBreakdown})"
+                : $"Total Score: {totalScore} points";
+
+            scoreDataJson = JsonSerializer.Serialize(new
+            {
+                TotalScore = totalScore,
+                Categories = categoryScores
+            });
         }
 
         if (dto.AppointmentId.HasValue)

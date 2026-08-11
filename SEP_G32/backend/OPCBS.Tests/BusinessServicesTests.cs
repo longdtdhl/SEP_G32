@@ -1004,21 +1004,22 @@ public class BusinessServicesTests
         dayOffRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorDayOff>());
 
         var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
+        var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)).ToString("yyyy-MM-dd");
 
         // 1. 30 Minutes
-        var res30 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "08:00", EndTime = "08:30" });
+        var res30 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = futureDate, StartTime = "08:00", EndTime = "08:30" });
         Assert.True(res30.Success);
         Assert.Equal("08:00", res30.Data!.StartTime);
         Assert.Equal("08:30", res30.Data!.EndTime);
 
         // 2. 75 Minutes (1 hour 15 min)
-        var res75 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "09:00", EndTime = "10:15" });
+        var res75 = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = futureDate, StartTime = "09:00", EndTime = "10:15" });
         Assert.True(res75.Success);
         Assert.Equal("09:00", res75.Data!.StartTime);
         Assert.Equal("10:15", res75.Data!.EndTime);
 
         // 3. 3 Hours
-        var res3h = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "13:00", EndTime = "16:00" });
+        var res3h = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = futureDate, StartTime = "13:00", EndTime = "16:00" });
         Assert.True(res3h.Success);
         Assert.Equal("13:00", res3h.Data!.StartTime);
         Assert.Equal("16:00", res3h.Data!.EndTime);
@@ -1041,12 +1042,17 @@ public class BusinessServicesTests
         var docUser = new User { Id = doctorUserId, Email = "d@test.com", FullName = "Doc", PhoneNumber = "1", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
         var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
 
+        var testDateOnly = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+        var testDateStr = testDateOnly.ToString("yyyy-MM-dd");
+        var dayOffDateTime = DateTime.Today.AddDays(14);
+        var dayOffStr = dayOffDateTime.ToString("yyyy-MM-dd");
+
         var existingSlot = new AppointmentSlot
         {
             Id = Guid.NewGuid(),
             DoctorProfileId = doctorId,
             DoctorProfile = doctor,
-            SlotDate = new DateOnly(2026, 8, 10),
+            SlotDate = testDateOnly,
             StartTime = new TimeOnly(8, 0),
             EndTime = new TimeOnly(9, 0),
             Status = AppointmentSlotStatus.Available
@@ -1057,8 +1063,8 @@ public class BusinessServicesTests
             Id = Guid.NewGuid(),
             DoctorProfileId = doctorId,
             DoctorProfile = doctor,
-            StartDate = new DateTime(2026, 8, 15),
-            EndDate = new DateTime(2026, 8, 15)
+            StartDate = dayOffDateTime.Date,
+            EndDate = dayOffDateTime.Date
         };
 
         doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
@@ -1068,17 +1074,17 @@ public class BusinessServicesTests
         var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
 
         // 1. StartTime >= EndTime
-        var resInvalidTime = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "09:00", EndTime = "08:00" });
+        var resInvalidTime = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = testDateStr, StartTime = "09:00", EndTime = "08:00" });
         Assert.False(resInvalidTime.Success);
         Assert.Contains("Start time must be before end time", resInvalidTime.Message);
 
         // 2. Overlapping Slot
-        var resOverlap = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-10", StartTime = "08:30", EndTime = "09:30" });
+        var resOverlap = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = testDateStr, StartTime = "08:30", EndTime = "09:30" });
         Assert.False(resOverlap.Success);
         Assert.Contains("overlaps with an existing slot", resOverlap.Message);
 
         // 3. Day Off
-        var resDayOff = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = "2026-08-15", StartTime = "08:00", EndTime = "09:00" });
+        var resDayOff = await service.CreateSlotAsync(doctorUserId, new CreateSlotDto { Date = dayOffStr, StartTime = "08:00", EndTime = "09:00" });
         Assert.False(resDayOff.Success);
         Assert.Contains("day off", resDayOff.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -1184,6 +1190,11 @@ public class BusinessServicesTests
 
         var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object);
 
+        var today = DateTime.Today;
+        int daysUntilMonday = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+        if (daysUntilMonday == 0) daysUntilMonday = 7;
+        var nextMonday = today.AddDays(daysUntilMonday);
+
         var config = new WeeklyScheduleConfigDto
         {
             WorkingDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
@@ -1193,7 +1204,7 @@ public class BusinessServicesTests
             },
             SlotDurationMinutes = 60,
             BreakTimeMinutes = 0,
-            StartDate = "2026-08-10", // Monday
+            StartDate = nextMonday.ToString("yyyy-MM-dd"), // Future Monday
             WeeksToApply = 2
         };
 

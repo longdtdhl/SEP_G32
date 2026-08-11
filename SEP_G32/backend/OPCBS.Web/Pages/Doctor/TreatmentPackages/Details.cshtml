@@ -80,6 +80,7 @@
 @if (Model.Package != null)
 {
     var pkg = Model.Package;
+    var isCancellationPending = pkg.IsCancellationPending;
 
     <div class="row g-4">
         <!-- Main Clinical Details (8 cols) -->
@@ -171,8 +172,65 @@
                     <a asp-page="/Doctor/TreatmentCases/Index" class="btn btn-outline-primary btn-sm w-100 mb-2 py-2" style="border-radius:6px; font-weight:600;">
                         <i class="bi bi-folder me-1"></i> View Treatment Cases
                     </a>
+                    @if (!pkg.IsTemplate && (pkg.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending"))
+                    {
+                        @if (isCancellationPending)
+                        {
+                            <div class="rounded-2 p-2 mb-2" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:.78rem;">
+                                <i class="bi bi-hourglass-split me-1"></i>
+                                @if (Model.IsCancellationRequester)
+                                {
+                                    <span>Cancellation request sent. Waiting for the patient to confirm.</span>
+                                }
+                                else
+                                {
+                                    <span>Cancellation requested by @pkg.CancellationRequestedByName. Your confirmation is required.</span>
+                                }
+                            </div>
+                            @if (!Model.IsCancellationRequester)
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:6px; font-weight:600;">
+                                    <i class="bi bi-check2-circle me-1"></i> Confirm Cancellation
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:6px; font-weight:600;">
+                                <i class="bi bi-x-octagon me-1"></i> Request Cancellation
+                            </button>
+                        }
+                    }
                 </div>
             </div>
         </div>
     </div>
+
+    @if (!pkg.IsTemplate && (pkg.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending") && (!isCancellationPending || !Model.IsCancellationRequester))
+    {
+        <div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:12px;">
+                    <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-shield-exclamation text-danger me-2"></i>@(isCancellationPending ? "Confirm Cancellation" : "Request Package Cancellation")</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">@(isCancellationPending ? "Confirming will end the package and its active treatment case." : "The package remains active until the patient confirms this request.")</p>
+                            @if (!isCancellationPending)
+                            {
+                                <label class="form-label small fw-semibold">Reason <span class="fw-normal text-muted">(optional)</span></label>
+                                <textarea name="reason" class="form-control" rows="3" placeholder="Explain the reason for cancellation..."></textarea>
+                            }
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Keep Package</button>
+                            <button type="submit" class="btn btn-danger btn-sm px-3">@(isCancellationPending ? "Confirm Cancellation" : "Send Request")</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }

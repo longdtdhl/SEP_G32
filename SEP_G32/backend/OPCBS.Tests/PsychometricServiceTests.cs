@@ -429,4 +429,79 @@ public class PsychometricServiceTests
         var submitDto = new SubmitTestDto { TestId = testId, Answers = answersDto };
         await Assert.ThrowsAsync<Exception>(() => service.SubmitTestAsync(submitDto, patientUserId, default));
     }
+
+    [Fact]
+    public async Task CreateTestAsync_ValidData_CreatesTestSuccessfully()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var dto = new CreatePsychometricTestDto
+        {
+            Title = "GAD-7 Anxiety Scale",
+            TestType = "GAD7",
+            Description = "Generalized anxiety disorder screening",
+            Questions = new List<CreatePsychometricQuestionDto>
+            {
+                new() { QuestionNumber = 1, QuestionText = "Feeling nervous or anxious", Category = "Anxiety" },
+                new() { QuestionNumber = 2, QuestionText = "Not being able to stop worrying", Category = "Anxiety" }
+            }
+        };
+
+        var response = await service.CreateTestAsync(dto);
+
+        Assert.True(response.Success);
+        Assert.Equal("GAD-7 Anxiety Scale", response.Data!.Title);
+        Assert.Equal("GAD7", response.Data.TestType);
+        Assert.Equal(2, response.Data.QuestionCount);
+        testRepo.Verify(r => r.AddAsync(It.IsAny<PsychometricTest>(), It.IsAny<CancellationToken>()), Times.Once);
+        questionRepo.Verify(r => r.AddAsync(It.IsAny<PsychometricQuestion>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task DeleteTestAsync_ExistingTest_SoftDeletesTestAndQuestions()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var testId = Guid.NewGuid();
+        var test = new PsychometricTest { Id = testId, Title = "Custom Test", TestType = "CUSTOM" };
+        var questions = new List<PsychometricQuestion>
+        {
+            new() { Id = Guid.NewGuid(), TestId = testId, QuestionText = "Q1", QuestionNumber = 1, Test = test }
+        };
+
+        testRepo.Setup(r => r.GetByIdAsync(testId, It.IsAny<CancellationToken>())).ReturnsAsync(test);
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(questions);
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
+        );
+
+        var response = await service.DeleteTestAsync(testId);
+
+        Assert.True(response.Success);
+        Assert.True(test.IsDeleted);
+        Assert.True(questions[0].IsDeleted);
+        testRepo.Verify(r => r.Update(test), Times.Once);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

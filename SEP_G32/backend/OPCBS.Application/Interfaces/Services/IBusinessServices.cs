@@ -174,6 +174,10 @@ public class TreatmentPackageDto
     public DateTime? AssignedDate { get; set; }
     public DateTime? AcceptedDate { get; set; }
     public DateTime? ActiveDate { get; set; }
+    public Guid? CancellationRequestedByUserId { get; set; }
+    public string? CancellationRequestedByName { get; set; }
+    public DateTime? CancellationRequestedAt { get; set; }
+    public string? CancellationReason { get; set; }
 }
 
 public class CreateTreatmentPackageDto

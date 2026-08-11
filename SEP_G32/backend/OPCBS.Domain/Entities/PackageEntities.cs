@@ -169,6 +169,15 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Reason if package was rejected</summary>
     public string? RejectionReason { get; set; }
 
+    /// <summary>User who initiated the cancellation request. The other party must confirm it.</summary>
+    public Guid? CancellationRequestedByUserId { get; set; }
+
+    /// <summary>When the cancellation request was submitted.</summary>
+    public DateTime? CancellationRequestedAt { get; set; }
+
+    /// <summary>Optional reason supplied by the cancellation requester.</summary>
+    public string? CancellationReason { get; set; }
+
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }
 

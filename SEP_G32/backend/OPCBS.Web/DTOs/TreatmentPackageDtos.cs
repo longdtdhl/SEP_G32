@@ -24,6 +24,10 @@ public class TreatmentPackageDto
     public DateTime? AssignedDate { get; set; }
     public DateTime? AcceptedDate { get; set; }
     public DateTime? ActiveDate { get; set; }
+    public Guid? CancellationRequestedByUserId { get; set; }
+    public string? CancellationRequestedByName { get; set; }
+    public DateTime? CancellationRequestedAt { get; set; }
+    public string? CancellationReason { get; set; }
 
     // Aliases for views
     public string Title => Name;
@@ -32,6 +36,7 @@ public class TreatmentPackageDto
     public bool IsExpired => ExpirationDate < DateTime.Now;
     public string DisplayPatientName => PatientName ?? "Template (Not assigned)";
     public bool IsTemplate => PatientId == null;
+    public bool IsCancellationPending => Status == "CancellationPending";
 }
 
 public class CreateTreatmentPackageDto

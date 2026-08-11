@@ -474,6 +474,28 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
         return (data ?? new(), error);
     }
 
+    public async Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId)
+    {
+        var (data, _, error) = await GetAsync<PsychometricTestDetailDto>($"{ApiRoutes.Psychometrics}/tests/{testId}");
+        return (data, error);
+    }
+
+    public async Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>($"{ApiRoutes.Psychometrics}/tests", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto)
+    {
+        return await PutAsync($"{ApiRoutes.Psychometrics}/tests/{id}", dto);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteTestAsync(Guid id)
+    {
+        return await DeleteAsync($"{ApiRoutes.Psychometrics}/tests/{id}");
+    }
+
     public async Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId)
     {
         var (data, _, error) = await GetAsync<List<PsychometricQuestionDto>>($"{ApiRoutes.Psychometrics}/tests/{testId}/questions");

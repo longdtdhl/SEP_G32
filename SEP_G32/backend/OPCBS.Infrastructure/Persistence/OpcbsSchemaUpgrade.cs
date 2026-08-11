@@ -24,6 +24,15 @@ public static class OpcbsSchemaUpgrade
             """, ct);
 
         await context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'TreatmentPackages', N'CancellationRequestedByUserId') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [CancellationRequestedByUserId] uniqueidentifier NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'CancellationRequestedAt') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [CancellationRequestedAt] datetime2 NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'CancellationReason') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [CancellationReason] nvarchar(1000) NULL;
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[AppointmentCompletionConfirmations]', N'U') IS NULL
             BEGIN
                 CREATE TABLE [AppointmentCompletionConfirmations] (

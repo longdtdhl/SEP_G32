@@ -40,6 +40,7 @@ public class DetailsModel : PageModel
     public PatientRecordDto PatientRecord { get; set; } = default!;
     public List<ConsultationNoteDto> ConsultationNotes { get; set; } = new();
     public List<TreatmentPackageDto> TreatmentPackages { get; set; } = new();
+    public List<TreatmentPackageDto> PackageHistory { get; set; } = new();
     public List<TreatmentPackageDto> TemplatePackages { get; set; } = new();
 
     // Treatment & Risk Data
@@ -115,8 +116,12 @@ public class DetailsModel : PageModel
                 var (pkgs, _, _) = await _pkgService.GetAllAsync(1, 200);
                 if (pkgs != null)
                 {
-                    TreatmentPackages = pkgs
-                        .Where(p => p.PatientId == patientGuid && p.Status != "Cancelled" && p.Status != "Rejected")
+                    var patientPackages = pkgs.Where(p => p.PatientId == patientGuid).ToList();
+                    TreatmentPackages = patientPackages
+                        .Where(p => p.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending")
+                        .ToList();
+                    PackageHistory = patientPackages
+                        .Where(p => p.Status is "Completed" or "Cancelled" or "Rejected" or "Expired")
                         .ToList();
 
                     TemplatePackages = pkgs

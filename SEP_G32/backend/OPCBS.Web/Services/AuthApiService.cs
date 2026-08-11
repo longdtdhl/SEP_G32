@@ -20,6 +20,10 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
         if (!string.IsNullOrWhiteSpace(data?.AccessToken) && !string.IsNullOrWhiteSpace(data.RefreshToken))
         {
             _cookieService.StoreTokens(data.AccessToken, data.RefreshToken, model.RememberMe);
+            _cookieService.StoreUserDisplay(
+                data.FullName,
+                data.AvatarUrl,
+                model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(7));
         }
         return (data, error);
     }
@@ -48,11 +52,18 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(UserProfileDto? Data, string? Error)> GetProfileAsync()
     {
         var (data, _, error) = await GetAsync<UserProfileDto>(ApiRoutes.UserProfile);
+        if (data != null)
+            _cookieService.StoreUserDisplay(data.FullName, data.AvatarUrl);
         return (data, error);
     }
 
     public async Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileDto model)
-        => await PutAsync(ApiRoutes.UserProfile, model);
+    {
+        var result = await PutAsync(ApiRoutes.UserProfile, model);
+        if (result.Success)
+            _cookieService.StoreUserDisplay(model.FullName ?? _cookieService.GetFullName(), _cookieService.GetAvatarUrl());
+        return result;
+    }
 
     public Task LogoutAsync()
     {

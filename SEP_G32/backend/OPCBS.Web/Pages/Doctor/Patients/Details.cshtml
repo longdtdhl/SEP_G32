@@ -363,19 +363,18 @@ else
                 <!-- Right Column (Treatment Cases Summary & Recent Consultations) -->
                 <div class="col-lg-7">
                     <!-- Active Treatment Cases Summary -->
+                    @{ var activeCases = Model.PatientCases.Where(tc => tc.Status == 0).ToList(); }
                     <div class="pd-card">
                         <div class="pd-card-head">
-                            <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Treatment Cases Summary</h6>
-                            <span class="text-muted" style="font-size:0.75rem;">@Model.PatientCases.Count Total Case(s)</span>
+                            <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Active Treatment Cases</h6>
+                            <span class="text-muted" style="font-size:0.75rem;">@activeCases.Count Active Case(s)</span>
                         </div>
                         <div class="pd-card-body" style="padding:0;">
-                            @if (Model.PatientCases.Any())
+                            @if (activeCases.Any())
                             {
-                                @foreach (var tc in Model.PatientCases)
+                                @foreach (var tc in activeCases)
                                 {
                                     var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
-                                    var tcBadge = tc.Status == 0 ? "active" : tc.Status == 1 ? "hold" : tc.Status == 2 ? "completed" : tc.Status == 3 ? "terminated" : "cancelled";
-                                    var tcLabel = tc.Status == 0 ? "Active" : tc.Status == 1 ? "On Hold" : tc.Status == 2 ? "Completed" : tc.Status == 3 ? "Terminated" : "Cancelled";
                                     var activeGoal = Model.ActiveGoals.FirstOrDefault(g => g.TreatmentCaseId == tc.Id);
                                     var risk = Model.CaseRisks.GetValueOrDefault(tc.Id);
 
@@ -383,7 +382,7 @@ else
                                         <div class="d-flex justify-content-between align-items-start mb-1">
                                             <div>
                                                 <div class="d-flex align-items-center gap-2 mb-1">
-                                                    <span class="pd-badge @tcBadge">@tcLabel</span>
+                                                    <span class="pd-badge active">Active</span>
                                                     @if (risk != null)
                                                     {
                                                         <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
@@ -432,7 +431,116 @@ else
                             {
                                 <div class="pd-empty" style="padding:2rem;">
                                     <i class="bi bi-folder-x"></i>
-                                    <p>No treatment cases created for this patient</p>
+                                    <p>No active treatment cases for this patient</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Treatment Package Actions -->
+                    @{ var hasOpenPackage = Model.TreatmentPackages.Any(p => p.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending"); }
+                    <div class="pd-card">
+                        <div class="pd-card-head">
+                            <h6 class="pd-card-title"><i class="bi bi-box-seam me-2" style="color:#0d9488;"></i>Treatment Packages</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (Model.PackageHistory.Any())
+                                {
+                                    <a asp-page="/Doctor/TreatmentPackages/Index" asp-route-viewMode="history" asp-route-searchTerm="@Model.PatientRecord.ResolvedDisplayName" class="btn btn-sm btn-outline-secondary py-1 px-2" style="border-radius:6px; font-size:.72rem;">
+                                        <i class="bi bi-clock-history me-1"></i>History (@Model.PackageHistory.Count)
+                                    </a>
+                                }
+                                <span class="text-muted" style="font-size:0.75rem;">@Model.TreatmentPackages.Count active</span>
+                            </div>
+                        </div>
+                        <div class="pd-card-body">
+                            @if (Model.TreatmentPackages.Any())
+                            {
+                                <div class="d-flex flex-column gap-2 mb-3">
+                                    @foreach (var package in Model.TreatmentPackages.Take(3))
+                                    {
+                                        var badgeBg = package.Status switch
+                                        {
+                                            "Active" => "#dcfce7",
+                                            "Accepted" => "#e0f2fe",
+                                            "Assigned" => "#fef3c7",
+                                            "CancellationPending" => "#ffedd5",
+                                            "Completed" => "#f1f5f9",
+                                            _ => "#fee2e2"
+                                        };
+                                        var badgeColor = package.Status switch
+                                        {
+                                            "Active" => "#166534",
+                                            "Accepted" => "#0369a1",
+                                            "Assigned" => "#92400e",
+                                            "CancellationPending" => "#9a3412",
+                                            "Completed" => "#475569",
+                                            _ => "#991b1b"
+                                        };
+
+                                        <div class="p-2.5 rounded-3 border bg-white d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-color:#e2e8f0 !important; padding:0.65rem 0.85rem;">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f0fdfa; color:#0d9488; font-size:1.05rem;">
+                                                    <i class="bi bi-box-seam"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="fw-bold text-dark" style="font-size:0.875rem;">@package.Name</span>
+                                                        <span class="badge rounded-pill px-2 py-0.5" style="background:@badgeBg; color:@badgeColor; font-size:0.68rem; font-weight:600;">@package.Status</span>
+                                                    </div>
+                                                    <div class="text-muted" style="font-size:0.75rem;">
+                                                        <i class="bi bi-layers me-1"></i>@package.SessionQuantity Sessions &middot; @(package.Price.ToString("N0")) VND
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@package.Id" class="btn btn-sm btn-outline-secondary px-2.5 py-1" style="border-radius:6px; font-size:0.75rem; font-weight:500;">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            @if (!hasOpenPackage)
+                            {
+                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+                                    <div class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size:0.8rem;">
+                                        <i class="bi bi-plus-circle text-teal" style="color:#0d9488;"></i>
+                                        <span>Assign or Create New Package</span>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-2">
+                                        @if (Model.TemplatePackages.Any())
+                                        {
+                                            <form method="post" asp-page-handler="AssignTemplate" asp-route-id="@Model.PatientRecord.Id" class="d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="flex-grow-1" style="min-width:200px;">
+                                                    <select asp-for="AssignTemplateId" class="form-select form-select-sm" style="border-radius:6px; font-size:0.78rem;">
+                                                        <option value="">Choose a template package...</option>
+                                                        @foreach (var template in Model.TemplatePackages)
+                                                        {
+                                                            <option value="@template.Id">@template.Name (@template.SessionQuantity sessions)</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-sm btn-outline-primary px-3 py-1.5" style="border-radius:6px; font-size:0.78rem; font-weight:600; white-space:nowrap;">
+                                                    <i class="bi bi-box-arrow-in-right me-1"></i>Assign Template
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <div class="d-flex align-items-center gap-2 @(Model.TemplatePackages.Any() ? "pt-2 border-top" : "")">
+                                            <span class="text-muted small" style="font-size:0.75rem;">Or create customized:</span>
+                                            <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.Id" class="btn btn-sm" style="background:#0d9488; color:#fff; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                                <i class="bi bi-plus-lg me-1"></i>Create Custom Package
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="p-2.5 rounded-2 d-flex align-items-center gap-2" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.78rem; color:#0f766e; padding:0.65rem 0.85rem;">
+                                    <i class="bi bi-info-circle-fill flex-shrink-0" style="color:#0d9488;"></i>
+                                    <span>An active package is currently assigned. Complete or conclude it before assigning a new one.</span>
                                 </div>
                             }
                         </div>

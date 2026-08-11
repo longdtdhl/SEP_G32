@@ -79,6 +79,14 @@
         var progColor = prog >= 100 ? "#10b981" : prog >= 50 ? "#3b82f6" : "#f59e0b";
     }
 
+    @if (Model.Case.Status == 2 || prog >= 100)
+    {
+        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#ecfdf5; color:#065f46; border-radius:10px;">
+            <i class="bi bi-trophy-fill fs-4" style="color:#d97706;"></i>
+            <div><strong>Congratulations!</strong> You have completed this treatment journey.</div>
+        </div>
+    }
+
     <!-- ══ HEADER ══ -->
     <div class="pw-header-card">
         <a href="/Patient/TreatmentCases" class="text-decoration-none text-muted small d-inline-block mb-2">
@@ -501,7 +509,7 @@
                             <h6 class="fw-bold mb-1" style="color:#0f766e;"><i class="bi bi-emoji-smile me-2"></i>Daily Mood Tracking</h6>
                             <p class="text-secondary small mb-0">Track your daily mood, stress, and sleep quality in Mood Journey. All logs are synced automatically to your treatment record.</p>
                         </div>
-                        <a href="/Patient/Journal/Index" class="btn btn-sm px-3" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
+                        <a href="/Patient/Journal/Index?caseId=@Model.Case.Id" class="btn btn-sm px-3" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
                             <i class="bi bi-plus-lg me-1"></i>Log Mood in Mood Journey
                         </a>
                     </div>
@@ -510,7 +518,7 @@
                 <div class="pw-section">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0"><i class="bi bi-emoji-smile me-2" style="color:#f59e0b;"></i>Mood Log History</h6>
-                        <a href="/Patient/Journal/Index" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; font-size:.78rem;">
+                        <a href="/Patient/Journal/Index?caseId=@Model.Case.Id" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; font-size:.78rem;">
                             <i class="bi bi-box-arrow-up-right me-1"></i>Full Journal
                         </a>
                     </div>
@@ -519,7 +527,7 @@
                         <div class="pw-empty">
                             <i class="bi bi-emoji-neutral"></i>
                             <p>No mood entries recorded for this treatment case yet. Track your daily mood in Mood Journey.</p>
-                            <a href="/Patient/Journal/Index" class="btn btn-sm px-3 mt-2" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
+                            <a href="/Patient/Journal/Index?caseId=@Model.Case.Id" class="btn btn-sm px-3 mt-2" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
                                 <i class="bi bi-pencil-square me-1"></i>Log Mood in Mood Journey
                             </a>
                         </div>

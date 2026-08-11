@@ -37,7 +37,7 @@ public class IndexModel : PageModel
         Pagination = pagination;
         Error ??= error;
 
-        var activeStatuses = new[] { "Draft", "Created", "Assigned", "Accepted", "Active" };
+        var activeStatuses = new[] { "Draft", "Created", "Assigned", "Accepted", "Active", "CancellationPending" };
 
         TemplateCount = Packages.Count(p => activeStatuses.Contains(p.Status) && (p.PatientId == null || p.PatientId == Guid.Empty));
         ActiveCount = Packages.Count(p => activeStatuses.Contains(p.Status) && p.PatientId != null && p.PatientId != Guid.Empty);

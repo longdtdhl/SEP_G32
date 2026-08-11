@@ -224,6 +224,7 @@ public abstract class ApiServiceBase
             }
 
             _jwt.StoreTokens(envelope.Data.AccessToken, envelope.Data.RefreshToken);
+            _jwt.StoreUserDisplay(envelope.Data.FullName, envelope.Data.AvatarUrl);
             return true;
         }
         catch

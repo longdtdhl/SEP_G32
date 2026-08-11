@@ -144,6 +144,10 @@ public interface IBusinessManagerApiService
 public interface IPsychometricApiService
 {
     Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync();
+    Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId);
+    Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto);
+    Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto);
+    Task<(bool Success, string? Error)> DeleteTestAsync(Guid id);
     Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId);
     Task<(PsychometricSubmissionDto? Data, string? Error)> SubmitTestAsync(SubmitTestDto dto);
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByAppointmentAsync(Guid appointmentId);

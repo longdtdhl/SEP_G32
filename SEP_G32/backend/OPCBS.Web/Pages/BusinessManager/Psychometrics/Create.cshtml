@@ -1,0 +1,349 @@
+@page
+@model OPCBS.Web.Pages.BusinessManager.Psychometrics.CreateModel
+@{
+    ViewData["Title"] = "Create Psychometric Test";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    .bm-form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .question-card {
+        background: #fafbfc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.85rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .question-card:hover {
+        border-color: #cbd5e1;
+        background: #ffffff;
+    }
+    .q-badge {
+        width: 28px;
+        height: 28px;
+        background: var(--mb-primary);
+        color: white;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-page="Index" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5" style="border-radius:7px;">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0;">
+                <i class="bi bi-plus-circle-fill me-2" style="color:var(--mb-primary);"></i>Create Psychometric Test
+            </h1>
+            <p style="margin:2px 0 0; font-size:0.83rem; color:#64748b;">
+                Add a new standardized psychological questionnaire and configure question items
+            </p>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form method="post" id="createTestForm">
+    <div class="row g-4">
+        <!-- Left Column: Test Details & Question Builder -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="bm-form-card p-4 mb-4">
+                <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2" style="font-size:1.05rem;">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span>Test Overview & Identification</span>
+                </h5>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold" style="font-size:0.84rem;">
+                            Test Title <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Input.Title" class="form-control" placeholder="e.g., GAD-7 Generalized Anxiety Disorder Scale" required />
+                        <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:0.84rem;">
+                            Type Code <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Input.TestType" class="form-control text-uppercase" placeholder="e.g., GAD7, PHQ9, DASS21" required />
+                        <span asp-validation-for="Input.TestType" class="text-danger small"></span>
+                        <div class="form-text" style="font-size:0.72rem;">Unique identifier code (e.g. GAD7, CUSTOM)</div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-semibold" style="font-size:0.84rem;">Clinical Description & Purpose</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Explain what this test screens for, clinical scoring interpretation, and target audience..."></textarea>
+                    <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Dynamic Question Items Card -->
+            <div class="bm-form-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2" style="font-size:1.05rem;">
+                            <i class="bi bi-list-ol text-primary"></i>
+                            <span>Test Question Items</span>
+                        </h5>
+                        <p class="text-muted mb-0" style="font-size:0.78rem;">
+                            Define questions for patient assessment. Total questions: <strong id="questionCountBadge">@(Model.Input.Questions.Count)</strong>
+                        </p>
+                    </div>
+
+                    <!-- Quick Preset Templates -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
+                            <i class="bi bi-magic me-1"></i>Load Standard Template
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:0.82rem;">
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('GAD7')"><i class="bi bi-activity text-success me-2"></i>GAD-7 (Anxiety - 7 Questions)</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('PHQ9')"><i class="bi bi-heart-pulse text-primary me-2"></i>PHQ-9 (Depression - 9 Questions)</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('CLEAR')"><i class="bi bi-trash text-danger me-2"></i>Clear Questions</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Questions Container -->
+                <div id="questionsContainer">
+                    @for (int i = 0; i < Model.Input.Questions.Count; i++)
+                    {
+                        <div class="question-card" id="q-row-@i" data-index="@i">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="q-badge q-num-label">@(i + 1)</div>
+                                    <span class="fw-bold text-dark" style="font-size:0.86rem;">Question item</span>
+                                </div>
+                                <button type="button" class="btn btn-sm text-danger p-0 delete-q-btn" onclick="removeQuestion(@i)" title="Remove question">
+                                    <i class="bi bi-trash fs-6"></i>
+                                </button>
+                            </div>
+
+                            <input type="hidden" name="Input.Questions[@i].QuestionNumber" class="q-num-input" value="@(i + 1)" />
+
+                            <div class="row g-2">
+                                <div class="col-md-9">
+                                    <input type="text" name="Input.Questions[@i].QuestionText" class="form-control form-control-sm q-text-input" placeholder="Enter question description or symptom..." value="@Model.Input.Questions[i].QuestionText" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <select name="Input.Questions[@i].Category" class="form-select form-select-sm q-cat-input">
+                                        <option value="General" selected="@(Model.Input.Questions[i].Category == "General")">General</option>
+                                        <option value="Depression" selected="@(Model.Input.Questions[i].Category == "Depression")">Depression</option>
+                                        <option value="Anxiety" selected="@(Model.Input.Questions[i].Category == "Anxiety")">Anxiety</option>
+                                        <option value="Stress" selected="@(Model.Input.Questions[i].Category == "Stress")">Stress</option>
+                                        <option value="Sleep" selected="@(Model.Input.Questions[i].Category == "Sleep")">Sleep</option>
+                                        <option value="Somatic" selected="@(Model.Input.Questions[i].Category == "Somatic")">Somatic</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Add Question CTA -->
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100 py-2 mt-2 d-flex align-items-center justify-content-center gap-1.5" onclick="addQuestion()" style="border-radius:7px; border-style:dashed; font-weight:600; font-size:0.84rem;">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Add Another Question</span>
+                </button>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius:7px; font-weight:600; font-size:0.86rem;">
+                    <i class="bi bi-check-lg me-1"></i>Save & Create Test
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:7px; font-weight:600; font-size:0.86rem;">
+                    Cancel
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Column: Guidelines & Scoring Reference -->
+        <div class="col-lg-4">
+            <!-- Standard Rating Scale Card -->
+            <div class="bm-form-card p-3.5 mb-3" style="background:#f8fafc;">
+                <h6 class="fw-bold mb-2 text-dark" style="font-size:0.9rem;">
+                    <i class="bi bi-sliders me-1.5" style="color:var(--mb-primary);"></i>Standard 4-Point Likert Scale
+                </h6>
+                <p class="text-muted mb-2.5" style="font-size:0.76rem;">
+                    All OPCBS psychometric questionnaires use the standard clinical 0–3 scoring scale:
+                </p>
+                <div class="d-flex flex-column gap-1.5" style="font-size:0.78rem;">
+                    <div class="p-2 rounded border bg-white d-flex justify-content-between">
+                        <span><strong>0</strong> &middot; Not at all</span>
+                        <span class="text-muted">0 pts</span>
+                    </div>
+                    <div class="p-2 rounded border bg-white d-flex justify-content-between">
+                        <span><strong>1</strong> &middot; Several days</span>
+                        <span class="text-muted">1 pt</span>
+                    </div>
+                    <div class="p-2 rounded border bg-white d-flex justify-content-between">
+                        <span><strong>2</strong> &middot; More than half the days</span>
+                        <span class="text-muted">2 pts</span>
+                    </div>
+                    <div class="p-2 rounded border bg-white d-flex justify-content-between">
+                        <span><strong>3</strong> &middot; Nearly every day</span>
+                        <span class="text-muted">3 pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Practices Card -->
+            <div class="bm-form-card p-3.5">
+                <h6 class="fw-bold mb-2 text-dark" style="font-size:0.9rem;">
+                    <i class="bi bi-lightbulb me-1.5" style="color:#d97706;"></i>Best Practices
+                </h6>
+                <ul class="text-muted ps-3 mb-0" style="font-size:0.77rem; line-height:1.5;">
+                    <li class="mb-1.5">Keep question wording concise and focused on the patient's experience over the past 2 weeks.</li>
+                    <li class="mb-1.5">Assign relevant <strong>Categories</strong> (Depression, Anxiety, etc.) if subscale reporting is desired.</li>
+                    <li class="mb-1.5">Ensure unique <strong>Type Code</strong> like <code>GAD7</code> or <code>BDI2</code> for automated clinical processing.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let questionIndex = @(Model.Input.Questions.Count);
+
+        function updateQuestionNumbers() {
+            const rows = document.querySelectorAll('#questionsContainer .question-card');
+            rows.forEach((row, idx) => {
+                const num = idx + 1;
+                row.querySelector('.q-num-label').innerText = num;
+                row.querySelector('.q-num-input').value = num;
+                row.id = `q-row-${idx}`;
+                row.setAttribute('data-index', idx);
+
+                // Update input name attributes
+                row.querySelector('.q-num-input').name = `Input.Questions[${idx}].QuestionNumber`;
+                row.querySelector('.q-text-input').name = `Input.Questions[${idx}].QuestionText`;
+                row.querySelector('.q-cat-input').name = `Input.Questions[${idx}].Category`;
+                row.querySelector('.delete-q-btn').setAttribute('onclick', `removeQuestion(${idx})`);
+            });
+            document.getElementById('questionCountBadge').innerText = rows.length;
+        }
+
+        function addQuestion(text = '', category = 'General') {
+            const container = document.getElementById('questionsContainer');
+            const idx = container.querySelectorAll('.question-card').length;
+            const num = idx + 1;
+
+            const div = document.createElement('div');
+            div.className = 'question-card';
+            div.id = `q-row-${idx}`;
+            div.setAttribute('data-index', idx);
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="q-badge q-num-label">${num}</div>
+                        <span class="fw-bold text-dark" style="font-size:0.86rem;">Question item</span>
+                    </div>
+                    <button type="button" class="btn btn-sm text-danger p-0 delete-q-btn" onclick="removeQuestion(${idx})" title="Remove question">
+                        <i class="bi bi-trash fs-6"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="Input.Questions[${idx}].QuestionNumber" class="q-num-input" value="${num}" />
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <input type="text" name="Input.Questions[${idx}].QuestionText" class="form-control form-control-sm q-text-input" placeholder="Enter question description or symptom..." value="${text}" required />
+                    </div>
+                    <div class="col-md-3">
+                        <select name="Input.Questions[${idx}].Category" class="form-select form-select-sm q-cat-input">
+                            <option value="General" ${category === 'General' ? 'selected' : ''}>General</option>
+                            <option value="Depression" ${category === 'Depression' ? 'selected' : ''}>Depression</option>
+                            <option value="Anxiety" ${category === 'Anxiety' ? 'selected' : ''}>Anxiety</option>
+                            <option value="Stress" ${category === 'Stress' ? 'selected' : ''}>Stress</option>
+                            <option value="Sleep" ${category === 'Sleep' ? 'selected' : ''}>Sleep</option>
+                            <option value="Somatic" ${category === 'Somatic' ? 'selected' : ''}>Somatic</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            updateQuestionNumbers();
+        }
+
+        function removeQuestion(idx) {
+            const container = document.getElementById('questionsContainer');
+            const rows = container.querySelectorAll('.question-card');
+            if (rows.length <= 1) {
+                alert('A test must contain at least one question.');
+                return;
+            }
+            const row = document.getElementById(`q-row-${idx}`);
+            if (row) {
+                row.remove();
+                updateQuestionNumbers();
+            }
+        }
+
+        function loadTemplate(type) {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            if (type === 'GAD7') {
+                document.querySelector('input[name="Input.Title"]').value = 'GAD-7 Generalized Anxiety Disorder Scale';
+                document.querySelector('input[name="Input.TestType"]').value = 'GAD7';
+                document.querySelector('textarea[name="Input.Description"]').value = 'The GAD-7 is a standard 7-item instrument for screening and measuring the severity of generalized anxiety disorder in outpatient and primary care settings.';
+
+                const gad7Questions = [
+                    "Feeling nervous, anxious, or on edge",
+                    "Not being able to stop or control worrying",
+                    "Worrying too much about different things",
+                    "Trouble relaxing",
+                    "Being so restless that it is hard to sit still",
+                    "Becoming easily annoyed or irritable",
+                    "Feeling afraid, as if something awful might happen"
+                ];
+
+                gad7Questions.forEach(q => addQuestion(q, 'Anxiety'));
+            } else if (type === 'PHQ9') {
+                document.querySelector('input[name="Input.Title"]').value = 'PHQ-9 Patient Health Questionnaire';
+                document.querySelector('input[name="Input.TestType"]').value = 'PHQ9';
+                document.querySelector('textarea[name="Input.Description"]').value = 'The PHQ-9 is a 9-item self-report questionnaire used to screen, diagnose, and measure the severity of depression.';
+
+                const phq9Questions = [
+                    "Little interest or pleasure in doing things",
+                    "Feeling down, depressed, or hopeless",
+                    "Trouble falling or staying asleep, or sleeping too much",
+                    "Feeling tired or having little energy",
+                    "Poor appetite or overeating",
+                    "Feeling bad about yourself — or that you are a failure or have let yourself or your family down",
+                    "Trouble concentrating on things, such as reading the newspaper or watching television",
+                    "Moving or speaking so slowly that other people could have noticed, or the opposite",
+                    "Thoughts that you would be better off dead, or of hurting yourself in some way"
+                ];
+
+                phq9Questions.forEach(q => addQuestion(q, 'Depression'));
+            } else {
+                addQuestion('', 'General');
+            }
+            updateQuestionNumbers();
+        }
+    </script>
+}

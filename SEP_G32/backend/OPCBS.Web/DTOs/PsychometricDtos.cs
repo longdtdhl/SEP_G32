@@ -9,6 +9,44 @@ public class PsychometricTestDto
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string TestType { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public int QuestionCount { get; set; }
+    public int SubmissionCount { get; set; }
+}
+
+public class CreatePsychometricQuestionDto
+{
+    public string QuestionText { get; set; } = string.Empty;
+    public int QuestionNumber { get; set; }
+    public string? Category { get; set; }
+}
+
+public class CreatePsychometricTestDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string TestType { get; set; } = string.Empty;
+    public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
+}
+
+public class UpdatePsychometricTestDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string TestType { get; set; } = string.Empty;
+    public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
+}
+
+public class PsychometricTestDetailDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string TestType { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public int QuestionCount { get; set; }
+    public int SubmissionCount { get; set; }
+    public List<PsychometricQuestionDto> Questions { get; set; } = new();
 }
 
 public class PsychometricQuestionDto
