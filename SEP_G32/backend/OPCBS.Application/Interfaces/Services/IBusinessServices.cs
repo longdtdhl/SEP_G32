@@ -9,7 +9,7 @@ public class BlogPostDto
     public Guid Id { get; set; }
     public required string Title { get; set; }
     public required string Content { get; set; }
-    public required string ThumbnailUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string? Excerpt { get; set; }
     public required string AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }
@@ -23,7 +23,7 @@ public class CreateBlogPostDto
 {
     public required string Title { get; set; }
     public required string Content { get; set; }
-    public required string ThumbnailUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string? Excerpt { get; set; }
 }
 
@@ -81,6 +81,7 @@ public class VerificationRequestDto
     public string? LicenseNumber { get; set; }
     public string? Specialization { get; set; }
     public int ExperienceYears { get; set; }
+    public string? Education { get; set; }
     public string? Biography { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? RejectionReason { get; set; }
@@ -88,8 +89,17 @@ public class VerificationRequestDto
     public Guid? ReviewedBy { get; set; }
     public string? ReviewedByName { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
+    public DateTime? CertificateUploadedAt { get; set; }
+    public DateTime SubmittedAt { get; set; }
+    public string? PreviousApprovedCertificateUrl { get; set; }
+    public string? PreviousApprovedCertificateFileName { get; set; }
+    public DateTime? PreviousApprovedCertificateUploadedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
 public class SubmitVerificationDto
 {
     public string? LicenseNumber { get; set; }
@@ -97,9 +107,11 @@ public class SubmitVerificationDto
     public int ExperienceYears { get; set; }
     public string? Education { get; set; }
     public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
     public string? Notes { get; set; }
 }
-
 
 public class NotificationDto
 {
@@ -109,6 +121,9 @@ public class NotificationDto
     public string Type { get; set; } = string.Empty;
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? ReadAt { get; set; }
+    public Guid? RelatedEntityId { get; set; }
+    public string? RelatedEntityType { get; set; }
 }
 
 public class ServicePackageDto
@@ -140,34 +155,63 @@ public class TreatmentPackageDto
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
-    public required string DoctorName { get; set; }
-    public required string PatientName { get; set; }
+    public string? TargetOutcome { get; set; }
+    public string? RecommendedExercises { get; set; }
+    public string? Instructions { get; set; }
+    public Guid DoctorId { get; set; }
+    public Guid DoctorProfileId { get; set; }
+    public string? DoctorName { get; set; }
+    public Guid? PatientId { get; set; }
+    public string? PatientName { get; set; }
     public int SessionQuantity { get; set; }
     public int RemainingSessions { get; set; }
+    public int ValidityDays { get; set; }
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime ExpirationDate { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? AssignedDate { get; set; }
+    public DateTime? AcceptedDate { get; set; }
+    public DateTime? ActiveDate { get; set; }
+    public Guid? CancellationRequestedByUserId { get; set; }
+    public string? CancellationRequestedByName { get; set; }
+    public DateTime? CancellationRequestedAt { get; set; }
+    public string? CancellationReason { get; set; }
 }
 
 public class CreateTreatmentPackageDto
 {
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
+    public string? TargetOutcome { get; set; }
+    public string? RecommendedExercises { get; set; }
+    public string? Instructions { get; set; }
     public int SessionQuantity { get; set; }
-    public int ValidityDays { get; set; }
+    public int ValidityDays { get; set; } = 90;
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
 }
 
 public class SubscriptionDto
 {
     public Guid Id { get; set; }
+    public Guid DoctorId { get; set; }
+    public string? DoctorName { get; set; }
+    public Guid ServicePackageId { get; set; }
     public required string PackageName { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime ExpirationDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal AmountPaid { get; set; }
+    /// <summary>Maximum schedule slots the subscribed plan permits per day.</summary>
+    public int? MaxDailySlotsCapacity { get; set; }
+    /// <summary>Maximum active patient capacity advertised by the subscribed plan.</summary>
+    public int? MaxPatientCapacity { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? PaymentUrl { get; set; }
 }
 
 public class SpecializationDto
@@ -202,6 +246,14 @@ public class UserListDto
     public DateTime CreatedAt { get; set; }
 }
 
+public class RoleDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int UserCount { get; set; }
+}
+
 public class DashboardStatsDto
 {
     public int TotalUsers { get; set; }
@@ -226,11 +278,12 @@ public interface IBlogService
     Task<ApiResponse<BlogPostDto>> UpdateBlogAsync(Guid blogId, Guid doctorUserId, UpdateBlogPostDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteBlogAsync(Guid blogId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> SubmitBlogForReviewAsync(Guid blogId, Guid doctorUserId, CancellationToken ct = default);
-    Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<BlogPostDto>>> GetDoctorBlogsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default);
     Task<ApiResponse<List<BlogPostDto>>> GetPendingBlogsAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse> ApproveBlogAsync(Guid blogId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectBlogAsync(Guid blogId, Guid supportUserId, string? reason, CancellationToken ct = default);
     // Blog comments
+    Task<ApiResponse<List<BlogCommentDto>>> GetCommentsForBlogAsync(Guid blogPostId, CancellationToken ct = default);
     Task<ApiResponse<BlogCommentDto>> AddCommentAsync(Guid userId, CreateBlogCommentDto dto, CancellationToken ct = default);
     Task<ApiResponse<BlogCommentDto>> UpdateCommentAsync(Guid commentId, Guid userId, UpdateBlogCommentDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteCommentAsync(Guid commentId, Guid userId, CancellationToken ct = default);
@@ -248,15 +301,19 @@ public interface IReviewService
 /// <summary>
 /// Verification service - doctor verification workflow
 /// </summary>
+/// <summary>
+/// Verification service - doctor verification workflow
+/// </summary>
 public interface IVerificationService
 {
     Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, SubmitVerificationDto? dto = null, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationStatusAsync(Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<VerificationRequestDto>> GetVerificationByIdAsync(Guid requestId, CancellationToken ct = default);
     Task<ApiResponse<List<VerificationRequestDto>>> GetPendingVerificationsAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
-    Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<VerificationRequestDto>>> GetAllVerificationsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse> ApproveVerificationAsync(Guid requestId, Guid supportUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectVerificationAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct = default);
+    Task<ApiResponse> RequestAdditionalInfoAsync(Guid requestId, Guid supportUserId, string reason, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -267,9 +324,11 @@ public interface ITreatmentPackageService
     Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAndPatientAsync(Guid doctorUserId, Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<TreatmentPackageDto>> GetByIdAsync(Guid packageId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> AcceptPackageAsync(Guid packageId, Guid patientUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct = default);
+    Task<ApiResponse> CancelPackageAsync(Guid packageId, Guid userId, string? reason, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -290,8 +349,11 @@ public interface IServicePackageService
 public interface ISubscriptionService
 {
     Task<ApiResponse<SubscriptionDto>> PurchaseAsync(Guid doctorUserId, Guid servicePackageId, string returnUrl, CancellationToken ct = default);
+    Task<ApiResponse<SubscriptionDto>> CreateSubscriptionDirectAsync(Guid doctorUserId, Guid servicePackageId, CancellationToken ct = default);
     Task<ApiResponse<SubscriptionDto>> GetActiveSubscriptionAsync(Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<List<SubscriptionDto>>> GetSubscriptionHistoryAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<List<SubscriptionDto>>> GetAllSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<SubscriptionDto>> GetSubscriptionByIdAsync(Guid subscriptionId, CancellationToken ct = default);
     Task<ApiResponse> ProcessPaymentCallbackAsync(IDictionary<string, string> queryParams, CancellationToken ct = default);
 }
 
@@ -301,6 +363,7 @@ public interface ISubscriptionService
 public interface INotificationService
 {
     Task<ApiResponse<List<NotificationDto>>> GetUserNotificationsAsync(Guid userId, int page = 1, int pageSize = 20, CancellationToken ct = default);
+    Task<ApiResponse<int>> GetUnreadCountAsync(Guid userId, CancellationToken ct = default);
     Task<ApiResponse> MarkAsReadAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> MarkAllAsReadAsync(Guid userId, CancellationToken ct = default);
     Task CreateNotificationAsync(Guid userId, string title, string message, Domain.Enums.NotificationType type, Guid? relatedEntityId = null, string? relatedEntityType = null, CancellationToken ct = default);
@@ -313,9 +376,15 @@ public interface IAdminService
 {
     Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct = default);
     Task<ApiResponse<List<UserListDto>>> GetUsersAsync(string? search, string? role, int page = 1, int pageSize = 10, CancellationToken ct = default);
-    Task<ApiResponse> LockUserAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<UserListDto>> GetUserByIdAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse> LockUserAsync(Guid userId, Guid requestingAdminId, CancellationToken ct = default);
     Task<ApiResponse> UnlockUserAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct = default);
     Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page = 1, int pageSize = 20, CancellationToken ct = default);
     Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default);
     Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, CancellationToken ct = default);
+    Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, CancellationToken ct = default);
+    Task<ApiResponse> DeleteSpecializationAsync(Guid id, CancellationToken ct = default);
+    Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct = default);
+    Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, CancellationToken ct = default);
 }
