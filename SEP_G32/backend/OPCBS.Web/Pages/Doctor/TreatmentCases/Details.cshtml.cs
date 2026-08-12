@@ -54,6 +54,14 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id = caseId });
     }
 
+    // POST: Give Assignment Feedback
+    public async Task<IActionResult> OnPostGiveFeedbackAsync(Guid caseId, Guid assignmentId, string doctorFeedback)
+    {
+        var dto = new FeedbackAssignmentDto { DoctorFeedback = doctorFeedback };
+        await _therapyApi.FeedbackAssignmentAsync(assignmentId, dto);
+        return RedirectToPage(new { id = caseId });
+    }
+
     // POST: Complete Session
     public async Task<IActionResult> OnPostCompleteSessionAsync(Guid caseId, Guid sessionId, string? sessionSummary, string? therapistNotes, int? moodBefore, int? moodAfter)
     {

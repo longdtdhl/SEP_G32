@@ -215,7 +215,30 @@
                             {
                                 <p class="small mt-1 mb-0"><strong>Feedback:</strong> @a.DoctorFeedback</p>
                             }
+                            @if (a.Status == 1)
+                            {
+                                <button class="btn btn-success btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#giveFeedback-@a.Id">
+                                    <i class="bi bi-chat-left-text me-1"></i>Give Feedback
+                                </button>
+                            }
                         </div>
+                    </div>
+
+                    <!-- Give Feedback Modal -->
+                    <div class="modal fade" id="giveFeedback-@a.Id" tabindex="-1">
+                        <div class="modal-dialog"><div class="modal-content">
+                            <form method="post" asp-page-handler="GiveFeedback">
+                                <input type="hidden" name="caseId" value="@Model.Case.Id" />
+                                <input type="hidden" name="assignmentId" value="@a.Id" />
+                                <div class="modal-header"><h5 class="modal-title">Feedback: @a.Title</h5></div>
+                                <div class="modal-body">
+                                    <p class="small text-muted"><strong>Patient Submission:</strong> @a.PatientSubmission</p>
+                                    <div class="mb-3"><label class="form-label">Your Feedback</label>
+                                        <textarea name="doctorFeedback" class="form-control" rows="3" required></textarea></div>
+                                </div>
+                                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success">Send Feedback</button></div>
+                            </form>
+                        </div></div>
                     </div>
 
                     <!-- Assignment Details Modal -->
