@@ -203,9 +203,16 @@
                                         <span class="text-muted small ms-2"><i class="bi bi-calendar3 me-1"></i>Due @a.DueDate.Value.ToString("MMM dd, yyyy")</span>
                                     }
                                 </div>
-                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#assignmentDetails-@a.Id">
-                                    <i class="bi bi-eye me-1"></i>Details
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#assignmentDetails-@a.Id">
+                                        <i class="bi bi-eye me-1"></i>Details
+                                    </button>
+                                    <form method="post" asp-page-handler="DeleteAssignment" onsubmit="return confirm('Delete this assignment?');">
+                                        <input type="hidden" name="caseId" value="@Model.Case.Id" />
+                                        <input type="hidden" name="assignmentId" value="@a.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
                             </div>
                             @if (!string.IsNullOrEmpty(a.PatientSubmission))
                             {

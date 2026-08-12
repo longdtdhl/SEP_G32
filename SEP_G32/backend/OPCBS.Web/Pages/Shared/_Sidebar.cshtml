@@ -30,6 +30,9 @@
             <a class="nav-link @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index">
                 <i class="bi bi-heart-pulse"></i> Treatment Cases
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
+                <i class="bi bi-journal-heart"></i> Emotion Journal
+            </a>
             <div class="sidebar-header mt-3">Quick Actions</div>
             <a class="nav-link" asp-page="/Doctors/Index">
                 <i class="bi bi-search-heart"></i> Find a Therapist
