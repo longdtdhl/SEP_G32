@@ -1,41 +1,76 @@
 ﻿@page
 @model OPCBS.Web.Pages.Doctor.Subscriptions.PaymentCallbackModel
+@using OPCBS.Web.Helpers
 @{
-    ViewData["Title"] = "Payment Callback";
-    ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = Model.IsSuccess ? "Payment Successful" : "Payment Unsuccessful";
+    Layout = "_DashboardLayout";
 }
 
-<div class="container py-5">
+<div class="py-4">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card border-0 shadow-lg text-center p-5" style="border-radius:24px;">
-                <div class="card-body">
+            <div class="card border-0 shadow-sm" style="border-radius:8px; border:1px solid #e5e7eb !important;">
+                <div class="card-body p-4 text-center">
                     @if (Model.IsSuccess)
                     {
-                        <div class="mb-4">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle text-success shadow-sm" style="width: 80px; height: 80px;">
-                                <i class="bi bi-shield-check" style="font-size: 3rem;"></i>
+                        <div class="mb-3">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle" style="width: 64px; height: 64px;">
+                                <i class="bi bi-check-circle-fill fs-2"></i>
                             </div>
                         </div>
-                        <h2 class="fw-bold text-success mb-3">Payment Successful</h2>
-                        <p class="text-muted mb-4">@Model.Message</p>
-                        <div class="d-grid gap-2">
-                            <a asp-page="Status" class="btn btn-primary btn-lg rounded-pill fw-bold"><i class="bi bi-check-circle me-2"></i>Go to My Subscription</a>
-                            <a asp-page="/Doctor/Dashboard" class="btn btn-outline-secondary rounded-pill fw-bold">Back to Dashboard</a>
+                        <h2 class="h4 fw-bold text-dark mb-2">Payment Successful</h2>
+                        <p class="text-muted small mb-4">@Model.Message</p>
+
+                        @if (Model.Amount.HasValue || !string.IsNullOrEmpty(Model.TransactionNo))
+                        {
+                            <div class="p-3 rounded-3 bg-light text-start mb-4 border" style="font-size:0.85rem;">
+                                @if (Model.Amount.HasValue)
+                                {
+                                    <div class="d-flex justify-content-between mb-1.5">
+                                        <span class="text-muted">Amount Paid:</span>
+                                        <strong class="text-dark">@SubscriptionUiHelper.FormatCurrency(Model.Amount.Value)</strong>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.TransactionNo))
+                                {
+                                    <div class="d-flex justify-content-between mb-1.5">
+                                        <span class="text-muted">Transaction Code:</span>
+                                        <code class="text-dark font-monospace">@Model.TransactionNo</code>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.OrderInfo))
+                                {
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Description:</span>
+                                        <span class="text-dark text-truncate ms-2" style="max-width: 240px;">@Model.OrderInfo</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+                            <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-primary fw-bold px-4 py-2" style="border-radius:6px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                                <i class="bi bi-shield-check me-1.5"></i>View My Subscription
+                            </a>
+                            <a asp-page="/Doctor/Subscriptions/History" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="border-radius:6px;">
+                                <i class="bi bi-clock-history me-1.5"></i>View History
+                            </a>
                         </div>
                     }
                     else
                     {
-                        <div class="mb-4">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 rounded-circle text-danger shadow-sm" style="width: 80px; height: 80px;">
-                                <i class="bi bi-x-circle" style="font-size: 3rem;"></i>
+                        <div class="mb-3">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle" style="width: 64px; height: 64px;">
+                                <i class="bi bi-x-circle-fill fs-2"></i>
                             </div>
                         </div>
-                        <h2 class="fw-bold text-danger mb-3">Payment Failed</h2>
-                        <p class="text-muted mb-4">@Model.Message</p>
-                        <div class="d-grid gap-2">
-                            <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-danger btn-lg rounded-pill fw-bold"><i class="bi bi-arrow-counterclockwise me-2"></i>Try Again</a>
-                            <a asp-page="/Doctor/Dashboard" class="btn btn-outline-secondary rounded-pill fw-bold">Back to Dashboard</a>
+                        <h2 class="h4 fw-bold text-dark mb-2">Payment Unsuccessful</h2>
+                        <p class="text-muted small mb-4">@Model.Message</p>
+
+                        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+                            <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-primary fw-bold px-4 py-2" style="border-radius:6px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                                <i class="bi bi-arrow-left me-1.5"></i>Back to Service Packages
+                            </a>
                         </div>
                     }
                 </div>
