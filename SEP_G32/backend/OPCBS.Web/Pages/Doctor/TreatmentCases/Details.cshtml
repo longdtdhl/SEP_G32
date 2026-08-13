@@ -68,6 +68,7 @@
         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-sessions"><i class="bi bi-camera-video me-1"></i>Sessions</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-goals"><i class="bi bi-bullseye me-1"></i>Goals</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-assignments"><i class="bi bi-journal-check me-1"></i>Assignments</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-journal"><i class="bi bi-journal-heart me-1"></i>Journal</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-timeline"><i class="bi bi-clock-history me-1"></i>Timeline</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-info"><i class="bi bi-info-circle me-1"></i>Overview</a></li>
     </ul>
@@ -283,6 +284,40 @@
                         </div></div>
                     </div>
                 }
+            }
+        </div>
+
+        <!-- Journal Tab (shared entries only) -->
+        <div class="tab-pane fade" id="tab-journal">
+            @if (!Model.SharedJournals.Any())
+            {
+                <p class="text-muted">No shared journal entries yet.</p>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var j in Model.SharedJournals)
+                    {
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm" style="border-radius: 10px;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">@j.Title</h6>
+                                        <span style="font-size: 1.25rem;">@j.MoodEmoji</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(j.Content))
+                                    {
+                                        <p class="text-muted small mb-2">@j.Content</p>
+                                    }
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>Mood: @j.MoodText &middot; Stress: @j.StressText</span>
+                                        <span>@j.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
             }
         </div>
 

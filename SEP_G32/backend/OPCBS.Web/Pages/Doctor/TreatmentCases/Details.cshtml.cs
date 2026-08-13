@@ -19,6 +19,7 @@ public class DetailsModel : PageModel
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
     public List<TherapyAssignmentDto> Assignments { get; set; } = new();
+    public List<EmotionJournalDto> SharedJournals { get; set; } = new();
     public string? ErrorMessage { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
@@ -33,14 +34,16 @@ public class DetailsModel : PageModel
         var progressTask = _api.GetProgressAsync(id);
         var timelineTask = _api.GetTimelineAsync(id);
         var assignmentsTask = _therapyApi.GetAssignmentsByPackageAsync(caseData.TreatmentPackageId);
+        var journalsTask = _therapyApi.GetPatientSharedJournalsAsync(caseData.PatientId);
 
-        await Task.WhenAll(sessionsTask, goalsTask, progressTask, timelineTask, assignmentsTask);
+        await Task.WhenAll(sessionsTask, goalsTask, progressTask, timelineTask, assignmentsTask, journalsTask);
 
         Sessions = sessionsTask.Result.Data;
         Goals = goalsTask.Result.Data;
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data;
         Assignments = assignmentsTask.Result.Data;
+        SharedJournals = journalsTask.Result.Data;
 
         return Page();
     }
