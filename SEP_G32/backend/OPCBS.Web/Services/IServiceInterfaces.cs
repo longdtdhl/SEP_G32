@@ -181,6 +181,7 @@ public interface IMessagingApiService
     Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationAsync(Guid doctorUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null);
     Task<(ConversationWebDto? Data, string? Error)> GetOrCreateConversationByPatientAsync(Guid patientUserId, Guid? appointmentId = null, Guid? treatmentPackageId = null);
     Task<(int Count, string? Error)> GetUnreadCountAsync();
+    Task<(List<ConversationAuditWebDto> Data, string? Error)> GetConversationAuditsAsync();
 }
 
 public interface ITreatmentCaseApiService

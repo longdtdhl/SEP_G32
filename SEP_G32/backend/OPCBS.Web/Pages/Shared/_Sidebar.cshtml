@@ -159,6 +159,9 @@
             <a class="nav-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
                 <i class="bi bi-journal-text"></i> Audit Logs
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/admin/messageauditlog") ? "active" : "")" asp-page="/Admin/MessageAuditLog/Index">
+                <i class="bi bi-shield-lock"></i> Message Audit Log
+            </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports">
                 <i class="bi bi-file-earmark-bar-graph"></i> Reports
             </a>

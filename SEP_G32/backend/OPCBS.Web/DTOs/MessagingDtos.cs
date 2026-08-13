@@ -30,3 +30,13 @@ public class MessageWebDto
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+/// <summary>DTO for conversation audit display (Admin/CS — no message content)</summary>
+public class ConversationAuditWebDto
+{
+    public Guid Id { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string DoctorName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}

@@ -575,6 +575,12 @@ public class MessagingApiService : ApiServiceBase, IMessagingApiService
         var (data, _, error) = await GetAsync<int>($"{ApiRoutes.Messages}/unread");
         return (data, error);
     }
+
+    public async Task<(List<ConversationAuditWebDto> Data, string? Error)> GetConversationAuditsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<ConversationAuditWebDto>>($"{ApiRoutes.Messages}/audit");
+        return (data ?? new(), error);
+    }
 }
 
 // --- Treatment Cases ---
