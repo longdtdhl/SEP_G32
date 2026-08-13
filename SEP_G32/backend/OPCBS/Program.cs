@@ -7,11 +7,13 @@ using OPCBS.Application.Extensions;
 using OPCBS.Infrastructure.Extensions;
 using OPCBS.Infrastructure.Persistence;
 using OPCBS.Infrastructure.Seed;
+using OPCBS.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 // Infrastructure services (DbContext, repositories, external services)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -41,6 +43,21 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "OPCBS",
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
+    };
+
+    // SignalR sends JWT token via query string (?access_token=...)
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -117,5 +134,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
