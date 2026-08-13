@@ -248,9 +248,11 @@ public interface ITreatmentPackageService
     Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAndPatientAsync(Guid doctorUserId, Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<TreatmentPackageDto>> GetByIdAsync(Guid packageId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse> AcceptPackageAsync(Guid packageId, Guid patientUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectPackageAsync(Guid packageId, Guid patientUserId, string? reason, CancellationToken ct = default);
+    Task<ApiResponse> CancelPackageAsync(Guid packageId, Guid userId, string? reason, CancellationToken ct = default);
 }
 
 /// <summary>

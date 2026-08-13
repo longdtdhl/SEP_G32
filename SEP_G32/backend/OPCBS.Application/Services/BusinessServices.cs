@@ -598,12 +598,59 @@ public class TreatmentPackageService : ITreatmentPackageService
         return ApiResponse<List<TreatmentPackageDto>>.SuccessResponse(_mapper.Map<List<TreatmentPackageDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
+    public async Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAndPatientAsync(Guid doctorUserId, Guid patientUserId, int page, int pageSize, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<List<TreatmentPackageDto>>.ErrorResponse("Doctor not found");
+
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        if (patient == null)
+            return ApiResponse<List<TreatmentPackageDto>>.ErrorResponse("Patient not found");
+
+        var all = await _packageRepo.GetAllAsync(ct);
+        var packages = all.Where(p => p.DoctorId == doctor.Id && p.PatientId == patient.Id && !p.IsDeleted).ToList();
+        var total = packages.Count;
+        var items = packages.OrderByDescending(p => p.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ApiResponse<List<TreatmentPackageDto>>.SuccessResponse(_mapper.Map<List<TreatmentPackageDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+    }
+
     public async Task<ApiResponse<TreatmentPackageDto>> GetByIdAsync(Guid packageId, Guid userId, CancellationToken ct)
     {
         var package = await _packageRepo.GetByIdAsync(packageId, ct);
         if (package == null)
             return ApiResponse<TreatmentPackageDto>.ErrorResponse("Treatment package not found");
         return ApiResponse<TreatmentPackageDto>.SuccessResponse(_mapper.Map<TreatmentPackageDto>(package));
+    }
+
+    public async Task<ApiResponse> CancelPackageAsync(Guid packageId, Guid userId, string? reason, CancellationToken ct)
+    {
+        var package = await _packageRepo.GetByIdAsync(packageId, ct);
+        if (package == null)
+            return ApiResponse.ErrorResponse("Treatment package not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == userId);
+
+        bool isDoctor = doctor != null && package.DoctorId == doctor.Id;
+        bool isPatient = patient != null && package.PatientId == patient.Id;
+
+        if (!isDoctor && !isPatient)
+            return ApiResponse.ErrorResponse("Not authorized to cancel this package");
+
+        if (package.Status == TreatmentPackageStatus.Completed || package.Status == TreatmentPackageStatus.Cancelled)
+            return ApiResponse.ErrorResponse("This package cannot be cancelled");
+
+        package.Status = TreatmentPackageStatus.Cancelled;
+        package.RejectionReason = reason ?? "Đã hủy bởi " + (isDoctor ? "bác sĩ" : "bệnh nhân");
+        package.UpdatedAt = DateTime.UtcNow;
+        _packageRepo.Update(package);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Treatment package cancelled successfully");
     }
 
     public async Task<ApiResponse> AcceptPackageAsync(Guid packageId, Guid patientUserId, CancellationToken ct)

@@ -27,4 +27,11 @@ public class IndexModel : PageModel
         await _api.CreateJournalAsync(dto);
         return RedirectToPage();
     }
+
+    // POST: Delete Journal Entry
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id)
+    {
+        await _api.DeleteJournalAsync(id);
+        return RedirectToPage();
+    }
 }
