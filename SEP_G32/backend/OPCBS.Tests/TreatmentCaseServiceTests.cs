@@ -275,7 +275,7 @@ public class TreatmentCaseServiceTests
         }, CancellationToken.None);
 
         Assert.False(result.Success);
-        Assert.Contains("maximum of 2 sessions", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no sessions remaining", result.Message, StringComparison.OrdinalIgnoreCase);
         _sessionRepo.Verify(r => r.AddAsync(It.IsAny<TreatmentSession>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

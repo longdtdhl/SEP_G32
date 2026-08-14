@@ -2,174 +2,522 @@
 @model OPCBS.Web.Pages.Patient.ConsultationNotes.IndexModel
 @{
     ViewData["Title"] = "Consultation Records";
-
-    Layout = "_DashboardLayout";}
+    Layout = "_DashboardLayout";
+    var totalCount = Model.Records.Count;
+    var pendingCount = Model.Records.Count(r => !r.IsPatientConfirmed);
+    var confirmedCount = Model.Records.Count(r => r.IsPatientConfirmed);
+    var orderedRecords = Model.Records.OrderByDescending(r => r.DisplayConsultationDate).ToList();
+}
 
 <style>
-    /* ── Record Cards ── */
-    .record-card {
-        border-radius: 16px !important;
-        transition: all 0.25s ease;
-        border: 1px solid #e2e8f0 !important;
-        background: white;
-        overflow: hidden;
+    /* ── MindBridge / OPCBS Clinical Theme Tokens ── */
+    :root {
+        --mb-primary-teal: #3E8E7E;
+        --mb-primary-teal-dark: #2f6e61;
+        --mb-primary-teal-light: #e8f5f1;
+        --mb-primary-teal-subtle: #f0fdf9;
+        --mb-border-subtle: #e2e8f0;
+        --mb-card-border: #e8ecef;
+        --mb-text-main: #1e293b;
+        --mb-text-muted: #64748b;
     }
-    .record-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.04) !important;
-        border-color: #cbd5e1 !important;
+
+    /* ── Page Header & Stats ── */
+    .cr-header-wrapper {
+        margin-bottom: 1.5rem;
     }
-    .record-doctor-avatar {
-        width: 44px;
-        height: 44px;
-        background-color: #eff6ff;
-        color: #2563eb;
+    .cr-title {
+        font-size: 1.45rem;
         font-weight: 700;
-        border-radius: 50%;
+        color: var(--mb-text-main);
+        letter-spacing: -0.02em;
+        margin-bottom: 0.25rem;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        border: 2px solid #dbeafe;
+        gap: 0.5rem;
     }
-    .record-section-title {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #94a3b8;
-        margin-bottom: 8px;
-        display: flex;
+    .cr-subtitle {
+        font-size: 0.88rem;
+        color: var(--mb-text-muted);
+        margin: 0;
+    }
+    .cr-stat-chip {
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: var(--mb-text-main);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
-    
-    /* ── Search & Filter Bar ── */
-    .search-filter-bar {
-        display: flex; 
-        gap: 12px; 
-        align-items: center; 
-        margin-bottom: 1.75rem; 
-        flex-wrap: wrap;
-        background: white; 
-        padding: 1rem; 
-        border-radius: 14px; 
-        border: 1px solid #e2e8f0;
-    }
-    .search-wrapper {
-        position: relative;
-        flex: 1;
-        min-width: 280px;
-    }
-    .search-wrapper i {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
+    .cr-stat-chip .chip-num {
         font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--mb-primary-teal);
     }
-    .search-input {
-        width: 100%;
-        padding: 10px 14px 10px 40px; 
-        border: 1px solid #e2e8f0;
-        border-radius: 10px; 
-        font-size: 0.85rem; 
-        outline: none; 
-        transition: all 0.2s;
-        background: #fff;
-    }
-    .search-input:focus { 
-        border-color: #3b82f6; 
-        box-shadow: 0 0 0 3px rgba(59,130,246,0.1); 
-        background: #fff;
+    .cr-stat-chip.chip-pending .chip-num {
+        color: #d97706;
     }
 
     /* ── Active Package Banner ── */
-    .package-banner-card {
-        background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    .cr-pkg-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
         border: 1px solid #a7f3d0;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
     }
-    .progress-track {
-        height: 6px; 
-        border-radius: 10px; 
+    .cr-pkg-badge {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 3px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .cr-progress-bar-wrap {
+        height: 6px;
+        border-radius: 99px;
         background-color: #cbd5e1;
         overflow: hidden;
     }
 
-    /* ── Badges ── */
-    .badge-diagnosis {
-        background: #eff6ff; 
-        color: #1e40af; 
-        border: 1px solid #bfdbfe; 
-        padding: 6px 14px; 
-        border-radius: 20px; 
-        font-size: 0.75rem;
-        font-weight: 600;
+    /* ── Search & Filter Top Bar ── */
+    .cr-filter-card {
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
-    .badge-pkg-active {
-        background: #d1fae5;
+    .cr-search-box {
+        position: relative;
+        flex: 1;
+        min-width: 240px;
+    }
+    .cr-search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.95rem;
+        pointer-events: none;
+    }
+    .cr-search-input {
+        width: 100%;
+        height: 42px;
+        padding: 8px 12px 8px 36px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        color: var(--mb-text-main);
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+    .cr-search-input:focus {
+        background: #ffffff;
+        border-color: var(--mb-primary-teal);
+        box-shadow: 0 0 0 3px rgba(62, 142, 126, 0.15);
+        outline: none;
+    }
+    .cr-filter-select {
+        height: 42px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        color: var(--mb-text-main);
+        background-color: #f8fafc;
+        font-weight: 500;
+        padding: 0 10px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .cr-filter-select:focus {
+        background-color: #ffffff;
+        border-color: var(--mb-primary-teal);
+        box-shadow: 0 0 0 3px rgba(62, 142, 126, 0.15);
+    }
+    .cr-date-input {
+        height: 42px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        color: var(--mb-text-main);
+        background-color: #f8fafc;
+        padding: 0 10px;
+    }
+    .cr-date-input:focus {
+        background-color: #ffffff;
+        border-color: var(--mb-primary-teal);
+        box-shadow: 0 0 0 3px rgba(62, 142, 126, 0.15);
+    }
+
+    /* ── Status Badges with Color + Text ── */
+    .badge-clinical-confirmed {
+        background: #ecfdf5;
         color: #065f46;
         border: 1px solid #a7f3d0;
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.74rem;
+        font-weight: 600;
         border-radius: 20px;
-        padding: 4px 12px;
+        padding: 4px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .badge-clinical-pending {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 0.74rem;
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 4px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .badge-clinical-diagnosis {
+        background: #f0fdf9;
+        color: #115e59;
+        border: 1px solid #ccfbf1;
+        font-size: 0.74rem;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 3px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Left Column: Master List Cards ── */
+    .cr-item-card {
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 12px;
+        padding: 1.1rem;
+        margin-bottom: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        border-left: 4px solid #cbd5e1;
+    }
+    .cr-item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        border-color: #94a3b8;
+    }
+    .cr-item-card.active {
+        border-left-color: var(--mb-primary-teal) !important;
+        border-color: #9ed7c2;
+        background: #fafefd;
+        box-shadow: 0 4px 16px rgba(62, 142, 126, 0.1);
+    }
+    .cr-item-card.unconfirmed {
+        border-left-color: #f59e0b;
+    }
+    .cr-doctor-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--mb-primary-teal-light);
+        color: var(--mb-primary-teal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        flex-shrink: 0;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .cr-card-doc-name {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--mb-text-main);
+        margin: 0;
+    }
+    .cr-card-date {
+        font-size: 0.76rem;
+        color: var(--mb-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .cr-card-preview {
+        font-size: 0.82rem;
+        color: #475569;
+        line-height: 1.5;
+        margin-top: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* ── Right Column: Selected Record Clinical Dossier ── */
+    .cr-dossier-panel {
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 14px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+        position: sticky;
+        top: 80px;
+    }
+    .cr-dossier-header {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .cr-action-callout {
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .cr-action-callout.callout-pending {
+        background: #fffdf5;
+        border: 1px solid #fde68a;
+    }
+    .cr-action-callout.callout-confirmed {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    /* ── Clinical Sections in Dossier ── */
+    .cr-clinical-sec {
+        background: #f8fafc;
+        border: 1px solid var(--mb-border-subtle);
+        border-radius: 10px;
+        padding: 1rem 1.15rem;
+        margin-bottom: 1rem;
+    }
+    .cr-clinical-sec-title {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cr-clinical-sec-title i {
+        color: var(--mb-primary-teal);
+        font-size: 0.9rem;
+    }
+    .cr-clinical-sec-body {
+        font-size: 0.875rem;
+        color: var(--mb-text-main);
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* ── Buttons Hierarchy ── */
+    .btn-mb-primary {
+        background-color: var(--mb-primary-teal);
+        border-color: var(--mb-primary-teal);
+        color: #ffffff;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-mb-primary:hover {
+        background-color: var(--mb-primary-teal-dark);
+        border-color: var(--mb-primary-teal-dark);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(62, 142, 126, 0.25);
+    }
+    .btn-mb-secondary {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: var(--mb-text-main);
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.84rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-mb-secondary:hover {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+        color: var(--mb-text-main);
+    }
+    .btn-mb-outline-primary {
+        background-color: transparent;
+        border: 1px solid var(--mb-primary-teal);
+        color: var(--mb-primary-teal);
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.82rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-mb-outline-primary:hover {
+        background-color: var(--mb-primary-teal-light);
+        color: var(--mb-primary-teal-dark);
+    }
+
+    /* ── Empty State ── */
+    .cr-empty-state {
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 14px;
+        padding: 3.5rem 2rem;
+        text-align: center;
+    }
+    .cr-empty-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--mb-primary-teal-light);
+        color: var(--mb-primary-teal);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Mobile responsiveness ── */
+    @@media (max-width: 991.98px) {
+        .cr-dossier-panel {
+            position: static;
+            margin-top: 1.5rem;
+        }
+        .cr-stat-chip {
+            width: 100%;
+            justify-content: space-between;
+        }
     }
 </style>
 
-<!-- Page Header -->
-<div class="mb-page-header">
-    <h1><i class="bi bi-file-earmark-medical-fill me-2 text-primary"></i>Consultation Records</h1>
-    <p class="text-muted mb-0">Track your clinical diagnostics, session summaries, treatment plans, and doctor recommendations</p>
+<!-- Page Header & Stats -->
+<div class="cr-header-wrapper">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h1 class="cr-title">
+                <i class="bi bi-file-earmark-medical-fill" style="color: var(--mb-primary-teal);"></i>
+                Consultation Records &amp; Care Plans
+            </h1>
+            <p class="cr-subtitle">
+                Access your clinical evaluations, diagnosis notes, treatment plans, and doctor follow-up recommendations.
+            </p>
+        </div>
+        
+        <!-- Summary Stat Chips -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="cr-stat-chip" title="Total consultation records">
+                <i class="bi bi-journal-text text-muted"></i>
+                <span>Total Records:</span>
+                <span class="chip-num">@totalCount</span>
+            </div>
+            @if (pendingCount > 0)
+            {
+                <div class="cr-stat-chip chip-pending" title="Records awaiting your confirmation">
+                    <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                    <span>Needs Review:</span>
+                    <span class="chip-num">@pendingCount</span>
+                </div>
+            }
+            <div class="cr-stat-chip" title="Confirmed clinical records">
+                <i class="bi bi-check2-all text-success"></i>
+                <span>Confirmed:</span>
+                <span class="chip-num">@confirmedCount</span>
+            </div>
+        </div>
+    </div>
 </div>
 
-@if (Model.Error != null)
+<!-- Alert Notifications -->
+@if (TempData["Success"] != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none; margin-bottom: 1.5rem;">
-        <i class="bi bi-exclamation-octagon-fill me-1"></i>@Model.Error
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 12px; border: 1px solid #a7f3d0; background: #ecfdf5; color: #065f46;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null || Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 12px; border: 1px solid #fecaca; background: #fef2f2; color: #991b1b;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@(TempData["Error"] ?? Model.Error)
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
-<!-- Active Treatment Packages Section -->
+<!-- Active Treatment Packages Section (if any) -->
 @if (Model.ActivePackages.Any())
 {
     @foreach (var pkg in Model.ActivePackages)
     {
         var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
-        <div class="package-banner-card shadow-sm animate__animated animate__fadeIn">
+        <div class="cr-pkg-card animate__animated animate__fadeIn">
             <div class="row align-items-center g-3">
                 <div class="col-lg-8">
                     <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                        <span class="badge-pkg-active">Active Treatment Package</span>
-                        <span class="text-muted small"><i class="bi bi-calendar-event me-1"></i>Expires: @pkg.ExpirationDate.ToString("MM/dd/yyyy")</span>
+                        <span class="cr-pkg-badge">
+                            <i class="bi bi-check2-circle"></i> Active Treatment Package
+                        </span>
+                        <span class="text-muted small">
+                            <i class="bi bi-calendar-event me-1"></i>Expires: @pkg.ExpirationDate.ToString("MM/dd/yyyy")
+                        </span>
                     </div>
-                    <h4 class="fw-bold text-dark mb-1" style="font-size: 1.15rem;">@pkg.Title</h4>
+                    <h4 class="fw-bold text-dark mb-1" style="font-size: 1.1rem;">@pkg.Title</h4>
                     <p class="text-secondary small mb-3" style="max-width: 65ch;">@pkg.Description</p>
                     <div class="d-flex align-items-center gap-4 flex-wrap">
-                        <div class="small text-dark"><i class="bi bi-person-badge-fill me-1 text-success"></i>Doctor: <strong>@pkg.DoctorName</strong></div>
-                        <div class="small text-dark"><i class="bi bi-chat-left-dots-fill me-1 text-success"></i>Completed: <strong>@pkg.CompletedSessions / @pkg.TotalSessions sessions</strong></div>
+                        <div class="small text-dark">
+                            <i class="bi bi-person-badge me-1" style="color: var(--mb-primary-teal);"></i>Doctor: <strong>@pkg.DoctorName</strong>
+                        </div>
+                        <div class="small text-dark">
+                            <i class="bi bi-chat-left-dots me-1" style="color: var(--mb-primary-teal);"></i>Sessions: <strong>@pkg.CompletedSessions / @pkg.TotalSessions completed</strong>
+                        </div>
                         <div style="width: 160px;">
                             <div class="d-flex justify-content-between small mb-1" style="font-size: 0.72rem;">
                                 <span class="text-muted">Progress</span>
                                 <span class="fw-bold text-success">@progress%</span>
                             </div>
-                            <div class="progress progress-track">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: @progress%"></div>
+                            <div class="cr-progress-bar-wrap">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: @progress%; height: 100%;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 text-lg-end d-flex gap-2 justify-content-lg-end flex-wrap mt-3 mt-lg-0">
-                    <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success px-3 py-2 fw-bold" style="border-radius:10px; font-size:0.78rem;">
-                        <i class="bi bi-info-circle me-1"></i>View Details
+                <div class="col-lg-4 text-lg-end d-flex gap-2 justify-content-lg-end flex-wrap mt-2 mt-lg-0">
+                    <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn-mb-secondary">
+                        <i class="bi bi-info-circle"></i> Package Details
                     </a>
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id" class="btn btn-sm btn-success px-3 py-2 fw-bold" style="border-radius:10px; font-size:0.78rem;">
-                        <i class="bi bi-calendar-plus me-1"></i>Book Next Session
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id" class="btn-mb-primary">
+                        <i class="bi bi-calendar-plus"></i> Book Next Session
                     </a>
                 </div>
             </div>
@@ -177,253 +525,504 @@
     }
 }
 
-@if (TempData["Success"] != null)
+@if (orderedRecords.Any())
 {
-    <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-3" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-3" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-<!-- Search bar & Filters -->
-<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-    <div class="card-body p-3.5 p-md-4">
-        <div class="d-flex flex-wrap align-items-center gap-3">
-            <div class="search-box flex-grow-1" style="min-width: 260px;">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" class="search-input" placeholder="Search by doctor name, diagnosis, notes..." id="crSearch" oninput="filterConsultationNotes()" />
+    <!-- Search and Filter Bar -->
+    <div class="cr-filter-card">
+        <div class="row g-2 align-items-center">
+            <!-- Search Query -->
+            <div class="col-lg-4 col-md-6">
+                <div class="cr-search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="crSearch" class="cr-search-input" placeholder="Search by diagnosis, doctor, notes, plan..." oninput="filterRecords()" />
+                </div>
             </div>
-            
-            <div style="min-width: 180px;">
-                <select id="doctorFilter" class="form-select" onchange="filterConsultationNotes()" style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
+
+            <!-- Status Filter -->
+            <div class="col-lg-3 col-md-6">
+                <select id="statusFilter" class="form-select cr-filter-select" onchange="filterRecords()">
+                    <option value="all">All Statuses (@totalCount)</option>
+                    <option value="pending">Awaiting Confirmation (@pendingCount)</option>
+                    <option value="confirmed">Confirmed Records (@confirmedCount)</option>
+                </select>
+            </div>
+
+            <!-- Doctor Filter -->
+            <div class="col-lg-3 col-md-6">
+                <select id="doctorFilter" class="form-select cr-filter-select" onchange="filterRecords()">
                     <option value="all">All Doctors</option>
-                    @foreach (var docName in Model.Records.Select(r => r.DoctorName).Where(d => !string.IsNullOrEmpty(d)).Distinct())
+                    @foreach (var docName in orderedRecords.Select(r => r.DoctorName).Where(d => !string.IsNullOrWhiteSpace(d)).Distinct())
                     {
-                        <option value="@docName?.ToLower()">@docName</option>
+                        <option value="@docName?.ToLower()">Dr. @docName</option>
                     }
                 </select>
             </div>
 
-            <div style="min-width: 160px;">
-                <input type="date" id="dateFilter" class="form-control" onchange="filterConsultationNotes()" style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
+            <!-- Reset Action & Counter -->
+            <div class="col-lg-2 col-md-6 d-flex align-items-center justify-content-between justify-content-lg-end gap-2">
+                <button type="button" class="btn-mb-secondary w-100 justify-content-center" onclick="resetFilters()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
             </div>
+        </div>
 
-            <button type="button" class="btn-reset" onclick="resetFilters()">
-                <i class="bi bi-arrow-counterclockwise"></i> Reset
-            </button>
+        <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top" style="border-color: #f1f5f9 !important; font-size: 0.78rem; color: #64748b;">
+            <div>
+                Showing <strong id="visibleCount" class="text-dark">@totalCount</strong> of @totalCount consultation records
+            </div>
+            <div id="filterActiveBadge" style="display: none;">
+                <span class="badge bg-light text-secondary border"><i class="bi bi-funnel-fill me-1 text-primary"></i>Filters Applied</span>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Consultation Records list -->
-@if (Model.Records.Any())
-{
-    <div class="row g-4" id="crContainer">
-        @foreach (var record in Model.Records.OrderByDescending(r => r.CreatedAt))
-        {
-            var docNameLower = (record.DoctorName ?? "Specialist MindBridge").ToLower();
-            var diagLower = (record.Diagnosis ?? "").ToLower();
-            var summaryLower = (record.ConsultationSummary ?? "").ToLower();
+    <!-- Balanced Master-Detail Layout -->
+    <div class="row g-4" id="crWorkspace">
+        
+        <!-- LEFT COLUMN: Record List -->
+        <div class="col-lg-5 col-xl-5" id="crListColumn">
+            <div class="d-flex flex-column" id="crCardsContainer">
+                @for (int i = 0; i < orderedRecords.Count; i++)
+                {
+                    var record = orderedRecords[i];
+                    var isSelected = (i == 0);
+                    var docName = string.IsNullOrWhiteSpace(record.DoctorName) ? "Specialist Therapist" : record.DoctorName;
+                    var docInitial = docName.Substring(0, 1).ToUpper();
+                    var diagText = string.IsNullOrWhiteSpace(record.Diagnosis) ? "General Consultation" : record.Diagnosis;
+                    var docLower = docName.ToLower();
+                    var diagLower = diagText.ToLower();
+                    var summaryLower = (record.ConsultationSummary ?? "").ToLower();
+                    var therapyLower = (record.TherapyPlan ?? "").ToLower();
+                    var statusKey = record.IsPatientConfirmed ? "confirmed" : "pending";
+                    var dateKey = record.DisplayConsultationDate.ToString("yyyy-MM-dd");
 
-            <div class="col-12 cr-card-item animate__animated animate__fadeIn" data-doctor="@docNameLower" data-diagnosis="@diagLower" data-summary="@summaryLower" data-date="@record.CreatedAt.ToString("yyyy-MM-dd")">
-                <div class="card border-0 shadow-sm record-card">
-                    <div class="card-body p-4 p-md-4">
+                    <div class="cr-item-card @(isSelected ? "active" : "") @(!record.IsPatientConfirmed ? "unconfirmed" : "") cr-card-entry animate__animated animate__fadeIn"
+                         id="card-@record.Id"
+                         data-record-id="@record.Id"
+                         data-doctor="@docLower"
+                         data-diagnosis="@diagLower"
+                         data-summary="@summaryLower"
+                         data-therapy="@therapyLower"
+                         data-status="@statusKey"
+                         data-date="@dateKey"
+                         onclick="selectRecord('@record.Id')">
                         
-                        <!-- Card Header: Doctor & Date info -->
-                        <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-3 gap-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="record-doctor-avatar">
-                                    @((record.DoctorName ?? "C").Substring(0, 1).ToUpper())
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="cr-doctor-avatar">
+                                @docInitial
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <h6 class="cr-card-doc-name text-truncate">Dr. @docName</h6>
+                                    @if (record.IsPatientConfirmed)
+                                    {
+                                        <span class="badge-clinical-confirmed">
+                                            <i class="bi bi-check2-circle"></i> Confirmed
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-clinical-pending">
+                                            <i class="bi bi-clock-history"></i> Needs Review
+                                        </span>
+                                    }
                                 </div>
-                                <div>
-                                    <h5 class="mb-0 fw-bold text-dark" style="font-size: 1rem;">Doctor: @(record.DoctorName ?? "Specialist Therapist")</h5>
-                                    <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Consultation Date: @record.CreatedAt.ToString("MM/dd/yyyy • HH:mm")</span>
+
+                                <div class="cr-card-date mb-2">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>@record.DisplayConsultationDate.ToString("MMM dd, yyyy • HH:mm")</span>
+                                    @if (!string.IsNullOrEmpty(record.PackageName))
+                                    {
+                                        <span class="text-muted ms-1">• @record.PackageName</span>
+                                    }
+                                </div>
+
+                                <div class="mb-2">
+                                    <span class="badge-clinical-diagnosis">
+                                        <i class="bi bi-clipboard2-pulse"></i> @diagText
+                                    </span>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(record.ConsultationSummary))
+                                {
+                                    <p class="cr-card-preview mb-0">@record.ConsultationSummary</p>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(record.TherapyPlan))
+                                {
+                                    <p class="cr-card-preview mb-0">@record.TherapyPlan</p>
+                                }
+
+                                <!-- Mobile Expand Button (Visible only on small screens) -->
+                                <div class="d-lg-none mt-2 pt-2 border-top text-end">
+                                    <span class="btn-mb-outline-primary" style="font-size:0.75rem; padding: 2px 8px;">
+                                        View Details <i class="bi bi-arrow-right"></i>
+                                    </span>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Empty Filter State -->
+            <div id="noFilteredContainer" class="cr-empty-state" style="display: none;">
+                <div class="cr-empty-icon">
+                    <i class="bi bi-filter-circle"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1" style="font-size: 1.05rem;">No Matching Records</h5>
+                <p class="text-muted small mb-3">No consultation records match your search keyword or selected filters.</p>
+                <button type="button" class="btn-mb-secondary mx-auto" onclick="resetFilters()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Selected Record Dossier Details -->
+        <div class="col-lg-7 col-xl-7" id="crDetailColumn">
+            @for (int i = 0; i < orderedRecords.Count; i++)
+            {
+                var record = orderedRecords[i];
+                var isSelected = (i == 0);
+                var docName = string.IsNullOrWhiteSpace(record.DoctorName) ? "Specialist Therapist" : record.DoctorName;
+                var docInitial = docName.Substring(0, 1).ToUpper();
+                var diagText = string.IsNullOrWhiteSpace(record.Diagnosis) ? "General Clinical Evaluation" : record.Diagnosis;
+
+                <div class="cr-dossier-panel dossier-item animate__animated animate__fadeIn"
+                     id="dossier-@record.Id"
+                     style="display: @(isSelected ? "block" : "none");">
+                    
+                    <!-- Dossier Header -->
+                    <div class="cr-dossier-header">
+                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="cr-doctor-avatar" style="width: 48px; height: 48px; font-size: 1.15rem;">
+                                    @docInitial
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1" style="font-size: 1.15rem;">Dr. @docName</h5>
+                                    <div class="text-muted small d-flex align-items-center gap-2 flex-wrap">
+                                        <span><i class="bi bi-calendar3 me-1 text-primary"></i>@record.DisplayConsultationDate.ToString("MMMM dd, yyyy • HH:mm")</span>
+                                        @if (!string.IsNullOrEmpty(record.PackageName))
+                                        {
+                                            <span>•</span>
+                                            <span class="badge bg-light text-dark border">@record.PackageName</span>
+                                        }
+                                        @if (record.AppointmentId.HasValue)
+                                        {
+                                            <span>•</span>
+                                            <a asp-page="/Patient/Appointments/Details" asp-route-id="@record.AppointmentId" class="text-decoration-none text-primary fw-medium" title="View appointment booking">
+                                                <i class="bi bi-link-45deg"></i>Appointment Details
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
                                 @if (record.IsPatientConfirmed)
                                 {
-                                    <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.75rem;">
-                                        <i class="bi bi-check-circle-fill me-1" style="color:#10b981;"></i>Confirmed (@record.PatientConfirmedAt?.ToString("dd/MM/yyyy HH:mm"))
+                                    <span class="badge-clinical-confirmed" style="font-size: 0.8rem; padding: 6px 12px;">
+                                        <i class="bi bi-check2-circle"></i> Confirmed Record
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;">
-                                        <i class="bi bi-hourglass-split me-1" style="color:#d97706;"></i>Awaiting Confirmation
-                                    </span>
-                                }
-                                @if (!string.IsNullOrEmpty(record.Diagnosis))
-                                {
-                                    <span class="badge rounded-pill px-2.5 py-1 fw-medium" style="background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; font-size:0.75rem;">
-                                        <i class="bi bi-journal-medical me-1 text-primary"></i>Diagnosis: @record.Diagnosis
+                                    <span class="badge-clinical-pending" style="font-size: 0.8rem; padding: 6px 12px;">
+                                        <i class="bi bi-clock-history"></i> Awaiting Your Review
                                     </span>
                                 }
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Card Body Content Sections -->
-                        <div class="d-flex flex-column gap-3">
-                            <!-- Notes / Summary -->
-                            @if (!string.IsNullOrEmpty(record.ConsultationSummary))
-                            {
-                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                                    <div class="fw-semibold text-secondary mb-1.5 small d-flex align-items-center gap-1.5" style="color:#475569 !important; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
-                                        <i class="bi bi-chat-left-text text-primary"></i>
-                                        <span>Consultation Notes &amp; Feedback</span>
+                    <!-- Patient Confirmation Action Banner -->
+                    @if (!record.IsPatientConfirmed)
+                    {
+                        <div class="cr-action-callout callout-pending">
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                                <div>
+                                    <div class="fw-bold text-warning-emphasis d-flex align-items-center gap-1.5 mb-1" style="font-size: 0.9rem; color: #92400e;">
+                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                                        Patient Review &amp; Acknowledgment
                                     </div>
-                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@record.ConsultationSummary</div>
+                                    <div class="text-muted small" style="line-height: 1.45;">
+                                        Please review the diagnostic notes and therapy recommendations. Click confirm to record your acknowledgment.
+                                    </div>
                                 </div>
-                            }
-
-                            <!-- TherapyPlan & Recommendations -->
-                            @if (!string.IsNullOrEmpty(record.TherapyPlan) || !string.IsNullOrEmpty(record.Recommendation))
-                            {
-                                <div class="row g-3">
-                                    @if (!string.IsNullOrEmpty(record.TherapyPlan))
-                                    {
-                                        <div class="@(!string.IsNullOrEmpty(record.Recommendation) ? "col-md-6" : "col-12")">
-                                            <div class="p-3 rounded-3 h-100" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                                                <div class="fw-semibold text-secondary mb-1.5 small d-flex align-items-center gap-1.5" style="color:#475569 !important; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
-                                                    <i class="bi bi-compass text-primary"></i>
-                                                    <span>Therapy Plan</span>
-                                                </div>
-                                                <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@record.TherapyPlan</div>
-                                            </div>
-                                        </div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(record.Recommendation))
-                                    {
-                                        <div class="@(!string.IsNullOrEmpty(record.TherapyPlan) ? "col-md-6" : "col-12")">
-                                            <div class="p-3 rounded-3 h-100" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                                                <div class="fw-semibold text-secondary mb-1.5 small d-flex align-items-center gap-1.5" style="color:#475569 !important; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.03em;">
-                                                    <i class="bi bi-lightbulb text-primary"></i>
-                                                    <span>Recommendations &amp; Advice</span>
-                                                </div>
-                                                <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">@record.Recommendation</div>
-                                            </div>
-                                        </div>
-                                    }
+                                <form method="post" asp-page-handler="ConfirmNote" asp-route-recordId="@record.Id" class="m-0 flex-shrink-0">
+                                    <button type="submit" class="btn-mb-primary w-100 justify-content-center shadow-sm">
+                                        <i class="bi bi-check2-circle"></i> Confirm Record
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="cr-action-callout callout-confirmed">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 small text-success fw-medium">
+                                    <i class="bi bi-shield-check fs-5"></i>
+                                    <span>
+                                        You confirmed this clinical record on <strong>@(record.PatientConfirmedAt?.ToString("MMM dd, yyyy • HH:mm") ?? "Confirmed")</strong>
+                                    </span>
                                 </div>
-                            }
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                                    <i class="bi bi-lock-fill me-1"></i>Verified Record
+                                </span>
+                            </div>
+                        </div>
+                    }
 
-                            <!-- Next appointment recommended date & slot -->
+                    <!-- 1. Clinical Diagnosis -->
+                    <div class="cr-clinical-sec" style="background: #f0fdf9; border-color: #ccfbf1;">
+                        <div class="cr-clinical-sec-title" style="color: #0f766e;">
+                            <i class="bi bi-clipboard2-pulse"></i> Primary Diagnosis &amp; Clinical Assessment
+                        </div>
+                        <div class="fw-bold text-dark mb-1" style="font-size: 0.96rem;">
+                            @diagText
+                        </div>
+                    </div>
+
+                    <!-- 2. Consultation Summary & Observations -->
+                    @if (!string.IsNullOrWhiteSpace(record.ConsultationSummary))
+                    {
+                        <div class="cr-clinical-sec">
+                            <div class="cr-clinical-sec-title">
+                                <i class="bi bi-chat-left-text"></i> Consultation Notes &amp; Session Summary
+                            </div>
+                            <div class="cr-clinical-sec-body">@record.ConsultationSummary</div>
+                        </div>
+                    }
+
+                    <!-- 3. Therapy & Treatment Plan -->
+                    @if (!string.IsNullOrWhiteSpace(record.TherapyPlan))
+                    {
+                        <div class="cr-clinical-sec">
+                            <div class="cr-clinical-sec-title">
+                                <i class="bi bi-compass"></i> Therapy &amp; Care Plan
+                            </div>
+                            <div class="cr-clinical-sec-body">@record.TherapyPlan</div>
+                        </div>
+                    }
+
+                    <!-- 4. Doctor Recommendations & Home Exercises -->
+                    @if (!string.IsNullOrWhiteSpace(record.Recommendation))
+                    {
+                        <div class="cr-clinical-sec">
+                            <div class="cr-clinical-sec-title">
+                                <i class="bi bi-lightbulb"></i> Therapist Advice &amp; Recommendations
+                            </div>
+                            <div class="cr-clinical-sec-body">@record.Recommendation</div>
+                        </div>
+                    }
+
+                    <!-- 5. Next Recommended Appointment / Follow-up -->
+                    @if (record.NextAppointmentRecommendedDate.HasValue || !string.IsNullOrWhiteSpace(record.FollowUpNotes))
+                    {
+                        <div class="cr-clinical-sec" style="background: #fffbeb; border-color: #fde68a;">
+                            <div class="cr-clinical-sec-title" style="color: #92400e;">
+                                <i class="bi bi-calendar-check text-warning"></i> Follow-up Recommendations &amp; Next Session
+                            </div>
+
                             @if (record.NextAppointmentRecommendedDate.HasValue)
                             {
-                                <div class="col-12 mt-2">
-                                    <div style="background:#fffbeb; border: 1px solid #fde68a; color:#92400e; padding: 12px 16px; border-radius:12px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-calendar-check-fill text-warning fs-5"></i>
-                                            <div>
-                                                <div class="fw-bold">Lịch hẹn tái khám được gợi ý:</div>
-                                                <div>
-                                                    @record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy")
-                                                    @if (!string.IsNullOrEmpty(record.NextAppointmentRecommendedSlotStartTime))
-                                                    {
-                                                        <span class="badge bg-warning text-dark ms-1">@record.NextAppointmentRecommendedSlotStartTime - @record.NextAppointmentRecommendedSlotEndTime</span>
-                                                    }
-                                                </div>
-                                            </div>
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
+                                    <div>
+                                        <div class="fw-bold text-dark small">Suggested Next Consultation:</div>
+                                        <div class="text-dark" style="font-size: 0.88rem;">
+                                            <i class="bi bi-calendar-event me-1 text-warning"></i>
+                                            @record.NextAppointmentRecommendedDate.Value.ToString("dddd, MMMM dd, yyyy")
+                                            @if (!string.IsNullOrWhiteSpace(record.NextAppointmentRecommendedSlotStartTime))
+                                            {
+                                                <span class="badge bg-warning text-dark ms-1">
+                                                    @record.NextAppointmentRecommendedSlotStartTime - @record.NextAppointmentRecommendedSlotEndTime
+                                                </span>
+                                            }
                                         </div>
-                                        @if (record.FollowUpAppointmentId.HasValue)
-                                        {
-                                            <div>
-                                                <a asp-page="/Patient/Appointments/Details" asp-route-id="@record.FollowUpAppointmentId" class="btn btn-sm btn-outline-success fw-bold">
-                                                    <i class="bi bi-check-circle-fill me-1"></i>Lịch tái khám đã tạo (@(record.FollowUpAppointmentBookingCode ?? "Chi tiết"))
-                                                </a>
-                                            </div>
-                                        }
+                                        <div class="text-muted small mt-1">This is a recommendation only. Please choose and confirm a slot to create an appointment.</div>
                                     </div>
+
+                                    @if (record.FollowUpAppointmentId.HasValue)
+                                    {
+                                        <a asp-page="/Patient/Appointments/Details" asp-route-id="@record.FollowUpAppointmentId" class="btn-mb-outline-primary" style="background: #ffffff;">
+                                            <i class="bi bi-check-circle-fill text-success"></i> View Scheduled Follow-Up
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="/Appointment/Book" asp-route-doctorId="@record.DoctorId" asp-route-week="@record.NextAppointmentRecommendedDate.Value.ToString("yyyy-MM-dd")" class="btn-mb-primary">
+                                            <i class="bi bi-calendar-plus"></i> Choose Follow-Up Slot
+                                        </a>
+                                    }
                                 </div>
                             }
 
-                             <!-- Follow up notes -->
-                            @if (!string.IsNullOrEmpty(record.FollowUpNotes))
+                            @if (!string.IsNullOrWhiteSpace(record.FollowUpNotes))
                             {
-                                <div class="col-12 mt-2 text-muted small">
-                                    <hr class="my-2" style="border-color: #e2e8f0;" />
-                                    <span class="fw-semibold text-dark"><i class="bi bi-arrow-return-right me-1 text-primary"></i>Next Follow-up Notes: </span>
-                                    <span style="font-size: 0.82rem;">@record.FollowUpNotes</span>
+                                <div class="text-muted small pt-2 border-top" style="border-color: #fef3c7 !important;">
+                                    <strong>Follow-up Instructions:</strong> @record.FollowUpNotes
                                 </div>
                             }
-
                         </div>
+                    }
 
+                    <!-- 6. Record Metadata & Doctor Profile Link -->
+                    <div class="d-flex align-items-center justify-content-between pt-3 mt-3 border-top flex-wrap gap-2 text-muted" style="font-size: 0.76rem; border-color: #f1f5f9 !important;">
+                        <div>
+                            <span><i class="bi bi-shield-check text-primary me-1"></i>OPCBS Clinical Record ID: <code>@record.Id.ToString().Substring(0, 8)...</code></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a asp-page="/Doctors/Index" class="text-decoration-none text-primary fw-medium">
+                                <i class="bi bi-search-heart me-1"></i>Find Other Specialists
+                            </a>
+                        </div>
                     </div>
+
                 </div>
-            </div>
-        }
-    </div>
-    
-    <div class="card border-0 shadow-sm text-center py-5" id="noFilteredRecordContainer" style="border-radius: 16px; display: none; margin-top: 1rem;">
-        <div class="card-body p-4">
-            <i class="bi bi-filter-circle text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold text-dark">No Matching Records</h5>
-            <p class="text-muted small mb-0">Try adjusting your search query, selected doctor, or date filter.</p>
+            }
         </div>
+
     </div>
 }
 else
 {
-    <div class="card border-0 shadow-sm text-center py-5" id="noRecordContainer" style="border-radius: 16px;">
-        <div class="card-body p-5">
-            <i class="bi bi-file-earmark-medical text-muted mb-3" style="font-size: 3.5rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold text-dark" style="font-size: 1.15rem;">No Consultation Records Found</h5>
-            <p class="text-muted small mb-4" style="max-width: 50ch; margin: 0 auto 1.5rem;">Your clinical records, diagnoses, plans, and recommended exercises from therapists will appear here after your sessions are completed.</p>
-            <a asp-page="/Doctors/Index" class="btn btn-primary px-4 py-2.5 fw-bold shadow-sm" style="border-radius: 10px;">
-                <i class="bi bi-search-heart me-1"></i>Find a Therapist & Book Now
+    <!-- Empty Overall State -->
+    <div class="cr-empty-state">
+        <div class="cr-empty-icon">
+            <i class="bi bi-file-earmark-medical"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2" style="font-size: 1.25rem;">No Consultation Records Found</h4>
+        <p class="text-muted small mx-auto mb-4" style="max-width: 520px; line-height: 1.6;">
+            Your clinical diagnosis records, care plans, therapist notes, and recommendations will be securely saved here after your appointments are completed.
+        </p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <a asp-page="/Doctors/Index" class="btn-mb-primary px-4 py-2.5">
+                <i class="bi bi-search-heart"></i> Book a Consultation
+            </a>
+            <a asp-page="/Patient/Appointments/History" class="btn-mb-secondary px-4 py-2.5">
+                <i class="bi bi-clock-history"></i> View Appointment History
             </a>
         </div>
     </div>
 }
 
 <script>
-function filterConsultationNotes() {
-    const query = document.getElementById('crSearch').value.trim().toLowerCase();
-    const selectedDoctor = document.getElementById('doctorFilter').value.trim().toLowerCase();
-    const selectedDate = document.getElementById('dateFilter').value; // yyyy-MM-dd
+    let activeRecordId = null;
 
-    let visibleCount = 0;
-    
-    document.querySelectorAll('.cr-card-item').forEach(item => {
-        const doc = item.dataset.doctor || '';
-        const diag = item.dataset.diagnosis || '';
-        const summary = item.dataset.summary || '';
-        const date = item.dataset.date || ''; // yyyy-MM-dd
-        
-        const matchesQuery = !query || doc.includes(query) || diag.includes(query) || summary.includes(query);
-        const matchesDoctor = !selectedDoctor || doc === selectedDoctor;
-        const matchesDate = !selectedDate || date === selectedDate;
-        
-        if (matchesQuery && matchesDoctor && matchesDate) {
-            item.style.display = 'block';
-            visibleCount++;
-        } else {
-            item.style.display = 'none';
-        }
-    });
+    function selectRecord(recordId) {
+        activeRecordId = recordId;
 
-    const noFilteredAlert = document.getElementById('noFilteredRecordContainer');
-    if (noFilteredAlert) {
-        if (visibleCount === 0) {
-            noFilteredAlert.style.display = 'block';
-        } else {
-            noFilteredAlert.style.display = 'none';
+        // Update list card active state
+        document.querySelectorAll('.cr-item-card').forEach(card => {
+            if (card.dataset.recordId === recordId) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        // Toggle dossier views
+        document.querySelectorAll('.dossier-item').forEach(dossier => {
+            if (dossier.id === 'dossier-' + recordId) {
+                dossier.style.display = 'block';
+            } else {
+                dossier.style.display = 'none';
+            }
+        });
+
+        // On mobile, scroll smoothly to the dossier
+        if (window.innerWidth < 992) {
+            const targetDossier = document.getElementById('dossier-' + recordId);
+            if (targetDossier) {
+                targetDossier.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     }
-}
 
-function clearFilters() {
-    document.getElementById('crSearch').value = '';
-    document.getElementById('doctorFilter').value = '';
-    document.getElementById('dateFilter').value = '';
-    filterConsultationNotes();
-}
+    function filterRecords() {
+        const query = (document.getElementById('crSearch')?.value || '').trim().toLowerCase();
+        const status = (document.getElementById('statusFilter')?.value || 'all').toLowerCase();
+        const doctor = (document.getElementById('doctorFilter')?.value || 'all').toLowerCase();
+
+        let visibleCount = 0;
+        let firstVisibleId = null;
+
+        const cards = document.querySelectorAll('.cr-card-entry');
+        cards.forEach(card => {
+            const doc = (card.dataset.doctor || '').toLowerCase();
+            const diag = (card.dataset.diagnosis || '').toLowerCase();
+            const summary = (card.dataset.summary || '').toLowerCase();
+            const therapy = (card.dataset.therapy || '').toLowerCase();
+            const cardStatus = (card.dataset.status || '').toLowerCase();
+            const recordId = card.dataset.recordId;
+
+            const matchesQuery = !query || doc.includes(query) || diag.includes(query) || summary.includes(query) || therapy.includes(query);
+            const matchesStatus = (status === 'all') || (cardStatus === status);
+            const matchesDoctor = (doctor === 'all') || (doc === doctor);
+
+            if (matchesQuery && matchesStatus && matchesDoctor) {
+                card.style.display = 'block';
+                visibleCount++;
+                if (!firstVisibleId) {
+                    firstVisibleId = recordId;
+                }
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update count badge
+        const countSpan = document.getElementById('visibleCount');
+        if (countSpan) countSpan.textContent = visibleCount;
+
+        const filterBadge = document.getElementById('filterActiveBadge');
+        if (filterBadge) {
+            if (query || status !== 'all' || doctor !== 'all') {
+                filterBadge.style.display = 'inline-block';
+            } else {
+                filterBadge.style.display = 'none';
+            }
+        }
+
+        // Toggle empty filter warning & detail column
+        const noFilteredState = document.getElementById('noFilteredContainer');
+        const detailColumn = document.getElementById('crDetailColumn');
+
+        if (visibleCount === 0) {
+            if (noFilteredState) noFilteredState.style.display = 'block';
+            if (detailColumn) detailColumn.style.display = 'none';
+        } else {
+            if (noFilteredState) noFilteredState.style.display = 'none';
+            if (detailColumn) detailColumn.style.display = 'block';
+
+            // If the current active card was filtered out, select the first visible card
+            const currentActiveCard = document.querySelector('.cr-item-card.active');
+            if (!currentActiveCard || currentActiveCard.style.display === 'none') {
+                if (firstVisibleId) {
+                    selectRecord(firstVisibleId);
+                }
+            }
+        }
+    }
+
+    function resetFilters() {
+        const searchInput = document.getElementById('crSearch');
+        const statusSelect = document.getElementById('statusFilter');
+        const doctorSelect = document.getElementById('doctorFilter');
+
+        if (searchInput) searchInput.value = '';
+        if (statusSelect) statusSelect.value = 'all';
+        if (doctorSelect) doctorSelect.value = 'all';
+
+        filterRecords();
+    }
+
+    // Initialize selection on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        const firstCard = document.querySelector('.cr-item-card');
+        if (firstCard && firstCard.dataset.recordId) {
+            selectRecord(firstCard.dataset.recordId);
+        }
+    });
 </script>

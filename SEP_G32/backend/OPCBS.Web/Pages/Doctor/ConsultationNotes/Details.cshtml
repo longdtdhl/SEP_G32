@@ -94,7 +94,6 @@
                 <span>•</span>
                 <span><i class="bi bi-calendar3"></i> Consultation Date: @Model.Record.DisplayConsultationDate.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</span>
                 <span>•</span>
-                <span class="@Model.Record.VisibilityBadgeClass" style="font-size:0.75rem;"><i class="bi @Model.Record.VisibilityIcon me-1"></i>@Model.Record.VisibilityText</span>
                 @if (!string.IsNullOrEmpty(Model.Record.PackageName))
                 {
                     <span>•</span>

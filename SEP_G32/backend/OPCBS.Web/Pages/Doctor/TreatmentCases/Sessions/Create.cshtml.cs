@@ -13,6 +13,14 @@ public class CreateModel : PageModel
     [BindProperty(SupportsGet = true)] public Guid CaseId { get; set; }
     public TreatmentCaseWebDto? TreatmentCase { get; set; }
     public string? ErrorMessage { get; set; }
+    public bool IsPackageExhausted => TreatmentCase != null &&
+        (TreatmentCase.Status == 2 ||
+         TreatmentCase.RemainingSessions <= 0 ||
+         (TreatmentCase.TotalSessions > 0 && TreatmentCase.CompletedSessions >= TreatmentCase.TotalSessions));
+
+    public string PackageExhaustedMessage => TreatmentCase == null
+        ? "This treatment case has no remaining sessions."
+        : $"This treatment package has no sessions remaining ({TreatmentCase.CompletedSessions}/{TreatmentCase.TotalSessions} completed). Create or assign a new treatment package before adding more treatment sessions.";
 
     public async Task OnGetAsync()
     {
@@ -29,6 +37,12 @@ public class CreateModel : PageModel
     {
         CaseId = caseId;
         await OnGetAsync();
+
+        if (IsPackageExhausted)
+        {
+            ErrorMessage = PackageExhaustedMessage;
+            return Page();
+        }
 
         DateTime? plannedStartTime = null;
         DateTime? plannedEndTime = null;

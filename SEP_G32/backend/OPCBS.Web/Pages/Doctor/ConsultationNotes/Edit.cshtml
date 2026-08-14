@@ -241,7 +241,7 @@
                                 </div>
                                 <div class="col-md-6" id="editRecSlotContainer" style="@(Model.Input.NextAppointmentRecommendedDate.HasValue ? "" : "display:none;")">
                                     <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                        <i class="bi bi-clock me-1"></i>Suggested Slot (Auto-booked on save)
+                                        <i class="bi bi-clock me-1"></i>Suggested Time Slot
                                     </label>
                                     <select asp-for="Input.NextAppointmentRecommendedSlotId" id="editRecSlotSelect" class="form-select" style="border-radius:10px;">
                                         <option value="">-- Select a suggested slot --</option>
@@ -249,7 +249,7 @@
                                 </div>
                             </div>
                             <div id="editRecSlotMsg" class="form-text small text-muted mt-2">
-                                <i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation record.
+                                <i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.
                             </div>
                         </div>
 
@@ -278,7 +278,7 @@
                                     }
                                 </div>
                             </div>
-                            <input type="hidden" asp-for="Input.Visibility" />
+                            <input type="hidden" asp-for="Input.Visibility" value="1" />
                         </div>
 
                         <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
@@ -362,7 +362,7 @@
                         }
                         select.appendChild(opt);
                     });
-                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation record.';
+                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.';
                 } else {
                     if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots found for this date.</span>';
                 }

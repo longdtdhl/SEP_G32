@@ -519,13 +519,13 @@ public class AppointmentService : IAppointmentService
         {
             treatmentPackage = await _packageRepo.GetByIdAsync(dto.TreatmentPackageId.Value, ct);
             if (treatmentPackage == null)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Không tìm thấy gói điều trị.");
+                return ApiResponse<AppointmentDto>.ErrorResponse("Treatment package not found.");
             if (treatmentPackage.RemainingSessions <= 0)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị đã hết phiên tư vấn.");
+                return ApiResponse<AppointmentDto>.ErrorResponse("This treatment package has no sessions remaining. Please book a regular appointment or ask the doctor to assign a new package.");
             if (treatmentPackage.Status != TreatmentPackageStatus.Active && treatmentPackage.Status != TreatmentPackageStatus.Accepted)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị chưa được kích hoạt hoặc đã bị hủy.");
+                return ApiResponse<AppointmentDto>.ErrorResponse("This treatment package is not active. Please book a regular appointment or ask the doctor to assign a new package.");
             if (treatmentPackage.ExpirationDate < DateTime.UtcNow)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Gói điều trị đã hết hạn sử dụng.");
+                return ApiResponse<AppointmentDto>.ErrorResponse("This treatment package has expired. Please book a regular appointment or ask the doctor to assign a new package.");
         }
         else if (patientProfileId.HasValue)
         {
@@ -4038,7 +4038,7 @@ public class ScheduleService : IScheduleService
             var caseSessions = allSessions.Where(s => s.TreatmentCaseId == caseItem.Id && !s.IsDeleted).ToList();
             var plannedSessionCount = caseSessions.Count(s => s.Status != TreatmentSessionStatus.Cancelled);
             if (plannedSessionCount >= caseItem.TotalSessions || caseItem.RemainingSessions <= 0)
-                return ApiResponse<AppointmentSlotDto>.ErrorResponse("This treatment case has no remaining session to schedule");
+                return ApiResponse<AppointmentSlotDto>.ErrorResponse($"This treatment package has no sessions remaining ({plannedSessionCount}/{caseItem.TotalSessions} sessions already planned or completed). Create or assign a new package before scheduling another treatment appointment.");
 
             var nextNumber = caseSessions.Count == 0 ? 1 : caseSessions.Max(s => s.SessionNumber) + 1;
             session = new TreatmentSession

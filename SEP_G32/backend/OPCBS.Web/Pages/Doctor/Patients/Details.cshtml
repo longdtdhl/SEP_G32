@@ -672,7 +672,6 @@ else
                                                     @(string.IsNullOrEmpty(note.Diagnosis) ? "No Diagnosis Specified" : note.Diagnosis)
                                                 </h6>
                                                 <div class="d-flex gap-1">
-                                                    <span class="@note.VisibilityBadgeClass" style="font-size:0.68rem;"><i class="bi @note.VisibilityIcon me-1"></i>@note.VisibilityText</span>
                                                     <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem; border-radius:5px; padding:2px 8px;">Details</a>
                                                 </div>
                                             </div>

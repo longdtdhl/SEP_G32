@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Add Custom Session";
     Layout = "_DashboardLayout";
+    var packageExhausted = Model.IsPackageExhausted;
 }
 
 <style>
@@ -49,6 +50,13 @@
                     <i class="bi bi-info-circle-fill me-1"></i>
                     This creates one planned session only. It does not auto-generate a full schedule.
                 </div>
+                @if (packageExhausted)
+                {
+                    <div class="alert alert-warning small rounded-3 mt-3 mb-0">
+                        <i class="bi bi-hourglass-split me-1"></i>
+                        @Model.PackageExhaustedMessage
+                    </div>
+                }
             </div>
         </div>
 
@@ -63,26 +71,26 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Session Title <span class="text-danger">*</span></label>
-                        <input type="text" name="title" class="form-control" placeholder="e.g. Mid-treatment evaluation and goal review" required />
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Mid-treatment evaluation and goal review" required disabled="@packageExhausted" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Description & Agenda</label>
-                        <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..."></textarea>
+                        <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..." disabled="@packageExhausted"></textarea>
                     </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-dark">Session Date</label>
-                            <input type="date" name="sessionDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <input type="date" name="sessionDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" disabled="@packageExhausted" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-dark">Start Time</label>
-                            <input type="time" name="startTime" class="form-control" />
+                            <input type="time" name="startTime" class="form-control" disabled="@packageExhausted" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-dark">End Time</label>
-                            <input type="time" name="endTime" class="form-control" />
+                            <input type="time" name="endTime" class="form-control" disabled="@packageExhausted" />
                         </div>
                     </div>
 
@@ -93,7 +101,7 @@
 
                     <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                         <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;" disabled="@packageExhausted">
                             <i class="bi bi-plus-lg"></i> Add Session to Case
                         </button>
                     </div>

@@ -514,7 +514,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         {
             await _uow.RollbackTransactionAsync(ct);
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
-                $"All {totalNeeded} sessions are already completed or scheduled. No new sessions needed.");
+                $"This treatment package has no sessions remaining. All {totalNeeded} package sessions are already completed or scheduled. Create or assign a new package before generating more treatment sessions.");
         }
 
         // ── Load slots and appointments ─────────────────────────────────
@@ -778,7 +778,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         var activeSessionCount = existingSessions.Count(s => s.Status != TreatmentSessionStatus.Cancelled);
         if (activeSessionCount >= treatmentCase.TotalSessions)
             return ApiResponse<TreatmentSessionDto>.ErrorResponse(
-                $"This treatment case already has the maximum of {treatmentCase.TotalSessions} sessions.");
+                $"This treatment package has no sessions remaining ({activeSessionCount}/{treatmentCase.TotalSessions} sessions already planned or completed). Create or assign a new package before adding more treatment sessions.");
 
         var sessionNumber = existingSessions.Any() ? existingSessions.Max(s => s.SessionNumber) + 1 : 1;
 

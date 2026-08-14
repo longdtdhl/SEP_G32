@@ -22,6 +22,28 @@
         <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error</div>
     }
 
+    @if (Model.EndedTreatmentPackage != null)
+    {
+        var endedPkg = Model.EndedTreatmentPackage;
+        <div class="alert border-0 shadow-sm mb-3" style="border-radius:14px; background:linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-left:4px solid #f59e0b !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px; height:44px; background:#f59e0b; color:white;">
+                    <i class="bi bi-hourglass-split" style="font-size:1.2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div style="font-weight:800; font-size:0.95rem; color:#92400e;">Your treatment package has ended</div>
+                    <div style="font-size:0.82rem; color:#b45309;">
+                        <strong>@endedPkg.Title</strong> has no remaining package sessions. This booking will be created as a regular appointment.
+                    </div>
+                    <div style="font-size:0.78rem; color:#d97706; margin-top:4px;">Ask your doctor to assign a new treatment package if you want to continue package-based sessions.</div>
+                </div>
+                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@endedPkg.Id" class="btn btn-outline-warning btn-sm" style="border-radius:10px;">
+                    <i class="bi bi-eye me-1"></i>View Package
+                </a>
+            </div>
+        </div>
+    }
+
     @if (Model.TreatmentPackage != null)
     {
         var tPkg = Model.TreatmentPackage;

@@ -204,7 +204,7 @@
                             </div>
                             <div class="col-md-6" id="createRecSlotContainer" style="display:none;">
                                 <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                    <i class="bi bi-clock me-1"></i>Suggested Slot (Auto-booked on save)
+                                    <i class="bi bi-clock me-1"></i>Suggested Time Slot
                                 </label>
                                 <select asp-for="Input.NextAppointmentRecommendedSlotId" id="createRecSlotSelect" class="form-select" style="border-radius:10px;">
                                     <option value="">-- Select a suggested slot --</option>
@@ -212,17 +212,17 @@
                             </div>
                         </div>
                         <div id="createRecSlotMsg" class="form-text small text-muted mt-2">
-                            <i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation note.
+                            <i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.
                         </div>
                     </div>
 
-                    <!-- Consultation Date & Visibility -->
+                    <!-- Consultation Date -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-calendar-check"></i>Consultation Date & Visibility
+                            <i class="bi bi-calendar-check"></i>Consultation Date
                         </div>
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label fw-semibold" style="font-size:0.85rem;">
                                     <i class="bi bi-calendar3 me-1"></i>Consultation Date
                                 </label>
@@ -239,17 +239,8 @@
                                     <small class="text-muted">Enter the actual consultation date</small>
                                 }
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                    <i class="bi bi-eye me-1"></i>Visibility
-                                </label>
-                                <select asp-for="Input.Visibility" class="form-select" style="border-radius:10px;">
-                                    <option value="0">🔒 Doctor Only (internal notes, clinical hypotheses)</option>
-                                    <option value="1">👁️ Patient Visible (summary, advice, homework)</option>
-                                </select>
-                                <small class="text-muted">Controls whether the patient can view this note</small>
-                            </div>
                         </div>
+                        <input type="hidden" asp-for="Input.Visibility" value="1" />
                     </div>
 
                     <!-- Action Buttons -->
@@ -328,7 +319,7 @@
                         opt.textContent = slot.label;
                         select.appendChild(opt);
                     });
-                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation note.';
+                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.';
                 } else {
                     if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots found for this date.</span>';
                 }

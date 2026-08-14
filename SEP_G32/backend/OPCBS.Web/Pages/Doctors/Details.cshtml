@@ -1022,12 +1022,6 @@
                             <i class="bi bi-calendar-check"></i> Book Appointment
                         </a>
                     }
-                    @if (isPatient)
-                    {
-                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@Model.Doctor.Id" class="dr-btn-secondary-cta">
-                            <i class="bi bi-chat-dots"></i> Send Message
-                        </a>
-                    }
                 </div>
 
             </div>

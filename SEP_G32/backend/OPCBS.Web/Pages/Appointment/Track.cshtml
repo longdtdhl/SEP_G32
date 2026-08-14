@@ -99,6 +99,27 @@
     }
 
     /* ── Compact Status Timeline ── */
+    .track-status-badge {
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 0.82rem;
+        font-weight: 800;
+        gap: 0.4rem;
+        line-height: 1.2;
+        padding: 0.5rem 0.8rem;
+        white-space: normal;
+    }
+    .track-status-pending { background: #fff4d6; border-color: #f59e0b; color: #92400e; }
+    .track-status-confirmed { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
+    .track-status-progress { background: #ede9fe; border-color: #7c3aed; color: #4c1d95; }
+    .track-status-completion { background: #ccfbf1; border-color: #14b8a6; color: #115e59; }
+    .track-status-completed { background: #dcfce7; border-color: #22c55e; color: #14532d; }
+    .track-status-cancelled,
+    .track-status-danger { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+    .track-status-muted { background: #e2e8f0; border-color: #94a3b8; color: #334155; }
+
     .timeline-steps {
         display: flex;
         align-items: flex-start;
@@ -334,73 +355,73 @@
                     <div>
                         @if (apt.Status == 9)
                         {
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-pending">
                                 <i class="bi bi-envelope-check me-1"></i>Awaiting Email Confirmation
                             </span>
                         }
                         else if (apt.Status == 0)
                         {
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-pending">
                                 <i class="bi bi-clock-history me-1"></i>Pending Doctor Approval
                             </span>
                         }
                         else if (apt.Status == 1)
                         {
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-confirmed">
                                 <i class="bi bi-check-circle-fill me-1"></i>Confirmed
                             </span>
                         }
                         else if (apt.Status == 3)
                         {
-                            <span class="badge px-3 py-1.5 rounded-pill fs-7 fw-semibold" style="background:#ede9fe; color:#4338ca; border:1px solid #c7d2fe;">
+                            <span class="track-status-badge track-status-progress">
                                 <i class="bi bi-camera-video-fill me-1"></i>In Progress
                             </span>
                         }
                         else if (apt.Status == 10 || apt.Status == 7)
                         {
-                            <span class="badge px-3 py-1.5 rounded-pill fs-7 fw-semibold" style="background:#ccfbf1; color:#115e59; border:1px solid #99f6e4;">
+                            <span class="track-status-badge track-status-completion">
                                 <i class="bi bi-hourglass-split me-1"></i>Awaiting Completion Confirmation
                             </span>
                         }
                         else if (apt.Status == 4)
                         {
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-completed">
                                 <i class="bi bi-patch-check-fill me-1"></i>Completed
                             </span>
                         }
                         else if (apt.Status == 5)
                         {
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-cancelled">
                                 <i class="bi bi-x-circle-fill me-1"></i>Cancelled
                             </span>
                         }
                         else if (apt.Status == 2)
                         {
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-muted">
                                 <i class="bi bi-slash-circle me-1"></i>Declined by Doctor
                             </span>
                         }
                         else if (apt.Status == 6)
                         {
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-pending">
                                 <i class="bi bi-arrow-repeat me-1"></i>Reschedule Requested
                             </span>
                         }
                         else if (apt.Status == 8)
                         {
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-danger">
                                 <i class="bi bi-person-x-fill me-1"></i>No Show
                             </span>
                         }
                         else if (apt.Status == 11)
                         {
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-danger">
                                 <i class="bi bi-shield-exclamation me-1"></i>Disputed (Under Support Review)
                             </span>
                         }
                         else
                         {
-                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-1.5 rounded-pill fs-7 fw-semibold">
+                            <span class="track-status-badge track-status-confirmed">
                                 Scheduled Session
                             </span>
                         }

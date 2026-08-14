@@ -118,7 +118,7 @@ public class CreateModel : PageModel
                 id = s.Id,
                 startTime = s.StartTime,
                 endTime = s.EndTime,
-                label = $"{s.StartTime} - {s.EndTime} ({s.Price:N0} VNĐ)"
+                label = $"{s.StartTime} - {s.EndTime}"
             })
             .ToList();
 

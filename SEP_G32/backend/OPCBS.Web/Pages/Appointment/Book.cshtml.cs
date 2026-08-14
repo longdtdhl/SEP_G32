@@ -26,6 +26,7 @@ public class BookModel : PageModel
     public bool CanUsePublicBooking => IsGuest || User.IsInRole("Patient");
     public string? Error { get; set; }
     public TreatmentPackageDto? TreatmentPackage { get; set; }
+    public TreatmentPackageDto? EndedTreatmentPackage { get; set; }
     public bool HasPackageButNotBookingVia { get; set; }
 
     // Week data
@@ -110,7 +111,16 @@ public class BookModel : PageModel
                 try
                 {
                     var (pkgData, _) = await _treatmentService.GetByIdAsync(TreatmentPackageId.Value);
-                    TreatmentPackage = pkgData;
+                    if (pkgData != null && IsTreatmentPackageBookable(pkgData))
+                    {
+                        TreatmentPackage = pkgData;
+                    }
+                    else if (pkgData != null)
+                    {
+                        EndedTreatmentPackage = pkgData;
+                        TreatmentPackageId = null;
+                        Input.TreatmentPackageId = null;
+                    }
                 }
                 catch { }
             }
@@ -129,6 +139,14 @@ public class BookModel : PageModel
                     {
                         TreatmentPackage = activePkg;
                         HasPackageButNotBookingVia = true;
+                    }
+                    else
+                    {
+                        EndedTreatmentPackage = pkgs
+                            .Where(p => (p.DoctorProfileId == resolvedDoctorProfileId || p.DoctorId == DoctorId.Value) &&
+                                        IsTreatmentPackageEnded(p))
+                            .OrderByDescending(p => p.ActiveDate ?? p.AcceptedDate ?? p.AssignedDate ?? p.CreatedAt)
+                            .FirstOrDefault();
                     }
                 }
                 catch { }
@@ -199,6 +217,21 @@ public class BookModel : PageModel
                 catch { }
             }
         }
+    }
+
+    private static bool IsTreatmentPackageBookable(TreatmentPackageDto package)
+    {
+        return (package.Status == "Active" || package.Status == "Accepted") &&
+               !package.IsExpired &&
+               package.RemainingSessions > 0;
+    }
+
+    private static bool IsTreatmentPackageEnded(TreatmentPackageDto package)
+    {
+        return package.Status == "Completed" ||
+               package.Status == "Expired" ||
+               package.RemainingSessions <= 0 ||
+               package.IsExpired;
     }
 
     [BindProperty(SupportsGet = true)] public string? SelectedDate { get; set; }
