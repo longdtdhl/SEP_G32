@@ -27,12 +27,13 @@ public class ScheduleNotesController : ControllerBase
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] Guid? appointmentSlotId = null)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var result = await _scheduleService.GetNotesAsync(userId.Value, search, category, fromDate, toDate, page, pageSize);
+        var result = await _scheduleService.GetNotesAsync(userId.Value, search, category, fromDate, toDate, page, pageSize, appointmentSlotId);
         return Ok(result);
     }
 

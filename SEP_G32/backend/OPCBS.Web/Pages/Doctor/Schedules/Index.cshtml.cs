@@ -1,55 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Doctor.Schedules;
 
-public class ScheduleNoteItemDto
-{
-    public Guid Id { get; set; }
-    public Guid SlotId { get; set; }
-    public bool IsSlotNote { get; set; }
-    public string Date { get; set; } = string.Empty;
-    public string TimeRange { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public string Category { get; set; } = "General Schedule";
-    public string CreatedAtDisplay { get; set; } = string.Empty;
-
-    // Structured Patient & Treatment info
-    public string PatientName { get; set; } = "General availability";
-    public string? PatientAvatar { get; set; }
-    public Guid? PatientId { get; set; }
-    public string TreatmentInfo { get; set; } = "N/A";
-    public Guid? RelatedAppointmentId { get; set; }
-    public string AppointmentStatus { get; set; } = string.Empty;
-}
-
 public class IndexModel : PageModel
 {
     private readonly IScheduleApiService _api;
-    public IndexModel(IScheduleApiService api) => _api = api;
+    private readonly IAppointmentApiService _appointmentApi;
 
-    [BindProperty(SupportsGet = true)] public string Tab { get; set; } = "schedule";
+    public IndexModel(IScheduleApiService api, IAppointmentApiService appointmentApi)
+    {
+        _api = api;
+        _appointmentApi = appointmentApi;
+    }
+
     [BindProperty(SupportsGet = true)] public string View { get; set; } = "week";
     [BindProperty(SupportsGet = true)] public string Date { get; set; } = "";
-    [BindProperty(SupportsGet = true)] public string SearchNote { get; set; } = "";
-    [BindProperty(SupportsGet = true)] public string NoteCategory { get; set; } = "";
-    [BindProperty(SupportsGet = true)] public string NoteDate { get; set; } = "";
-    [BindProperty(SupportsGet = true)] public string NoteSort { get; set; } = "newest";
-    [BindProperty(SupportsGet = true)] public int NotePage { get; set; } = 1;
 
     public List<DayOffDto> DaysOff { get; set; } = new();
     public List<AppointmentSlotDto> ActualSlots { get; set; } = new();
     public List<CalendarEventDto> CalendarEvents { get; set; } = new();
-    public List<ScheduleNoteItemDto> ScheduleNotes { get; set; } = new();
-    public List<ScheduleNoteItemDto> PaginatedNotes { get; set; } = new();
     public List<EligibleTreatmentPatientDto> EligiblePatients { get; set; } = new();
-
-    public int TotalNoteItems { get; set; }
-    public int TotalNotePages { get; set; }
-    public int PageSize { get; set; } = 10;
+    public List<ScheduleNoteWebDto> AllNotes { get; set; } = new();
 
     public string? Error { get; set; }
     public string? Success { get; set; }
@@ -64,8 +39,6 @@ public class IndexModel : PageModel
     public int PeriodAvailableSlots { get; set; }
     public int PeriodBookedSlots { get; set; }
     public int PeriodBlockedSlots { get; set; }
-    public int PeriodDaysOffCount { get; set; }
-    public int PeriodNotesCount { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -82,7 +55,7 @@ public class IndexModel : PageModel
             SelectedDate = DateTime.Today;
         }
 
-        // Calculate period date range based on view [PeriodStart, PeriodEnd) (start inclusive, end exclusive)
+        // Calculate period date range based on view [PeriodStart, PeriodEnd)
         View = (View ?? "week").ToLowerInvariant();
         if (View == "day")
         {
@@ -109,18 +82,19 @@ public class IndexModel : PageModel
 
         // Load data from API
         var (events, err1) = await _api.GetCalendarEventsAsync(PeriodStart, PeriodEnd);
-        var (slotsData, err3) = await _api.GetMySlotsAsync();
-        var (eligiblePatients, err2) = await _api.GetEligibleTreatmentPatientsAsync();
+        var (slotsData, err2) = await _api.GetMySlotsAsync();
+        var (eligiblePatients, err3) = await _api.GetEligibleTreatmentPatientsAsync();
         var (notesData, err4) = await _api.GetNotesAsync(null, null, null, null, 1, 1000);
 
-        // Calendar events excluding DayOff and Note events (notes live in dedicated Notes tab)
+        // Exclude standalone DayOff or Note events from calendar cards (notes are shown in drawers)
         CalendarEvents = events.Where(e => !string.Equals(e.EventType, "DayOff", StringComparison.OrdinalIgnoreCase) &&
                                            !string.Equals(e.EventType, "Note", StringComparison.OrdinalIgnoreCase)).ToList();
         ActualSlots = slotsData?.Slots ?? new();
         EligiblePatients = eligiblePatients ?? new();
+        AllNotes = notesData ?? new();
         Error = Error ?? err1 ?? err2 ?? err3 ?? err4;
 
-        // Calculate summary statistics strictly for current period
+        // Summary statistics for current period
         var pStart = DateOnly.FromDateTime(PeriodStart);
         var pEnd = DateOnly.FromDateTime(PeriodEnd);
 
@@ -128,89 +102,17 @@ public class IndexModel : PageModel
         PeriodAvailableSlots = ActualSlots.Count(s => DateOnly.TryParse(s.Date, out var d) && d >= pStart && d < pEnd && s.Status == 0);
         PeriodBookedSlots = ActualSlots.Count(s => DateOnly.TryParse(s.Date, out var d) && d >= pStart && d < pEnd && s.Status == 1);
         PeriodBlockedSlots = ActualSlots.Count(s => DateOnly.TryParse(s.Date, out var d) && d >= pStart && d < pEnd && s.Status == 2);
-        PeriodDaysOffCount = DaysOff.Count(d => d.StartDate.Date < PeriodEnd && d.EndDate.Date >= PeriodStart);
-
-        // Build Schedule Notes list from dedicated ScheduleNote API
-        var notesList = (notesData ?? new()).Select(n => new ScheduleNoteItemDto
-        {
-            Id = n.Id,
-            SlotId = Guid.Empty,
-            IsSlotNote = false,
-            Date = n.Date,
-            TimeRange = !string.IsNullOrWhiteSpace(n.StartTime) && !string.IsNullOrWhiteSpace(n.EndTime) ? $"{n.StartTime} - {n.EndTime}" : "All day",
-            Title = n.Title,
-            Content = n.Content,
-            Category = n.Category,
-            CreatedAtDisplay = n.CreatedAt.ToString("MMM dd, yyyy HH:mm"),
-            PatientName = n.PatientName ?? "General availability",
-            PatientId = n.PatientId,
-            TreatmentInfo = n.TreatmentCaseName ?? "N/A"
-        }).ToList();
-
-        // Older availability and treatment slot notes were stored on AppointmentSlot.Notes.
-        // Keep them visible in the dedicated notes tab while preserving the correct update target.
-        notesList.AddRange(ActualSlots
-            .Where(slot => !string.IsNullOrWhiteSpace(slot.Notes))
-            .Select(slot => new ScheduleNoteItemDto
-            {
-                Id = slot.Id,
-                SlotId = slot.Id,
-                IsSlotNote = true,
-                Date = slot.Date,
-                TimeRange = $"{slot.StartTime} - {slot.EndTime}",
-                Title = "Schedule slot note",
-                Content = slot.Notes!.Trim(),
-                Category = "Slot note",
-                CreatedAtDisplay = slot.Date,
-                PatientName = "Related schedule slot",
-                TreatmentInfo = "Availability or treatment scheduling"
-            }));
-
-        if (!string.IsNullOrWhiteSpace(SearchNote))
-        {
-            var term = SearchNote.Trim();
-            notesList = notesList.Where(note =>
-                note.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                note.Content.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                note.PatientName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        if (!string.IsNullOrWhiteSpace(NoteCategory))
-        {
-            notesList = notesList.Where(note => string.Equals(note.Category, NoteCategory, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        // Apply Date filter
-        if (!string.IsNullOrWhiteSpace(NoteDate))
-        {
-            notesList = notesList.Where(n => n.Date == NoteDate).ToList();
-        }
-
-        // Apply Sorting
-        if (NoteSort == "oldest")
-        {
-            notesList = notesList.OrderBy(n => n.Date).ThenBy(n => n.TimeRange).ToList();
-        }
-        else
-        {
-            notesList = notesList.OrderByDescending(n => n.Date).ThenByDescending(n => n.TimeRange).ToList();
-        }
-
-        ScheduleNotes = notesList;
-        PeriodNotesCount = ScheduleNotes.Count;
-
-        // Pagination
-        PageSize = 10;
-        TotalNoteItems = ScheduleNotes.Count;
-        TotalNotePages = (int)Math.Ceiling(TotalNoteItems / (double)PageSize);
-        if (TotalNotePages < 1) TotalNotePages = 1;
-        if (NotePage < 1) NotePage = 1;
-        if (NotePage > TotalNotePages) NotePage = TotalNotePages;
-
-        PaginatedNotes = ScheduleNotes.Skip((NotePage - 1) * PageSize).Take(PageSize).ToList();
     }
 
-    public async Task<IActionResult> OnPostCreateSlotAsync(string date, string startTime, string endTime, string? notes, int? maxPatients)
+    public async Task<IActionResult> OnPostCreateSlotAsync(
+        string date,
+        string startTime,
+        string endTime,
+        string? notes,
+        int? maxPatients,
+        ConsultationMode consultationMode = ConsultationMode.Both,
+        string? preAppointmentNoteTitle = null,
+        bool isPreAppointmentNoteRequired = false)
     {
         var dto = new CreateSlotDto
         {
@@ -218,7 +120,10 @@ public class IndexModel : PageModel
             StartTime = startTime,
             EndTime = endTime,
             Notes = notes,
-            MaxPatients = maxPatients ?? 1
+            MaxPatients = maxPatients ?? 1,
+            ConsultationMode = consultationMode,
+            PreAppointmentNoteTitle = preAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = isPreAppointmentNoteRequired
         };
         var (data, error) = await _api.CreateSlotAsync(dto);
         if (error != null) TempData["Error"] = error;
@@ -226,7 +131,16 @@ public class IndexModel : PageModel
         return RedirectToPage(new { view = View, date = date });
     }
 
-    public async Task<IActionResult> OnPostUpdateSlotAsync(Guid slotId, string? startTime, string? endTime, string? notes, int? maxPatients, int? status)
+    public async Task<IActionResult> OnPostUpdateSlotAsync(
+        Guid slotId,
+        string? startTime,
+        string? endTime,
+        string? notes,
+        int? maxPatients,
+        int? status,
+        ConsultationMode? consultationMode = null,
+        string? preAppointmentNoteTitle = null,
+        bool? isPreAppointmentNoteRequired = null)
     {
         var dto = new UpdateSlotDto
         {
@@ -234,11 +148,22 @@ public class IndexModel : PageModel
             EndTime = endTime,
             Notes = notes,
             MaxPatients = maxPatients,
-            Status = status
+            Status = status,
+            ConsultationMode = consultationMode,
+            PreAppointmentNoteTitle = preAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = isPreAppointmentNoteRequired
         };
         var (success, error) = await _api.UpdateSlotAsync(slotId, dto);
         if (!success) TempData["Error"] = error;
         else TempData["Success"] = "Slot updated successfully.";
+        return RedirectToPage(new { view = View, date = Date });
+    }
+
+    public async Task<IActionResult> OnPostUpdateSlotNotesAsync(Guid slotId, string? notes)
+    {
+        var (success, error) = await _api.UpdateSlotNotesAsync(slotId, notes);
+        if (!success) TempData["Error"] = error ?? "Failed to save slot notes.";
+        else TempData["Success"] = "Slot notes saved successfully.";
         return RedirectToPage(new { view = View, date = Date });
     }
 
@@ -280,10 +205,11 @@ public class IndexModel : PageModel
         return RedirectToPage(new { view = View, date = Date });
     }
 
-    public async Task<IActionResult> OnPostCreateNoteAsync(string date, string? startTime, string? endTime, string noteTitle, string noteContent, string? category, Guid? patientId, Guid? treatmentCaseId)
+    public async Task<IActionResult> OnPostCreateNoteAsync(string date, string? startTime, string? endTime, string noteTitle, string noteContent, string? category, Guid? patientId, Guid? treatmentCaseId, Guid? appointmentSlotId)
     {
         var dto = new CreateScheduleNoteWebDto
         {
+            AppointmentSlotId = appointmentSlotId,
             Date = date,
             StartTime = startTime,
             EndTime = endTime,
@@ -295,60 +221,53 @@ public class IndexModel : PageModel
         };
         var (data, error) = await _api.CreateNoteAsync(dto);
         if (error != null) TempData["Error"] = error;
-        else TempData["Success"] = "Schedule note created successfully.";
-        return RedirectToPage(new { tab = "notes", view = View, date = Date });
+        else TempData["Success"] = "Note saved successfully.";
+        return RedirectToPage(new { view = View, date = Date });
+    }
+
+    public async Task<IActionResult> OnGetNotesAsync(Guid? appointmentSlotId)
+    {
+        if (!appointmentSlotId.HasValue || appointmentSlotId.Value == Guid.Empty)
+        {
+            return new JsonResult(new { success = true, data = new List<ScheduleNoteWebDto>() });
+        }
+
+        var (notesData, error) = await _api.GetNotesAsync(appointmentSlotId: appointmentSlotId.Value, pageSize: 100);
+        if (error != null)
+        {
+            return new JsonResult(new { success = false, message = error, data = new List<ScheduleNoteWebDto>() });
+        }
+        return new JsonResult(new { success = true, data = notesData ?? new List<ScheduleNoteWebDto>() });
     }
 
     public async Task<IActionResult> OnPostUpdateNoteAsync(Guid? noteId, Guid? slotId, bool isSlotNote, string noteContent)
     {
-        if (isSlotNote)
+        if (isSlotNote && slotId.HasValue)
         {
-            if (!slotId.HasValue)
-            {
-                TempData["Error"] = "Schedule slot note was not found.";
-            }
-            else
-            {
-                var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, noteContent);
-                TempData[success ? "Success" : "Error"] = success ? "Schedule slot note updated." : error;
-            }
+            var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, noteContent);
+            TempData[success ? "Success" : "Error"] = success ? "Slot note updated." : error;
         }
-        else if (!noteId.HasValue)
-        {
-            TempData["Error"] = "Schedule note was not found.";
-        }
-        else
+        else if (noteId.HasValue)
         {
             var (data, error) = await _api.UpdateNoteAsync(noteId.Value, new UpdateScheduleNoteWebDto { Content = noteContent });
-            TempData[data != null ? "Success" : "Error"] = data != null ? "Schedule note updated successfully." : error ?? "Unable to update the schedule note.";
+            TempData[data != null ? "Success" : "Error"] = data != null ? "Note updated successfully." : error ?? "Unable to update note.";
         }
-        return RedirectToPage(new { tab = "notes", view = View, date = Date });
+        return RedirectToPage(new { view = View, date = Date });
     }
 
     public async Task<IActionResult> OnPostDeleteNoteAsync(Guid? noteId, Guid? slotId, bool isSlotNote)
     {
-        if (isSlotNote)
+        if (isSlotNote && slotId.HasValue)
         {
-            if (!slotId.HasValue)
-            {
-                TempData["Error"] = "Schedule slot note was not found.";
-            }
-            else
-            {
-                var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, null);
-                TempData[success ? "Success" : "Error"] = success ? "Schedule slot note removed." : error;
-            }
+            var (success, error) = await _api.UpdateSlotNotesAsync(slotId.Value, null);
+            TempData[success ? "Success" : "Error"] = success ? "Slot note removed." : error;
         }
-        else if (!noteId.HasValue)
-        {
-            TempData["Error"] = "Schedule note was not found.";
-        }
-        else
+        else if (noteId.HasValue)
         {
             var (success, error) = await _api.DeleteNoteAsync(noteId.Value);
-            TempData[success ? "Success" : "Error"] = success ? "Schedule note deleted." : error;
+            TempData[success ? "Success" : "Error"] = success ? "Note deleted." : error;
         }
-        return RedirectToPage(new { tab = "notes", view = View, date = Date });
+        return RedirectToPage(new { view = View, date = Date });
     }
 
     public async Task<IActionResult> OnPostAssignTreatmentSlotAsync(Guid slotId, Guid patientId, Guid treatmentCaseId, Guid treatmentSessionId, string? notes)
@@ -406,7 +325,16 @@ public class IndexModel : PageModel
         return RedirectToPage(new { view = View, date = date });
     }
 
-    public async Task<IActionResult> OnPostGenerateWeeklyScheduleAsync(List<DayOfWeek> workingDays, string startTime, string endTime, int slotDurationMinutes, int defaultMaxPatients, string startDate, int weeksToApply, string? defaultNotes)
+    public async Task<IActionResult> OnPostGenerateWeeklyScheduleAsync(
+        List<DayOfWeek> workingDays,
+        string startTime,
+        string endTime,
+        int slotDurationMinutes,
+        int defaultMaxPatients,
+        string startDate,
+        int weeksToApply,
+        string? defaultNotes,
+        ConsultationMode consultationMode = ConsultationMode.Both)
     {
         var timeRanges = new List<WeeklyScheduleRangeDto>
         {
@@ -422,12 +350,29 @@ public class IndexModel : PageModel
             DefaultMaxPatients = defaultMaxPatients > 0 ? defaultMaxPatients : 1,
             StartDate = string.IsNullOrWhiteSpace(startDate) ? DateTime.Today.ToString("yyyy-MM-dd") : startDate,
             WeeksToApply = weeksToApply > 0 ? weeksToApply : 4,
-            DefaultNotes = defaultNotes
+            DefaultNotes = defaultNotes,
+            ConsultationMode = consultationMode
         };
 
         var (count, error) = await _api.GenerateWeeklyScheduleAsync(dto);
         if (error != null) TempData["Error"] = error;
         else TempData["Success"] = $"Successfully generated {count} slot(s) for your weekly schedule.";
         return RedirectToPage(new { view = View, date = startDate });
+    }
+
+    public async Task<IActionResult> OnPostCancelAppointmentAsync(Guid appointmentId, string? reason)
+    {
+        var (success, error) = await _appointmentApi.CancelAsync(appointmentId, new CancelAppointmentDto { Reason = reason });
+        if (!success) TempData["Error"] = error ?? "Failed to cancel appointment.";
+        else TempData["Success"] = "Appointment cancelled successfully.";
+        return RedirectToPage(new { view = View, date = Date });
+    }
+
+    public async Task<IActionResult> OnPostConfirmAppointmentAsync(Guid appointmentId)
+    {
+        var (success, error) = await _appointmentApi.ConfirmAsync(appointmentId);
+        if (!success) TempData["Error"] = error ?? "Failed to approve appointment.";
+        else TempData["Success"] = "Appointment approved successfully.";
+        return RedirectToPage(new { view = View, date = Date });
     }
 }

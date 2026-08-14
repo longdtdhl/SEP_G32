@@ -21,6 +21,11 @@ public class CreateAppointmentDto
     public string? GuestName { get; set; }
     public string? GuestEmail { get; set; }
     public string? GuestPhoneNumber { get; set; }
+    public string? GuestZaloNumber { get; set; }
+
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
+    public string? PatientAddress { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -37,7 +42,9 @@ public class AppointmentDto
     public string? PatientName { get; set; }
     public string? PatientEmail { get; set; }
     public string? GuestEmail { get; set; }
+    public string? GuestZaloNumber { get; set; }
     public string ConsultationMode { get; set; } = "Tư vấn Trực tuyến (Online)";
+    public ConsultationMode ConsultationModeEnum { get; set; } = OPCBS.Domain.Enums.ConsultationMode.Online;
     public required string AppointmentDate { get; set; }
     public required string StartTime { get; set; }
     public required string EndTime { get; set; }
@@ -48,6 +55,11 @@ public class AppointmentDto
     public string? Expectations { get; set; }
     public DateTime CreatedAt { get; set; }
     public decimal? Fee { get; set; }
+    public string? DoctorAddress { get; set; }
+    public string? PatientAddress { get; set; }
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
     public Guid? TreatmentPackageId { get; set; }
     public Guid? TreatmentCaseId { get; set; }
     public Guid? TreatmentSessionId { get; set; }
@@ -81,6 +93,8 @@ public class AppointmentListItemDto
     public string? EndTime { get; set; }
     public AppointmentStatus Status { get; set; }
     public decimal? Fee { get; set; }
+    public string ConsultationMode { get; set; } = "Online";
+    public OPCBS.Domain.Enums.ConsultationMode ConsultationModeEnum { get; set; } = OPCBS.Domain.Enums.ConsultationMode.Online;
     public Guid? TreatmentPackageId { get; set; }
     public Guid? ProposedSlotId { get; set; }
     public string? ProposedSlotDate { get; set; }
@@ -162,7 +176,6 @@ public class RescheduleAppointmentDto
     public string? Reason { get; set; }
 }
 
-
 /// <summary>
 /// Complete appointment request DTO
 /// </summary>
@@ -184,7 +197,11 @@ public class AppointmentSlotDto
     public decimal? Price { get; set; }
     public string? Notes { get; set; }
     public int MaxPatients { get; set; } = 1;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
     public int CurrentBookings { get; set; } = 0;
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -215,6 +232,11 @@ public class ConsultationNoteDto
     public string? TherapyPlan { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
+    public string? NextAppointmentRecommendedSlotStartTime { get; set; }
+    public string? NextAppointmentRecommendedSlotEndTime { get; set; }
+    public Guid? FollowUpAppointmentId { get; set; }
+    public string? FollowUpAppointmentBookingCode { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
     public string? PackageName { get; set; }
@@ -231,6 +253,8 @@ public class ConsultationNoteDto
     public string? WalkInPatientName { get; set; }
     public string? WalkInPatientPhone { get; set; }
     public string? WalkInPatientEmail { get; set; }
+
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 public class PatientRecordDto
@@ -295,8 +319,10 @@ public class CreateConsultationNoteDto
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -309,8 +335,11 @@ public class UpdateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -391,4 +420,3 @@ public class AppointmentClinicalContextDto
     public List<RecentAssessmentResultDto> RecentAssessments { get; set; } = new();
     public AppointmentTreatmentCaseContextDto? TreatmentCaseContext { get; set; }
 }
-

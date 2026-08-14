@@ -79,6 +79,18 @@ public class ConsultationNote : BaseEntity
     /// <summary>Next appointment recommendation date (if applicable)</summary>
     public DateTime? NextAppointmentRecommendedDate { get; set; }
 
+    /// <summary>Next appointment recommendation slot ID (if applicable)</summary>
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
+
+    /// <summary>Navigation property to recommended slot</summary>
+    public virtual AppointmentSlot? NextAppointmentRecommendedSlot { get; set; }
+
+    /// <summary>Follow-up appointment ID created when patient confirms recommendation</summary>
+    public Guid? FollowUpAppointmentId { get; set; }
+
+    /// <summary>Navigation property to created follow-up appointment</summary>
+    public virtual Appointment? FollowUpAppointment { get; set; }
+
     /// <summary>Date of the consultation. Auto-filled from appointment if linked, otherwise doctor inputs manually.</summary>
     public DateTime? ConsultationDate { get; set; }
 
@@ -109,6 +121,7 @@ public class ConsultationNote : BaseEntity
     /// <summary>Navigation property to PatientRecord</summary>
     public virtual required PatientRecord PatientRecord { get; set; }
 }
+
 /// <summary>
 /// Treatment package entity - custom package created by doctor for specific patient
 /// NOT paid through VNPay, only Service Packages are paid

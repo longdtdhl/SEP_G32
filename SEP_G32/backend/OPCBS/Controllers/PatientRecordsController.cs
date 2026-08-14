@@ -127,6 +127,28 @@ public class PatientRecordsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("{id}/create-account")]
+    public async Task<IActionResult> CreateGuestAccount(Guid id)
+    {
+        var doctorId = GetUserId();
+        if (doctorId == null) return Unauthorized();
+
+        var result = await _service.CreateAccountForGuestAsync(doctorId.Value, id);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("{id}/resend-invitation")]
+    public async Task<IActionResult> ResendGuestAccountInvitation(Guid id)
+    {
+        var doctorId = GetUserId();
+        if (doctorId == null) return Unauthorized();
+
+        var result = await _service.ResendGuestAccountInvitationAsync(doctorId.Value, id);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.SystemAdmin)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRecordDto dto)

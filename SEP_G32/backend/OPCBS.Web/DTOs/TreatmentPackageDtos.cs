@@ -29,6 +29,10 @@ public class TreatmentPackageDto
     public DateTime? CancellationRequestedAt { get; set; }
     public string? CancellationReason { get; set; }
 
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
+    public List<CustomClinicalFieldDto> BasicInformationFields => CustomFields?.Where(f => f.SectionKey == "BasicInformation").ToList() ?? new();
+    public List<CustomClinicalFieldDto> ClinicalGuidelinesFields => CustomFields?.Where(f => f.SectionKey == "ClinicalGuidelines").ToList() ?? new();
+
     // Aliases for views
     public string Title => Name;
     public int TotalSessions => SessionQuantity;
@@ -52,6 +56,42 @@ public class CreateTreatmentPackageDto
     public int ValidityDays { get; set; } = 90;
     public int RecommendedSessionsPerWeek { get; set; } = 1;
 
+    public List<CreateCustomClinicalFieldDto> BasicInformationFields { get; set; } = new();
+    public List<CreateCustomClinicalFieldDto> ClinicalGuidelinesFields { get; set; } = new();
+
+    public List<CreateCustomClinicalFieldDto>? CustomFields
+    {
+        get
+        {
+            var list = new List<CreateCustomClinicalFieldDto>();
+            if (BasicInformationFields != null)
+            {
+                foreach (var f in BasicInformationFields)
+                {
+                    f.SectionKey = "BasicInformation";
+                    list.Add(f);
+                }
+            }
+            if (ClinicalGuidelinesFields != null)
+            {
+                foreach (var f in ClinicalGuidelinesFields)
+                {
+                    f.SectionKey = "ClinicalGuidelines";
+                    list.Add(f);
+                }
+            }
+            return list;
+        }
+        set
+        {
+            if (value != null)
+            {
+                BasicInformationFields = value.Where(f => f.SectionKey == "BasicInformation").ToList();
+                ClinicalGuidelinesFields = value.Where(f => f.SectionKey == "ClinicalGuidelines").ToList();
+            }
+        }
+    }
+
     // Read-write aliases for Razor form binding
     public string Title { get => Name; set => Name = value; }
     public int TotalSessions { get => SessionQuantity; set => SessionQuantity = value; }
@@ -68,6 +108,42 @@ public class UpdateTreatmentPackageDto
     public int ValidityDays { get; set; } = 90;
     public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
+
+    public List<CreateCustomClinicalFieldDto> BasicInformationFields { get; set; } = new();
+    public List<CreateCustomClinicalFieldDto> ClinicalGuidelinesFields { get; set; } = new();
+
+    public List<CreateCustomClinicalFieldDto>? CustomFields
+    {
+        get
+        {
+            var list = new List<CreateCustomClinicalFieldDto>();
+            if (BasicInformationFields != null)
+            {
+                foreach (var f in BasicInformationFields)
+                {
+                    f.SectionKey = "BasicInformation";
+                    list.Add(f);
+                }
+            }
+            if (ClinicalGuidelinesFields != null)
+            {
+                foreach (var f in ClinicalGuidelinesFields)
+                {
+                    f.SectionKey = "ClinicalGuidelines";
+                    list.Add(f);
+                }
+            }
+            return list;
+        }
+        set
+        {
+            if (value != null)
+            {
+                BasicInformationFields = value.Where(f => f.SectionKey == "BasicInformation").ToList();
+                ClinicalGuidelinesFields = value.Where(f => f.SectionKey == "ClinicalGuidelines").ToList();
+            }
+        }
+    }
 
     // Read-write aliases for Razor form binding
     public string Title { get => Name; set => Name = value; }

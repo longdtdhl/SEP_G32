@@ -15,6 +15,11 @@ public class ConsultationNoteDto
     public string? TherapyPlan { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
+    public string? NextAppointmentRecommendedSlotStartTime { get; set; }
+    public string? NextAppointmentRecommendedSlotEndTime { get; set; }
+    public Guid? FollowUpAppointmentId { get; set; }
+    public string? FollowUpAppointmentBookingCode { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
     public string? PackageName { get; set; }
@@ -31,6 +36,8 @@ public class ConsultationNoteDto
     public string? WalkInPatientName { get; set; }
     public string? WalkInPatientPhone { get; set; }
     public string? WalkInPatientEmail { get; set; }
+
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
 
     // Aliases for views
     public DateTime DisplayConsultationDate => ConsultationDate ?? CreatedAt;
@@ -75,12 +82,14 @@ public class CreateConsultationNoteDto
     public string? PrescriptionInfo { get; set; }
     public string? PrivateNotes { get; set; }
     public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public string ConsultationSummary { get; set; } = string.Empty;
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 
     // Walk-in patient fields
     public string? WalkInPatientName { get; set; }
@@ -99,8 +108,11 @@ public class UpdateConsultationNoteDto
     public string? Recommendation { get; set; }
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
+    public DateTime? NextAppointmentRecommendedDate { get; set; }
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
     public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 
     // Read-write aliases for Razor form binding
     public string? Notes { get => ConsultationSummary; set => ConsultationSummary = value ?? ""; }

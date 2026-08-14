@@ -353,7 +353,10 @@ public class TreatmentNormalizationTests
             BookingCode = "BC-102",
             AppointmentSlot = null!,
             Doctor = null!,
-            Status = AppointmentStatus.Approved
+            Status = AppointmentStatus.Completed,
+            TreatmentCaseId = caseId,
+            TreatmentSessionId = session1Id,
+            CompletedAt = DateTime.UtcNow
         };
 
         _sessionRepo.Setup(r => r.GetByIdAsync(session1Id, It.IsAny<CancellationToken>())).ReturnsAsync(session1);
@@ -711,7 +714,9 @@ public class TreatmentNormalizationTests
             DoctorId = doctorUserId,
             PatientId = patientProfileId,
             Status = TreatmentCaseStatus.Active,
-            CaseName = "CBT Anxiety Protocol"
+            CaseName = "CBT Anxiety Protocol",
+            TotalSessions = 1,
+            RemainingSessions = 1
         };
 
         var session = new TreatmentSession

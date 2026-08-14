@@ -125,22 +125,22 @@
         <div class="col-lg-8">
             <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
                 <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
-                <input type="text" name="search" value="@Model.Filter.Search" class="form-control"
+                <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control"
                        placeholder="Search by doctor name or specialization..." 
                        style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
-                <input type="hidden" name="specialization" value="@Model.Filter.Specialization" />
+                <input type="hidden" name="Filter.SpecializationId" value="@Model.Filter.SpecializationId" />
             </form>
         </div>
         <div class="col-lg-4">
             <form method="get">
-                <input type="hidden" name="search" value="@Model.Filter.Search" />
-                <select name="specialization" class="form-select" 
+                <input type="hidden" name="Filter.Search" value="@Model.Filter.Search" />
+                <select name="Filter.SpecializationId" class="form-select" 
                         style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
                         onchange="this.form.submit()">
                     <option value="">All Specializations</option>
                     @foreach (var s in Model.Specializations)
                     {
-                        <option value="@s" selected="@(Model.Filter.Specialization == s)">@s</option>
+                        <option value="@s.Id" selected="@(Model.Filter.SpecializationId == s.Id)">@s.Name</option>
                     }
                 </select>
             </form>

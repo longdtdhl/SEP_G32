@@ -387,6 +387,31 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #0f766e; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi @(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "bi-camera-video-fill" : "bi-geo-alt-fill") fs-5"></i></div>
+                                <div>
+                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Consultation Mode</div>
+                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">
+                                        <span class="badge rounded-pill px-2.5 py-1 fw-semibold" style="@(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;" : "background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;")">
+                                            @(apt.ConsultationMode ?? (apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)"))
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(apt.PatientAddress) || !string.IsNullOrEmpty(Model.PatientRecord?.Address))
+                        {
+                            <div class="col-12 col-md-6">
+                                <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                    <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-geo-alt fs-5"></i></div>
+                                    <div>
+                                        <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Patient Address</div>
+                                        <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">@(apt.PatientAddress ?? Model.PatientRecord?.Address)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
                                 <div class="info-row-icon me-3" style="background: #f1f5f9; color: #475569; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-clock-fill fs-5"></i></div>
                                 <div>
                                     <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Schedule Time</div>
@@ -442,14 +467,23 @@
 
                     <!-- Pre-Appointment Evaluation -->
                     @{
-                        var hasAptEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                        var hasCustomEval = apt.CustomFields != null && apt.CustomFields.Any(cf => !string.IsNullOrWhiteSpace(cf.Content));
+                        var hasAptEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations) || hasCustomEval;
                         var pRec = Model.PatientRecord;
                         var hasProfileEval = pRec != null && (!string.IsNullOrEmpty(pRec.CurrentSymptoms) || !string.IsNullOrEmpty(pRec.PsychologicalHistory) || !string.IsNullOrEmpty(pRec.StressFactors));
                     }
                     <div class="evaluation-section mb-4 p-4 rounded-4 border shadow-sm bg-white">
-                        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-                            <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
-                        </h5>
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-clipboard2-pulse text-danger me-2"></i>Pre-Appointment Evaluation
+                            </h5>
+                            @if (!string.IsNullOrWhiteSpace(apt.PreAppointmentNoteTitle))
+                            {
+                                <span class="badge px-3 py-1.5 rounded-pill" style="background:#ccfbf1; color:#0f766e; font-weight:600; font-size:0.8rem;">
+                                    <i class="bi bi-patch-question me-1"></i>@apt.PreAppointmentNoteTitle
+                                </span>
+                            }
+                        </div>
                         
                         @if (hasAptEval)
                         {
@@ -472,6 +506,19 @@
                                 <div class="evaluation-item mb-3">
                                     <div class="small fw-semibold text-muted mb-1"><i class="bi bi-bullseye text-success me-1"></i>Expectations</div>
                                     <div class="evaluation-bubble bubble-expectations">@apt.Expectations</div>
+                                </div>
+                            }
+                            @if (apt.CustomFields != null && apt.CustomFields.Any())
+                            {
+                                <div class="mt-3 pt-3 border-top">
+                                    <div class="small fw-bold text-dark mb-2"><i class="bi bi-tags text-teal me-1"></i>@(string.IsNullOrWhiteSpace(apt.PreAppointmentNoteTitle) ? "Additional Clinical Information" : apt.PreAppointmentNoteTitle)</div>
+                                    @foreach (var cf in apt.CustomFields)
+                                    {
+                                        <div class="evaluation-item mb-2">
+                                            <div class="small fw-semibold text-muted mb-1">@(string.IsNullOrWhiteSpace(cf.Title) ? (apt.PreAppointmentNoteTitle ?? "Clinical Note") : cf.Title)</div>
+                                            <div class="evaluation-bubble" style="background:#f0fdfa; border-color:#ccfbf1; color:#115e59;">@cf.Content</div>
+                                        </div>
+                                    }
                                 </div>
                             }
                         }

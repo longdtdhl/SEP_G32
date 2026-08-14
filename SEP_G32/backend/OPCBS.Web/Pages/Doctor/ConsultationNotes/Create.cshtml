@@ -175,11 +175,45 @@
                                   placeholder="Notes for follow-up consultations next (if needed)..."></textarea>
                     </div>
 
+                    <!-- Custom Clinical Fields -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="form-section-title mb-0 border-0 pb-0">
+                                <i class="bi bi-tags-fill"></i>Custom Clinical Fields
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="addCreateCustomField()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Field
+                            </button>
+                        </div>
+                        <p class="text-muted small mb-2">Add structured fields like Biomarkers, Behavioral Observations, Screening Scales, etc.</p>
+                        <div id="customFieldsContainer">
+                            <!-- Dynamically added custom fields -->
+                        </div>
+                    </div>
+
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-calendar"></i>Expected Follow-up Date
+                            <i class="bi bi-calendar"></i>Expected Follow-up Date & Slot
                         </div>
-                        <input asp-for="Input.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" />
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="font-size:0.85rem;">
+                                    <i class="bi bi-calendar-event me-1"></i>Follow-up Date
+                                </label>
+                                <input asp-for="Input.NextAppointmentRecommendedDate" id="createRecDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" onchange="loadCreateRecommendedSlots(this.value)" />
+                            </div>
+                            <div class="col-md-6" id="createRecSlotContainer" style="display:none;">
+                                <label class="form-label fw-semibold" style="font-size:0.85rem;">
+                                    <i class="bi bi-clock me-1"></i>Suggested Slot (Auto-booked on save)
+                                </label>
+                                <select asp-for="Input.NextAppointmentRecommendedSlotId" id="createRecSlotSelect" class="form-select" style="border-radius:10px;">
+                                    <option value="">-- Select a suggested slot --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="createRecSlotMsg" class="form-text small text-muted mt-2">
+                            <i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation note.
+                        </div>
                     </div>
 
                     <!-- Consultation Date & Visibility -->
@@ -230,3 +264,81 @@
         </div>
     </div>
 </form>
+
+@section Scripts {
+<script>
+    let customFieldCount = 0;
+    function addCreateCustomField(title = '', content = '', fieldType = 'Text') {
+        const container = document.getElementById('customFieldsContainer');
+        const index = customFieldCount++;
+        const div = document.createElement('div');
+        div.className = 'p-3 rounded-3 mb-2 border bg-light';
+        div.id = `customFieldRow_${index}`;
+        div.innerHTML = `
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" name="Input.CustomFields[${index}].Title" value="${title}" class="form-control form-control-sm" placeholder="Field Title (e.g. Test Score)" style="border-radius:8px;" required />
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="Input.CustomFields[${index}].Content" value="${content}" class="form-control form-control-sm" placeholder="Content / Observation" style="border-radius:8px;" required />
+                </div>
+                <div class="col-md-2">
+                    <select name="Input.CustomFields[${index}].FieldType" class="form-select form-select-sm" style="border-radius:8px;">
+                        <option value="Text" ${fieldType === 'Text' ? 'selected' : ''}>Text</option>
+                        <option value="Number" ${fieldType === 'Number' ? 'selected' : ''}>Number</option>
+                        <option value="Date" ${fieldType === 'Date' ? 'selected' : ''}>Date</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('customFieldRow_${index}').remove()" style="border-radius:8px;">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    async function loadCreateRecommendedSlots(date) {
+        const container = document.getElementById('createRecSlotContainer');
+        const select = document.getElementById('createRecSlotSelect');
+        const msg = document.getElementById('createRecSlotMsg');
+        if (!date) {
+            if (container) container.style.display = 'none';
+            if (select) select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
+            return;
+        }
+
+        if (container) container.style.display = 'block';
+        if (select) {
+            select.innerHTML = '<option value="">Loading available slots...</option>';
+            select.disabled = true;
+        }
+
+        try {
+            const response = await fetch(`?handler=Slots&date=${encodeURIComponent(date)}`);
+            const data = await response.json();
+            if (select) {
+                select.disabled = false;
+                select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
+                if (data.success && data.slots && data.slots.length > 0) {
+                    data.slots.forEach(slot => {
+                        const opt = document.createElement('option');
+                        opt.value = slot.id;
+                        opt.textContent = slot.label;
+                        select.appendChild(opt);
+                    });
+                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation note.';
+                } else {
+                    if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots found for this date.</span>';
+                }
+            }
+        } catch (e) {
+            if (select) {
+                select.disabled = false;
+                select.innerHTML = '<option value="">-- Failed to load slots --</option>';
+            }
+        }
+    }
+</script>
+}

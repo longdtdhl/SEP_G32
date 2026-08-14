@@ -10,6 +10,9 @@
     .tc-create-page .form-label { font-size: .9rem; margin-bottom: .45rem; }
     .tc-create-page .form-control { min-height: 46px; font-size: .95rem; }
     .tc-create-page textarea.form-control { min-height: 140px; }
+    .session-summary-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; }
+    .session-summary-card .summary-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.4rem .65rem; border-radius:999px; background:#eef6f4; color:#0f766e; font-size:.82rem; font-weight:700; }
+    .session-form-card { border: 1px solid #dbe7e4; border-radius: 16px; background:#fff; }
 </style>
 <div class="container-fluid py-3 tc-create-page">
     <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="text-decoration-none text-muted fs-7 d-inline-block mb-2">
@@ -28,37 +31,74 @@
         </div>
     }
 
-    <div class="bg-white border rounded-3 p-4 p-lg-5 shadow-sm">
-        <form method="post" asp-page-handler="Create">
-            <input type="hidden" name="caseId" value="@Model.CaseId" />
-
-            <div class="mb-3">
-                <label class="form-label fw-bold text-dark">Session Title <span class="text-danger">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="e.g. Mid-Treatment Evaluation & Goal Review" required />
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold text-dark">Description & Agenda</label>
-                <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..."></textarea>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-dark">Planned Start Time</label>
-                    <input type="datetime-local" name="plannedStartTime" class="form-control" />
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="session-summary-card p-4 shadow-sm">
+                <h6 class="fw-bold text-muted small text-uppercase mb-3">
+                    <i class="bi bi-heart-pulse me-1"></i>Treatment Case
+                </h6>
+                <div class="mb-3">
+                    <div class="fw-bold text-dark fs-5">@(Model.TreatmentCase?.CaseName ?? "Treatment case")</div>
+                    <div class="text-muted small">Patient: @(Model.TreatmentCase?.PatientName ?? "N/A")</div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-dark">Planned End Time</label>
-                    <input type="datetime-local" name="plannedEndTime" class="form-control" />
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="summary-chip"><i class="bi bi-calendar2-check"></i>@(Model.TreatmentCase?.CompletedSessions ?? 0)/@(Model.TreatmentCase?.TotalSessions ?? 0) sessions</span>
+                    <span class="summary-chip"><i class="bi bi-graph-up"></i>@(Model.TreatmentCase?.OverallProgressPercent ?? 0)% progress</span>
+                </div>
+                <div class="alert alert-info small rounded-3 mb-0">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    This creates one planned session only. It does not auto-generate a full schedule.
                 </div>
             </div>
+        </div>
 
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
-                <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
-                    <i class="bi bi-plus-lg"></i> Add Session to Case
-                </button>
+        <div class="col-lg-8">
+            <div class="session-form-card p-4 p-lg-5 shadow-sm">
+                <form method="post" asp-page-handler="Create">
+                    <input type="hidden" name="caseId" value="@Model.CaseId" />
+
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-calendar-plus me-2" style="color:#0d9488;"></i>Session Information
+                    </h5>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Session Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Mid-treatment evaluation and goal review" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Description & Agenda</label>
+                        <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark">Session Date</label>
+                            <input type="date" name="sessionDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark">Start Time</label>
+                            <input type="time" name="startTime" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark">End Time</label>
+                            <input type="time" name="endTime" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border small rounded-3 mb-4">
+                        <i class="bi bi-calendar-range me-1" style="color:#0d9488;"></i>
+                        To create an appointment for this session, schedule it from the case calendar or doctor schedule after saving.
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                            <i class="bi bi-plus-lg"></i> Add Session to Case
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 </div>

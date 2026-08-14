@@ -620,7 +620,10 @@ public class AdminController : ControllerBase
     [HttpPut("users/{userId}/unlock")]
     public async Task<IActionResult> UnlockUser(Guid userId)
     {
-        var result = await _adminService.UnlockUserAsync(userId);
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.UnlockUserAsync(userId, adminUserId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -666,7 +669,10 @@ public class AdminController : ControllerBase
     [HttpPut("settings")]
     public async Task<IActionResult> UpdateSettings([FromBody] Dictionary<string, string> settings)
     {
-        var result = await _adminService.UpdateSystemSettingsAsync(settings);
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.UpdateSystemSettingsAsync(settings, adminUserId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

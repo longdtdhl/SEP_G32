@@ -9,10 +9,12 @@ public class EditModel : PageModel
 {
     private readonly IConsultationNoteApiService _api;
     private readonly ITreatmentPackageApiService _packageApi;
-    public EditModel(IConsultationNoteApiService api, ITreatmentPackageApiService packageApi)
+    private readonly IScheduleApiService _scheduleApi;
+    public EditModel(IConsultationNoteApiService api, ITreatmentPackageApiService packageApi, IScheduleApiService scheduleApi)
     {
         _api = api;
         _packageApi = packageApi;
+        _scheduleApi = scheduleApi;
     }
 
     [BindProperty] public UpdateConsultationNoteDto Input { get; set; } = new();
@@ -42,7 +44,17 @@ public class EditModel : PageModel
             TherapyPlan = data.TherapyPlan,
             Recommendations = data.Recommendations,
             Visibility = data.Visibility,
-            ConsultationDate = data.ConsultationDate
+            ConsultationDate = data.ConsultationDate,
+            NextAppointmentRecommendedDate = data.NextAppointmentRecommendedDate,
+            NextAppointmentRecommendedSlotId = data.NextAppointmentRecommendedSlotId,
+            CustomFields = data.CustomFields?.Select(f => new CreateCustomClinicalFieldDto
+            {
+                SectionKey = f.SectionKey,
+                Title = f.Title,
+                Content = f.Content,
+                FieldType = f.FieldType,
+                OrderIndex = f.OrderIndex
+            }).ToList() ?? new List<CreateCustomClinicalFieldDto>()
         };
 
         // Load treatment packages for the patient (filter doctor's packages by patient name)
@@ -72,5 +84,33 @@ public class EditModel : PageModel
         }
         TempData["Success"] = "Updated consultation record.";
         return RedirectToPage("./Details", new { id });
+    }
+
+    public async Task<IActionResult> OnGetSlotsAsync(string date)
+    {
+        if (string.IsNullOrWhiteSpace(date) || !DateOnly.TryParse(date, out var parsedDate))
+        {
+            return new JsonResult(new { success = false, message = "Invalid date format." });
+        }
+
+        var (data, error) = await _scheduleApi.GetMySlotsAsync(parsedDate);
+        if (error != null || data?.Slots == null)
+        {
+            return new JsonResult(new { success = false, message = error ?? "No slots available." });
+        }
+
+        var availableSlots = data.Slots
+            .Where(s => (int)s.Status == 0 && s.CurrentBookings < s.MaxPatients)
+            .OrderBy(s => s.StartTime)
+            .Select(s => new
+            {
+                id = s.Id,
+                startTime = s.StartTime,
+                endTime = s.EndTime,
+                label = $"{s.StartTime} - {s.EndTime} ({s.Price:N0} VNĐ)"
+            })
+            .ToList();
+
+        return new JsonResult(new { success = true, slots = availableSlots });
     }
 }

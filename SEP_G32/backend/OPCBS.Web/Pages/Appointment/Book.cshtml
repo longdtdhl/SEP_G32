@@ -167,6 +167,8 @@
                     <div class="wc-legend flex-column">
                         <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Available</div>
                         <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Booked</div>
+                        <div class="wc-legend-item"><i class="bi bi-camera-video" style="color:var(--mb-primary);"></i>Online</div>
+                        <div class="wc-legend-item"><i class="bi bi-geo-alt" style="color:#2563eb;"></i>In-person</div>
                     </div>
                 </div>
             </aside>
@@ -229,15 +231,41 @@
                                                      data-slot-id="@slot.Id"
                                                      data-slot-date="@dateDisplay"
                                                      data-slot-time="@slot.StartTime - @slot.EndTime"
+                                                     data-slot-mode="@((int)slot.ConsultationMode)"
+                                                     data-slot-mode-text="@(slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Online ? "Online Consultation" : slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Offline ? "In-Person (Offline)" : "Both Online & In-Person")"
+                                                     data-slot-note-req="@(slot.IsPreAppointmentNoteRequired ? "true" : "false")"
+                                                     data-slot-note-title="@(slot.PreAppointmentNoteTitle ?? "")"
                                                      @Html.Raw(isAvailable ? "onclick=\"fillSlotData(this)\"" : "")
-                                                     title="@(isAvailable ? $"Available - {slot.StartTime} - {slot.EndTime}" : $"Booked - {slot.StartTime} - {slot.EndTime}")">
+                                                     title="@(isAvailable ? $"Available - {slot.StartTime} - {slot.EndTime} ({(slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Online ? "Online" : slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Offline ? "In-Person" : "Online/In-Person")})" : $"Booked - {slot.StartTime} - {slot.EndTime}")">
                                                     @if (isBooked)
                                                     {
                                                         <span class="slot-label"><i class="bi bi-lock-fill me-1"></i>BOOKED</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="slot-label">AVAILABLE</span>
+                                                        var modeShortText = slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Online
+                                                            ? "Online"
+                                                            : slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Offline
+                                                                ? "In-person"
+                                                                : "Online / In-person";
+                                                        <span class="slot-label">
+                                                            @if (slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Online)
+                                                            {
+                                                                <i class="bi bi-camera-video me-1" title="Online consultation"></i><span>ONLINE</span>
+                                                            }
+                                                            else if (slot.ConsultationMode == OPCBS.Domain.Enums.ConsultationMode.Offline)
+                                                            {
+                                                                <i class="bi bi-geo-alt me-1" title="In-person consultation"></i><span>IN-PERSON</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span>ONLINE / IN-PERSON</span>
+                                                            }
+                                                        </span>
+                                                        @if (slot.ConsultationMode != OPCBS.Domain.Enums.ConsultationMode.Both)
+                                                        {
+                                                            <span class="slot-mode-text">@modeShortText</span>
+                                                        }
                                                     }
                                                     <span class="slot-time">@slot.StartTime - @slot.EndTime</span>
                                                 </div>
@@ -322,7 +350,22 @@
                         }
                     </div>
 
-                        <div class="mb-3">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Consultation Mode <span class="text-danger">*</span></label>
+                            <select asp-for="Input.ConsultationMode" id="bookingConsultationMode" class="form-select" style="border-radius:12px;padding:10px 14px;" required>
+                                <option value="Online">Online Consultation</option>
+                                <option value="Offline">In-Person (Offline)</option>
+                            </select>
+                            <div id="consultationModeNotice" class="form-text small mt-1 text-muted"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Patient Address</label>
+                            <input asp-for="Input.PatientAddress" class="form-control" placeholder="e.g. 123 Nguyen Hue, District 1, Ho Chi Minh City" style="border-radius:12px;padding:10px 14px;" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">REASON FOR VISIT</label>
                         <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Brief description of your condition or reason for consultation..." style="border-radius:12px;padding:10px 14px;resize:vertical;"></textarea>
                     </div>
@@ -361,6 +404,24 @@
                         </div>
                     }
 
+                    <!-- Slot Custom Question / Doctor's Required Evaluation -->
+                    <div id="slotCustomNoteSection" class="mb-3" style="display:none;">
+                        <div class="p-3 rounded-3 border" style="background:#f0fdfa; border-color:#ccfbf1 !important;">
+                            <label id="slotCustomNoteLabel" class="form-label small text-uppercase fw-bold text-dark d-flex align-items-center gap-1.5" style="letter-spacing:0.03em; font-size:0.8rem; color:#0f766e !important;"></label>
+                            <input type="hidden" name="Input.CustomFields[0].Title" id="slotCustomNoteTitleInput" />
+                            <input type="hidden" name="Input.CustomFields[0].SectionKey" value="PreAppointmentEvaluation" />
+                            <textarea name="Input.CustomFields[0].Content" id="slotCustomNoteContent" class="form-control" rows="2" placeholder="Your response to the doctor's inquiry..." style="border-radius:10px; resize:vertical; font-size:0.875rem;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Additional Custom Clinical Fields Container -->
+                    <div id="patientCustomFieldsContainer" class="mb-2"></div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPatientCustomField()" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
+                            <i class="bi bi-plus-circle me-1"></i>Add Additional Clinical Note
+                        </button>
+                    </div>
+
                     <!-- Privacy note -->
                     <div class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background:#f8faf8;">
                         <i class="bi bi-shield-check" style="color:var(--mb-primary);font-size:1.2rem;margin-top:2px;"></i>
@@ -381,10 +442,39 @@
 
 @section Scripts {
     <script>
+        let patientFieldCount = 1;
+        function addPatientCustomField(title = '', content = '') {
+            const container = document.getElementById('patientCustomFieldsContainer');
+            const index = patientFieldCount++;
+            const div = document.createElement('div');
+            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
+            div.id = `patientFieldRow_${index}`;
+            div.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" name="Input.CustomFields[${index}].Title" value="${title.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Note Title (e.g. Current Medication)" style="border-radius:6px;" required />
+                        <input type="hidden" name="Input.CustomFields[${index}].SectionKey" value="PreAppointmentEvaluation" />
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="Input.CustomFields[${index}].Content" value="${content.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Details / Response" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('patientFieldRow_${index}').remove()" style="border-radius:6px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
         function fillSlotData(el) {
             var slotId = el.getAttribute('data-slot-id');
             var dateText = el.getAttribute('data-slot-date');
             var timeText = el.getAttribute('data-slot-time');
+            var mode = el.getAttribute('data-slot-mode');
+            var noteReq = el.getAttribute('data-slot-note-req') === 'true';
+            var noteTitle = el.getAttribute('data-slot-note-title');
 
             // Update hidden inputs
             document.getElementById('slotIdInput').value = slotId;
@@ -404,6 +494,48 @@
             if(modalDateEl) modalDateEl.textContent = dateText;
             var modalTimeEl = document.getElementById('modalTime');
             if(modalTimeEl) modalTimeEl.textContent = timeText;
+
+            // Configure consultation mode options
+            var modeSelect = document.getElementById('bookingConsultationMode');
+            var modeNotice = document.getElementById('consultationModeNotice');
+            if (modeSelect) {
+                modeSelect.innerHTML = '';
+                if (mode === '0' || mode === 'Online') {
+                    modeSelect.innerHTML = '<option value="Online" selected>Online Consultation</option>';
+                    if (modeNotice) modeNotice.textContent = 'This slot is available for Online consultation only.';
+                } else if (mode === '1' || mode === 'Offline') {
+                    modeSelect.innerHTML = '<option value="Offline" selected>In-Person (Offline) Consultation</option>';
+                    if (modeNotice) modeNotice.textContent = 'This slot is available for In-Person (Offline) consultation only.';
+                } else {
+                    modeSelect.innerHTML = '<option value="Online" selected>Online Consultation</option><option value="Offline">In-Person (Offline) Consultation</option>';
+                    if (modeNotice) modeNotice.textContent = 'Doctor allows both Online and In-Person consultations for this slot.';
+                }
+            }
+
+            // Configure slot custom pre-appointment note / doctor question
+            var slotNoteSec = document.getElementById('slotCustomNoteSection');
+            var slotNoteLabel = document.getElementById('slotCustomNoteLabel');
+            var slotNoteTitleInput = document.getElementById('slotCustomNoteTitleInput');
+            var slotNoteContent = document.getElementById('slotCustomNoteContent');
+
+            if (slotNoteSec && slotNoteLabel && slotNoteTitleInput && slotNoteContent) {
+                if (noteTitle && noteTitle.trim() !== '') {
+                    slotNoteSec.style.display = 'block';
+                    slotNoteTitleInput.value = noteTitle.trim();
+                    slotNoteLabel.innerHTML = '<i class="bi bi-patch-question me-1" style="color:#0f766e;"></i>' + noteTitle.trim() + (noteReq ? ' <span class="text-danger">*</span>' : ' <span class="text-muted fw-normal small">(Optional)</span>');
+                    slotNoteContent.required = noteReq;
+                } else if (noteReq) {
+                    slotNoteSec.style.display = 'block';
+                    slotNoteTitleInput.value = 'Pre-Appointment Evaluation Note';
+                    slotNoteLabel.innerHTML = '<i class="bi bi-patch-question me-1" style="color:#0f766e;"></i>Doctor\'s Required Evaluation Note <span class="text-danger">*</span>';
+                    slotNoteContent.required = true;
+                } else {
+                    slotNoteSec.style.display = 'none';
+                    slotNoteTitleInput.value = '';
+                    slotNoteContent.value = '';
+                    slotNoteContent.required = false;
+                }
+            }
             
             // Highlight selected slot
             document.querySelectorAll('.wc-slot').forEach(s => s.classList.remove('selected'));

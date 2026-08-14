@@ -33,7 +33,7 @@ public class TrackModel : PageModel
 
         if (string.IsNullOrWhiteSpace(Input.BookingCode) || string.IsNullOrWhiteSpace(Input.Email))
         {
-            ErrorMessage = "Vui lòng nhập đầy đủ cả Mã đặt lịch và Email đã dùng khi đăng ký lịch hẹn.";
+            ErrorMessage = "Please provide both your Booking Code and registered Email address.";
             return Page();
         }
 
@@ -42,9 +42,7 @@ public class TrackModel : PageModel
 
         if (error != null)
         {
-            ErrorMessage = error.Contains("500") || error.Contains("Internal Server Error")
-                ? "Hệ thống gặp gián đoạn tạm thời. Vui lòng thử lại sau ít phút."
-                : error;
+            ErrorMessage = SanitizeErrorMessage(error);
             AppointmentResult = null;
         }
         else
@@ -62,7 +60,7 @@ public class TrackModel : PageModel
 
         if (string.IsNullOrWhiteSpace(Input.BookingCode) || string.IsNullOrWhiteSpace(Input.Email))
         {
-            ErrorMessage = "Vui lòng nhập đầy đủ Mã đặt lịch và Email.";
+            ErrorMessage = "Please provide both your Booking Code and registered Email address.";
             return Page();
         }
 
@@ -79,11 +77,11 @@ public class TrackModel : PageModel
 
         if (success)
         {
-            SuccessMessage = msg ?? "Thông tin lịch hẹn đã được gửi lại thành công tới email của bạn.";
+            SuccessMessage = msg ?? "Appointment confirmation instructions have been resent to your email address.";
         }
         else
         {
-            ErrorMessage = error ?? "Gửi lại email không thành công. Vui lòng thử lại sau.";
+            ErrorMessage = SanitizeErrorMessage(error) ?? "Unable to resend confirmation email at this time. Please try again later.";
         }
 
         return Page();
@@ -99,7 +97,7 @@ public class TrackModel : PageModel
 
         if (string.IsNullOrWhiteSpace(Input.BookingCode) || string.IsNullOrWhiteSpace(Input.Email))
         {
-            ErrorMessage = "Booking code and email are required.";
+            ErrorMessage = "Please provide both your Booking Code and registered Email address.";
             return Page();
         }
 
@@ -108,8 +106,43 @@ public class TrackModel : PageModel
             BookingCode = Input.BookingCode.Trim(),
             Email = Input.Email.Trim()
         });
-        SuccessMessage = success ? message : null;
-        ErrorMessage = success ? null : error ?? "The cancellation link could not be sent.";
+
+        if (success)
+        {
+            SuccessMessage = message ?? "A secure cancellation link has been sent to your email address. Please check your inbox.";
+        }
+        else
+        {
+            ErrorMessage = SanitizeErrorMessage(error) ?? "The cancellation link could not be sent. Please check your appointment status.";
+        }
+
         return Page();
+    }
+
+    private static string SanitizeErrorMessage(string? error)
+    {
+        if (string.IsNullOrWhiteSpace(error))
+            return "No appointment matching the provided Booking Code and Email address was found. Please verify your details.";
+
+        if (error.Contains("500") || error.Contains("Internal Server Error"))
+            return "The system experienced a temporary interruption. Please try again in a few moments.";
+
+        if (error.Contains("429") || error.Contains("too many", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("wait", StringComparison.OrdinalIgnoreCase))
+            return "Too many requests were made. Please wait briefly before trying again.";
+
+        if (error.Contains("401") || error.Contains("403") ||
+            error.Contains("unauthorized", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+            return "This request could not be verified. Please check your booking details and try again.";
+
+        if (error.Contains("Không tìm thấy", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Not found", StringComparison.OrdinalIgnoreCase))
+            return "No appointment matching the provided Booking Code and Email address was found. Please verify your details.";
+
+        if (error.Contains("Vui lòng nhập đầy đủ", StringComparison.OrdinalIgnoreCase))
+            return "Please provide both your Booking Code and registered Email address.";
+
+        return "We could not process this request. Please verify your booking details or contact OPCBS Support.";
     }
 }

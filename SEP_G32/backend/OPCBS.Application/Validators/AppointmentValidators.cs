@@ -32,6 +32,11 @@ public class CreateAppointmentDtoValidator : AbstractValidator<CreateAppointment
         RuleFor(x => x.GuestPhoneNumber)
             .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
             .When(x => !string.IsNullOrEmpty(x.GuestPhoneNumber));
+
+        RuleFor(x => x.GuestZaloNumber)
+            .MaximumLength(20).WithMessage("Zalo number cannot exceed 20 characters")
+            .Matches(@"^[0-9+() .-]+$").WithMessage("Invalid Zalo number format")
+            .When(x => !string.IsNullOrWhiteSpace(x.GuestZaloNumber));
     }
 }
 

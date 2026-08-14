@@ -38,7 +38,23 @@ public class EditModel : PageModel
             Instructions = data.Instructions,
             TotalSessions = data.TotalSessions,
             ValidityDays = data.ValidityDays,
-            Price = data.Price
+            Price = data.Price,
+            BasicInformationFields = data.BasicInformationFields?.Select(f => new CreateCustomClinicalFieldDto
+            {
+                SectionKey = "BasicInformation",
+                Title = f.Title,
+                Content = f.Content,
+                FieldType = f.FieldType,
+                OrderIndex = f.OrderIndex
+            }).ToList() ?? new List<CreateCustomClinicalFieldDto>(),
+            ClinicalGuidelinesFields = data.ClinicalGuidelinesFields?.Select(f => new CreateCustomClinicalFieldDto
+            {
+                SectionKey = "ClinicalGuidelines",
+                Title = f.Title,
+                Content = f.Content,
+                FieldType = f.FieldType,
+                OrderIndex = f.OrderIndex
+            }).ToList() ?? new List<CreateCustomClinicalFieldDto>()
         };
         return Page();
     }

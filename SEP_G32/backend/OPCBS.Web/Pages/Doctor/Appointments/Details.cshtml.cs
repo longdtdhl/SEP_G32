@@ -16,17 +16,20 @@ public class DetailsModel : PageModel
     private readonly IConsultationNoteApiService _recordApi;
     private readonly IPsychometricApiService _psychService;
     private readonly ITreatmentPackageApiService _packageApi;
+    private readonly IScheduleApiService _scheduleApi;
 
     public DetailsModel(
         IAppointmentApiService api, 
         IConsultationNoteApiService recordApi,
         IPsychometricApiService psychService,
-        ITreatmentPackageApiService packageApi)
+        ITreatmentPackageApiService packageApi,
+        IScheduleApiService scheduleApi)
     {
         _api = api;
         _recordApi = recordApi;
         _psychService = psychService;
         _packageApi = packageApi;
+        _scheduleApi = scheduleApi;
     }
 
     public AppointmentDto? Appointment { get; set; }
@@ -197,5 +200,52 @@ public class DetailsModel : PageModel
         if (!success) TempData["Error"] = error ?? "Failed to decline reschedule request.";
         else TempData["Success"] = "Reschedule request declined. Original appointment time retained.";
         return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostRescheduleAsync(Guid id, Guid newSlotId, string? reason)
+    {
+        if (newSlotId == Guid.Empty)
+        {
+            TempData["Error"] = "Please select an available slot.";
+            return RedirectToPage(new { id });
+        }
+
+        var (success, error) = await _api.DoctorRescheduleAsync(id, new RescheduleAppointmentDto
+        {
+            NewSlotId = newSlotId,
+            Reason = reason
+        });
+
+        if (!success) TempData["Error"] = error ?? "Failed to reschedule appointment.";
+        else TempData["Success"] = "Appointment moved to the selected slot successfully.";
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnGetSlotsAsync(string date)
+    {
+        if (string.IsNullOrWhiteSpace(date) || !DateOnly.TryParse(date, out var parsedDate))
+        {
+            return new JsonResult(new { success = false, message = "Invalid date format." });
+        }
+
+        var (data, error) = await _scheduleApi.GetMySlotsAsync(parsedDate);
+        if (error != null || data?.Slots == null)
+        {
+            return new JsonResult(new { success = false, message = error ?? "No slots available." });
+        }
+
+        var availableSlots = data.Slots
+            .Where(s => (int)s.Status == 0 && s.CurrentBookings < s.MaxPatients)
+            .OrderBy(s => s.StartTime)
+            .Select(s => new
+            {
+                id = s.Id,
+                startTime = s.StartTime,
+                endTime = s.EndTime,
+                label = $"{s.StartTime} - {s.EndTime} ({s.Price:N0} VNĐ)"
+            })
+            .ToList();
+
+        return new JsonResult(new { success = true, slots = availableSlots });
     }
 }

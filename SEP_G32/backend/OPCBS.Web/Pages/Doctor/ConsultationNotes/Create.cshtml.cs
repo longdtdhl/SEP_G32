@@ -11,17 +11,20 @@ public class CreateModel : PageModel
     private readonly IAppointmentApiService _appointmentApi;
     private readonly IPatientRecordApiService _patientApi;
     private readonly IPsychometricApiService _psychService;
+    private readonly IScheduleApiService _scheduleApi;
 
     public CreateModel(
         IConsultationNoteApiService api, 
         IAppointmentApiService appointmentApi,
         IPatientRecordApiService patientApi,
-        IPsychometricApiService psychService)
+        IPsychometricApiService psychService,
+        IScheduleApiService scheduleApi)
     {
         _api = api;
         _appointmentApi = appointmentApi;
         _patientApi = patientApi;
         _psychService = psychService;
+        _scheduleApi = scheduleApi;
     }
 
     [BindProperty] public CreateConsultationNoteDto Input { get; set; } = new() { ConsultationSummary = "" };
@@ -92,5 +95,33 @@ public class CreateModel : PageModel
         
         TempData["Success"] = "Consultation record created successfully!";
         return RedirectToPage("/Doctor/Appointments/Details", new { id = AppointmentId.Value });
+    }
+
+    public async Task<IActionResult> OnGetSlotsAsync(string date)
+    {
+        if (string.IsNullOrWhiteSpace(date) || !DateOnly.TryParse(date, out var parsedDate))
+        {
+            return new JsonResult(new { success = false, message = "Invalid date format." });
+        }
+
+        var (data, error) = await _scheduleApi.GetMySlotsAsync(parsedDate);
+        if (error != null || data?.Slots == null)
+        {
+            return new JsonResult(new { success = false, message = error ?? "No slots available." });
+        }
+
+        var availableSlots = data.Slots
+            .Where(s => (int)s.Status == 0 && s.CurrentBookings < s.MaxPatients)
+            .OrderBy(s => s.StartTime)
+            .Select(s => new
+            {
+                id = s.Id,
+                startTime = s.StartTime,
+                endTime = s.EndTime,
+                label = $"{s.StartTime} - {s.EndTime} ({s.Price:N0} VNĐ)"
+            })
+            .ToList();
+
+        return new JsonResult(new { success = true, slots = availableSlots });
     }
 }

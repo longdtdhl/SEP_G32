@@ -1,3 +1,5 @@
+using OPCBS.Domain.Enums;
+
 namespace OPCBS.Web.DTOs;
 
 public class CalendarEventDto
@@ -20,6 +22,8 @@ public class CalendarEventDto
     public int? SessionNumber { get; set; }
     public string? Description { get; set; }
     public string? BookingCode { get; set; }
+    public bool HasNote { get; set; }
+    public int NoteCount { get; set; }
     public bool HasNotes { get; set; }
     public int MaxPatients { get; set; } = 1;
     public int CurrentBookings { get; set; } = 0;
@@ -48,8 +52,15 @@ public class AppointmentDto
     public string? Expectations { get; set; }
     public int Status { get; set; }
     public string? GuestEmail { get; set; }
+    public string? GuestZaloNumber { get; set; }
     public string? PatientEmail { get; set; }
     public string? ConsultationMode { get; set; }
+    public ConsultationMode ConsultationModeEnum { get; set; } = OPCBS.Domain.Enums.ConsultationMode.Online;
+    public string? DoctorAddress { get; set; }
+    public string? PatientAddress { get; set; }
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
     public string? CancellationReason { get; set; }
     public decimal? Fee { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -77,6 +88,8 @@ public class AppointmentDto
         7 => "Awaiting Your Confirmation",
         8 => "No Show",
         9 => "Awaiting Email Confirmation",
+        10 => "Awaiting Completion Confirmation",
+        11 => "Completion Disputed",
         _ => "Unknown"
     };
 
@@ -110,6 +123,8 @@ public class AppointmentListItemDto
     public string? EndTime { get; set; }
     public int Status { get; set; }
     public decimal? Fee { get; set; }
+    public string? ConsultationMode { get; set; }
+    public ConsultationMode ConsultationModeEnum { get; set; } = OPCBS.Domain.Enums.ConsultationMode.Online;
     public Guid? TreatmentPackageId { get; set; }
     public Guid? ProposedSlotId { get; set; }
     public string? ProposedSlotDate { get; set; }
@@ -129,6 +144,8 @@ public class AppointmentListItemDto
         7 => "Awaiting Your Confirmation",
         8 => "No Show",
         9 => "Awaiting Email Confirmation",
+        10 => "Awaiting Completion Confirmation",
+        11 => "Completion Disputed",
         _ => "Unknown"
     };
 
@@ -159,6 +176,11 @@ public class CreateAppointmentDto
     public string? GuestName { get; set; }
     public string? GuestEmail { get; set; }
     public string? GuestPhoneNumber { get; set; }
+    public string? GuestZaloNumber { get; set; }
+
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
+    public string? PatientAddress { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 public class RescheduleAppointmentDto
@@ -220,12 +242,39 @@ public class AppointmentSlotDto
     public string Date { get; set; } = string.Empty;
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
-    // Backend returns AppointmentSlotStatus as int (0=Available, 1=Booked, 2=Unavailable)
     public int Status { get; set; }
     public decimal? Price { get; set; }
     public string? Notes { get; set; }
     public int MaxPatients { get; set; } = 1;
     public int CurrentBookings { get; set; } = 0;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
+}
+
+public class CustomClinicalFieldDto
+{
+    public Guid Id { get; set; }
+    public string OwnerType { get; set; } = string.Empty;
+    public Guid OwnerId { get; set; }
+    public string SectionKey { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Content { get; set; }
+    public string FieldType { get; set; } = "Text"; // Text, LongText, Instruction
+    public int OrderIndex { get; set; } = 0;
+    public Guid? CreatedByDoctorId { get; set; }
+}
+
+public class CreateCustomClinicalFieldDto
+{
+    public string OwnerType { get; set; } = string.Empty;
+    public Guid OwnerId { get; set; }
+    public string SectionKey { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Content { get; set; }
+    public string FieldType { get; set; } = "Text";
+    public int OrderIndex { get; set; } = 0;
 }
 
 public class AvailableSlotsDto

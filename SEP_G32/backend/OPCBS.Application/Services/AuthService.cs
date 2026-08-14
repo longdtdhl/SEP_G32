@@ -418,15 +418,25 @@ public class UserService : IUserService
 {
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<Role> _roleRepo;
+    private readonly IRepository<PatientProfile>? _patientRepo;
+    private readonly IRepository<DoctorProfile>? _doctorRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public UserService(IRepository<User> userRepo, IRepository<Role> roleRepo, IUnitOfWork uow, IMapper mapper)
+    public UserService(
+        IRepository<User> userRepo,
+        IRepository<Role> roleRepo,
+        IUnitOfWork uow,
+        IMapper mapper,
+        IRepository<PatientProfile>? patientRepo = null,
+        IRepository<DoctorProfile>? doctorRepo = null)
     {
         _userRepo = userRepo;
         _roleRepo = roleRepo;
         _uow = uow;
         _mapper = mapper;
+        _patientRepo = patientRepo;
+        _doctorRepo = doctorRepo;
     }
 
     public async Task<ApiResponse<UserProfileDto>> GetProfileAsync(Guid userId, CancellationToken ct = default)
@@ -449,6 +459,32 @@ public class UserService : IUserService
             Role = role?.Name ?? "Unknown",
             CreatedAt = user.CreatedAt
         };
+
+        if (_patientRepo != null)
+        {
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var pat = allPatients.FirstOrDefault(p => p.UserId == userId);
+            if (pat != null)
+            {
+                dto.Address = pat.Address;
+                dto.DateOfBirth = pat.DateOfBirth;
+                dto.Gender = pat.Gender.ToString();
+                dto.EmergencyContactName = pat.EmergencyContactName;
+                dto.EmergencyContactPhone = pat.EmergencyContactPhone;
+            }
+        }
+
+        if (string.IsNullOrEmpty(dto.Address) && _doctorRepo != null)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doc = allDoctors.FirstOrDefault(d => d.UserId == userId);
+            if (doc != null)
+            {
+                dto.Address = doc.Address;
+                dto.DateOfBirth = doc.DateOfBirth;
+                dto.Gender = doc.Gender?.ToString();
+            }
+        }
 
         return ApiResponse<UserProfileDto>.SuccessResponse(dto);
     }
@@ -474,24 +510,40 @@ public class UserService : IUserService
 
         user.UpdatedAt = DateTime.UtcNow;
         _userRepo.Update(user);
+
+        if (_patientRepo != null)
+        {
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var pat = allPatients.FirstOrDefault(p => p.UserId == userId);
+            if (pat != null)
+            {
+                if (dto.Address != null) pat.Address = dto.Address;
+                if (dto.DateOfBirth.HasValue) pat.DateOfBirth = dto.DateOfBirth;
+                if (!string.IsNullOrWhiteSpace(dto.Gender) && Enum.TryParse<Gender>(dto.Gender, true, out var g)) pat.Gender = g;
+                if (dto.EmergencyContactName != null) pat.EmergencyContactName = dto.EmergencyContactName;
+                if (dto.EmergencyContactPhone != null) pat.EmergencyContactPhone = dto.EmergencyContactPhone;
+                pat.UpdatedAt = DateTime.UtcNow;
+                _patientRepo.Update(pat);
+            }
+        }
+
+        if (_doctorRepo != null)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doc = allDoctors.FirstOrDefault(d => d.UserId == userId);
+            if (doc != null)
+            {
+                if (dto.Address != null) doc.Address = dto.Address;
+                if (dto.DateOfBirth.HasValue) doc.DateOfBirth = dto.DateOfBirth;
+                if (!string.IsNullOrWhiteSpace(dto.Gender) && Enum.TryParse<Gender>(dto.Gender, true, out var dg)) doc.Gender = dg;
+                doc.UpdatedAt = DateTime.UtcNow;
+                _doctorRepo.Update(doc);
+            }
+        }
+
         await _uow.SaveChangesAsync(ct);
 
-        // Return updated profile
-        var role = await _roleRepo.GetByIdAsync(user.RoleId, ct);
-        var result = new UserProfileDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FullName = user.FullName,
-            PhoneNumber = user.PhoneNumber,
-            AvatarUrl = user.AvatarUrl,
-            Status = user.Status,
-            IsEmailVerified = user.IsEmailVerified,
-            Role = role?.Name ?? "Unknown",
-            CreatedAt = user.CreatedAt
-        };
-
-        return ApiResponse<UserProfileDto>.SuccessResponse(result, "Profile updated successfully");
+        return await GetProfileAsync(userId, ct);
     }
 
     public async Task<ApiResponse> ChangePasswordAsync(Guid userId, ChangePasswordDto dto, CancellationToken ct = default)

@@ -63,12 +63,39 @@ public class DetailsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string ActiveTab { get; set; } = "overview";
 
-    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview")
+    [BindProperty(SupportsGet = true)]
+    public Guid? Id { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(Guid? id, string? tab = "overview")
     {
+        var targetId = id ?? Id;
+        if (!targetId.HasValue || targetId.Value == Guid.Empty)
+        {
+            TempData["ErrorMessage"] = "Select a patient record to view details.";
+            return RedirectToPage("./Index");
+        }
+
         ActiveTab = string.IsNullOrWhiteSpace(tab) ? "overview" : tab;
         IsLoading = true;
 
-        var recordResult = await _patientService.GetByIdAsync(id);
+        var recordResult = await _patientService.GetByIdAsync(targetId.Value);
+        if (recordResult.Error != null || recordResult.Data == null)
+        {
+            recordResult = await _patientService.GetByUserIdAsync(targetId.Value);
+        }
+        if (recordResult.Error != null || recordResult.Data == null)
+        {
+            var (all, _) = await _patientService.GetAllAsync();
+            if (all != null)
+            {
+                var match = all.FirstOrDefault(r => r.PatientId == targetId.Value || r.Id == targetId.Value);
+                if (match != null)
+                {
+                    recordResult = (match, null);
+                }
+            }
+        }
+
         if (recordResult.Error != null || recordResult.Data == null)
         {
             Error = recordResult.Error ?? "Patient record not found.";
@@ -77,9 +104,10 @@ public class DetailsModel : PageModel
         }
 
         PatientRecord = recordResult.Data;
+        var resolvedRecordId = PatientRecord.Id;
 
         // Fetch Consultation Notes
-        var notesResult = await _noteService.GetByPatientRecordIdAsync(id);
+        var notesResult = await _noteService.GetByPatientRecordIdAsync(resolvedRecordId);
         if (notesResult.Error == null && notesResult.Data != null)
         {
             ConsultationNotes = notesResult.Data.OrderByDescending(n => n.DisplayConsultationDate).ToList();
@@ -131,7 +159,7 @@ public class DetailsModel : PageModel
             }
             catch { }
 
-            // 3. Fetch Treatment Cases (strictly by PatientId Guid)
+            // 3. Fetch Treatment Cases (strictly by PatientId Guid or PatientRecord.UserId)
             try
             {
                 var (allCases, _) = await _caseApi.GetMyDoctorCasesAsync();
@@ -251,6 +279,21 @@ public class DetailsModel : PageModel
         {
             TempData["SuccessMessage"] = $"Successfully assigned package \"{templatePkg.Name}\" to the patient!";
         }
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostCreateGuestAccountAsync(Guid id)
+    {
+        var (success, error) = await _patientService.CreateAccountForGuestAsync(id);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to create a patient account for this guest record.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Patient account invitation sent. The guest can set a password from their registered email.";
+        }
+
         return RedirectToPage(new { id });
     }
 }

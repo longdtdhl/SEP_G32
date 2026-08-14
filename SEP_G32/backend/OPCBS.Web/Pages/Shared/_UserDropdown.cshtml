@@ -49,6 +49,12 @@
     var profileUrl = string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
         ? "/Doctor/Profile"
         : "/Account/Profile";
+    var homeLabel = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase)
+        ? "My Appointments"
+        : "Dashboard";
+    var homeIcon = string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase)
+        ? "bi-calendar-check"
+        : "bi-grid-1x2";
 }
 
 <li class="nav-item dropdown">
@@ -84,7 +90,7 @@
         </li>
         <li>
             <a class="dropdown-item py-2 fw-semibold text-primary" href="@dashboardUrl">
-                <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                <i class="bi @homeIcon me-2"></i>@homeLabel
             </a>
         </li>
         <li><hr class="dropdown-divider my-1" /></li>

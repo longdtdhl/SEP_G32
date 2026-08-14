@@ -94,6 +94,24 @@
                     <p class="text-secondary fs-7 mb-0" style="line-height: 1.6;">
                         @(string.IsNullOrWhiteSpace(pkg.Description) ? "No detailed description provided for this treatment package template." : pkg.Description)
                     </p>
+
+                    @if (pkg.BasicInformationFields != null && pkg.BasicInformationFields.Any())
+                    {
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="fw-bold text-dark fs-7 mb-2"><i class="bi bi-tags text-teal me-1" style="color:#0d9488;"></i> Basic Information Fields</h6>
+                            <div class="row g-2">
+                                @foreach (var f in pkg.BasicInformationFields)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="p-2.5 rounded-2 bg-light border">
+                                            <div class="text-muted fs-8 fw-semibold">@f.Title</div>
+                                            <div class="fw-bold text-dark fs-7 mt-0.5">@f.Content</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -124,6 +142,24 @@
                         <div class="mb-0">
                             <label class="fw-bold text-dark fs-7 mb-1 d-block"><i class="bi bi-info-circle text-emerald me-1" style="color:#059669;"></i> Patient Guidance & Instructions:</label>
                             <div class="tp-instruction-box">@pkg.Instructions</div>
+                        </div>
+                    }
+
+                    @if (pkg.ClinicalGuidelinesFields != null && pkg.ClinicalGuidelinesFields.Any())
+                    {
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="fw-bold text-dark fs-7 mb-2"><i class="bi bi-tags text-teal me-1" style="color:#0d9488;"></i> Clinical Guidelines Fields</h6>
+                            <div class="row g-2">
+                                @foreach (var f in pkg.ClinicalGuidelinesFields)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="p-2.5 rounded-2 bg-light border">
+                                            <div class="text-muted fs-8 fw-semibold">@f.Title</div>
+                                            <div class="fw-bold text-dark fs-7 mt-0.5">@f.Content</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
                 </div>

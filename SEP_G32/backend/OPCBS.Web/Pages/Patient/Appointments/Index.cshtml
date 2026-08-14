@@ -10,53 +10,36 @@
     .apt-filter-bar {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1.25rem;
-        margin-bottom: 1.75rem;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
     }
 
     /* ── Appointment Cards ── */
     .apt-card {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        margin-bottom: 0.875rem;
+        border-radius: 8px;
+        margin-bottom: 0.625rem;
         border-left: 4px solid transparent;
         transition: all 0.2s ease;
         overflow: hidden;
     }
 
     .apt-card:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         transform: translateX(2px);
     }
 
-    .apt-card.st-pending {
-        border-left-color: #f59e0b;
-    }
-
-    .apt-card.st-approved {
-        border-left-color: #3b82f6;
-    }
-
-    .apt-card.st-inprogress {
-        border-left-color: #8b5cf6;
-    }
-
-    .apt-card.st-completed {
-        border-left-color: #10b981;
-    }
-
-    .apt-card.st-cancelled {
-        border-left-color: #ef4444;
-    }
-
-    .apt-card.st-rejected {
-        border-left-color: #6b7280;
-    }
+    .apt-card.st-pending { border-left-color: #f59e0b; }
+    .apt-card.st-approved { border-left-color: #3b82f6; }
+    .apt-card.st-inprogress { border-left-color: #8b5cf6; }
+    .apt-card.st-completed { border-left-color: #10b981; }
+    .apt-card.st-cancelled { border-left-color: #ef4444; }
+    .apt-card.st-rejected { border-left-color: #6b7280; }
 
     .apt-card-body {
-        padding: 1.25rem 1.5rem;
+        padding: 0.875rem 1.25rem;
     }
 
     .apt-date-box {
@@ -65,15 +48,15 @@
         align-items: center;
         justify-content: center;
         background: #f8fafc;
-        border-radius: 12px;
-        width: 56px;
-        height: 56px;
+        border-radius: 8px;
+        width: 52px;
+        height: 52px;
         flex-shrink: 0;
         border: 1px solid #f1f5f9;
     }
 
     .apt-date-day {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         font-weight: 700;
         color: #1e293b;
         line-height: 1.1;
@@ -91,10 +74,10 @@
         display: inline-block;
         background: #eff6ff;
         color: #2563eb;
-        padding: 2px 10px;
-        border-radius: 8px;
+        padding: 2px 8px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
     }
 
     .apt-pkg-chip {
@@ -119,41 +102,31 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 20px;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 600;
         letter-spacing: 0.02em;
+        white-space: nowrap;
     }
 
-    .apt-status.s-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
+    .apt-status.s-pending { background: #fef3c7; color: #92400e; }
+    .apt-status.s-approved { background: #dbeafe; color: #1e40af; }
+    .apt-status.s-inprogress { background: #ede9fe; color: #5b21b6; }
+    .apt-status.s-completed { background: #d1fae5; color: #065f46; }
+    .apt-status.s-cancelled { background: #fee2e2; color: #991b1b; }
+    .apt-status.s-rejected { background: #f3f4f6; color: #374151; }
 
-    .apt-status.s-approved {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .apt-status.s-inprogress {
-        background: #ede9fe;
-        color: #5b21b6;
-    }
-
-    .apt-status.s-completed {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .apt-status.s-cancelled {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .apt-status.s-rejected {
-        background: #f3f4f6;
-        color: #374151;
+    .time-badge {
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     /* ── Action Buttons ── */
@@ -162,7 +135,7 @@
         align-items: center;
         gap: 4px;
         padding: 5px 14px;
-        border-radius: 10px;
+        border-radius: 8px;
         font-size: 0.78rem;
         font-weight: 600;
         border: 1px solid #e2e8f0;
@@ -170,6 +143,7 @@
         color: #475569;
         transition: all 0.15s ease;
         text-decoration: none;
+        cursor: pointer;
     }
 
     .apt-btn:hover {
@@ -183,56 +157,44 @@
         color: #2563eb;
     }
 
-    .apt-btn.btn-view:hover {
-        background: #eff6ff;
-    }
+    .apt-btn.btn-view:hover { background: #eff6ff; }
 
     .apt-btn.btn-chat {
         border-color: #a5f3fc;
         color: #0891b2;
+        padding: 5px 8px;
     }
 
-    .apt-btn.btn-chat:hover {
-        background: #ecfeff;
-    }
-
-    .apt-btn.btn-star {
-        border-color: #fde68a;
-        color: #d97706;
-    }
-
-    .apt-btn.btn-star:hover {
-        background: #fffbeb;
-    }
+    .apt-btn.btn-chat:hover { background: #ecfeff; }
 
     /* ── Empty State ── */
     .apt-empty {
         text-align: center;
-        padding: 80px 24px;
+        padding: 64px 24px;
         background: #fff;
-        border-radius: 16px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
     }
 
     .apt-empty-icon {
-        width: 80px;
-        height: 80px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
         background: #f1f5f9;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+        font-size: 1.75rem;
         color: #94a3b8;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
     }
 
     /* ── Pagination Styling ── */
     .apt-pagination-link {
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         border: 1px solid #e2e8f0 !important;
         font-weight: 600;
-        padding: 8px 14px;
+        padding: 6px 12px;
         font-size: 0.85rem;
         transition: all 0.2s ease;
         display: flex;
@@ -250,8 +212,8 @@
     }
 
     .apt-pagination-item.active .apt-pagination-link {
-        background-color: #2563eb !important;
-        border-color: #2563eb !important;
+        background-color: #0f766e !important;
+        border-color: #0f766e !important;
         color: #fff !important;
     }
 
@@ -262,30 +224,58 @@
         pointer-events: none;
     }
 
+    /* ── Search Input Group ── */
     .apt-search-group {
-        display: flex;
-        min-width: 230px;
+        position: relative;
+        min-width: 220px;
         flex: 1.6;
     }
 
+    .apt-search-group .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.9rem;
+        pointer-events: none;
+        z-index: 2;
+    }
+
     .apt-search-group .form-control {
-        height: 44px;
-        border-radius: 10px 0 0 10px;
+        height: 40px;
+        border-radius: 8px;
         border-color: #e2e8f0;
         box-shadow: none;
         font-size: .85rem;
+        padding-left: 36px;
     }
 
-    .apt-search-submit {
-        width: 44px;
-        border: 1px solid #0f766e;
-        border-left: 0;
-        border-radius: 0 10px 10px 0;
-        background: #0f766e;
-        color: #fff;
+    .apt-search-group .form-control:focus {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.12);
     }
 
-    .apt-search-submit:hover { background: #115e59; }
+    /* ── Clear filter ── */
+    .apt-clear-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .apt-clear-btn:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #dc2626;
+    }
 </style>
 
 <!-- Page Header -->
@@ -295,10 +285,10 @@
         <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Manage active and upcoming consultation appointments</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-page="History" class="btn btn-outline-secondary px-3" style="border-radius:10px; height:42px; display:inline-flex; align-items:center; font-weight:600; font-size:0.85rem;">
+        <a asp-page="History" class="btn btn-outline-secondary px-3" style="border-radius:8px; height:40px; display:inline-flex; align-items:center; font-weight:600; font-size:0.85rem;">
             <i class="bi bi-clock-history me-1"></i>Appointment History
         </a>
-        <a asp-page="/Doctors/Index" class="btn btn-primary px-3" style="border-radius:10px; height:42px; display:inline-flex; align-items:center; font-weight:600; font-size:0.85rem;">
+        <a asp-page="/Doctors/Index" class="btn btn-primary px-3" style="border-radius:8px; height:40px; display:inline-flex; align-items:center; font-weight:600; font-size:0.85rem;">
             <i class="bi bi-plus-lg me-1"></i>Book New Appointment
         </a>
     </div>
@@ -307,7 +297,7 @@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert"
-         style="border-radius:12px; border:none; margin-bottom: 1.5rem;">
+         style="border-radius:8px; border:none; margin-bottom: 1.25rem;">
         <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -316,7 +306,7 @@
 @if (Model.Error != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert"
-         style="border-radius:12px; border:none; margin-bottom: 1.5rem;">
+         style="border-radius:8px; border:none; margin-bottom: 1.25rem;">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -327,17 +317,15 @@
     <!-- Reset page to 1 when changing filters -->
     <input type="hidden" name="page" value="1" />
 
-    <div class="apt-filter-bar d-flex gap-3 align-items-center flex-wrap">
+    <div class="apt-filter-bar d-flex gap-2 align-items-center flex-wrap">
         <div class="apt-search-group">
+            <i class="bi bi-search search-icon"></i>
             <input type="search" name="Search" value="@Model.Search" class="form-control"
-                   placeholder="Search doctor or booking code" aria-label="Search appointments" />
-            <button type="submit" class="apt-search-submit" title="Search" aria-label="Search appointments">
-                <i class="bi bi-search"></i>
-            </button>
+                   placeholder="Search by doctor, booking code, date..." aria-label="Search appointments" />
         </div>
-        <div style="flex: 1.2; min-width: 180px;">
+        <div style="flex: 1.2; min-width: 160px;">
             <select name="Status" onchange="this.form.submit()" class="form-select"
-                    style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
+                    style="height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
                 <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">All Active Statuses
                 </option>
                 <option value="Pending" selected="@(Model.Status == "Pending" ? "selected" : null)">Pending Approval</option>
@@ -346,31 +334,31 @@
                 <option value="RescheduleRequested" selected="@(Model.Status == "RescheduleRequested" ? "selected" : null)">Reschedule Requested</option>
             </select>
         </div>
-        <div style="flex: 1.5; min-width: 200px;">
+        <div style="flex: 1.5; min-width: 180px;">
             <select name="Doctor" onchange="this.form.submit()" class="form-select"
-                    style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
+                    style="height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
                 <option value="" selected="@(string.IsNullOrEmpty(Model.Doctor) ? "selected" : null)">All Doctors
                 </option>
                 @foreach (var docName in Model.UniqueDoctors)
                 {
-                    <option value="@docName" selected="@(Model.Doctor == docName ? "selected" : null)">Doctor:@docName
+                    <option value="@docName" selected="@(Model.Doctor == docName ? "selected" : null)">Doctor: @docName
                     </option>
                 }
             </select>
         </div>
-        <div style="flex: 1; min-width: 150px;">
+        <div style="flex: 0.9; min-width: 140px;">
             <input type="date" name="Date" value="@Model.Date" onchange="this.form.submit()" class="form-control"
-                   style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
+                   style="height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
         </div>
+        <button type="submit" class="btn btn-primary" style="height:40px; border-radius:8px; padding:0 16px; font-size:0.85rem; font-weight:600; white-space:nowrap;">
+            <i class="bi bi-search me-1"></i>Search
+        </button>
         @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Doctor) ||
         !string.IsNullOrEmpty(Model.Date))
         {
-            <div>
-                <a href="?" class="btn btn-outline-secondary"
-                   style="height: 44px; border-radius: 10px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; font-weight: 500;">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reset
-                </a>
-            </div>
+            <a href="?" class="apt-clear-btn" title="Clear all filters">
+                <i class="bi bi-x-lg"></i>
+            </a>
         }
     </div>
 </form>
@@ -408,85 +396,86 @@
                              isCancelled ? "bi-x-circle-fill" :
                              isRejected ? "bi-slash-circle" : "bi-question-circle";
 
+            var dayNum = "—";
+            var monthStr = "";
+            if (DateTime.TryParse(apt.AppointmentDate, out var parsedDate))
+            {
+                dayNum = parsedDate.Day.ToString();
+                monthStr = parsedDate.ToString("MMM").ToUpper();
+            }
+
             <div class="apt-card @borderClass">
                 <div class="apt-card-body">
-                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-                        <!-- Left: Date + Info -->
-                        <div class="d-flex align-items-center gap-3" style="flex:1; min-width:0;">
-                            <div class="apt-date-box">
-                                @{
-                                    var dayNum = "";
-                                    var monthStr = "";
-                                    if (DateTime.TryParse(apt.AppointmentDate, out var parsedDate))
-                                    {
-                                        dayNum = parsedDate.Day.ToString();
-                                        monthStr = parsedDate.ToString("MMM").ToUpper();
-                                    }
-                                    else
-                                    {
-                                        dayNum = "—";
-                                    }
-                                }
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <!-- Left: Date + Doctor Info + Status Badge -->
+                        <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width: 200px;">
+                            <div class="apt-date-box d-none d-sm-flex">
                                 <span class="apt-date-day">@dayNum</span>
                                 <span class="apt-date-month">@monthStr</span>
                             </div>
                             <div style="min-width:0;">
-                                <h6 class="mb-1 fw-bold" style="font-size:0.95rem; color:#1e293b;">Doctor: @(apt.DoctorName ?? "Specialist")</h6>
-                                    <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-                                        @if (!string.IsNullOrEmpty(apt.Specialization))
-                                        {
-                                            <span class="apt-spec-chip">@apt.Specialization</span>
-                                        }
-                                        @if (apt.TreatmentPackageId.HasValue)
-                                        {
-                                            <span class="apt-pkg-chip"><i class="bi bi-box-seam"></i>Package</span>
-                                        }
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-3 apt-meta">
-                                        <span><i class="bi bi-clock me-1"></i>@(apt.StartTime ?? "—") — @(apt.EndTime ?? "")</span>
-                                        @if (!string.IsNullOrEmpty(apt.BookingCode))
-                                        {
-                                            <span class="d-none d-sm-inline"><i class="bi bi-upc me-1"></i>@apt.BookingCode</span>
-                                        }
-                                        @if (apt.Fee.HasValue && apt.Fee > 0)
-                                        {
-                                            <span><i class="bi bi-wallet2 me-1"></i>@apt.Fee?.ToString("N0") VND</span>
-                                        }
-                                    </div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="fw-bold text-dark" style="font-size:0.92rem;">Doctor: @(apt.DoctorName ?? "Specialist")</span>
+                                    <span class="apt-status @statusClass">
+                                        <i class="bi @statusIcon"></i>
+                                        @apt.StatusText
+                                    </span>
                                 </div>
+                                @if (!string.IsNullOrEmpty(apt.Specialization))
+                                {
+                                    <div class="mt-1">
+                                        <span class="apt-spec-chip">@apt.Specialization</span>
+                                    </div>
+                                }
                             </div>
+                        </div>
 
-                            <!-- Right: Status + Actions -->
-                            <div class="d-flex flex-column align-items-end gap-2">
-                                <span class="apt-status @statusClass">
-                                    <i class="bi @statusIcon"></i>
-                                    @apt.StatusText
-                                </span>
-                                <div class="d-flex gap-1 flex-wrap">
-                                    @if (isCompleted)
-                                    {
-                                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="apt-btn btn-star"
-                                           title="Write Review">
-                                            <i class="bi bi-star"></i>
-                                        </a>
-                                    }
-                                    @if (isApproved || isInProgress)
-                                    {
-                                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId"
-                                           class="apt-btn btn-chat" title="Chat with Doctor">
-                                            <i class="bi bi-chat-dots-fill"></i>
-                                        </a>
-                                    }
-                                    <a asp-page="Details" asp-route-id="@apt.Id" class="apt-btn btn-view">
-                                        <i class="bi bi-eye me-1"></i>Details
-                                    </a>
-                                </div>
+                        <!-- Package Badge (Right Side) -->
+                        @if (apt.TreatmentPackageId.HasValue)
+                        {
+                            <div class="text-center">
+                                <span class="apt-pkg-chip"><i class="bi bi-box-seam"></i>Package</span>
                             </div>
+                        }
+
+                        <!-- Time (Green badge like doctor card) -->
+                        <div class="text-center" style="min-width: 110px;">
+                            <div class="time-badge">
+                                <i class="bi bi-clock"></i>
+                                @(apt.StartTime ?? "--:--") — @(apt.EndTime ?? "--:--")
+                            </div>
+                        </div>
+
+                        <!-- Fee -->
+                        <div class="text-end" style="min-width: 80px;">
+                            @if (apt.Fee.HasValue && apt.Fee > 0)
+                            {
+                                <span class="fw-bold text-dark" style="font-size:0.88rem;">@apt.Fee.Value.ToString("N0") ₫</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-1 ms-auto align-items-center">
+                            @if (isApproved || isInProgress)
+                            {
+                                <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId"
+                                   class="apt-btn btn-chat" title="Chat with Doctor">
+                                    <i class="bi bi-chat-dots-fill"></i>
+                                </a>
+                            }
+                            <a asp-page="Details" asp-route-id="@apt.Id" class="apt-btn btn-view">
+                                <i class="bi bi-eye me-1"></i>Details
+                            </a>
                         </div>
                     </div>
                 </div>
-            }
-        </div>
+            </div>
+        }
+    </div>
 
         <!-- Pagination Controls -->
         @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
@@ -531,7 +520,7 @@ else
             </div>
             <h4 style="color:#475569; font-weight:700; margin-bottom:8px;">No matching appointments</h4>
             <p class="text-muted mb-4" style="font-size:0.9rem;">Adjust your filters or look for a new therapist.</p>
-            <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg" style="border-radius:12px; padding:10px 28px;">
+            <a asp-page="/Doctors/Index" class="btn btn-primary btn-lg" style="border-radius:8px; padding:10px 28px;">
                 <i class="bi bi-search-heart me-2"></i>Find a Therapist
             </a>
         </div>

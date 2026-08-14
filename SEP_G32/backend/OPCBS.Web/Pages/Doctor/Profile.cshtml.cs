@@ -90,7 +90,8 @@ public class ProfileModel : PageModel
                 CareApproach = DoctorProfile.CareApproach,
                 Languages = DoctorProfile.Languages,
                 ConsultationTypes = DoctorProfile.ConsultationTypes,
-                LicenseNumber = DoctorProfile.LicenseNumber
+                LicenseNumber = DoctorProfile.LicenseNumber,
+                LicenseExpiryDate = DoctorProfile.LicenseExpiryDate
             };
 
             // Pre-fill selected specializations (match by name or ID if available)
@@ -139,6 +140,9 @@ public class ProfileModel : PageModel
         }
 
         // 1. Update general user profile info
+        Input.Address = DoctorInput.Address;
+        Input.Gender = DoctorInput.Gender;
+        Input.DateOfBirth = DoctorInput.DateOfBirth;
         var (userOk, userErr) = await _auth.UpdateProfileAsync(Input);
         if (!userOk)
         {

@@ -3,8 +3,11 @@ using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
 using OPCBS.Shared.Models;
+using OPCBS.Domain.Constants;
 using OPCBS.Domain.Entities;
 using OPCBS.Domain.Enums;
+using System.Net;
+using System.Security.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +23,9 @@ public class PatientRecordService : IPatientRecordService
     private readonly IRepository<Appointment> _apptRepo;
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<Role> _roleRepo;
+    private readonly IRepository<OtpVerification> _otpRepo;
+    private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -29,6 +35,9 @@ public class PatientRecordService : IPatientRecordService
         IRepository<Appointment> apptRepo,
         IRepository<PatientProfile> patientRepo,
         IRepository<User> userRepo,
+        IRepository<Role> roleRepo,
+        IRepository<OtpVerification> otpRepo,
+        IEmailService emailService,
         IMapper mapper,
         IUnitOfWork unitOfWork)
     {
@@ -37,6 +46,9 @@ public class PatientRecordService : IPatientRecordService
         _apptRepo = apptRepo;
         _patientRepo = patientRepo;
         _userRepo = userRepo;
+        _roleRepo = roleRepo;
+        _otpRepo = otpRepo;
+        _emailService = emailService;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
     }
@@ -335,5 +347,206 @@ public class PatientRecordService : IPatientRecordService
         {
             return ApiResponse.ErrorResponse($"Failed to update patient record: {ex.Message}");
         }
+    }
+
+    public async Task<ApiResponse> CreateAccountForGuestAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default)
+    {
+        var doctorProfile = await ResolveDoctorProfileAsync(doctorUserId, ct);
+        if (doctorProfile == null)
+            return ApiResponse.ErrorResponse("Doctor profile not found.");
+
+        var record = await _repo.GetByIdAsync(patientRecordId, ct);
+        if (record == null || record.IsDeleted)
+            return ApiResponse.ErrorResponse("Patient record not found.");
+
+        if (!MatchesDoctor(record.DoctorId, doctorProfile))
+            return ApiResponse.ErrorResponse("You do not have permission to create an account for this patient.");
+
+        if (record.PatientId.HasValue)
+            return ApiResponse.ErrorResponse("This patient already has a registered account.");
+
+        var email = NormalizeEmail(record.GuestEmail);
+        if (string.IsNullOrWhiteSpace(email))
+            return ApiResponse.ErrorResponse("Guest email is required to create a patient account.");
+
+        var phone = record.GuestPhone?.Trim();
+        if (string.IsNullOrWhiteSpace(phone))
+            return ApiResponse.ErrorResponse("Guest phone number is required to create a patient account.");
+
+        var allUsers = (await _userRepo.GetAllAsync(ct)).ToList();
+        if (allUsers.Any(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase)))
+            return ApiResponse.ErrorResponse("This email has already been registered.");
+
+        if (allUsers.Any(u => string.Equals(u.PhoneNumber, phone, StringComparison.OrdinalIgnoreCase)))
+            return ApiResponse.ErrorResponse("This phone number has already been registered.");
+
+        var patientRole = (await _roleRepo.GetAllAsync(ct))
+            .FirstOrDefault(r => r.Name == RoleConstants.Patient);
+        if (patientRole == null)
+            return ApiResponse.ErrorResponse("Patient role not found. Please run seed data.");
+
+        var fullName = string.IsNullOrWhiteSpace(record.GuestName)
+            ? email.Split('@')[0]
+            : record.GuestName.Trim();
+
+        var user = new User
+        {
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(CreateUnusablePassword()),
+            FullName = fullName,
+            PhoneNumber = phone,
+            RoleId = patientRole.Id,
+            Role = patientRole,
+            Status = UserStatus.Active,
+            IsEmailVerified = true,
+            CreatedBy = doctorUserId
+        };
+
+        var patientProfile = new PatientProfile
+        {
+            UserId = user.Id,
+            User = user,
+            MedicalHistory = record.PsychologicalHistory,
+            CreatedBy = doctorUserId
+        };
+
+        await _unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            await _userRepo.AddAsync(user, ct);
+            await _patientRepo.AddAsync(patientProfile, ct);
+
+            record.PatientId = patientProfile.Id;
+            record.Patient = patientProfile;
+            record.UpdatedAt = DateTime.UtcNow;
+            record.UpdatedBy = doctorUserId;
+            _repo.Update(record);
+
+            var allAppointments = await _apptRepo.GetAllAsync(ct);
+            var guestAppointments = allAppointments.Where(a =>
+                !a.IsDeleted &&
+                !a.PatientId.HasValue &&
+                MatchesDoctor(a.DoctorId, doctorProfile) &&
+                string.Equals(NormalizeEmail(a.GuestEmail), email, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var appointment in guestAppointments)
+            {
+                appointment.PatientId = patientProfile.Id;
+                appointment.Patient = patientProfile;
+                appointment.UpdatedAt = DateTime.UtcNow;
+                appointment.UpdatedBy = doctorUserId;
+                _apptRepo.Update(appointment);
+            }
+
+            var otpCode = await CreateSetPasswordOtpAsync(user, ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
+
+            var emailSent = await TrySendInvitationEmailAsync(user.Email, user.FullName, otpCode, ct);
+            return ApiResponse.SuccessResponse(emailSent
+                ? "Patient account created and invitation email sent."
+                : "Patient account created, but the invitation email could not be sent. Please use Resend Invitation.");
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync(ct);
+            return ApiResponse.ErrorResponse($"Failed to create patient account: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse> ResendGuestAccountInvitationAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default)
+    {
+        var doctorProfile = await ResolveDoctorProfileAsync(doctorUserId, ct);
+        if (doctorProfile == null)
+            return ApiResponse.ErrorResponse("Doctor profile not found.");
+
+        var record = await _repo.GetByIdAsync(patientRecordId, ct);
+        if (record == null || record.IsDeleted)
+            return ApiResponse.ErrorResponse("Patient record not found.");
+
+        if (!MatchesDoctor(record.DoctorId, doctorProfile))
+            return ApiResponse.ErrorResponse("You do not have permission to resend this invitation.");
+
+        if (!record.PatientId.HasValue)
+            return ApiResponse.ErrorResponse("Create the patient account before resending an invitation.");
+
+        var patient = (await _patientRepo.GetAllAsync(ct))
+            .FirstOrDefault(p => p.Id == record.PatientId.Value || p.UserId == record.PatientId.Value);
+        if (patient == null)
+            return ApiResponse.ErrorResponse("Linked patient profile not found.");
+
+        var user = await _userRepo.GetByIdAsync(patient.UserId, ct);
+        if (user == null || user.IsDeleted)
+            return ApiResponse.ErrorResponse("Linked patient account not found.");
+
+        var otpCode = await CreateSetPasswordOtpAsync(user, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        var emailSent = await TrySendInvitationEmailAsync(user.Email, user.FullName, otpCode, ct);
+        return emailSent
+            ? ApiResponse.SuccessResponse("Invitation email resent successfully.")
+            : ApiResponse.ErrorResponse("Invitation email could not be sent. Please check SMTP settings and try again.");
+    }
+
+    private async Task<DoctorProfile?> ResolveDoctorProfileAsync(Guid doctorUserId, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        return allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+    }
+
+    private async Task<string> CreateSetPasswordOtpAsync(User user, CancellationToken ct)
+    {
+        var otpCode = GenerateOtp();
+        await _otpRepo.AddAsync(new OtpVerification
+        {
+            UserId = user.Id,
+            Code = otpCode,
+            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            User = user
+        }, ct);
+        return otpCode;
+    }
+
+    private async Task<bool> TrySendInvitationEmailAsync(string email, string patientName, string otpCode, CancellationToken ct)
+    {
+        try
+        {
+            var resetLink = $"{GetPublicWebBaseUrl()}/Account/ResetPassword?email={Uri.EscapeDataString(email)}&otpCode={Uri.EscapeDataString(otpCode)}";
+            var safeName = WebUtility.HtmlEncode(patientName);
+            var html = $@"
+                <p>Hello {safeName},</p>
+                <p>Your doctor has invited you to use OPCBS to continue managing appointments and treatment progress online.</p>
+                <p>Please set your password using the secure link below. This link expires in 24 hours.</p>
+                <p><a href=""{resetLink}"" style=""display:inline-block;background:#0f766e;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600;"">Set your password</a></p>
+                <p>If the button does not work, copy and paste this URL into your browser:</p>
+                <p>{WebUtility.HtmlEncode(resetLink)}</p>
+                <p>If you did not expect this invitation, please contact OPCBS support.</p>";
+
+            await _emailService.SendEmailAsync(email, "OPCBS - Set up your patient account", html, ct);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string NormalizeEmail(string? email) => email?.Trim().ToLowerInvariant() ?? string.Empty;
+
+    private static string CreateUnusablePassword() =>
+        Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+
+    private static string GenerateOtp()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[4];
+        rng.GetBytes(bytes);
+        var value = BitConverter.ToUInt32(bytes, 0) % 1_000_000;
+        return value.ToString("D6");
+    }
+
+    private static string GetPublicWebBaseUrl()
+    {
+        var configured = Environment.GetEnvironmentVariable("OPCBS_PUBLIC_WEB_URL");
+        return string.IsNullOrWhiteSpace(configured) ? "http://localhost:5044" : configured.Trim().TrimEnd('/');
     }
 }

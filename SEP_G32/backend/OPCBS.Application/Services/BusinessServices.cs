@@ -384,6 +384,7 @@ public class ConsultationNoteService : IConsultationNoteService
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<TreatmentPackage> _packageRepo;
     private readonly INotificationService _notificationService;
+    private readonly IRepository<CustomClinicalField>? _customFieldRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -397,7 +398,8 @@ public class ConsultationNoteService : IConsultationNoteService
         IRepository<TreatmentPackage> packageRepo,
         INotificationService notificationService,
         IUnitOfWork uow,
-        IMapper mapper)
+        IMapper mapper,
+        IRepository<CustomClinicalField>? customFieldRepo = null)
     {
         _recordRepo = recordRepo;
         _apptRepo = apptRepo;
@@ -409,6 +411,7 @@ public class ConsultationNoteService : IConsultationNoteService
         _notificationService = notificationService;
         _uow = uow;
         _mapper = mapper;
+        _customFieldRepo = customFieldRepo;
     }
 
     private async Task EnrichRecordsAsync(List<ConsultationNoteDto> dtos, CancellationToken ct)
@@ -480,6 +483,37 @@ public class ConsultationNoteService : IConsultationNoteService
             // Enrich package name from appointment
             if (dto.AppointmentId.HasValue && apptPackageMap.TryGetValue(dto.AppointmentId.Value, out var packageName))
                 dto.PackageName = packageName;
+        }
+
+        if (_customFieldRepo != null && dtos.Any())
+        {
+            try
+            {
+                var allFields = await _customFieldRepo.GetAllAsync(ct);
+                var fieldsByNote = allFields.Where(f => f.OwnerType == "ConsultationNote")
+                    .GroupBy(f => f.OwnerId)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(f => f.OrderIndex).Select(f => new CustomClinicalFieldDto
+                    {
+                        Id = f.Id,
+                        OwnerType = f.OwnerType,
+                        OwnerId = f.OwnerId,
+                        SectionKey = f.SectionKey,
+                        Title = f.Title,
+                        Content = f.Content,
+                        FieldType = f.FieldType,
+                        OrderIndex = f.OrderIndex,
+                        CreatedByDoctorId = f.CreatedByDoctorId
+                    }).ToList());
+
+                foreach (var dto in dtos)
+                {
+                    if (fieldsByNote.TryGetValue(dto.Id, out var fields))
+                    {
+                        dto.CustomFields = fields;
+                    }
+                }
+            }
+            catch { }
         }
     }
 
@@ -594,6 +628,30 @@ public class ConsultationNoteService : IConsultationNoteService
         }
         await _recordRepo.AddAsync(record, ct);
         await _uow.SaveChangesAsync(ct);
+
+        if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
+        {
+            int idx = 0;
+            foreach (var cf in dto.CustomFields)
+            {
+                if (!string.IsNullOrWhiteSpace(cf.Title))
+                {
+                    await _customFieldRepo.AddAsync(new CustomClinicalField
+                    {
+                        OwnerType = "ConsultationNote",
+                        OwnerId = record.Id,
+                        SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "ConsultationNote" : cf.SectionKey,
+                        Title = cf.Title,
+                        Content = cf.Content,
+                        FieldType = cf.FieldType ?? "Text",
+                        OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                        CreatedByDoctorId = doctor.Id
+                    }, ct);
+                }
+            }
+            await _uow.SaveChangesAsync(ct);
+        }
+
         var createdLinkedDto = _mapper.Map<ConsultationNoteDto>(record);
         await EnrichRecordsAsync(new List<ConsultationNoteDto> { createdLinkedDto }, ct);
 
@@ -631,6 +689,40 @@ public class ConsultationNoteService : IConsultationNoteService
         record.UpdatedAt = DateTime.UtcNow;
 
         _recordRepo.Update(record);
+
+        if (_customFieldRepo != null && dto.CustomFields != null)
+        {
+            try
+            {
+                var existingFields = (await _customFieldRepo.GetAllAsync(ct))
+                    .Where(f => f.OwnerType == "ConsultationNote" && f.OwnerId == record.Id)
+                    .ToList();
+                foreach (var f in existingFields)
+                {
+                    _customFieldRepo.Delete(f);
+                }
+                int idx = 0;
+                foreach (var cf in dto.CustomFields)
+                {
+                    if (!string.IsNullOrWhiteSpace(cf.Title))
+                    {
+                        await _customFieldRepo.AddAsync(new CustomClinicalField
+                        {
+                            OwnerType = "ConsultationNote",
+                            OwnerId = record.Id,
+                            SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "ConsultationNote" : cf.SectionKey,
+                            Title = cf.Title,
+                            Content = cf.Content,
+                            FieldType = cf.FieldType ?? "Text",
+                            OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                            CreatedByDoctorId = doctor.Id
+                        }, ct);
+                    }
+                }
+            }
+            catch { }
+        }
+
         await _uow.SaveChangesAsync(ct);
         var updatedDto = _mapper.Map<ConsultationNoteDto>(record);
         await EnrichRecordsAsync(new List<ConsultationNoteDto> { updatedDto }, ct);
@@ -1334,7 +1426,7 @@ public class AdminService : IAdminService
         return ApiResponse.SuccessResponse("User account locked successfully");
     }
 
-    public async Task<ApiResponse> UnlockUserAsync(Guid userId, CancellationToken ct)
+    public async Task<ApiResponse> UnlockUserAsync(Guid userId, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var user = await _userRepo.GetByIdAsync(userId, ct);
         if (user == null || user.IsDeleted) return ApiResponse.ErrorResponse("User not found");
@@ -1344,7 +1436,7 @@ public class AdminService : IAdminService
         return ApiResponse.SuccessResponse("User account unlocked successfully");
     }
 
-    public async Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct)
+    public async Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct = default)
     {
         var roles = await _roleRepo.GetAllAsync(ct);
         var users = await _userRepo.GetAllAsync(ct);
@@ -1360,7 +1452,7 @@ public class AdminService : IAdminService
         return ApiResponse<List<RoleDto>>.SuccessResponse(list);
     }
 
-    public async Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page, int pageSize, CancellationToken ct)
+    public async Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page, int pageSize, CancellationToken ct = default)
     {
         var all = await _auditRepo.GetAllAsync(ct);
         var logs = all.ToList();
@@ -1371,13 +1463,13 @@ public class AdminService : IAdminService
         return ApiResponse<List<AuditLogDto>>.SuccessResponse(_mapper.Map<List<AuditLogDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
-    public async Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct)
+    public async Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default)
     {
         var all = await _specRepo.GetAllAsync(ct);
         return ApiResponse<List<SpecializationDto>>.SuccessResponse(_mapper.Map<List<SpecializationDto>>(all.Where(s => !s.IsDeleted).ToList()));
     }
 
-    public async Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, CancellationToken ct)
+    public async Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var spec = new Specialization { Name = name, Description = description };
         await _specRepo.AddAsync(spec, ct);
@@ -1385,7 +1477,7 @@ public class AdminService : IAdminService
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization created");
     }
 
-    public async Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, CancellationToken ct)
+    public async Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var spec = await _specRepo.GetByIdAsync(id, ct);
         if (spec == null) return ApiResponse<SpecializationDto>.ErrorResponse("Specialization not found");
@@ -1397,7 +1489,7 @@ public class AdminService : IAdminService
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization updated");
     }
 
-    public async Task<ApiResponse> DeleteSpecializationAsync(Guid id, CancellationToken ct)
+    public async Task<ApiResponse> DeleteSpecializationAsync(Guid id, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var spec = await _specRepo.GetByIdAsync(id, ct);
         if (spec == null) return ApiResponse.ErrorResponse("Specialization not found");
@@ -1407,14 +1499,14 @@ public class AdminService : IAdminService
         return ApiResponse.SuccessResponse("Specialization deleted successfully");
     }
 
-    public async Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct)
+    public async Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct = default)
     {
         var configs = await _configRepo.GetAllAsync(ct);
         var dict = configs.ToDictionary(c => c.Key, c => c.Value);
         return ApiResponse<Dictionary<string, string>>.SuccessResponse(dict);
     }
 
-    public async Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, CancellationToken ct)
+    public async Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var configs = await _configRepo.GetAllAsync(ct);
         var configDict = configs.ToDictionary(c => c.Key, c => c);
@@ -1444,6 +1536,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<TreatmentCase> _caseRepo;
     private readonly INotificationService _notificationService;
+    private readonly IRepository<CustomClinicalField>? _customFieldRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
@@ -1457,7 +1550,8 @@ public class TreatmentPackageService : ITreatmentPackageService
         INotificationService notificationService,
         IUnitOfWork uow,
         IMapper mapper,
-        IFavoriteDoctorNotificationService? favoriteNotificationService = null)
+        IFavoriteDoctorNotificationService? favoriteNotificationService = null,
+        IRepository<CustomClinicalField>? customFieldRepo = null)
     {
         _packageRepo = packageRepo;
         _doctorRepo = doctorRepo;
@@ -1468,6 +1562,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         _uow = uow;
         _mapper = mapper;
         _favoriteNotificationService = favoriteNotificationService;
+        _customFieldRepo = customFieldRepo;
     }
 
     public async Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct)
@@ -1523,6 +1618,29 @@ public class TreatmentPackageService : ITreatmentPackageService
         await _packageRepo.AddAsync(package, ct);
         await _uow.SaveChangesAsync(ct);
 
+        if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
+        {
+            int idx = 0;
+            foreach (var cf in dto.CustomFields)
+            {
+                if (!string.IsNullOrWhiteSpace(cf.Title))
+                {
+                    await _customFieldRepo.AddAsync(new CustomClinicalField
+                    {
+                        OwnerType = "TreatmentPackage",
+                        OwnerId = package.Id,
+                        SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "BasicInformation" : cf.SectionKey,
+                        Title = cf.Title,
+                        Content = cf.Content,
+                        FieldType = cf.FieldType ?? "Text",
+                        OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                        CreatedByDoctorId = doctor.Id
+                    }, ct);
+                }
+            }
+            await _uow.SaveChangesAsync(ct);
+        }
+
         // Send notification to patient (TreatmentCase is created only when patient accepts)
         if (patient != null)
         {
@@ -1569,6 +1687,73 @@ public class TreatmentPackageService : ITreatmentPackageService
         return ApiResponse<TreatmentPackageDto>.SuccessResponse(createdDto, patient != null ? "Treatment package created and assigned. Treatment case will be created when patient accepts." : "Template treatment package created successfully");
     }
 
+    public async Task<ApiResponse<TreatmentPackageDto>> UpdateAsync(Guid packageId, Guid doctorUserId, UpdateTreatmentPackageDto dto, CancellationToken ct)
+    {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Doctor not found");
+
+        var package = await _packageRepo.GetByIdAsync(packageId, ct);
+        if (package == null)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Treatment package not found");
+
+        if (package.DoctorId != doctor.Id)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("You are not authorized to edit this treatment package");
+
+        package.Name = dto.Name;
+        package.Description = dto.Description;
+        package.TargetOutcome = dto.TargetOutcome;
+        package.RecommendedExercises = dto.RecommendedExercises;
+        package.Instructions = dto.Instructions;
+        package.SessionQuantity = dto.SessionQuantity;
+        package.ValidityDays = dto.ValidityDays > 0 ? dto.ValidityDays : 90;
+        package.RecommendedSessionsPerWeek = dto.RecommendedSessionsPerWeek > 0 ? dto.RecommendedSessionsPerWeek : 1;
+        package.Price = dto.Price;
+        package.UpdatedAt = DateTime.UtcNow;
+
+        _packageRepo.Update(package);
+
+        if (_customFieldRepo != null && dto.CustomFields != null)
+        {
+            try
+            {
+                var existingFields = (await _customFieldRepo.GetAllAsync(ct))
+                    .Where(f => f.OwnerType == "TreatmentPackage" && f.OwnerId == package.Id)
+                    .ToList();
+                foreach (var f in existingFields)
+                {
+                    _customFieldRepo.Delete(f);
+                }
+                int idx = 0;
+                foreach (var cf in dto.CustomFields)
+                {
+                    if (!string.IsNullOrWhiteSpace(cf.Title))
+                    {
+                        await _customFieldRepo.AddAsync(new CustomClinicalField
+                        {
+                            OwnerType = "TreatmentPackage",
+                            OwnerId = package.Id,
+                            SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "BasicInformation" : cf.SectionKey,
+                            Title = cf.Title,
+                            Content = cf.Content,
+                            FieldType = cf.FieldType ?? "Text",
+                            OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                            CreatedByDoctorId = doctor.Id
+                        }, ct);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        await _uow.SaveChangesAsync(ct);
+
+        var resultDto = _mapper.Map<TreatmentPackageDto>(package);
+        await EnrichNamesAsync(new List<TreatmentPackageDto> { resultDto }, ct);
+        return ApiResponse<TreatmentPackageDto>.SuccessResponse(resultDto, "Treatment package updated successfully");
+    }
+
     /// <summary>Resolve DoctorName/PatientName from User entities (nav props not loaded by generic repo)</summary>
     private async Task EnrichNamesAsync(List<TreatmentPackageDto> dtos, CancellationToken ct)
     {
@@ -1600,6 +1785,37 @@ public class TreatmentPackageService : ITreatmentPackageService
             {
                 dto.CancellationRequestedByName = requestedByName;
             }
+        }
+
+        if (_customFieldRepo != null && dtos.Any())
+        {
+            try
+            {
+                var allFields = await _customFieldRepo.GetAllAsync(ct);
+                var fieldsByPackage = allFields.Where(f => f.OwnerType == "TreatmentPackage")
+                    .GroupBy(f => f.OwnerId)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(f => f.OrderIndex).Select(f => new CustomClinicalFieldDto
+                    {
+                        Id = f.Id,
+                        OwnerType = f.OwnerType,
+                        OwnerId = f.OwnerId,
+                        SectionKey = f.SectionKey,
+                        Title = f.Title,
+                        Content = f.Content,
+                        FieldType = f.FieldType,
+                        OrderIndex = f.OrderIndex,
+                        CreatedByDoctorId = f.CreatedByDoctorId
+                    }).ToList());
+
+                foreach (var dto in dtos)
+                {
+                    if (fieldsByPackage.TryGetValue(dto.Id, out var fields))
+                    {
+                        dto.CustomFields = fields;
+                    }
+                }
+            }
+            catch { }
         }
     }
 

@@ -49,6 +49,7 @@ public class OpcbsDbContext : DbContext
     // Consultations & Patient Records
     public DbSet<PatientRecord> PatientRecords => Set<PatientRecord>();
     public DbSet<ConsultationNote> ConsultationNotes => Set<ConsultationNote>();
+    public DbSet<CustomClinicalField> CustomClinicalFields => Set<CustomClinicalField>();
 
     // Packages
     public DbSet<TreatmentPackage> TreatmentPackages => Set<TreatmentPackage>();
@@ -355,6 +356,19 @@ public class OpcbsDbContext : DbContext
                 .HasFilter("[IsDeleted] = 0");
         });
 
+        modelBuilder.Entity<ScheduleNote>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+            entity.HasOne(e => e.AppointmentSlot)
+                .WithMany(s => s.ScheduleNotes)
+                .HasForeignKey(e => e.AppointmentSlotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.AppointmentSlotId);
+            entity.HasIndex(e => new { e.DoctorProfileId, e.NoteDate });
+        });
+
         // Appointment
         modelBuilder.Entity<Appointment>(entity =>
         {
@@ -366,8 +380,10 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(255);
             entity.Property(e => e.GuestEmail)
                 .HasMaxLength(255);
-            entity.Property(e => e.GuestPhoneNumber)
-                .HasMaxLength(20);
+              entity.Property(e => e.GuestPhoneNumber)
+                  .HasMaxLength(20);
+              entity.Property(e => e.GuestZaloNumber)
+                  .HasMaxLength(20);
             entity.Property(e => e.GuestConfirmationTokenHash)
                 .HasMaxLength(64);
             entity.Property(e => e.GuestActionTokenHash)
@@ -429,7 +445,10 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.GuestTokenHash).HasMaxLength(64);
             entity.Property(e => e.DisputeReason).HasMaxLength(2000);
         });
+    }
 
+    private static void ConfigurePackageEntities(ModelBuilder modelBuilder)
+    {
         // ConsultationNote
         modelBuilder.Entity<ConsultationNote>(entity =>
         {
@@ -439,8 +458,18 @@ public class OpcbsDbContext : DbContext
                 .HasForeignKey<ConsultationNote>(e => e.AppointmentId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);
+            entity.HasOne(e => e.NextAppointmentRecommendedSlot)
+                .WithMany()
+                .HasForeignKey(e => e.NextAppointmentRecommendedSlotId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+            entity.HasOne(e => e.FollowUpAppointment)
+                .WithMany()
+                .HasForeignKey(e => e.FollowUpAppointmentId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
             entity.HasOne(e => e.Doctor)
-                .WithMany() // Or add a collection to DoctorProfile
+                .WithMany()
                 .HasForeignKey(e => e.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.PatientRecord)
@@ -491,10 +520,20 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.StressFactors).HasMaxLength(2000);
             entity.Property(e => e.GeneralNotes).HasMaxLength(5000);
         });
-    }
 
-    private static void ConfigurePackageEntities(ModelBuilder modelBuilder)
-    {
+        // CustomClinicalField
+        modelBuilder.Entity<CustomClinicalField>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OwnerType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.SectionKey).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Content).HasMaxLength(5000);
+            entity.Property(e => e.FieldType).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => new { e.OwnerType, e.OwnerId });
+            entity.HasIndex(e => new { e.OwnerId, e.SectionKey, e.OrderIndex });
+        });
+
         // ServicePackage
         modelBuilder.Entity<ServicePackage>(entity =>
         {

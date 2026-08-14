@@ -99,6 +99,11 @@ public class UserProfileDto
     public bool IsEmailVerified { get; set; }
     public required string Role { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? Address { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 }
 
 /// <summary>
@@ -108,6 +113,11 @@ public class UpdateUserProfileDto
 {
     public string? FullName { get; set; }
     public string? PhoneNumber { get; set; }
+    public string? Address { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 }
 
 /// <summary>
@@ -137,6 +147,7 @@ public class DoctorProfileDto
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }
     public string? LicenseNumber { get; set; }
+    public DateTime? LicenseExpiryDate { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
 }
@@ -178,4 +189,5 @@ public class UpdateDoctorProfileDto
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }
     public string? LicenseNumber { get; set; }
+    public DateTime? LicenseExpiryDate { get; set; }
 }

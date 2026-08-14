@@ -35,7 +35,7 @@ public class DoctorService : IDoctorService
         _uow = uow;
     }
 
-    public async Task<ApiResponse<List<DoctorProfileDto>>> GetDoctorsAsync(string? search, Guid? specializationId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    public async Task<ApiResponse<List<DoctorProfileDto>>> GetDoctorsAsync(string? search, Guid? specializationId, double? minRating = null, decimal? maxFee = null, string? gender = null, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var query = allDoctors.Where(d => d.VerificationStatus == VerificationStatus.Approved && d.IsVisible);
@@ -50,6 +50,34 @@ public class DoctorService : IDoctorService
         var allDoctorSpecs = (await _doctorSpecRepo.GetAllAsync(ct)).ToList();
         var allSpecs = (await _specRepo.GetAllAsync(ct)).ToList();
         var specMap = allSpecs.ToDictionary(s => s.Id, s => s.Name);
+
+        // Specialization filter by Id
+        if (specializationId.HasValue && specializationId.Value != Guid.Empty)
+        {
+            var doctorIdsWithSpec = allDoctorSpecs
+                .Where(ds => ds.SpecializationId == specializationId.Value)
+                .Select(ds => ds.DoctorProfileId)
+                .ToHashSet();
+            list = list.Where(d => doctorIdsWithSpec.Contains(d.Id)).ToList();
+        }
+
+        // Minimum rating filter
+        if (minRating.HasValue && minRating.Value > 0)
+        {
+            list = list.Where(d => (double)d.AverageRating >= minRating.Value).ToList();
+        }
+
+        // Maximum fee filter
+        if (maxFee.HasValue && maxFee.Value > 0)
+        {
+            list = list.Where(d => d.ConsultationFee <= maxFee.Value).ToList();
+        }
+
+        // Gender filter
+        if (!string.IsNullOrWhiteSpace(gender))
+        {
+            list = list.Where(d => d.Gender.HasValue && string.Equals(d.Gender.Value.ToString(), gender.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+        }
 
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(search))
@@ -291,6 +319,7 @@ public class AppointmentService : IAppointmentService
     private readonly IRepository<AppointmentCompletionConfirmation>? _completionConfirmationRepo;
     private readonly IViolationReportService? _violationReports;
     private readonly ITreatmentCaseService? _treatmentCaseService;
+    private readonly IRepository<CustomClinicalField>? _customFieldRepo;
 
     public AppointmentService(
         IRepository<Appointment> apptRepo,
@@ -312,7 +341,8 @@ public class AppointmentService : IAppointmentService
         IRepository<TreatmentSession>? sessionRepo = null,
         IRepository<AppointmentCompletionConfirmation>? completionConfirmationRepo = null,
         IViolationReportService? violationReports = null,
-        ITreatmentCaseService? treatmentCaseService = null)
+        ITreatmentCaseService? treatmentCaseService = null,
+        IRepository<CustomClinicalField>? customFieldRepo = null)
     {
         _apptRepo = apptRepo;
         _slotRepo = slotRepo;
@@ -334,6 +364,7 @@ public class AppointmentService : IAppointmentService
         _completionConfirmationRepo = completionConfirmationRepo;
         _violationReports = violationReports;
         _treatmentCaseService = treatmentCaseService;
+        _customFieldRepo = customFieldRepo;
     }
 
     private async Task SyncSessionStatusAsync(Appointment appt, TreatmentSessionStatus newSessionStatus, CancellationToken ct)
@@ -398,6 +429,12 @@ public class AppointmentService : IAppointmentService
         var slot = await _slotRepo.GetByIdAsync(dto.AppointmentSlotId, ct);
         if (slot == null || slot.Status != AppointmentSlotStatus.Available)
             return ApiResponse<AppointmentDto>.ErrorResponse("Slot not available for booking.");
+
+        if (slot.ConsultationMode == ConsultationMode.Online && dto.ConsultationMode == ConsultationMode.Offline)
+            return ApiResponse<AppointmentDto>.ErrorResponse("This slot is only available for Online consultation.");
+        if (slot.ConsultationMode == ConsultationMode.Offline && dto.ConsultationMode == ConsultationMode.Online)
+            return ApiResponse<AppointmentDto>.ErrorResponse("This slot is only available for In-Person (Offline) consultation.");
+
         // Check capacity
         if (slot.CurrentBookings >= slot.MaxPatients)
             return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã đạt giới hạn số lượng bệnh nhân.");
@@ -414,7 +451,14 @@ public class AppointmentService : IAppointmentService
             var allPatients = await _patientRepo.GetAllAsync(ct);
             var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId.Value);
             if (patient != null)
+            {
                 patientProfileId = patient.Id;
+                if (!string.IsNullOrWhiteSpace(dto.PatientAddress))
+                {
+                    patient.Address = dto.PatientAddress.Trim();
+                    _patientRepo.Update(patient);
+                }
+            }
             else
                 return ApiResponse<AppointmentDto>.ErrorResponse("Only patients can create appointments while signed in.");
         }
@@ -548,6 +592,7 @@ public class AppointmentService : IAppointmentService
                 MedicalHistory = dto.MedicalHistory,
                 Expectations = dto.Expectations,
                 TreatmentPackageId = dto.TreatmentPackageId,
+                ConsultationMode = dto.ConsultationMode,
                 Status = patientProfileId.HasValue ? AppointmentStatus.Pending : AppointmentStatus.AwaitingGuestConfirmation,
                 GuestConfirmationTokenHash = guestConfirmationToken == null ? null : HashGuestConfirmationToken(guestConfirmationToken),
                 GuestActionTokenHash = guestActionToken == null ? null : HashGuestConfirmationToken(guestActionToken),
@@ -558,6 +603,28 @@ public class AppointmentService : IAppointmentService
                 Doctor = doctor
             };
             await _apptRepo.AddAsync(appointment, ct);
+
+            if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
+            {
+                int idx = 0;
+                foreach (var cf in dto.CustomFields)
+                {
+                    if (!string.IsNullOrWhiteSpace(cf.Title))
+                    {
+                        await _customFieldRepo.AddAsync(new CustomClinicalField
+                        {
+                            OwnerType = "Appointment",
+                            OwnerId = appointment.Id,
+                            SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "PreAppointmentEvaluation" : cf.SectionKey,
+                            Title = cf.Title,
+                            Content = cf.Content,
+                            FieldType = cf.FieldType ?? "Text",
+                            OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                            CreatedByDoctorId = doctor.Id
+                        }, ct);
+                    }
+                }
+            }
 
             await _historyRepo.AddAsync(new AppointmentHistory
             {
@@ -739,6 +806,8 @@ public class AppointmentService : IAppointmentService
             }
 
             dto.TreatmentPackageId = appt.TreatmentPackageId;
+            dto.ConsultationMode = appt.ConsultationMode == ConsultationMode.Online ? "Online" : "In-Person";
+            dto.ConsultationModeEnum = appt.ConsultationMode;
         }
     }
 
@@ -793,6 +862,8 @@ public class AppointmentService : IAppointmentService
             dto.StartTime = slot.StartTime.ToString("HH:mm");
             dto.EndTime = slot.EndTime.ToString("HH:mm");
             dto.Fee = slot.Price;
+            dto.PreAppointmentNoteTitle = slot.PreAppointmentNoteTitle;
+            dto.IsPreAppointmentNoteRequired = slot.IsPreAppointmentNoteRequired;
 
             var slotDateTime = GetSlotTimeUtc(slot);
             dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
@@ -831,6 +902,41 @@ public class AppointmentService : IAppointmentService
 
         // Enrich with cancellation reason
         dto.CancellationReason = appt.CancellationReason;
+
+        dto.ConsultationMode = appt.ConsultationMode == ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)";
+        dto.ConsultationModeEnum = appt.ConsultationMode;
+
+        var docProf = allDoctors.FirstOrDefault(d => d.Id == appt.DoctorId);
+        dto.DoctorAddress = docProf?.Address;
+
+        if (appt.PatientId.HasValue)
+        {
+            var patProf = allPatients.FirstOrDefault(p => p.Id == appt.PatientId.Value || p.UserId == appt.PatientId.Value);
+            dto.PatientAddress = patProf?.Address;
+        }
+
+        if (_customFieldRepo != null)
+        {
+            try
+            {
+                var allFields = await _customFieldRepo.GetAllAsync(ct);
+                dto.CustomFields = allFields.Where(f => f.OwnerType == "Appointment" && f.OwnerId == appt.Id)
+                    .OrderBy(f => f.OrderIndex)
+                    .Select(f => new CustomClinicalFieldDto
+                    {
+                        Id = f.Id,
+                        OwnerType = f.OwnerType,
+                        OwnerId = f.OwnerId,
+                        SectionKey = f.SectionKey,
+                        Title = f.Title,
+                        Content = f.Content,
+                        FieldType = f.FieldType,
+                        OrderIndex = f.OrderIndex,
+                        CreatedByDoctorId = f.CreatedByDoctorId
+                    }).ToList();
+            }
+            catch { }
+        }
     }
 
     public async Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, string? view = null, CancellationToken ct = default)
@@ -2522,14 +2628,21 @@ public class AppointmentService : IAppointmentService
         {
             var allNotes = await _consultationNoteRepo.GetAllAsync(ct);
             var allPatientRecords = _patientRecordRepo != null ? await _patientRecordRepo.GetAllAsync(ct) : new List<PatientRecord>();
-            var pRecord = allPatientRecords.FirstOrDefault(pr => pr.PatientId == patient.Id);
-            var pRecordId = pRecord?.Id;
+            var pRecordIds = allPatientRecords
+                .Where(pr => pr.PatientId == patient.Id)
+                .Select(pr => pr.Id)
+                .ToHashSet();
+
+            var allAppts = await _apptRepo.GetAllAsync(ct);
+            var patientApptIds = allAppts
+                .Where(a => a.PatientId == patient.Id || a.PatientId == patient.UserId)
+                .Select(a => a.Id)
+                .ToHashSet();
 
             var patientNotes = allNotes.Where(n => !n.IsDeleted &&
-                ((pRecordId.HasValue && n.PatientRecordId == pRecordId.Value) ||
-                 (n.Appointment != null && n.Appointment.PatientId == patient.Id) ||
-                 (n.AppointmentId.HasValue && n.AppointmentId != appointmentId)) &&
-                n.AppointmentId != appointmentId)
+                n.AppointmentId != appointmentId &&
+                (pRecordIds.Contains(n.PatientRecordId) ||
+                 (n.AppointmentId.HasValue && patientApptIds.Contains(n.AppointmentId.Value))))
                 .OrderByDescending(n => n.ConsultationDate ?? n.CreatedAt)
                 .Take(3)
                 .ToList();
@@ -2713,6 +2826,7 @@ public class ScheduleService : IScheduleService
     private readonly IRepository<DoctorSubscription>? _subscriptionRepo;
     private readonly IRepository<ServicePackage>? _servicePackageRepo;
     private readonly IRepository<ScheduleNote>? _scheduleNoteRepo;
+    private readonly IRepository<CustomClinicalField>? _customFieldRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -2734,7 +2848,8 @@ public class ScheduleService : IScheduleService
         IFavoriteDoctorNotificationService? favoriteNotificationService = null,
         IRepository<DoctorSubscription>? subscriptionRepo = null,
         IRepository<ServicePackage>? servicePackageRepo = null,
-        IRepository<ScheduleNote>? scheduleNoteRepo = null)
+        IRepository<ScheduleNote>? scheduleNoteRepo = null,
+        IRepository<CustomClinicalField>? customFieldRepo = null)
     {
         _scheduleRepo = scheduleRepo;
         _slotRepo = slotRepo;
@@ -2754,6 +2869,7 @@ public class ScheduleService : IScheduleService
         _subscriptionRepo = subscriptionRepo;
         _servicePackageRepo = servicePackageRepo;
         _scheduleNoteRepo = scheduleNoteRepo;
+        _customFieldRepo = customFieldRepo;
     }
 
     private async Task<int?> GetDailySlotCapacityAsync(Guid doctorProfileId, CancellationToken ct)
@@ -2861,6 +2977,7 @@ public class ScheduleService : IScheduleService
                         StartTime = currentTime,
                         EndTime = slotEnd,
                         Status = AppointmentSlotStatus.Available,
+                        ConsultationMode = schedule.ConsultationMode,
                         DoctorProfile = doctor
                     });
                     existingKeys.Add(key);
@@ -2900,6 +3017,7 @@ public class ScheduleService : IScheduleService
             EndTime = endTime,
             SlotDuration = dto.SlotDuration,
             SlotsPerDay = slotsPerDay,
+            ConsultationMode = dto.ConsultationMode,
             DoctorProfile = doctor
         };
 
@@ -2929,6 +3047,7 @@ public class ScheduleService : IScheduleService
         if (!string.IsNullOrWhiteSpace(dto.StartTime)) schedule.StartTime = TimeOnly.Parse(dto.StartTime);
         if (!string.IsNullOrWhiteSpace(dto.EndTime)) schedule.EndTime = TimeOnly.Parse(dto.EndTime);
         if (dto.SlotDuration.HasValue) schedule.SlotDuration = dto.SlotDuration.Value;
+        if (dto.ConsultationMode.HasValue) schedule.ConsultationMode = dto.ConsultationMode.Value;
 
         if (schedule.StartTime >= schedule.EndTime)
             return ApiResponse<ScheduleDto>.ErrorResponse("Start time must be before end time");
@@ -3002,6 +3121,22 @@ public class ScheduleService : IScheduleService
         if (date.HasValue)
             doctorSlots = doctorSlots.Where(s => s.SlotDate == date.Value).ToList();
 
+        var allFields = _customFieldRepo != null ? ((await _customFieldRepo.GetAllAsync(ct)) ?? new List<CustomClinicalField>()) : new List<CustomClinicalField>();
+        var fieldsBySlot = allFields.Where(f => f.OwnerType == "AppointmentSlot")
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(f => f.OrderIndex).Select(f => new CustomClinicalFieldDto
+            {
+                Id = f.Id,
+                OwnerType = f.OwnerType,
+                OwnerId = f.OwnerId,
+                SectionKey = f.SectionKey,
+                Title = f.Title,
+                Content = f.Content,
+                FieldType = f.FieldType,
+                OrderIndex = f.OrderIndex,
+                CreatedByDoctorId = f.CreatedByDoctorId
+            }).ToList());
+
         var slotDtos = doctorSlots.Select(s => new AppointmentSlotDto
         {
             Id = s.Id,
@@ -3012,7 +3147,11 @@ public class ScheduleService : IScheduleService
             Price = s.Price,
             Notes = s.Notes,
             MaxPatients = s.MaxPatients,
-            CurrentBookings = s.CurrentBookings
+            CurrentBookings = s.CurrentBookings,
+            ConsultationMode = s.ConsultationMode,
+            PreAppointmentNoteTitle = s.PreAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = s.IsPreAppointmentNoteRequired,
+            CustomFields = fieldsBySlot.TryGetValue(s.Id, out var cfList) ? cfList : new()
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -3044,6 +3183,22 @@ public class ScheduleService : IScheduleService
         if (date.HasValue)
             doctorSlots = doctorSlots.Where(s => s.SlotDate == date.Value).ToList();
 
+        var allFields2 = _customFieldRepo != null ? ((await _customFieldRepo.GetAllAsync(ct)) ?? new List<CustomClinicalField>()) : new List<CustomClinicalField>();
+        var fieldsBySlot2 = allFields2.Where(f => f.OwnerType == "AppointmentSlot")
+            .GroupBy(f => f.OwnerId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(f => f.OrderIndex).Select(f => new CustomClinicalFieldDto
+            {
+                Id = f.Id,
+                OwnerType = f.OwnerType,
+                OwnerId = f.OwnerId,
+                SectionKey = f.SectionKey,
+                Title = f.Title,
+                Content = f.Content,
+                FieldType = f.FieldType,
+                OrderIndex = f.OrderIndex,
+                CreatedByDoctorId = f.CreatedByDoctorId
+            }).ToList());
+
         var slotDtos = doctorSlots.Select(s => new AppointmentSlotDto
         {
             Id = s.Id,
@@ -3054,7 +3209,11 @@ public class ScheduleService : IScheduleService
             Price = s.Price,
             Notes = s.Notes,
             MaxPatients = s.MaxPatients,
-            CurrentBookings = s.CurrentBookings
+            CurrentBookings = s.CurrentBookings,
+            ConsultationMode = s.ConsultationMode,
+            PreAppointmentNoteTitle = s.PreAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = s.IsPreAppointmentNoteRequired,
+            CustomFields = fieldsBySlot2.TryGetValue(s.Id, out var cfList) ? cfList : new()
         }).ToList();
 
         var result = new AvailableSlotsDto
@@ -3188,11 +3347,37 @@ public class ScheduleService : IScheduleService
             Notes = dto.Notes,
             MaxPatients = dto.MaxPatients > 0 ? dto.MaxPatients : 1,
             CurrentBookings = 0,
+            ConsultationMode = dto.ConsultationMode,
+            PreAppointmentNoteTitle = dto.PreAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = dto.IsPreAppointmentNoteRequired,
             DoctorProfile = doctor
         };
 
         await _slotRepo.AddAsync(slot, ct);
         await _uow.SaveChangesAsync(ct);
+
+        if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
+        {
+            int idx = 0;
+            foreach (var cf in dto.CustomFields)
+            {
+                if (!string.IsNullOrWhiteSpace(cf.Title))
+                {
+                    await _customFieldRepo.AddAsync(new CustomClinicalField
+                    {
+                        OwnerType = "AppointmentSlot",
+                        OwnerId = slot.Id,
+                        SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "PreAppointmentEvaluation" : cf.SectionKey,
+                        Title = cf.Title,
+                        Content = cf.Content,
+                        FieldType = cf.FieldType ?? "Text",
+                        OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                        CreatedByDoctorId = doctor.Id
+                    }, ct);
+                }
+            }
+            await _uow.SaveChangesAsync(ct);
+        }
 
         var returnDto = new AppointmentSlotDto
         {
@@ -3204,7 +3389,10 @@ public class ScheduleService : IScheduleService
             Price = slot.Price,
             Notes = slot.Notes,
             MaxPatients = slot.MaxPatients,
-            CurrentBookings = slot.CurrentBookings
+            CurrentBookings = slot.CurrentBookings,
+            ConsultationMode = slot.ConsultationMode,
+            PreAppointmentNoteTitle = slot.PreAppointmentNoteTitle,
+            IsPreAppointmentNoteRequired = slot.IsPreAppointmentNoteRequired
         };
 
         if (_favoriteNotificationService != null)
@@ -3350,6 +3538,15 @@ public class ScheduleService : IScheduleService
         if (dto.Notes != null)
             slot.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim();
 
+        if (dto.ConsultationMode.HasValue)
+            slot.ConsultationMode = dto.ConsultationMode.Value;
+
+        if (dto.PreAppointmentNoteTitle != null)
+            slot.PreAppointmentNoteTitle = string.IsNullOrWhiteSpace(dto.PreAppointmentNoteTitle) ? null : dto.PreAppointmentNoteTitle.Trim();
+
+        if (dto.IsPreAppointmentNoteRequired.HasValue)
+            slot.IsPreAppointmentNoteRequired = dto.IsPreAppointmentNoteRequired.Value;
+
         // Update max patients
         if (dto.MaxPatients.HasValue)
         {
@@ -3361,6 +3558,40 @@ public class ScheduleService : IScheduleService
         }
 
         _slotRepo.Update(slot);
+
+        if (_customFieldRepo != null && dto.CustomFields != null)
+        {
+            try
+            {
+                var existingFields = (await _customFieldRepo.GetAllAsync(ct))
+                    .Where(f => f.OwnerType == "AppointmentSlot" && f.OwnerId == slot.Id)
+                    .ToList();
+                foreach (var f in existingFields)
+                {
+                    _customFieldRepo.Delete(f);
+                }
+                int idx = 0;
+                foreach (var cf in dto.CustomFields)
+                {
+                    if (!string.IsNullOrWhiteSpace(cf.Title))
+                    {
+                        await _customFieldRepo.AddAsync(new CustomClinicalField
+                        {
+                            OwnerType = "AppointmentSlot",
+                            OwnerId = slot.Id,
+                            SectionKey = string.IsNullOrWhiteSpace(cf.SectionKey) ? "PreAppointmentEvaluation" : cf.SectionKey,
+                            Title = cf.Title,
+                            Content = cf.Content,
+                            FieldType = cf.FieldType ?? "Text",
+                            OrderIndex = cf.OrderIndex > 0 ? cf.OrderIndex : idx++,
+                            CreatedByDoctorId = doctor.Id
+                        }, ct);
+                    }
+                }
+            }
+            catch { }
+        }
+
         await _uow.SaveChangesAsync(ct);
 
         return ApiResponse.SuccessResponse("Slot updated successfully");
@@ -4268,6 +4499,7 @@ public class ScheduleService : IScheduleService
         DateTime? toDate = null,
         int page = 1,
         int pageSize = 10,
+        Guid? appointmentSlotId = null,
         CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);

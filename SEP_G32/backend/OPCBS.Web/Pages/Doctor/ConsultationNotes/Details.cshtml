@@ -211,12 +211,28 @@
                                 <div class="p-3 rounded-3 h-100" style="background:#fffbeb; border:1px solid #fef3c7;">
                                     <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#92400e; font-size:0.78rem;">
                                         <i class="bi bi-calendar-event text-warning"></i>
-                                        <span>Next Recommended Appointment Date</span>
+                                        <span>Next Recommended Appointment</span>
                                     </div>
                                     <div class="text-dark" style="font-size:0.88rem; line-height:1.6;">
                                         @if (Model.Record.NextAppointmentRecommendedDate.HasValue)
                                         {
-                                            <span>@Model.Record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <div class="d-flex flex-column gap-1">
+                                                <div>
+                                                    <span class="fw-semibold">@Model.Record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy")</span>
+                                                    @if (!string.IsNullOrEmpty(Model.Record.NextAppointmentRecommendedSlotStartTime))
+                                                    {
+                                                        <span class="badge bg-warning text-dark ms-1">@Model.Record.NextAppointmentRecommendedSlotStartTime - @Model.Record.NextAppointmentRecommendedSlotEndTime</span>
+                                                    }
+                                                </div>
+                                                @if (Model.Record.FollowUpAppointmentId.HasValue)
+                                                {
+                                                    <div>
+                                                        <a asp-page="/Doctor/Appointments/Details" asp-route-id="@Model.Record.FollowUpAppointmentId" class="badge rounded-pill px-2.5 py-1 fw-medium text-decoration-none" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:0.75rem;">
+                                                            <i class="bi bi-link-45deg me-1"></i>Follow-up Booked (@(Model.Record.FollowUpAppointmentBookingCode ?? "View"))
+                                                        </a>
+                                                    </div>
+                                                }
+                                            </div>
                                         }
                                         else
                                         {
@@ -226,6 +242,27 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if (Model.Record.CustomFields != null && Model.Record.CustomFields.Any())
+                        {
+                            <div class="p-3 rounded-3 mt-3" style="background:#f0fdfa; border:1px solid #ccfbf1;">
+                                <div class="fw-semibold mb-2 d-flex align-items-center gap-2" style="color:#0f766e; font-size:0.85rem;">
+                                    <i class="bi bi-tags-fill"></i>
+                                    <span>Custom Clinical Fields</span>
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var cf in Model.Record.CustomFields)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="p-2.5 rounded-2 bg-white border">
+                                                <div class="text-muted small fw-semibold" style="font-size:0.75rem;">@cf.Title</div>
+                                                <div class="fw-bold text-dark mt-0.5" style="font-size:0.9rem;">@cf.Content</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

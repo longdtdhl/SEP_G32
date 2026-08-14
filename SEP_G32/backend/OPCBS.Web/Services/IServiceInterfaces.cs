@@ -24,7 +24,7 @@ public interface IScheduleApiService
     Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
     Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
     Task<(AppointmentSlotDto? Data, string? Error)> AssignTreatmentSlotAsync(AssignTreatmentSlotDto dto);
-    Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10);
+    Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null);
     Task<(ScheduleNoteWebDto? Data, string? Error)> CreateNoteAsync(CreateScheduleNoteWebDto dto);
     Task<(ScheduleNoteWebDto? Data, string? Error)> UpdateNoteAsync(Guid id, UpdateScheduleNoteWebDto dto);
     Task<(bool Success, string? Error)> DeleteNoteAsync(Guid id);
@@ -40,6 +40,8 @@ public interface IPatientRecordApiService
     Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId);
     Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id);
+    Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id);
 }
 
 public interface IConsultationNoteApiService

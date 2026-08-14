@@ -10,19 +10,23 @@ public class DetailsModel : PageModel
 {
     private readonly ITreatmentCaseApiService _api;
     private readonly IPsychometricApiService _psychApi;
+    private readonly IPatientRecordApiService _patientRecordApi;
     private readonly JwtCookieService _jwt;
 
     public DetailsModel(
         ITreatmentCaseApiService api,
         IPsychometricApiService psychApi,
+        IPatientRecordApiService patientRecordApi,
         JwtCookieService jwt)
     {
         _api = api;
         _psychApi = psychApi;
+        _patientRecordApi = patientRecordApi;
         _jwt = jwt;
     }
 
     public TreatmentCaseWebDto? Case { get; set; }
+    public Guid? PatientRecordId { get; set; }
     public List<TreatmentSessionWebDto> Sessions { get; set; } = new();
     public List<TreatmentGoalWebDto> Goals { get; set; } = new();
     public List<HomeworkWebDto> HomeworkList { get; set; } = new();
@@ -62,6 +66,7 @@ public class DetailsModel : PageModel
         }
 
         Case = caseData;
+        await ResolvePatientRecordIdAsync(caseData.PatientId);
 
         var sessionsTask = _api.GetSessionsAsync(id);
         var goalsTask = _api.GetGoalsAsync(id);
@@ -111,6 +116,7 @@ public class DetailsModel : PageModel
         var (caseData, _) = await _api.GetByIdAsync(caseId);
         Case = caseData;
         if (caseData == null) return;
+        await ResolvePatientRecordIdAsync(caseData.PatientId);
 
         var sessionsTask = _api.GetSessionsAsync(caseId);
         var goalsTask = _api.GetGoalsAsync(caseId);
@@ -127,6 +133,37 @@ public class DetailsModel : PageModel
         MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
+    }
+
+    private async Task ResolvePatientRecordIdAsync(Guid patientUserId)
+    {
+        PatientRecordId = null;
+        if (patientUserId == Guid.Empty) return;
+
+        try
+        {
+            var (record, _) = await _patientRecordApi.GetByUserIdAsync(patientUserId);
+            if (record != null)
+            {
+                PatientRecordId = record.Id;
+                return;
+            }
+
+            var (allRecords, _) = await _patientRecordApi.GetAllAsync();
+            if (allRecords != null)
+            {
+                var match = allRecords.FirstOrDefault(r => r.PatientId == patientUserId || r.Id == patientUserId);
+                if (match != null)
+                {
+                    PatientRecordId = match.Id;
+                    return;
+                }
+            }
+        }
+        catch
+        {
+            PatientRecordId = null;
+        }
     }
 
     // POST: Delete Session

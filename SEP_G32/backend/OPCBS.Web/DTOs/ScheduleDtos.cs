@@ -1,3 +1,5 @@
+using OPCBS.Domain.Enums;
+
 namespace OPCBS.Web.DTOs;
 
 public class ScheduleDto
@@ -9,6 +11,7 @@ public class ScheduleDto
     public int SlotDuration { get; set; }
     public bool IsActive { get; set; } = true;
     public int SlotsPerDay { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 
     // Helper for display
     public string DayOfWeek => GetDayNames();
@@ -33,6 +36,7 @@ public class CreateScheduleDto
     public string EndTime { get; set; } = "17:00";
     public int SlotDuration { get; set; } = 60;
     public int WeeksAhead { get; set; } = 4;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 }
 
 public class UpdateScheduleDto
@@ -43,6 +47,7 @@ public class UpdateScheduleDto
     public string? EndTime { get; set; }
     public int? SlotDuration { get; set; }
     public int? WeeksAhead { get; set; }
+    public ConsultationMode? ConsultationMode { get; set; }
 }
 
 public class DayOffDto
@@ -76,6 +81,10 @@ public class CreateSlotDto
     public required string EndTime { get; set; }
     public string? Notes { get; set; }
     public int MaxPatients { get; set; } = 1;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 public class UpdateSlotDto
@@ -85,6 +94,10 @@ public class UpdateSlotDto
     public string? Notes { get; set; }
     public int? MaxPatients { get; set; }
     public int? Status { get; set; }
+    public ConsultationMode? ConsultationMode { get; set; }
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool? IsPreAppointmentNoteRequired { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 public class EligibleTreatmentPatientDto
@@ -128,6 +141,7 @@ public class WeeklyScheduleConfigDto
     public string StartDate { get; set; } = string.Empty;
     public int WeeksToApply { get; set; } = 4;
     public string? DefaultNotes { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 }
 
 public class WeeklySchedulePreviewDto
@@ -152,6 +166,7 @@ public class ScheduleNoteWebDto
 {
     public Guid Id { get; set; }
     public Guid DoctorProfileId { get; set; }
+    public Guid? AppointmentSlotId { get; set; }
     public string Date { get; set; } = string.Empty;
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
@@ -167,6 +182,7 @@ public class ScheduleNoteWebDto
 
 public class CreateScheduleNoteWebDto
 {
+    public Guid? AppointmentSlotId { get; set; }
     public string Date { get; set; } = string.Empty;
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }
@@ -179,6 +195,7 @@ public class CreateScheduleNoteWebDto
 
 public class UpdateScheduleNoteWebDto
 {
+    public Guid? AppointmentSlotId { get; set; }
     public string? Date { get; set; }
     public string? StartTime { get; set; }
     public string? EndTime { get; set; }

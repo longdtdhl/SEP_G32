@@ -314,13 +314,32 @@
                                 </div>
                             }
 
-                            <!-- Next appointment recommended date -->
+                            <!-- Next appointment recommended date & slot -->
                             @if (record.NextAppointmentRecommendedDate.HasValue)
                             {
                                 <div class="col-12 mt-2">
-                                    <div style="background:#fffbeb; border: 1px solid #fde68a; color:#92400e; padding: 10px 14px; border-radius:10px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 8px;">
-                                        <i class="bi bi-calendar-check-fill text-warning"></i>
-                                        <span>Recommended next consultation session: <strong>@record.NextAppointmentRecommendedDate.Value.ToString("MM/dd/yyyy")</strong></span>
+                                    <div style="background:#fffbeb; border: 1px solid #fde68a; color:#92400e; padding: 12px 16px; border-radius:12px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-calendar-check-fill text-warning fs-5"></i>
+                                            <div>
+                                                <div class="fw-bold">Lịch hẹn tái khám được gợi ý:</div>
+                                                <div>
+                                                    @record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy")
+                                                    @if (!string.IsNullOrEmpty(record.NextAppointmentRecommendedSlotStartTime))
+                                                    {
+                                                        <span class="badge bg-warning text-dark ms-1">@record.NextAppointmentRecommendedSlotStartTime - @record.NextAppointmentRecommendedSlotEndTime</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (record.FollowUpAppointmentId.HasValue)
+                                        {
+                                            <div>
+                                                <a asp-page="/Patient/Appointments/Details" asp-route-id="@record.FollowUpAppointmentId" class="btn btn-sm btn-outline-success fw-bold">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Lịch tái khám đã tạo (@(record.FollowUpAppointmentBookingCode ?? "Chi tiết"))
+                                                </a>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -335,22 +354,6 @@
                                 </div>
                             }
 
-                            @if (!record.IsPatientConfirmed)
-                            {
-                                <div class="col-12 mt-3">
-                                    <div class="p-3 bg-warning bg-opacity-10 border border-warning-subtle rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                        <div class="small text-dark fw-medium">
-                                            <i class="bi bi-info-circle text-warning me-1.5 fs-6"></i>Please confirm that you have reviewed these consultation notes.
-                                        </div>
-                                        <form method="post" asp-page-handler="ConfirmNote">
-                                            <input type="hidden" name="recordId" value="@record.Id" />
-                                            <button type="submit" class="btn btn-success btn-sm px-3.5 py-1.5 rounded-2 fw-bold shadow-sm" onclick="return confirm('Are you sure you want to confirm these consultation notes?');">
-                                                <i class="bi bi-check-lg me-1"></i>Confirm Notes
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            }
                         </div>
 
                     </div>

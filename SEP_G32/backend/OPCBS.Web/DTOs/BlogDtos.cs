@@ -13,6 +13,9 @@ public class BlogDto
     public string? AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }
     public Guid? AuthorId { get; set; }
+    public string? AuthorProfessionalTitle { get; set; }
+    public int AuthorExperienceYears { get; set; }
+    public bool AuthorIsVerified { get; set; }
     public string? Status { get; set; }
     public string? RejectionReason { get; set; }
     public int ViewCount { get; set; }
@@ -39,6 +42,10 @@ public class BlogListItemDto
     public string? Category { get; set; }
     public string? AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }
+    public Guid? AuthorId { get; set; }
+    public string? AuthorProfessionalTitle { get; set; }
+    public int AuthorExperienceYears { get; set; }
+    public bool AuthorIsVerified { get; set; }
     public string? Status { get; set; }
     public string? RejectionReason { get; set; }
     public int ViewCount { get; set; }

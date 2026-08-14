@@ -547,8 +547,14 @@ public class AppointmentServiceTests
         _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<DoctorProfile> { doctor });
 
+        var vnZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnZone);
+        var endedSlot = CreateSlot(AppointmentSlotStatus.Booked);
+        endedSlot.SlotDate = DateOnly.FromDateTime(vnNow.AddDays(-1));
+        endedSlot.StartTime = new TimeOnly(10, 0);
+        endedSlot.EndTime = new TimeOnly(11, 0);
         _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateSlot(AppointmentSlotStatus.Booked));
+            .ReturnsAsync(endedSlot);
 
         // Must have a consultation note to allow completion
         _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -573,7 +579,7 @@ public class AppointmentServiceTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Equal(AppointmentStatus.AwaitingPatientConfirmation, appointment.Status);
+        Assert.Equal(AppointmentStatus.Completed, appointment.Status);
     }
 
   

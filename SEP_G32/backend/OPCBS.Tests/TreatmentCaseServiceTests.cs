@@ -158,7 +158,10 @@ public class TreatmentCaseServiceTests
             BookingCode = "BC-999",
             AppointmentSlot = null!,
             Doctor = null!,
-            Status = AppointmentStatus.Approved
+            Status = AppointmentStatus.Completed,
+            TreatmentCaseId = caseId,
+            TreatmentSessionId = sessionId,
+            CompletedAt = DateTime.UtcNow
         };
 
         var session = new TreatmentSession
@@ -197,6 +200,139 @@ public class TreatmentCaseServiceTests
         Assert.Equal(1, treatmentCase.CompletedSessions);
         Assert.Equal(4, treatmentCase.RemainingSessions);
         Assert.Equal(20, treatmentCase.OverallProgressPercent);
+    }
+
+    [Fact]
+    public async Task CompleteSessionAsync_AppointmentNotConfirmed_DoesNotCompleteSession()
+    {
+        var caseId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var appointmentId = Guid.NewGuid();
+        var session = new TreatmentSession
+        {
+            Id = sessionId,
+            TreatmentCaseId = caseId,
+            SessionNumber = 1,
+            Status = TreatmentSessionStatus.Scheduled,
+            AppointmentId = appointmentId,
+            TreatmentCase = null!
+        };
+        var appointment = new Appointment
+        {
+            Id = appointmentId,
+            BookingCode = "BC-PENDING",
+            Status = AppointmentStatus.Approved,
+            TreatmentCaseId = caseId,
+            TreatmentSessionId = sessionId,
+            AppointmentSlot = null!,
+            Doctor = null!
+        };
+
+        _sessionRepo.Setup(r => r.GetByIdAsync(sessionId, It.IsAny<CancellationToken>())).ReturnsAsync(session);
+        _appointmentRepo.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var result = await _service.CompleteSessionAsync(
+            sessionId,
+            new CompleteSessionDto { SessionSummary = "Doctor attempted early completion" },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("patient or guest confirms", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TreatmentSessionStatus.Scheduled, session.Status);
+        _sessionRepo.Verify(r => r.Update(It.IsAny<TreatmentSession>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_MaximumSessionCountReached_BlocksAdditionalSession()
+    {
+        var caseId = Guid.NewGuid();
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            TreatmentPackageId = Guid.NewGuid(),
+            DoctorId = Guid.NewGuid(),
+            PatientId = Guid.NewGuid(),
+            CaseName = "Limited case",
+            TotalSessions = 2,
+            RemainingSessions = 1,
+            Status = TreatmentCaseStatus.Active,
+            TreatmentPackage = null!,
+            Doctor = null!,
+            Patient = null!
+        };
+        var sessions = new List<TreatmentSession>
+        {
+            new() { TreatmentCaseId = caseId, SessionNumber = 1, Status = TreatmentSessionStatus.Completed, TreatmentCase = treatmentCase },
+            new() { TreatmentCaseId = caseId, SessionNumber = 2, Status = TreatmentSessionStatus.Planned, TreatmentCase = treatmentCase }
+        };
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(sessions);
+
+        var result = await _service.CreateSessionAsync(new CreateSessionDto
+        {
+            TreatmentCaseId = caseId,
+            Title = "Session 3"
+        }, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("maximum of 2 sessions", result.Message, StringComparison.OrdinalIgnoreCase);
+        _sessionRepo.Verify(r => r.AddAsync(It.IsAny<TreatmentSession>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshProgressAsync_AllSessionsCompleted_WaitsForGoalsAndHomeworkBeforeCompletingCase()
+    {
+        var caseId = Guid.NewGuid();
+        var packageId = Guid.NewGuid();
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            TreatmentPackageId = packageId,
+            DoctorId = Guid.NewGuid(),
+            PatientId = Guid.NewGuid(),
+            CaseName = "Progress consistency",
+            TotalSessions = 2,
+            CompletedSessions = 0,
+            RemainingSessions = 2,
+            Status = TreatmentCaseStatus.Active,
+            TreatmentPackage = null!,
+            Doctor = null!,
+            Patient = null!
+        };
+        var sessions = new List<TreatmentSession>
+        {
+            new() { TreatmentCaseId = caseId, SessionNumber = 1, Status = TreatmentSessionStatus.Completed, TreatmentCase = treatmentCase },
+            new() { TreatmentCaseId = caseId, SessionNumber = 2, Status = TreatmentSessionStatus.Completed, TreatmentCase = treatmentCase }
+        };
+        var goal = new TreatmentGoal
+        {
+            TreatmentCaseId = caseId,
+            Title = "Reduce anxiety",
+            ProgressPercent = 50,
+            Status = GoalStatus.InProgress,
+            TreatmentCase = treatmentCase
+        };
+        var homework = new TherapyAssignment
+        {
+            TreatmentCaseId = caseId,
+            Title = "Breathing practice",
+            Status = HomeworkStatus.Assigned,
+            TreatmentCase = treatmentCase
+        };
+
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(sessions);
+        _goalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentGoal> { goal });
+        _assignmentRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TherapyAssignment> { homework });
+
+        var result = await _service.RefreshProgressAsync(caseId);
+
+        Assert.True(result.Success);
+        Assert.Equal(2, treatmentCase.CompletedSessions);
+        Assert.Equal(0, treatmentCase.RemainingSessions);
+        Assert.Equal(68, treatmentCase.OverallProgressPercent);
+        Assert.Equal(TreatmentCaseStatus.Active, treatmentCase.Status);
+        _packageRepo.Verify(r => r.Update(It.IsAny<TreatmentPackage>()), Times.Never);
     }
 
     [Fact]

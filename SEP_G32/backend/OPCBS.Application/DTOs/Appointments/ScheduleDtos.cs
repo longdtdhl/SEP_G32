@@ -14,6 +14,7 @@ public class ScheduleDto
     public SlotDuration SlotDuration { get; set; }
     public bool IsActive { get; set; }
     public int SlotsPerDay { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 }
 
 /// <summary>
@@ -26,6 +27,7 @@ public class CreateScheduleDto
     public string EndTime { get; set; } = string.Empty;
     public SlotDuration SlotDuration { get; set; }
     public int? WeeksAhead { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 }
 
 /// <summary>
@@ -39,6 +41,7 @@ public class UpdateScheduleDto
     public string? EndTime { get; set; }
     public SlotDuration? SlotDuration { get; set; }
     public int? WeeksAhead { get; set; }
+    public ConsultationMode? ConsultationMode { get; set; }
 }
 
 /// <summary>
@@ -73,6 +76,10 @@ public class CreateSlotDto
     public string EndTime { get; set; } = string.Empty; // Format: HH:mm
     public string? Notes { get; set; }
     public int MaxPatients { get; set; } = 1;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool IsPreAppointmentNoteRequired { get; set; } = false;
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -85,6 +92,10 @@ public class UpdateSlotDto
     public string? Notes { get; set; }
     public int? MaxPatients { get; set; }
     public AppointmentSlotStatus? Status { get; set; }
+    public ConsultationMode? ConsultationMode { get; set; }
+    public string? PreAppointmentNoteTitle { get; set; }
+    public bool? IsPreAppointmentNoteRequired { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 /// <summary>
@@ -136,6 +147,7 @@ public class WeeklyScheduleConfigDto
     public string StartDate { get; set; } = string.Empty;
     public int WeeksToApply { get; set; } = 4;
     public string? DefaultNotes { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Both;
 }
 
 public class WeeklySchedulePreviewDto
@@ -146,3 +158,4 @@ public class WeeklySchedulePreviewDto
     public int SlotConflictCount { get; set; }
     public List<string> SkippedDates { get; set; } = new();
 }
+

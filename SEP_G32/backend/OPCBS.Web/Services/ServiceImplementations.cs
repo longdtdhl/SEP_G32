@@ -90,7 +90,7 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
         return (data, error);
     }
 
-    public async Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10)
+    public async Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null)
     {
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
@@ -99,6 +99,7 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
         if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
+        if (appointmentSlotId.HasValue) queryParams.Add($"appointmentSlotId={appointmentSlotId.Value}");
 
         var url = "api/v1/schedule-notes?" + string.Join("&", queryParams);
         var (data, _, error) = await GetAsync<List<ScheduleNoteWebDto>>(url);
@@ -168,6 +169,16 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto)
     {
         return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/{id}/create-account", new { });
+    }
+
+    public async Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/{id}/resend-invitation", new { });
     }
 }
 public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiService

@@ -154,6 +154,10 @@
                             <div class="text-muted small mb-1">License Number</div>
                             <div class="fw-semibold text-dark">@(Model.DoctorProfile?.LicenseNumber ?? "-")</div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="text-muted small mb-1">License Expiration Date</div>
+                            <div class="fw-semibold text-dark">@(Model.DoctorProfile?.LicenseExpiryDate?.ToString("MMM dd, yyyy") ?? "-")</div>
+                        </div>
                         <div class="col-12">
                             <div class="text-muted small mb-1">Care Approach / Strengths</div>
                             <div class="p-3 bg-light rounded-3 text-dark small" style="white-space: pre-line; line-height: 1.6;">
@@ -276,6 +280,10 @@ else
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">License Number</label>
                         <input asp-for="DoctorInput.LicenseNumber" class="form-control" placeholder="e.g. 123456789" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium small">License Expiration Date</label>
+                        <input type="date" asp-for="DoctorInput.LicenseExpiryDate" class="form-control" value='@(Model.DoctorInput.LicenseExpiryDate?.ToString("yyyy-MM-dd"))' />
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-medium small">Professional Background / Career History</label>

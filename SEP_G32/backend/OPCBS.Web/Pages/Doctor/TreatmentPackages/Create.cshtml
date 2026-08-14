@@ -110,15 +110,27 @@
                         </div>
                     }
 
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-dark fs-7">Template Title <span class="text-danger">*</span></label>
                         <input asp-for="Input.Title" class="form-control" placeholder="e.g. CBT Anxiety Recovery Protocol (8 Sessions)" required />
                         <span asp-validation-for="Input.Title" class="text-danger fs-8"></span>
                     </div>
 
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold text-dark fs-7">Description & Scope</label>
                         <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Provide a summary of the clinical approach, methodology, and therapeutic scope..."></textarea>
+                    </div>
+
+                    <!-- Basic Information Custom Fields -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-dark fs-7"><i class="bi bi-tags me-1 text-teal" style="color:#0d9488;"></i> Custom Basic Information Fields</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px;" onclick="addBasicInfoField()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Field
+                            </button>
+                        </div>
+                        <div id="basicInfoFieldsContainer"></div>
                     </div>
                 </div>
             </div>
@@ -173,12 +185,23 @@
                         <textarea asp-for="Input.Instructions" class="form-control" rows="2" placeholder="Instructions for patient on attendance expectations, session homework..."></textarea>
                     </div>
 
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold text-dark fs-7">Package Fee (VND)</label>
                         <div class="input-group">
                             <input type="number" asp-for="Input.Price" id="inputPrice" class="form-control" placeholder="0" onchange="updatePreview()" />
                             <span class="input-group-text bg-light text-muted">VND</span>
                         </div>
+                    </div>
+
+                    <!-- Clinical Guidelines Custom Fields -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-dark fs-7"><i class="bi bi-tags me-1 text-teal" style="color:#0d9488;"></i> Custom Clinical Guidelines Fields</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px;" onclick="addClinicalGuideField()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Field
+                            </button>
+                        </div>
+                        <div id="clinicalGuideFieldsContainer"></div>
                     </div>
                 </div>
             </div>
@@ -234,6 +257,56 @@
 
 @section Scripts {
     <script>
+        let basicInfoCount = 0;
+        function addBasicInfoField(title = '', content = '') {
+            const container = document.getElementById('basicInfoFieldsContainer');
+            const index = basicInfoCount++;
+            const div = document.createElement('div');
+            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
+            div.id = `basicFieldRow_${index}`;
+            div.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" name="Input.BasicInformationFields[${index}].Title" value="${title}" class="form-control form-control-sm" placeholder="Field Title (e.g. Modality, Target Age)" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="Input.BasicInformationFields[${index}].Content" value="${content}" class="form-control form-control-sm" placeholder="Value / Details" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('basicFieldRow_${index}').remove()" style="border-radius:6px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        let clinicalGuideCount = 0;
+        function addClinicalGuideField(title = '', content = '') {
+            const container = document.getElementById('clinicalGuideFieldsContainer');
+            const index = clinicalGuideCount++;
+            const div = document.createElement('div');
+            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
+            div.id = `guideFieldRow_${index}`;
+            div.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" name="Input.ClinicalGuidelinesFields[${index}].Title" value="${title}" class="form-control form-control-sm" placeholder="Field Title (e.g. Assessment Interval)" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="Input.ClinicalGuidelinesFields[${index}].Content" value="${content}" class="form-control form-control-sm" placeholder="Value / Instructions" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('guideFieldRow_${index}').remove()" style="border-radius:6px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
         function updatePreview() {
             var title = document.querySelector('[name="Input.Title"]').value;
             var sessions = document.getElementById('inputTotalSessions').value || 0;

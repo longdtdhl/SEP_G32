@@ -41,11 +41,15 @@ public class DoctorsController : ControllerBase
     public async Task<IActionResult> GetDoctors(
         [FromQuery] string? keyword,
         [FromQuery] Guid? specializationId,
+        [FromQuery] double? minRating,
         [FromQuery] decimal? rating,
+        [FromQuery] decimal? maxFee,
+        [FromQuery] string? gender,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, page, pageSize);
+        var effectiveMinRating = minRating ?? (rating.HasValue ? (double?)rating.Value : null);
+        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, effectiveMinRating, maxFee, gender, page, pageSize);
         return Ok(result);
     }
 

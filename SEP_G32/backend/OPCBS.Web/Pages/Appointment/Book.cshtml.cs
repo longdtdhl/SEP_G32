@@ -79,6 +79,7 @@ public class BookModel : PageModel
                     if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
                     if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
                     if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                    if (string.IsNullOrWhiteSpace(Input.GuestZaloNumber)) Input.GuestZaloNumber = profile.PhoneNumber;
                 }
             }
             catch { }
@@ -224,6 +225,7 @@ public class BookModel : PageModel
                     if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
                     if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
                     if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                    if (string.IsNullOrWhiteSpace(Input.GuestZaloNumber)) Input.GuestZaloNumber = profile.PhoneNumber;
                 }
             }
             catch { }

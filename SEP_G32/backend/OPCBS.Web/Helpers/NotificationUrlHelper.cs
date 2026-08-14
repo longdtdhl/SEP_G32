@@ -132,7 +132,7 @@ public static class NotificationUrlHelper
                     return "/Patient/Reviews/Index";
 
                 default:
-                    return "/Patient/Dashboard";
+                    return "/Patient/Appointments/Index";
             }
         }
 

@@ -43,6 +43,9 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Error)> RescheduleAsync(Guid id, RescheduleAppointmentDto dto)
         => await PutAsync($"{ApiRoutes.Appointments}/reschedule/{id}", dto);
 
+    public async Task<(bool Success, string? Error)> DoctorRescheduleAsync(Guid id, RescheduleAppointmentDto dto)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/doctor-reschedule", dto);
+
     public async Task<(bool Success, string? Error)> ApproveRescheduleAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/{id}/approve-reschedule");
 

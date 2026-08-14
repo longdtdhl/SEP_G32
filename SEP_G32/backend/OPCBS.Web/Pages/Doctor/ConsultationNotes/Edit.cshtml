@@ -1,5 +1,6 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.EditModel
+@using System.Text.Encodings.Web
 @{
     ViewData["Title"] = "Details profile consultation";
     
@@ -203,13 +204,62 @@
                             <textarea asp-for="Input.Recommendations" class="form-control" style="border-radius:10px;" rows="3" placeholder="Advice hoặc assignment..."></textarea>
                         </div>
 
-                        <!-- Consultation Date & Visibility -->
                         <div class="form-section">
                             <div class="form-section-title">
-                                <i class="bi bi-calendar-check"></i>Consultation Date & Visibility
+                                <i class="bi bi-arrow-repeat"></i>Notes track / Follow-up Notes
+                            </div>
+                            <textarea asp-for="Input.FollowUpNotes" class="form-control" style="border-radius:10px;" rows="2" placeholder="Notes for follow-up consultations..."></textarea>
+                        </div>
+
+                        <!-- Custom Clinical Fields -->
+                        <div class="form-section">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="form-section-title mb-0 border-0 pb-0">
+                                    <i class="bi bi-tags-fill"></i>Custom Clinical Fields
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="addEditCustomField()">
+                                    <i class="bi bi-plus-circle me-1"></i>Add Field
+                                </button>
+                            </div>
+                            <p class="text-muted small mb-2">Add structured fields like Biomarkers, Behavioral Observations, Screening Scales, etc.</p>
+                            <div id="customFieldsContainer">
+                                <!-- Dynamically added or pre-populated custom fields -->
+                            </div>
+                        </div>
+
+                        <!-- Expected Follow-up Date & Slot -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-calendar"></i>Expected Follow-up Date & Slot
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
+                                    <label class="form-label fw-semibold" style="font-size:0.85rem;">
+                                        <i class="bi bi-calendar-event me-1"></i>Follow-up Date
+                                    </label>
+                                    <input asp-for="Input.NextAppointmentRecommendedDate" id="editRecDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" onchange="loadEditRecommendedSlots(this.value)" />
+                                </div>
+                                <div class="col-md-6" id="editRecSlotContainer" style="@(Model.Input.NextAppointmentRecommendedDate.HasValue ? "" : "display:none;")">
+                                    <label class="form-label fw-semibold" style="font-size:0.85rem;">
+                                        <i class="bi bi-clock me-1"></i>Suggested Slot (Auto-booked on save)
+                                    </label>
+                                    <select asp-for="Input.NextAppointmentRecommendedSlotId" id="editRecSlotSelect" class="form-select" style="border-radius:10px;">
+                                        <option value="">-- Select a suggested slot --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="editRecSlotMsg" class="form-text small text-muted mt-2">
+                                <i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation record.
+                            </div>
+                        </div>
+
+                        <!-- Consultation Date -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-calendar-check"></i>Consultation Date
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
                                     <label class="form-label fw-semibold" style="font-size:0.85rem;">
                                         <i class="bi bi-calendar3 me-1"></i>Consultation Date
                                     </label>
@@ -227,17 +277,8 @@
                                         <small class="text-muted">Enter the actual consultation date</small>
                                     }
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                        <i class="bi bi-eye me-1"></i>Visibility
-                                    </label>
-                                    <select asp-for="Input.Visibility" class="form-select" style="border-radius:10px;">
-                                        <option value="0">🔒 Doctor Only (internal notes, clinical hypotheses)</option>
-                                        <option value="1">👁️ Patient Visible (summary, advice, homework)</option>
-                                    </select>
-                                    <small class="text-muted">Controls whether the patient can view this note</small>
-                                </div>
                             </div>
+                            <input type="hidden" asp-for="Input.Visibility" />
                         </div>
 
                         <div class="d-flex justify-content-end gap-3 pt-3 mt-3" style="border-top:2px solid #f1f5f9;">
@@ -251,4 +292,102 @@
             </form>
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+    let customFieldCount = 0;
+    function addEditCustomField(title = '', content = '', fieldType = 'Text') {
+        const container = document.getElementById('customFieldsContainer');
+        const index = customFieldCount++;
+        const div = document.createElement('div');
+        div.className = 'p-3 rounded-3 mb-2 border bg-light';
+        div.id = `customFieldRow_${index}`;
+        div.innerHTML = `
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" name="Input.CustomFields[${index}].Title" value="${title.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Field Title (e.g. Test Score)" style="border-radius:8px;" required />
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="Input.CustomFields[${index}].Content" value="${content.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Content / Observation" style="border-radius:8px;" required />
+                </div>
+                <div class="col-md-2">
+                    <select name="Input.CustomFields[${index}].FieldType" class="form-select form-select-sm" style="border-radius:8px;">
+                        <option value="Text" ${fieldType === 'Text' ? 'selected' : ''}>Text</option>
+                        <option value="Number" ${fieldType === 'Number' ? 'selected' : ''}>Number</option>
+                        <option value="Date" ${fieldType === 'Date' ? 'selected' : ''}>Date</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('customFieldRow_${index}').remove()" style="border-radius:8px;">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    const currentSelectedSlotId = '@(Model.Input.NextAppointmentRecommendedSlotId?.ToString() ?? "")';
+
+    async function loadEditRecommendedSlots(date, preselectId = '') {
+        const container = document.getElementById('editRecSlotContainer');
+        const select = document.getElementById('editRecSlotSelect');
+        const msg = document.getElementById('editRecSlotMsg');
+        if (!date) {
+            if (container) container.style.display = 'none';
+            if (select) select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
+            return;
+        }
+
+        if (container) container.style.display = 'block';
+        if (select) {
+            select.innerHTML = '<option value="">Loading available slots...</option>';
+            select.disabled = true;
+        }
+
+        try {
+            const response = await fetch(`?handler=Slots&date=${encodeURIComponent(date)}`);
+            const data = await response.json();
+            if (select) {
+                select.disabled = false;
+                select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
+                if (data.success && data.slots && data.slots.length > 0) {
+                    data.slots.forEach(slot => {
+                        const opt = document.createElement('option');
+                        opt.value = slot.id;
+                        opt.textContent = slot.label;
+                        if (preselectId && slot.id.toLowerCase() === preselectId.toLowerCase()) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>If you specify a slot, a follow-up appointment will be automatically created when you save this consultation record.';
+                } else {
+                    if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots found for this date.</span>';
+                }
+            }
+        } catch (e) {
+            if (select) {
+                select.disabled = false;
+                select.innerHTML = '<option value="">-- Failed to load slots --</option>';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateInput = document.getElementById('editRecDateInput');
+        if (dateInput && dateInput.value) {
+            loadEditRecommendedSlots(dateInput.value, currentSelectedSlotId);
+        }
+
+        @if (Model.Input.CustomFields != null && Model.Input.CustomFields.Any())
+        {
+            @foreach (var cf in Model.Input.CustomFields)
+            {
+                <text>addEditCustomField('@Html.Raw(JavaScriptEncoder.Default.Encode(cf.Title ?? ""))', '@Html.Raw(JavaScriptEncoder.Default.Encode(cf.Content ?? ""))', '@Html.Raw(JavaScriptEncoder.Default.Encode(cf.FieldType ?? "Text"))');</text>
+            }
+        }
+    });
+</script>
 }

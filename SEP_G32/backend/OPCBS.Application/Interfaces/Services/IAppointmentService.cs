@@ -56,6 +56,9 @@ public class CalendarEventDto
     public int? SessionNumber { get; set; }
     public string? Description { get; set; }
     public string? BookingCode { get; set; }
+    public bool HasNote { get; set; }
+    public int NoteCount { get; set; }
+    // Kept for existing web clients while they migrate to HasNote.
     public bool HasNotes { get; set; }
     public int MaxPatients { get; set; } = 1;
     public int CurrentBookings { get; set; } = 0;
@@ -88,7 +91,7 @@ public interface IScheduleService
     Task<ApiResponse<ScheduleNoteDto>> CreateNoteAsync(Guid doctorUserId, CreateScheduleNoteDto dto, CancellationToken ct = default);
     Task<ApiResponse<ScheduleNoteDto>> UpdateNoteAsync(Guid noteId, Guid doctorUserId, UpdateScheduleNoteDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteNoteAsync(Guid noteId, Guid doctorUserId, CancellationToken ct = default);
-    Task<ApiResponse<List<ScheduleNoteDto>>> GetNotesAsync(Guid doctorUserId, string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<List<ScheduleNoteDto>>> GetNotesAsync(Guid doctorUserId, string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null, CancellationToken ct = default);
     Task<ApiResponse<AppointmentSlotDto>> AssignTreatmentSlotAsync(Guid doctorUserId, AssignTreatmentSlotDto dto, CancellationToken ct = default);
 }
 

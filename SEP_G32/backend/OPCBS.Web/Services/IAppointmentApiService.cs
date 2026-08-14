@@ -9,6 +9,7 @@ public interface IAppointmentApiService
     Task<(AppointmentDto? Data, string? Error)> GetByIdAsync(Guid id);
     Task<(AppointmentDto? Data, string? Error)> BookAsync(CreateAppointmentDto dto);
     Task<(bool Success, string? Error)> RescheduleAsync(Guid id, RescheduleAppointmentDto dto);
+    Task<(bool Success, string? Error)> DoctorRescheduleAsync(Guid id, RescheduleAppointmentDto dto);
     Task<(bool Success, string? Error)> ApproveRescheduleAsync(Guid id);
     Task<(bool Success, string? Error)> RejectRescheduleAsync(Guid id, string? reason = null);
     Task<(bool Success, string? Error)> CancelAsync(Guid id, CancelAppointmentDto dto);

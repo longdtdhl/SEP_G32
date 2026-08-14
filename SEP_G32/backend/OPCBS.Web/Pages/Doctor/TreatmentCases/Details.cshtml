@@ -134,7 +134,7 @@
                 </a>
                 <h1 class="cd-title">@c.CaseName</h1>
                 <div class="cd-meta">
-                    <a href="/Doctor/Patients/Details?id=@c.PatientId" class="cd-person-chip">
+                    <a href="@(Model.PatientRecordId.HasValue ? $"/Doctor/Patients/Details/{Model.PatientRecordId.Value}" : (c.PatientId != Guid.Empty ? $"/Doctor/Patients/Details/{c.PatientId}" : $"/Doctor/Patients?search={Uri.EscapeDataString(c.PatientName ?? string.Empty)}"))" class="cd-person-chip" title="View Patient Details">
                         <i class="bi bi-person-fill"></i>@(c.PatientName ?? "Patient")
                     </a>
                     @{
@@ -304,6 +304,30 @@
 
                 <!-- Sidebar -->
                 <div class="col-lg-4">
+                    <!-- Patient Profile Card -->
+                    <div class="cd-box">
+                        <div class="cd-box-head">
+                            <h6 class="cd-box-title"><i class="bi bi-person-badge me-2"></i>Patient Profile</h6>
+                        </div>
+                        <div class="cd-box-body">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width:42px; height:42px; background:#ccfbf1; color:#0f766e; font-weight:800; font-size:1.1rem; border:1px solid #99f6e4;">
+                                    @(string.IsNullOrEmpty(c.PatientName) ? "P" : c.PatientName[..1].ToUpper())
+                                </div>
+                                <div class="min-width-0 flex-grow-1">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size:0.9rem;">@(c.PatientName ?? "Patient")</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">Treatment Case Patient</div>
+                                </div>
+                            </div>
+                            <a href="@(Model.PatientRecordId.HasValue ? $"/Doctor/Patients/Details/{Model.PatientRecordId.Value}" : (c.PatientId != Guid.Empty ? $"/Doctor/Patients/Details/{c.PatientId}" : $"/Doctor/Patients?search={Uri.EscapeDataString(c.PatientName ?? string.Empty)}"))"
+                               class="btn btn-sm w-100 d-flex align-items-center justify-content-center gap-1.5"
+                               style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; border-radius:8px; font-weight:600; font-size:0.8rem;">
+                                <i class="bi bi-person-vcard"></i>View Patient Record Details
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Next Session -->
                     <div class="cd-box">
                         <div class="cd-box-head">
@@ -753,7 +777,6 @@
                 }
             </div>
         }
-
 
         <!-- ── TAB 4: ACTIVITIES ── -->
         @if (Model.ActiveTab == "activities")

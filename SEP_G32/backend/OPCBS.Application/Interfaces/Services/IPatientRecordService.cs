@@ -18,4 +18,6 @@ public interface IPatientRecordService
     Task<PatientRecordDto?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task<ApiResponse> CreateAsync(Guid doctorId, CreatePatientRecordDto dto, CancellationToken ct = default);
     Task<ApiResponse> UpdateAsync(Guid id, UpdatePatientRecordDto dto, CancellationToken ct = default);
+    Task<ApiResponse> CreateAccountForGuestAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default);
+    Task<ApiResponse> ResendGuestAccountInvitationAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default);
 }

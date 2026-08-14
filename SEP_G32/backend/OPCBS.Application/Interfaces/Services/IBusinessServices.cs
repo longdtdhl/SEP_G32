@@ -1,3 +1,4 @@
+using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Shared.Models;
 
 namespace OPCBS.Application.Interfaces.Services;
@@ -11,8 +12,12 @@ public class BlogPostDto
     public required string Content { get; set; }
     public string? ThumbnailUrl { get; set; }
     public string? Excerpt { get; set; }
+    public Guid AuthorId { get; set; }
     public required string AuthorName { get; set; }
     public string? AuthorAvatarUrl { get; set; }
+    public string? AuthorProfessionalTitle { get; set; }
+    public int AuthorExperienceYears { get; set; }
+    public bool AuthorIsVerified { get; set; }
     public string Status { get; set; } = string.Empty;
     public int ViewCount { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -178,6 +183,9 @@ public class TreatmentPackageDto
     public string? CancellationRequestedByName { get; set; }
     public DateTime? CancellationRequestedAt { get; set; }
     public string? CancellationReason { get; set; }
+    public List<CustomClinicalFieldDto>? CustomFields { get; set; }
+    public List<CustomClinicalFieldDto> BasicInformationFields => CustomFields?.Where(f => f.SectionKey == "BasicInformation").ToList() ?? new();
+    public List<CustomClinicalFieldDto> ClinicalGuidelinesFields => CustomFields?.Where(f => f.SectionKey == "ClinicalGuidelines").ToList() ?? new();
 }
 
 public class CreateTreatmentPackageDto
@@ -192,6 +200,21 @@ public class CreateTreatmentPackageDto
     public int ValidityDays { get; set; } = 90;
     public int RecommendedSessionsPerWeek { get; set; } = 1;
     public decimal Price { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
+}
+
+public class UpdateTreatmentPackageDto
+{
+    public required string Name { get; set; }
+    public string? Description { get; set; }
+    public string? TargetOutcome { get; set; }
+    public string? RecommendedExercises { get; set; }
+    public string? Instructions { get; set; }
+    public int SessionQuantity { get; set; }
+    public int ValidityDays { get; set; } = 90;
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
+    public decimal Price { get; set; }
+    public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
 public class SubscriptionDto
@@ -301,9 +324,6 @@ public interface IReviewService
 /// <summary>
 /// Verification service - doctor verification workflow
 /// </summary>
-/// <summary>
-/// Verification service - doctor verification workflow
-/// </summary>
 public interface IVerificationService
 {
     Task<ApiResponse<VerificationRequestDto>> SubmitVerificationAsync(Guid doctorUserId, SubmitVerificationDto? dto = null, CancellationToken ct = default);
@@ -322,6 +342,7 @@ public interface IVerificationService
 public interface ITreatmentPackageService
 {
     Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct = default);
+    Task<ApiResponse<TreatmentPackageDto>> UpdateAsync(Guid packageId, Guid doctorUserId, UpdateTreatmentPackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<List<TreatmentPackageDto>>> GetByDoctorAndPatientAsync(Guid doctorUserId, Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
@@ -378,13 +399,13 @@ public interface IAdminService
     Task<ApiResponse<List<UserListDto>>> GetUsersAsync(string? search, string? role, int page = 1, int pageSize = 10, CancellationToken ct = default);
     Task<ApiResponse<UserListDto>> GetUserByIdAsync(Guid userId, CancellationToken ct = default);
     Task<ApiResponse> LockUserAsync(Guid userId, Guid requestingAdminId, CancellationToken ct = default);
-    Task<ApiResponse> UnlockUserAsync(Guid userId, CancellationToken ct = default);
+    Task<ApiResponse> UnlockUserAsync(Guid userId, Guid? requestingAdminId = null, CancellationToken ct = default);
     Task<ApiResponse<List<RoleDto>>> GetRolesAsync(CancellationToken ct = default);
     Task<ApiResponse<List<AuditLogDto>>> GetAuditLogsAsync(string? entityName, int page = 1, int pageSize = 20, CancellationToken ct = default);
     Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default);
-    Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, CancellationToken ct = default);
-    Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, CancellationToken ct = default);
-    Task<ApiResponse> DeleteSpecializationAsync(Guid id, CancellationToken ct = default);
+    Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default);
+    Task<ApiResponse<SpecializationDto>> UpdateSpecializationAsync(Guid id, string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default);
+    Task<ApiResponse> DeleteSpecializationAsync(Guid id, Guid? requestingAdminId = null, CancellationToken ct = default);
     Task<ApiResponse<Dictionary<string, string>>> GetSystemSettingsAsync(CancellationToken ct = default);
-    Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, CancellationToken ct = default);
+    Task<ApiResponse> UpdateSystemSettingsAsync(Dictionary<string, string> settings, Guid? requestingAdminId = null, CancellationToken ct = default);
 }
