@@ -302,6 +302,7 @@
                                     <th>Date & Time</th>
                                     <th>Summary</th>
                                     <th>Status</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -331,6 +332,19 @@
                                             @(s.PatientFriendlySummary ?? "—")
                                         </td>
                                         <td><span class="@s.StatusBadgeClass">@s.StatusText</span></td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-1">
+                                                @if (s.AppointmentId.HasValue)
+                                                {
+                                                    <a href="/Patient/Appointments/Details/@s.AppointmentId" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; padding:3px 8px;" title="View Appointment Details">
+                                                        <i class="bi bi-box-arrow-up-right"></i>
+                                                    </a>
+                                                    <a href="/Patient/Appointments/Reschedule/@s.AppointmentId" class="btn btn-sm btn-outline-warning text-dark" style="border-radius:6px; font-size:0.75rem; padding:3px 8px;" title="Reschedule Session">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>

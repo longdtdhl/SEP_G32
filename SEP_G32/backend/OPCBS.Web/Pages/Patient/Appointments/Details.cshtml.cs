@@ -40,15 +40,12 @@ public class DetailsModel : PageModel
         if (data == null) { Error = error ?? "Not found lịch hẹn."; return Page(); }
         Appointment = data;
 
-        if (data.TreatmentPackageId.HasValue || data.TreatmentCaseId.HasValue)
+        try
         {
-            try
-            {
-                var (clinicalContext, _) = await _service.GetClinicalContextAsync(id);
-                ClinicalContext = clinicalContext;
-            }
-            catch { }
+            var (clinicalContext, _) = await _service.GetClinicalContextAsync(id);
+            ClinicalContext = clinicalContext;
         }
+        catch { }
 
         // Load psychometric submission for this appointment
         var (subData, _) = await _psychService.GetSubmissionByAppointmentAsync(id);

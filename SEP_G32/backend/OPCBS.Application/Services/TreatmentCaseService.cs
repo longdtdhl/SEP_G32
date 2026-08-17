@@ -803,16 +803,91 @@ public class TreatmentCaseService : ITreatmentCaseService
             if (appointmentSlot == null || appointmentSlot.IsDeleted)
                 return ApiResponse<TreatmentSessionDto>.ErrorResponse("Linked appointment slot not found.");
         }
+        else if (dto.PlannedStartTime.HasValue)
+        {
+            var doctor = await _doctorRepo.GetByIdAsync(treatmentCase.DoctorId, ct);
+            if (doctor == null)
+            {
+                var allDocs = await _doctorRepo.GetAllAsync(ct);
+                doctor = allDocs.FirstOrDefault(d => d.Id == treatmentCase.DoctorId || d.UserId == treatmentCase.DoctorId);
+            }
+
+            var patient = await _patientRepo.GetByIdAsync(treatmentCase.PatientId, ct);
+            if (patient == null)
+            {
+                var allPats = await _patientRepo.GetAllAsync(ct);
+                patient = allPats.FirstOrDefault(p => p.Id == treatmentCase.PatientId || p.UserId == treatmentCase.PatientId);
+            }
+
+            var slotDate = DateOnly.FromDateTime(dto.PlannedStartTime.Value);
+            var slotStart = TimeOnly.FromDateTime(dto.PlannedStartTime.Value);
+            var slotEnd = dto.PlannedEndTime.HasValue
+                ? TimeOnly.FromDateTime(dto.PlannedEndTime.Value)
+                : slotStart.AddMinutes(60);
+
+            var allDoctorSlots = await _slotRepo.GetAllAsync(ct);
+            var docProfileId = doctor?.Id ?? treatmentCase.DoctorId;
+            appointmentSlot = allDoctorSlots.FirstOrDefault(s =>
+                s.DoctorProfileId == docProfileId &&
+                s.SlotDate == slotDate &&
+                s.StartTime == slotStart &&
+                s.EndTime == slotEnd &&
+                !s.IsDeleted);
+
+            if (appointmentSlot == null)
+            {
+                appointmentSlot = new AppointmentSlot
+                {
+                    DoctorProfileId = docProfileId,
+                    SlotDate = slotDate,
+                    StartTime = slotStart,
+                    EndTime = slotEnd,
+                    DurationMinutes = (int)Math.Max(15, (slotEnd - slotStart).TotalMinutes),
+                    MaxPatients = 1,
+                    CurrentBookings = 1,
+                    Status = AppointmentSlotStatus.Booked,
+                    DoctorProfile = doctor!
+                };
+                await _slotRepo.AddAsync(appointmentSlot, ct);
+            }
+            else
+            {
+                appointmentSlot.CurrentBookings++;
+                appointmentSlot.Status = AppointmentSlotStatus.Booked;
+                _slotRepo.Update(appointmentSlot);
+            }
+
+            var bookingCode = $"OPCBS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            appointment = new Appointment
+            {
+                BookingCode = bookingCode,
+                AppointmentSlotId = appointmentSlot.Id,
+                DoctorId = docProfileId,
+                PatientId = patient?.Id ?? treatmentCase.PatientId,
+                TreatmentCaseId = treatmentCase.Id,
+                TreatmentPackageId = treatmentCase.TreatmentPackageId != Guid.Empty ? treatmentCase.TreatmentPackageId : null,
+                AppointmentDate = dto.PlannedStartTime.Value,
+                Status = AppointmentStatus.Approved,
+                ApprovedAt = DateTime.UtcNow,
+                AppointmentSlot = appointmentSlot,
+                Doctor = doctor!,
+                Patient = patient
+            };
+            await _appointmentRepo.AddAsync(appointment, ct);
+        }
+
+        var sessionPlannedStart = appointmentSlot?.SlotDate.ToDateTime(appointmentSlot.StartTime) ?? dto.PlannedStartTime;
+        var sessionPlannedEnd = appointmentSlot?.SlotDate.ToDateTime(appointmentSlot.EndTime) ?? dto.PlannedEndTime;
 
         var session = new TreatmentSession
         {
             TreatmentCaseId = dto.TreatmentCaseId,
-            AppointmentId = dto.AppointmentId,
+            AppointmentId = appointment?.Id ?? dto.AppointmentId,
             SessionNumber = sessionNumber,
             Title = dto.Title ?? $"Session {sessionNumber}",
             Description = dto.Description,
-            PlannedStartTime = appointmentSlot?.SlotDate.ToDateTime(appointmentSlot.StartTime) ?? dto.PlannedStartTime,
-            PlannedEndTime = appointmentSlot?.SlotDate.ToDateTime(appointmentSlot.EndTime) ?? dto.PlannedEndTime,
+            PlannedStartTime = sessionPlannedStart,
+            PlannedEndTime = sessionPlannedEnd,
             Status = appointment == null ? TreatmentSessionStatus.Planned : appointment.Status switch
             {
                 AppointmentStatus.InProgress or AppointmentStatus.AwaitingPatientConfirmation or
@@ -1058,13 +1133,138 @@ public class TreatmentCaseService : ITreatmentCaseService
             .ToList();
 
         var allAppts = await _appointmentRepo.GetAllAsync(ct);
-        var caseAppts = allAppts.Where(a => !a.IsDeleted && (a.TreatmentCaseId == caseId || (tc.TreatmentPackageId != Guid.Empty && a.TreatmentPackageId == tc.TreatmentPackageId))).ToList();
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slotDict = allSlots.GroupBy(sl => sl.Id).ToDictionary(g => g.Key, g => g.First());
 
-        var existingApptIds = sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToHashSet();
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patient = allPatients.FirstOrDefault(p => p.Id == tc.PatientId || p.UserId == tc.PatientId);
+        var patientIds = new HashSet<Guid> { tc.PatientId };
+        if (patient != null)
+        {
+            patientIds.Add(patient.Id);
+            patientIds.Add(patient.UserId);
+        }
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == tc.DoctorId || d.UserId == tc.DoctorId);
+        var doctorIds = new HashSet<Guid> { tc.DoctorId };
+        if (doctor != null)
+        {
+            doctorIds.Add(doctor.Id);
+            doctorIds.Add(doctor.UserId);
+        }
+
+        var caseAppts = allAppts.Where(a => !a.IsDeleted && (
+            a.TreatmentCaseId == caseId ||
+            (tc.TreatmentPackageId != Guid.Empty && a.TreatmentPackageId == tc.TreatmentPackageId) ||
+            (a.TreatmentSessionId.HasValue && sessions.Any(s => s.Id == a.TreatmentSessionId.Value)) ||
+            (sessions.Any(s => s.AppointmentId == a.Id)) ||
+            (a.PatientId.HasValue && patientIds.Contains(a.PatientId.Value) && doctorIds.Contains(a.DoctorId) && (
+                tc.TreatmentPackageId != Guid.Empty ? (a.TreatmentPackageId == tc.TreatmentPackageId || a.TreatmentPackageId == null) : true
+            ))
+        )).ToList();
+
+        bool hasChanges = false;
+
+        // 1. Link any existing sessions that don't have AppointmentId yet to available unlinked appointments
+        var linkedApptIds = sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToHashSet();
+        foreach (var s in sessions)
+        {
+            if (!s.AppointmentId.HasValue)
+            {
+                var candidateAppt = caseAppts.FirstOrDefault(a => !linkedApptIds.Contains(a.Id) && (!a.TreatmentSessionId.HasValue || a.TreatmentSessionId == s.Id));
+                if (candidateAppt != null)
+                {
+                    s.AppointmentId = candidateAppt.Id;
+                    candidateAppt.TreatmentSessionId = s.Id;
+                    candidateAppt.TreatmentCaseId = caseId;
+                    _sessionRepo.Update(s);
+                    _appointmentRepo.Update(candidateAppt);
+                    linkedApptIds.Add(candidateAppt.Id);
+                    hasChanges = true;
+                }
+                else if (s.PlannedStartTime.HasValue)
+                {
+                    var slotDate = DateOnly.FromDateTime(s.PlannedStartTime.Value);
+                    var slotStart = TimeOnly.FromDateTime(s.PlannedStartTime.Value);
+                    var slotEnd = s.PlannedEndTime.HasValue
+                        ? TimeOnly.FromDateTime(s.PlannedEndTime.Value)
+                        : slotStart.AddMinutes(60);
+
+                    var docProfileId = doctor?.Id ?? tc.DoctorId;
+                    var apptSlot = allSlots.FirstOrDefault(sl =>
+                        sl.DoctorProfileId == docProfileId &&
+                        sl.SlotDate == slotDate &&
+                        sl.StartTime == slotStart &&
+                        sl.EndTime == slotEnd &&
+                        !sl.IsDeleted);
+
+                    if (apptSlot == null)
+                    {
+                        apptSlot = new AppointmentSlot
+                        {
+                            DoctorProfileId = docProfileId,
+                            SlotDate = slotDate,
+                            StartTime = slotStart,
+                            EndTime = slotEnd,
+                            DurationMinutes = (int)Math.Max(15, (slotEnd - slotStart).TotalMinutes),
+                            MaxPatients = 1,
+                            CurrentBookings = 1,
+                            Status = AppointmentSlotStatus.Booked,
+                            DoctorProfile = doctor!
+                        };
+                        await _slotRepo.AddAsync(apptSlot, ct);
+                        slotDict[apptSlot.Id] = apptSlot;
+                    }
+                    else
+                    {
+                        apptSlot.CurrentBookings++;
+                        apptSlot.Status = AppointmentSlotStatus.Booked;
+                        _slotRepo.Update(apptSlot);
+                    }
+
+                    var bookingCode = $"OPCBS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+                    var newAppt = new Appointment
+                    {
+                        BookingCode = bookingCode,
+                        AppointmentSlotId = apptSlot.Id,
+                        DoctorId = docProfileId,
+                        PatientId = patient?.Id ?? tc.PatientId,
+                        TreatmentCaseId = caseId,
+                        TreatmentPackageId = tc.TreatmentPackageId != Guid.Empty ? tc.TreatmentPackageId : null,
+                        TreatmentSessionId = s.Id,
+                        AppointmentDate = s.PlannedStartTime.Value,
+                        Status = s.Status == TreatmentSessionStatus.Completed ? AppointmentStatus.Completed
+                               : s.Status == TreatmentSessionStatus.Cancelled ? AppointmentStatus.Cancelled
+                               : AppointmentStatus.Approved,
+                        ApprovedAt = DateTime.UtcNow,
+                        AppointmentSlot = apptSlot,
+                        Doctor = doctor!,
+                        Patient = patient
+                    };
+                    await _appointmentRepo.AddAsync(newAppt, ct);
+                    s.AppointmentId = newAppt.Id;
+                    _sessionRepo.Update(s);
+                    caseAppts.Add(newAppt);
+                    linkedApptIds.Add(newAppt.Id);
+                    hasChanges = true;
+                }
+            }
+        }
+
+        // 2. For every appointment belonging to the case that does not have a session, create its session
         foreach (var appt in caseAppts)
         {
-            if (!existingApptIds.Contains(appt.Id))
+            if (!sessions.Any(s => s.AppointmentId == appt.Id || (appt.TreatmentSessionId.HasValue && s.Id == appt.TreatmentSessionId.Value)))
             {
+                DateTime? startTime = appt.AppointmentDate;
+                DateTime? endTime = appt.AppointmentDate?.AddMinutes(60);
+                if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
+                {
+                    startTime = slot.SlotDate.ToDateTime(slot.StartTime);
+                    endTime = slot.SlotDate.ToDateTime(slot.EndTime);
+                }
+
                 var nextNumber = sessions.Count == 0 ? 1 : sessions.Max(s => s.SessionNumber) + 1;
                 var newSession = new TreatmentSession
                 {
@@ -1072,8 +1272,8 @@ public class TreatmentCaseService : ITreatmentCaseService
                     SessionNumber = nextNumber,
                     Title = $"Session {nextNumber}: {tc.CaseName}",
                     Description = $"Treatment session {nextNumber} of {tc.TotalSessions}",
-                    PlannedStartTime = appt.AppointmentDate,
-                    PlannedEndTime = appt.AppointmentDate?.AddMinutes(60),
+                    PlannedStartTime = startTime,
+                    PlannedEndTime = endTime,
                     Status = appt.Status == AppointmentStatus.Completed ? TreatmentSessionStatus.Completed
                            : appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Rejected ? TreatmentSessionStatus.Cancelled
                            : TreatmentSessionStatus.Scheduled,
@@ -1081,15 +1281,72 @@ public class TreatmentCaseService : ITreatmentCaseService
                     TreatmentCase = tc
                 };
                 await _sessionRepo.AddAsync(newSession, ct);
-                if (!appt.TreatmentCaseId.HasValue || appt.TreatmentCaseId.Value == Guid.Empty || !appt.TreatmentSessionId.HasValue)
-                {
-                    appt.TreatmentCaseId = caseId;
-                    appt.TreatmentSessionId = newSession.Id;
-                    _appointmentRepo.Update(appt);
-                }
+                
+                appt.TreatmentCaseId = caseId;
+                appt.TreatmentSessionId = newSession.Id;
+                _appointmentRepo.Update(appt);
+                
                 sessions.Add(newSession);
-                existingApptIds.Add(appt.Id);
+                linkedApptIds.Add(appt.Id);
+                hasChanges = true;
             }
+        }
+
+        // 3. Keep status, dates, and two-way keys in 100% sync between session and appointment
+        foreach (var s in sessions)
+        {
+            if (s.AppointmentId.HasValue)
+            {
+                var appt = caseAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value) ?? allAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value);
+                if (appt != null)
+                {
+                    if (appt.TreatmentCaseId != caseId || appt.TreatmentSessionId != s.Id)
+                    {
+                        appt.TreatmentCaseId = caseId;
+                        appt.TreatmentSessionId = s.Id;
+                        _appointmentRepo.Update(appt);
+                        hasChanges = true;
+                    }
+
+                    if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
+                    {
+                        var start = slot.SlotDate.ToDateTime(slot.StartTime);
+                        var end = slot.SlotDate.ToDateTime(slot.EndTime);
+                        if (s.PlannedStartTime != start || s.PlannedEndTime != end)
+                        {
+                            s.PlannedStartTime = start;
+                            s.PlannedEndTime = end;
+                            _sessionRepo.Update(s);
+                            hasChanges = true;
+                        }
+                    }
+                    else if (appt.AppointmentDate.HasValue && (s.PlannedStartTime == null || s.PlannedStartTime != appt.AppointmentDate.Value))
+                    {
+                        s.PlannedStartTime = appt.AppointmentDate.Value;
+                        s.PlannedEndTime = appt.AppointmentDate.Value.AddMinutes(60);
+                        _sessionRepo.Update(s);
+                        hasChanges = true;
+                    }
+
+                    if (appt.Status == AppointmentStatus.Completed && s.Status != TreatmentSessionStatus.Completed)
+                    {
+                        s.Status = TreatmentSessionStatus.Completed;
+                        _sessionRepo.Update(s);
+                        hasChanges = true;
+                    }
+                    else if ((appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Rejected) && s.Status != TreatmentSessionStatus.Cancelled)
+                    {
+                        s.Status = TreatmentSessionStatus.Cancelled;
+                        _sessionRepo.Update(s);
+                        hasChanges = true;
+                    }
+                }
+            }
+        }
+
+        if (hasChanges)
+        {
+            await _uow.SaveChangesAsync(ct);
         }
 
         var dtos = new List<TreatmentSessionDto>();
@@ -1098,17 +1355,29 @@ public class TreatmentCaseService : ITreatmentCaseService
         var allGoals = await _goalRepo.GetAllAsync(ct);
         var allDetails = await _goalDetailRepo.GetAllAsync(ct);
 
-        foreach (var s in sessions)
+        foreach (var s in sessions.OrderBy(x => x.SessionNumber))
         {
             var dto = MapToSessionDto(s);
-            if (string.IsNullOrEmpty(dto.BookingCode) && s.AppointmentId.HasValue)
+            if (s.AppointmentId.HasValue)
             {
                 var appt = caseAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value) ?? allAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value);
                 if (appt != null)
                 {
                     dto.BookingCode = appt.BookingCode;
-                    dto.AppointmentDate = appt.AppointmentDate ?? s.PlannedStartTime;
-                    dto.PlannedStartTime ??= appt.AppointmentDate;
+                    if (slotDict.TryGetValue(appt.AppointmentSlotId, out var slot))
+                    {
+                        var start = slot.SlotDate.ToDateTime(slot.StartTime);
+                        var end = slot.SlotDate.ToDateTime(slot.EndTime);
+                        dto.PlannedStartTime = start;
+                        dto.PlannedEndTime = end;
+                        dto.AppointmentDate = start;
+                    }
+                    else
+                    {
+                        dto.AppointmentDate = appt.AppointmentDate ?? s.PlannedStartTime;
+                        dto.PlannedStartTime ??= appt.AppointmentDate;
+                        dto.PlannedEndTime ??= appt.AppointmentDate?.AddMinutes(60);
+                    }
                 }
             }
             var sessionHomework = allAssignments.Where(a => a.TreatmentSessionId == s.Id && !a.IsDeleted).ToList();

@@ -1,0 +1,572 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Patient.ConsultationRecords.DetailsModel
+@{
+    ViewData["Title"] = "Consultation Note Details";
+    Layout = "_DashboardLayout";
+    var r = Model.Record;
+    if (r == null) return;
+    var doc = Model.Doctor;
+    var apt = Model.Appointment;
+    var tc = Model.TreatmentCase;
+    var pkg = Model.TreatmentPackage;
+    var isOnline = apt != null && string.Equals(apt.ConsultationMode, "Online", StringComparison.OrdinalIgnoreCase);
+}
+
+<style>
+    :root {
+        --mb-primary-teal: #3E8E7E;
+        --mb-primary-teal-dark: #2f6e61;
+        --mb-primary-teal-light: #e8f5f1;
+        --mb-primary-teal-subtle: #f0fdf9;
+        --mb-card-border: #e8ecef;
+        --mb-text-main: #1e293b;
+        --mb-text-muted: #64748b;
+    }
+
+    .cnd-container {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding-bottom: 3rem;
+    }
+
+    .cnd-breadcrumb {
+        font-size: 0.85rem;
+        color: var(--mb-text-muted);
+        margin-bottom: 1.25rem;
+    }
+
+    .cnd-breadcrumb a {
+        color: var(--mb-primary-teal);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .cnd-breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .cnd-card {
+        background: #ffffff;
+        border: 1px solid var(--mb-card-border);
+        border-radius: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .cnd-card-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fafbfc;
+    }
+
+    .cnd-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--mb-text-main);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cnd-card-body {
+        padding: 1.5rem;
+    }
+
+    .cnd-doc-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--mb-primary-teal-light);
+        color: var(--mb-primary-teal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        border: 3px solid #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .cnd-clinical-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.1rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .cnd-clinical-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #475569;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .cnd-clinical-text {
+        font-size: 0.92rem;
+        color: var(--mb-text-main);
+        line-height: 1.6;
+        white-space: pre-line;
+        margin: 0;
+    }
+
+    .badge-cnd-confirmed {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 5px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-cnd-pending {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 5px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-cnd-diagnosis {
+        background: #f0fdf9;
+        color: #0f766e;
+        border: 1px solid #99f6e4;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 4px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cnd-action-banner {
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cnd-action-banner.pending {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border: 1px solid #fcd34d;
+    }
+
+    .cnd-action-banner.confirmed {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #86efac;
+    }
+
+    .cnd-progress-bar {
+        height: 8px;
+        border-radius: 99px;
+        background-color: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .cnd-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3E8E7E 0%, #10b981 100%);
+        border-radius: 99px;
+    }
+</style>
+
+<div class="cnd-container">
+    <!-- Breadcrumb -->
+    <div class="cnd-breadcrumb d-flex align-items-center gap-2">
+        <a asp-page="/Patient/ConsultationRecords/Index"><i class="bi bi-arrow-left me-1"></i>Consultation Records</a>
+        <span>/</span>
+        <span class="text-dark fw-semibold">Consultation Note #@(r.DisplayConsultationDate.ToString("yyyyMMdd"))</span>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- 1. Header Card -->
+    <div class="cnd-card">
+        <div class="cnd-card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 pb-4 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="cnd-doc-avatar">
+                        @(string.IsNullOrEmpty(r.DoctorName) ? "Dr" : r.DoctorName.Substring(0, 1))
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h4 class="fw-bold text-dark mb-0">@(r.DoctorName ?? "Assigned Therapist")</h4>
+                            @if (!string.IsNullOrEmpty(doc?.Specialization))
+                            {
+                                <span class="badge bg-light text-secondary border fw-medium" style="font-size:0.75rem;">@doc.Specialization</span>
+                            }
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-heart-pulse me-1 text-teal" style="color:var(--mb-primary-teal);"></i>
+                            @(doc?.Specializations != null && doc.Specializations.Any() ? string.Join(", ", doc.Specializations) : "Clinical Psychology & Psychotherapy")
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    @if (r.IsPatientConfirmed)
+                    {
+                        <span class="badge-cnd-confirmed">
+                            <i class="bi bi-check2-circle text-success fs-6"></i> Confirmed & Acknowledged
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge-cnd-pending">
+                            <i class="bi bi-clock-history text-warning fs-6"></i> Awaiting Patient Review
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="row g-3 pt-3">
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-uppercase small text-muted fw-bold" style="font-size:0.7rem; letter-spacing:0.04em;">CONSULTATION DATE</div>
+                    <div class="fw-semibold text-dark mt-1">
+                        <i class="bi bi-calendar-event me-1" style="color:var(--mb-primary-teal);"></i>
+                        @r.DisplayConsultationDate.ToString("dddd, MMM dd, yyyy")
+                    </div>
+                    <div class="text-muted small">@r.DisplayConsultationDate.ToString("HH:mm")</div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-uppercase small text-muted fw-bold" style="font-size:0.7rem; letter-spacing:0.04em;">CONSULTATION MODE</div>
+                    <div class="fw-semibold text-dark mt-1">
+                        @if (isOnline)
+                        {
+                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i class="bi bi-camera-video me-1"></i>Online Video</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-geo-alt me-1"></i>In-Person Clinic</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-uppercase small text-muted fw-bold" style="font-size:0.7rem; letter-spacing:0.04em;">BOOKING REFERENCE</div>
+                    <div class="fw-semibold font-monospace text-primary mt-1">
+                        @(apt?.BookingCode ?? "Direct Note")
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="text-uppercase small text-muted fw-bold" style="font-size:0.7rem; letter-spacing:0.04em;">APPOINTMENT DETAILS</div>
+                    <div class="mt-1">
+                        @if (r.AppointmentId.HasValue)
+                        {
+                            <a href="/Patient/Appointments/Details/@r.AppointmentId.Value" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.78rem;">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>View Appointment
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Direct Consultation</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Patient Acknowledgement Card -->
+    @if (!r.IsPatientConfirmed)
+    {
+        <div class="cnd-action-banner pending shadow-sm">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#f59e0b;color:#ffffff;font-size:1.4rem;">
+                        <i class="bi bi-clipboard2-check"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1" style="color:#78350f !important;">Please Review & Acknowledge Your Consultation Record</h6>
+                        <p class="text-muted small mb-0" style="color:#92400e !important; max-width:640px;">
+                            Please review the clinical diagnosis, session summary, therapy care plan, and therapist recommendations below. Confirming acknowledges that you have read and understood your doctor's assessment.
+                        </p>
+                    </div>
+                </div>
+                <form method="post" asp-page-handler="Confirm" asp-route-id="@r.Id" class="flex-shrink-0">
+                    <button type="submit" class="btn btn-warning fw-bold px-4 py-2 shadow-sm text-dark" style="border-radius:10px;">
+                        <i class="bi bi-check2-circle me-1"></i>Confirm Record
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="cnd-action-banner confirmed shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;background:#10b981;color:#ffffff;font-size:1.3rem;">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1" style="color:#065f46 !important;">Consultation Record Confirmed & Acknowledged</h6>
+                    <p class="text-muted small mb-0" style="color:#047857 !important;">
+                        You reviewed and acknowledged this consultation record on <strong>@r.PatientConfirmedAt?.ToString("MMMM dd, yyyy 'at' HH:mm")</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 3. Clinical Summary (Readonly) -->
+    <div class="cnd-card">
+        <div class="cnd-card-header">
+            <h5 class="cnd-card-title">
+                <i class="bi bi-clipboard-pulse" style="color:var(--mb-primary-teal);"></i>
+                Clinical Summary & Assessment
+            </h5>
+            <span class="badge bg-light text-muted border fw-normal" style="font-size:0.75rem;">Official Clinical Record</span>
+        </div>
+        <div class="cnd-card-body">
+            <!-- Primary Diagnosis -->
+            <div class="cnd-clinical-box" style="background:#f0fdf9; border-color:#ccfbf1;">
+                <div class="cnd-clinical-label" style="color:#0f766e;">
+                    <i class="bi bi-bandaid"></i>PRIMARY DIAGNOSIS & CLINICAL ASSESSMENT
+                </div>
+                @if (!string.IsNullOrWhiteSpace(r.Diagnosis))
+                {
+                    <div class="mb-2">
+                        <span class="badge-cnd-diagnosis">
+                            <i class="bi bi-bookmark-check-fill"></i>@r.Diagnosis
+                        </span>
+                    </div>
+                }
+                <div class="cnd-clinical-text">
+                    @(string.IsNullOrWhiteSpace(r.ConsultationSummary) ? "No detailed clinical summary recorded for this session." : r.ConsultationSummary)
+                </div>
+            </div>
+
+            <!-- Therapy & Care Plan -->
+            <div class="cnd-clinical-box">
+                <div class="cnd-clinical-label">
+                    <i class="bi bi-journal-medical"></i>THERAPY & CARE PLAN
+                </div>
+                <div class="cnd-clinical-text">
+                    @(string.IsNullOrWhiteSpace(r.TherapyPlan) ? "No specific therapy care plan specified. Continue following general wellness guidelines." : r.TherapyPlan)
+                </div>
+            </div>
+
+            <!-- Therapist Advice & Recommendations -->
+            <div class="cnd-clinical-box" style="background:#f8fafc; border-color:#cbd5e1;">
+                <div class="cnd-clinical-label" style="color:#334155;">
+                    <i class="bi bi-lightbulb"></i>THERAPIST ADVICE & RECOMMENDATIONS
+                </div>
+                <div class="cnd-clinical-text">
+                    @(string.IsNullOrWhiteSpace(r.Recommendation) ? "No special recommendations entered for this consultation." : r.Recommendation)
+                </div>
+            </div>
+
+            <!-- Custom Clinical Fields (if any) -->
+            @if (r.CustomFields != null && r.CustomFields.Any())
+            {
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold text-dark small text-uppercase mb-3" style="letter-spacing:0.04em;">
+                        <i class="bi bi-list-check me-1" style="color:var(--mb-primary-teal);"></i>Additional Clinical Parameters
+                    </h6>
+                    <div class="row g-3">
+                        @foreach (var cf in r.CustomFields)
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="small fw-bold text-muted mb-1">@cf.Title</div>
+                                    <div class="text-dark small">@(string.IsNullOrWhiteSpace(cf.Content) ? "—" : cf.Content)</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- 4. Treatment Progress (if linked to Treatment Case / Package) -->
+    @if (tc != null || pkg != null)
+    {
+        var caseName = tc?.CaseName ?? pkg?.Title ?? "Treatment Package";
+        var totalSess = tc?.TotalSessions ?? pkg?.TotalSessions ?? 0;
+        var completedSess = tc?.CompletedSessions ?? (pkg != null ? pkg.TotalSessions - pkg.RemainingSessions : 0);
+        var remainingSess = tc?.RemainingSessions ?? pkg?.RemainingSessions ?? 0;
+        var progressPercent = totalSess > 0 ? (completedSess * 100 / totalSess) : 0;
+
+        <div class="cnd-card">
+            <div class="cnd-card-header">
+                <h5 class="cnd-card-title">
+                    <i class="bi bi-graph-up-arrow" style="color:var(--mb-primary-teal);"></i>
+                    Treatment Case Progress
+                </h5>
+                @if (tc != null)
+                {
+                    <a href="/Patient/TreatmentCases/Details/@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:8px; font-size:0.78rem;">
+                        <i class="bi bi-eye me-1"></i>View Treatment Case
+                    </a>
+                }
+            </div>
+            <div class="cnd-card-body">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">@caseName</h6>
+                        <div class="text-muted small">
+                            Completed <strong>@completedSess / @totalSess</strong> sessions &bull; <strong>@remainingSess</strong> sessions remaining
+                        </div>
+                    </div>
+                    <div class="text-md-end">
+                        <span class="fs-4 fw-bold text-success">@progressPercent%</span>
+                        <div class="text-muted small">Overall Case Progress</div>
+                    </div>
+                </div>
+
+                <div class="cnd-progress-bar mb-4">
+                    <div class="cnd-progress-fill" style="width: @progressPercent%;"></div>
+                </div>
+
+                <!-- Current Goals -->
+                @if (Model.TreatmentGoals != null && Model.TreatmentGoals.Any())
+                {
+                    <h6 class="fw-bold text-muted small text-uppercase mb-3" style="letter-spacing:0.04em;">
+                        <i class="bi bi-bullseye me-1 text-teal" style="color:var(--mb-primary-teal);"></i>Active Treatment Goals
+                    </h6>
+                    <div class="row g-3">
+                        @foreach (var goal in Model.TreatmentGoals.Take(4))
+                        {
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="fw-semibold text-dark small text-truncate" style="max-width:70%;">@goal.Title</div>
+                                        <span class="@goal.StatusBadgeClass" style="font-size:0.7rem;">@goal.StatusText</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between small text-muted mb-1" style="font-size:0.75rem;">
+                                        <span>Progress</span>
+                                        <span class="fw-bold">@goal.ProgressPercent%</span>
+                                    </div>
+                                    <div class="progress" style="height:5px;">
+                                        <div class="progress-bar bg-success" style="width: @goal.ProgressPercent%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 5. Follow-up & Next Steps -->
+    <div class="cnd-card">
+        <div class="cnd-card-header">
+            <h5 class="cnd-card-title">
+                <i class="bi bi-calendar-check" style="color:var(--mb-primary-teal);"></i>
+                Follow-up & Next Steps
+            </h5>
+        </div>
+        <div class="cnd-card-body">
+            @if (r.NextAppointmentRecommendedDate.HasValue || !string.IsNullOrWhiteSpace(r.FollowUpNotes))
+            {
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-7">
+                        @if (r.NextAppointmentRecommendedDate.HasValue)
+                        {
+                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3 border">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#e6f4f1;color:#0f766e;font-size:1.3rem;">
+                                    <i class="bi bi-alarm"></i>
+                                </div>
+                                <div>
+                                    <div class="small text-uppercase fw-bold text-muted" style="font-size:0.7rem;">RECOMMENDED NEXT SESSION</div>
+                                    <div class="fw-bold text-dark fs-6 mt-1">
+                                        @r.NextAppointmentRecommendedDate.Value.ToString("dddd, MMMM dd, yyyy")
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(r.NextAppointmentRecommendedSlotStartTime))
+                                    {
+                                        <div class="text-muted small">
+                                            <i class="bi bi-clock me-1"></i>Suggested Time: @r.NextAppointmentRecommendedSlotStartTime - @r.NextAppointmentRecommendedSlotEndTime
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(r.FollowUpNotes))
+                        {
+                            <div class="cnd-clinical-box mb-0">
+                                <div class="cnd-clinical-label">
+                                    <i class="bi bi-chat-left-text"></i>FOLLOW-UP GUIDANCE
+                                </div>
+                                <div class="cnd-clinical-text">@r.FollowUpNotes</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-lg-5 text-center text-lg-start border-start-lg ps-lg-4">
+                        @if (r.FollowUpAppointmentId.HasValue && !string.IsNullOrEmpty(r.FollowUpAppointmentBookingCode))
+                        {
+                            <div class="p-3 bg-success-subtle rounded-3 border border-success-subtle mb-3 text-center">
+                                <div class="small fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-1"></i>Follow-up Scheduled</div>
+                                <div class="font-monospace fw-bold text-dark">@r.FollowUpAppointmentBookingCode</div>
+                                <a href="/Patient/Appointments/Details/@r.FollowUpAppointmentId" class="btn btn-sm btn-success mt-2" style="border-radius:8px;">
+                                    View Follow-up Appointment
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            var targetDateStr = r.NextAppointmentRecommendedDate?.ToString("yyyy-MM-dd");
+                            <div class="p-4 bg-light rounded-4 text-center border">
+                                <i class="bi bi-calendar-plus text-teal mb-2 d-block" style="font-size:2rem; color:var(--mb-primary-teal);"></i>
+                                <h6 class="fw-bold text-dark mb-1">Book Your Follow-up Session</h6>
+                                <p class="text-muted small mb-3">Reserve your recommended time slot with Dr. @(r.DoctorName ?? "your therapist")</p>
+                                <a asp-page="/Appointment/Book" asp-route-doctorId="@r.DoctorId" asp-route-week="@targetDateStr" asp-route-returning="true" class="btn btn-primary fw-semibold px-4 py-2 w-100" style="border-radius:10px; background:var(--mb-primary-teal); border-color:var(--mb-primary-teal);">
+                                    <i class="bi bi-calendar-check me-1"></i>Book Follow-up Slot
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-heart text-muted mb-2 d-block" style="font-size:2rem;"></i>
+                    <p class="text-muted small mb-3">No specific follow-up date has been scheduled yet. You can book an appointment at any time.</p>
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@r.DoctorId" asp-route-returning="true" class="btn btn-outline-primary btn-sm" style="border-radius:8px;">
+                        <i class="bi bi-calendar-plus me-1"></i>Schedule Next Appointment
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Confidentiality Notice -->
+    <div class="text-center text-muted small mt-4">
+        <i class="bi bi-shield-lock me-1"></i> This consultation record is a confidential medical document maintained securely under OPCBS Patient Care Standards.
+    </div>
+</div>

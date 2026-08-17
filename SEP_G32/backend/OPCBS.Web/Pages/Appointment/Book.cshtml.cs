@@ -138,7 +138,9 @@ public class BookModel : PageModel
                     if (activePkg != null)
                     {
                         TreatmentPackage = activePkg;
-                        HasPackageButNotBookingVia = true;
+                        TreatmentPackageId = activePkg.Id;
+                        Input.TreatmentPackageId = activePkg.Id;
+                        HasPackageButNotBookingVia = false;
                     }
                     else
                     {
@@ -259,6 +261,20 @@ public class BookModel : PageModel
                     if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
                     if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
                     if (string.IsNullOrWhiteSpace(Input.GuestZaloNumber)) Input.GuestZaloNumber = profile.PhoneNumber;
+                }
+
+                if (!Input.TreatmentPackageId.HasValue || Input.TreatmentPackageId == Guid.Empty)
+                {
+                    var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
+                    var activePkg = pkgs.FirstOrDefault(p =>
+                        (p.DoctorProfileId == Input.DoctorId || p.DoctorId == Input.DoctorId) &&
+                        (p.Status == "Active" || p.Status == "Accepted") &&
+                        !p.IsExpired &&
+                        p.RemainingSessions > 0);
+                    if (activePkg != null)
+                    {
+                        Input.TreatmentPackageId = activePkg.Id;
+                    }
                 }
             }
             catch { }
