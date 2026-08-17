@@ -841,10 +841,10 @@
                         </a>
                     }
 
-                    @if (apt.CanReschedule)
+                    @if (apt.CanReschedule || isRescheduleRequested || isPending || (isApproved && !isCompleted && !isCancelled))
                     {
                         <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="session-sec-btn w-100">
-                            <i class="bi bi-arrow-repeat me-1.5" style="color:#0f766e;"></i>Request Reschedule
+                            <i class="bi bi-arrow-repeat me-1.5" style="color:#0f766e;"></i>@(isRescheduleRequested ? "Update Reschedule Request" : "Request Reschedule")
                         </a>
                     }
 

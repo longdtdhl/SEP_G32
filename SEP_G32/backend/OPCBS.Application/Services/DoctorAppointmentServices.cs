@@ -674,7 +674,7 @@ public class AppointmentService : IAppointmentService
                     Title = $"Session {nextNumber}: {linkedCase.CaseName}",
                     Description = $"Treatment session {nextNumber} of {linkedCase.TotalSessions}",
                     PlannedStartTime = slotDateTime,
-                    PlannedEndTime = slotDateTime.AddMinutes(slot.DurationMinutes > 0 ? slot.DurationMinutes : 60),
+                    PlannedEndTime = slot.SlotDate.ToDateTime(slot.EndTime),
                     Status = TreatmentSessionStatus.Scheduled,
                     AppointmentId = appointment.Id,
                     TreatmentCase = linkedCase
@@ -873,8 +873,8 @@ public class AppointmentService : IAppointmentService
                 dto.Fee = slot.Price;
 
                 var slotDateTime = GetSlotTimeUtc(slot);
-                dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
-                                    slotDateTime - DateTime.UtcNow >= TimeSpan.FromHours(24);
+                dto.CanReschedule = (appt.Status == AppointmentStatus.Approved || appt.Status == AppointmentStatus.Pending || appt.Status == AppointmentStatus.RescheduleRequested) &&
+                                    slotDateTime >= DateTime.UtcNow;
             }
 
             dto.ProposedSlotId = appt.ProposedSlotId;
@@ -957,8 +957,8 @@ public class AppointmentService : IAppointmentService
             dto.IsPreAppointmentNoteRequired = slot.IsPreAppointmentNoteRequired;
 
             var slotDateTime = GetSlotTimeUtc(slot);
-            dto.CanReschedule = appt.Status == AppointmentStatus.Approved &&
-                                slotDateTime - DateTime.UtcNow >= TimeSpan.FromHours(24);
+            dto.CanReschedule = (appt.Status == AppointmentStatus.Approved || appt.Status == AppointmentStatus.Pending || appt.Status == AppointmentStatus.RescheduleRequested) &&
+                                slotDateTime >= DateTime.UtcNow;
         }
 
         dto.ProposedSlotId = appt.ProposedSlotId;
@@ -1644,9 +1644,6 @@ public class AppointmentService : IAppointmentService
         {
             appointment.Status = AppointmentStatus.Approved;
             appointment.ProposedSlotId = null;
-            appointment.ProposedSlotDate = null;
-            appointment.ProposedSlotStartTime = null;
-            appointment.ProposedSlotEndTime = null;
         }
         appointment.UpdatedAt = DateTime.UtcNow;
         _apptRepo.Update(appointment);

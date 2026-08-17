@@ -845,10 +845,53 @@ public class ConsultationNoteService : IConsultationNoteService
 
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
-        var records = await _recordRepo.GetAllAsync(ct);
-        var filtered = records.Where(x => x.PatientRecordId == patientRecordId).OrderByDescending(x => x.CreatedAt);
+        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allAppts = await _apptRepo.GetAllAsync(ct);
 
-        var total = filtered.Count();
+        var validIds = new HashSet<Guid> { patientRecordId };
+        var matchingPr = allPatientRecords.FirstOrDefault(pr => pr.Id == patientRecordId || (pr.PatientId.HasValue && pr.PatientId.Value == patientRecordId));
+        if (matchingPr != null)
+        {
+            validIds.Add(matchingPr.Id);
+            if (matchingPr.PatientId.HasValue)
+            {
+                validIds.Add(matchingPr.PatientId.Value);
+                var pat = allPatients.FirstOrDefault(p => p.Id == matchingPr.PatientId.Value || p.UserId == matchingPr.PatientId.Value);
+                if (pat != null)
+                {
+                    validIds.Add(pat.Id);
+                    validIds.Add(pat.UserId);
+                }
+            }
+        }
+        else
+        {
+            var pat = allPatients.FirstOrDefault(p => p.Id == patientRecordId || p.UserId == patientRecordId);
+            if (pat != null)
+            {
+                validIds.Add(pat.Id);
+                validIds.Add(pat.UserId);
+                var prs = allPatientRecords.Where(pr => pr.PatientId.HasValue && (pr.PatientId.Value == pat.Id || pr.PatientId.Value == pat.UserId)).ToList();
+                foreach (var pr in prs)
+                {
+                    validIds.Add(pr.Id);
+                }
+            }
+        }
+
+        var patientApptIds = allAppts
+            .Where(a => a.PatientId.HasValue && validIds.Contains(a.PatientId.Value))
+            .Select(a => a.Id)
+            .ToHashSet();
+
+        var records = await _recordRepo.GetAllAsync(ct);
+        var filtered = records
+            .Where(x => validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value)))
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+
+        var total = filtered.Count;
         var paged = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         var dtos = _mapper.Map<List<ConsultationNoteDto>>(paged);
@@ -866,27 +909,60 @@ public class ConsultationNoteService : IConsultationNoteService
 
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
-        var patientRecord = await _patientRecordRepo.GetByIdAsync(patientUserId, ct);
-        if (patientRecord == null)
+        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+
+        var validIds = new HashSet<Guid> { patientUserId };
+        var pat = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        if (pat != null)
         {
-            // Try to find by patient UserId
-            var allPatients = await _patientRepo.GetAllAsync(ct);
-            var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
-            if (patient != null)
+            validIds.Add(pat.Id);
+            validIds.Add(pat.UserId);
+            var prs = allPatientRecords.Where(pr => pr.PatientId.HasValue && (pr.PatientId.Value == pat.Id || pr.PatientId.Value == pat.UserId)).ToList();
+            foreach (var pr in prs)
             {
-                var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
-                patientRecord = allPatientRecords.FirstOrDefault(pr => pr.PatientId == patient.Id);
+                validIds.Add(pr.Id);
             }
         }
-        
-        if (patientRecord == null) return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Patient record not found");
-        var all = await _recordRepo.GetAllAsync(ct);
-        var records = all.Where(r => r.PatientRecordId == patientRecord.Id).ToList();
-        var total = records.Count;
-        var items = records.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var dtos = _mapper.Map<List<ConsultationNoteDto>>(items);
+        else
+        {
+            var pr = allPatientRecords.FirstOrDefault(p => p.Id == patientUserId || (p.PatientId.HasValue && p.PatientId.Value == patientUserId));
+            if (pr != null)
+            {
+                validIds.Add(pr.Id);
+                if (pr.PatientId.HasValue)
+                {
+                    validIds.Add(pr.PatientId.Value);
+                }
+            }
+        }
+
+        var patientApptIds = allAppts
+            .Where(a => a.PatientId.HasValue && validIds.Contains(a.PatientId.Value))
+            .Select(a => a.Id)
+            .ToHashSet();
+
+        var records = await _recordRepo.GetAllAsync(ct);
+        var filtered = records
+            .Where(x => validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value)))
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+
+        var total = filtered.Count;
+        var paged = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(paged);
         await EnrichRecordsAsync(dtos, ct);
-        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+
+        var pagination = new PaginationMetadata
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
+
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, "Records retrieved successfully", pagination);
     }
 
     public async Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct)
@@ -1944,26 +2020,35 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
         if (patient == null)
             return ApiResponse.ErrorResponse("Patient profile not found");
 
-        if (package.PatientId != patient.Id)
+        if (package.PatientId.HasValue &&
+            package.PatientId != patient.Id &&
+            package.PatientId != patient.UserId &&
+            package.PatientId != patientUserId)
+        {
             return ApiResponse.ErrorResponse("Not authorized to accept this package");
+        }
 
-        if (package.Status != TreatmentPackageStatus.Assigned && package.Status != TreatmentPackageStatus.Active)
+        if (package.Status != TreatmentPackageStatus.Assigned && package.Status != TreatmentPackageStatus.Active && package.Status != TreatmentPackageStatus.Created)
             return ApiResponse.ErrorResponse("Only assigned packages can be accepted");
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId);
-        if (doctor == null)
-            return ApiResponse.ErrorResponse("Doctor profile not found");
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId || d.UserId == package.DoctorId);
+        var doctorIdToUse = doctor?.Id ?? package.DoctorId;
+        var patientIdToUse = patient.Id;
+
+        // Auto assign patient id if not set yet
+        if (!package.PatientId.HasValue)
+        {
+            package.PatientId = patientIdToUse;
+        }
 
         var allCases = await _caseRepo.GetAllAsync(ct);
         var existingCase = allCases.FirstOrDefault(c =>
             c.TreatmentPackageId == package.Id &&
-            c.DoctorId == doctor.Id &&
-            c.PatientId == patient.Id &&
             !c.IsDeleted);
 
         if (package.Status == TreatmentPackageStatus.Active && existingCase != null)
@@ -1984,8 +2069,8 @@ public class TreatmentPackageService : ITreatmentPackageService
                 var treatmentCase = new TreatmentCase
                 {
                     TreatmentPackageId = package.Id,
-                    DoctorId = doctor.Id,
-                    PatientId = patient.Id,
+                    DoctorId = doctorIdToUse,
+                    PatientId = patientIdToUse,
                     CaseName = package.Name,
                     CaseDescription = package.Description,
                     PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
@@ -2036,18 +2121,20 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
         if (patient == null)
             return ApiResponse.ErrorResponse("Patient profile not found");
 
-        if (package.PatientId != patient.Id)
+        if (package.PatientId.HasValue &&
+            package.PatientId != patient.Id &&
+            package.PatientId != patient.UserId &&
+            package.PatientId != patientUserId)
+        {
             return ApiResponse.ErrorResponse("Not authorized to reject this package");
+        }
 
         if (package.Status == TreatmentPackageStatus.Rejected)
             return ApiResponse.SuccessResponse("Treatment package was already rejected.");
-
-        if (package.Status != TreatmentPackageStatus.Assigned)
-            return ApiResponse.ErrorResponse("Only assigned packages can be rejected");
 
         package.Status = TreatmentPackageStatus.Rejected;
         package.RejectionReason = reason;

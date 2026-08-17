@@ -106,13 +106,6 @@ public class DetailsModel : PageModel
         PatientRecord = recordResult.Data;
         var resolvedRecordId = PatientRecord.Id;
 
-        // Fetch Consultation Notes
-        var notesResult = await _noteService.GetByPatientRecordIdAsync(resolvedRecordId);
-        if (notesResult.Error == null && notesResult.Data != null)
-        {
-            ConsultationNotes = notesResult.Data.OrderByDescending(n => n.DisplayConsultationDate).ToList();
-        }
-
         if (PatientRecord.PatientId.HasValue)
         {
             var patientGuid = PatientRecord.PatientId.Value;
@@ -124,7 +117,7 @@ public class DetailsModel : PageModel
                 if (allAppts != null)
                 {
                     PatientAppointments = allAppts
-                        .Where(a => a.PatientId == patientGuid)
+                        .Where(a => a.PatientId == patientGuid || a.PatientId == targetId)
                         .OrderByDescending(a => a.StartAt)
                         .ToList();
 
@@ -225,6 +218,42 @@ public class DetailsModel : PageModel
             }
             catch { }
         }
+
+        // Fetch Consultation Notes with multi-tiered resolution
+        var fetchedNotes = new List<ConsultationNoteDto>();
+        try
+        {
+            var notesResult = await _noteService.GetByPatientRecordIdAsync(resolvedRecordId, 1, 100);
+            if (notesResult.Data != null && notesResult.Data.Any())
+            {
+                fetchedNotes.AddRange(notesResult.Data);
+            }
+
+            if (!fetchedNotes.Any() && PatientRecord.PatientId.HasValue)
+            {
+                var fallbackNotes = await _noteService.GetByPatientRecordIdAsync(PatientRecord.PatientId.Value, 1, 100);
+                if (fallbackNotes.Data != null && fallbackNotes.Data.Any())
+                {
+                    fetchedNotes.AddRange(fallbackNotes.Data);
+                }
+            }
+
+            if (!fetchedNotes.Any() && targetId.HasValue && targetId.Value != resolvedRecordId)
+            {
+                var targetNotes = await _noteService.GetByPatientRecordIdAsync(targetId.Value, 1, 100);
+                if (targetNotes.Data != null && targetNotes.Data.Any())
+                {
+                    fetchedNotes.AddRange(targetNotes.Data);
+                }
+            }
+        }
+        catch { }
+
+        ConsultationNotes = fetchedNotes
+            .GroupBy(n => n.Id)
+            .Select(g => g.First())
+            .OrderByDescending(n => n.DisplayConsultationDate)
+            .ToList();
 
         IsLoading = false;
         return Page();

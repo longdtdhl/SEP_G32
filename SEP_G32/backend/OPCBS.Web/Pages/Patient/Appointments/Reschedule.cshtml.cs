@@ -37,9 +37,9 @@ public class RescheduleModel : PageModel
 
         Appointment = data;
 
-        if (!Appointment.CanReschedule && Appointment.Status != 6) // Status 6 = RescheduleRequested
+        if (!Appointment.CanReschedule && Appointment.Status != 0 && Appointment.Status != 1 && Appointment.Status != 6)
         {
-            Error = "This appointment cannot be rescheduled. Rescheduling requires at least 24 hours advance notice and an Approved status.";
+            Error = "This appointment cannot be rescheduled. Only pending or approved upcoming appointments can be rescheduled.";
             return Page();
         }
 
