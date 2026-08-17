@@ -456,9 +456,9 @@ public class ConsultationNoteService : IConsultationNoteService
         _customFieldRepo = customFieldRepo;
     }
 
-    private async Task EnrichRecordsAsync(List<ConsultationNoteDto> dtos, CancellationToken ct)
+    private async Task EnrichRecordsAsync(List<ConsultationNoteDto>? dtos, CancellationToken ct)
     {
-        if (!dtos.Any()) return;
+        if (dtos == null || !dtos.Any()) return;
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var allUsers = await _userRepo.GetAllAsync(ct);
@@ -909,25 +909,26 @@ public class ConsultationNoteService : IConsultationNoteService
 
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
-        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
-        var allPatients = await _patientRepo.GetAllAsync(ct);
-        var allAppts = await _apptRepo.GetAllAsync(ct);
+        var allPatientRecords = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+        var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+        var allAppts = (await _apptRepo.GetAllAsync(ct)) ?? new List<Appointment>();
 
         var validIds = new HashSet<Guid> { patientUserId };
         var pat = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        PatientRecord? pr = null;
         if (pat != null)
         {
             validIds.Add(pat.Id);
             validIds.Add(pat.UserId);
-            var prs = allPatientRecords.Where(pr => pr.PatientId.HasValue && (pr.PatientId.Value == pat.Id || pr.PatientId.Value == pat.UserId)).ToList();
-            foreach (var pr in prs)
+            var prs = allPatientRecords.Where(r => r.PatientId.HasValue && (r.PatientId.Value == pat.Id || r.PatientId.Value == pat.UserId)).ToList();
+            foreach (var r in prs)
             {
-                validIds.Add(pr.Id);
+                validIds.Add(r.Id);
             }
         }
         else
         {
-            var pr = allPatientRecords.FirstOrDefault(p => p.Id == patientUserId || (p.PatientId.HasValue && p.PatientId.Value == patientUserId));
+            pr = allPatientRecords.FirstOrDefault(p => p.Id == patientUserId || (p.PatientId.HasValue && p.PatientId.Value == patientUserId));
             if (pr != null)
             {
                 validIds.Add(pr.Id);
@@ -938,12 +939,15 @@ public class ConsultationNoteService : IConsultationNoteService
             }
         }
 
+        if (pat == null && pr == null)
+            return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Patient record not found");
+
         var patientApptIds = allAppts
             .Where(a => a.PatientId.HasValue && validIds.Contains(a.PatientId.Value))
             .Select(a => a.Id)
             .ToHashSet();
 
-        var records = await _recordRepo.GetAllAsync(ct);
+        var records = (await _recordRepo.GetAllAsync(ct)) ?? new List<ConsultationNote>();
         var filtered = records
             .Where(x => validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value)))
             .OrderByDescending(x => x.CreatedAt)

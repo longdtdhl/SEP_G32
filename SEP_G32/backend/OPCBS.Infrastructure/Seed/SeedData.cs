@@ -6,8 +6,9 @@ using OPCBS.Infrastructure.Persistence;
 namespace OPCBS.Infrastructure.Seed;
 
 /// <summary>
-/// Database seed data for initial setup
-/// Seeds roles, permissions, specializations, service packages, and a dev admin account
+/// Database seed data for initial setup.
+/// Seeds roles, permissions, specializations, service packages, 10 approved doctors with schedules,
+/// appointments, consultation notes, reviews, blogs, and psychometric assessments in English.
 /// </summary>
 public static class SeedData
 {
@@ -16,7 +17,9 @@ public static class SeedData
         if (context.Roles.Any())
             return; // Already seeded
 
-        // 1. Seed Roles
+        // ═══════════════════════════════════════════════
+        // 1. SEED ROLES
+        // ═══════════════════════════════════════════════
         var roles = new Dictionary<string, Role>();
         foreach (var roleName in RoleConstants.AllRoles)
         {
@@ -26,7 +29,9 @@ public static class SeedData
         }
         await context.SaveChangesAsync();
 
-        // 2. Seed Permissions
+        // ═══════════════════════════════════════════════
+        // 2. SEED PERMISSIONS
+        // ═══════════════════════════════════════════════
         var permissionCodes = new[]
         {
             PermissionConstants.ManageOwnProfile,
@@ -64,7 +69,9 @@ public static class SeedData
         }
         await context.SaveChangesAsync();
 
-        // 3. Seed Role-Permission mappings
+        // ═══════════════════════════════════════════════
+        // 3. SEED ROLE-PERMISSION MAPPINGS
+        // ═══════════════════════════════════════════════
         void MapPermission(string roleName, string permCode)
         {
             context.RolePermissions.Add(new RolePermission
@@ -113,18 +120,20 @@ public static class SeedData
 
         await context.SaveChangesAsync();
 
-        // 4. Seed Specializations
+        // ═══════════════════════════════════════════════
+        // 4. SEED SPECIALIZATIONS
+        // ═══════════════════════════════════════════════
         var specializations = new[] {
-            ("Clinical Psychology", "Assessment and treatment of mental disorders"),
-            ("Counseling Psychology", "Help with everyday life stressors and emotional issues"),
-            ("Child & Adolescent Psychology", "Specialized care for children and teens"),
-            ("Depression & Mood Disorders", "Treatment for depression, bipolar disorder"),
-            ("Anxiety & Stress Management", "Treatment for anxiety disorders and stress"),
-            ("Trauma & PTSD", "Specialized trauma-focused therapy"),
-            ("Addiction & Substance Abuse", "Recovery from substance use disorders"),
-            ("Family & Marriage Counseling", "Relationship and family therapy"),
-            ("Career Counseling", "Professional development and career guidance"),
-            ("Cognitive Behavioral Therapy", "CBT-based therapeutic approaches")
+            ("Clinical Psychology", "Assessment and evidence-based treatment of moderate to severe psychological disorders"),
+            ("Counseling Psychology", "Holistic support for life transitions, stress management, and personal growth"),
+            ("Child & Adolescent Psychology", "Developmental and emotional mental health care tailored for kids and teens"),
+            ("Depression & Mood Disorders", "Specialized therapeutic interventions for major depression and bipolar mood fluctuations"),
+            ("Anxiety & Stress Management", "Targeted strategies for panic disorder, generalized anxiety, social phobia, and acute stress"),
+            ("Trauma & PTSD", "Specialized trauma processing, EMDR, and recovery for complex trauma survivors"),
+            ("Addiction & Substance Abuse", "Comprehensive recovery programs for substance dependency and behavioral addictions"),
+            ("Family & Marriage Counseling", "Systemic therapy for relationship enrichment, conflict resolution, and marital stability"),
+            ("Career Counseling", "Guidance on workplace stress, executive burnout, leadership resilience, and career redirection"),
+            ("Cognitive Behavioral Therapy", "Structured cognitive restructuring and behavioral modification therapy (CBT & DBT)")
         };
 
         var specEntities = new List<Specialization>();
@@ -136,117 +145,263 @@ public static class SeedData
         }
         await context.SaveChangesAsync();
 
-        // 5. Seed Service Packages
-        var freePkg = new ServicePackage { Name = "Free Trial", Description = "Free trial for demo — no payment required", DurationDays = 30, Price = 0, MaxPatientCapacity = 5, MaxDailySlotsCapacity = 3, DisplayOrder = 0 };
-        var basicPkg = new ServicePackage { Name = "Basic", Description = "Basic plan for new doctors", DurationDays = 30, Price = 299000, MaxPatientCapacity = 10, MaxDailySlotsCapacity = 5, DisplayOrder = 1 };
-        var proPkg = new ServicePackage { Name = "Professional", Description = "Professional plan with more capacity", DurationDays = 90, Price = 799000, MaxPatientCapacity = 30, MaxDailySlotsCapacity = 10, IsFeatured = true, DisplayOrder = 2 };
-        var premPkg = new ServicePackage { Name = "Premium", Description = "Unlimited premium plan", DurationDays = 365, Price = 2499000, MaxPatientCapacity = 100, MaxDailySlotsCapacity = 20, DisplayOrder = 3 };
+        // ═══════════════════════════════════════════════
+        // 5. SEED SERVICE PACKAGES
+        // ═══════════════════════════════════════════════
+        var freePkg = new ServicePackage { Name = "Free Trial", Description = "Free trial for evaluation — no payment required", DurationDays = 30, Price = 0, MaxPatientCapacity = 5, MaxDailySlotsCapacity = 3, DisplayOrder = 0 };
+        var basicPkg = new ServicePackage { Name = "Basic Practice", Description = "Starter plan for independent clinical practitioners", DurationDays = 30, Price = 299000, MaxPatientCapacity = 10, MaxDailySlotsCapacity = 5, DisplayOrder = 1 };
+        var proPkg = new ServicePackage { Name = "Professional Practice", Description = "Expanded tier with elevated capacity and featured listings", DurationDays = 90, Price = 799000, MaxPatientCapacity = 35, MaxDailySlotsCapacity = 12, IsFeatured = true, DisplayOrder = 2 };
+        var premPkg = new ServicePackage { Name = "Premium Practice", Description = "Unlimited enterprise access with top priority booking", DurationDays = 365, Price = 2499000, MaxPatientCapacity = 120, MaxDailySlotsCapacity = 25, DisplayOrder = 3 };
         context.ServicePackages.AddRange(freePkg, basicPkg, proPkg, premPkg);
         await context.SaveChangesAsync();
 
-        // 6. Seed System Config
+        // ═══════════════════════════════════════════════
+        // 6. SEED SYSTEM CONFIG
+        // ═══════════════════════════════════════════════
         context.SystemConfigs.Add(new SystemConfig { Key = "OtpExpirationMinutes", Value = "10", Description = "OTP expiration time in minutes", DataType = "int" });
         context.SystemConfigs.Add(new SystemConfig { Key = "MaxLoginAttempts", Value = "5", Description = "Maximum login attempts before lockout", DataType = "int" });
-        context.SystemConfigs.Add(new SystemConfig { Key = "AppName", Value = "MindBridge - Online Psychological Counseling", Description = "Application display name" });
+        context.SystemConfigs.Add(new SystemConfig { Key = "AppName", Value = "MindBridge - Online Psychological Counseling & Therapy Platform", Description = "Application display name" });
         context.SystemConfigs.Add(new SystemConfig { Key = "DefaultConsultationFee", Value = "500000", Description = "Default consultation fee in VND", DataType = "decimal" });
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
         // 7. STAFF ACCOUNTS
         // ═══════════════════════════════════════════════
-        var adminUser = CreateUser(context, "admin@opcbs.com", "Admin@123", "Lê Minh Quản Trị", "0900000001", roles[RoleConstants.SystemAdmin]);
-        var csUser = CreateUser(context, "support@opcbs.com", "Support@123", "Nguyễn Thị Hỗ Trợ", "0900000002", roles[RoleConstants.CustomerSupport]);
-        var bmUser = CreateUser(context, "manager@opcbs.com", "Manager@123", "Trần Văn Quản Lý", "0900000003", roles[RoleConstants.BusinessManager]);
+        var adminUser = CreateUser(context, "admin@opcbs.com", "Admin@123", "Alexander Vance (System Admin)", "0900000001", roles[RoleConstants.SystemAdmin]);
+        var csUser = CreateUser(context, "support@opcbs.com", "Support@123", "Sarah Jenkins (Support Specialist)", "0900000002", roles[RoleConstants.CustomerSupport]);
+        var bmUser = CreateUser(context, "manager@opcbs.com", "Manager@123", "David Sterling (Business Manager)", "0900000003", roles[RoleConstants.BusinessManager]);
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 8. PATIENTS (3 patients)
+        // 8. PATIENTS (6 active patient accounts)
         // ═══════════════════════════════════════════════
-        var patient1User = CreateUser(context, "patient@opcbs.com", "Patient@123", "Nguyễn Văn An", "0912345678", roles[RoleConstants.Patient]);
-        var patient2User = CreateUser(context, "patient2@opcbs.com", "Patient@123", "Trần Thị Bình", "0912345679", roles[RoleConstants.Patient]);
-        var patient3User = CreateUser(context, "patient3@opcbs.com", "Patient@123", "Phạm Hoàng Cường", "0912345680", roles[RoleConstants.Patient]);
+        var patUsers = new[]
+        {
+            CreateUser(context, "patient@opcbs.com", "Patient@123", "Jonathan Miller", "0912345001", roles[RoleConstants.Patient]),
+            CreateUser(context, "patient2@opcbs.com", "Patient@123", "Emily Watson", "0912345002", roles[RoleConstants.Patient]),
+            CreateUser(context, "patient3@opcbs.com", "Patient@123", "Michael Chang", "0912345003", roles[RoleConstants.Patient]),
+            CreateUser(context, "patient4@opcbs.com", "Patient@123", "Olivia Bennett", "0912345004", roles[RoleConstants.Patient]),
+            CreateUser(context, "patient5@opcbs.com", "Patient@123", "Lucas Campbell", "0912345005", roles[RoleConstants.Patient]),
+            CreateUser(context, "patient6@opcbs.com", "Patient@123", "Rachel Adams", "0912345006", roles[RoleConstants.Patient])
+        };
 
-        // Extra auth test accounts for login/OTP flows
-        CreateUser(context, "unverified@opcbs.com", "Unverified@123", "Người chưa xác thực", "0900000004", roles[RoleConstants.Patient], isEmailVerified: false, status: UserStatus.Inactive);
-        CreateUser(context, "locked@opcbs.com", "Locked@123", "Tài khoản bị khóa", "0900000005", roles[RoleConstants.Patient], isEmailVerified: true, status: UserStatus.Locked);
+        // Test accounts for verification & auth testing
+        CreateUser(context, "unverified@opcbs.com", "Unverified@123", "Unverified User Account", "0900000004", roles[RoleConstants.Patient], isEmailVerified: false, status: UserStatus.Inactive);
+        CreateUser(context, "locked@opcbs.com", "Locked@123", "Locked User Account", "0900000005", roles[RoleConstants.Patient], isEmailVerified: true, status: UserStatus.Locked);
         await context.SaveChangesAsync();
 
-        var patient1 = new PatientProfile { UserId = patient1User.Id, User = patient1User, DateOfBirth = new DateTime(1995, 5, 15), Gender = Gender.Male, Address = "123 Nguyễn Trãi, Q.1, TP.HCM" };
-        var patient2 = new PatientProfile { UserId = patient2User.Id, User = patient2User, DateOfBirth = new DateTime(1998, 8, 22), Gender = Gender.Female, Address = "456 Lê Lợi, Q.3, TP.HCM" };
-        var patient3 = new PatientProfile { UserId = patient3User.Id, User = patient3User, DateOfBirth = new DateTime(2000, 1, 10), Gender = Gender.Male, Address = "789 Trần Hưng Đạo, Q.5, TP.HCM" };
-        context.PatientProfiles.AddRange(patient1, patient2, patient3);
+        var patientProfiles = new List<PatientProfile>
+        {
+            new() { UserId = patUsers[0].Id, User = patUsers[0], DateOfBirth = new DateTime(1993, 4, 12), Gender = Gender.Male, Address = "742 Evergreen Terrace, Springfield" },
+            new() { UserId = patUsers[1].Id, User = patUsers[1], DateOfBirth = new DateTime(1996, 9, 25), Gender = Gender.Female, Address = "221B Baker Street, London" },
+            new() { UserId = patUsers[2].Id, User = patUsers[2], DateOfBirth = new DateTime(1990, 11, 8), Gender = Gender.Male, Address = "432 Park Avenue, New York, NY" },
+            new() { UserId = patUsers[3].Id, User = patUsers[3], DateOfBirth = new DateTime(1998, 2, 17), Gender = Gender.Female, Address = "100 Pine Street, San Francisco, CA" },
+            new() { UserId = patUsers[4].Id, User = patUsers[4], DateOfBirth = new DateTime(2001, 7, 30), Gender = Gender.Male, Address = "550 Market Street, Seattle, WA" },
+            new() { UserId = patUsers[5].Id, User = patUsers[5], DateOfBirth = new DateTime(1995, 12, 5), Gender = Gender.Female, Address = "88 Olympic Boulevard, Los Angeles, CA" }
+        };
+        context.PatientProfiles.AddRange(patientProfiles);
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 9. DOCTORS (3 verified doctors + 1 pending)
+        // 9. DOCTORS (10 Approved & Fully Verified Doctors)
         // ═══════════════════════════════════════════════
-        var doc1User = CreateUser(context, "doctor@opcbs.com", "Doctor@123", "TS. Trần Thị Bảo Ngọc", "0987654321", roles[RoleConstants.Doctor]);
-        var doc2User = CreateUser(context, "doctor2@opcbs.com", "Doctor@123", "ThS. Lê Hoàng Minh", "0987654322", roles[RoleConstants.Doctor]);
-        var doc3User = CreateUser(context, "doctor3@opcbs.com", "Doctor@123", "PGS.TS. Nguyễn Phương Thảo", "0987654323", roles[RoleConstants.Doctor]);
-        var doc4User = CreateUser(context, "doctor4@opcbs.com", "Doctor@123", "ThS. Võ Thanh Tùng", "0987654324", roles[RoleConstants.Doctor]);
+        var doctorData = new[]
+        {
+            new
+            {
+                Email = "doctor@opcbs.com",
+                AltEmail = "doctor1@opcbs.com",
+                Name = "Dr. Eleanor Vance, Ph.D.",
+                Phone = "0987654301",
+                Title = "Senior Clinical Psychologist",
+                Bio = "Over 14 years of clinical experience specializing in adult mood disorders, complex trauma, and evidence-based Cognitive Behavioral Therapy (CBT). Ph.D. in Clinical Psychology from Stanford University.",
+                Exp = 14,
+                Lic = "LIC-US-2024-001",
+                Rating = 4.9m,
+                Reviews = 42,
+                Specs = new[] { 0, 3, 9 }, // Clinical, Depression, CBT
+                Pkg = premPkg
+            },
+            new
+            {
+                Email = "doctor2@opcbs.com",
+                AltEmail = "doctor2@opcbs.com",
+                Name = "Dr. Marcus Sterling, Psy.D.",
+                Phone = "0987654302",
+                Title = "Child & Adolescent Psychologist",
+                Bio = "Dedicated to supporting children, teenagers, and family systems through developmental transitions, ADHD management, and emotional regulation using play and behavioral therapy. 9 years of hospital experience.",
+                Exp = 9,
+                Lic = "LIC-US-2024-002",
+                Rating = 4.8m,
+                Reviews = 28,
+                Specs = new[] { 2, 7, 1 }, // Child, Family, Counseling
+                Pkg = proPkg
+            },
+            new
+            {
+                Email = "doctor3@opcbs.com",
+                AltEmail = "doctor3@opcbs.com",
+                Name = "Prof. Sophia Ramirez, Ph.D.",
+                Phone = "0987654303",
+                Title = "Professor of Marital & Family Therapy",
+                Bio = "21 years of research and clinical practice in relational dynamics, conflict de-escalation, and marriage rejuvenation. Author of multiple peer-reviewed relational psychology studies.",
+                Exp = 21,
+                Lic = "LIC-US-2024-003",
+                Rating = 4.95m,
+                Reviews = 65,
+                Specs = new[] { 7, 1, 5 }, // Family, Counseling, Trauma
+                Pkg = premPkg
+            },
+            new
+            {
+                Email = "doctor4@opcbs.com",
+                AltEmail = "doctor4@opcbs.com",
+                Name = "Dr. Julian Hayes, M.D., Ph.D.",
+                Phone = "0987654304",
+                Title = "Neuropsychiatrist & Stress Management Specialist",
+                Bio = "Combines neurobiology and psychotherapy to assist corporate professionals and executives overcoming chronic burnout, panic attacks, and severe workplace stressors. 11 years in private practice.",
+                Exp = 11,
+                Lic = "LIC-US-2024-004",
+                Rating = 4.75m,
+                Reviews = 34,
+                Specs = new[] { 4, 8, 0 }, // Anxiety, Career, Clinical
+                Pkg = proPkg
+            },
+            new
+            {
+                Email = "doctor5@opcbs.com",
+                AltEmail = "doctor5@opcbs.com",
+                Name = "Dr. Clara Bennett, Psy.D.",
+                Phone = "0987654305",
+                Title = "Trauma & PTSD Specialist (Certified EMDR)",
+                Bio = "Certified EMDR consultant and somatic experiencing practitioner focusing on acute trauma recovery, complex PTSD, and emotional resilience for survivors of trauma. 10 years of clinical practice.",
+                Exp = 10,
+                Lic = "LIC-US-2024-005",
+                Rating = 4.85m,
+                Reviews = 31,
+                Specs = new[] { 5, 0, 4 }, // Trauma, Clinical, Anxiety
+                Pkg = proPkg
+            },
+            new
+            {
+                Email = "doctor6@opcbs.com",
+                AltEmail = "doctor6@opcbs.com",
+                Name = "Dr. David Kim, Ph.D.",
+                Phone = "0987654306",
+                Title = "Addiction & Behavioral Health Consultant",
+                Bio = "12 years assisting individuals in overcoming chemical dependencies, behavioral addictions, and digital overuse through motivational interviewing and structured relapse prevention.",
+                Exp = 12,
+                Lic = "LIC-US-2024-006",
+                Rating = 4.7m,
+                Reviews = 22,
+                Specs = new[] { 6, 9, 1 }, // Addiction, CBT, Counseling
+                Pkg = basicPkg
+            },
+            new
+            {
+                Email = "doctor7@opcbs.com",
+                AltEmail = "doctor7@opcbs.com",
+                Name = "Dr. Olivia Patel, Psy.D.",
+                Phone = "0987654307",
+                Title = "Mood Disorders & Mindfulness-Based Therapist",
+                Bio = "Expert in Acceptance and Commitment Therapy (ACT) and Dialectical Behavior Therapy (DBT) for persistent depression, mood swings, and perfectionism-induced stress. 8 years clinical experience.",
+                Exp = 8,
+                Lic = "LIC-US-2024-007",
+                Rating = 4.8m,
+                Reviews = 25,
+                Specs = new[] { 3, 9, 0 }, // Depression, CBT, Clinical
+                Pkg = proPkg
+            },
+            new
+            {
+                Email = "doctor8@opcbs.com",
+                AltEmail = "doctor8@opcbs.com",
+                Name = "Dr. Ethan Wright, Ph.D.",
+                Phone = "0987654308",
+                Title = "Vocational Psychologist & Executive Counselor",
+                Bio = "Focuses on career transitions, imposter syndrome, leadership psychology, and high-performance burnout prevention. Consults with leading creative and technology enterprises.",
+                Exp = 13,
+                Lic = "LIC-US-2024-008",
+                Rating = 4.65m,
+                Reviews = 19,
+                Specs = new[] { 8, 4, 1 }, // Career, Anxiety, Counseling
+                Pkg = basicPkg
+            },
+            new
+            {
+                Email = "doctor9@opcbs.com",
+                AltEmail = "doctor9@opcbs.com",
+                Name = "Dr. Hannah Schmidt, Psy.D.",
+                Phone = "0987654309",
+                Title = "Adolescent Mental Health & Family Systems Therapist",
+                Bio = "Specializes in adolescent emotional challenges, peer anxiety, identity development, and repairing strained parent-teen communication through compassionate systemic family counseling.",
+                Exp = 7,
+                Lic = "LIC-US-2024-009",
+                Rating = 4.9m,
+                Reviews = 29,
+                Specs = new[] { 2, 7, 3 }, // Child, Family, Depression
+                Pkg = proPkg
+            },
+            new
+            {
+                Email = "doctor10@opcbs.com",
+                AltEmail = "doctor10@opcbs.com",
+                Name = "Dr. Alexander Brooks, M.D.",
+                Phone = "0987654310",
+                Title = "Integrative Mental Health & Sleep Specialist",
+                Bio = "Board-certified psychiatrist and sleep specialist focusing on non-pharmacological sleep CBT-I, circadian rhythm alignment, and anxiety reduction for chronic insomnia patients. 15 years experience.",
+                Exp = 15,
+                Lic = "LIC-US-2024-010",
+                Rating = 4.92m,
+                Reviews = 47,
+                Specs = new[] { 4, 0, 9 }, // Anxiety, Clinical, CBT
+                Pkg = premPkg
+            }
+        };
+
+        var doctorProfiles = new List<DoctorProfile>();
+        var doctorSubscriptions = new List<DoctorSubscription>();
+
+        foreach (var data in doctorData)
+        {
+            var user = CreateUser(context, data.Email, "Doctor@123", data.Name, data.Phone, roles[RoleConstants.Doctor]);
+            var docProfile = new DoctorProfile
+            {
+                UserId = user.Id,
+                User = user,
+                ProfessionalTitle = data.Title,
+                Biography = data.Bio,
+                ExperienceYears = data.Exp,
+                LicenseNumber = data.Lic,
+                LicenseExpiryDate = new DateTime(2029, 12, 31),
+                VerificationStatus = VerificationStatus.Approved,
+                IsVisible = true,
+                AverageRating = data.Rating,
+                ReviewCount = data.Reviews
+            };
+            doctorProfiles.Add(docProfile);
+            context.DoctorProfiles.Add(docProfile);
+
+            // Active Subscription
+            doctorSubscriptions.Add(new DoctorSubscription
+            {
+                DoctorProfile = docProfile,
+                DoctorProfileId = docProfile.Id,
+                ServicePackage = data.Pkg,
+                ServicePackageId = data.Pkg.Id,
+                Status = SubscriptionStatus.Active,
+                StartDate = DateTime.UtcNow.AddDays(-45),
+                ExpirationDate = DateTime.UtcNow.AddDays(data.Pkg.DurationDays)
+            });
+        }
         await context.SaveChangesAsync();
 
-        var doc1 = new DoctorProfile
+        // Specializations for each doctor (2-3 each)
+        for (int i = 0; i < doctorProfiles.Count; i++)
         {
-            UserId = doc1User.Id,
-            User = doc1User,
-            ProfessionalTitle = "Tiến sĩ Tâm lý học lâm sàng",
-            Biography = "Hơn 12 năm kinh nghiệm trong lĩnh vực tham vấn và trị liệu tâm lý. Tốt nghiệp ĐH Y Dược TP.HCM chuyên ngành Tâm lý lâm sàng. Chuyên gia trị liệu trầm cảm và rối loạn lo âu.",
-            ExperienceYears = 12,
-            LicenseNumber = "LIC-2024-001",
-            LicenseExpiryDate = new DateTime(2028, 12, 31),
-            VerificationStatus = VerificationStatus.Approved,
-            IsVisible = true,
-            AverageRating = 4.8m,
-            ReviewCount = 32
-        };
-        var doc2 = new DoctorProfile
-        {
-            UserId = doc2User.Id,
-            User = doc2User,
-            ProfessionalTitle = "Thạc sĩ Tâm lý trị liệu",
-            Biography = "Chuyên gia tâm lý trẻ em và vị thành niên với 8 năm kinh nghiệm. Phương pháp trị liệu CBT và Play Therapy. Tốt nghiệp ĐH Sư phạm Hà Nội.",
-            ExperienceYears = 8,
-            LicenseNumber = "LIC-2024-002",
-            LicenseExpiryDate = new DateTime(2027, 6, 30),
-            VerificationStatus = VerificationStatus.Approved,
-            IsVisible = true,
-            AverageRating = 4.5m,
-            ReviewCount = 18
-        };
-        var doc3 = new DoctorProfile
-        {
-            UserId = doc3User.Id,
-            User = doc3User,
-            ProfessionalTitle = "Phó Giáo sư, Tiến sĩ Tâm lý học",
-            Biography = "20 năm nghiên cứu và thực hành lâm sàng. Giảng viên ĐH Khoa học Xã hội và Nhân văn. Chuyên gia hàng đầu về trị liệu gia đình và các vấn đề hôn nhân.",
-            ExperienceYears = 20,
-            LicenseNumber = "LIC-2024-003",
-            LicenseExpiryDate = new DateTime(2029, 12, 31),
-            VerificationStatus = VerificationStatus.Approved,
-            IsVisible = true,
-            AverageRating = 4.9m,
-            ReviewCount = 45
-        };
-        var doc4 = new DoctorProfile
-        {
-            UserId = doc4User.Id,
-            User = doc4User,
-            ProfessionalTitle = "Thạc sĩ Tâm lý học",
-            Biography = "Chuyên gia tâm lý nghề nghiệp và stress công sở. 5 năm kinh nghiệm tư vấn tại các doanh nghiệp lớn.",
-            ExperienceYears = 5,
-            LicenseNumber = "LIC-2024-004",
-            LicenseExpiryDate = new DateTime(2027, 12, 31),
-            VerificationStatus = VerificationStatus.Submitted,
-            IsVisible = false
-        };
-        context.DoctorProfiles.AddRange(doc1, doc2, doc3, doc4);
-        await context.SaveChangesAsync();
-
-        // Doctor specializations
-        void AssignSpecs(DoctorProfile doc, params int[] indices)
-        {
-            foreach (var idx in indices)
+            var doc = doctorProfiles[i];
+            var specIndices = doctorData[i].Specs;
+            foreach (var idx in specIndices)
             {
                 context.DoctorSpecializations.Add(new DoctorSpecialization
                 {
@@ -257,336 +412,401 @@ public static class SeedData
                 });
             }
         }
-        AssignSpecs(doc1, 0, 3, 4);     // Clinical, Depression, Anxiety
-        AssignSpecs(doc2, 2, 9, 1);     // Child, CBT, Counseling
-        AssignSpecs(doc3, 7, 0, 5);     // Family, Clinical, Trauma
-        AssignSpecs(doc4, 8, 4);        // Career, Anxiety
+        context.DoctorSubscriptions.AddRange(doctorSubscriptions);
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 10. SUBSCRIPTIONS (active for 3 verified doctors)
+        // 10. SCHEDULES & SLOTS FOR ALL 10 DOCTORS
         // ═══════════════════════════════════════════════
-        context.DoctorSubscriptions.Add(new DoctorSubscription
-        {
-            DoctorProfileId = doc1.Id,
-            ServicePackageId = proPkg.Id,
-            Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-30),
-            ExpirationDate = DateTime.UtcNow.AddDays(60),
-            DoctorProfile = doc1,
-            ServicePackage = proPkg
-        });
-        context.DoctorSubscriptions.Add(new DoctorSubscription
-        {
-            DoctorProfileId = doc2.Id,
-            ServicePackageId = basicPkg.Id,
-            Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-10),
-            ExpirationDate = DateTime.UtcNow.AddDays(20),
-            DoctorProfile = doc2,
-            ServicePackage = basicPkg
-        });
-        context.DoctorSubscriptions.Add(new DoctorSubscription
-        {
-            DoctorProfileId = doc3.Id,
-            ServicePackageId = premPkg.Id,
-            Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-60),
-            ExpirationDate = DateTime.UtcNow.AddDays(305),
-            DoctorProfile = doc3,
-            ServicePackage = premPkg
-        });
-        await context.SaveChangesAsync();
+        var workDays = DayOfWeekEnum.Monday | DayOfWeekEnum.Tuesday | DayOfWeekEnum.Wednesday | DayOfWeekEnum.Thursday | DayOfWeekEnum.Friday;
+        var today = DateTime.UtcNow.Date;
+        var validWeekdays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-        // ═══════════════════════════════════════════════
-        // 11. SCHEDULES & APPOINTMENT SLOTS
-        // ═══════════════════════════════════════════════
-        var daysOfWeek = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-
-        void CreateScheduleAndSlots(DoctorProfile doc, int startHour, int endHour, SlotDuration duration)
+        for (int i = 0; i < doctorProfiles.Count; i++)
         {
-            var flagDays = DayOfWeekEnum.Monday | DayOfWeekEnum.Tuesday | DayOfWeekEnum.Wednesday | DayOfWeekEnum.Thursday | DayOfWeekEnum.Friday;
+            var doc = doctorProfiles[i];
+            int startHour = (i % 2 == 0) ? 8 : 13; // alternating morning & afternoon shifts
+            int endHour = (i % 2 == 0) ? 14 : 19;
+
             context.Schedules.Add(new Schedule
             {
                 DoctorProfileId = doc.Id,
-                WorkingDays = flagDays,
+                WorkingDays = workDays,
                 StartTime = new TimeOnly(startHour, 0),
                 EndTime = new TimeOnly(endHour, 0),
-                SlotDuration = duration,
+                SlotDuration = SlotDuration.Minutes60,
                 IsActive = true,
                 DoctorProfile = doc,
-                SlotsPerDay = (endHour - startHour) / ((int)duration == 30 ? 1 : ((int)duration == 60 ? 1 : 1))
+                SlotsPerDay = endHour - startHour
             });
 
-            var today = DateTime.UtcNow.Date;
-            var slotMinutes = duration == SlotDuration.Minutes30 ? 30 : (duration == SlotDuration.Minutes60 ? 60 : 90);
-            for (int i = 0; i <= 21; i++)
+            // Generate slots for -7 days in the past up to +21 days in the future
+            for (int dayOffset = -7; dayOffset <= 21; dayOffset++)
             {
-                var date = today.AddDays(i);
-                if (!daysOfWeek.Contains(date.DayOfWeek)) continue;
-                for (int min = startHour * 60; min < endHour * 60; min += slotMinutes)
+                var date = today.AddDays(dayOffset);
+                if (!validWeekdays.Contains(date.DayOfWeek)) continue;
+
+                for (int hour = startHour; hour < endHour; hour++)
                 {
                     context.AppointmentSlots.Add(new AppointmentSlot
                     {
                         DoctorProfileId = doc.Id,
                         SlotDate = DateOnly.FromDateTime(date),
-                        StartTime = new TimeOnly(min / 60, min % 60),
-                        EndTime = new TimeOnly((min + slotMinutes) / 60, (min + slotMinutes) % 60),
+                        StartTime = new TimeOnly(hour, 0),
+                        EndTime = new TimeOnly(hour + 1, 0),
                         Status = AppointmentSlotStatus.Available,
+                        ConsultationMode = (hour % 2 == 0) ? ConsultationMode.Online : ConsultationMode.Offline,
+                        Price = 500000m + (i * 20000m),
                         DoctorProfile = doc
                     });
                 }
             }
         }
-
-        CreateScheduleAndSlots(doc1, 9, 17, SlotDuration.Minutes60);  // 9-17, 60min slots
-        CreateScheduleAndSlots(doc2, 8, 12, SlotDuration.Minutes60);  // 8-12, 60min slots (morning)
-        CreateScheduleAndSlots(doc3, 14, 20, SlotDuration.Minutes60); // 14-20, 60min slots (afternoon/evening)
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 12. APPOINTMENTS (various statuses)
+        // 11. APPOINTMENTS (1-2 Patients per Doctor with Past Completed & Future Appointments)
         // ═══════════════════════════════════════════════
-        var pastSlots = context.AppointmentSlots
-            .Where(s => s.SlotDate < DateOnly.FromDateTime(DateTime.UtcNow.Date))
-            .OrderBy(s => s.SlotDate).ThenBy(s => s.StartTime)
-            .ToList();
+        var allSlots = context.AppointmentSlots.OrderBy(s => s.SlotDate).ThenBy(s => s.StartTime).ToList();
+        var pastSlots = allSlots.Where(s => s.SlotDate < DateOnly.FromDateTime(today)).ToList();
+        var futureSlots = allSlots.Where(s => s.SlotDate > DateOnly.FromDateTime(today)).ToList();
 
-        var futureSlots = context.AppointmentSlots
-            .Where(s => s.SlotDate > DateOnly.FromDateTime(DateTime.UtcNow.Date))
-            .OrderBy(s => s.SlotDate).ThenBy(s => s.StartTime)
-            .ToList();
-
-        // Helper to pick a slot for a specific doctor
         AppointmentSlot? PickSlot(List<AppointmentSlot> slots, Guid doctorId)
         {
             var slot = slots.FirstOrDefault(s => s.DoctorProfileId == doctorId && s.Status == AppointmentSlotStatus.Available);
-            if (slot != null) { slot.Status = AppointmentSlotStatus.Booked; slots.Remove(slot); }
+            if (slot != null)
+            {
+                slot.Status = AppointmentSlotStatus.Booked;
+                slot.CurrentBookings = 1;
+                slots.Remove(slot);
+            }
             return slot;
         }
 
-        int bookingCounter = 1;
-        Appointment CreateAppointment(AppointmentSlot slot, DoctorProfile doc, PatientProfile patient, AppointmentStatus status, string? notes = null)
+        int bookingCounter = 100;
+        var completedAppointments = new List<(Appointment Apt, string Diagnosis, string Summary, string Rec, int Rating, string ReviewText)>();
+        var seededAppointments = new List<Appointment>();
+
+        for (int i = 0; i < doctorProfiles.Count; i++)
         {
-            var apt = new Appointment
+            var doc = doctorProfiles[i];
+            var primaryPatient = patientProfiles[i % patientProfiles.Count];
+            var secondaryPatient = patientProfiles[(i + 1) % patientProfiles.Count];
+
+            // 1. Past Completed Appointment with Primary Patient
+            var pastSlot1 = PickSlot(pastSlots, doc.Id);
+            if (pastSlot1 != null)
             {
-                BookingCode = $"BK-{DateTime.UtcNow:yyyyMMdd}-{bookingCounter++:D4}",
-                AppointmentSlotId = slot.Id,
-                DoctorId = doc.Id,
-                PatientId = patient.Id,
-                Status = status,
-                Notes = notes,
-                AppointmentSlot = slot,
-                Doctor = doc,
-                Patient = patient
-            };
-            if (status == AppointmentStatus.Approved) apt.ApprovedAt = DateTime.UtcNow.AddDays(-2);
-            if (status == AppointmentStatus.Completed) { apt.ApprovedAt = DateTime.UtcNow.AddDays(-5); apt.CompletedAt = DateTime.UtcNow.AddDays(-1); }
-            if (status == AppointmentStatus.Cancelled) { apt.CancelledAt = DateTime.UtcNow.AddDays(-1); apt.CancellationReason = "Bệnh nhân bận việc đột xuất."; }
-            context.Appointments.Add(apt);
-            return apt;
+                var apt = new Appointment
+                {
+                    BookingCode = $"BK-{DateTime.UtcNow:yyyyMMdd}-{bookingCounter++:D4}",
+                    AppointmentSlotId = pastSlot1.Id,
+                    DoctorId = doc.Id,
+                    PatientId = primaryPatient.Id,
+                    Status = AppointmentStatus.Completed,
+                    Notes = "Initial consultation and mental health diagnostic assessment.",
+                    ApprovedAt = DateTime.UtcNow.AddDays(-6),
+                    CompletedAt = DateTime.UtcNow.AddDays(-2),
+                    AppointmentSlot = pastSlot1,
+                    Doctor = doc,
+                    Patient = primaryPatient
+                };
+                context.Appointments.Add(apt);
+                seededAppointments.Add(apt);
+
+                completedAppointments.Add((
+                    apt,
+                    Diagnosis: GetSampleDiagnosis(i),
+                    Summary: $"Completed full clinical intake session with {primaryPatient.User.FullName}. Patient presented with symptoms aligned with therapeutic focus. Commenced preliminary cognitive restructuring exercises.",
+                    Rec: "Schedule 6 bi-weekly follow-up sessions. Practice mindfulness breathing for 10 minutes daily. Maintain symptom tracking log.",
+                    Rating: (i % 3 == 0) ? 5 : 4,
+                    ReviewText: GetSampleReview(i, primaryPatient.User.FullName)
+                ));
+            }
+
+            // 2. Future Approved / Pending Appointment with Secondary Patient
+            var futureSlot1 = PickSlot(futureSlots, doc.Id);
+            if (futureSlot1 != null)
+            {
+                var apt = new Appointment
+                {
+                    BookingCode = $"BK-{DateTime.UtcNow:yyyyMMdd}-{bookingCounter++:D4}",
+                    AppointmentSlotId = futureSlot1.Id,
+                    DoctorId = doc.Id,
+                    PatientId = secondaryPatient.Id,
+                    Status = (i % 2 == 0) ? AppointmentStatus.Approved : AppointmentStatus.Pending,
+                    Notes = "Follow-up consultation regarding progress and behavioral homework review.",
+                    ApprovedAt = (i % 2 == 0) ? DateTime.UtcNow.AddDays(-1) : null,
+                    AppointmentSlot = futureSlot1,
+                    Doctor = doc,
+                    Patient = secondaryPatient
+                };
+                context.Appointments.Add(apt);
+                seededAppointments.Add(apt);
+            }
         }
-
-        // Past completed appointments (for reviews)
-        var completedApts = new List<Appointment>();
-        var slot1 = PickSlot(pastSlots, doc1.Id);
-        var slot2 = PickSlot(pastSlots, doc1.Id);
-        var slot3 = PickSlot(pastSlots, doc3.Id);
-        var slot4 = PickSlot(pastSlots, doc2.Id);
-
-        if (slot1 != null) completedApts.Add(CreateAppointment(slot1, doc1, patient1, AppointmentStatus.Completed, "Tôi cảm thấy lo lắng và mất ngủ gần đây."));
-        if (slot2 != null) completedApts.Add(CreateAppointment(slot2, doc1, patient2, AppointmentStatus.Completed, "Stress công việc kéo dài."));
-        if (slot3 != null) completedApts.Add(CreateAppointment(slot3, doc3, patient1, AppointmentStatus.Completed, "Vấn đề giao tiếp trong gia đình."));
-        if (slot4 != null) completedApts.Add(CreateAppointment(slot4, doc2, patient3, AppointmentStatus.Completed, "Con trai tôi có biểu hiện thu mình."));
-
-        // Future pending/approved appointments
-        var fSlot1 = PickSlot(futureSlots, doc1.Id);
-        var fSlot2 = PickSlot(futureSlots, doc2.Id);
-        var fSlot3 = PickSlot(futureSlots, doc3.Id);
-        var fSlot4 = PickSlot(futureSlots, doc1.Id);
-
-        if (fSlot1 != null) CreateAppointment(fSlot1, doc1, patient1, AppointmentStatus.Pending, "Tái khám theo lịch.");
-        if (fSlot2 != null) CreateAppointment(fSlot2, doc2, patient2, AppointmentStatus.Approved, "Tư vấn lần đầu.");
-        if (fSlot3 != null) CreateAppointment(fSlot3, doc3, patient3, AppointmentStatus.Pending, "Tham vấn gia đình.");
-
-        // Cancelled appointment
-        var cSlot = PickSlot(futureSlots, doc1.Id);
-        if (cSlot != null) CreateAppointment(cSlot, doc1, patient3, AppointmentStatus.Cancelled);
-
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 13. REVIEWS (from completed appointments)
+        // 12. PATIENT RECORDS, CONSULTATION NOTES & REVIEWS
         // ═══════════════════════════════════════════════
-        var reviewData = new (int rating, string comment)[]
+        foreach (var item in completedAppointments)
         {
-            (5, "Bác sĩ rất tận tâm và lắng nghe. Tôi cảm thấy thoải mái hơn rất nhiều sau buổi tư vấn."),
-            (4, "Tư vấn chuyên nghiệp, tuy nhiên thời gian hơi ngắn. Sẽ quay lại lần sau."),
-            (5, "PGS rất giỏi, phân tích vấn đề rõ ràng và cho lời khuyên hữu ích cho gia đình tôi."),
-            (4, "Bác sĩ hiểu tâm lý trẻ em rất tốt. Con tôi đã cởi mở hơn sau buổi trị liệu.")
-        };
+            var pRecord = new PatientRecord
+            {
+                DoctorId = item.Apt.DoctorId,
+                PatientId = item.Apt.PatientId,
+                Doctor = item.Apt.Doctor,
+                Patient = item.Apt.Patient,
+                GeneralNotes = $"Established clinical record for {item.Apt.Patient?.User.FullName}. Primary diagnostic pathway initiated."
+            };
+            context.PatientRecords.Add(pRecord);
 
-        for (int i = 0; i < completedApts.Count && i < reviewData.Length; i++)
-        {
-            var apt = completedApts[i];
-            var (rating, comment) = reviewData[i];
+            context.ConsultationNotes.Add(new ConsultationNote
+            {
+                AppointmentId = item.Apt.Id,
+                DoctorId = item.Apt.DoctorId,
+                PatientRecord = pRecord,
+                ConsultationSummary = item.Summary,
+                Diagnosis = item.Diagnosis,
+                Recommendation = item.Rec,
+                Appointment = item.Apt,
+                Doctor = item.Apt.Doctor
+            });
+
             context.Reviews.Add(new Review
             {
-                AppointmentId = apt.Id,
-                DoctorId = apt.DoctorId,
-                PatientId = apt.PatientId!.Value,
-                Rating = rating,
-                Comment = comment,
+                AppointmentId = item.Apt.Id,
+                DoctorId = item.Apt.DoctorId,
+                PatientId = item.Apt.PatientId!.Value,
+                Rating = item.Rating,
+                Comment = item.ReviewText,
                 IsVisible = true,
-                Appointment = apt,
-                Doctor = apt.Doctor,
-                Patient = apt.Patient!
+                Appointment = item.Apt,
+                Doctor = item.Apt.Doctor,
+                Patient = item.Apt.Patient!
             });
         }
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 14. BLOG POSTS (various statuses)
+        // 13. SEED BLOG POSTS (2-3 high-quality articles per doctor)
         // ═══════════════════════════════════════════════
-        context.BlogPosts.Add(new BlogPost
+        var blogSeedData = new[]
         {
-            DoctorId = doc1.Id,
-            Doctor = doc1,
-            Title = "5 Dấu Hiệu Bạn Đang Bị Trầm Cảm Mà Không Biết",
-            Content = "<p>Trầm cảm là một rối loạn tâm thần phổ biến ảnh hưởng đến hàng triệu người trên thế giới. Nhiều người mắc trầm cảm mà không nhận ra...</p><h2>1. Mất hứng thú với mọi thứ</h2><p>Bạn từng yêu thích nhiều hoạt động nhưng giờ đây không còn quan tâm nữa...</p><h2>2. Thay đổi giấc ngủ</h2><p>Mất ngủ hoặc ngủ quá nhiều đều là dấu hiệu cảnh báo...</p><h2>3. Mệt mỏi kéo dài</h2><p>Cảm giác kiệt sức dù không làm gì nặng nhọc...</p><h2>4. Khó tập trung</h2><p>Trí nhớ kém, không thể đưa ra quyết định...</p><h2>5. Thay đổi cân nặng</h2><p>Ăn quá nhiều hoặc không muốn ăn...</p>",
-            ThumbnailUrl = "https://images.unsplash.com/photo-1541199249251-f713e6145474?w=800",
-            Excerpt = "Trầm cảm không phải lúc nào cũng rõ ràng. Hãy nhận biết 5 dấu hiệu thường bị bỏ qua để tìm kiếm sự giúp đỡ kịp thời.",
-            Status = BlogStatus.Published,
-            ViewCount = 1250,
-            SubmittedAt = DateTime.UtcNow.AddDays(-15),
-            ApprovedAt = DateTime.UtcNow.AddDays(-14),
-            ApprovedBy = csUser.Id,
-            PublishedAt = DateTime.UtcNow.AddDays(-14)
-        });
+            // Doctor 1
+            (
+                DocIdx: 0,
+                Title: "5 Hidden Signs of High-Functioning Depression You Shouldn't Ignore",
+                Excerpt: "High-functioning depression often disguises itself as productivity and composure. Learn the subtle psychological signs and when to seek clinical guidance.",
+                Content: "<p>Depression does not always look like someone unable to get out of bed. High-functioning depression (persistent depressive disorder or dysthymia) frequently hides behind a mask of professional success, punctuality, and social smiles.</p><h3>1. Constant Underlying Exhaustion</h3><p>Even after 8 hours of sleep, individuals experience a persistent heavy fatigue that caffeine or rest fails to alleviate.</p><h3>2. The 'Impostor' Happiness Phenomenon</h3><p>Laughing in social settings while feeling completely detached and empty inside.</p><h3>3. Relentless Self-Criticism</h3><p>Viewing personal accomplishments through a lens of inadequacy, feeling you're always one mistake away from failure.</p><h3>4. Gradual Loss of Genuine Joy (Anhedonia)</h3><p>Participating in hobbies mechanically without the spark of true satisfaction.</p><h3>5. Overwhelming Need for Isolation After Socializing</h3><p>The immense emotional effort required to appear 'normal' drains energy rapidly.</p><p>If you recognize these symptoms, remember that seeking therapy is a proactive step toward emotional vitality, not a sign of weakness.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1541199249251-f713e6145474?w=800",
+                Views: 1420
+            ),
+            (
+                DocIdx: 0,
+                Title: "Cognitive Restructuring: How to Rewire Negative Thought Loops",
+                Excerpt: "Cognitive Behavioral Therapy offers proven tools to challenge automatic negative thoughts and build mental resilience.",
+                Content: "<p>Our thoughts dictate our emotions, which in turn drive our behaviors. When cognitive distortions like catastrophizing or black-and-white thinking take hold, our reality becomes distorted.</p><h3>The 3-Step Cognitive Shift:</h3><ol><li><strong>Catch It:</strong> Identify the automatic negative thought as soon as emotional distress spikes.</li><li><strong>Check It:</strong> Ask yourself: What objective evidence supports this thought? What evidence contradicts it?</li><li><strong>Change It:</strong> Formulate a balanced, realistic replacement thought grounded in facts rather than fear.</li></ol><p>Consistent practice trains neural pathways to default to constructive problem-solving rather than self-defeating loops.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800",
+                Views: 980
+            ),
+            (
+                DocIdx: 0,
+                Title: "The Neuroscience of Chronic Anxiety and How Somatic Grounding Helps",
+                Excerpt: "Understand what happens in your amygdala during an anxiety spiral and how somatic grounding calms your nervous system.",
+                Content: "<p>When the amygdala perceives a threat, it triggers the autonomic nervous system to flood the body with cortisol and adrenaline. Somatic grounding techniques provide physical anchors that signal safety directly to the brainstem.</p><p>Techniques such as diaphragmatic breathing with extended exhales activate the vagus nerve, initiating parasympathetic recovery within minutes.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800",
+                Views: 1150
+            ),
 
-        context.BlogPosts.Add(new BlogPost
-        {
-            DoctorId = doc2.Id,
-            Doctor = doc2,
-            Title = "Hướng Dẫn Cha Mẹ: Nhận Biết Khi Con Cần Hỗ Trợ Tâm Lý",
-            Content = "<p>Trẻ em thường không biết cách diễn đạt cảm xúc của mình. Cha mẹ cần chú ý đến các dấu hiệu sau...</p><h2>Thay đổi hành vi đột ngột</h2><p>Trẻ từ hoạt bát trở nên thu mình, hoặc từ ngoan ngoãn trở nên hung hăng...</p><h2>Kết quả học tập giảm sút</h2><p>Sự suy giảm trong học tập có thể là dấu hiệu của vấn đề tâm lý...</p>",
-            ThumbnailUrl = "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800",
-            Excerpt = "Làm thế nào để biết con bạn đang gặp vấn đề tâm lý? Hướng dẫn dành cho phụ huynh.",
-            Status = BlogStatus.Published,
-            ViewCount = 890,
-            SubmittedAt = DateTime.UtcNow.AddDays(-10),
-            ApprovedAt = DateTime.UtcNow.AddDays(-9),
-            ApprovedBy = csUser.Id,
-            PublishedAt = DateTime.UtcNow.AddDays(-9)
-        });
+            // Doctor 2
+            (
+                DocIdx: 1,
+                Title: "Helping Children Navigate School Anxiety and Social Pressure",
+                Excerpt: "A clinical guide for parents on identifying anxiety in school-age children and fostering emotional resilience.",
+                Content: "<p>Children often lack the vocabulary to articulate anxiety directly. Instead, school-related stress frequently manifests as stomachaches, morning tantrums, bedtime resistance, or sudden academic decline.</p><h3>Practical Strategies for Parents:</h3><ul><li><strong>Validate Emotions First:</strong> Avoid dismissing fears with 'You will be fine.' Instead, try: 'I can see how overwhelming this feels. We will figure it out together.'</li><li><strong>Create Predictable Routines:</strong> Consistency in morning and evening rituals provides emotional safety.</li><li><strong>Break Challenges into Micro-Steps:</strong> Desensitize school fears gradually through small, achievable goals.</li></ul>",
+                Thumbnail: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800",
+                Views: 850
+            ),
+            (
+                DocIdx: 1,
+                Title: "Effective Discipline Without Drama: The Connection-Before-Correction Rule",
+                Excerpt: "Learn why emotional regulation in parents is the cornerstone of healthy behavioral guidance in developing children.",
+                Content: "<p>When children act out, their logical prefrontal cortex is offline. Yelling or harsh punishment pushes their nervous system deeper into fight-or-flight mode. Establishing connection before attempting behavioral correction creates receptivity and long-term emotional intelligence.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?w=800",
+                Views: 720
+            ),
 
-        context.BlogPosts.Add(new BlogPost
-        {
-            DoctorId = doc3.Id,
-            Doctor = doc3,
-            Title = "Giao Tiếp Hiệu Quả Trong Hôn Nhân: 7 Nguyên Tắc Vàng",
-            Content = "<p>Giao tiếp là nền tảng của mọi mối quan hệ. Trong hôn nhân, cách bạn nói chuyện với nhau quyết định sự bền vững của mối quan hệ...</p><h2>1. Lắng nghe chủ động</h2><p>Hãy thực sự lắng nghe, không chỉ chờ đến lượt nói...</p>",
-            ThumbnailUrl = "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800",
-            Excerpt = "7 nguyên tắc giao tiếp giúp vợ chồng hiểu nhau hơn và xây dựng hôn nhân bền vững.",
-            Status = BlogStatus.Published,
-            ViewCount = 2100,
-            SubmittedAt = DateTime.UtcNow.AddDays(-20),
-            ApprovedAt = DateTime.UtcNow.AddDays(-19),
-            ApprovedBy = csUser.Id,
-            PublishedAt = DateTime.UtcNow.AddDays(-19)
-        });
+            // Doctor 3
+            (
+                DocIdx: 2,
+                Title: "The 7 Principles for Long-Term Relationship Longevity",
+                Excerpt: "Insights from 20 years of marital therapy on building enduring trust, emotional intimacy, and collaborative conflict resolution.",
+                Content: "<p>Lasting relationships are built on deliberate micro-habits rather than grand romantic gestures. Research demonstrates that couples who nurture 'emotional bids'—small moments of daily connection—navigate inevitable conflicts with far greater resilience.</p><h3>Core Pillars of Relational Health:</h3><ol><li>Maintain positive sentiment override.</li><li>Turn toward each other's emotional bids.</li><li>Practice gentle startup during disagreements.</li><li>Accept influence and value mutual perspectives.</li><li>Create shared relational rituals and meaning.</li></ol>",
+                Thumbnail: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800",
+                Views: 2150
+            ),
+            (
+                DocIdx: 2,
+                Title: "De-escalating Heated Arguments: Nonviolent Communication at Home",
+                Excerpt: "How adopting observations, feelings, needs, and requests can transform destructive marital disputes into deeper connection.",
+                Content: "<p>Arguments become toxic when criticism triggers defensive walls. Transitioning from accusatory 'You always' statements to vulnerable 'I feel / I need' expressions allows partners to listen without preparing a counter-attack.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800",
+                Views: 1640
+            ),
 
-        // Pending blog (waiting for moderation)
-        context.BlogPosts.Add(new BlogPost
-        {
-            DoctorId = doc1.Id,
-            Doctor = doc1,
-            Title = "Thiền Định Và Sức Khỏe Tinh Thần: Khoa Học Nói Gì?",
-            Content = "<p>Thiền định đã được nghiên cứu rộng rãi trong y học hiện đại...</p>",
-            ThumbnailUrl = "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800",
-            Excerpt = "Bằng chứng khoa học về lợi ích của thiền định đối với sức khỏe tâm thần.",
-            Status = BlogStatus.Pending,
-            ViewCount = 0,
-            SubmittedAt = DateTime.UtcNow.AddDays(-1)
-        });
+            // Doctor 4
+            (
+                DocIdx: 3,
+                Title: "The Physiology of Executive Burnout: Prevention & Biological Recovery",
+                Excerpt: "Burnout is not a mental flaw—it is physiological adrenal and neurological exhaustion. Here is how modern leaders recover.",
+                Content: "<p>Prolonged high-stakes decision-making depletes dopamine reserves and dysregulates circadian cortisol curves. Recovery requires aggressive boundary setting, biological sleep optimization, and structured cognitive disengagement.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800",
+                Views: 1320
+            ),
+            (
+                DocIdx: 3,
+                Title: "Overcoming Panic Attacks: What to Do When Your Fight-or-Flight System Misfires",
+                Excerpt: "A physician's blueprint to stopping panic attacks in their tracks using the mammalian dive reflex and physiological sighs.",
+                Content: "<p>Panic attacks are essentially false alarms triggered by your nervous system. By utilizing the double inhale followed by a long sigh (the physiological sigh), you instantly trigger pulmonary gas exchange that decelerates your heart rate.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1474418397713-7ede21d49118?w=800",
+                Views: 1890
+            ),
 
-        // Draft blog
-        context.BlogPosts.Add(new BlogPost
-        {
-            DoctorId = doc2.Id,
-            Doctor = doc2,
-            Title = "Trò Chơi Trị Liệu: Play Therapy Cho Trẻ Em",
-            Content = "<p>Play Therapy là phương pháp trị liệu sử dụng trò chơi để giúp trẻ em biểu đạt cảm xúc...</p>",
-            ThumbnailUrl = "https://images.unsplash.com/photo-1587654780291-39c9404d7dd0?w=800",
-            Excerpt = "Tìm hiểu về phương pháp Play Therapy và cách nó giúp trẻ em vượt qua khó khăn tâm lý.",
-            Status = BlogStatus.Draft,
-            ViewCount = 0
-        });
-        await context.SaveChangesAsync();
+            // Doctor 5
+            (
+                DocIdx: 4,
+                Title: "Demystifying EMDR: How Bilateral Stimulation Rewires Traumatic Memory",
+                Excerpt: "An inside look at Eye Movement Desensitization and Reprocessing (EMDR) and how it helps the brain process unintegrated trauma.",
+                Content: "<p>Traumatic memories often remain 'frozen' in their original sensory state within the amygdala and hippocampus. EMDR uses bilateral sensory stimulation to facilitate natural neurobiological memory consolidation.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800",
+                Views: 1450
+            ),
+            (
+                DocIdx: 4,
+                Title: "Somatic Grounding Techniques for Acute Anxiety Triggers",
+                Excerpt: "Practical body-based anchors to bring your prefrontal cortex back online when feeling triggered.",
+                Content: "<p>The 5-4-3-2-1 sensory technique and progressive muscle release directly interrupt sympathetic arousal, anchoring awareness safely in the present moment.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800",
+                Views: 990
+            ),
 
-        // ═══════════════════════════════════════════════
-        // 15. VERIFICATION REQUEST (for pending doctor)
-        // ═══════════════════════════════════════════════
-        context.VerificationRequests.Add(new VerificationRequest
-        {
-            DoctorProfileId = doc4.Id,
-            Status = VerificationStatus.Submitted,
-            DoctorProfile = doc4
-        });
-        await context.SaveChangesAsync();
+            // Doctor 6
+            (
+                DocIdx: 5,
+                Title: "The Dopamine Loop: Breaking Free from Digital and Behavioral Compulsions",
+                Excerpt: "Why modern apps and digital environments hijack our reward pathways and how to implement a sustainable dopamine reset.",
+                Content: "<p>Behavioral addiction thrives on intermittent variable rewards. Reclaiming autonomy requires friction architectures—placing intentional barriers between impulse and consumption.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800",
+                Views: 1120
+            ),
+            (
+                DocIdx: 5,
+                Title: "Motivational Interviewing: Unlocking Your Internal Drive for Lasting Change",
+                Excerpt: "Why willpower alone fails and how clarifying personal core values drives sustainable psychological transformation.",
+                Content: "<p>Sustainable change happens when the discrepancy between our daily behaviors and our deepest values is explored without judgment, cultivating intrinsic motivation.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=800",
+                Views: 830
+            ),
 
-        // ═══════════════════════════════════════════════
-        // 16. CONSULTATION NOTES & PATIENT RECORDS (for completed appointments)
-        // ═══════════════════════════════════════════════
-        if (completedApts.Count > 0)
+            // Doctor 7
+            (
+                DocIdx: 6,
+                Title: "Acceptance & Commitment Therapy: Moving Beyond the Battle with Thoughts",
+                Excerpt: "Learn how psychological flexibility and values-aligned action provide freedom from chronic emotional struggle.",
+                Content: "<p>Rather than exhausting energy trying to eliminate negative emotions, ACT teaches psychological defusion: observing thoughts like leaves floating down a stream while committing to values-aligned living.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?w=800",
+                Views: 1210
+            ),
+            (
+                DocIdx: 6,
+                Title: "Breaking the Cycle of Chronic Rumination and Overthinking",
+                Excerpt: "Distinguish between constructive problem-solving and toxic mental churning, and learn clinical tools to disrupt the pattern.",
+                Content: "<p>Rumination masquerades as preparation but creates paralysis. Establishing a scheduled 15-minute 'worry window' confines anxiety while keeping your day productive.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?w=800",
+                Views: 1040
+            ),
+
+            // Doctor 8
+            (
+                DocIdx: 7,
+                Title: "Conquering Imposter Syndrome: Owning Your Value in Competitive Workplaces",
+                Excerpt: "Why high achievers struggle with feeling like frauds and how to build internal confidence grounded in reality.",
+                Content: "<p>Imposter syndrome is exceptionally prevalent among high performers who attribute their success to luck while internalizing every mistake. Keeping an objective 'evidence of competency' log dismantles cognitive distortions.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800",
+                Views: 1670
+            ),
+            (
+                DocIdx: 7,
+                Title: "Navigating Career Crossroads Without Paralyzing Anxiety",
+                Excerpt: "A psychological framework for decision-making during pivotal professional transitions.",
+                Content: "<p>Career transitions evoke existential vulnerability. Approaching decisions as iterative experiments rather than irreversible leaps alleviates fear of failure.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
+                Views: 940
+            ),
+
+            // Doctor 9
+            (
+                DocIdx: 8,
+                Title: "Understanding Teen Social Media Use, Comparison, and Mental Well-being",
+                Excerpt: "Clinical guidance on helping adolescents maintain self-worth in an algorithmically curated digital world.",
+                Content: "<p>Adolescent brain development is uniquely vulnerable to social validation metrics. Encouraging offline mastery experiences builds authentic self-esteem uncoupled from digital likes.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800",
+                Views: 1380
+            ),
+            (
+                DocIdx: 8,
+                Title: "Creating Safe Emotional Spaces for Adolescents at Home",
+                Excerpt: "How non-reactive active listening encourages teens to open up and seek support during difficult times.",
+                Content: "<p>Teens clam up when they expect lectures. Shifting from reactive advice-giving to empathetic curiosity transforms parent-teen relationship dynamics.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800",
+                Views: 890
+            ),
+
+            // Doctor 10
+            (
+                DocIdx: 9,
+                Title: "CBT for Insomnia (CBT-I): Rewiring Your Sleep Architecture Naturally",
+                Excerpt: "The gold-standard clinical protocol for curing chronic insomnia without long-term sedative dependence.",
+                Content: "<p>CBT-I addresses the conditioned arousal that connects the bed with frustration and wakefulness. Stimulus control, sleep restriction, and circadian alignment restore natural sleep drive within weeks.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1511295742362-92c96b124e52?w=800",
+                Views: 2450
+            ),
+            (
+                DocIdx: 9,
+                Title: "The Sleep-Mental Health Axis: Why Deep Sleep Protects Against Anxiety",
+                Excerpt: "How slow-wave sleep and REM sleep recalibrate emotional processing circuits and bolster daily mental resilience.",
+                Content: "<p>During REM sleep, the brain reprocesses emotional memories in a neurochemically calm environment. Deprivation of REM sleep drastically lowers our threshold for anxiety triggers.</p>",
+                Thumbnail: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800",
+                Views: 1910
+            )
+        };
+
+        foreach (var blog in blogSeedData)
         {
-            var pRecord1 = new PatientRecord
+            var author = doctorProfiles[blog.DocIdx];
+            context.BlogPosts.Add(new BlogPost
             {
-                DoctorId = completedApts[0].DoctorId,
-                PatientId = completedApts[0].PatientId,
-                Doctor = completedApts[0].Doctor,
-                Patient = completedApts[0].Patient,
-                GeneralNotes = "Created from Seed data"
-            };
-            context.PatientRecords.Add(pRecord1);
-
-            context.ConsultationNotes.Add(new ConsultationNote
-            {
-                AppointmentId = completedApts[0].Id,
-                DoctorId = completedApts[0].DoctorId,
-                PatientRecord = pRecord1,
-                ConsultationSummary = "Bệnh nhân có biểu hiện lo lắng quá mức, mất ngủ, khó tập trung. Đã tiến hành CBT phiên 1. Hướng dẫn kỹ thuật thở sâu và ghi nhật ký lo âu.",
-                Diagnosis = "Rối loạn lo âu lan tỏa (GAD)",
-                Recommendation = "Tiếp tục CBT trong 6-8 phiên. Tập thở sâu 10 phút/ngày. Ghi nhật ký lo âu hàng ngày. Tái khám sau 2 tuần.",
-                Appointment = completedApts[0],
-                Doctor = completedApts[0].Doctor
+                DoctorId = author.Id,
+                Doctor = author,
+                Title = blog.Title,
+                Excerpt = blog.Excerpt,
+                Content = blog.Content,
+                ThumbnailUrl = blog.Thumbnail,
+                Status = BlogStatus.Published,
+                ViewCount = blog.Views,
+                SubmittedAt = DateTime.UtcNow.AddDays(-20),
+                ApprovedAt = DateTime.UtcNow.AddDays(-19),
+                ApprovedBy = csUser.Id,
+                PublishedAt = DateTime.UtcNow.AddDays(-19)
             });
         }
-        if (completedApts.Count > 2)
-        {
-            var pRecord2 = new PatientRecord
-            {
-                DoctorId = completedApts[2].DoctorId,
-                PatientId = completedApts[2].PatientId,
-                Doctor = completedApts[2].Doctor,
-                Patient = completedApts[2].Patient,
-                GeneralNotes = "Created from Seed data"
-            };
-            context.PatientRecords.Add(pRecord2);
-
-            context.ConsultationNotes.Add(new ConsultationNote
-            {
-                AppointmentId = completedApts[2].Id,
-                DoctorId = completedApts[2].DoctorId,
-                PatientRecord = pRecord2,
-                ConsultationSummary = "Gia đình có xung đột giữa vợ chồng liên quan đến cách nuôi dạy con. Đã tiến hành phiên tham vấn gia đình. Xác định các mẫu giao tiếp tiêu cực.",
-                Diagnosis = "Xung đột gia đình - vấn đề giao tiếp",
-                Recommendation = "Lên lịch 4 phiên trị liệu gia đình. Tập luyện kỹ năng giao tiếp bất bạo lực. Cả hai vợ chồng cùng tham gia.",
-                Appointment = completedApts[2],
-                Doctor = completedApts[2].Doctor
-            });
-        }
         await context.SaveChangesAsync();
+
+        // ═══════════════════════════════════════════════
+        // 14. PSYCHOMETRIC ASSESSMENTS (PHQ-9 & DASS-21)
+        // ═══════════════════════════════════════════════
         await SeedPsychometricsAsync(context);
     }
 
@@ -615,6 +835,23 @@ public static class SeedData
         return user;
     }
 
+    private static string GetSampleDiagnosis(int index) => (index % 5) switch
+    {
+        0 => "Generalized Anxiety Disorder (GAD) - Moderate",
+        1 => "Persistent Depressive Disorder (Dysthymia)",
+        2 => "Adjustment Disorder with Mixed Anxiety & Depressed Mood",
+        3 => "Occupational Burnout Syndrome & Acute Stress",
+        _ => "Relational Distress & Communication Impairment"
+    };
+
+    private static string GetSampleReview(int index, string patientName) => (index % 4) switch
+    {
+        0 => "Exceptional clinical care. The doctor was deeply empathetic, structured, and provided practical tools that helped me make noticeable progress immediately.",
+        1 => "Very thorough and insightful assessment. I felt genuinely heard and understood throughout the entire session.",
+        2 => "Professional, compassionate, and highly skilled in evidence-based therapy. Highly recommend to anyone seeking mental health support.",
+        _ => "Great counseling experience. The doctor helped break down complex emotional challenges into actionable, manageable steps."
+    };
+
     private static async Task SeedPsychometricsAsync(OpcbsDbContext context)
     {
         if (context.PsychometricTests.Any())
@@ -624,7 +861,7 @@ public static class SeedData
         var phq9 = new PsychometricTest
         {
             Title = "Patient Health Questionnaire (PHQ-9)",
-            Description = "A 9-question scale that helps assess the severity of your depression over the past 2 weeks.",
+            Description = "A 9-question clinical scale that helps assess the severity of depression symptoms over the past 2 weeks.",
             TestType = "PHQ9"
         };
         context.PsychometricTests.Add(phq9);
@@ -657,7 +894,7 @@ public static class SeedData
         var dass21 = new PsychometricTest
         {
             Title = "Depression, Anxiety and Stress Scale (DASS-21)",
-            Description = "A 21-question assessment that helps evaluate your emotional state over the past week.",
+            Description = "A 21-item assessment measuring the emotional states of depression, anxiety, and stress.",
             TestType = "DASS21"
         };
         context.PsychometricTests.Add(dass21);
