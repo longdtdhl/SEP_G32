@@ -282,7 +282,7 @@
                                 <div class="table-responsive">
                                     <table class="table cd-table align-middle">
                                         <thead><tr>
-                                            <th>#</th><th>Title</th><th>Planned</th><th>Status</th>
+                                            <th>#</th><th>Title</th><th>Planned</th><th>Status</th><th class="text-end">Actions</th>
                                         </tr></thead>
                                         <tbody>
                                             @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber).Take(4))
@@ -292,6 +292,19 @@
                                                     <td class="fw-semibold text-dark">@(s.Title ?? $"Session {s.SessionNumber}")</td>
                                                     <td class="text-muted">@(s.PlannedStartTime?.ToString("MMM dd, HH:mm") ?? "Planned")</td>
                                                     <td><span class="@s.StatusBadgeClass" style="font-size:0.7rem;">@s.StatusText</span></td>
+                                                    <td class="text-end">
+                                                        <div class="d-flex justify-content-end gap-1">
+                                                            @if (s.AppointmentId.HasValue)
+                                                            {
+                                                                <a href="/Doctor/Appointments/Details/@s.AppointmentId" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.72rem; padding:3px 8px;" title="View Appointment Details">
+                                                                    <i class="bi bi-box-arrow-up-right"></i>
+                                                                </a>
+                                                                <a href="/Doctor/Appointments/Reschedule/@s.AppointmentId" class="btn btn-sm btn-outline-warning text-dark" style="border-radius:6px; font-size:0.72rem; padding:3px 8px;" title="Reschedule Session">
+                                                                    <i class="bi bi-arrow-repeat"></i>
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -510,6 +523,15 @@
                                         <td><span class="@s.StatusBadgeClass" style="font-size:0.7rem;">@s.StatusText</span></td>
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-1">
+                                                @if (s.AppointmentId.HasValue)
+                                                {
+                                                    <a href="/Doctor/Appointments/Details/@s.AppointmentId" class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.72rem; padding:3px 8px;" title="View Appointment Details">
+                                                        <i class="bi bi-box-arrow-up-right"></i>
+                                                    </a>
+                                                    <a href="/Doctor/Appointments/Reschedule/@s.AppointmentId" class="btn btn-sm btn-outline-warning text-dark" style="border-radius:5px; font-size:0.72rem; padding:3px 8px;" title="Reschedule Session">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </a>
+                                                }
                                                 <form method="post" asp-page-handler="DeleteSession" asp-route-caseId="@c.Id" asp-route-sessionId="@s.Id" onsubmit="return confirm('Delete this session?');" class="d-inline">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:5px; font-size:0.72rem; padding:3px 8px;" title="Delete">
                                                         <i class="bi bi-trash"></i>

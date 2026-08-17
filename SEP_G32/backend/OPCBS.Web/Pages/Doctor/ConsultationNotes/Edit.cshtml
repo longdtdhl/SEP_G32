@@ -232,21 +232,21 @@
                             <div class="form-section-title">
                                 <i class="bi bi-calendar"></i>Expected Follow-up Date & Slot
                             </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                        <i class="bi bi-calendar-event me-1"></i>Follow-up Date
-                                    </label>
+                            <div class="row g-2 align-items-end mb-3">
+                                <div class="col-sm-7 col-md-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Select Follow-up Date</label>
                                     <input asp-for="Input.NextAppointmentRecommendedDate" id="editRecDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" onchange="loadEditRecommendedSlots(this.value)" />
                                 </div>
-                                <div class="col-md-6" id="editRecSlotContainer" style="@(Model.Input.NextAppointmentRecommendedDate.HasValue ? "" : "display:none;")">
-                                    <label class="form-label fw-semibold" style="font-size:0.85rem;">
-                                        <i class="bi bi-clock me-1"></i>Suggested Time Slot
-                                    </label>
-                                    <select asp-for="Input.NextAppointmentRecommendedSlotId" id="editRecSlotSelect" class="form-select" style="border-radius:10px;">
-                                        <option value="">-- Select a suggested slot --</option>
-                                    </select>
+                                <div class="col-sm-5 col-md-4">
+                                    <button type="button" class="btn btn-outline-primary w-100" style="border-radius:10px; border-color:#0d9488; color:#0d9488;" onclick="loadEditRecommendedSlots(document.getElementById('editRecDateInput').value)">
+                                        <i class="bi bi-search me-1"></i>View Slots
+                                    </button>
                                 </div>
+                            </div>
+                            <div id="editRecSlotContainer" class="mb-2" style="@(Model.Input.NextAppointmentRecommendedDate.HasValue ? "" : "display:none;")">
+                                <label class="form-label small fw-bold text-dark mb-2" id="editRecSlotHeader">Available Time Slots for Follow-up</label>
+                                <div id="editRecSlotsGrid" class="row g-2"></div>
+                                <input type="hidden" asp-for="Input.NextAppointmentRecommendedSlotId" id="editRecSlotInput" />
                             </div>
                             <div id="editRecSlotMsg" class="form-text small text-muted mt-2">
                                 <i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.
@@ -332,46 +332,46 @@
 
     async function loadEditRecommendedSlots(date, preselectId = '') {
         const container = document.getElementById('editRecSlotContainer');
-        const select = document.getElementById('editRecSlotSelect');
+        const grid = document.getElementById('editRecSlotsGrid');
         const msg = document.getElementById('editRecSlotMsg');
+        const header = document.getElementById('editRecSlotHeader');
+        const slotInput = document.getElementById('editRecSlotInput');
+
         if (!date) {
             if (container) container.style.display = 'none';
-            if (select) select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
+            if (slotInput) slotInput.value = '';
             return;
         }
 
         if (container) container.style.display = 'block';
-        if (select) {
-            select.innerHTML = '<option value="">Loading available slots...</option>';
-            select.disabled = true;
-        }
+        if (header) header.textContent = 'Available Time Slots for ' + date;
+        if (grid) grid.innerHTML = '<div class="col-12 py-2 text-center text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading time slots...</div>';
+
+        const targetSelected = preselectId || slotInput.value;
 
         try {
             const response = await fetch(`?handler=Slots&date=${encodeURIComponent(date)}`);
             const data = await response.json();
-            if (select) {
-                select.disabled = false;
-                select.innerHTML = '<option value="">-- Select a suggested slot --</option>';
-                if (data.success && data.slots && data.slots.length > 0) {
-                    data.slots.forEach(slot => {
-                        const opt = document.createElement('option');
-                        opt.value = slot.id;
-                        opt.textContent = slot.label;
-                        if (preselectId && slot.id.toLowerCase() === preselectId.toLowerCase()) {
-                            opt.selected = true;
-                        }
-                        select.appendChild(opt);
-                    });
-                    if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.';
-                } else {
-                    if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots found for this date.</span>';
-                }
+            if (data.success && data.slots && data.slots.length > 0) {
+                grid.innerHTML = data.slots.map(s => {
+                    const isChecked = (targetSelected && s.id.toLowerCase() === targetSelected.toLowerCase()) ? 'checked' : '';
+                    return `
+                        <div class="col-6 col-sm-4 col-md-3">
+                            <input type="radio" class="btn-check" name="editRecSlotRadio" id="rec_slot_${s.id}" value="${s.id}" ${isChecked} onchange="document.getElementById('editRecSlotInput').value = this.value" />
+                            <label class="btn btn-outline-primary w-100 p-2.5 rounded-3 text-center" for="rec_slot_${s.id}" style="border-radius:10px;">
+                                <div class="fw-bold fs-6">${s.startTime}</div>
+                                <div class="small opacity-75">until ${s.endTime}</div>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+                if (msg) msg.innerHTML = '<i class="bi bi-info-circle me-1"></i>Select a suggested follow-up slot for the patient.';
+            } else {
+                grid.innerHTML = `<div class="col-12 p-3 text-center bg-light rounded-3 border border-dashed text-muted"><i class="bi bi-calendar-x d-block fs-5 mb-1"></i>No available slots found for this date.</div>`;
+                if (msg) msg.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>No available slots on this date.</span>';
             }
         } catch (e) {
-            if (select) {
-                select.disabled = false;
-                select.innerHTML = '<option value="">-- Failed to load slots --</option>';
-            }
+            if (grid) grid.innerHTML = `<div class="col-12 p-3 text-center text-danger small">Failed to load slots.</div>`;
         }
     }
 

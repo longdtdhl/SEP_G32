@@ -8,9 +8,17 @@ namespace OPCBS.Web.Pages.Doctor.TreatmentCases.Sessions;
 public class CreateModel : PageModel
 {
     private readonly ITreatmentCaseApiService _api;
-    public CreateModel(ITreatmentCaseApiService api) => _api = api;
+    private readonly IScheduleApiService _scheduleApi;
+
+    public CreateModel(ITreatmentCaseApiService api, IScheduleApiService scheduleApi)
+    {
+        _api = api;
+        _scheduleApi = scheduleApi;
+    }
 
     [BindProperty(SupportsGet = true)] public Guid CaseId { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Date { get; set; }
+    public AvailableSlotsDto? AvailableSlots { get; set; }
     public TreatmentCaseWebDto? TreatmentCase { get; set; }
     public string? ErrorMessage { get; set; }
     public bool IsPackageExhausted => TreatmentCase != null &&
@@ -29,6 +37,23 @@ public class CreateModel : PageModel
             var (data, _) = await _api.GetByIdAsync(CaseId);
             TreatmentCase = data;
         }
+
+        var targetDate = !string.IsNullOrWhiteSpace(Date) && DateOnly.TryParse(Date, out var parsed)
+            ? parsed
+            : DateOnly.FromDateTime(DateTime.Today);
+
+        var (slots, _) = await _scheduleApi.GetMySlotsAsync(targetDate);
+        AvailableSlots = slots;
+    }
+
+    public async Task<IActionResult> OnGetSlotsAsync(string date)
+    {
+        if (DateOnly.TryParse(date, out var parsedDate))
+        {
+            var (slots, _) = await _scheduleApi.GetMySlotsAsync(parsedDate);
+            return new JsonResult(slots);
+        }
+        return new JsonResult(new { slots = Array.Empty<object>() });
     }
 
     public async Task<IActionResult> OnPostCreateAsync(

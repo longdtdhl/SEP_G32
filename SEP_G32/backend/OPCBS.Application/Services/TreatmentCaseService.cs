@@ -1057,6 +1057,41 @@ public class TreatmentCaseService : ITreatmentCaseService
             .OrderBy(s => s.SessionNumber)
             .ToList();
 
+        var allAppts = await _appointmentRepo.GetAllAsync(ct);
+        var caseAppts = allAppts.Where(a => !a.IsDeleted && (a.TreatmentCaseId == caseId || (tc.TreatmentPackageId != Guid.Empty && a.TreatmentPackageId == tc.TreatmentPackageId))).ToList();
+
+        var existingApptIds = sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToHashSet();
+        foreach (var appt in caseAppts)
+        {
+            if (!existingApptIds.Contains(appt.Id))
+            {
+                var nextNumber = sessions.Count == 0 ? 1 : sessions.Max(s => s.SessionNumber) + 1;
+                var newSession = new TreatmentSession
+                {
+                    TreatmentCaseId = caseId,
+                    SessionNumber = nextNumber,
+                    Title = $"Session {nextNumber}: {tc.CaseName}",
+                    Description = $"Treatment session {nextNumber} of {tc.TotalSessions}",
+                    PlannedStartTime = appt.AppointmentDate,
+                    PlannedEndTime = appt.AppointmentDate?.AddMinutes(60),
+                    Status = appt.Status == AppointmentStatus.Completed ? TreatmentSessionStatus.Completed
+                           : appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Rejected ? TreatmentSessionStatus.Cancelled
+                           : TreatmentSessionStatus.Scheduled,
+                    AppointmentId = appt.Id,
+                    TreatmentCase = tc
+                };
+                await _sessionRepo.AddAsync(newSession, ct);
+                if (!appt.TreatmentCaseId.HasValue || appt.TreatmentCaseId.Value == Guid.Empty || !appt.TreatmentSessionId.HasValue)
+                {
+                    appt.TreatmentCaseId = caseId;
+                    appt.TreatmentSessionId = newSession.Id;
+                    _appointmentRepo.Update(appt);
+                }
+                sessions.Add(newSession);
+                existingApptIds.Add(appt.Id);
+            }
+        }
+
         var dtos = new List<TreatmentSessionDto>();
         var allAssignments = await _assignmentRepo.GetAllAsync(ct);
         var allSessionGoals = await _sessionGoalRepo.GetAllAsync(ct);
@@ -1066,6 +1101,16 @@ public class TreatmentCaseService : ITreatmentCaseService
         foreach (var s in sessions)
         {
             var dto = MapToSessionDto(s);
+            if (string.IsNullOrEmpty(dto.BookingCode) && s.AppointmentId.HasValue)
+            {
+                var appt = caseAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value) ?? allAppts.FirstOrDefault(a => a.Id == s.AppointmentId.Value);
+                if (appt != null)
+                {
+                    dto.BookingCode = appt.BookingCode;
+                    dto.AppointmentDate = appt.AppointmentDate ?? s.PlannedStartTime;
+                    dto.PlannedStartTime ??= appt.AppointmentDate;
+                }
+            }
             var sessionHomework = allAssignments.Where(a => a.TreatmentSessionId == s.Id && !a.IsDeleted).ToList();
             dto.HomeworkList = sessionHomework.Select(MapToHomeworkDto).ToList();
 

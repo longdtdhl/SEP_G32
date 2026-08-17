@@ -13,6 +13,23 @@ public static class OpcbsSchemaUpgrade
         if (!context.Database.IsSqlServer()) return;
 
         await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[__EFMigrationsHistory]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [__EFMigrationsHistory] (
+                    [MigrationId] nvarchar(150) NOT NULL,
+                    [ProductVersion] nvarchar(32) NOT NULL,
+                    CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+                );
+            END
+
+            IF OBJECT_ID(N'[Permissions]', N'U') IS NOT NULL
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20260806092731_NormalizeTreatmentRelationships')
+                    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20260806092731_NormalizeTreatmentRelationships', N'8.0.0');
+                IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20260812071000_AddAppointmentGuestZaloNumber')
+                    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20260812071000_AddAppointmentGuestZaloNumber', N'8.0.0');
+            END
+
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationTokenHash') IS NULL
                 ALTER TABLE [Appointments] ADD [GuestConfirmationTokenHash] nvarchar(64) NULL;
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationLastSentAt') IS NULL
@@ -111,6 +128,29 @@ public static class OpcbsSchemaUpgrade
                 ALTER TABLE [TreatmentPackages] ADD [CancellationRequestedAt] datetime2 NULL;
             IF COL_LENGTH(N'TreatmentPackages', N'CancellationReason') IS NULL
                 ALTER TABLE [TreatmentPackages] ADD [CancellationReason] nvarchar(1000) NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'RecommendedSessionsPerWeek') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [RecommendedSessionsPerWeek] int NOT NULL CONSTRAINT [DF_TreatmentPackages_RecommendedSessionsPerWeek] DEFAULT 1;
+            IF COL_LENGTH(N'TreatmentPackages', N'TargetOutcome') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [TargetOutcome] nvarchar(max) NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'RecommendedExercises') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [RecommendedExercises] nvarchar(max) NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'Instructions') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [Instructions] nvarchar(max) NULL;
+            IF COL_LENGTH(N'TreatmentPackages', N'ValidityDays') IS NULL
+                ALTER TABLE [TreatmentPackages] ADD [ValidityDays] int NOT NULL CONSTRAINT [DF_TreatmentPackages_ValidityDays] DEFAULT 90;
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'VerificationRequests', N'CertificatePublicId') IS NULL
+                ALTER TABLE [VerificationRequests] ADD [CertificatePublicId] nvarchar(500) NULL;
+            IF COL_LENGTH(N'VerificationRequests', N'CertificateFileName') IS NULL
+                ALTER TABLE [VerificationRequests] ADD [CertificateFileName] nvarchar(255) NULL;
+            IF COL_LENGTH(N'VerificationRequests', N'CertificateContentType') IS NULL
+                ALTER TABLE [VerificationRequests] ADD [CertificateContentType] nvarchar(100) NULL;
+            IF COL_LENGTH(N'VerificationRequests', N'CertificateUploadedAt') IS NULL
+                ALTER TABLE [VerificationRequests] ADD [CertificateUploadedAt] datetime2 NULL;
+            IF COL_LENGTH(N'VerificationRequests', N'SubmittedAt') IS NULL
+                ALTER TABLE [VerificationRequests] ADD [SubmittedAt] datetime2 NOT NULL CONSTRAINT [DF_VerificationRequests_SubmittedAt] DEFAULT SYSUTCDATETIME();
             """, ct);
 
         await context.Database.ExecuteSqlRawAsync("""

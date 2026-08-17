@@ -320,6 +320,9 @@ public class AppointmentService : IAppointmentService
     private readonly IViolationReportService? _violationReports;
     private readonly ITreatmentCaseService? _treatmentCaseService;
     private readonly IRepository<CustomClinicalField>? _customFieldRepo;
+    private readonly IRepository<TreatmentGoal>? _goalRepo;
+    private readonly IRepository<TherapyAssignment>? _assignmentRepo;
+    private readonly IRepository<MoodEntry>? _moodRepo;
 
     public AppointmentService(
         IRepository<Appointment> apptRepo,
@@ -342,7 +345,10 @@ public class AppointmentService : IAppointmentService
         IRepository<AppointmentCompletionConfirmation>? completionConfirmationRepo = null,
         IViolationReportService? violationReports = null,
         ITreatmentCaseService? treatmentCaseService = null,
-        IRepository<CustomClinicalField>? customFieldRepo = null)
+        IRepository<CustomClinicalField>? customFieldRepo = null,
+        IRepository<TreatmentGoal>? goalRepo = null,
+        IRepository<TherapyAssignment>? assignmentRepo = null,
+        IRepository<MoodEntry>? moodRepo = null)
     {
         _apptRepo = apptRepo;
         _slotRepo = slotRepo;
@@ -365,6 +371,9 @@ public class AppointmentService : IAppointmentService
         _violationReports = violationReports;
         _treatmentCaseService = treatmentCaseService;
         _customFieldRepo = customFieldRepo;
+        _goalRepo = goalRepo;
+        _assignmentRepo = assignmentRepo;
+        _moodRepo = moodRepo;
     }
 
     private async Task SyncSessionStatusAsync(Appointment appt, TreatmentSessionStatus newSessionStatus, CancellationToken ct)
@@ -396,6 +405,28 @@ public class AppointmentService : IAppointmentService
             }
             session.UpdatedAt = DateTime.UtcNow;
             _sessionRepo.Update(session);
+
+            if (newSessionStatus == TreatmentSessionStatus.Completed && _treatmentCaseRepo != null && session.TreatmentCaseId != Guid.Empty)
+            {
+                var tc = await _treatmentCaseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
+                if (tc != null)
+                {
+                    var caseSessions = allSessions.Where(s => s.TreatmentCaseId == tc.Id && !s.IsDeleted).ToList();
+                    var completedCount = caseSessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Id == session.Id);
+                    tc.CompletedSessions = completedCount;
+                    if (tc.TotalSessions > 0)
+                    {
+                        tc.OverallProgressPercent = (int)Math.Round((double)completedCount / tc.TotalSessions * 100);
+                        if (tc.OverallProgressPercent >= 100 && tc.Status == TreatmentCaseStatus.Active)
+                        {
+                            tc.Status = TreatmentCaseStatus.Completed;
+                            tc.ActualEndDate = DateTime.UtcNow;
+                        }
+                    }
+                    tc.UpdatedAt = DateTime.UtcNow;
+                    _treatmentCaseRepo.Update(tc);
+                }
+            }
         }
     }
 
@@ -602,7 +633,56 @@ public class AppointmentService : IAppointmentService
                 AppointmentSlot = slot,
                 Doctor = doctor
             };
+
+            // Link treatment case and create treatment session if booking with package
+            TreatmentCase? linkedCase = null;
+            if (treatmentPackage != null && _treatmentCaseRepo != null && patientProfileId.HasValue)
+            {
+                var allCases = await _treatmentCaseRepo.GetAllAsync(ct);
+                linkedCase = allCases.FirstOrDefault(c =>
+                    c.TreatmentPackageId == treatmentPackage.Id &&
+                    (c.PatientId == patientProfileId.Value || (patientUserId.HasValue && c.PatientId == patientUserId.Value)) &&
+                    !c.IsDeleted &&
+                    c.Status == TreatmentCaseStatus.Active);
+
+                if (linkedCase == null)
+                {
+                    linkedCase = allCases.FirstOrDefault(c =>
+                        c.DoctorId == dto.DoctorId &&
+                        (c.PatientId == patientProfileId.Value || (patientUserId.HasValue && c.PatientId == patientUserId.Value)) &&
+                        !c.IsDeleted &&
+                        c.Status == TreatmentCaseStatus.Active);
+                }
+
+                if (linkedCase != null)
+                {
+                    appointment.TreatmentCaseId = linkedCase.Id;
+                }
+            }
+
             await _apptRepo.AddAsync(appointment, ct);
+
+            if (linkedCase != null && _sessionRepo != null)
+            {
+                var allSessions = await _sessionRepo.GetAllAsync(ct);
+                var caseSessions = allSessions.Where(s => s.TreatmentCaseId == linkedCase.Id && !s.IsDeleted).ToList();
+                var nextNumber = caseSessions.Count == 0 ? 1 : caseSessions.Max(s => s.SessionNumber) + 1;
+                var session = new TreatmentSession
+                {
+                    TreatmentCaseId = linkedCase.Id,
+                    SessionNumber = nextNumber,
+                    Title = $"Session {nextNumber}: {linkedCase.CaseName}",
+                    Description = $"Treatment session {nextNumber} of {linkedCase.TotalSessions}",
+                    PlannedStartTime = slotDateTime,
+                    PlannedEndTime = slotDateTime.AddMinutes(slot.DurationMinutes > 0 ? slot.DurationMinutes : 60),
+                    Status = TreatmentSessionStatus.Scheduled,
+                    AppointmentId = appointment.Id,
+                    TreatmentCase = linkedCase
+                };
+                await _sessionRepo.AddAsync(session, ct);
+                appointment.TreatmentSessionId = session.Id;
+                _apptRepo.Update(appointment);
+            }
 
             if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
             {
@@ -2795,6 +2875,14 @@ public class AppointmentService : IAppointmentService
                 tCase = allCases.FirstOrDefault(c => c.Id == appt.TreatmentCaseId.Value && !c.IsDeleted);
             }
 
+            if (tCase == null && appt.TreatmentPackageId.HasValue)
+            {
+                tCase = allCases.FirstOrDefault(c =>
+                    c.TreatmentPackageId == appt.TreatmentPackageId.Value &&
+                    (c.PatientId == patient.Id || c.PatientId == patient.UserId) &&
+                    !c.IsDeleted);
+            }
+
             if (tCase == null)
             {
                 tCase = allCases.Where(c => !c.IsDeleted && (c.PatientId == patient.Id || c.PatientId == patient.UserId) && c.Status == TreatmentCaseStatus.Active)
@@ -2804,13 +2892,53 @@ public class AppointmentService : IAppointmentService
 
             if (tCase != null)
             {
-                var goals = tCase.Goals != null ? tCase.Goals.Where(g => !g.IsDeleted).ToList() : new List<TreatmentGoal>();
-                var sessions = tCase.Sessions != null ? tCase.Sessions.Where(s => !s.IsDeleted).ToList() : new List<TreatmentSession>();
-                var assignments = tCase.Assignments != null ? tCase.Assignments.Where(a => !a.IsDeleted).ToList() : new List<TherapyAssignment>();
-                var moods = tCase.MoodEntries != null ? tCase.MoodEntries.Where(m => !m.IsDeleted).OrderByDescending(m => m.RecordedAt).ToList() : new List<MoodEntry>();
+                List<TreatmentGoal> goals = new();
+                if (_goalRepo != null)
+                {
+                    var allGoals = await _goalRepo.GetAllAsync(ct);
+                    goals = allGoals.Where(g => g.TreatmentCaseId == tCase.Id && !g.IsDeleted).ToList();
+                }
 
-                var currentSession = sessions.FirstOrDefault(s => s.AppointmentId == appointmentId);
-                var nextSession = sessions.Where(s => s.Status == TreatmentSessionStatus.Scheduled && s.PlannedStartTime > DateTime.Now).OrderBy(s => s.PlannedStartTime).FirstOrDefault();
+                List<TreatmentSession> sessions = new();
+                if (_sessionRepo != null)
+                {
+                    var allSessions = await _sessionRepo.GetAllAsync(ct);
+                    sessions = allSessions.Where(s => s.TreatmentCaseId == tCase.Id && !s.IsDeleted).OrderBy(s => s.SessionNumber).ToList();
+                }
+
+                List<TherapyAssignment> assignments = new();
+                if (_assignmentRepo != null)
+                {
+                    var allAssignments = await _assignmentRepo.GetAllAsync(ct);
+                    assignments = allAssignments.Where(a => a.TreatmentCaseId == tCase.Id && !a.IsDeleted).ToList();
+                }
+
+                List<MoodEntry> moods = new();
+                if (_moodRepo != null)
+                {
+                    var allMoods = await _moodRepo.GetAllAsync(ct);
+                    moods = allMoods.Where(m => (m.TreatmentCaseId == tCase.Id || m.PatientId == patient.Id || m.PatientId == patient.UserId) && !m.IsDeleted)
+                        .OrderByDescending(m => m.RecordedAt)
+                        .ToList();
+                }
+
+                var currentSession = sessions.FirstOrDefault(s => s.AppointmentId == appointmentId || (appt.TreatmentSessionId.HasValue && s.Id == appt.TreatmentSessionId.Value));
+                var nextSession = sessions.Where(s => (s.Status == TreatmentSessionStatus.Scheduled || s.Status == TreatmentSessionStatus.Planned) && s.PlannedStartTime > DateTime.Now)
+                    .OrderBy(s => s.PlannedStartTime)
+                    .FirstOrDefault();
+
+                var completedSessionsCount = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+                var totalSessionsCount = tCase.TotalSessions > 0 ? tCase.TotalSessions : Math.Max(sessions.Count, completedSessionsCount);
+
+                double progressPercent = tCase.OverallProgressPercent;
+                if (totalSessionsCount > 0)
+                {
+                    progressPercent = Math.Round((double)completedSessionsCount / totalSessionsCount * 100, 1);
+                }
+                else if (goals.Count > 0)
+                {
+                    progressPercent = Math.Round((double)goals.Count(g => g.Status == GoalStatus.Achieved) / goals.Count * 100, 1);
+                }
 
                 var latestMood = moods.FirstOrDefault();
                 string? moodSummary = latestMood != null
@@ -2835,39 +2963,14 @@ public class AppointmentService : IAppointmentService
                     })
                     .ToList();
 
-                var recentProgress = goals.SelectMany(g => g.ProgressHistory ?? new List<TreatmentGoalProgress>())
-                    .Where(p => !p.IsDeleted)
-                    .OrderByDescending(p => p.RecordedAt)
-                    .Take(3)
-                    .Select(p => new TreatmentGoalProgressContextDto
-                    {
-                        Id = p.Id,
-                        GoalTitle = p.Goal?.Title ?? "Goal Progress",
-                        SessionNumber = p.TreatmentSession?.SessionNumber,
-                        ProgressPercent = p.ProgressPercent,
-                        DoctorComment = p.DoctorComment,
-                        RecordedDate = p.RecordedAt
-                    })
-                    .ToList();
-
-                double progressPercent = tCase.OverallProgressPercent;
-                if (tCase.TotalSessions > 0)
-                {
-                    progressPercent = Math.Round((double)tCase.CompletedSessions / tCase.TotalSessions * 100, 1);
-                }
-                else if (goals.Count > 0)
-                {
-                    progressPercent = Math.Round((double)goals.Count(g => g.Status == GoalStatus.Achieved) / goals.Count * 100, 1);
-                }
-
                 result.TreatmentCaseContext = new AppointmentTreatmentCaseContextDto
                 {
                     TreatmentCaseId = tCase.Id,
                     CaseName = tCase.CaseName,
                     Status = tCase.Status.ToString(),
-                    CompletedSessions = tCase.CompletedSessions,
-                    TotalSessions = tCase.TotalSessions,
-                    CurrentSessionNumber = currentSession?.SessionNumber ?? (tCase.CompletedSessions + 1),
+                    CompletedSessions = completedSessionsCount,
+                    TotalSessions = totalSessionsCount,
+                    CurrentSessionNumber = currentSession?.SessionNumber ?? (completedSessionsCount + 1),
                     NextPlannedSessionDate = nextSession?.PlannedStartTime,
                     OverallProgressPercent = progressPercent,
                     GoalsAchieved = goals.Count(g => g.Status == GoalStatus.Achieved),
@@ -2876,7 +2979,7 @@ public class AppointmentService : IAppointmentService
                     HomeworkAssigned = assignments.Count,
                     LatestMoodSummary = moodSummary,
                     ActiveGoals = activeGoals,
-                    RecentGoalProgressHistory = recentProgress
+                    RecentGoalProgressHistory = new List<TreatmentGoalProgressContextDto>()
                 };
             }
         }

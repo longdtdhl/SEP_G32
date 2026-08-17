@@ -79,24 +79,59 @@
                         <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..." disabled="@packageExhausted"></textarea>
                     </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark">Session Date</label>
-                            <input type="date" name="sessionDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" disabled="@packageExhausted" />
+                    <div class="mb-4 p-3 rounded-4 bg-light border">
+                        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar2-plus text-primary" style="color:#0d9488 !important;"></i> Select Time Slot
+                        </h6>
+
+                        <!-- Date Picker Row -->
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-sm-7 col-md-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Select Date</label>
+                                <input type="date" id="sessionDatePicker" class="form-control" value="@(string.IsNullOrWhiteSpace(Model.Date) ? DateTime.Today.ToString("yyyy-MM-dd") : Model.Date)" min="@DateTime.Today.ToString("yyyy-MM-dd")" style="border-radius:10px;" onchange="loadDoctorSlots(this.value)" disabled="@packageExhausted" />
+                            </div>
+                            <div class="col-sm-5 col-md-4">
+                                <button type="button" class="btn btn-outline-primary w-100" style="border-radius:10px; border-color:#0d9488; color:#0d9488;" onclick="loadDoctorSlots(document.getElementById('sessionDatePicker').value)" disabled="@packageExhausted">
+                                    <i class="bi bi-search me-1"></i>View Slots
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark">Start Time</label>
-                            <input type="time" name="startTime" class="form-control" disabled="@packageExhausted" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark">End Time</label>
-                            <input type="time" name="endTime" class="form-control" disabled="@packageExhausted" />
+
+                        <!-- Available Time Slots Grid -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-dark mb-2" id="slotHeaderLabel">Available Time Slots for @(string.IsNullOrWhiteSpace(Model.Date) ? DateTime.Today.ToString("yyyy-MM-dd") : Model.Date)</label>
+                            <div id="slotsContainer" class="row g-2">
+                                @if (Model.AvailableSlots?.Slots != null && Model.AvailableSlots.Slots.Any(s => s.Status == 0))
+                                {
+                                    @foreach (var slot in Model.AvailableSlots.Slots.Where(s => s.Status == 0))
+                                    {
+                                        <div class="col-6 col-sm-4 col-md-3">
+                                            <input type="radio" class="btn-check" name="slotRadio" id="slot_@slot.Id" value="@slot.Id" data-start="@slot.StartTime" data-end="@slot.EndTime" onchange="onSlotSelected(this)" @(packageExhausted ? "disabled" : "") />
+                                            <label class="btn btn-outline-primary w-100 p-2.5 rounded-3 text-center" for="slot_@slot.Id" style="border-radius:10px;">
+                                                <div class="fw-bold fs-6">@slot.StartTime</div>
+                                                <div class="small opacity-75">until @slot.EndTime</div>
+                                            </label>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="col-12 p-3 text-center bg-white rounded-3 border border-dashed text-muted">
+                                        <i class="bi bi-calendar-x d-block fs-4 mb-1"></i>
+                                        <span class="small">No available time slots on this date. Select another date above or create slots in Schedule Management.</span>
+                                    </div>
+                                }
+                            </div>
+                            <input type="hidden" name="sessionDate" id="hiddenSessionDate" value="@(string.IsNullOrWhiteSpace(Model.Date) ? DateTime.Today.ToString("yyyy-MM-dd") : Model.Date)" />
+                            <input type="hidden" name="startTime" id="hiddenStartTime" />
+                            <input type="hidden" name="endTime" id="hiddenEndTime" />
+                            <input type="hidden" name="selectedSlotId" id="hiddenSlotId" />
                         </div>
                     </div>
 
                     <div class="alert alert-light border small rounded-3 mb-4">
                         <i class="bi bi-calendar-range me-1" style="color:#0d9488;"></i>
-                        To create an appointment for this session, schedule it from the case calendar or doctor schedule after saving.
+                        Selecting a time slot sets the planned schedule for this session.
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 pt-3 border-top">
@@ -110,3 +145,49 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    async function loadDoctorSlots(dateStr) {
+        if (!dateStr) return;
+        document.getElementById('slotHeaderLabel').textContent = 'Available Time Slots for ' + dateStr;
+        document.getElementById('hiddenSessionDate').value = dateStr;
+        document.getElementById('hiddenStartTime').value = '';
+        document.getElementById('hiddenEndTime').value = '';
+        document.getElementById('hiddenSlotId').value = '';
+        const container = document.getElementById('slotsContainer');
+        container.innerHTML = '<div class="col-12 py-3 text-center text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading time slots...</div>';
+
+        try {
+            const resp = await fetch(`?handler=Slots&date=${dateStr}&caseId=@Model.CaseId`);
+            const result = await resp.json();
+            if (result && result.slots && result.slots.length > 0) {
+                const openSlots = result.slots.filter(s => s.status === 0);
+                if (openSlots.length === 0) {
+                    container.innerHTML = `<div class="col-12 p-3 text-center bg-white rounded-3 border border-dashed text-muted"><i class="bi bi-calendar-x d-block fs-4 mb-1"></i>No available slots on this date</div>`;
+                    return;
+                }
+                container.innerHTML = openSlots.map(s => `
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <input type="radio" class="btn-check" name="slotRadio" id="slot_${s.id}" value="${s.id}" data-start="${s.startTime}" data-end="${s.endTime}" onchange="onSlotSelected(this)" />
+                        <label class="btn btn-outline-primary w-100 p-2.5 rounded-3 text-center" for="slot_${s.id}" style="border-radius:10px;">
+                            <div class="fw-bold fs-6">${s.startTime}</div>
+                            <div class="small opacity-75">until ${s.endTime}</div>
+                        </label>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `<div class="col-12 p-3 text-center bg-white rounded-3 border border-dashed text-muted"><i class="bi bi-calendar-x d-block fs-4 mb-1"></i>No available slots on this date</div>`;
+            }
+        } catch (e) {
+            container.innerHTML = `<div class="col-12 p-3 text-center text-danger">Failed to load slots.</div>`;
+        }
+    }
+
+    function onSlotSelected(radio) {
+        document.getElementById('hiddenSlotId').value = radio.value;
+        document.getElementById('hiddenStartTime').value = radio.dataset.start;
+        document.getElementById('hiddenEndTime').value = radio.dataset.end;
+    }
+</script>
+}

@@ -149,21 +149,36 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
     try
     {
-        Console.WriteLine("Applying Database Migrations...");
-        await context.Database.MigrateAsync();
         Console.WriteLine("Applying Schema Upgrades...");
         await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CRITICAL ERROR] Schema upgrades failed: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+    }
+
+    try
+    {
+        Console.WriteLine("Applying Database Migrations...");
+        await context.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[WARN] Database migrations step encountered: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+    }
+
+    try
+    {
         Console.WriteLine("Seeding Database...");
         await SeedData.SeedAsync(context);
         Console.WriteLine("Database initialization and seed complete!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[CRITICAL ERROR] Database initialization failed: {ex.Message}");
-        if (ex.InnerException != null)
-        {
-            Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
-        }
+        Console.WriteLine($"[CRITICAL ERROR] Database seeding failed: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
     }
 }
 
