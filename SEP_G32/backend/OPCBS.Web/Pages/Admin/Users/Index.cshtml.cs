@@ -42,7 +42,7 @@ public class IndexModel : PageModel
         var (success, error) = await _api.LockUserAsync(userId);
         if (success) TempData["Success"] = "User account locked successfully.";
         else TempData["Error"] = error ?? "Failed to lock user.";
-        return RedirectToPage(new { Search, Role, Page });
+        return RedirectToPage("/Admin/Users/Index", new { Search, Role, page = this.Page });
     }
 
     public async Task<IActionResult> OnPostUnlockAsync(Guid userId)
@@ -50,6 +50,6 @@ public class IndexModel : PageModel
         var (success, error) = await _api.UnlockUserAsync(userId);
         if (success) TempData["Success"] = "User account unlocked successfully.";
         else TempData["Error"] = error ?? "Failed to unlock user.";
-        return RedirectToPage(new { Search, Role, Page });
+        return RedirectToPage("/Admin/Users/Index", new { Search, Role, page = this.Page });
     }
 }

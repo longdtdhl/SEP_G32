@@ -1021,6 +1021,79 @@ public static class SeedData
             });
         }
 
+        // ═══════════════════════════════════════════════
+        // 16. AUDIT LOGS (Compliance & Security Records)
+        // ═══════════════════════════════════════════════
+        var hasAuditLogs = await context.AuditLogs.AnyAsync();
+        if (!hasAuditLogs)
+        {
+            var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@opcbs.com");
+            var adminId = adminUser?.Id;
+
+            context.AuditLogs.AddRange(
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "SystemConfig",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Create,
+                    ActionDescription = "Initial system security settings and consultation fee baselines established",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                },
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "Specialization",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Create,
+                    ActionDescription = "Core clinical psychological specializations seeded into platform",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                },
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "ServicePackage",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Create,
+                    ActionDescription = "Doctor tier subscription packages configured (Standard, Pro, Enterprise)",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                },
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "PsychometricTest",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Create,
+                    ActionDescription = "Published standardized diagnostic instruments: PHQ-9 & DASS-21",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                },
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "DoctorProfile",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Update,
+                    ActionDescription = "Approved clinical practitioner license and credentials for Dr. Sarah Jenkins",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                },
+                new AuditLog
+                {
+                    UserId = adminId,
+                    EntityName = "User",
+                    EntityId = Guid.NewGuid(),
+                    Action = AuditAction.Update,
+                    ActionDescription = "System Administrator performed system health verification and security audit",
+                    IpAddress = "127.0.0.1",
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OPCBS/1.0"
+                }
+            );
+        }
+
         await context.SaveChangesAsync();
     }
 }

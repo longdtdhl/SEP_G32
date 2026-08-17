@@ -456,17 +456,28 @@
 }
 else
 {
-    <div class="empty-state">
-        <i class="bi bi-calendar2-x d-block"></i>
-        <h5>No appointments found</h5>
-        <p>There are no appointments matching your filters. Try adjusting your search criteria.</p>
-        @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.DateFrom) || !string.IsNullOrEmpty(Model.DateTo))
-        {
-            <a asp-page="Index" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:8px;">
-                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
-            </a>
-        }
-    </div>
+    @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.DateFrom) || !string.IsNullOrEmpty(Model.DateTo))
+    {
+        <partial name="_EmptyState" model='new EmptyStateViewModel {
+            Illustration = "search",
+            Title = "No Appointments Found",
+            Message = "There are no appointments matching your search criteria. Try adjusting or clearing your filters.",
+            ActionText = "Clear Filters",
+            ActionUrl = "/Doctor/Appointments/Index",
+            ActionIcon = "bi-arrow-counterclockwise"
+        }' />
+    }
+    else
+    {
+        <partial name="_EmptyState" model='new EmptyStateViewModel {
+            Illustration = "calendar",
+            Title = "No Appointments Scheduled",
+            Message = "You currently have no patient appointments. Ensure your practice time slots are open for patient bookings.",
+            ActionText = "Manage Work Schedule",
+            ActionUrl = "/Doctor/Schedules/Index",
+            ActionIcon = "bi-calendar3"
+        }' />
+    }
 }
 
 <!-- Pagination -->

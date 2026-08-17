@@ -156,6 +156,7 @@ public interface IPsychometricApiService
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId);
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync();
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId);
+    Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetAllSubmissionsAsync(Guid? testId = null);
 }
 
 public interface INotificationApiService
@@ -244,4 +245,18 @@ public interface ITreatmentCaseApiService
     // Dashboard & Risk
     Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync();
     Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId);
+}
+
+public interface IDoctorRevenueApiService
+{
+    Task<(DoctorRevenueOverviewDto? Data, string? Error)> GetRevenueOverviewAsync(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? period = null);
+
+    Task<(List<DoctorRevenueTransactionDto> Data, PaginationDto? Pagination, string? Error)> GetTransactionsAsync(
+        string? search = null,
+        string? settlementStatus = null,
+        int page = 1,
+        int pageSize = 20);
 }

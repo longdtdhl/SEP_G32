@@ -542,6 +542,17 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
         var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/case/{caseId}");
         return (data ?? new(), error);
     }
+
+    public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetAllSubmissionsAsync(Guid? testId = null)
+    {
+        var url = $"{ApiRoutes.Psychometrics}/submissions";
+        if (testId.HasValue && testId.Value != Guid.Empty)
+        {
+            url += $"?testId={testId.Value}";
+        }
+        var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>(url);
+        return (data ?? new(), error);
+    }
 }
 
 // --- Notification ---
@@ -868,3 +879,39 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
         return (data, error);
     }
 }
+
+public class DoctorRevenueApiService : ApiServiceBase, IDoctorRevenueApiService
+{
+    public DoctorRevenueApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(DoctorRevenueOverviewDto? Data, string? Error)> GetRevenueOverviewAsync(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? period = null)
+    {
+        var queryParams = new List<string>();
+        if (startDate.HasValue) queryParams.Add($"startDate={startDate.Value:O}");
+        if (endDate.HasValue) queryParams.Add($"endDate={endDate.Value:O}");
+        if (!string.IsNullOrEmpty(period)) queryParams.Add($"period={Uri.EscapeDataString(period)}");
+
+        var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+        var (data, _, error) = await GetAsync<DoctorRevenueOverviewDto>($"api/v1/doctor/revenue/overview{queryString}");
+        return (data, error);
+    }
+
+    public async Task<(List<DoctorRevenueTransactionDto> Data, PaginationDto? Pagination, string? Error)> GetTransactionsAsync(
+        string? search = null,
+        string? settlementStatus = null,
+        int page = 1,
+        int pageSize = 20)
+    {
+        var queryParams = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrEmpty(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrEmpty(settlementStatus)) queryParams.Add($"settlementStatus={Uri.EscapeDataString(settlementStatus)}");
+
+        var queryString = "?" + string.Join("&", queryParams);
+        var (data, pagination, error) = await GetAsync<List<DoctorRevenueTransactionDto>>($"api/v1/doctor/revenue/transactions{queryString}");
+        return (data ?? new(), pagination, error);
+    }
+}
+

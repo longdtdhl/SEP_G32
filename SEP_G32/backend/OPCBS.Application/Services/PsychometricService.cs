@@ -594,6 +594,53 @@ public class PsychometricService : IPsychometricService
         return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(dtos.OrderByDescending(s => s.SubmittedAt).ToList());
     }
 
+    public async Task<ApiResponse<List<PsychometricSubmissionDto>>> GetAllSubmissionsAsync(Guid? testId = null, CancellationToken ct = default)
+    {
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+        var query = submissions.Where(s => !s.IsDeleted);
+        if (testId.HasValue && testId.Value != Guid.Empty)
+        {
+            query = query.Where(s => s.TestId == testId.Value);
+        }
+        var filtered = query.OrderByDescending(s => s.CreatedAt).ToList();
+
+        var tests = await _testRepo.GetAllAsync(ct);
+        var testDict = tests.ToDictionary(t => t.Id, t => t);
+
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var patientDict = allPatients.ToDictionary(p => p.Id, p => p);
+
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var userDict = allUsers.ToDictionary(u => u.Id, u => u);
+
+        var dtos = filtered.Select(s =>
+        {
+            string patientName = "Patient";
+            if (patientDict.TryGetValue(s.PatientId, out var p) && userDict.TryGetValue(p.UserId, out var u))
+            {
+                patientName = u.FullName ?? "Patient";
+            }
+
+            return new PsychometricSubmissionDto
+            {
+                Id = s.Id,
+                TestId = s.TestId,
+                TestTitle = testDict.TryGetValue(s.TestId, out var t) ? t.Title : "Assessment Result",
+                TestType = testDict.TryGetValue(s.TestId, out var t2) ? t2.TestType : "Screening",
+                PatientId = s.PatientId,
+                PatientName = patientName,
+                AppointmentId = s.AppointmentId,
+                TreatmentCaseId = s.TreatmentCaseId,
+                SubmittedAt = s.CreatedAt,
+                TotalScore = s.TotalScore,
+                ScoreDataJson = s.ScoreDataJson,
+                Interpretation = s.Interpretation
+            };
+        }).ToList();
+
+        return ApiResponse<List<PsychometricSubmissionDto>>.SuccessResponse(dtos);
+    }
+
     #region Diagnostic Interpretations
 
     private string GetPhq9Interpretation(int score)

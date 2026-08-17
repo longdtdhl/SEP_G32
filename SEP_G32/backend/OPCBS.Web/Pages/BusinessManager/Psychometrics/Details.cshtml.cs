@@ -18,6 +18,7 @@ public class DetailsModel : PageModel
     }
 
     public PsychometricTestDetailDto? Test { get; set; }
+    public List<PsychometricSubmissionDto> Submissions { get; set; } = new();
 
     [TempData]
     public string? SuccessMessage { get; set; }
@@ -35,6 +36,10 @@ public class DetailsModel : PageModel
         }
 
         Test = test;
+
+        var (submissions, _) = await _psychService.GetAllSubmissionsAsync(id);
+        Submissions = submissions;
+
         return Page();
     }
 
@@ -44,7 +49,7 @@ public class DetailsModel : PageModel
         if (!success)
         {
             ErrorMessage = error ?? "Failed to delete test.";
-            return RedirectToPage(new { id });
+            return RedirectToPage("/BusinessManager/Psychometrics/Details", new { id });
         }
 
         TempData["SuccessMessage"] = "Psychometric test deleted successfully.";

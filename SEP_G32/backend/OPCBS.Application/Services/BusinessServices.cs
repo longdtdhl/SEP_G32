@@ -1540,14 +1540,27 @@ public class ServicePackageService : IServicePackageService
         return ApiResponse<ServicePackageDto>.SuccessResponse(_mapper.Map<ServicePackageDto>(pkg), "Package updated");
     }
 
-    public async Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct)
+    public async Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct = default)
     {
         var pkg = await _pkgRepo.GetByIdAsync(packageId, ct);
         if (pkg == null) return ApiResponse.ErrorResponse("Package not found");
         pkg.IsActive = !pkg.IsActive;
+        pkg.UpdatedAt = DateTime.UtcNow;
         _pkgRepo.Update(pkg);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse(pkg.IsActive ? "Package activated" : "Package deactivated");
+    }
+
+    public async Task<ApiResponse> DeleteAsync(Guid packageId, CancellationToken ct = default)
+    {
+        var pkg = await _pkgRepo.GetByIdAsync(packageId, ct);
+        if (pkg == null) return ApiResponse.ErrorResponse("Package not found");
+        pkg.IsDeleted = true;
+        pkg.IsActive = false;
+        pkg.UpdatedAt = DateTime.UtcNow;
+        _pkgRepo.Update(pkg);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Package deleted successfully");
     }
 }
 
@@ -1560,14 +1573,15 @@ public class AdminService : IAdminService
     private readonly IRepository<Appointment> _apptRepo;
     private readonly IRepository<AuditLog> _auditRepo;
     private readonly IRepository<Specialization> _specRepo;
+    private readonly IRepository<DoctorSpecialization>? _docSpecRepo;
     private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IRepository<BlogPost> _blogRepo;
     private readonly IRepository<SystemConfig> _configRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public AdminService(IRepository<User> userRepo, IRepository<Role> roleRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper)
-    { _userRepo = userRepo; _roleRepo = roleRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; }
+    public AdminService(IRepository<User> userRepo, IRepository<Role> roleRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper, IRepository<DoctorSpecialization>? docSpecRepo = null)
+    { _userRepo = userRepo; _roleRepo = roleRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; _docSpecRepo = docSpecRepo; }
 
     public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct)
     {
@@ -1652,6 +1666,15 @@ public class AdminService : IAdminService
 
         user.Status = UserStatus.Locked;
         _userRepo.Update(user);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "User",
+            EntityId = user.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Locked user account '{user.Email}'",
+            NewValue = "Locked"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("User account locked successfully");
     }
@@ -1662,6 +1685,15 @@ public class AdminService : IAdminService
         if (user == null || user.IsDeleted) return ApiResponse.ErrorResponse("User not found");
         user.Status = UserStatus.Active;
         _userRepo.Update(user);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "User",
+            EntityId = user.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Unlocked user account '{user.Email}'",
+            NewValue = "Active"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("User account unlocked successfully");
     }
@@ -1690,19 +1722,77 @@ public class AdminService : IAdminService
             logs = logs.Where(l => l.EntityName.Contains(entityName, StringComparison.OrdinalIgnoreCase)).ToList();
         var total = logs.Count;
         var items = logs.OrderByDescending(l => l.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<AuditLogDto>>.SuccessResponse(_mapper.Map<List<AuditLogDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+
+        var users = (await _userRepo.GetAllAsync(ct)).ToDictionary(u => u.Id, u => u);
+        var dtos = items.Select(l =>
+        {
+            var dto = _mapper.Map<AuditLogDto>(l);
+            if (l.UserId.HasValue && users.TryGetValue(l.UserId.Value, out var u))
+            {
+                dto.UserEmail = u.Email;
+            }
+            return dto;
+        }).ToList();
+
+        return ApiResponse<List<AuditLogDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
     public async Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default)
     {
         var all = await _specRepo.GetAllAsync(ct);
-        return ApiResponse<List<SpecializationDto>>.SuccessResponse(_mapper.Map<List<SpecializationDto>>(all.Where(s => !s.IsDeleted).ToList()));
+        var activeSpecs = all.Where(s => !s.IsDeleted).OrderBy(s => s.Name).ToList();
+
+        var allDocSpecs = _docSpecRepo != null ? (await _docSpecRepo.GetAllAsync(ct)).Where(ds => !ds.IsDeleted).ToList() : new List<DoctorSpecialization>();
+
+        var allDoctorProfiles = (await _doctorRepo.GetAllAsync(ct)).Where(d => !d.IsDeleted).ToDictionary(d => d.Id, d => d);
+        var allUsers = (await _userRepo.GetAllAsync(ct)).ToDictionary(u => u.Id, u => u);
+
+        var dtos = new List<SpecializationDto>();
+        foreach (var spec in activeSpecs)
+        {
+            var doctorNames = new List<string>();
+            var specDocEntries = allDocSpecs.Where(ds => ds.SpecializationId == spec.Id).ToList();
+
+            foreach (var ds in specDocEntries)
+            {
+                if (allDoctorProfiles.TryGetValue(ds.DoctorProfileId, out var dp))
+                {
+                    if (allUsers.TryGetValue(dp.UserId, out var user) && !string.IsNullOrEmpty(user.FullName))
+                    {
+                        if (!doctorNames.Contains(user.FullName))
+                        {
+                            doctorNames.Add(user.FullName);
+                        }
+                    }
+                }
+            }
+
+            dtos.Add(new SpecializationDto
+            {
+                Id = spec.Id,
+                Name = spec.Name,
+                Description = spec.Description,
+                IconUrl = spec.IconUrl,
+                DoctorCount = doctorNames.Count,
+                Doctors = doctorNames
+            });
+        }
+
+        return ApiResponse<List<SpecializationDto>>.SuccessResponse(dtos);
     }
 
     public async Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var spec = new Specialization { Name = name, Description = description };
         await _specRepo.AddAsync(spec, ct);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Create,
+            ActionDescription = $"Created clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization created");
     }
@@ -1715,6 +1805,14 @@ public class AdminService : IAdminService
         spec.Description = description;
         spec.UpdatedAt = DateTime.UtcNow;
         _specRepo.Update(spec);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Updated clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization updated");
     }
@@ -1725,6 +1823,14 @@ public class AdminService : IAdminService
         if (spec == null) return ApiResponse.ErrorResponse("Specialization not found");
         spec.IsDeleted = true;
         _specRepo.Update(spec);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Delete,
+            ActionDescription = $"Deleted clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Specialization deleted successfully");
     }
@@ -1753,6 +1859,14 @@ public class AdminService : IAdminService
                 await _configRepo.AddAsync(new SystemConfig { Key = key, Value = value ?? string.Empty }, ct);
             }
         }
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "SystemConfig",
+            EntityId = Guid.NewGuid(),
+            Action = AuditAction.Update,
+            ActionDescription = "Updated application-wide system configurations"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Settings updated successfully");
     }

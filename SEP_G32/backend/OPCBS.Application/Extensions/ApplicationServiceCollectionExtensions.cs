@@ -43,6 +43,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<ITreatmentCaseService, TreatmentCaseService>();
         services.AddScoped<IViolationReportService, ViolationReportService>();
+        services.AddScoped<IDoctorRevenueService, DoctorRevenueService>();
 
         return services;
     }

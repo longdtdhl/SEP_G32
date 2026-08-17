@@ -157,13 +157,176 @@
                 </div>
             </div>
 
-            <div class="bm-card p-3.5" style="background:#f8fafc;">
-                <h6 class="fw-bold mb-2 text-dark" style="font-size:0.9rem;">
-                    <i class="bi bi-shield-check me-1.5" style="color:#10b981;"></i>Patient Availability
-                </h6>
-                <p class="text-muted mb-0" style="font-size:0.77rem; line-height:1.5;">
-                    This questionnaire is automatically available in the <strong>Patient Portal</strong> under <em>Psychological Tests</em> and can be completed by patients anytime or assigned prior to appointments.
-                </p>
+                @if (Model.Test.TestType == "PHQ9")
+                {
+                    <div class="bm-card p-3.5 mb-3" style="background:#fdfcfb; border-color:#fed7aa;">
+                        <h6 class="fw-bold mb-2 text-dark" style="font-size:0.88rem;">
+                            <i class="bi bi-calculator me-1.5 text-warning"></i>PHQ-9 Scoring Matrix
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless mb-0" style="font-size:0.75rem;">
+                                <tbody>
+                                    <tr><td class="text-muted py-0.5">0 – 4</td><td><span class="badge bg-success bg-opacity-10 text-success">None / Minimal</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">5 – 9</td><td><span class="badge bg-info bg-opacity-10 text-info">Mild Depression</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">10 – 14</td><td><span class="badge bg-warning bg-opacity-10 text-warning">Moderate Depression</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">15 – 19</td><td><span class="badge bg-danger bg-opacity-10 text-danger">Moderately Severe</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">20 – 27</td><td><span class="badge bg-danger text-white">Severe Depression</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else if (Model.Test.TestType == "DASS21")
+                {
+                    <div class="bm-card p-3.5 mb-3" style="background:#fdfcfb; border-color:#fed7aa;">
+                        <h6 class="fw-bold mb-2 text-dark" style="font-size:0.88rem;">
+                            <i class="bi bi-calculator me-1.5 text-warning"></i>DASS-21 Clinical Sub-Scales
+                        </h6>
+                        <p class="text-muted mb-2" style="font-size:0.73rem;">Scores are multiplied by 2 to align with DASS-42 norms.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless mb-0" style="font-size:0.73rem;">
+                                <thead class="text-muted border-bottom">
+                                    <tr><th>Severity</th><th>Depression</th><th>Anxiety</th><th>Stress</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="fw-semibold">Normal</td><td>0–9</td><td>0–7</td><td>0–14</td></tr>
+                                    <tr><td class="fw-semibold text-info">Mild</td><td>10–13</td><td>8–9</td><td>15–18</td></tr>
+                                    <tr><td class="fw-semibold text-warning">Moderate</td><td>14–20</td><td>10–14</td><td>19–25</td></tr>
+                                    <tr><td class="fw-semibold text-danger">Severe</td><td>21–27</td><td>15–19</td><td>26–33</td></tr>
+                                    <tr><td class="fw-semibold text-danger fw-bold">Extremely Severe</td><td>28+</td><td>20+</td><td>34+</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else if (Model.Test.TestType == "GAD7")
+                {
+                    <div class="bm-card p-3.5 mb-3" style="background:#fdfcfb; border-color:#fed7aa;">
+                        <h6 class="fw-bold mb-2 text-dark" style="font-size:0.88rem;">
+                            <i class="bi bi-calculator me-1.5 text-warning"></i>GAD-7 Scoring Matrix
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless mb-0" style="font-size:0.75rem;">
+                                <tbody>
+                                    <tr><td class="text-muted py-0.5">0 – 4</td><td><span class="badge bg-success bg-opacity-10 text-success">Minimal Anxiety</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">5 – 9</td><td><span class="badge bg-info bg-opacity-10 text-info">Mild Anxiety</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">10 – 14</td><td><span class="badge bg-warning bg-opacity-10 text-warning">Moderate Anxiety</span></td></tr>
+                                    <tr><td class="text-muted py-0.5">15 – 21</td><td><span class="badge bg-danger bg-opacity-10 text-danger">Severe Anxiety</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <div class="bm-card p-3.5" style="background:#f8fafc;">
+                    <h6 class="fw-bold mb-2 text-dark" style="font-size:0.9rem;">
+                        <i class="bi bi-shield-check me-1.5" style="color:#10b981;"></i>Patient Availability
+                    </h6>
+                    <p class="text-muted mb-0" style="font-size:0.77rem; line-height:1.5;">
+                        This questionnaire is automatically available in the <strong>Patient Portal</strong> under <em>Psychological Tests</em> and can be completed by patients anytime or assigned prior to appointments.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Patient Test Results & Submissions Section -->
+            <div class="col-12">
+            <div class="bm-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark" style="font-size:1.1rem;">
+                            <i class="bi bi-journal-check text-primary me-2"></i>Patient Test Results & Submissions (@Model.Submissions.Count)
+                        </h5>
+                        <p class="text-muted mb-0" style="font-size:0.8rem;">Clinical assessment scores and responses submitted by patients for this questionnaire</p>
+                    </div>
+                </div>
+
+                @if (Model.Submissions.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Patient Name</th>
+                                    <th>Submitted Date</th>
+                                    <th>Total Score</th>
+                                    <th>Clinical Interpretation</th>
+                                    <th>Sub-Scores / Breakdown</th>
+                                    <th class="text-end pe-3">Context</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sub in Model.Submissions)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold text-dark">
+                                            <i class="bi bi-person-circle text-muted me-1.5"></i>@sub.PatientName
+                                        </td>
+                                        <td class="text-muted">@sub.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                                        <td>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.85rem; padding:5px 10px;">
+                                                @sub.TotalScore pts
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle" style="font-size:0.75rem; white-space:normal; text-align:left; line-height:1.4;">
+                                                @sub.Interpretation
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">
+                                            @if (!string.IsNullOrEmpty(sub.ScoreDataJson))
+                                            {
+                                                try
+                                                {
+                                                    using var doc = System.Text.Json.JsonDocument.Parse(sub.ScoreDataJson);
+                                                    var parts = new List<string>();
+                                                    foreach (var prop in doc.RootElement.EnumerateObject())
+                                                    {
+                                                        parts.Add($"{prop.Name}: {prop.Value}");
+                                                    }
+                                                    <span>@string.Join(" | ", parts)</span>
+                                                }
+                                                catch
+                                                {
+                                                    <span>@sub.ScoreDataJson</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>—</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (sub.AppointmentId.HasValue)
+                                            {
+                                                <span class="badge bg-light text-secondary border" title="Linked to Appointment">
+                                                    <i class="bi bi-calendar-check me-1"></i>Appt
+                                                </span>
+                                            }
+                                            else if (sub.TreatmentCaseId.HasValue)
+                                            {
+                                                <span class="badge bg-light text-secondary border" title="Linked to Treatment Case">
+                                                    <i class="bi bi-folder me-1"></i>Case
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-muted border">Self-Assessment</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox display-6 d-block mb-2" style="color:#cbd5e1;"></i>
+                        <p class="mb-1 fw-medium text-dark" style="font-size:0.9rem;">No patient submissions recorded yet</p>
+                        <p class="mb-0 text-muted" style="font-size:0.8rem;">When patients take this psychometric test in the portal, their results and calculated scores will appear here automatically.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>

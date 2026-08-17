@@ -138,12 +138,12 @@
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.7rem;">Inactive</span>
                                 }
                             </td>
-                            <td class="text-muted small">@pkg.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="text-muted small">@(pkg.CreatedAt != default ? pkg.CreatedAt.ToString("dd/MM/yyyy") : "—")</td>
                             <td class="text-end pe-3">
                                 <a asp-page="Edit" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary me-1" style="border-radius:6px; font-size:0.75rem;" title="Edit Package"><i class="bi bi-pencil me-1"></i>Edit</a>
                                 <form method="post" asp-page-handler="Delete" class="d-inline">
                                     <input type="hidden" name="id" value="@pkg.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.75rem;" title="Deactivate Package" onclick="return confirm('Deactivate service package @pkg.Name?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.75rem;" title="Delete Package" onclick="return confirm('Are you sure you want to delete service package \'@pkg.Name\'?')">
                                         <i class="bi bi-trash me-1"></i>Delete
                                     </button>
                                 </form>

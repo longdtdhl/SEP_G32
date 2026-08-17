@@ -30,6 +30,7 @@ public class SpecializationDto
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
     public int DoctorCount { get; set; }
+    public List<string> Doctors { get; set; } = new();
 }
 
 public class CreateSpecializationDto

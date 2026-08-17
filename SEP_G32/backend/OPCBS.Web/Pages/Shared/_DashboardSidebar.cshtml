@@ -201,6 +201,9 @@
 
             @if (isVerified)
             {
+                <a class="sb-link @(currentPath.StartsWith("/doctor/revenue") ? "active" : "")" asp-page="/Doctor/Revenue/Index">
+                    <i class="bi bi-wallet2"></i><span>Earnings & Revenue</span>
+                </a>
                 <a class="sb-link @(currentPath.StartsWith("/doctor/subscriptions") || currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
                     <i class="bi bi-credit-card"></i><span>Plan & Billing</span>
                 </a>

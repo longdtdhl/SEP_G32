@@ -147,9 +147,14 @@ else
         <div class="tab-pane fade show active" id="activePane" role="tabpanel">
             @if (!Model.ActiveCases.Any())
             {
-                <div class="tc-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px;">
-                    <p>No active treatment cases@(string.IsNullOrEmpty(Model.Search) ? "." : " matching your search.")</p>
-                </div>
+                <partial name="_EmptyState" model='new EmptyStateViewModel {
+                    Illustration = "treatment",
+                    Title = "No Active Treatment Cases",
+                    Message = !string.IsNullOrEmpty(Model.Search) ? "No active treatment cases matching your search query." : "You do not have any active patient treatment cases. Create or assign a package to start a clinical roadmap.",
+                    ActionText = "Manage Treatment Packages",
+                    ActionUrl = "/Doctor/TreatmentPackages/Index",
+                    ActionIcon = "bi-box-seam"
+                }' />
             }
             else
             {
@@ -161,9 +166,15 @@ else
         <div class="tab-pane fade" id="historyPane" role="tabpanel">
             @if (!Model.HistoryCases.Any())
             {
-                <div class="tc-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px;">
-                    <p>No completed or archived cases@(string.IsNullOrEmpty(Model.Search) ? "." : " matching your search.")</p>
-                </div>
+                <partial name="_EmptyState" model='new EmptyStateViewModel {
+                    Illustration = "document",
+                    Title = "No Archived Treatment Cases",
+                    Message = !string.IsNullOrEmpty(Model.Search) ? "No archived treatment cases matching your search query." : "Completed, terminated, or transferred treatment cases will be safely archived here.",
+                    ActionText = "View Active Cases",
+                    ActionUrl = "#activePane",
+                    ActionIcon = "bi-arrow-left",
+                    CardStyle = true
+                }' />
             }
             else
             {

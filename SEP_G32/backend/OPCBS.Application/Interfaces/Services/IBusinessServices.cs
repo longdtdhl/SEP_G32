@@ -142,6 +142,8 @@ public class ServicePackageDto
     public int? MaxDailySlotsCapacity { get; set; }
     public bool IsActive { get; set; }
     public bool IsFeatured { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class CreateServicePackageDto
@@ -243,6 +245,8 @@ public class SpecializationDto
     public required string Name { get; set; }
     public string? Description { get; set; }
     public string? IconUrl { get; set; }
+    public int DoctorCount { get; set; }
+    public List<string> Doctors { get; set; } = new();
 }
 
 public class AuditLogDto
@@ -362,6 +366,7 @@ public interface IServicePackageService
     Task<ApiResponse<ServicePackageDto>> CreateAsync(CreateServicePackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<ServicePackageDto>> UpdateAsync(Guid packageId, CreateServicePackageDto dto, CancellationToken ct = default);
     Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct = default);
+    Task<ApiResponse> DeleteAsync(Guid packageId, CancellationToken ct = default);
 }
 
 /// <summary>

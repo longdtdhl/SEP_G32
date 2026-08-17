@@ -130,6 +130,15 @@ public class PsychometricsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>GET /api/v1/psychometrics/submissions - Get all patient submissions (Business Manager, Admin & Doctor)</summary>
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin},{RoleConstants.Doctor}")]
+    [HttpGet("submissions")]
+    public async Task<IActionResult> GetAllSubmissions([FromQuery] Guid? testId = null)
+    {
+        var result = await _psychService.GetAllSubmissionsAsync(testId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

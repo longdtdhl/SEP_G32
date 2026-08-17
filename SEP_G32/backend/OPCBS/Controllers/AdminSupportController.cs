@@ -210,12 +210,12 @@ public class ServicePackagesController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>DELETE /api/v1/service-packages/{id} — Delete/toggle package (Business Manager)</summary>
+    /// <summary>DELETE /api/v1/service-packages/{id} — Delete package (Business Manager)</summary>
     [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
     [HttpDelete("{packageId}")]
     public async Task<IActionResult> DeletePackage(Guid packageId)
     {
-        var result = await _pkgService.ToggleActiveAsync(packageId);
+        var result = await _pkgService.DeleteAsync(packageId);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 }

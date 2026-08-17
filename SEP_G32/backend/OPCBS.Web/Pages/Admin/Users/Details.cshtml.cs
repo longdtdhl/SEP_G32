@@ -26,7 +26,7 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.LockUserAsync(id);
         if (success) TempData["Success"] = "User locked.";
         else TempData["Error"] = error ?? "Failed to lock.";
-        return RedirectToPage(new { id });
+        return RedirectToPage("/Admin/Users/Details", new { id });
     }
 
     public async Task<IActionResult> OnPostUnlockAsync(Guid id)
@@ -34,6 +34,6 @@ public class DetailsModel : PageModel
         var (success, error) = await _api.UnlockUserAsync(id);
         if (success) TempData["Success"] = "User unlocked.";
         else TempData["Error"] = error ?? "Failed to unlock.";
-        return RedirectToPage(new { id });
+        return RedirectToPage("/Admin/Users/Details", new { id });
     }
 }

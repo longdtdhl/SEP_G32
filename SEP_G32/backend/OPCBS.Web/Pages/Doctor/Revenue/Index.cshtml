@@ -1,0 +1,611 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Revenue.IndexModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Revenue & Earnings";
+    Layout = "_DashboardLayout";
+
+    var overview = Model.Overview ?? new OPCBS.Web.DTOs.DoctorRevenueOverviewDto();
+    var timelineJson = JsonSerializer.Serialize(overview.Timeline.Select(t => new { label = t.DateLabel, gross = t.GrossRevenue, net = t.NetEarnings, sessions = t.SessionsCount }));
+}
+
+<style>
+    .rev-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .rev-kpi-card {
+        padding: 1.25rem 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .rev-kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+    .rev-kpi-blue::before { background: linear-gradient(180deg, #2563eb, #3b82f6); }
+    .rev-kpi-red::before { background: linear-gradient(180deg, #ef4444, #f87171); }
+    .rev-kpi-emerald::before { background: linear-gradient(180deg, #059669, #10b981); }
+    .rev-kpi-amber::before { background: linear-gradient(180deg, #d97706, #f59e0b); }
+
+    .rev-filter-pill {
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        color: #64748b;
+        background: #f1f5f9;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+    }
+    .rev-filter-pill:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+    .rev-filter-pill.active {
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    }
+    
+    .status-settled {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .status-pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .status-processing {
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .status-refunded {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .rev-card { border: none !important; box-shadow: none !important; }
+    }
+</style>
+
+<!-- ══ 1. HEADER SECTION ══ -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h1 class="fw-bold text-dark mb-0" style="font-size:1.45rem;">
+            <i class="bi bi-wallet2 text-primary me-2"></i>Revenue & Earnings
+        </h1>
+        <p class="text-muted small mb-0 mt-1">Track consultation revenue, payout cycles, and transaction history.</p>
+    </div>
+
+    <!-- Right Controls: Period Selector & Export -->
+    <div class="d-flex flex-wrap align-items-center gap-2 no-print">
+        <!-- Time Filter Dropdown / Pills -->
+        <div class="d-flex bg-white p-1 rounded-pill border shadow-sm gap-1">
+            <a href="?Period=7days" class="rev-filter-pill @(Model.Period == "7days" ? "active" : "")">7 Days</a>
+            <a href="?Period=30days" class="rev-filter-pill @(Model.Period == "30days" ? "active" : "")">30 Days</a>
+            <a href="?Period=90days" class="rev-filter-pill @(Model.Period == "90days" ? "active" : "")">90 Days</a>
+            <a href="?Period=year" class="rev-filter-pill @(Model.Period == "year" ? "active" : "")">This Year</a>
+            <a href="?Period=all" class="rev-filter-pill @(Model.Period == "all" ? "active" : "")">All Time</a>
+        </div>
+
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" style="font-size:0.8rem;">
+            <i class="bi bi-download me-1"></i>Export Statement
+        </button>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ══ 2. TOP 4 KPI MATRIX ══ -->
+<div class="row g-3 mb-4">
+    <!-- 1. Gross Revenue -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="rev-card rev-kpi-card rev-kpi-blue h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:0.75rem; letter-spacing:0.5px;">Gross Revenue</span>
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
+                    <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-1" style="font-size:1.65rem;">
+                @(overview.TotalGrossRevenue.ToString("N0")) <small class="fs-6 fw-normal text-muted">VND</small>
+            </h3>
+            <div class="d-flex align-items-center gap-1 mt-2">
+                <span class="text-muted" style="font-size:0.72rem;">Total consultation fees booked</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Platform Fee -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="rev-card rev-kpi-card rev-kpi-red h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:0.75rem; letter-spacing:0.5px;">Platform Fee (10%)</span>
+                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
+                    <i class="bi bi-percent text-danger fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-1" style="font-size:1.65rem;">
+                @(overview.PlatformFeeDeducted.ToString("N0")) <small class="fs-6 fw-normal text-muted">VND</small>
+            </h3>
+            <div class="d-flex align-items-center gap-1 mt-2">
+                <span class="text-muted" style="font-size:0.72rem;">Cloud video & infrastructure maintenance</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Net Earnings (NOT Estimated) -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="rev-card rev-kpi-card rev-kpi-emerald h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:0.75rem; letter-spacing:0.5px;">Net Earnings</span>
+                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
+                    <i class="bi bi-cash-stack text-success fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-1" style="font-size:1.65rem;">
+                @(overview.TotalNetEarnings.ToString("N0")) <small class="fs-6 fw-normal text-muted">VND</small>
+            </h3>
+            <div class="d-flex align-items-center gap-1 mt-2">
+                <span class="badge bg-success bg-opacity-10 text-success fw-bold" style="font-size:0.7rem;">
+                    <i class="bi bi-check2-circle me-0.5"></i>90% Take-Home
+                </span>
+                <span class="text-muted" style="font-size:0.72rem;">Credited directly to doctor</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Pending Settlement -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="rev-card rev-kpi-card rev-kpi-amber h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:0.75rem; letter-spacing:0.5px;">Pending Settlement</span>
+                <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
+                    <i class="bi bi-clock-history text-warning fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-1" style="font-size:1.65rem;">
+                @(overview.PendingSettlement.ToString("N0")) <small class="fs-6 fw-normal text-muted">VND</small>
+            </h3>
+            <div class="d-flex align-items-center gap-1 mt-2">
+                <span class="text-muted" style="font-size:0.72rem;">Settled to Bank: <strong>@(overview.SettledEarnings.ToString("N0")) VND</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 3. ROW 2: REVENUE OVERVIEW (LEFT) + SETTLEMENT INFORMATION (RIGHT) ══ -->
+<div class="row g-3 mb-4">
+    <!-- Left (Col-8): Revenue Overview Chart & Summary -->
+    <div class="col-12 col-lg-8">
+        <div class="rev-card p-3 p-md-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-activity text-primary me-2"></i>Revenue Overview
+                        </h6>
+                        <small class="text-muted">Trend of Net Earnings vs Gross Consultation Volume</small>
+                    </div>
+                    <!-- Metric Toggle Buttons -->
+                    <div class="btn-group btn-group-sm" role="group" style="border-radius:8px; overflow:hidden;">
+                        <button type="button" class="btn btn-primary" id="btn-show-net" onclick="toggleMetric('net')">Net Earnings</button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-show-gross" onclick="toggleMetric('gross')">Gross Volume</button>
+                    </div>
+                </div>
+
+                <div style="height: 250px; width: 100%; position: relative;">
+                    <canvas id="revenueTimelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Revenue Summary Breakdown Strip (Month, Quarter, Year) -->
+            <div class="row g-2 pt-3 mt-3 border-top text-center">
+                <div class="col-4 border-end">
+                    <div class="text-muted small" style="font-size:0.72rem;">COMPLETED SESSIONS</div>
+                    <div class="fw-bold text-dark fs-6 mt-0.5">@overview.CompletedSessionsCount <span class="small fw-normal text-muted">sessions</span></div>
+                </div>
+                <div class="col-4 border-end">
+                    <div class="text-muted small" style="font-size:0.72rem;">TOTAL NET REVENUE</div>
+                    <div class="fw-bold text-success fs-6 mt-0.5">@((overview.TotalNetEarnings / 1000000m).ToString("0.0#"))M <span class="small fw-normal text-muted">VND</span></div>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted small" style="font-size:0.72rem;">AVG / SESSION</div>
+                    <div class="fw-bold text-primary fs-6 mt-0.5">@((overview.AverageRevenuePerSession / 1000m).ToString("0.#"))k <span class="small fw-normal text-muted">VND</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right (Col-4): Settlement Information -->
+    <div class="col-12 col-lg-4">
+        <div class="rev-card p-3 p-md-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-bank text-success me-2"></i>Settlement Information
+                </h6>
+                <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-1" style="font-size:0.72rem;">
+                    <i class="bi bi-circle-fill text-success me-1" style="font-size:0.45rem;"></i>Active
+                </span>
+            </div>
+
+            <div class="p-3 rounded-3 mb-3 border bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                    <span class="text-muted small">Next Payout:</span>
+                    <span class="fw-bold text-dark fs-6">@overview.PayoutInfo.NextPayoutDate.ToString("MMM dd, yyyy")</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                    <span class="text-muted small">Payout Cycle:</span>
+                    <span class="badge bg-white text-dark border fw-medium" style="font-size:0.72rem;">Bi-weekly (15th & End of Month)</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Pending Amount:</span>
+                    <span class="fw-bold text-warning fs-6">@(overview.PendingSettlement.ToString("N0")) VND</span>
+                </div>
+            </div>
+
+            <div class="border rounded-3 p-3 mb-2 bg-white">
+                <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size:0.68rem; letter-spacing:0.4px;">
+                    Beneficiary Bank Account
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">Bank Name</small>
+                    <small class="fw-bold text-dark">@overview.PayoutInfo.BankName</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">Account Number</small>
+                    <small class="fw-semibold text-dark font-monospace">@overview.PayoutInfo.BankAccountNumber</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Beneficiary Name</small>
+                    <small class="fw-bold text-primary">@overview.PayoutInfo.BankAccountHolder</small>
+                </div>
+            </div>
+
+            <div class="text-muted small pt-2" style="font-size:0.72rem;">
+                <i class="bi bi-shield-lock me-1"></i>Automatic direct deposit via verified clearing system.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ 4. ROW 3: REVENUE TRANSACTIONS (LEFT COL-8) + REVENUE BY SERVICE (RIGHT COL-4) ══ -->
+<div class="row g-3 mb-4">
+    <!-- Left (Col-8): Revenue Transactions Table -->
+    <div class="col-12 col-lg-8">
+        <div class="rev-card h-100">
+            <div class="p-3 p-md-4 border-bottom bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-receipt text-primary me-2"></i>Revenue Transactions
+                    </h6>
+                    <small class="text-muted">Itemized audit ledger with gross fees and net earnings.</small>
+                </div>
+
+                <!-- Search & Status Filter -->
+                <form method="get" class="d-flex flex-wrap gap-2 no-print">
+                    <input type="hidden" name="Period" value="@Model.Period" />
+                    <input type="text" name="Search" value="@Model.Search" placeholder="Search booking or patient..." class="form-control form-control-sm" style="width:170px; border-radius:6px;" />
+                    <select name="Status" class="form-select form-select-sm" style="width:140px; border-radius:6px;">
+                        <option value="">All Status</option>
+                        <option value="Settled" selected="@(Model.Status == "Settled")">Settled</option>
+                        <option value="Pending Settlement" selected="@(Model.Status == "Pending Settlement")">Pending</option>
+                        <option value="Processing" selected="@(Model.Status == "Processing")">Processing</option>
+                        <option value="Refunded" selected="@(Model.Status == "Refunded")">Refunded</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-2"><i class="bi bi-funnel"></i></button>
+                    @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status))
+                    {
+                        <a href="?Period=@Model.Period" class="btn btn-outline-secondary btn-sm rounded-2"><i class="bi bi-x-circle"></i></a>
+                    }
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size:0.83rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Booking Code</th>
+                            <th>Date & Time</th>
+                            <th>Patient</th>
+                            <th>Service</th>
+                            <th class="text-end">Gross</th>
+                            <th class="text-end">Net Earned</th>
+                            <th class="text-center pe-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Transactions.Any())
+                        {
+                            @foreach (var tx in Model.Transactions)
+                            {
+                                var statusClass = tx.SettlementStatus switch
+                                {
+                                    "Settled" => "status-settled",
+                                    "Pending Settlement" => "status-pending",
+                                    "Processing" => "status-processing",
+                                    "Refunded" => "status-refunded",
+                                    _ => "bg-light text-secondary"
+                                };
+
+                                <tr>
+                                    <td class="ps-3">
+                                        <a asp-page="/Doctor/Appointments/Details" asp-route-id="@tx.Id" class="fw-bold font-monospace text-primary text-decoration-none d-block">
+                                            @tx.BookingCode
+                                        </a>
+                                        <a asp-page="/Doctor/Appointments/Details" asp-route-id="@tx.Id" class="text-primary text-decoration-none d-inline-flex align-items-center mt-0.5" style="font-size:0.72rem; font-weight:600;">
+                                            View Appointment <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </td>
+                                    <td class="text-muted" style="white-space:nowrap; font-size:0.78rem;">
+                                        @tx.AppointmentDate.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            @if (!string.IsNullOrEmpty(tx.PatientAvatarUrl))
+                                            {
+                                                <img src="@tx.PatientAvatarUrl" class="rounded-circle" style="width:22px;height:22px;object-fit:cover;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:22px;height:22px;">
+                                                    <i class="bi bi-person-fill text-secondary" style="font-size:0.65rem;"></i>
+                                                </div>
+                                            }
+                                            <span class="fw-semibold text-dark">@tx.PatientName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="text-dark fw-medium">@tx.ServiceType</span>
+                                            <span class="badge @(tx.ConsultationMode == "Online" ? "bg-info bg-opacity-10 text-info" : "bg-warning bg-opacity-10 text-warning") ms-1" style="font-size:0.65rem;">
+                                                @tx.ConsultationMode
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end fw-semibold text-dark">
+                                        @(tx.GrossAmount.ToString("N0")) <small class="text-muted">VND</small>
+                                    </td>
+                                    <td class="text-end fw-bold text-success">
+                                        +@(tx.NetAmount.ToString("N0")) <small class="text-muted">VND</small>
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <span class="badge @statusClass rounded-pill px-2 py-1" style="font-size:0.7rem; font-weight:600;">
+                                            @tx.SettlementStatus
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x d-block mb-2" style="font-size:2rem; color:#cbd5e1;"></i>
+                                    <h6 class="fw-bold mb-1">No transaction records found</h6>
+                                    <p class="small mb-0">Transactions will automatically be recorded as patient consultations are booked and completed.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
+            {
+                <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">Showing page @Model.Pagination.Page of @Model.Pagination.TotalPages (@Model.Pagination.TotalItems records)</small>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Pagination.Page ? "active" : "")">
+                                    <a class="page-link" href="?Period=@Model.Period&Search=@Model.Search&Status=@Model.Status&Page=@i">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right (Col-4): Revenue by Service -->
+    <div class="col-12 col-lg-4">
+        <div class="rev-card p-3 p-md-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-pie-chart text-primary me-2"></i>Revenue by Service
+                </h6>
+                <span class="badge bg-light text-dark border" style="font-size:0.7rem;">Distribution</span>
+            </div>
+
+            @if (overview.SourceBreakdown.Any())
+            {
+                <div class="d-flex flex-column gap-3 mb-4">
+                    @foreach (var src in overview.SourceBreakdown)
+                    {
+                        var barColor = src.SourceName.Contains("Online") ? "bg-primary" : (src.SourceName.Contains("Package") ? "bg-success" : "bg-info");
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark">@src.SourceName</span>
+                                <span class="fw-bold text-dark">@src.Percentage%</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                                <div class="progress-bar @barColor" style="width:@src.Percentage%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-1" style="font-size:0.72rem;">
+                                <span>@src.SessionCount sessions</span>
+                                <span>@(src.NetAmount.ToString("N0")) VND Net</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Clean default distribution presentation -->
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span class="fw-semibold text-dark"><i class="bi bi-camera-video me-1 text-primary"></i>Online Clinical Consultation</span>
+                            <span class="fw-bold text-dark">80%</span>
+                        </div>
+                        <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                            <div class="progress-bar bg-primary" style="width:80%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small mt-1" style="font-size:0.72rem;">
+                            <span>Direct Video Sessions</span>
+                            <span>@( (overview.TotalNetEarnings * 0.8m).ToString("N0") ) VND</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span class="fw-semibold text-dark"><i class="bi bi-box-seam me-1 text-success"></i>Treatment Packages</span>
+                            <span class="fw-bold text-dark">20%</span>
+                        </div>
+                        <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                            <div class="progress-bar bg-success" style="width:20%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small mt-1" style="font-size:0.72rem;">
+                            <span>Structured Therapy Care</span>
+                            <span>@( (overview.TotalNetEarnings * 0.2m).ToString("N0") ) VND</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Top Services List -->
+            @if (overview.TopServices.Any())
+            {
+                <div class="border-top pt-3">
+                    <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size:0.68rem; letter-spacing:0.4px;">
+                        Top Performing Services
+                    </div>
+                    @foreach (var top in overview.TopServices.Take(3))
+                    {
+                        <div class="d-flex justify-content-between align-items-center py-1.5 border-bottom" style="font-size:0.78rem;">
+                            <div class="d-flex align-items-center gap-1.5">
+                                <i class="bi bi-check-circle-fill text-primary" style="font-size:0.7rem;"></i>
+                                <span class="fw-medium text-dark">@top.ServiceName</span>
+                            </div>
+                            <span class="fw-semibold text-dark">@(top.AveragePrice.ToString("N0")) VND</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const timelineRaw = @Html.Raw(timelineJson);
+
+    let timelineChart = null;
+    let currentMetric = 'net';
+
+    function initTimelineChart() {
+        const ctx = document.getElementById('revenueTimelineChart');
+        if (!ctx) return;
+
+        const labels = timelineRaw.map(d => d.label);
+        const netData = timelineRaw.map(d => d.net);
+
+        timelineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Net Earnings (VND)',
+                    data: netData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    borderWidth: 2.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + Number(context.raw).toLocaleString() + ' VND';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return (value / 1000).toLocaleString() + 'k';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: { color: '#f1f5f9' }
+                    }
+                }
+            }
+        });
+    }
+
+    function toggleMetric(type) {
+        currentMetric = type;
+        const btnNet = document.getElementById('btn-show-net');
+        const btnGross = document.getElementById('btn-show-gross');
+
+        if (type === 'net') {
+            btnNet.className = 'btn btn-primary';
+            btnGross.className = 'btn btn-outline-secondary';
+            timelineChart.data.datasets[0].label = 'Net Earnings (VND)';
+            timelineChart.data.datasets[0].data = timelineRaw.map(d => d.net);
+            timelineChart.data.datasets[0].borderColor = '#10b981';
+            timelineChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.12)';
+        } else {
+            btnGross.className = 'btn btn-primary';
+            btnNet.className = 'btn btn-outline-secondary';
+            timelineChart.data.datasets[0].label = 'Gross Volume (VND)';
+            timelineChart.data.datasets[0].data = timelineRaw.map(d => d.gross);
+            timelineChart.data.datasets[0].borderColor = '#2563eb';
+            timelineChart.data.datasets[0].backgroundColor = 'rgba(37, 99, 235, 0.12)';
+        }
+        timelineChart.update();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initTimelineChart();
+    });
+</script>
+}

@@ -113,7 +113,30 @@
                                 </div>
                             </td>
                             <td class="text-muted">@(spec.Description ?? "—")</td>
-                            <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.75rem;">@spec.DoctorCount doctors</span></td>
+                            <td>
+                                <span class="badge @(spec.DoctorCount > 0 ? "bg-primary bg-opacity-10 text-primary" : "bg-light text-muted border") fw-bold mb-1" style="font-size:0.75rem;">
+                                    <i class="bi bi-person-badge me-1"></i>@spec.DoctorCount doctors
+                                </span>
+                                @if (spec.Doctors != null && spec.Doctors.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        @foreach (var doc in spec.Doctors.Take(3))
+                                        {
+                                            <span class="badge bg-light text-dark border" style="font-size:0.7rem; font-weight:500;">
+                                                <i class="bi bi-person me-0.5 text-muted"></i>@doc
+                                            </span>
+                                        }
+                                        @if (spec.Doctors.Count > 3)
+                                        {
+                                            <span class="badge bg-light text-muted border" style="font-size:0.7rem;">+@(spec.Doctors.Count - 3) more</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <small class="text-muted d-block" style="font-size:0.75rem;">No practitioners assigned</small>
+                                }
+                            </td>
                             <td>
                                 @if (spec.IsActive)
                                 {
