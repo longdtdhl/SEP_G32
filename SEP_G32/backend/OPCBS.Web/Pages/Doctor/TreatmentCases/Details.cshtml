@@ -1,0 +1,1045 @@
+@page "{id:guid?}"
+@model OPCBS.Web.Pages.Doctor.TreatmentCases.DetailsModel
+@{
+    ViewData["Title"] = Model.Case?.CaseName ?? "Treatment Case Details";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    /* ─── Header ─── */
+    .cd-header { background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:1.25rem 1.5rem; margin-bottom:1rem; }
+    .cd-title { font-size:1.35rem; font-weight:800; color:#0f172a; line-height:1.2; margin-bottom:0.5rem; }
+    .cd-meta { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; font-size:0.82rem; color:#64748b; }
+    .cd-person-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border:1px solid #dbe4ee; border-radius:6px; background:#fff; color:#1e293b; font-weight:600; font-size:0.82rem; text-decoration:none; }
+    .cd-person-chip:hover { border-color:#0d9488; color:#0f766e; }
+    .cd-person-chip i { color:#0d9488; }
+    .cd-dates { display:flex; flex-wrap:wrap; gap:0.5rem 1rem; margin-top:0.5rem; font-size:0.78rem; color:#64748b; }
+    .cd-actions { display:flex; align-items:center; gap:0.5rem; white-space:nowrap; }
+
+    /* ─── Strip ─── */
+    .cd-strip { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem 1rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.625rem; margin-bottom:1rem; }
+    .cd-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; font-size:0.78rem; color:#64748b; font-weight:600; white-space:nowrap; }
+    .cd-chip strong { color:#0f172a; }
+    .cd-chip i { color:#0d9488; font-size:0.82rem; }
+    .cd-prog-bar { flex-grow:1; min-width:100px; display:flex; align-items:center; gap:0.5rem; }
+    .cd-prog-bar .bar { background:#e2e8f0; border-radius:4px; height:7px; flex-grow:1; overflow:hidden; }
+    .cd-prog-bar .fill { height:100%; border-radius:4px; background:#0d9488; transition:width 0.5s; }
+
+    /* ─── Tab Nav ─── */
+    .cd-tab-nav { border-bottom:2px solid #e2e8f0; margin-bottom:1.25rem; display:flex; gap:0; overflow-x:auto; }
+    .cd-tab-nav .nav-link { border:none; border-bottom:2px solid transparent; border-radius:0; font-size:0.82rem; font-weight:600; color:#64748b; padding:0.625rem 1rem; margin-bottom:-2px; white-space:nowrap; transition:color 0.15s, border-color 0.15s; }
+    .cd-tab-nav .nav-link.active { color:#0d9488; border-bottom-color:#0d9488; }
+    .cd-tab-nav .nav-link:hover:not(.active) { color:#334155; }
+    .cd-tab-nav .badge { font-size:0.65rem; margin-left:4px; }
+
+    /* ─── Section Card ─── */
+    .cd-box { background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; margin-bottom:1rem; }
+    .cd-box-head { padding:0.875rem 1.25rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; }
+    .cd-box-title { font-size:0.88rem; font-weight:700; color:#1e293b; margin:0; }
+    .cd-box-title i { color:#0d9488; }
+    .cd-box-body { padding:1rem 1.25rem; }
+
+    /* ─── Table ─── */
+    .cd-table { font-size:0.84rem; margin-bottom:0; }
+    .cd-table th { font-size:0.72rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.03em; background:#fafbfc; border-bottom:1px solid #f1f5f9; padding:0.625rem 0.875rem; }
+    .cd-table td { padding:0.75rem 0.875rem; border-bottom:1px solid #f8fafc; vertical-align:middle; }
+    .cd-table tbody tr:hover { background:#f8fffe; }
+
+    /* ─── Badge ─── */
+    .cd-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 10px; border-radius:5px; font-size:0.7rem; font-weight:700; }
+    .cd-badge.active { background:#ccfbf1; color:#115e59; }
+    .cd-badge.hold { background:#fef3c7; color:#92400e; }
+    .cd-badge.completed { background:#dbeafe; color:#1e40af; }
+    .cd-badge.danger { background:#fee2e2; color:#991b1b; }
+    .cd-badge.muted { background:#f1f5f9; color:#64748b; }
+    .cd-badge.info { background:#e0f2fe; color:#0369a1; }
+
+    /* ─── Progress ─── */
+    .cd-progress { background:#e2e8f0; border-radius:3px; height:5px; overflow:hidden; }
+    .cd-progress-fill { height:100%; border-radius:3px; transition:width 0.5s; }
+
+    /* ─── Sub Nav ─── */
+    .cd-sub-nav { display:inline-flex; background:#f1f5f9; border-radius:7px; padding:3px; margin-bottom:1rem; }
+    .cd-sub-nav a { border-radius:5px; padding:5px 12px; font-size:0.78rem; font-weight:600; color:#64748b; text-decoration:none; transition:all 0.15s; }
+    .cd-sub-nav a.active { background:#fff; color:#0d9488; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+
+    /* ─── Timeline ─── */
+    .cd-tl { position:relative; padding-left:1.5rem; }
+    .cd-tl::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:2px; background:#e2e8f0; }
+    .cd-tl-item { position:relative; margin-bottom:1rem; }
+    .cd-tl-dot { position:absolute; left:-1.5rem; top:2px; width:14px; height:14px; border-radius:50%; background:#0d9488; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+
+    /* ─── Empty ─── */
+    .cd-empty { text-align:center; padding:2rem; color:#94a3b8; }
+    .cd-empty i { font-size:1.8rem; display:block; margin-bottom:0.5rem; color:#cbd5e1; }
+    .cd-empty p { font-size:0.82rem; margin:0; }
+
+    /* ─── Goal Card ─── */
+    .cd-goal { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; margin-bottom:0.75rem; transition:box-shadow 0.12s; }
+    .cd-goal:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+
+    @@media (max-width:991.98px) {
+        .cd-strip { flex-direction:column; align-items:stretch; }
+    }
+</style>
+
+<div class="container-fluid px-0 py-1">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+            <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Case == null)
+    {
+        <div class="alert alert-warning" style="border-radius:8px;">Treatment case not found.</div>
+        return;
+    }
+
+    @{
+        var c = Model.Case;
+        var overallProg = Model.Progress?.OverallProgressPercent ?? c.OverallProgressPercent;
+        var totalSessions = Model.Progress?.TotalSessions ?? c.TotalSessions;
+        var completedSessions = Model.Progress?.CompletedSessions ?? c.CompletedSessions;
+        var sessionProg = totalSessions > 0 ? completedSessions * 100 / totalSessions : 0;
+        var totalHomework = Model.Progress?.TotalAssignments ?? c.TotalHomeworkAssigned;
+        var completedHomework = Model.Progress?.CompletedAssignments ?? c.CompletedAssignmentCount;
+        var nextSession = Model.Sessions.Where(s => s.Status == 0 || s.Status == 6).OrderBy(s => s.PlannedStartTime).FirstOrDefault();
+        var pendingHomework = Model.HomeworkList.Where(h => h.Status == 1).ToList();
+    }
+
+    @if (c.Status == 2 || overallProg >= 100)
+    {
+        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#ecfdf5; color:#065f46; border-radius:10px;">
+            <i class="bi bi-trophy-fill fs-4" style="color:#d97706;"></i>
+            <div><strong>Congratulations!</strong> This treatment journey is complete. The case has been marked as done.</div>
+        </div>
+    }
+
+    <!-- ══ Case Header ══ -->
+    <div class="cd-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div style="min-width:0; flex:1;">
+                <a href="/Doctor/TreatmentCases" class="text-decoration-none text-muted d-inline-block mb-1" style="font-size:0.78rem;">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Treatment Cases
+                </a>
+                <h1 class="cd-title">@c.CaseName</h1>
+                <div class="cd-meta">
+                    <a href="@(Model.PatientRecordId.HasValue ? $"/Doctor/Patients/Details/{Model.PatientRecordId.Value}" : (c.PatientId != Guid.Empty ? $"/Doctor/Patients/Details/{c.PatientId}" : $"/Doctor/Patients?search={Uri.EscapeDataString(c.PatientName ?? string.Empty)}"))" class="cd-person-chip" title="View Patient Details">
+                        <i class="bi bi-person-fill"></i>@(c.PatientName ?? "Patient")
+                    </a>
+                    @{
+                        var sBadge = c.Status == 0 ? "active" : c.Status == 1 ? "hold" : c.Status == 2 ? "completed" : c.Status == 3 ? "danger" : "muted";
+                    }
+                    <span class="cd-badge @sBadge">@c.StatusText</span>
+                    @if (!string.Equals(c.PackageNameSnapshot ?? c.PackageName, c.CaseName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span><i class="bi bi-box-seam me-1" style="color:#0d9488;"></i>@(c.PackageNameSnapshot ?? c.PackageName)</span>
+                    }
+                </div>
+                <div class="cd-dates">
+                    <span><i class="bi bi-calendar3 me-1"></i>Started: @c.StartDate.ToString("MMM dd, yyyy")</span>
+                    @if (c.ExpectedEndDate.HasValue)
+                    {
+                        <span>→ Expected: @c.ExpectedEndDate.Value.ToString("MMM dd, yyyy")</span>
+                    }
+                </div>
+            </div>
+            <div class="cd-actions">
+                @if (c.Status == 0)
+                {
+                    <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:7px; font-size:0.8rem; font-weight:600;">
+                        <i class="bi bi-calendar-range me-1"></i>Schedule Session
+                    </a>
+                }
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" style="border-radius:7px; font-size:0.8rem;" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><a class="dropdown-item" style="font-size:0.82rem;" href="?id=@c.Id&tab=timeline"><i class="bi bi-clock-history me-2" style="color:#0d9488;"></i>Timeline</a></li>
+                        @if (c.Status == 0)
+                        {
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button type="button" class="dropdown-item text-danger" style="font-size:0.82rem;" data-bs-toggle="modal" data-bs-target="#closeCaseModal">
+                                    <i class="bi bi-x-circle me-2"></i>Close Case
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Progress Strip ══ -->
+    <div class="cd-strip">
+        <span class="cd-chip"><i class="bi bi-speedometer2"></i>Progress: <strong>@overallProg%</strong></span>
+        <span class="cd-chip"><i class="bi bi-camera-video"></i>Sessions: <strong>@completedSessions / @totalSessions</strong></span>
+        <span class="cd-chip"><i class="bi bi-bullseye"></i>Goals: <strong>@c.AchievedGoalCount / @c.GoalCount</strong></span>
+        <span class="cd-chip"><i class="bi bi-journal-check"></i>Homework: <strong>@completedHomework / @totalHomework</strong></span>
+        @if (nextSession?.PlannedStartTime != null)
+        {
+            <span class="cd-chip" style="border-color:#99f6e4; background:#f0fdfa;"><i class="bi bi-clock"></i>Next: <strong>@nextSession.PlannedStartTime.Value.ToString("MMM dd, HH:mm")</strong></span>
+        }
+        <div class="cd-prog-bar">
+            <div class="bar"><div class="fill" style="width:@(overallProg)%;"></div></div>
+        </div>
+    </div>
+
+    <!-- ══ Tab Navigation ══ -->
+    <nav class="nav cd-tab-nav">
+        <a class="nav-link @(Model.ActiveTab == "overview" ? "active" : "")" href="?id=@c.Id&tab=overview">
+            <i class="bi bi-grid-1x2 me-1"></i>Overview
+        </a>
+        <a class="nav-link @(Model.ActiveTab == "sessions" ? "active" : "")" href="?id=@c.Id&tab=sessions">
+            <i class="bi bi-calendar2-check me-1"></i>Sessions <span class="badge bg-light text-dark border">@Model.Sessions.Count</span>
+        </a>
+        <a class="nav-link @(Model.ActiveTab == "goals" ? "active" : "")" href="?id=@c.Id&tab=goals">
+            <i class="bi bi-bullseye me-1"></i>Goals <span class="badge bg-light text-dark border">@Model.Goals.Count</span>
+        </a>
+        <a class="nav-link @(Model.ActiveTab == "activities" ? "active" : "")" href="?id=@c.Id&tab=activities">
+            <i class="bi bi-journal-medical me-1"></i>Activities <span class="badge bg-light text-dark border">@(Model.HomeworkList.Count + Model.MoodEntries.Count)</span>
+        </a>
+        <a class="nav-link @(Model.ActiveTab == "timeline" ? "active" : "")" href="?id=@c.Id&tab=timeline">
+            <i class="bi bi-clock-history me-1"></i>Timeline <span class="badge bg-light text-dark border">@Model.Timeline.Count</span>
+        </a>
+    </nav>
+
+    <!-- ══════════════════════════ TAB CONTENT ══════════════════════════ -->
+    <div>
+        <!-- ── TAB 1: OVERVIEW ── -->
+        @if (Model.ActiveTab == "overview")
+        {
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <!-- Session Trajectory -->
+                    <div class="cd-box">
+                        <div class="cd-box-head">
+                            <h6 class="cd-box-title"><i class="bi bi-graph-up-arrow me-2"></i>Treatment Journey</h6>
+                        </div>
+                        <div class="cd-box-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:0.82rem;">
+                                <span class="text-muted">Session Completion</span>
+                                <strong style="color:#0d9488;">@completedSessions of @totalSessions (@sessionProg%)</strong>
+                            </div>
+                            <div style="background:#e2e8f0; border-radius:4px; height:10px; overflow:hidden; margin-bottom:1rem;">
+                                <div style="height:100%; width:@(sessionProg)%; background:#0d9488; border-radius:4px; transition:width 0.5s;"></div>
+                            </div>
+
+                            <!-- Active Goals -->
+                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;">
+                                <i class="bi bi-bullseye me-1" style="color:#0d9488;"></i>Active Goals
+                            </h6>
+                            @if (!Model.Goals.Any())
+                            {
+                                <p class="text-muted" style="font-size:0.8rem;">No goals set yet. <a href="?id=@c.Id&tab=goals" style="color:#0d9488;">Add your first goal</a>.</p>
+                            }
+                            else
+                            {
+                                @foreach (var g in Model.Goals.Take(3))
+                                {
+                                    var gColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                    <div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid #f1f5f9;">
+                                        <div class="flex-grow-1 min-width-0">
+                                            <div class="fw-semibold text-dark" style="font-size:0.82rem;">@g.Title</div>
+                                            <span class="text-muted" style="font-size:0.72rem;">@g.CategoryText · Target: @(g.TargetValue.HasValue ? $"{g.TargetValue} {g.Unit}" : "N/A")</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <div class="cd-progress" style="width:50px;">
+                                                <div class="cd-progress-fill" style="width:@(g.ProgressPercent)%; background:@gColor;"></div>
+                                            </div>
+                                            <span style="font-size:0.75rem; font-weight:700; color:@gColor; min-width:30px; text-align:right;">@(g.ProgressPercent)%</span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.Goals.Count > 3)
+                                {
+                                    <a href="?id=@c.Id&tab=goals" class="d-inline-block mt-2" style="font-size:0.78rem; color:#0d9488; font-weight:600; text-decoration:none;">View all @Model.Goals.Count goals →</a>
+                                }
+                            }
+
+                            <!-- Recent Sessions -->
+                            <h6 class="mt-3" style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;">
+                                <i class="bi bi-calendar-week me-1" style="color:#0d9488;"></i>Recent & Scheduled Sessions
+                            </h6>
+                            @if (!Model.Sessions.Any())
+                            {
+                                <p class="text-muted" style="font-size:0.8rem;">No sessions scheduled yet.</p>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table cd-table align-middle">
+                                        <thead><tr>
+                                            <th>#</th><th>Title</th><th>Planned</th><th>Status</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber).Take(4))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold text-muted">@s.SessionNumber</td>
+                                                    <td class="fw-semibold text-dark">@(s.Title ?? $"Session {s.SessionNumber}")</td>
+                                                    <td class="text-muted">@(s.PlannedStartTime?.ToString("MMM dd, HH:mm") ?? "Planned")</td>
+                                                    <td><span class="@s.StatusBadgeClass" style="font-size:0.7rem;">@s.StatusText</span></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Patient Profile Card -->
+                    <div class="cd-box">
+                        <div class="cd-box-head">
+                            <h6 class="cd-box-title"><i class="bi bi-person-badge me-2"></i>Patient Profile</h6>
+                        </div>
+                        <div class="cd-box-body">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width:42px; height:42px; background:#ccfbf1; color:#0f766e; font-weight:800; font-size:1.1rem; border:1px solid #99f6e4;">
+                                    @(string.IsNullOrEmpty(c.PatientName) ? "P" : c.PatientName[..1].ToUpper())
+                                </div>
+                                <div class="min-width-0 flex-grow-1">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size:0.9rem;">@(c.PatientName ?? "Patient")</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">Treatment Case Patient</div>
+                                </div>
+                            </div>
+                            <a href="@(Model.PatientRecordId.HasValue ? $"/Doctor/Patients/Details/{Model.PatientRecordId.Value}" : (c.PatientId != Guid.Empty ? $"/Doctor/Patients/Details/{c.PatientId}" : $"/Doctor/Patients?search={Uri.EscapeDataString(c.PatientName ?? string.Empty)}"))"
+                               class="btn btn-sm w-100 d-flex align-items-center justify-content-center gap-1.5"
+                               style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; border-radius:8px; font-weight:600; font-size:0.8rem;">
+                                <i class="bi bi-person-vcard"></i>View Patient Record Details
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Next Session -->
+                    <div class="cd-box">
+                        <div class="cd-box-head">
+                            <h6 class="cd-box-title"><i class="bi bi-clock me-2"></i>Next Session</h6>
+                        </div>
+                        <div class="cd-box-body">
+                            @if (nextSession?.PlannedStartTime != null)
+                            {
+                                <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:7px; padding:0.75rem;">
+                                    <div class="fw-bold text-dark" style="font-size:0.88rem;">@(nextSession.Title ?? $"Session {nextSession.SessionNumber}")</div>
+                                    <div style="font-size:0.82rem; color:#0d9488; font-weight:600; margin-top:4px;">
+                                        <i class="bi bi-calendar-event me-1"></i>@nextSession.PlannedStartTime.Value.ToString("dddd, MMM dd @ HH:mm")
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(nextSession.BookingCode))
+                                    {
+                                        <div class="text-muted mt-1" style="font-size:0.75rem;">Booking: <strong>@nextSession.BookingCode</strong></div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-2" style="font-size:0.82rem;">No upcoming session scheduled.</p>
+                                <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary w-100" style="border-radius:6px; font-size:0.78rem;">
+                                    <i class="bi bi-plus-lg me-1"></i>Generate Schedule
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Homework Pending -->
+                    <div class="cd-box">
+                        <div class="cd-box-head">
+                            <h6 class="cd-box-title"><i class="bi bi-journal-check me-2"></i>Homework Reviews</h6>
+                            @if (pendingHomework.Any())
+                            {
+                                <span class="cd-badge hold">@pendingHomework.Count pending</span>
+                            }
+                        </div>
+                        <div class="cd-box-body">
+                            @if (!pendingHomework.Any())
+                            {
+                                <p class="text-muted mb-0" style="font-size:0.82rem;">All homework reviewed.</p>
+                            }
+                            else
+                            {
+                                @foreach (var hw in pendingHomework.Take(3))
+                                {
+                                    <div class="py-2" style="border-bottom:1px solid #f1f5f9;">
+                                        <div class="fw-semibold text-dark" style="font-size:0.82rem;">@hw.Title</div>
+                                        <div class="text-muted" style="font-size:0.72rem;">Submitted: @(hw.SubmittedAt?.ToString("MMM dd") ?? "Recently")</div>
+                                        <a href="?id=@c.Id&tab=activities&subTab=homework" style="font-size:0.75rem; color:#0d9488; font-weight:600; text-decoration:none;">Review →</a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Mood Snapshot -->
+                    @if (Model.MoodEntries.Any())
+                    {
+                        <div class="cd-box">
+                            <div class="cd-box-head">
+                                <h6 class="cd-box-title"><i class="bi bi-emoji-smile me-2"></i>Mood Snapshot</h6>
+                            </div>
+                            <div class="cd-box-body">
+                                <div class="d-flex gap-1 align-items-end" style="height:50px;">
+                                    @foreach (var m in Model.MoodEntries.OrderBy(x => x.RecordedAt).TakeLast(14))
+                                    {
+                                        var h = Math.Max(6, m.MoodScore * 5);
+                                        var mc = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                        <div title="@m.RecordedAt.ToString("MMM dd") — @m.MoodScore/10" style="flex:1; min-width:4px; max-width:14px; height:@(h)px; background:@mc; border-radius:2px 2px 0 0; opacity:0.75;"></div>
+                                    }
+                                </div>
+                                <div class="text-muted text-end mt-1" style="font-size:0.68rem;">Last entries</div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Package Info -->
+                    @if (!string.IsNullOrEmpty(c.PackageDescriptionSnapshot) || c.DurationDaysSnapshot > 0)
+                    {
+                        <div class="cd-box">
+                            <div class="cd-box-head">
+                                <h6 class="cd-box-title"><i class="bi bi-box-seam me-2"></i>Package Details</h6>
+                            </div>
+                            <div class="cd-box-body" style="font-size:0.82rem;">
+                                @if (!string.IsNullOrEmpty(c.PackageDescriptionSnapshot))
+                                {
+                                    <p class="text-muted mb-2">@c.PackageDescriptionSnapshot</p>
+                                }
+                                <div class="row g-2 text-muted" style="font-size:0.78rem;">
+                                    <div class="col-6">Sessions: <strong class="text-dark">@c.TotalSessionsSnapshot</strong></div>
+                                    <div class="col-6">Duration: <strong class="text-dark">@c.DurationDaysSnapshot days</strong></div>
+                                    @if (c.RecommendedSessionsPerWeekSnapshot > 0)
+                                    {
+                                        <div class="col-6">Per week: <strong class="text-dark">@c.RecommendedSessionsPerWeekSnapshot</strong></div>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(c.TargetOutcomesSnapshot))
+                                {
+                                    <div class="mt-2 pt-2 border-top" style="font-size:0.78rem;">
+                                        <strong class="text-dark">Target Outcomes:</strong>
+                                        <p class="text-muted mb-0">@c.TargetOutcomesSnapshot</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ── TAB 2: SESSIONS ── -->
+        @if (Model.ActiveTab == "sessions")
+        {
+            <div class="cd-box">
+                <div class="cd-box-head">
+                    <h6 class="cd-box-title"><i class="bi bi-calendar2-check me-2"></i>Treatment Sessions</h6>
+                    @if (c.Status == 0)
+                    {
+                        <a href="/Doctor/TreatmentCases/Sessions/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                            <i class="bi bi-plus-lg me-1"></i>Add Session
+                        </a>
+                    }
+                </div>
+                @if (!Model.Sessions.Any())
+                {
+                    <div class="cd-empty">
+                        <i class="bi bi-calendar-x"></i>
+                        <p>No sessions created yet</p>
+                        <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Generate Schedule</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table cd-table align-middle">
+                            <thead><tr>
+                                <th>#</th><th>Title</th><th>Planned Time</th><th>Booking</th><th>Record</th><th>Status</th><th class="text-end">Actions</th>
+                            </tr></thead>
+                            <tbody>
+                                @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
+                                {
+                                    <tr>
+                                        <td class="fw-bold text-muted">@s.SessionNumber</td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">@(s.Title ?? $"Session {s.SessionNumber}")</div>
+                                            @if (!string.IsNullOrEmpty(s.Description))
+                                            {
+                                                <div class="text-muted" style="font-size:0.75rem;">@s.Description</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (s.PlannedStartTime.HasValue)
+                                            {
+                                                <span><i class="bi bi-clock me-1" style="color:#0d9488;"></i>@s.PlannedStartTime.Value.ToString("MMM dd, HH:mm")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="cd-badge muted">No Date</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(s.BookingCode))
+                                            {
+                                                <code style="font-size:0.75rem; background:#f1f5f9; padding:2px 6px; border-radius:4px;">@s.BookingCode</code>
+                                            }
+                                            else { <span class="text-muted">—</span> }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(s.SessionSummary))
+                                            {
+                                                <span class="cd-badge active"><i class="bi bi-check-lg"></i>Recorded</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted" style="font-size:0.75rem;">Pending</span>
+                                            }
+                                        </td>
+                                        <td><span class="@s.StatusBadgeClass" style="font-size:0.7rem;">@s.StatusText</span></td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-1">
+                                                <form method="post" asp-page-handler="DeleteSession" asp-route-caseId="@c.Id" asp-route-sessionId="@s.Id" onsubmit="return confirm('Delete this session?');" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:5px; font-size:0.72rem; padding:3px 8px;" title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── TAB 3: GOALS & OUTCOMES ── -->
+        @if (Model.ActiveTab == "goals")
+        {
+            <div class="cd-box">
+                <div class="cd-box-head">
+                    <h6 class="cd-box-title"><i class="bi bi-bullseye me-2"></i>Treatment Goals</h6>
+                    <a href="/Doctor/TreatmentCases/Goals/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                        <i class="bi bi-plus-lg me-1"></i>Add Goal
+                    </a>
+                </div>
+
+                @if (!Model.Goals.Any())
+                {
+                    <div class="cd-empty">
+                        <i class="bi bi-bullseye"></i>
+                        <p>No goals created yet. Set therapeutic milestones to track progress.</p>
+                        <a href="/Doctor/TreatmentCases/Goals/Create?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Add First Goal</a>
+                    </div>
+                }
+                else
+                {
+                    <!-- Overall Goal Progress -->
+                    var avgGoalProgress = Model.Goals.Any() ? (int)Model.Goals.Average(g => g.ProgressPercent) : 0;
+                    var achievedCount = Model.Goals.Count(g => g.Status == 2);
+                    var draftCount = Model.Goals.Count(g => g.Status == 5);
+                    <div style="padding:0.875rem 1.25rem; border-bottom:1px solid #f1f5f9; background:#fafbfc;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-size:0.82rem; font-weight:600; color:#1e293b;">Overall Goal Progress</span>
+                            <div class="d-flex gap-3" style="font-size:0.78rem;">
+                                <span style="color:#0d9488; font-weight:700;">@achievedCount/@Model.Goals.Count achieved</span>
+                                @if (draftCount > 0) { <span class="text-muted">@draftCount draft</span> }
+                                <span class="text-muted">Avg @avgGoalProgress%</span>
+                            </div>
+                        </div>
+                        <div style="background:#e2e8f0; border-radius:4px; height:8px; overflow:hidden;">
+                            <div style="height:100%; width:@(avgGoalProgress)%; background:#0d9488; border-radius:4px; transition:width 0.5s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Goal List -->
+                    <div style="padding:1rem 1.25rem;">
+                        @foreach (var g in Model.Goals.OrderBy(x => x.OrderIndex))
+                        {
+                            var gColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                            var isOverdue = g.TargetDate.HasValue && g.TargetDate.Value < DateTime.UtcNow && g.Status != 2;
+                            var daysToDeadline = g.TargetDate.HasValue ? (g.TargetDate.Value - DateTime.UtcNow).Days : (int?)null;
+                            var goalExpandId = $"goal-expand-{g.Id.ToString("N").Substring(0,8)}";
+
+                            <div class="cd-goal" style="@(g.Status == 5 ? "opacity:0.7; border-style:dashed;" : "")">
+                                <!-- Goal Header -->
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div style="min-width:0; flex:1;">
+                                        <div class="d-flex gap-2 align-items-center flex-wrap mb-1">
+                                            <span class="@g.PriorityBadgeClass" style="font-size:0.68rem;">@g.PriorityText</span>
+                                            <span class="@g.StatusBadgeClass" style="font-size:0.68rem;">@g.StatusText</span>
+                                            <span class="text-muted" style="font-size:0.72rem;">@g.CategoryText</span>
+                                            @if (g.Details.Any())
+                                            {
+                                                <span class="text-muted" style="font-size:0.68rem;"><i class="bi bi-list-check"></i> @g.Details.Count(d => d.Status == 2)/@g.Details.Count milestones</span>
+                                            }
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0" style="font-size:0.92rem;">@g.Title</h6>
+                                    </div>
+                                    <span style="font-size:1.1rem; font-weight:700; color:@gColor;">@(g.ProgressPercent)%</span>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(g.Description))
+                                {
+                                    <p class="text-muted mb-2" style="font-size:0.8rem;">@g.Description</p>
+                                }
+
+                                <!-- Progress bar + metrics -->
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between" style="font-size:0.75rem; color:#64748b; margin-bottom:3px;">
+                                        <span>Current: <strong class="text-dark">@(g.CurrentValue.HasValue ? $"{g.CurrentValue} {g.Unit}" : "N/A")</strong></span>
+                                        <span>Target: <strong class="text-dark">@(g.TargetValue.HasValue ? $"{g.TargetValue} {g.Unit}" : "N/A")</strong></span>
+                                    </div>
+                                    <div style="background:#e2e8f0; border-radius:3px; height:6px; overflow:hidden;">
+                                        <div style="height:100%; width:@(g.ProgressPercent)%; background:@gColor; border-radius:3px; transition:width 0.5s;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Due date + expand toggle -->
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="font-size:0.75rem; color:#64748b;">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        @if (g.TargetDate.HasValue)
+                                        {
+                                            if (isOverdue) { <span class="cd-badge danger"><i class="bi bi-exclamation-triangle"></i> Overdue (@g.TargetDate.Value.ToString("MMM dd"))</span> }
+                                            else if (daysToDeadline <= 3) { <span class="cd-badge hold"><i class="bi bi-clock"></i> Due in @daysToDeadline day(s)</span> }
+                                            else { <span><i class="bi bi-calendar3 me-1"></i>Due: @g.TargetDate.Value.ToString("MMM dd, yyyy")</span> }
+                                        }
+                                        @if (!string.IsNullOrEmpty(g.DoctorNotes)) { <span class="text-muted"><i class="bi bi-chat-left-text me-1"></i>Has notes</span> }
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;" type="button" data-bs-toggle="collapse" data-bs-target="#@goalExpandId">
+                                        <i class="bi bi-chevron-expand me-1"></i>Details
+                                    </button>
+                                </div>
+
+                                <!-- ═══ Expandable Detail Panel ═══ -->
+                                <div class="collapse mt-3 pt-3 border-top" id="@goalExpandId">
+
+                                    <!-- Milestones (GoalDetails) -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-list-check me-1" style="color:#0d9488;"></i>Milestones</h6>
+                                            <button class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.7rem; padding:2px 8px;" type="button" data-bs-toggle="collapse" data-bs-target="#addMilestone-@g.Id"><i class="bi bi-plus"></i></button>
+                                        </div>
+                                        <div class="collapse mb-2" id="addMilestone-@g.Id">
+                                            <form method="post" asp-page-handler="CreateGoalDetail" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
+                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-md-6"><input name="title" class="form-control form-control-sm" placeholder="Milestone title *" required style="border-radius:5px;" /></div>
+                                                    <div class="col-md-3"><input name="estimatedSessions" type="number" min="1" class="form-control form-control-sm" placeholder="Est. sessions" style="border-radius:5px;" /></div>
+                                                    <div class="col-md-3"><input name="orderIndex" type="number" min="0" class="form-control form-control-sm" placeholder="Order" style="border-radius:5px;" /></div>
+                                                </div>
+                                                <textarea name="description" class="form-control form-control-sm mb-2" rows="1" placeholder="Description (optional)" style="border-radius:5px;"></textarea>
+                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Add Milestone</button>
+                                            </form>
+                                        </div>
+                                        @if (g.Details.Any())
+                                        {
+                                            @foreach (var d in g.Details.OrderBy(x => x.OrderIndex))
+                                            {
+                                                <div class="d-flex align-items-start gap-2 py-2" style="border-bottom:1px solid #f8fafc;">
+                                                    <div style="flex-shrink:0; margin-top:2px;">
+                                                        @if (d.Status == 2) { <i class="bi bi-check-circle-fill" style="color:#10b981;"></i> }
+                                                        else if (d.Status == 1) { <i class="bi bi-arrow-right-circle-fill" style="color:#1d4ed8;"></i> }
+                                                        else { <i class="bi bi-circle" style="color:#cbd5e1;"></i> }
+                                                    </div>
+                                                    <div class="flex-grow-1" style="min-width:0;">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="fw-semibold text-dark" style="font-size:0.82rem;">@d.Title</span>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="@d.StatusBadgeClass" style="font-size:0.65rem;">@d.StatusText</span>
+                                                                @if (d.EstimatedSessions.HasValue) { <span class="text-muted" style="font-size:0.68rem;">~@d.EstimatedSessions sess</span> }
+                                                            </div>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(d.Description)) { <div class="text-muted" style="font-size:0.72rem;">@d.Description</div> }
+                                                        @if (d.Sessions.Any()) { <div class="mt-1" style="font-size:0.68rem; color:#0d9488;"><i class="bi bi-link-45deg"></i> Linked to @d.Sessions.Count session(s)</div> }
+                                                        @if (d.Status != 2)
+                                                        {
+                                                            <div class="d-flex gap-1 mt-1">
+                                                                @if (d.Status == 0) { <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><input type="hidden" name="status" value="1" /><button type="submit" class="btn btn-sm btn-outline-primary" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Start</button></form> }
+                                                                @if (d.Status == 1) { <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><input type="hidden" name="status" value="2" /><button type="submit" class="btn btn-sm btn-outline-success" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Complete</button></form> }
+                                                                <form method="post" asp-page-handler="DeleteGoalDetail" class="d-inline" onsubmit="return confirm('Delete this milestone?');"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;"><i class="bi bi-trash3"></i></button></form>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        else { <p class="text-muted mb-0" style="font-size:0.75rem;">No milestones defined yet.</p> }
+                                    </div>
+
+                                    <!-- Success Criteria -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-check2-square me-1" style="color:#0d9488;"></i>Success Criteria</h6>
+                                            <button class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.7rem; padding:2px 8px;" type="button" data-bs-toggle="collapse" data-bs-target="#addCriteria-@g.Id"><i class="bi bi-plus"></i></button>
+                                        </div>
+                                        <div class="collapse mb-2" id="addCriteria-@g.Id">
+                                            <form method="post" asp-page-handler="CreateSuccessCriteria" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
+                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-md-4"><select name="criteriaType" class="form-select form-select-sm" style="border-radius:5px;"><option value="0">Progress %</option><option value="1">Homework Completion</option><option value="2">Attendance</option><option value="3">Doctor Approval</option><option value="4">Assessment Score</option><option value="99">Custom</option></select></div>
+                                                    <div class="col-md-3"><select name="operatorType" class="form-select form-select-sm" style="border-radius:5px;"><option value="1">&gt;= (at least)</option><option value="0">&gt; (greater)</option><option value="3">&lt;= (at most)</option><option value="4">= (exact)</option></select></div>
+                                                    <div class="col-md-2"><input name="targetValue" type="number" step="any" class="form-control form-control-sm" placeholder="Target" style="border-radius:5px;" /></div>
+                                                    <div class="col-md-3"><input name="description" class="form-control form-control-sm" placeholder="Description" style="border-radius:5px;" /></div>
+                                                </div>
+                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Add Criteria</button>
+                                            </form>
+                                        </div>
+                                        @if (g.SuccessCriteria.Any())
+                                        {
+                                            @foreach (var sc in g.SuccessCriteria)
+                                            {
+                                                var scPassed = sc.IsPassed;
+                                                var scColor = scPassed ? "#10b981" : "#d97706";
+                                                <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #f8fafc; font-size:0.78rem;">
+                                                    <i class="bi @(scPassed ? "bi-check-circle-fill" : "bi-exclamation-circle")" style="color:@scColor; flex-shrink:0;"></i>
+                                                    <div class="flex-grow-1">
+                                                        <span class="fw-semibold text-dark">@sc.CriteriaTypeText</span>
+                                                        @if (!string.IsNullOrEmpty(sc.Description)) { <span class="text-muted ms-1">- @sc.Description</span> }
+                                                        <div class="text-muted" style="font-size:0.72rem;">
+                                                            Current: <strong>@(sc.CurrentValue?.ToString() ?? "N/A")</strong> @sc.OperatorText Target: <strong>@(sc.TargetValue?.ToString() ?? "N/A")</strong>
+                                                            @if (sc.IsRequired) { <span class="cd-badge danger" style="font-size:0.6rem;">Required</span> }
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex gap-1 flex-shrink-0">
+                                                        <details><summary class="btn btn-sm btn-outline-primary" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Evaluate</summary>
+                                                            <form method="post" asp-page-handler="EvaluateSuccessCriteria" class="mt-1 p-2 border rounded-2 bg-light" style="min-width:180px; font-size:0.75rem;">
+                                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="criteriaId" value="@sc.Id" />
+                                                                <input name="currentValue" type="number" step="any" class="form-control form-control-sm mb-1" placeholder="Current value" style="border-radius:4px;" />
+                                                                <button type="submit" class="btn btn-sm w-100" style="background:#0d9488; color:white; border-radius:4px; font-size:0.7rem;">Save</button>
+                                                            </form>
+                                                        </details>
+                                                        <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Remove this criteria?');"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="criteriaId" value="@sc.Id" /><button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;"><i class="bi bi-trash3"></i></button></form>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        else { <p class="text-muted mb-0" style="font-size:0.75rem;">No success criteria defined.</p> }
+                                    </div>
+
+                                    <!-- Record Progress (inline) -->
+                                    <div class="mb-3">
+                                        <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;"><i class="bi bi-graph-up me-1" style="color:#0d9488;"></i>Record Progress</h6>
+                                        <form method="post" asp-page-handler="RecordGoalProgress" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
+                                            <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-2"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Progress %</label><input type="number" name="progressPercent" class="form-control form-control-sm" min="0" max="100" value="@g.ProgressPercent" required style="border-radius:5px;" /></div>
+                                                <div class="col-md-2"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Value @(!string.IsNullOrEmpty(g.Unit) ? $"({g.Unit})" : "")</label><input type="number" step="any" name="currentValue" class="form-control form-control-sm" value="@g.CurrentValue" style="border-radius:5px;" /></div>
+                                                <div class="col-md-3"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Milestone</label><select name="goalDetailId" class="form-select form-select-sm" style="border-radius:5px;"><option value="">-- None --</option>@foreach (var d in g.Details.Where(x => x.Status != 2).OrderBy(x => x.OrderIndex)) { <option value="@d.Id">@d.Title</option> }</select></div>
+                                                <div class="col-md-5"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Comment</label><input type="text" name="doctorComment" class="form-control form-control-sm" placeholder="Clinical observation..." style="border-radius:5px;" /></div>
+                                            </div>
+                                            <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Save Progress</button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Progress History -->
+                                    @if (g.ProgressHistory.Any())
+                                    {
+                                        <div>
+                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;"><i class="bi bi-clock-history me-1" style="color:#0d9488;"></i>Progress Log (@g.ProgressHistory.Count)</h6>
+                                            <div class="table-responsive">
+                                                <table class="table cd-table" style="font-size:0.75rem;">
+                                                    <thead><tr><th>Date</th><th>Progress</th><th>Value</th><th>Milestone</th><th>Comment</th></tr></thead>
+                                                    <tbody>
+                                                        @foreach (var ph in g.ProgressHistory.OrderByDescending(p => p.RecordedAt).Take(10))
+                                                        {
+                                                            var phDetail = ph.GoalDetailId.HasValue ? g.Details.FirstOrDefault(d => d.Id == ph.GoalDetailId) : null;
+                                                            <tr>
+                                                                <td class="text-muted">@ph.RecordedAt.ToString("MMM dd, HH:mm")</td>
+                                                                <td><span class="fw-bold" style="color:@gColor;">@(ph.ProgressPercent)%</span></td>
+                                                                <td class="text-muted">@(ph.CurrentValue?.ToString() ?? "—")</td>
+                                                                <td>@(phDetail?.Title ?? "—")</td>
+                                                                <td class="text-muted text-truncate" style="max-width:200px;">@(ph.DoctorComment ?? "—")</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── TAB 4: ACTIVITIES ── -->
+        @if (Model.ActiveTab == "activities")
+        {
+            <div class="cd-box">
+                <div class="cd-sub-nav">
+                    <a class="@(Model.ActivitySubTab == "homework" ? "active" : "")" href="?id=@c.Id&tab=activities&subTab=homework">
+                        <i class="bi bi-journal-check me-1"></i>Homework (@Model.HomeworkList.Count)
+                    </a>
+                    <a class="@(Model.ActivitySubTab == "mood" ? "active" : "")" href="?id=@c.Id&tab=activities&subTab=mood">
+                        <i class="bi bi-emoji-smile me-1"></i>Mood (@Model.MoodEntries.Count)
+                    </a>
+                    <a class="@(Model.ActivitySubTab == "assessments" ? "active" : "")" href="?id=@c.Id&tab=activities&subTab=assessments">
+                        <i class="bi bi-clipboard2-pulse me-1"></i>Assessments (@Model.RecentAssessments.Count)
+                    </a>
+                </div>
+
+                <!-- Homework -->
+                @if (Model.ActivitySubTab == "homework")
+                {
+                    <div style="padding:0 1.25rem 1.25rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-dark mb-0" style="font-size:0.88rem;">Assigned Homework</h6>
+                            <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                <i class="bi bi-plus-lg me-1"></i>Assign
+                            </a>
+                        </div>
+                        @if (!Model.HomeworkList.Any())
+                        {
+                            <div class="cd-empty"><i class="bi bi-journal-x"></i><p>No homework assigned yet.</p></div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table cd-table align-middle">
+                                    <thead><tr>
+                                        <th>Title</th><th>Instructions</th><th>Due Date</th><th>Submission</th><th>Status</th><th class="text-end">Action</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        @foreach (var hw in Model.HomeworkList)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-semibold text-dark">@hw.Title</div>
+                                                    @if (!string.IsNullOrEmpty(hw.Description))
+                                                    {
+                                                        <div class="text-muted" style="font-size:0.75rem;">@hw.Description</div>
+                                                    }
+                                                </td>
+                                                <td style="max-width:180px;" class="text-muted" title="@hw.DetailedInstructions">
+                                                    @(string.IsNullOrWhiteSpace(hw.DetailedInstructions) ? "—" : (hw.DetailedInstructions.Length > 60 ? hw.DetailedInstructions[..60] + "..." : hw.DetailedInstructions))
+                                                </td>
+                                                <td class="text-muted">@(hw.DueDate?.ToString("MMM dd, yyyy") ?? "No due date")</td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(hw.PatientSubmission))
+                                                    {
+                                                        <div class="text-dark text-truncate" style="max-width:150px; font-size:0.8rem;">@hw.PatientSubmission</div>
+                                                        <div class="text-muted" style="font-size:0.72rem;">@hw.SubmittedAt?.ToString("MMM dd HH:mm")</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted" style="font-size:0.78rem;">Not submitted</span>
+                                                    }
+                                                </td>
+                                                <td><span class="@hw.StatusBadgeClass" style="font-size:0.7rem;">@hw.StatusText</span></td>
+                                                <td class="text-end">
+                                                    @if (hw.Status == 1)
+                                                    {
+                                                        <details class="text-start">
+                                                            <summary class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;">Review</summary>
+                                                            <form method="post" asp-page-handler="ReviewHomework" class="mt-2 p-2 border rounded-2 bg-light" style="min-width:240px;">
+                                                                <input type="hidden" name="caseId" value="@c.Id" />
+                                                                <input type="hidden" name="homeworkId" value="@hw.Id" />
+                                                                <label class="form-label fw-semibold" style="font-size:0.78rem;">Feedback</label>
+                                                                <textarea name="doctorFeedback" class="form-control form-control-sm mb-2" rows="2" required placeholder="Your feedback..." style="border-radius:5px;"></textarea>
+                                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.75rem;">Save</button>
+                                                            </form>
+                                                        </details>
+                                                    }
+                                                    else if (hw.Status == 2)
+                                                    {
+                                                        <span class="cd-badge active"><i class="bi bi-check-circle-fill"></i>Reviewed</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Mood -->
+                @if (Model.ActivitySubTab == "mood")
+                {
+                    <div style="padding:0 1.25rem 1.25rem;">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size:0.88rem;">Patient Mood Journey</h6>
+                        @if (!Model.MoodEntries.Any())
+                        {
+                            <div class="cd-empty"><i class="bi bi-emoji-smile"></i><p>No mood entries recorded by the patient.</p></div>
+                        }
+                        else
+                        {
+                            <!-- Mood Chart -->
+                            <div class="d-flex gap-1 align-items-end mb-3" style="height:80px;">
+                                @foreach (var m in Model.MoodEntries.OrderBy(x => x.RecordedAt))
+                                {
+                                    var h = Math.Max(8, m.MoodScore * 8);
+                                    var mc = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                    <div title="@m.RecordedAt.ToString("MMM dd, HH:mm") — Mood: @m.MoodScore" style="flex:1; min-width:6px; max-width:18px; height:@(h)px; background:@mc; border-radius:3px 3px 0 0; opacity:0.75; cursor:default;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'"></div>
+                                }
+                            </div>
+
+                            <!-- Mood Table -->
+                            <div class="table-responsive">
+                                <table class="table cd-table align-middle">
+                                    <thead><tr>
+                                        <th>Date</th><th>Mood</th><th>Anxiety</th><th>Stress</th><th>Sleep</th><th>Depression</th><th>Note</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        @foreach (var m in Model.MoodEntries.OrderByDescending(x => x.RecordedAt))
+                                        {
+                                            var mc = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                                            <tr>
+                                                <td class="text-muted">@m.RecordedAt.ToString("MMM dd, HH:mm")</td>
+                                                <td><span class="fw-bold" style="color:@mc;">@m.MoodScore/10</span></td>
+                                                <td class="text-muted">@(m.AnxietyScore?.ToString() ?? "—")</td>
+                                                <td class="text-muted">@(m.StressScore?.ToString() ?? "—")</td>
+                                                <td class="text-muted">@(m.SleepQualityScore?.ToString() ?? "—")</td>
+                                                <td class="text-muted">@(m.DepressionScore?.ToString() ?? "—")</td>
+                                                <td class="text-muted text-truncate" style="max-width:180px;">@(string.IsNullOrEmpty(m.Note) ? "—" : m.Note)</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Assessments -->
+                @if (Model.ActivitySubTab == "assessments")
+                {
+                    <div style="padding:0 1.25rem 1.25rem;">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size:0.88rem;">Psychometric Assessments</h6>
+                        @if (!Model.RecentAssessments.Any())
+                        {
+                            <div class="cd-empty"><i class="bi bi-clipboard2-pulse"></i><p>No assessment submissions linked to this case.</p></div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @foreach (var a in Model.RecentAssessments)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="cd-goal">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <div class="fw-bold text-dark" style="font-size:0.86rem;">@a.TestTitle</div>
+                                                    <div class="text-muted" style="font-size:0.72rem;"><i class="bi bi-calendar3 me-1"></i>@a.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                                </div>
+                                                <span class="cd-badge info">Score: @a.TotalScore</span>
+                                            </div>
+                                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:0.5rem 0.75rem; font-size:0.78rem; color:#64748b; margin-bottom:0.5rem;">
+                                                <strong>Result:</strong> @a.Interpretation
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                                @if (a.ScoreChange.HasValue)
+                                                {
+                                                    if (a.ScoreChange < 0)
+                                                    {
+                                                        <span class="cd-badge active"><i class="bi bi-arrow-down"></i>@a.ScoreChange (Improved)</span>
+                                                    }
+                                                    else if (a.ScoreChange > 0)
+                                                    {
+                                                        <span class="cd-badge hold"><i class="bi bi-arrow-up"></i>+@a.ScoreChange</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="cd-badge muted">No change</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="cd-badge muted">Initial</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── TAB 5: TIMELINE ── -->
+        @if (Model.ActiveTab == "timeline")
+        {
+            <div class="cd-box">
+                <div class="cd-box-head">
+                    <h6 class="cd-box-title"><i class="bi bi-clock-history me-2"></i>Activity Timeline</h6>
+                </div>
+                @if (!Model.Timeline.Any())
+                {
+                    <div class="cd-empty"><i class="bi bi-clock-history"></i><p>No timeline events yet.</p></div>
+                }
+                else
+                {
+                    <div class="cd-box-body">
+                        <div class="cd-tl ms-2">
+                            @foreach (var ev in Model.Timeline.OrderByDescending(x => x.EventDate))
+                            {
+                                <div class="cd-tl-item">
+                                    <div class="cd-tl-dot"></div>
+                                    <div class="fw-semibold text-dark" style="font-size:0.84rem;">@ev.Title</div>
+                                    <div class="text-muted mb-1" style="font-size:0.72rem;">@ev.EventDate.ToString("MMM dd, yyyy @ HH:mm")</div>
+                                    @if (!string.IsNullOrEmpty(ev.Description))
+                                    {
+                                        <div class="text-muted" style="font-size:0.78rem;">@ev.Description</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Close Case Modal -->
+<div class="modal fade" id="closeCaseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:10px;">
+            <form method="post" asp-page-handler="CloseCase">
+                <input type="hidden" name="caseId" value="@c.Id" />
+                <div class="modal-header" style="border-bottom:1px solid #f1f5f9;">
+                    <h6 class="modal-title fw-bold text-danger" style="font-size:0.92rem;"><i class="bi bi-x-circle me-1"></i>Close Treatment Case</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size:0.82rem;">Closing this case will finalize treatment records and mark uncompleted sessions as cancelled.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Closure Status</label>
+                        <select name="closeStatus" class="form-select form-select-sm" style="border-radius:6px;">
+                            <option value="2">Completed (Treatment finished)</option>
+                            <option value="3">Terminated (Discontinued)</option>
+                            <option value="5">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold" style="font-size:0.82rem;">Closure Note</label>
+                        <textarea name="closureNote" class="form-control" rows="3" placeholder="Summary and discharge recommendations..." style="border-radius:6px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #f1f5f9;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius:6px;">Confirm Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

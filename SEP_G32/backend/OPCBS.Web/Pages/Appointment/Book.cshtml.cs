@@ -9,15 +9,25 @@ public class BookModel : PageModel
 {
     private readonly IAppointmentApiService _appointmentService;
     private readonly IDoctorApiService _doctorService;
+    private readonly ITreatmentPackageApiService _treatmentService;
+    private readonly IAuthApiService _authService;
 
     [BindProperty] public CreateAppointmentDto Input { get; set; } = new();
     [BindProperty(SupportsGet = true)] public Guid? DoctorId { get; set; }
     [BindProperty(SupportsGet = true)] public string? Week { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? TreatmentPackageId { get; set; }
+    [BindProperty(SupportsGet = true)] public bool Returning { get; set; }
+
+    public bool IsReturningPatient { get; set; }
 
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public DoctorDto? Doctor { get; set; }
     public bool IsGuest => !User.Identity?.IsAuthenticated ?? true;
+    public bool CanUsePublicBooking => IsGuest || User.IsInRole("Patient");
     public string? Error { get; set; }
+    public TreatmentPackageDto? TreatmentPackage { get; set; }
+    public TreatmentPackageDto? EndedTreatmentPackage { get; set; }
+    public bool HasPackageButNotBookingVia { get; set; }
 
     // Week data
     public DateTime WeekStart { get; set; }
@@ -29,14 +39,27 @@ public class BookModel : PageModel
     public int CalStartHour { get; set; } = 8;
     public int CalEndHour { get; set; } = 18;
 
-    public BookModel(IAppointmentApiService appointmentService, IDoctorApiService doctorService)
+    public BookModel(
+        IAppointmentApiService appointmentService,
+        IDoctorApiService doctorService,
+        ITreatmentPackageApiService treatmentService,
+        IAuthApiService authService)
     {
         _appointmentService = appointmentService;
         _doctorService = doctorService;
+        _treatmentService = treatmentService;
+        _authService = authService;
     }
 
     public async Task OnGetAsync()
     {
+        if (!CanUsePublicBooking)
+        {
+            Error = "Public booking is available to patients and guests only. Doctors should schedule treatment appointments from Schedule Management.";
+            return;
+        }
+        // Patient fills in their own information — no auto-fill
+
         // Calculate week
         var today = DateTime.Today;
         if (!string.IsNullOrEmpty(Week) && DateTime.TryParse(Week, out var parsed))
@@ -46,17 +69,122 @@ public class BookModel : PageModel
         WeekEnd = WeekStart.AddDays(6);
         WeekDays = Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).ToList();
 
+        // Pre-fill user profile if logged in
+        if (!IsGuest)
+        {
+            try
+            {
+                var (profile, _) = await _authService.GetProfileAsync();
+                if (profile != null)
+                {
+                    if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
+                    if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
+                    if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                    if (string.IsNullOrWhiteSpace(Input.GuestZaloNumber)) Input.GuestZaloNumber = profile.PhoneNumber;
+                }
+            }
+            catch { }
+        }
+
         if (DoctorId.HasValue)
         {
             Input.DoctorId = DoctorId.Value;
 
-            // Load doctor info
+            // Resolve DoctorId: backend API handles both DoctorProfile.Id and User.Id
+            Guid resolvedDoctorProfileId = DoctorId.Value;
             try
             {
                 var (doc, _) = await _doctorService.GetByIdAsync(DoctorId.Value);
-                Doctor = doc;
+                if (doc != null)
+                {
+                    Doctor = doc;
+                    resolvedDoctorProfileId = doc.Id;
+                    Input.DoctorId = doc.Id; // Normalize to DoctorProfile.Id for downstream API calls
+                }
             }
             catch { }
+
+            // Load treatment package if specified
+            if (TreatmentPackageId.HasValue)
+            {
+                Input.TreatmentPackageId = TreatmentPackageId.Value;
+                try
+                {
+                    var (pkgData, _) = await _treatmentService.GetByIdAsync(TreatmentPackageId.Value);
+                    if (pkgData != null && IsTreatmentPackageBookable(pkgData))
+                    {
+                        TreatmentPackage = pkgData;
+                    }
+                    else if (pkgData != null)
+                    {
+                        EndedTreatmentPackage = pkgData;
+                        TreatmentPackageId = null;
+                        Input.TreatmentPackageId = null;
+                    }
+                }
+                catch { }
+            }
+            else if (!IsGuest)
+            {
+                try
+                {
+                    var (pkgs, _, _) = await _treatmentService.GetMyPackagesAsync();
+                    var activePkg = pkgs.FirstOrDefault(p =>
+                        (p.DoctorProfileId == resolvedDoctorProfileId || p.DoctorId == DoctorId.Value) &&
+                        (p.Status == "Active" || p.Status == "Accepted") &&
+                        !p.IsExpired &&
+                        p.RemainingSessions > 0);
+                    
+                    if (activePkg != null)
+                    {
+                        TreatmentPackage = activePkg;
+                        HasPackageButNotBookingVia = true;
+                    }
+                    else
+                    {
+                        EndedTreatmentPackage = pkgs
+                            .Where(p => (p.DoctorProfileId == resolvedDoctorProfileId || p.DoctorId == DoctorId.Value) &&
+                                        IsTreatmentPackageEnded(p))
+                            .OrderByDescending(p => p.ActiveDate ?? p.AcceptedDate ?? p.AssignedDate ?? p.CreatedAt)
+                            .FirstOrDefault();
+                    }
+                }
+                catch { }
+            }
+
+            // Check if returning patient (skip pre-evaluation & lock contact info)
+            if (DoctorId.HasValue)
+            {
+                if (Returning)
+                {
+                    IsReturningPatient = true;
+                }
+                else if (!IsGuest)
+                {
+                    try
+                    {
+                        var (isReturning, _) = await _appointmentService.IsReturningAsync(resolvedDoctorProfileId);
+                        IsReturningPatient = isReturning;
+                    }
+                    catch { }
+                }
+
+                // If returning patient, load previous appointment info for contact pre-fill
+                if (IsReturningPatient && !IsGuest)
+                {
+                    try
+                    {
+                        var (myAppts, _, _) = await _appointmentService.GetMyAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 100 });
+                        var prevAppt = myAppts?.FirstOrDefault(a => a.DoctorProfileId == resolvedDoctorProfileId || a.DoctorId == DoctorId.Value);
+                        if (prevAppt != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(prevAppt.PatientName))
+                                Input.GuestName = prevAppt.PatientName;
+                        }
+                    }
+                    catch { }
+                }
+            }
 
             // Load slots for each day in the week
             foreach (var day in WeekDays)
@@ -91,16 +219,71 @@ public class BookModel : PageModel
         }
     }
 
+    private static bool IsTreatmentPackageBookable(TreatmentPackageDto package)
+    {
+        return (package.Status == "Active" || package.Status == "Accepted") &&
+               !package.IsExpired &&
+               package.RemainingSessions > 0;
+    }
+
+    private static bool IsTreatmentPackageEnded(TreatmentPackageDto package)
+    {
+        return package.Status == "Completed" ||
+               package.Status == "Expired" ||
+               package.RemainingSessions <= 0 ||
+               package.IsExpired;
+    }
+
+    [BindProperty(SupportsGet = true)] public string? SelectedDate { get; set; }
+    [BindProperty(SupportsGet = true)] public string? SelectedTime { get; set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.DoctorId == Guid.Empty) { Error = "Vui lòng chọn bác sĩ."; await OnGetAsync(); return Page(); }
-        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Vui lòng chọn slot thời gian."; await OnGetAsync(); return Page(); }
+        if (!CanUsePublicBooking)
+        {
+            Error = "Public booking is available to patients and guests only.";
+            return Page();
+        }
+        if (Input.DoctorId == Guid.Empty) { Error = "Please select a doctor."; await OnGetAsync(); return Page(); }
+        if (Input.AppointmentSlotId == Guid.Empty) { Error = "Please select a time slot."; await OnGetAsync(); return Page(); }
 
-        var (success, error) = await _appointmentService.BookAsync(Input);
-        if (!success) { Error = error ?? "Không thể đặt lịch. Vui lòng thử lại."; await OnGetAsync(); return Page(); }
-        TempData["SuccessMessage"] = "Đặt lịch hẹn thành công!";
-        if (User.Identity?.IsAuthenticated == true)
-            return RedirectToPage("/Patient/Appointments/Index");
-        return RedirectToPage("/Appointment/Track");
+        // Guest validation or logged-in fallback
+        if (!IsGuest)
+        {
+            try
+            {
+                var (profile, _) = await _authService.GetProfileAsync();
+                if (profile != null)
+                {
+                    if (string.IsNullOrWhiteSpace(Input.GuestName)) Input.GuestName = profile.FullName;
+                    if (string.IsNullOrWhiteSpace(Input.GuestEmail)) Input.GuestEmail = profile.Email;
+                    if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) Input.GuestPhoneNumber = profile.PhoneNumber;
+                    if (string.IsNullOrWhiteSpace(Input.GuestZaloNumber)) Input.GuestZaloNumber = profile.PhoneNumber;
+                }
+            }
+            catch { }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Please enter your full name."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Please enter your email."; await OnGetAsync(); return Page(); }
+        }
+
+        var (bookedAppointment, error) = await _appointmentService.BookAsync(Input);
+        if (bookedAppointment == null)
+        {
+            Error = error ?? "Unable to book appointment. Please try again.";
+            await OnGetAsync();
+            return Page();
+        }
+
+        return RedirectToPage("/Appointment/Success", new
+        {
+            BookingCode = bookedAppointment.BookingCode ?? "",
+            DoctorName = bookedAppointment.DoctorName ?? Doctor?.FullName ?? "",
+            AppointmentDate = bookedAppointment.AppointmentDate ?? SelectedDate ?? "",
+            StartTime = bookedAppointment.StartTime ?? SelectedTime ?? "",
+            EndTime = bookedAppointment.EndTime ?? ""
+        });
     }
 }

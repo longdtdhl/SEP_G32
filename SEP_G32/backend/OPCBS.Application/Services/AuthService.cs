@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly IRepository<PatientProfile> _patientRepo;
     private readonly IRepository<DoctorProfile> _doctorRepo;
     private readonly IRepository<DoctorSpecialization> _doctorSpecRepo;
+    private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IJwtTokenService _jwtService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
@@ -30,6 +31,7 @@ public class AuthService : IAuthService
         IRepository<PatientProfile> patientRepo,
         IRepository<DoctorProfile> doctorRepo,
         IRepository<DoctorSpecialization> doctorSpecRepo,
+        IRepository<VerificationRequest> verRepo,
         IJwtTokenService jwtService,
         IEmailService emailService,
         IMapper mapper)
@@ -41,6 +43,7 @@ public class AuthService : IAuthService
         _patientRepo = patientRepo;
         _doctorRepo = doctorRepo;
         _doctorSpecRepo = doctorSpecRepo;
+        _verRepo = verRepo;
         _jwtService = jwtService;
         _emailService = emailService;
         _mapper = mapper;
@@ -53,6 +56,8 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Email already exists");
         if (allUsers.Any(u => u.PhoneNumber == dto.PhoneNumber))
             return ApiResponse<AuthResponseDto>.ErrorResponse("Phone number already exists");
+        if (dto.Password != dto.ConfirmPassword)
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Passwords do not match.");
 
         var allRoles = await _roleRepo.GetAllAsync(ct);
         var patientRole = allRoles.FirstOrDefault(r => r.Name == RoleConstants.Patient);
@@ -132,6 +137,7 @@ public class AuthService : IAuthService
                 ProfessionalTitle = dto.ProfessionalTitle,
                 Biography = dto.Biography,
                 ExperienceYears = dto.ExperienceYears,
+                VerificationStatus = VerificationStatus.Draft,
                 User = user
             };
             await _doctorRepo.AddAsync(doctorProfile, ct);
@@ -198,6 +204,39 @@ public class AuthService : IAuthService
         return ApiResponse.SuccessResponse("Email verified successfully");
     }
 
+    public async Task<ApiResponse> ResendVerificationOtpAsync(ForgotPasswordDto dto, CancellationToken ct = default)
+    {
+        var allUsers = await _userRepo.GetAllAsync(ct);
+        var user = allUsers.FirstOrDefault(u => string.Equals(u.Email, dto.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (user == null)
+            return ApiResponse.SuccessResponse("If the account exists, a verification code has been sent.");
+
+        if (user.IsEmailVerified)
+            return ApiResponse.ErrorResponse("This email has already been verified. Please log in.");
+
+        var allOtps = await _otpRepo.GetAllAsync(ct);
+        var lastOtp = allOtps
+            .Where(o => o.UserId == user.Id && !o.IsUsed)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefault();
+
+        if (lastOtp != null && lastOtp.CreatedAt > DateTime.UtcNow.AddSeconds(-60))
+            return ApiResponse.ErrorResponse("Please wait 60 seconds before requesting another code.");
+
+        var otpCode = GenerateOtp();
+        await _otpRepo.AddAsync(new OtpVerification
+        {
+            UserId = user.Id,
+            Code = otpCode,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            User = user
+        }, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        _ = _emailService.SendOtpEmailAsync(user.Email, otpCode, ct);
+        return ApiResponse.SuccessResponse("A new verification code has been sent. It expires in 10 minutes.");
+    }
+
     public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto dto, CancellationToken ct = default)
     {
         var allUsers = await _userRepo.GetAllAsync(ct);
@@ -209,7 +248,21 @@ public class AuthService : IAuthService
             return ApiResponse<AuthResponseDto>.ErrorResponse("Invalid email or password");
 
         if (!user.IsEmailVerified)
-            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. Please verify your email first.");
+        {
+            var otpCode = GenerateOtp();
+            var otp = new OtpVerification
+            {
+                UserId = user.Id,
+                Code = otpCode,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                User = user
+            };
+            await _otpRepo.AddAsync(otp, ct);
+            await _uow.SaveChangesAsync(ct);
+            _ = _emailService.SendOtpEmailAsync(user.Email, otpCode, ct);
+
+            return ApiResponse<AuthResponseDto>.ErrorResponse("Email not verified. A new verification code has been sent to your email.");
+        }
 
         if (user.Status == UserStatus.Locked)
             return ApiResponse<AuthResponseDto>.ErrorResponse("Account is locked. Contact support.");
@@ -235,6 +288,7 @@ public class AuthService : IAuthService
             UserId = user.Id,
             Email = user.Email,
             FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl,
             Role = roleName,
             AccessToken = accessToken,
             RefreshToken = refreshToken,
@@ -329,6 +383,7 @@ public class AuthService : IAuthService
             UserId = user.Id,
             Email = user.Email,
             FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl,
             Role = roleName,
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
@@ -363,15 +418,25 @@ public class UserService : IUserService
 {
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<Role> _roleRepo;
+    private readonly IRepository<PatientProfile>? _patientRepo;
+    private readonly IRepository<DoctorProfile>? _doctorRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public UserService(IRepository<User> userRepo, IRepository<Role> roleRepo, IUnitOfWork uow, IMapper mapper)
+    public UserService(
+        IRepository<User> userRepo,
+        IRepository<Role> roleRepo,
+        IUnitOfWork uow,
+        IMapper mapper,
+        IRepository<PatientProfile>? patientRepo = null,
+        IRepository<DoctorProfile>? doctorRepo = null)
     {
         _userRepo = userRepo;
         _roleRepo = roleRepo;
         _uow = uow;
         _mapper = mapper;
+        _patientRepo = patientRepo;
+        _doctorRepo = doctorRepo;
     }
 
     public async Task<ApiResponse<UserProfileDto>> GetProfileAsync(Guid userId, CancellationToken ct = default)
@@ -394,6 +459,32 @@ public class UserService : IUserService
             Role = role?.Name ?? "Unknown",
             CreatedAt = user.CreatedAt
         };
+
+        if (_patientRepo != null)
+        {
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var pat = allPatients.FirstOrDefault(p => p.UserId == userId);
+            if (pat != null)
+            {
+                dto.Address = pat.Address;
+                dto.DateOfBirth = pat.DateOfBirth;
+                dto.Gender = pat.Gender.ToString();
+                dto.EmergencyContactName = pat.EmergencyContactName;
+                dto.EmergencyContactPhone = pat.EmergencyContactPhone;
+            }
+        }
+
+        if (string.IsNullOrEmpty(dto.Address) && _doctorRepo != null)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doc = allDoctors.FirstOrDefault(d => d.UserId == userId);
+            if (doc != null)
+            {
+                dto.Address = doc.Address;
+                dto.DateOfBirth = doc.DateOfBirth;
+                dto.Gender = doc.Gender?.ToString();
+            }
+        }
 
         return ApiResponse<UserProfileDto>.SuccessResponse(dto);
     }
@@ -419,24 +510,40 @@ public class UserService : IUserService
 
         user.UpdatedAt = DateTime.UtcNow;
         _userRepo.Update(user);
+
+        if (_patientRepo != null)
+        {
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            var pat = allPatients.FirstOrDefault(p => p.UserId == userId);
+            if (pat != null)
+            {
+                if (dto.Address != null) pat.Address = dto.Address;
+                if (dto.DateOfBirth.HasValue) pat.DateOfBirth = dto.DateOfBirth;
+                if (!string.IsNullOrWhiteSpace(dto.Gender) && Enum.TryParse<Gender>(dto.Gender, true, out var g)) pat.Gender = g;
+                if (dto.EmergencyContactName != null) pat.EmergencyContactName = dto.EmergencyContactName;
+                if (dto.EmergencyContactPhone != null) pat.EmergencyContactPhone = dto.EmergencyContactPhone;
+                pat.UpdatedAt = DateTime.UtcNow;
+                _patientRepo.Update(pat);
+            }
+        }
+
+        if (_doctorRepo != null)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doc = allDoctors.FirstOrDefault(d => d.UserId == userId);
+            if (doc != null)
+            {
+                if (dto.Address != null) doc.Address = dto.Address;
+                if (dto.DateOfBirth.HasValue) doc.DateOfBirth = dto.DateOfBirth;
+                if (!string.IsNullOrWhiteSpace(dto.Gender) && Enum.TryParse<Gender>(dto.Gender, true, out var dg)) doc.Gender = dg;
+                doc.UpdatedAt = DateTime.UtcNow;
+                _doctorRepo.Update(doc);
+            }
+        }
+
         await _uow.SaveChangesAsync(ct);
 
-        // Return updated profile
-        var role = await _roleRepo.GetByIdAsync(user.RoleId, ct);
-        var result = new UserProfileDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FullName = user.FullName,
-            PhoneNumber = user.PhoneNumber,
-            AvatarUrl = user.AvatarUrl,
-            Status = user.Status,
-            IsEmailVerified = user.IsEmailVerified,
-            Role = role?.Name ?? "Unknown",
-            CreatedAt = user.CreatedAt
-        };
-
-        return ApiResponse<UserProfileDto>.SuccessResponse(result, "Profile updated successfully");
+        return await GetProfileAsync(userId, ct);
     }
 
     public async Task<ApiResponse> ChangePasswordAsync(Guid userId, ChangePasswordDto dto, CancellationToken ct = default)

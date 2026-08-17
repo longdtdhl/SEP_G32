@@ -37,6 +37,7 @@ public class BlogApiService : ApiServiceBase, IBlogApiService
         {
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(filter.Status)) parts.Add($"status={filter.Status}");
+            if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
             parts.Add($"page={filter.Page}");
             parts.Add($"pageSize={filter.PageSize}");
             if (parts.Count > 0) url += "?" + string.Join("&", parts);
@@ -56,4 +57,29 @@ public class BlogApiService : ApiServiceBase, IBlogApiService
 
     public async Task<(bool Success, string? Error)> SubmitForReviewAsync(Guid id)
         => await PostAsync($"{ApiRoutes.Blogs}/submit-review/{id}");
+
+    public async Task<(List<BlogCommentWebDto> Data, string? Error)> GetCommentsAsync(Guid blogPostId)
+    {
+        var (data, _, error) = await GetAsync<List<BlogCommentWebDto>>($"api/v1/blog-comments/{blogPostId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<BlogListItemDto> Data, PaginationDto? Pagination, string? Error)> GetPendingBlogsAsync(int page = 1, int pageSize = 10)
+    {
+        var url = $"{ApiRoutes.Blogs}/pending?page={page}&pageSize={pageSize}";
+        var (data, pagination, error) = await GetAsync<List<BlogListItemDto>>(url);
+        return (data ?? new(), pagination, error);
+    }
+
+    public async Task<(bool Success, string? Error)> ApproveBlogAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Blogs}/approve/{id}", new { });
+
+    public async Task<(bool Success, string? Error)> RejectBlogAsync(Guid id, string reason)
+        => await PutAsync($"{ApiRoutes.Blogs}/reject/{id}", reason); // Note: Assuming the backend accepts [FromBody] string reason.
+
+    public async Task<(BlogCommentWebDto? Data, string? Error)> AddCommentAsync(CreateBlogCommentWebDto dto)
+        => await PostAsync<BlogCommentWebDto>("api/v1/blog-comments", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteCommentAsync(Guid commentId)
+        => await base.DeleteAsync($"api/v1/blog-comments/{commentId}");
 }

@@ -9,21 +9,59 @@ namespace OPCBS.Application.Interfaces.Services;
 public interface IAppointmentService
 {
     Task<ApiResponse<AppointmentDto>> CreateAppointmentAsync(CreateAppointmentDto dto, Guid? patientUserId, CancellationToken ct = default);
-    Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, CancellationToken ct = default);
+    Task<ApiResponse<List<AppointmentListItemDto>>> GetMyAppointmentsAsync(Guid userId, int page = 1, int pageSize = 10, string? status = null, string? search = null, string? view = null, CancellationToken ct = default);
     Task<ApiResponse<AppointmentDto>> GetAppointmentByIdAsync(Guid appointmentId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse<AppointmentDto>> TrackAppointmentAsync(TrackAppointmentDto dto, CancellationToken ct = default);
+    Task<ApiResponse> ResendConfirmationEmailAsync(ResendConfirmationDto dto, CancellationToken ct = default);
+    Task<ApiResponse> ConfirmGuestAppointmentAsync(ConfirmGuestAppointmentDto dto, CancellationToken ct = default);
+    Task<ApiResponse> CancelGuestAppointmentAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> RequestGuestCancellationLinkAsync(RequestGuestCancellationLinkDto dto, CancellationToken ct = default);
     Task<ApiResponse> CancelAppointmentAsync(Guid appointmentId, Guid userId, CancelAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> RescheduleAppointmentAsync(Guid appointmentId, Guid userId, RescheduleAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> RequestRescheduleAsync(Guid appointmentId, Guid patientUserId, RescheduleAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> ApproveRescheduleAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectRescheduleAsync(Guid appointmentId, Guid doctorUserId, RejectAppointmentDto? dto = null, CancellationToken ct = default);
-    Task<ApiResponse<List<AppointmentListItemDto>>> GetDoctorAppointmentsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, string? status = null, string? search = null, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default);
+    Task<ApiResponse<List<AppointmentListItemDto>>> GetDoctorAppointmentsAsync(Guid doctorUserId, int page = 1, int pageSize = 10, string? status = null, string? search = null, DateTime? fromDate = null, DateTime? toDate = null, string? view = null, CancellationToken ct = default);
     Task<ApiResponse> ApproveAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> RejectAppointmentAsync(Guid appointmentId, Guid doctorUserId, RejectAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> StartAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> CompleteAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse> ConfirmCompletionAsync(Guid appointmentId, Guid patientUserId, CancellationToken ct = default);
+    Task<ApiResponse> ConfirmGuestCompletionAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DisputeCompletionAsync(Guid appointmentId, Guid patientUserId, DisputeCompletionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DisputeGuestCompletionAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> MarkPatientNoShowAsync(Guid appointmentId, Guid doctorUserId, string? reason = null, CancellationToken ct = default);
     Task<ApiResponse<int>> GetVisitCountAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default);
     Task<ApiResponse<bool>> IsReturningPatientAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default);
+    Task<ApiResponse<AppointmentClinicalContextDto>> GetClinicalContextAsync(Guid appointmentId, Guid requestingUserId, CancellationToken ct = default);
+}
+
+public class CalendarEventDto
+{
+    public Guid Id { get; set; }
+    public string EventType { get; set; } = string.Empty; // Availability, Appointment, DayOff, Note
+    public string Title { get; set; } = string.Empty;
+    public string Start { get; set; } = string.Empty;
+    public string End { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty; // Available, Confirmed, Pending, Completed, Blocked, DayOff
+    public Guid? AppointmentId { get; set; }
+    public Guid? SlotId { get; set; }
+    public Guid? NoteId { get; set; }
+    public bool IsAllDay { get; set; }
+    public string? PatientName { get; set; }
+    public Guid? PatientId { get; set; }
+    public Guid? TreatmentCaseId { get; set; }
+    public Guid? TreatmentSessionId { get; set; }
+    public string? TreatmentCaseName { get; set; }
+    public int? SessionNumber { get; set; }
+    public string? Description { get; set; }
+    public string? BookingCode { get; set; }
+    public bool HasNote { get; set; }
+    public int NoteCount { get; set; }
+    // Kept for existing web clients while they migrate to HasNote.
+    public bool HasNotes { get; set; }
+    public int MaxPatients { get; set; } = 1;
+    public int CurrentBookings { get; set; } = 0;
 }
 
 /// <summary>
@@ -39,10 +77,22 @@ public interface IScheduleService
     Task<ApiResponse<AvailableSlotsDto>> GetDoctorAllSlotsAsync(Guid doctorUserId, DateOnly? date, CancellationToken ct = default);
     Task<ApiResponse> ToggleBlockSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> AddDayOffAsync(Guid doctorUserId, CreateDayOffDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<DayOffDto>>> GetDoctorDaysOffAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse> DeleteDayOffAsync(Guid dayOffId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<AppointmentSlotDto>> CreateSlotAsync(Guid doctorUserId, CreateSlotDto dto, CancellationToken ct = default);
     Task<ApiResponse> DeleteSlotAsync(Guid slotId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> UpdateSlotNotesAsync(Guid slotId, Guid doctorUserId, string? notes, CancellationToken ct = default);
     Task<ApiResponse> UpdateSlotAsync(Guid slotId, Guid doctorUserId, UpdateSlotDto dto, CancellationToken ct = default);
+    Task<ApiResponse<List<CalendarEventDto>>> GetCalendarEventsAsync(Guid doctorUserId, DateTime? start, DateTime? end, CancellationToken ct = default);
+    Task<ApiResponse<List<EligibleTreatmentPatientDto>>> GetEligibleTreatmentPatientsAsync(Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<AppointmentSlotDto>> CreateTreatmentAppointmentAsync(Guid doctorUserId, CreateTreatmentAppointmentDto dto, CancellationToken ct = default);
+    Task<ApiResponse<WeeklySchedulePreviewDto>> PreviewWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
+    Task<ApiResponse<int>> GenerateWeeklyScheduleAsync(Guid doctorUserId, WeeklyScheduleConfigDto dto, CancellationToken ct = default);
+    Task<ApiResponse<ScheduleNoteDto>> CreateNoteAsync(Guid doctorUserId, CreateScheduleNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse<ScheduleNoteDto>> UpdateNoteAsync(Guid noteId, Guid doctorUserId, UpdateScheduleNoteDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DeleteNoteAsync(Guid noteId, Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse<List<ScheduleNoteDto>>> GetNotesAsync(Guid doctorUserId, string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null, CancellationToken ct = default);
+    Task<ApiResponse<AppointmentSlotDto>> AssignTreatmentSlotAsync(Guid doctorUserId, AssignTreatmentSlotDto dto, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -57,4 +107,5 @@ public interface IConsultationNoteService
     Task<ApiResponse<List<ConsultationNoteDto>>> GetByAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct = default);
     Task<ApiResponse<List<ConsultationNoteDto>>> GetByDoctorAsync(Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default);
+    Task<ApiResponse<ConsultationNoteDto>> ConfirmByPatientAsync(Guid recordId, Guid patientUserId, CancellationToken ct = default);
 }

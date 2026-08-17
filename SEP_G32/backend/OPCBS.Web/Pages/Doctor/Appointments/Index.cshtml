@@ -1,134 +1,504 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Appointments.IndexModel
 @{
-    ViewData["Title"] = "Quản lý lịch hẹn";
-    ViewData["UseDashboardLayout"] = true;
-}
+    ViewData["Title"] = "Appointment Management";
 
-<div class="mb-page-header">
-    <h1>Quản lý lịch hẹn</h1>
+    Layout = "_DashboardLayout";}
+
+<style>
+    .appt-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+        margin-bottom: 0.625rem;
+        overflow: hidden;
+    }
+    .appt-card:hover {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transform: translateX(2px);
+    }
+    .appt-card.status-pending { border-left-color: #f59e0b; }
+    .appt-card.status-approved { border-left-color: #3b82f6; }
+    .appt-card.status-inprogress { border-left-color: #8b5cf6; }
+    .appt-card.status-completed { border-left-color: #10b981; }
+    .appt-card.status-cancelled { border-left-color: #ef4444; }
+    .appt-card.status-rejected { border-left-color: #6b7280; }
+
+    .appt-card-body {
+        padding: 0.875rem 1.25rem;
+    }
+
+    .appt-date-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border-radius: 8px;
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border: 1px solid #f1f5f9;
+    }
+    .appt-date-day {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.1;
+    }
+    .appt-date-month {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .patient-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4e8b70, #6db896);
+        color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    /* ── Status Badges ── */
+    .appt-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .appt-status.s-pending { background: #fef3c7; color: #92400e; }
+    .appt-status.s-approved { background: #dbeafe; color: #1e40af; }
+    .appt-status.s-inprogress { background: #ede9fe; color: #5b21b6; }
+    .appt-status.s-completed { background: #d1fae5; color: #065f46; }
+    .appt-status.s-cancelled { background: #fee2e2; color: #991b1b; }
+    .appt-status.s-rejected { background: #f3f4f6; color: #374151; }
+
+    .appt-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .appt-pkg-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #f0fdf4;
+        color: #16a34a;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.68rem;
+    }
+
+    .time-badge {
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ── Filter Section ── */
+    .filter-section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-search-group {
+        position: relative;
+    }
+    .filter-search-group .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+        pointer-events: none;
+        z-index: 2;
+    }
+    .filter-search-group .form-control {
+        padding-left: 32px;
+    }
+
+    .date-group-header {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #0f766e;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 6px 0;
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 10px;
+    }
+
+    .empty-state {
+        padding: 56px 20px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    .empty-state i { font-size: 3rem; color: #cbd5e1; }
+    .empty-state h5 { color: #6c757d; margin-top: 14px; }
+    .empty-state p { color: #94a3b8; font-size: 0.88rem; }
+
+    /* ── Action buttons ── */
+    .action-btn {
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.85rem;
+        padding: 0;
+        background: #fff;
+        border-width: 1px;
+        box-shadow: 0 1px 2px rgba(15, 67, 72, 0.06);
+        transition: all 0.15s ease;
+        cursor: pointer;
+    }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(15, 67, 72, 0.1); }
+    .appointment-actions {
+        min-width: 120px;
+        justify-content: flex-end;
+    }
+    .appointment-actions .action-label-btn {
+        min-height: 36px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(15, 67, 72, 0.06);
+    }
+
+    /* ── Clear filter ── */
+    .apt-clear-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .apt-clear-btn:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #dc2626;
+    }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="mb-1">Appointment Management</h1>
+        <p class="text-muted mb-0 small">Manage active and pending patient appointments</p>
+    </div>
+    <div>
+        <a asp-page="History" class="btn btn-outline-secondary btn-sm px-3 py-2" style="border-radius:8px; font-weight:600; font-size:0.85rem;">
+            <i class="bi bi-clock-history me-1"></i>Appointment History
+        </a>
+    </div>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-warning">@Model.Error</div>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-radius:8px;">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] is string tempError)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius:8px;">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>@tempError
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Success"] is string tempSuccess)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius:8px;">
+        <i class="bi bi-check-circle-fill me-1"></i>@tempSuccess
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 <!-- Filters -->
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-body py-2">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small">Trạng thái</label>
-                <select asp-for="Status" class="form-select form-select-sm">
-                    <option value="">Tất cả</option>
-                    <option value="Pending">Chờ duyệt</option>
-                    <option value="Approved">Đã duyệt</option>
-                    <option value="Completed">Hoàn thành</option>
-                    <option value="Cancelled">Đã hủy</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small">Tìm kiếm</label>
-                <input asp-for="Search" class="form-control form-control-sm" placeholder="Tên bệnh nhân..." />
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i> Lọc</button>
-            </div>
-        </form>
+<form method="get">
+    <div class="filter-section d-flex gap-2 align-items-end flex-wrap">
+        <div class="filter-search-group" style="flex:1.6; min-width:200px;">
+            <i class="bi bi-search search-icon"></i>
+            <input asp-for="Search" class="form-control form-control-sm" placeholder="Search patient, booking code..."
+                   style="height:36px; border-radius:8px; font-size:0.85rem;" />
+        </div>
+        <div style="flex:1; min-width:140px;">
+            <select asp-for="Status" class="form-select form-select-sm" style="height:36px; border-radius:8px; font-size:0.85rem;">
+                <option value="">All Active Statuses</option>
+                <option value="Pending">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="InProgress">In Progress</option>
+                <option value="RescheduleRequested">Reschedule Requested</option>
+            </select>
+        </div>
+        <div style="flex:0.8; min-width:130px;">
+            <input asp-for="DateFrom" type="date" class="form-control form-control-sm" style="height:36px; border-radius:8px; font-size:0.85rem;" />
+        </div>
+        <div style="flex:0.8; min-width:130px;">
+            <input asp-for="DateTo" type="date" class="form-control form-control-sm" style="height:36px; border-radius:8px; font-size:0.85rem;" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="height:36px; border-radius:8px; padding:0 14px; font-size:0.85rem; font-weight:600;">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.DateFrom) || !string.IsNullOrEmpty(Model.DateTo))
+        {
+            <a asp-page="Index" class="apt-clear-btn" title="Clear all filters" style="width:36px; height:36px;">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        }
     </div>
-</div>
+</form>
 
-<!-- Table -->
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Bệnh nhân</th>
-                        <th>Thời gian</th>
-                        <th>Trạng thái</th>
-                        <th>Phí</th>
-                        <th class="text-end">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Appointments.Any())
+<!-- Appointment List -->
+@if (Model.Appointments.Any())
+{
+    var grouped = Model.Appointments
+        .OrderByDescending(a => a.AppointmentDate)
+        .ThenBy(a => a.StartTime)
+        .GroupBy(a => a.AppointmentDate ?? "Unknown");
+
+    @foreach (var group in grouped)
+    {
+        <div class="mb-4">
+            <div class="date-group-header">
+                <i class="bi bi-calendar3 me-1"></i>
+                @{
+                    var displayDate = DateTime.TryParse(group.Key, out var gDate)
+                        ? gDate.ToString("dddd, MMMM dd, yyyy")
+                        : group.Key;
+                }
+                @displayDate
+                <span class="badge bg-secondary bg-opacity-25 text-dark ms-2" style="font-size:0.7rem;">@group.Count() appointments</span>
+            </div>
+
+            <div class="d-flex flex-column gap-0">
+                @foreach (var apt in group)
+                {
+                    var statusClass = apt.Status switch
                     {
-                        @foreach (var apt in Model.Appointments)
-                        {
-                            var badgeClass = apt.Status switch
-                            {
-                                "Pending" => "bg-warning text-dark",
-                                "Approved" => "bg-info text-white",
-                                "Completed" => "bg-success",
-                                "Cancelled" => "bg-danger",
-                                _ => "bg-secondary"
-                            };
-                            <tr>
-                                <td>
-                                    <strong>@(apt.PatientName ?? "N/A")</strong>
-                                    @if (!string.IsNullOrEmpty(apt.Specialization))
-                                    {
-                                        <br /><small class="text-muted">@apt.Specialization</small>
-                                    }
-                                </td>
-                                <td>
-                                    @apt.StartAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
-                                </td>
-                                <td><span class="badge @badgeClass">@apt.Status</span></td>
-                                <td>@(apt.Fee?.ToString("N0") ?? "-") ₫</td>
-                                <td class="text-end">
-                                    <a asp-page="Details" asp-route-id="@apt.Id" class="btn btn-sm btn-outline-primary" title="Chi tiết">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    @if (apt.Status == "Pending")
-                                    {
-                                        <form method="post" asp-page-handler="Confirm" class="d-inline">
-                                            <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Duyệt"><i class="bi bi-check-lg"></i></button>
-                                        </form>
-                                    }
-                                    @if (apt.Status == "Approved")
-                                    {
-                                        <form method="post" asp-page-handler="Complete" class="d-inline">
-                                            <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-info" title="Hoàn thành"><i class="bi bi-check-all"></i></button>
-                                        </form>
-                                    }
-                                    @if (apt.Status is "Pending" or "Approved")
-                                    {
-                                        <form method="post" asp-page-handler="Cancel" class="d-inline">
-                                            <input type="hidden" name="id" value="@apt.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Hủy" onclick="return confirm('Bạn có chắc muốn hủy lịch hẹn này?')"><i class="bi bi-x-lg"></i></button>
-                                        </form>
-                                    }
-                                </td>
-                            </tr>
-                        }
+                        0 => "status-pending",
+                        1 => "status-approved",
+                        3 => "status-inprogress",
+                        4 => "status-completed",
+                        5 => "status-cancelled",
+                        2 => "status-rejected",
+                        6 => "status-pending",
+                        _ => ""
+                    };
+                    var badgeStatusClass = apt.Status switch
+                    {
+                        0 => "s-pending",
+                        1 => "s-approved",
+                        3 => "s-inprogress",
+                        4 => "s-completed",
+                        5 => "s-cancelled",
+                        2 => "s-rejected",
+                        6 => "s-pending",
+                        _ => ""
+                    };
+                    var statusIcon = apt.Status switch
+                    {
+                        0 => "bi-hourglass-split",
+                        1 => "bi-check-circle-fill",
+                        3 => "bi-play-circle-fill",
+                        4 => "bi-patch-check-fill",
+                        5 => "bi-x-circle-fill",
+                        2 => "bi-slash-circle",
+                        6 => "bi-arrow-repeat",
+                        _ => "bi-question-circle"
+                    };
+                    var initials = string.IsNullOrEmpty(apt.PatientName) ? "?" :
+                        string.Join("", apt.PatientName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                            .Take(2).Select(w => w[0])).ToUpper();
+
+                    var dayNum = "";
+                    var monthStr = "";
+                    if (DateTime.TryParse(apt.AppointmentDate, out var parsedDate))
+                    {
+                        dayNum = parsedDate.Day.ToString();
+                        monthStr = parsedDate.ToString("MMM").ToUpper();
                     }
                     else
                     {
-                        <tr><td colspan="5" class="text-center py-4 text-muted">Không có lịch hẹn nào</td></tr>
+                        dayNum = "—";
                     }
-                </tbody>
-            </table>
+
+                    <div class="appt-card @statusClass">
+                        <div class="appt-card-body">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <!-- Date Box -->
+                                <div class="appt-date-box d-none d-sm-flex">
+                                    <span class="appt-date-day">@dayNum</span>
+                                    <span class="appt-date-month">@monthStr</span>
+                                </div>
+
+                                <!-- Patient Info + Status Badge -->
+                                <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 180px;">
+                                    <div class="patient-avatar">@initials</div>
+                                    <div style="min-width:0;">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="fw-bold text-dark" style="font-size:0.92rem;">@(apt.PatientName ?? "N/A")</span>
+                                            <span class="appt-status @badgeStatusClass">
+                                                <i class="bi @statusIcon"></i>
+                                                @apt.StatusText
+                                            </span>
+                                        </div>
+                                        @if (apt.Status == 6 && !string.IsNullOrEmpty(apt.ProposedSlotDate))
+                                        {
+                                            <div class="mt-1"><span class="badge bg-warning bg-opacity-10 text-dark border border-warning-subtle small" style="font-size:0.7rem;"><i class="bi bi-arrow-repeat me-1"></i>New slot: @apt.ProposedSlotDate @apt.ProposedSlotStartTime</span></div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Package Badge (Right Side) -->
+                                @if (apt.TreatmentPackageId.HasValue)
+                                {
+                                    <div class="text-center">
+                                        <span class="appt-pkg-chip"><i class="bi bi-box-seam"></i>Package</span>
+                                    </div>
+                                }
+
+                                <!-- Time -->
+                                <div class="text-center" style="min-width: 110px;">
+                                    <div class="time-badge">
+                                        <i class="bi bi-clock"></i>
+                                        @(apt.StartTime ?? "--:--") — @(apt.EndTime ?? "--:--")
+                                    </div>
+                                </div>
+
+                                <!-- Fee -->
+                                <div class="text-end" style="min-width: 80px;">
+                                    @if (apt.Fee.HasValue && apt.Fee > 0)
+                                    {
+                                        <span class="fw-bold text-dark" style="font-size:0.88rem;">@apt.Fee.Value.ToString("N0") ₫</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </div>
+
+                                <!-- Actions: Details + Message + Approve/Reschedule (no Start/Cancel) -->
+                                <div class="d-flex gap-1 ms-auto align-items-center appointment-actions">
+                                    <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if (apt.Status is 1 or 3 && apt.PatientId.HasValue)
+                                    {
+                                        <a asp-page="/Doctor/Messages/Index" asp-route-patientId="@apt.PatientId" class="action-btn btn btn-outline-info" title="Chat with Patient">
+                                            <i class="bi bi-chat-dots-fill"></i>
+                                        </a>
+                                    }
+                                    @if (apt.Status == 0)
+                                    {
+                                        <form method="post" asp-page-handler="Confirm" class="d-inline">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="action-btn btn btn-outline-success" title="Approve">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (apt.Status == 6)
+                                    {
+                                        <form method="post" asp-page-handler="ApproveReschedule" class="d-inline">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="btn btn-success btn-sm px-2 action-label-btn" title="Approve Reschedule" style="font-size:0.75rem;">
+                                                <i class="bi bi-check-lg me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="RejectReschedule" class="d-inline">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="action-btn btn btn-outline-danger" title="Decline Reschedule" onclick="return confirm('Decline reschedule request and keep current slot?')">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
+    }
+}
+else
+{
+    <div class="empty-state">
+        <i class="bi bi-calendar2-x d-block"></i>
+        <h5>No appointments found</h5>
+        <p>There are no appointments matching your filters. Try adjusting your search criteria.</p>
+        @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.DateFrom) || !string.IsNullOrEmpty(Model.DateTo))
+        {
+            <a asp-page="Index" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:8px;">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+            </a>
+        }
     </div>
-</div>
+}
 
 <!-- Pagination -->
 @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
 {
-    <nav class="mt-3">
-        <ul class="pagination justify-content-center">
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center gap-1">
+            <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="Index" asp-route-page="@(Model.CurrentPage - 1)"
+                   asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+                   asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
+                   style="border-radius:8px;">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
             @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" asp-page="Index" asp-route-page="@i" asp-route-status="@Model.Status" asp-route-search="@Model.Search">@i</a>
+                    <a class="page-link" asp-page="Index" asp-route-page="@i"
+                       asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+                       asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
+                       style="border-radius:8px;">@i</a>
                 </li>
             }
+            <li class="page-item @(Model.CurrentPage >= Model.Pagination.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-page="Index" asp-route-page="@(Model.CurrentPage + 1)"
+                   asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+                   asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
+                   style="border-radius:8px;">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
         </ul>
     </nav>
 }

@@ -13,13 +13,14 @@ public class IndexModel : PageModel
     public List<BlogListItemDto> Blogs { get; set; } = new();
     public PaginationDto? Pagination { get; set; }
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public int CurrentPage { get; set; } = 1;
     public string? Error { get; set; }
 
     public async Task OnGetAsync()
     {
         Error = TempData["Error"] as string;
-        var filter = new BlogFilterDto { Status = Status, Page = CurrentPage, PageSize = 10 };
+        var filter = new BlogFilterDto { Status = Status, Search = Search, Page = CurrentPage, PageSize = 10 };
         var (data, pagination, error) = await _api.GetMyBlogsAsync(filter);
         Blogs = data; Pagination = pagination; Error ??= error;
     }

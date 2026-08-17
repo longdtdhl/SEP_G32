@@ -1,0 +1,128 @@
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
+
+@{
+    var role = JwtService.GetRole();
+    var dashboardUrl = role switch
+    {
+        "Doctor" => "/Doctor/Dashboard",
+        "Patient" => "/Patient/Appointments/Index",
+        "CustomerSupport" => "/CustomerSupport/Dashboard",
+        "BusinessManager" => "/BusinessManager/Dashboard",
+        "SystemAdmin" => "/Admin/Dashboard",
+        _ => "/"
+    };
+    
+    var portalName = role switch
+    {
+        "Doctor" => "Doctor Portal",
+        "Patient" => "Patient Portal",
+        "CustomerSupport" => "Support Portal",
+        "BusinessManager" => "Business Portal",
+        "SystemAdmin" => "Admin Portal",
+        _ => "MindBridge"
+    };
+    
+    // Build breadcrumb from URL path
+    var path = Context.Request.Path.Value?.Trim('/') ?? "";
+    var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+}
+
+<header class="mb-dash-topbar">
+    <div class="d-flex align-items-center gap-3 h-100 px-3 px-lg-4">
+        <!-- Sidebar Toggle (mobile/tablet) -->
+        <button class="btn p-0 d-lg-none border-0 mb-sidebar-toggle" type="button" id="sidebarToggleBtn" aria-label="Toggle sidebar">
+            <i class="bi bi-list" style="font-size:1.5rem;color:#334155;"></i>
+        </button>
+
+        <!-- Logo -->
+        <a asp-page="/Index" class="d-flex align-items-center text-decoration-none flex-shrink-0">
+            <img src="/images/logo-cropped.png" alt="MindBridge" style="height:32px;width:auto;" />
+        </a>
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="d-none d-md-block flex-grow-1" style="min-width:0;">
+            <ol class="breadcrumb mb-0" style="font-size:0.82rem;">
+                <li class="breadcrumb-item">
+                    <a href="@dashboardUrl" class="text-decoration-none" style="color:var(--mb-primary);">
+                        <i class="bi bi-house-door" style="font-size:0.85rem;"></i>
+                    </a>
+                </li>
+                @for (int i = 0; i < segments.Length; i++)
+                {
+                    var seg = segments[i];
+                    var label = seg switch
+                    {
+                        "Patient" or "Doctor" or "Admin" or "CustomerSupport" or "BusinessManager" => portalName,
+                        "Appointments" => "Appointments",
+                        "ConsultationRecords" => "Clinical Records",
+                        "ConsultationNotes" => "Consultation Notes",
+                        "TreatmentPackages" => "Treatment Packages",
+                        "TreatmentCases" => string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase) ? "Treatment Cases" : "Treatment Progress",
+                        "Schedules" => "Calendar & Availability",
+                        "Patients" => "Patient Records",
+                        "Blogs" => "My Articles",
+                        "ServicePackages" => "Service Packages",
+                        "Subscriptions" => "Plan & Billing",
+                        "Verification" => "Professional Verification",
+                        "DoctorApplications" => "Doctor Applications",
+                        "BlogModeration" => "Blog Moderation",
+                        "Specializations" => "Specializations",
+                        "Users" => "Users",
+                        "Roles" => "Roles",
+                        "Permissions" => "Permissions",
+                        "AuditLogs" => "Audit Logs",
+                        "Settings" => "Settings",
+                        "Reports" => "Reports",
+                        "Analytics" => "Analytics",
+                        "Favorites" => "Favorites",
+                        "Messages" => "Messages",
+                        "Notifications" => "Notifications",
+                        "Journal" => "Mood Journey",
+                        "Psychometrics" => "Psychological Assessments",
+                        "Reviews" => "Reviews",
+                        "Profile" => "Profile",
+                        "Dashboard" => "Dashboard",
+                        "Details" => "Details",
+                        "Create" => "Create",
+                        "Edit" => "Edit",
+                        "Index" => "",
+                        "DaysOff" => "Days Off",
+                        "Status" => "Status",
+                        "History" => "History",
+                        "TakeTest" => "Take Test",
+                        "Result" => "Result",
+                        "Reschedule" => "Reschedule",
+                        "PaymentCallback" => "Payment",
+                        "VerificationStatus" => "Status",
+                        _ => seg
+                    };
+
+                    // Skip portal prefix and empty labels
+                    if (i == 0 && (seg == "Patient" || seg == "Doctor" || seg == "Admin" || seg == "CustomerSupport" || seg == "BusinessManager" || seg == "Notifications"))
+                        continue;
+                    if (string.IsNullOrEmpty(label) || label == "Index")
+                        continue;
+
+                    var isLast = i == segments.Length - 1;
+                    if (isLast)
+                    {
+                        <li class="breadcrumb-item active fw-semibold" style="color:#1e293b;" aria-current="page">@label</li>
+                    }
+                    else
+                    {
+                        <li class="breadcrumb-item"><span style="color:#94a3b8;">@label</span></li>
+                    }
+                }
+            </ol>
+        </nav>
+
+        <!-- Spacer for mobile -->
+        <div class="flex-grow-1 d-md-none"></div>
+
+        <!-- Right side: Notification + User -->
+        <ul class="navbar-nav flex-row align-items-center gap-2 ms-auto">
+            <partial name="_NotificationBell" />
+            <partial name="_UserDropdown" />
+        </ul>
+    </div>
+</header>

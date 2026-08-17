@@ -1,33 +1,36 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Account.ProfileModel
 @{
     ViewData["Title"] = "My Profile";
+    Layout = "_DashboardLayout";
 }
 
 <div style="max-width:640px;margin:0 auto;">
-    <div class="card">
-        <div class="card-body">
-            <h2 class="mb-4">My Profile</h2>
+    <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <div class="card-body p-4">
+            <h2 class="mb-4" style="font-size:1.4rem; font-weight:700; color:#1e293b;">
+                <i class="bi bi-person-gear me-2" style="color:var(--mb-primary);"></i>My Profile
+            </h2>
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
             <form method="post">
                 <div class="text-center mb-4">
-                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:96px;height:96px;background-color:var(--mb-secondary);">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:96px;height:96px;background-color:var(--mb-secondary-light); border:1px solid var(--mb-secondary);">
                         <i class="bi bi-person-fill" style="font-size:2.5rem;color:var(--mb-primary);"></i>
                     </div>
-                    <p class="text-muted mb-0" style="font-size:0.875rem;">@Model.Email</p>
+                    <p class="text-muted mb-0 fw-semibold" style="font-size:0.875rem;">@Model.Email</p>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Full Name</label>
-                    <input asp-for="Input.FullName" class="form-control" />
+                    <label class="form-label fw-semibold">Full Name</label>
+                    <input asp-for="Input.FullName" class="form-control" style="border-radius:10px;" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
-                    <input asp-for="Input.PhoneNumber" class="form-control" />
+                    <label class="form-label fw-semibold">Phone Number</label>
+                    <input asp-for="Input.PhoneNumber" class="form-control" style="border-radius:10px;" />
                 </div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">Gender</label>
-                        <select asp-for="Input.Gender" class="form-select">
+                        <label class="form-label fw-semibold">Gender</label>
+                        <select asp-for="Input.Gender" class="form-select" style="border-radius:10px;">
                             <option value="">Select</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -35,15 +38,17 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Date of Birth</label>
-                        <input asp-for="Input.DateOfBirth" type="date" class="form-control" />
+                        <label class="form-label fw-semibold">Date of Birth</label>
+                        <input asp-for="Input.DateOfBirth" type="date" class="form-control" style="border-radius:10px;" />
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Address</label>
-                    <input asp-for="Input.Address" class="form-control" />
+                    <label class="form-label fw-semibold">Address</label>
+                    <input asp-for="Input.Address" class="form-control" style="border-radius:10px;" />
                 </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary w-100 btn-lg mt-3" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
+                    Save Changes
+                </button>
             </form>
         </div>
     </div>

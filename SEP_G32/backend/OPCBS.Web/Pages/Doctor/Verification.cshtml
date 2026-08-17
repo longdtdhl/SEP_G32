@@ -29,7 +29,7 @@
 {
     var v = Model.Verification;
     var statusLower = v.Status?.ToLower() ?? "draft";
-
+    
     var (badgeBg, badgeColor, badgeBorder, displayStatus) = statusLower switch
     {
         "submitted" or "pending" => ("#fef3c7", "#92400e", "#fde68a", "Pending Review"),
@@ -42,10 +42,10 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
             <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-activity me-2 text-primary"></i>Account Verification Progress</h5>
-
+            
             <div class="d-flex justify-content-between align-items-center position-relative flex-wrap gap-4" style="z-index: 1;">
                 <div class="position-absolute top-50 start-0 end-0 translate-middle-y bg-light d-none d-md-block" style="height: 4px; z-index: -1;"></div>
-
+                
                 <!-- Step 1 -->
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
@@ -134,7 +134,7 @@
             }
 
             <hr class="my-4" />
-
+            
             <!-- Certificate Section Header with Action Button -->
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <div class="fw-bold text-dark"><i class="bi bi-award me-1 text-primary"></i>Practice Certificate Document</div>
@@ -147,20 +147,20 @@
             {
                 var certUrl = v.CertificateUrl;
                 var fileName = !string.IsNullOrEmpty(v.CertificateFileName) ? v.CertificateFileName : "Practice_Certificate_Document";
-                var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
-                || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+                var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) 
+                           || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) 
+                           || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                           || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                           || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
                 var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
-                || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
-
+                         || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
+                
                 <div class="card border bg-light mb-3">
                     <div class="card-body">
                         @if (isImage)
                         {
                             <div class="text-center mb-3">
-                                <img src="@certUrl" alt="Practice Certificate Document" class="img-fluid rounded border shadow-sm" style="max-height: 450px; cursor: pointer;"
+                                <img src="@certUrl" alt="Practice Certificate Document" class="img-fluid rounded border shadow-sm" style="max-height: 450px; cursor: pointer;" 
                                      onclick="window.open(this.src, '_blank', 'noopener,noreferrer')" title="Click to view full size" />
                             </div>
                         }
@@ -170,7 +170,7 @@
                                 <iframe src="@certUrl" title="Certificate PDF Document" class="rounded border"></iframe>
                             </div>
                         }
-
+                        
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi @(isPdf ? "bi-file-earmark-pdf-fill text-danger fs-4" : isImage ? "bi-file-earmark-image-fill text-primary fs-4" : "bi-file-earmark-text-fill text-secondary fs-4")"></i>
@@ -259,10 +259,10 @@ else
                     Please provide accurate practice credentials and upload your official practice license/certificate.
                 </div>
             </div>
-
+            
             <form method="post" enctype="multipart/form-data" id="initialVerificationForm">
                 <h5 class="fw-bold mb-4 text-dark border-bottom pb-2"><i class="bi bi-file-earmark-medical me-2 text-primary"></i>Verification Practice Credentials</h5>
-
+                
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-medium small">Specialization / Position <span class="text-danger">*</span></label>

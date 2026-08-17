@@ -1,0 +1,137 @@
+@page
+@model OPCBS.Web.Pages.Notifications.IndexModel
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "_DashboardLayout";
+}
+
+<div class="container py-4" style="max-width: 800px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1 fw-bold" style="color: var(--mb-primary);">
+                <i class="bi bi-bell me-2"></i>Notifications
+            </h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                @if (Model.UnreadCount > 0)
+                {
+                    <span class="badge bg-primary rounded-pill me-1">@Model.UnreadCount</span>
+                    <span>unread notifications</span>
+                }
+                else
+                {
+                    <span>All notifications have been read</span>
+                }
+            </p>
+        </div>
+        @if (Model.UnreadCount > 0)
+        {
+            <form method="post" asp-page-handler="MarkAllRead">
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-check2-all me-1"></i>Mark All as Read
+                </button>
+            </form>
+        }
+    </div>
+
+    <!-- Notification List -->
+    @if (!Model.Notifications.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-bell-slash" style="font-size: 4rem; color: #ddd;"></i>
+            <h5 class="text-muted mt-3">No notifications</h5>
+            <p class="text-muted">You will be notified when important events occur.</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group shadow-sm" style="border-radius: 14px; overflow: hidden;">
+            @foreach (var notif in Model.Notifications)
+            {
+                var isUnread = !notif.IsRead;
+                var bgClass = isUnread ? "background: #f0f7ff;" : "";
+                var icon = notif.Type switch
+                {
+                    "Appointment" => "📅",
+                    "Verification" => "✅",
+                    "Subscription" => "💳",
+                    "Package" => "📦",
+                    "System" => "🔔",
+                    "Reminder" => "⏰",
+                    "ConsultationNote" => "📋",
+                    _ => "🔔"
+                };
+                var redirectUrl = !string.IsNullOrEmpty(notif.ActionUrl) ? notif.ActionUrl : "#";
+
+                <div class="list-group-item border-0 d-flex align-items-start gap-3 py-3" style="@bgClass border-bottom: 1px solid #f0f0f0 !important;">
+                    <div style="font-size: 1.6rem; min-width: 36px; text-align: center;">@icon</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 fw-bold" style="font-size: 0.9rem;">
+                                    @if (redirectUrl != "#")
+                                    {
+                                        <a href="@redirectUrl" class="text-dark text-decoration-none hover-primary">@notif.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @notif.Title
+                                    }
+                                    @if (isUnread)
+                                    {
+                                        <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.6rem;">New</span>
+                                    }
+                                </h6>
+                                <p class="mb-1 text-muted" style="font-size: 0.85rem;">@notif.Message</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    @{
+                                        var diff = DateTime.UtcNow - notif.CreatedAt;
+                                        if (diff.TotalMinutes < 1) { <text>Just now</text> }
+                                        else if (diff.TotalHours < 1) { <text>@((int)diff.TotalMinutes) minutes ago</text> }
+                                        else if (diff.TotalDays < 1) { <text>@((int)diff.TotalHours) hours ago</text> }
+                                        else if (diff.TotalDays < 7) { <text>@((int)diff.TotalDays) days ago</text> }
+                                        else { <text>@notif.CreatedAt.ToString("MM/dd/yyyy HH:mm")</text> }
+                                    }
+                                </small>
+                            </div>
+                            <div class="d-flex gap-1 ms-2">
+                                @if (redirectUrl != "#")
+                                {
+                                    <a href="@redirectUrl" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 2px 8px;" title="View Details">
+                                        <i class="bi bi-arrow-right-circle"></i>
+                                    </a>
+                                }
+                                @if (isUnread)
+                                {
+                                    <form method="post" asp-page-handler="MarkRead" class="d-inline">
+                                        <input type="hidden" name="id" value="@notif.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem; padding: 2px 8px;" title="Mark as Read">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.Pagination != null && Model.Pagination.TotalItems > 15)
+        {
+            var totalPages = (int)Math.Ceiling((double)Model.Pagination.TotalItems / 15);
+            <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    @for (var i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="?CurrentPage=@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

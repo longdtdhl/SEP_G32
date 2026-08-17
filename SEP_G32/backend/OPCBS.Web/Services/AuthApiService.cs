@@ -17,9 +17,13 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(AuthResponseDto? Data, string? Error)> LoginAsync(LoginRequestDto model)
     {
         var (data, error) = await PostAsync<AuthResponseDto>(ApiRoutes.Login, model);
-        if (data?.AccessToken != null)
+        if (!string.IsNullOrWhiteSpace(data?.AccessToken) && !string.IsNullOrWhiteSpace(data.RefreshToken))
         {
-            _cookieService.StoreToken(data.AccessToken);
+            _cookieService.StoreTokens(data.AccessToken, data.RefreshToken, model.RememberMe);
+            _cookieService.StoreUserDisplay(
+                data.FullName,
+                data.AvatarUrl,
+                model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(7));
         }
         return (data, error);
     }
@@ -27,8 +31,14 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(bool Success, string? Error)> RegisterAsync(RegisterRequestDto model)
         => await PostAsync(ApiRoutes.Register, model);
 
+    public async Task<(bool Success, string? Error)> RegisterDoctorAsync(RegisterDoctorRequestDto model)
+        => await PostAsync(ApiRoutes.RegisterDoctor, model);
+
     public async Task<(bool Success, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto model)
         => await PostAsync(ApiRoutes.VerifyOtp, model);
+
+    public async Task<(bool Success, string? Error)> ResendVerificationOtpAsync(ForgotPasswordRequestDto model)
+        => await PostAsync(ApiRoutes.ResendVerificationOtp, model);
 
     public async Task<(bool Success, string? Error)> ForgotPasswordAsync(ForgotPasswordRequestDto model)
         => await PostAsync(ApiRoutes.ForgotPassword, model);
@@ -42,11 +52,18 @@ public class AuthApiService : ApiServiceBase, IAuthApiService
     public async Task<(UserProfileDto? Data, string? Error)> GetProfileAsync()
     {
         var (data, _, error) = await GetAsync<UserProfileDto>(ApiRoutes.UserProfile);
+        if (data != null)
+            _cookieService.StoreUserDisplay(data.FullName, data.AvatarUrl);
         return (data, error);
     }
 
     public async Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileDto model)
-        => await PutAsync(ApiRoutes.UserProfile, model);
+    {
+        var result = await PutAsync(ApiRoutes.UserProfile, model);
+        if (result.Success)
+            _cookieService.StoreUserDisplay(model.FullName ?? _cookieService.GetFullName(), _cookieService.GetAvatarUrl());
+        return result;
+    }
 
     public Task LogoutAsync()
     {

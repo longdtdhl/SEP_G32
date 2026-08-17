@@ -1,0 +1,174 @@
+@page
+@model OPCBS.Web.Pages.Doctor.TreatmentCases.IndexModel
+@{ ViewData["Title"] = "Treatment Progress"; Layout = "_DashboardLayout"; }
+
+<style>
+    /* ─── Table Styles ─── */
+    .tc-section {
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px;
+        overflow: hidden; margin-bottom: 1rem;
+    }
+    .tc-table { font-size: 0.84rem; margin-bottom: 0; }
+    .tc-table th {
+        font-size: 0.72rem; font-weight: 600; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 0.03em;
+        background: #fafbfc; border-bottom: 1px solid #f1f5f9; padding: 0.625rem 0.875rem;
+    }
+    .tc-table td { padding: 0.75rem 0.875rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .tc-table tbody tr { transition: background 0.12s; cursor: pointer; }
+    .tc-table tbody tr:hover { background: #f8fffe; }
+
+    /* ─── Badge ─── */
+    .tc-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 3px 10px; border-radius: 5px;
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .tc-badge.active { background: #ccfbf1; color: #115e59; }
+    .tc-badge.hold { background: #fef3c7; color: #92400e; }
+    .tc-badge.completed { background: #dbeafe; color: #1e40af; }
+    .tc-badge.terminated { background: #fee2e2; color: #991b1b; }
+    .tc-badge.cancelled { background: #f1f5f9; color: #64748b; }
+
+    /* ─── Progress ─── */
+    .tc-progress { background: #e2e8f0; border-radius: 3px; height: 5px; overflow: hidden; min-width: 50px; }
+    .tc-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+    /* ─── Search ─── */
+    .tc-search-wrap { position: relative; }
+    .tc-search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }
+    .tc-search-wrap input {
+        padding-left: 32px; border: 1px solid #e2e8f0; border-radius: 7px;
+        font-size: 0.82rem; height: 34px; background: #ffffff;
+    }
+    .tc-search-wrap input:focus { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,0.1); }
+
+    /* ─── Tabs ─── */
+    .tc-tab-nav { border-bottom: 2px solid #e2e8f0; margin-bottom: 1rem; display: flex; gap: 0; }
+    .tc-tab-nav .nav-link {
+        border: none; border-bottom: 2px solid transparent; border-radius: 0;
+        font-size: 0.82rem; font-weight: 600; color: #64748b;
+        padding: 0.625rem 1rem; margin-bottom: -2px;
+    }
+    .tc-tab-nav .nav-link.active { color: #0d9488; border-bottom-color: #0d9488; }
+    .tc-tab-nav .nav-link:hover:not(.active) { color: #334155; }
+
+    /* ─── Empty ─── */
+    .tc-empty { text-align: center; padding: 3rem 2rem; color: #94a3b8; }
+    .tc-empty i { font-size: 2rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1; }
+    .tc-empty p { font-size: 0.82rem; margin: 0; }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:800; color:#0f172a; margin:0;">
+            <i class="bi bi-heart-pulse-fill me-2" style="color:#0d9488;"></i>Treatment Progress
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Cases are <strong>auto-created</strong> when a patient accepts a treatment package</p>
+    </div>
+    <a href="/Doctor/TreatmentPackages/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
+        <i class="bi bi-box-seam me-1"></i>Manage Packages
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; border:none; font-size:0.84rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.Cases.Any())
+{
+    <div class="tc-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px;">
+        <i class="bi bi-heart-pulse"></i>
+        <h5 style="font-weight:700; color:#475569; font-size:1rem; margin-bottom:6px;">No Treatment Cases Yet</h5>
+        <p>Treatment cases appear here when patients accept your treatment packages.</p>
+        <a href="/Doctor/TreatmentPackages/Index" class="btn btn-sm mt-2" style="border-radius:7px; background:#0d9488; color:white; font-size:0.78rem; font-weight:600;">
+            <i class="bi bi-box-seam me-1"></i>View Packages
+        </a>
+    </div>
+}
+else
+{
+    var riskMap = Model.Dashboard?.AttentionCases?.ToDictionary(r => r.TreatmentCaseId) ?? new Dictionary<Guid, OPCBS.Web.DTOs.TreatmentCaseRiskWebDto>();
+    ViewData["RiskMap"] = riskMap;
+    <!-- Search & Sort Bar -->
+    <form method="get" class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+        <div class="tc-search-wrap flex-grow-1" style="max-width:320px;">
+            <i class="bi bi-search"></i>
+            <input type="text" name="Search" value="@Model.Search" class="form-control"
+                   placeholder="Search by patient, case name, or package..." />
+        </div>
+        <select name="SortBy" class="form-select" style="width:auto; border-radius:7px; font-size:0.82rem; height:34px; border:1px solid #e2e8f0;"
+                onchange="this.form.submit()">
+            <option value="newest" selected="@(Model.SortBy == "newest")">Newest First</option>
+            <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest First</option>
+            <option value="progress_desc" selected="@(Model.SortBy == "progress_desc")">Progress ↓</option>
+            <option value="progress_asc" selected="@(Model.SortBy == "progress_asc")">Progress ↑</option>
+            <option value="patient" selected="@(Model.SortBy == "patient")">Patient Name</option>
+        </select>
+        <button type="submit" class="btn btn-sm" style="border-radius:7px; background:#0d9488; color:white; font-size:0.8rem; font-weight:600; height:34px;">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        @if (!string.IsNullOrEmpty(Model.Search))
+        {
+            <a href="/Doctor/TreatmentCases/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; height:34px;">
+                <i class="bi bi-x-lg me-1"></i>Clear
+            </a>
+        }
+    </form>
+
+    <!-- Tabs -->
+    <ul class="nav tc-tab-nav" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#activePane" type="button" role="tab">
+                <i class="bi bi-activity me-1"></i>Active & On Hold (@Model.ActiveCases.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#historyPane" type="button" role="tab">
+                <i class="bi bi-clock-history me-1"></i>History (@Model.HistoryCases.Count)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Active Cases -->
+        <div class="tab-pane fade show active" id="activePane" role="tabpanel">
+            @if (!Model.ActiveCases.Any())
+            {
+                <div class="tc-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px;">
+                    <p>No active treatment cases@(string.IsNullOrEmpty(Model.Search) ? "." : " matching your search.")</p>
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_CaseTable", Model.ActiveCases, ViewData)
+            }
+        </div>
+
+        <!-- History Cases -->
+        <div class="tab-pane fade" id="historyPane" role="tabpanel">
+            @if (!Model.HistoryCases.Any())
+            {
+                <div class="tc-empty" style="background:white; border:1px dashed #e2e8f0; border-radius:10px;">
+                    <p>No completed or archived cases@(string.IsNullOrEmpty(Model.Search) ? "." : " matching your search.")</p>
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_CaseTable", Model.HistoryCases, ViewData)
+            }
+        </div>
+    </div>
+}

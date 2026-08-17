@@ -39,6 +39,11 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnPostRejectAsync(Guid id)
     {
+        if (string.IsNullOrWhiteSpace(RejectReason))
+        {
+            TempData["Error"] = "A rejection reason is required.";
+            return RedirectToPage(new { id });
+        }
         var (ok, error) = await _api.RejectBlogAsync(id, RejectReason);
         if (ok)
         {

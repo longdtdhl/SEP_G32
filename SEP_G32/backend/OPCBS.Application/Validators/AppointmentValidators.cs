@@ -32,9 +32,73 @@ public class CreateAppointmentDtoValidator : AbstractValidator<CreateAppointment
         RuleFor(x => x.GuestPhoneNumber)
             .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
             .When(x => !string.IsNullOrEmpty(x.GuestPhoneNumber));
+
+        RuleFor(x => x.GuestZaloNumber)
+            .MaximumLength(20).WithMessage("Zalo number cannot exceed 20 characters")
+            .Matches(@"^[0-9+() .-]+$").WithMessage("Invalid Zalo number format")
+            .When(x => !string.IsNullOrWhiteSpace(x.GuestZaloNumber));
     }
 }
 
+/// <summary>
+/// Validator for creating consultation records
+/// </summary>
+public class CreateConsultationNoteDtoValidator : AbstractValidator<CreateConsultationNoteDto>
+{
+    public CreateConsultationNoteDtoValidator()
+    {
+        // PatientRecordId is optional — auto-created from appointment if not provided
+
+        RuleFor(x => x.ConsultationSummary)
+            .NotEmpty().WithMessage("Consultation summary is required")
+            .MaximumLength(5000).WithMessage("Consultation summary cannot exceed 5000 characters");
+
+        RuleFor(x => x.Diagnosis)
+            .MaximumLength(2000).WithMessage("Diagnosis cannot exceed 2000 characters")
+            .When(x => !string.IsNullOrEmpty(x.Diagnosis));
+
+        RuleFor(x => x.Recommendation)
+            .MaximumLength(5000).WithMessage("Recommendation cannot exceed 5000 characters")
+            .When(x => !string.IsNullOrEmpty(x.Recommendation));
+
+        RuleFor(x => x.FollowUpNotes)
+            .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
+            .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
+
+        RuleFor(x => x.TherapyPlan)
+            .MaximumLength(2000).WithMessage("Kế hoạch trị liệu không được vượt quá 2000 ký tự.")
+            .When(x => !string.IsNullOrEmpty(x.TherapyPlan));
+    }
+}
+
+/// <summary>
+/// Validator for updating consultation records
+/// </summary>
+public class UpdateConsultationNoteDtoValidator : AbstractValidator<UpdateConsultationNoteDto>
+{
+    public UpdateConsultationNoteDtoValidator()
+    {
+        RuleFor(x => x.ConsultationSummary)
+            .NotEmpty().WithMessage("Consultation summary is required")
+            .MaximumLength(5000).WithMessage("Consultation summary cannot exceed 5000 characters");
+
+        RuleFor(x => x.Diagnosis)
+            .MaximumLength(2000).WithMessage("Diagnosis cannot exceed 2000 characters")
+            .When(x => !string.IsNullOrEmpty(x.Diagnosis));
+
+        RuleFor(x => x.Recommendation)
+            .MaximumLength(5000).WithMessage("Recommendation cannot exceed 5000 characters")
+            .When(x => !string.IsNullOrEmpty(x.Recommendation));
+
+        RuleFor(x => x.FollowUpNotes)
+            .MaximumLength(5000).WithMessage("Follow-up notes cannot exceed 5000 characters")
+            .When(x => !string.IsNullOrEmpty(x.FollowUpNotes));
+
+        RuleFor(x => x.TherapyPlan)
+            .MaximumLength(2000).WithMessage("Kế hoạch trị liệu không được vượt quá 2000 ký tự.")
+            .When(x => !string.IsNullOrEmpty(x.TherapyPlan));
+    }
+}
 
 /// <summary>
 /// Validator for canceling appointments

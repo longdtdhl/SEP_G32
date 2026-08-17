@@ -1,0 +1,132 @@
+@page "{id:guid}"
+@model OPCBS.Web.Pages.Doctor.Patients.EditModel
+@{
+    ViewData["Title"] = "Update Patient Profile";
+
+    Layout = "_DashboardLayout";}
+
+<style>
+    .form-section { margin-bottom: 1.5rem; }
+    .form-section-title {
+        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title i { color: var(--mb-primary); }
+
+    .patient-info-card {
+        background: linear-gradient(135deg, #f0fdf8, #ecfdf5); border-radius: 14px; padding: 1.25rem;
+        border: 1px solid rgba(16,185,129,0.15);
+    }
+    
+    .form-control { border-radius: 10px; }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-pencil-square me-2" style="color:var(--mb-primary);"></i>Update Patient Profile
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Edit basic information and clinical history</p>
+    </div>
+    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3" style="border-radius:12px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form method="post" class="mt-4">
+    <input type="hidden" asp-for="Id" />
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section-title justify-content-between">
+                        <div><i class="bi bi-person-badge"></i>Personal Information</div>
+                        <span class="badge bg-light text-secondary border ms-auto small" style="font-size:0.7rem;"><i class="bi bi-lock-fill me-1"></i>Read-Only</span>
+                    </div>
+
+                    <div class="alert alert-light border small text-muted mb-3" style="border-radius:10px;">
+                        <i class="bi bi-info-circle me-1 text-primary"></i>Personal information is managed by patient or administrator and cannot be modified by doctor.
+                    </div>
+
+                    <input type="hidden" asp-for="Input.GuestName" />
+                    <input type="hidden" asp-for="Input.GuestPhone" />
+                    <input type="hidden" asp-for="Input.GuestEmail" />
+                    <input type="hidden" asp-for="Input.GuestDateOfBirth" />
+                    <input type="hidden" asp-for="Input.GuestGender" />
+                    <input type="hidden" asp-for="Input.GuestAddress" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Patient Name</label>
+                        <input type="text" value="@Model.Input.GuestName" class="form-control bg-light text-dark fw-semibold" readonly disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Phone Number</label>
+                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestPhone) ? "N/A" : Model.Input.GuestPhone)" class="form-control bg-light text-dark" readonly disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Email</label>
+                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestEmail) ? "N/A" : Model.Input.GuestEmail)" class="form-control bg-light text-dark" readonly disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Date of Birth</label>
+                        <input type="text" value="@(Model.Input.GuestDateOfBirth.HasValue ? Model.Input.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")" class="form-control bg-light text-dark" readonly disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Gender</label>
+                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestGender) ? "N/A" : Model.Input.GuestGender)" class="form-control bg-light text-dark" readonly disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Address</label>
+                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestAddress) ? "N/A" : Model.Input.GuestAddress)" class="form-control bg-light text-dark" readonly disabled />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section-title">
+                        <i class="bi bi-heart-pulse-fill"></i>Clinical & Psychology Information
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Psychological History</label>
+                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Current Symptoms</label>
+                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Stress Factors</label>
+                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">General Notes</label>
+                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 pt-3 mt-4" style="border-top:2px solid #f1f5f9;">
+                        <a asp-page="./Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                            <i class="bi bi-check-circle-fill"></i>Update Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

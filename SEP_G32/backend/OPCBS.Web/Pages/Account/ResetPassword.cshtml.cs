@@ -12,10 +12,12 @@ public class ResetPasswordModel : PageModel
 
     public ResetPasswordModel(IAuthApiService authService) { _authService = authService; }
 
-    public void OnGet(string? email)
+    public void OnGet(string? email, string? otpCode)
     {
         if (!string.IsNullOrEmpty(email))
             Input.Email = email;
+        if (!string.IsNullOrEmpty(otpCode))
+            Input.OtpCode = otpCode;
     }
 
     public async Task<IActionResult> OnPostAsync()

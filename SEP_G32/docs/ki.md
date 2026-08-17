@@ -1,0 +1,705 @@
+# Knowledge Items (KI) - MindBridge System
+
+Tài liệu này ghi nhận các kiến thức thực tế (Knowledge Items), các lưu ý (gotchas) và các mẫu thiết kế kiến trúc (architectural patterns) trong dự án MindBridge để hỗ trợ các lập trình viên hoặc AI Agents phát triển dự án tiếp theo một cách nhất quán.
+
+---
+
+## 1. Tự động nhận diện & Khấu trừ phiên Gói điều trị (Treatment Packages Booking)
+
+### Ngữ cảnh & Nghiệp vụ
+Khi bệnh nhân đã mua một Gói điều trị tâm lý của Bác sĩ, mỗi khi họ đặt lịch hẹn mới với bác sĩ đó, số phiên còn lại (`RemainingSessions`) của gói phải được khấu trừ đi 1 buổi (`RemainingSessions--`), và lịch hẹn phải được liên kết trực tiếp với gói điều trị thông qua trường `TreatmentPackageId`.
+
+### Thiết kế Kỹ thuật
+* **Frontend (`Book.cshtml.cs`):** 
+  * Khi bệnh nhân truy cập vào trang đặt lịch mà không truyền kèm `TreatmentPackageId` trên URL (ví dụ: bấm đặt lịch từ trang tìm kiếm chuyên gia hoặc thông tin bác sĩ), hệ thống ở Frontend sẽ tự động gọi API kiểm tra xem bệnh nhân có gói điều trị nào đang hoạt động (`Active`/`Accepted`) với bác sĩ được chọn hay không.
+  * Nếu có, giao diện hiển thị thông báo thành công và ngầm điền thuộc tính ẩn `TreatmentPackageId` để gửi lên API.
+* **Backend (`DoctorAppointmentServices.cs`):**
+  * Tại phương thức `CreateAppointmentAsync`, nếu `dto.TreatmentPackageId` gửi lên bằng rỗng, Backend thực hiện cơ chế tìm kiếm dự phòng (Fallback): Quét toàn bộ danh sách gói khám đang hoạt động, chưa hết hạn, và có `RemainingSessions > 0` của bệnh nhân với bác sĩ đó.
+  * Nếu phát hiện gói hợp lệ, hệ thống tự động gán lịch hẹn với gói này và thực hiện trừ số phiên còn lại.
+
+---
+
+## 2. Đồng bộ DTO & Ánh xạ thuộc tính (DTO Mapping Mismatches)
+
+Trong dự án có sự lệch pha thuộc tính giữa dữ liệu JSON do Backend API trả về và cách đặt tên thuộc tính ở Web DTO Layer. Điều này khiến giao diện nhận giá trị rỗng/ngầm định (gây ra các lỗi như toàn bộ tài khoản luôn hiển thị là "Bị khóa" hoặc danh sách Audit log trống trơn).
+
+### Sửa lỗi Cấu trúc Tài khoản (`AdminDtos.cs` -> `UserListItemDto`)
+* **API Backend trả về:** `status` (chuỗi "Active"/"Locked"), `isEmailVerified` (bool)
+* **Web DTO ban đầu:** `IsActive` (bool), `EmailConfirmed` (bool) -> Mất đồng bộ.
+* **Giải pháp:** Ánh xạ đúng tên trường từ API và cung cấp các thuộc tính tính toán động:
+  ```csharp
+  public string Status { get; set; } = string.Empty;
+  public bool IsEmailVerified { get; set; }
+  public bool IsActive => Status == "Active" || Status == "0";
+  public bool EmailConfirmed => IsEmailVerified;
+  ```
+
+### Sửa lỗi Nhật ký Hoạt động (`AdminDtos.cs` -> `AuditLogDto`)
+* **API Backend trả về:** `createdAt`, `userEmail`, `entityName`, `actionDescription`
+* **Web DTO ban đầu:** `Timestamp`, `UserName`, `EntityType`, `Details` -> Gây hiển thị trắng dòng.
+* **Giải pháp:** Lưu trữ đúng trường API và ánh xạ thuộc tính phục vụ View:
+  ```csharp
+  public string? UserEmail { get; set; }
+  public string EntityName { get; set; } = string.Empty;
+  public string? ActionDescription { get; set; }
+  public DateTime CreatedAt { get; set; }
+  
+  public string? UserName => UserEmail;
+  public string? EntityType => EntityName;
+  public string? Details => ActionDescription;
+  public DateTime Timestamp => CreatedAt;
+  ```
+
+---
+
+## 3. Bảo toàn Tham số Bộ lọc khi Phân trang (`_Pagination.cshtml`)
+
+### Vấn đề
+Khi thực hiện phân trang trên danh sách có bộ lọc (như tìm kiếm bác sĩ, lọc trạng thái lịch hẹn...), việc nhấp vào trang tiếp theo (ví dụ trang 2) sẽ reset toàn bộ tham số lọc về mặc định nếu đường dẫn phân trang chỉ dạng `?page=2`.
+
+### Giải pháp
+Nâng cấp tệp partial view dùng chung `_Pagination.cshtml` để tự động quét toàn bộ query string hiện tại của HTTP Request (trừ trường `page`) và đính kèm vào đường dẫn của các trang:
+```csharp
+@{
+    var queryParams = new List<string>();
+    foreach (var key in ViewContext.HttpContext.Request.Query.Keys)
+    {
+        if (key != "page")
+        {
+            var value = ViewContext.HttpContext.Request.Query[key];
+            queryParams.Add($"{key}={System.Net.WebUtility.UrlEncode(value)}");
+        }
+    }
+    var querySuffix = queryParams.Any() ? "&" + string.Join("&", queryParams) : "";
+}
+```
+
+---
+
+## 4. Định tuyến API Chuyên khoa (`Specializations`)
+
+### Lưu ý về Định tuyến (Route Configuration Gotchas)
+Không được sử dụng route `api/v1/specializations` để đọc hoặc thay đổi chuyên khoa vì Backend không đăng ký route này tại gốc (sẽ gây lỗi 404). Các API được thiết kế như sau:
+* **Xem toàn bộ chuyên khoa:** `GET api/v1/doctors/specializations` (ủy quyền cho `DoctorsController`).
+* **Quản trị chuyên khoa (Thêm/Sửa/Xóa):** `api/v1/business-manager/specializations` (ủy quyền cho `BusinessManagerController`).
+
+---
+
+## 5. Persistence Cấu hình Hệ thống (System Settings)
+
+* Các cấu hình hệ thống (như SMTP Server, Timeout phiên, Số lần đăng nhập tối đa, Chế độ bảo trì...) được lưu trữ động tại bảng dữ liệu `SystemConfigs` theo cấu trúc Key-Value thông qua entity `SystemConfig`.
+* Khi gọi các phương thức tương tác với bảng này trong `AdminService`, cần tiêm trực tiếp `IRepository<SystemConfig>` thông qua DI thay vì gọi qua `_uow.GetRepository<SystemConfig>()` để đảm bảo tính tương thích và nhất quán của Generic Repository pattern trong dự án.
+
+---
+
+## 6. Tính năng Trị liệu Chuyên sâu (Therapy Features)
+
+### Bài tập Trị liệu (`TherapyAssignment`)
+* **Entity:** `OPCBS.Domain/Entities/TherapyAssignment.cs` - Liên kết với `TreatmentPackage` qua `TreatmentPackageId`.
+* **Trạng thái:** `Status` = 0 (Chưa làm), 1 (Đã nộp bài), 2 (Bác sĩ đã nhận xét).
+* **Luồng hoạt động:** Bác sĩ tạo → Bệnh nhân nộp bài → Bác sĩ nhận xét.
+* **API Route:** `api/v1/therapy/assignments/*` (TherapyController).
+
+### Nhật ký Cảm xúc (`EmotionJournal`)
+* **Entity:** `OPCBS.Domain/Entities/EmotionJournal.cs` - Liên kết với `PatientProfile` qua `PatientId`.
+* **Thang đo:** `MoodScale` (1-5: Rất tệ → Rất tốt), `StressScale` (1-5: Rất thấp → Rất cao).
+* **Chia sẻ:** Thuộc tính `IsShared` cho phép bệnh nhân tùy chọn chia sẻ nhật ký với bác sĩ.
+* **API Route:** `api/v1/therapy/journals/*` (TherapyController).
+
+### Lưu ý Kỹ thuật
+* **DI Pattern:** Inject `IRepository<T>` trực tiếp (không dùng `_uow.GetRepository<T>()`).
+* **Web Client:** `ITherapyApiService` / `TherapyApiService` gộp cả Assignments + Journals.
+* **Chart.js:** Biểu đồ xu hướng tâm trạng dùng Chart.js CDN `https://cdn.jsdelivr.net/npm/chart.js`.
+
+### Liên kết Gói điều trị với Hồ sơ & Ghi chú tư vấn của Bác sĩ
+* **Hồ sơ bệnh nhân (`Doctor/Patients/Details`):** Tự động quét và hiển thị toàn bộ gói điều trị của bệnh nhân này với bác sĩ phụ trách. Đi kèm thanh tiến trình và nút điều hướng nhanh tới trang quản lý bài tập trị liệu.
+* **Ghi chú tư vấn (`Doctor/ConsultationNotes/Details`):** 
+  1. Nếu phiên tư vấn gắn liền với lịch hẹn (`AppointmentId`), hệ thống sẽ tìm kiếm gói điều trị được liên kết trực tiếp với lịch hẹn đó để hiển thị.
+  2. Dự phòng (Fallback): Nếu không có gói điều trị trực tiếp, hệ thống tự động hiển thị danh sách các gói điều trị khác của bệnh nhân này với bác sĩ để bác sĩ dễ dàng truy cập và giao bài tập.
+
+---
+
+## 7. Thống nhất Ngôn ngữ Tiếng Anh cho Toàn bộ Hệ thống (English Localization Alignment)
+
+Để đáp ứng trải nghiệm người dùng quốc tế, toàn bộ giao diện và các trường thông tin của MindBridge đã được chuyển đổi đồng bộ sang tiếng Anh chuẩn hóa:
+* **Hệ thống Điều hướng & Thanh Menu (`_Header.cshtml`, `_Sidebar.cshtml`, `_Footer.cshtml`):**
+  * Đưa tất cả các mục điều hướng chính, tiêu đề cổng thông tin, danh mục chân trang và menu cá nhân về tiếng Anh.
+  * Các menu bên (Sidebar) dành cho Bác sĩ và Bệnh nhân được dịch toàn bộ sang tiếng Anh (ví dụ: `Bảng điều khiển` -> `Dashboard`, `Lịch hẹn` -> `Appointments`, `Nhật ký cảm xúc` -> `Mood Journal`, v.v.).
+* **Trang chủ (`Index.cshtml`):** Các đề mục Hero, Trust Stats, featured therapists, How it works, Stories of healing, tài nguyên và CTA được đưa lại về tiếng Anh.
+* **Màn hình xác thực & Tài khoản (`Pages/Account/*`):**
+  * `Register.cshtml`, `Login.cshtml`, `RegisterDoctor.cshtml` được dịch hoàn toàn sang tiếng Anh.
+  * Các trang khôi phục tài khoản, OTP và thay đổi thông tin cá nhân (`Profile.cshtml`, `ChangePassword.cshtml`, `ForgotPassword.cshtml`, `ResetPassword.cshtml`, `VerifyOtp.cshtml`) hiển thị hoàn toàn bằng tiếng Anh.
+* **Trang điều trị & chuyên sâu của Bệnh nhân & Bác sĩ:** Các trang chi tiết gói trị liệu (`Details.cshtml`), Nhật ký cảm xúc (`Journal/Index.cshtml`) và Sàng lọc tâm lý (`Psychometrics/TakeTest.cshtml`) được chuyển ngữ toàn bộ sang tiếng Anh.
+
+### 5.3 Full English Localization (Comprehensive Pass)
+
+**Objective:** Convert ALL remaining Vietnamese text across the entire website to English. The user explicitly requested zero Vietnamese text visible on the UI.
+
+**Approach:**
+* Built a custom C# console translation tool (`TranslateApp`) that runs 6+ replacement passes over all `.cshtml` files.
+* Each pass targeted: dictionary-based phrase translation → mixed Vietnamese/English cleanup → single-word Vietnamese cleanup.
+
+**Files Updated:** 94 `.cshtml` files across all modules (Doctor, Patient, Admin, Blog, Appointment, CustomerSupport, etc.).
+
+**Key Areas Translated:**
+* All page titles, headers, labels, buttons, placeholders, tooltips, error messages, and empty state text
+* CSS comments containing Vietnamese descriptions
+* JavaScript strings (e.g. share buttons, clipboard copy feedback, EasyMDE placeholders)
+* Appointment statuses, blog moderation workflows, verification flows
+* Clinical consultation forms (diagnoses, therapy plans, follow-up notes)
+* Treatment package management and subscription UIs
+
+**Known Issue - Aggressive Word Replacement:**
+Short Vietnamese words like "cho", "lan", "và" can corrupt C# property names when used in `.Replace()`. Examples encountered:
+* `PsychologicalHistory` → `PsyforlogicalHistory` (from "cho" → "for")
+* `PsychometricSubmission` → `PsyformetricSubmission`
+* `TherapyPlan` → `TherapyPspread` (from "lan" → "spread")
+* `Specialization` → `Sspreadization`
+
+**Mitigation:** Post-translation fixup script scans all `.cshtml` files for corrupted identifiers and restores them. Always run `dotnet build` after translation passes to catch any namespace/property corruption.
+
+**Remaining Work:** ~228 lines across 34 files still contain Vietnamese characters, mostly in deeply embedded mixed English/Vietnamese strings that require manual per-file editing for complete cleanup.
+
+---
+
+## 8. Doctor Appointment List UI Redesign (Phase 1)
+
+### Design Architecture
+The doctor's appointment list page (`Pages/Doctor/Appointments/Index.cshtml`) was redesigned from a plain table to a card-based layout with the following components:
+
+* **Status Summary Cards:** Four clickable summary cards at the top showing counts for Pending, Approved, Completed, and Cancelled appointments. Clicking a card filters by that status.
+* **Filter Section:** Enhanced filters including Status dropdown, Patient name search, Date From/To range pickers, with a clear-all reset button.
+* **Card-Based Appointment List:** Appointments are grouped by date with each appointment rendered as a horizontal card showing:
+  - Patient avatar (initials-based, gradient background)
+  - Patient name + booking code
+  - Time badge (start — end)
+  - Status badge with color coding
+  - Fee or Package indicator
+  - Quick-action buttons (Approve/Complete/Cancel) as compact icon buttons
+* **Empty State:** Custom empty state with illustration when no appointments match filters.
+
+### Technical Details
+* **Code-behind (`Index.cshtml.cs`):** Makes two API calls — one for filtered paginated data and one unfiltered (pageSize=9999) to compute status counts. Uses `AppointmentFilterDto` with `FromDate` and `ToDate` for date range filtering.
+* **DTO Enhancement:** `AppointmentListItemDto` (both Web and Application layers) now includes `EndTime` property alongside `StartTime`, populated by `EnrichAppointmentListDtosAsync` from `slot.EndTime.ToString("HH:mm")`.
+* **Razor Syntax Note:** Within an `@if` block, declare variables directly (`var grouped = ...;`) — do NOT wrap them in `@{ }` blocks as this causes Razor error `RZ1010`.
+
+---
+
+## 9. Consultation Note Completion Guard (Phase 2)
+
+### Business Rule
+Doctors MUST create a consultation note for an appointment before they can mark it as "Completed". This prevents incomplete clinical records.
+
+### Implementation
+* **Backend Guard (`DoctorAppointmentServices.cs` → `CompleteAppointmentAsync`):** Queries `IRepository<ConsultationNote>` before allowing status transition. If no non-deleted note exists for the appointment, returns error: "Please create a consultation note before completing this appointment."
+* **DI Change:** `AppointmentService` now requires `IRepository<ConsultationNote>` as a constructor parameter. Any code instantiating `AppointmentService` (including unit tests) must pass this dependency.
+* **Frontend Guard (`Details.cshtml`):** When status is Approved:
+  - If `HasConsultationNote` is true → green success alert + enabled "Mark as Completed" button
+  - If false → yellow warning alert + disabled button with tooltip
+  - Always shows appropriate CTA: "View/Edit Consultation Note" or "Create Consultation Note" or "Create Patient Record"
+* **Test Impact:** `CompleteAppointment_Success` test must set up `_consultationNoteRepoMock` to return a note for the appointment. Use `null!` for `required` navigation properties (`Doctor`, `PatientRecord`) that aren't exercised in test logic.
+
+---
+
+## 10. Email Service Expansion Pattern
+
+### Architecture
+* **Interface:** `IEmailService` (in `OPCBS.Application/Interfaces/Services/ExternalServices.cs`) defines typed email methods instead of requiring callers to build HTML.
+* **Implementation:** `SmtpEmailService` (in `OPCBS.Infrastructure/Services/SmtpEmailService.cs`) uses a shared `BuildEmailTemplate(headerTitle, headerSubtitle, headerGradient, bodyHtml)` helper that produces branded, responsive HTML emails.
+* **Mock:** `MockEmailService` (in `MockExternalServices.cs`) logs all email sends to console for development.
+
+### Available Email Methods
+| Method | Trigger |
+|--------|---------|
+| `SendOtpEmailAsync` | Registration verification |
+| `SendPasswordResetEmailAsync` | Password reset request |
+| `SendAppointmentConfirmedEmailAsync` | Doctor approves appointment |
+| `SendAppointmentCancelledEmailAsync` | Either party cancels |
+| `SendAppointmentCompletedEmailAsync` | Doctor completes appointment |
+| `SendAppointmentReminderEmailAsync` | Background reminder service |
+| `SendConsultationNoteEmailAsync` | Doctor creates consultation note |
+
+### Adding New Email Types
+1. Add method signature to `IEmailService` interface
+2. Implement in `SmtpEmailService` using `BuildEmailTemplate()` helper
+3. Add no-op mock in `MockEmailService`
+4. Call from the relevant service method, wrapped in `try/catch`
+
+---
+
+## 11. Appointment Cancellation Flow (Phase 3)
+
+### Business Rules
+* **24-Hour Policy:** Both patients and doctors must cancel at least 24 hours before the scheduled appointment time. The backend enforces this in `CancelAppointmentAsync`.
+* **Slot Release:** Upon cancellation, the appointment slot is set back to `Available`, allowing the time to be rebooked.
+* **Treatment Package Restore:** If the appointment was linked to a treatment package, `RemainingSessions` is incremented back (capped at `SessionQuantity`).
+
+### UI Design
+* **Doctor Side** (`Pages/Doctor/Appointments/Details.cshtml`): Cancel button triggers a Bootstrap modal with:
+  - Confirmation message showing patient name and date
+  - Category dropdown (Schedule Conflict, Emergency, Patient Request, Unavailable, Other)
+  - Free-text textarea for additional details
+  - 24h policy info alert
+* **Patient Side** (`Pages/Patient/Appointments/Details.cshtml`): Similar modal with patient-oriented categories (Schedule Conflict, Feeling Better, Financial Reasons, Found Another Doctor, Personal Emergency, Other).
+
+### Notification Flow
+After cancellation, the system notifies the **other party** (if patient cancels → doctor gets notified, and vice versa) via both:
+1. In-app notification (`INotificationService`)
+2. Email notification (`IEmailService.SendAppointmentCancelledEmailAsync`)
+
+---
+
+## 12. Email Integration into Appointment Lifecycle (Phase 4)
+
+### DI Change
+`AppointmentService` now requires `IEmailService` as a constructor parameter (after `INotificationService`, before `IUnitOfWork`). Unit tests must mock this with `Mock<IEmailService>`.
+
+### Lifecycle Emails Wired
+| Event | Method | Recipient |
+|-------|--------|-----------|
+| Appointment Approved | `ApproveAppointmentAsync` → `SendAppointmentConfirmedEmailAsync` | Patient |
+| Appointment Cancelled | `CancelAppointmentAsync` → `SendAppointmentCancelledEmailAsync` | Other party |
+| Appointment Completed | `CompleteAppointmentAsync` → `SendAppointmentCompletedEmailAsync` | Patient |
+
+### Pattern
+All email calls are placed inside existing `try { ... } catch { }` blocks alongside notification calls. They are fire-and-forget — a failed email will not roll back the appointment state transition.
+
+---
+
+## 13. VNPay Service Package Payment Gateway (Phase 5)
+
+### API Layer
+* `VnPayService.cs` implements `IPaymentService` using the standard VNPay 2.1.0 specification.
+* Generates a request URL containing query parameters sorted alphabetically and signed with HMAC-SHA512 using the merchant hash secret.
+* Signature verification is executed during callbacks and IPN calls by stripping the incoming secure hash and calculating HMAC-SHA512 over the alphabetically sorted remaining params.
+
+### Web / Razor Flow
+* When a doctor registers or renews a service package on `Doctor/ServicePackages/Index.cshtml`, `PurchaseAsync` is called with the package ID and return URL.
+* The API generates the VNPay URL, and the Razor Page redirects the user to the VNPay Sandbox page.
+* Upon payment completion, VNPay redirects the user back to `/Doctor/Subscriptions/PaymentCallback` which queries the API `ProcessCallbackAsync` to verify signatures, deactivate any older subscriptions (Expired), activate the new subscription (Active), and update `PaymentTransaction` to `Success`.
+
+---
+
+## 14. In-Progress Session & Inline Consultation Note Modal (Phase 2 Upgrade)
+
+### Appointment State Machine
+* **InProgress (3)**: Transition action `StartAppointmentAsync` allows a doctor to mark an Approved appointment as "In Progress" when starting consultation.
+* **Completion Guard**: If the session has no Consultation Note, completion is blocked. Instead of redirecting the user to a separate note creation page, the details page triggers a Bootstrap modal (`#createNoteModal`).
+* **Modal Submit & Complete**: The form in the modal allows the doctor to record diagnostic findings, chief complaints, and session notes, then submits to `OnPostCreateNoteAndCompleteAsync` which creates the note record and completes the appointment in a single request.
+
+---
+
+## 15. Follow-up Appointment Workflow & Doctor Detail Enrichment
+
+### Ngữ cảnh & Nghiệp vụ
+Hệ thống cần hỗ trợ tái khám: khi bác sĩ ghi nhận ngày tái khám trong Consultation Note (`NextAppointmentRecommendedDate`), bệnh nhân sẽ nhận email nhắc nhở 1 ngày trước ngày hẹn. Ngoài ra, bệnh nhân đã từng khám bác sĩ (returning patient) không cần điền lại thông tin Pre-Appointment Evaluation, và có thêm nút "Book Follow-up" trên trang chi tiết lịch hẹn đã hoàn thành.
+
+### Returning Patient Detection
+* **Backend:** `GetVisitCountAsync(patientUserId, doctorProfileId)` đếm số lượng appointment có `Status = Completed` giữa patient và doctor. `IsReturningPatientAsync` trả về `true` nếu `VisitCount > 0`.
+* **API Endpoints:** `GET /api/v1/appointments/visit-count/{doctorId}` và `GET /api/v1/appointments/is-returning/{doctorId}` (Patient role).
+* **Web Frontend:**
+  * Patient `Details.cshtml` hiển thị badge "Visit #N" cạnh specialization chip và nút "Book Follow-up" (chỉ khi `IsReturningPatient = true` và status = Completed).
+  * Nút "Book Follow-up" redirect đến `/Appointment/Book?doctorId=X&returning=true`.
+
+### Skip Pre-Evaluation cho Returning Patient
+* `Book.cshtml.cs` nhận query parameter `Returning=true` hoặc gọi `IsReturningAsync` để set `IsReturningPatient`.
+* `Book.cshtml` ẩn section Pre-Appointment Evaluation (Symptoms, MedicalHistory, Expectations) và hiển thị banner "Welcome back!" thay thế.
+
+### Follow-up Reminder (Background Service)
+* **Trigger:** `AppointmentReminderService.CheckAndSendFollowUpRemindersAsync` chạy mỗi 5 phút, quét `ConsultationNote` có `NextAppointmentRecommendedDate.Date = tomorrow (UTC)`.
+* **Actions:** Gửi in-app notification + email (`SendFollowUpReminderEmailAsync`) cho patient.
+* **Deduplication:** Sử dụng `RelatedEntityType = "FollowUpReminder"` + `RelatedEntityId = note.Id` trong bảng Notification để tránh gửi trùng.
+
+### Doctor Appointment Detail Enrichment
+* `EnrichAppointmentDtoAsync` populate thêm:
+  * `Fee` — từ `AppointmentSlot.Price`
+  * `TreatmentPackageName` — từ `TreatmentPackage.Name` (nếu có `TreatmentPackageId`)
+  * `VisitCount` — đếm completed appointments cùng patient + doctor
+* Doctor `Details.cshtml` hiển thị:
+  * Treatment Package badge (nếu có)
+  * Visit Count badge ("First consultation" hoặc "Visit #N")
+
+### Các file liên quan
+* `IAppointmentService.cs`, `DoctorAppointmentServices.cs`, `AppointmentsController.cs` (Backend)
+* `ExternalServices.cs`, `SmtpEmailService.cs`, `MockExternalServices.cs` (Email)
+* `AppointmentReminderService.cs` (Background Job)
+* `AppointmentDtos.cs` (Backend + Web), `IAppointmentApiService.cs`, `AppointmentApiService.cs` (Web)
+* Patient `Details.cshtml[.cs]`, `Book.cshtml[.cs]`, Doctor `Details.cshtml` (Razor Pages)
+
+---
+
+## 16. Doctor Booking Flow Improvements (6 fixes)
+
+### 16.1 Trường ngày tái khám trong Consultation Note Modal
+* Modal `#createNoteModal` trong Doctor `Details.cshtml` đã thêm input `date` cho `NoteInput.NextAppointmentRecommendedDate`.
+* DTO `CreateConsultationNoteDto` đã có sẵn field này — chỉ cần render input trên UI.
+
+### 16.2 Loại bỏ phần giá (Fee)
+* OPCBS không quản lý giá — dòng "Consultation Fee" đã bị xóa khỏi Appointment Information section trong Doctor `Details.cshtml`.
+
+### 16.3 Thông tin đầy đủ cho bệnh nhân tái khám
+* Doctor `Details.cshtml.cs` thêm 2 properties:
+  * `LatestConsultationNote` — ghi chú gần nhất từ lần khám trước (lọc bỏ buổi hiện tại), truy vấn qua `GetByPatientRecordIdAsync`.
+  * `ActiveTreatmentPackage` — gói điều trị đang active (Status = Active/Accepted, chưa hết hạn, còn sessions), truy vấn qua `GetMyPackagesAsync` và filter theo `PatientId`.
+* UI hiển thị:
+  * "Previous Consultation (Latest)" section — diagnosis, session notes, recommendations, therapy plan.
+  * "Active Package" row — tên gói, sessions completed/total, remaining, ngày hết hạn.
+
+### 16.4 Appointment List ẩn Cancelled
+* `Index.cshtml.cs`: Khi không có filter, lọc bỏ status Cancelled (5) và Rejected (2) khỏi danh sách.
+* Stat card "Cancelled" đổi thành "In Progress" (status 3), `CancelledCount` → `InProgressCount`.
+* `ApprovedCount` tách riêng, không gộp InProgress nữa.
+
+### 16.5 Nút Create Package ↔ View Package Details
+* Nếu `ActiveTreatmentPackage != null` → hiển thị "View Package Details" link đến `/Doctor/TreatmentPackages/Edit/{id}` + badge remaining sessions.
+* Nếu không → giữ nút "Create Treatment Package" như cũ.
+
+### 16.6 Badge gói khám trên đầu buổi hẹn
+* Khi appointment có `TreatmentPackageId` + `TreatmentPackageName`, hiển thị banner xanh lá phía trên Status Banner: "Treatment Package Appointment — This appointment is part of package: [Name]".
+
+### Các file liên quan
+* Doctor `Details.cshtml.cs`, Doctor `Details.cshtml` (Appointment Details)
+* Doctor `Index.cshtml.cs`, Doctor `Index.cshtml` (Appointment List)
+
+---
+
+## 17. Patient Booking Flow Improvements (3 fixes + bonus)
+
+### 17.1 Block booking outside treatment package
+* `Book.cshtml.cs`: Thêm `HasPackageButNotBookingVia` flag. Khi auto-detect active package nhưng patient không đến qua URL có `treatmentPackageId`, set flag = true và KHÔNG tự gán `TreatmentPackageId`.
+* `Book.cshtml`: Khi `HasPackageButNotBookingVia = true`, hiển thị warning banner vàng "You have an active treatment package" với 2 nút "Book via Package" và "View Package Details". Calendar bị ẩn hoàn toàn — patient phải đặt qua gói.
+
+### 17.2 Persist test results + Retake button
+* `Patient/Appointments/Details.cshtml`: Khi `PsychometricSubmission != null`, hiển thị kết quả test + thêm nút "Retake: [Test Title]" (chỉ khi status Pending/Approved). Nút retake link đến `/Patient/Psychometrics/TakeTest` với appointmentId.
+
+### 17.3 Patient Appointment List filter redesign
+* **Bug fix quan trọng**: Filter dropdown sử dụng sai status values (value="3" được label "Cancelled" nhưng 3 = InProgress). Sửa thành dùng enum names (Pending, Approved, InProgress, Completed, Cancelled, Rejected).
+* **Redesign**: Thêm 4 stat cards (Pending, Confirmed, Completed, All) giống giao diện bác sĩ. Thêm `PendingCount`, `ApprovedCount`, `CompletedCount`, `TotalCount` vào code-behind.
+* Sửa text mixed Vietnamese/English.
+
+### 17.4 Bonus: Status mapping bug fix
+* `Patient/Appointments/Details.cshtml`: `isCancelled` sai mapping Status == 3 (thực tế là InProgress). Sửa thành Status == 5. Thêm `isInProgress` = Status == 3.
+* Xóa "Consultation Fee" khỏi patient details (consistent với doctor side — OPCBS không quản lý giá).
+
+### Các file liên quan
+* `Appointment/Book.cshtml[.cs]` (Booking page)
+* Patient `Appointments/Details.cshtml` (Patient appointment details)
+* Patient `Appointments/Index.cshtml[.cs]` (Patient appointment list)
+
+---
+
+## 18. Sidebar Removal, expanded Dropdown Menu, and Doctor Header Customization
+
+### 18.1 Sidebar Removal
+* `_Layout.cshtml`: Loại bỏ partial view `<partial name="_Sidebar" />`. Thay đổi container Dashboard từ `.mb-dashboard-content` sang `.container py-4` chuẩn. Việc này loại bỏ hoàn toàn sidebar trái trên tất cả các trang Portal/Dashboard, đưa layout về dạng căn giữa chuẩn và hiển thị cả footer.
+
+### 18.2 Profile Dropdown Menu Upgrade
+* `_Header.cshtml`: Nâng cấp dropdown menu góc phải (ảnh đại diện). Thiết lập `min-width: 265px` và `max-height: 85vh; overflow-y: auto;` để hiển thị danh sách dài một cách tối ưu.
+* Đã chuyển toàn bộ liên kết chức năng của mọi vai trò từ sidebar cũ sang dropdown menu này:
+  * **Patient**: Dashboard, My Appointments, Consultation Records, Treatment Packages, Mood Journal, Psychometric Tests, Notifications.
+  * **Doctor**: Dashboard, Appointments, Schedules, Patient Records, Consultation Notes, Treatment Packages, Blog Posts, Service Packages, Subscription Status, Identity Verification, Profile. (Kiểm tra xác thực `isVerified` qua `IVerificationApiService` để khóa/mở các liên kết tương tự sidebar).
+  * **Customer Support**: Dashboard, Doctor Applications, Blog Moderation.
+  * **Business Manager**: Dashboard, Service Packages, Specializations, Analytics, Reports.
+  * **System Admin**: Dashboard, Users, Roles, Permissions, Audit Logs, Reports, Settings.
+
+### 18.3 Doctor Header Navigation Customization
+* `_Header.cshtml`: Đối với menu trái (`navbar-nav me-auto`), nếu người dùng đăng nhập dưới vai trò Bác sĩ (`isDoctor`), chỉ hiển thị duy nhất liên kết **Resources** (`/Blog/Index`). Ẩn tất cả các liên kết Home, Find a Therapist, Track Appointment.
+
+### Các file liên quan
+* `_Layout.cshtml` (Main layout)
+* `_Header.cshtml` (Main header & dropdown navigation)
+
+---
+
+## 19. Treatment Management System (Treatment Cases)
+
+### 19.1 Kiến trúc Tổng quan
+Hệ thống nâng cấp mô hình "Gói điều trị" (Treatment Package) thành mô hình "Ca điều trị" (Treatment Case) - một lifecycle hoàn chỉnh cho quá trình trị liệu tâm lý. Treatment Package giữ vai trò **template** (mẫu gói dịch vụ), còn Treatment Case là **instance** (ca điều trị thực tế) được tạo từ template đó.
+
+```
+Treatment Package (Template)
+            │
+            ▼
+Treatment Case (Active Instance)
+            │
+            ├── Treatment Sessions (buổi trị liệu, link tới Appointment)
+            ├── Treatment Goals (mục tiêu điều trị + tracking progress)
+            ├── Therapy Assignments (bài tập về nhà - tái sử dụng entity cũ)
+            ├── Emotion Journals (mood tracking - tái sử dụng EmotionJournal)
+            ├── Psychometric Submissions (assessment - tái sử dụng entity cũ)
+            └── Timeline (chronological aggregation tất cả events)
+```
+
+### 19.2 Domain Entities
+
+**Entities mới** (`TreatmentCaseEntities.cs`):
+* `TreatmentCase`: Ca điều trị chính. FK tới `TreatmentPackage`, `DoctorProfile` (via UserId), `PatientProfile` (via UserId). Chứa `TotalSessions`, `CompletedSessions`, `RemainingSessions`, `OverallProgressPercent`, `Status` (enum `TreatmentCaseStatus`).
+* `TreatmentSession`: Buổi trị liệu trong case. FK tới `TreatmentCase` (cascade), optional FK tới `Appointment` (unique, set null). Chứa `SessionNumber`, `MoodBefore/MoodAfter` (1-10), `TherapistNotes`, `PatientFeedback`.
+* `TreatmentGoal`: Mục tiêu điều trị. FK tới `TreatmentCase` (cascade). Chứa `Priority` (enum), `ProgressPercent`, `AchievedDate`.
+
+**Enums mới** (`SystemEnums.cs`):
+* `TreatmentCaseStatus`: Active(0), OnHold(1), Completed(2), Terminated(3), Transferred(4)
+* `TreatmentSessionStatus`: Scheduled(0), InProgress(1), Completed(2), Cancelled(3), NoShow(4)
+* `GoalPriority`: Low(0), Medium(1), High(2)
+* `GoalStatus`: NotStarted(0), InProgress(1), Achieved(2), Deferred(3), Cancelled(4)
+
+**Entities sửa đổi** (thêm nullable FK `TreatmentCaseId`):
+* `TherapyAssignment`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để bài tập có thể gắn vào case.
+* `EmotionJournal`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để mood journal link vào case.
+* `PsychometricSubmission`: Thêm `TreatmentCaseId` (nullable) + navigation `TreatmentCase?` để assessment link vào case.
+* `TreatmentPackage`: Thêm navigation `ICollection<TreatmentCase>? TreatmentCases`.
+* `DoctorProfile` & `PatientProfile`: Thêm navigation `ICollection<TreatmentCase>? TreatmentCases`.
+
+### 19.3 Quyết định Thiết kế Quan trọng
+
+1. **Tái sử dụng entity cũ**: EmotionJournal, PsychometricSubmission, TherapyAssignment **không** được tạo lại mới. Thay vào đó, thêm FK nullable `TreatmentCaseId` để backward-compatible với dữ liệu cũ.
+2. **DoctorProfile & PatientProfile dùng `UserId` làm principal key** cho FK trong TreatmentCase (`HasPrincipalKey(d => d.UserId)`), giống pattern đã có trong hệ thống.
+3. **Auto-close**: Khi `CompleteSession` và `RemainingSessions <= 0`, case tự động chuyển sang `Completed` + `OverallProgressPercent = 100`.
+4. **Progress formula**: 40% sessions + 40% goals + 20% homework (đã implement session part).
+5. **Timeline**: Aggregation từ 5 nguồn (Sessions, Goals, Assignments, Journals, Submissions), sort theo `EventDate` descending.
+
+### 19.4 API Endpoints
+
+Controller: `TreatmentCaseController` (`api/v1/treatment-cases`)
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST   | `/` | Tạo Treatment Case từ Package template |
+| GET    | `/{id}` | Chi tiết case |
+| GET    | `/doctor/{doctorUserId}` | Danh sách case của bác sĩ |
+| GET    | `/patient/{patientUserId}` | Danh sách case của bệnh nhân |
+| PUT    | `/{id}` | Cập nhật case info |
+| POST   | `/{id}/close` | Đóng case (Complete/Terminate) |
+| POST   | `/sessions` | Tạo session mới |
+| PUT    | `/sessions/{id}/complete` | Hoàn thành session |
+| GET    | `/{caseId}/sessions` | Danh sách sessions |
+| POST   | `/goals` | Tạo goal mới |
+| PUT    | `/goals/{id}` | Cập nhật goal |
+| GET    | `/{caseId}/goals` | Danh sách goals |
+| GET    | `/{caseId}/progress` | Dashboard progress tổng hợp |
+| GET    | `/{caseId}/timeline` | Timeline chronological |
+
+### 19.5 Web UI Pages
+
+**Doctor Portal:**
+* `Doctor/TreatmentCases/Index`: Danh sách tất cả cases (card layout, filter by status, progress bar)
+* `Doctor/TreatmentCases/Details`: Chi tiết case, 4 tabs (Sessions, Goals, Timeline, Overview), modals cho Complete Session, Create/Update Goal, Close Case
+
+**Patient Portal:**
+* `Patient/TreatmentCases/Index`: Danh sách cases của bệnh nhân (gradient progress bars)
+* `Patient/TreatmentCases/Details`: Progress dashboard (read-only), 3 tabs (Goals, Sessions, Activity)
+
+**Navigation:** Đã thêm link "Treatment Cases" vào dropdown menu trong `_Header.cshtml` cho cả Doctor và Patient.
+
+### 19.6 DbContext Configuration
+
+`OpcbsDbContext.cs` - Method `ConfigureTreatmentCaseEntities()`:
+* Composite index trên `(DoctorId, PatientId, Status)` cho TreatmentCase
+* Unique filtered index trên `AppointmentId` cho TreatmentSession (`WHERE AppointmentId IS NOT NULL`)
+* DeleteBehavior: Restrict cho Package/Doctor/Patient FK, Cascade cho Session/Goal, SetNull cho optional FKs
+
+### Các file liên quan (Backend)
+* `OPCBS.Domain/Entities/TreatmentCaseEntities.cs` [NEW]
+* `OPCBS.Domain/Enums/SystemEnums.cs` (thêm 4 enums)
+* `OPCBS.Domain/Entities/TherapyAssignment.cs` (thêm FK)
+* `OPCBS.Domain/Entities/EmotionJournal.cs` (thêm FK)
+* `OPCBS.Domain/Entities/PsychometricEntities.cs` (thêm FK)
+* `OPCBS.Domain/Entities/PackageEntities.cs` (thêm navigation)
+* `OPCBS.Domain/Entities/IdentityEntities.cs` (thêm navigation)
+* `OPCBS.Infrastructure/Persistence/OpcbsDbContext.cs` (DbSets + Fluent API)
+* `OPCBS.Application/DTOs/TreatmentCase/TreatmentCaseDtos.cs` [NEW]
+* `OPCBS.Application/Interfaces/Services/ITreatmentCaseService.cs` [NEW]
+* `OPCBS.Application/Services/TreatmentCaseService.cs` [NEW]
+* `OPCBS.Application/Extensions/ApplicationServiceCollectionExtensions.cs` (DI)
+* `OPCBS.Api/Controllers/TreatmentCaseController.cs` [NEW]
+
+### Các file liên quan (Web Frontend)
+* `OPCBS.Web/DTOs/TreatmentCaseDtos.cs` [NEW]
+* `OPCBS.Web/Services/IServiceInterfaces.cs` (thêm ITreatmentCaseApiService)
+* `OPCBS.Web/Services/ServiceImplementations.cs` (thêm TreatmentCaseApiService)
+* `OPCBS.Web/Constants/ApiRoutes.cs` (thêm route)
+* `OPCBS.Web/Program.cs` (DI registration)
+* `OPCBS.Web/Pages/Doctor/TreatmentCases/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Doctor/TreatmentCases/Details.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/TreatmentCases/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/TreatmentCases/Details.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Shared/_Header.cshtml` (nav links)
+
+---
+
+## 20. Hệ thống Tin nhắn Trực tiếp Real-time (Live Chat & Messaging System)
+
+### Ngữ cảnh & Nghiệp vụ
+* Hỗ trợ trò chuyện trực tuyến giữa Bác sĩ và Bệnh nhân nhằm trao đổi nhanh về tình hình sức khỏe hoặc giải đáp thắc mắc liên quan ngoài giờ hẹn khám.
+* Mỗi người dùng (Bác sĩ hoặc Bệnh nhân) có thể xem danh sách các cuộc hội thoại gần đây kèm tin nhắn cuối cùng, trạng thái chưa đọc, và tham gia nhắn tin trực tiếp thời gian thực.
+
+### Thiết kế Kỹ thuật
+* **Entity:** `ChatMessage` (`OPCBS.Domain/Entities/MessagingEntities.cs`)
+  - Lưu trữ tin nhắn giữa người gửi (`SenderId`) và người nhận (`ReceiverId`).
+  - Có các thuộc tính: `MessageText`, `SentAt` (thời gian gửi), `IsRead` (trạng thái đọc).
+* **SignalR Hub (`ChatHub.cs`):**
+  - Quản lý các kết nối thời gian thực theo ID người dùng (`UserId`).
+  - Phương thức `SendMessage(string receiverId, string message)` để định tuyến và chuyển tiếp tin nhắn tức thời cho người nhận nếu họ đang trực tuyến.
+* **API Endpoints (`MessagesController`):**
+  - `GET api/v1/messages/conversations`: Lấy danh sách các cuộc hội thoại hiện có của người dùng hiện tại kèm theo tin nhắn mới nhất và số lượng tin nhắn chưa đọc.
+  - `GET api/v1/messages/conversation/{otherUserId}`: Lấy lịch sử tin nhắn chi tiết giữa hai người dùng (hỗ trợ phân trang).
+  - `POST api/v1/messages/mark-read/{senderId}`: Đánh dấu đã đọc toàn bộ tin nhắn nhận được từ người dùng cụ thể.
+* **Web UI Pages:**
+  - Bác sĩ truy cập qua `/Doctor/Messages/Index`.
+  - Bệnh nhân truy cập qua `/Patient/Messages/Index`.
+  - Thiết kế card layout, có sidebar danh sách bạn chat bên trái và khung chat trực quan bên phải, tự động cuộn xuống dưới khi có tin nhắn mới.
+
+### Các file liên quan
+* `OPCBS.Domain/Entities/MessagingEntities.cs` [NEW]
+* `OPCBS.Application/Interfaces/Services/IMessagingService.cs` [NEW]
+* `OPCBS.Application/Services/MessagingService.cs` [NEW]
+* `OPCBS/Controllers/MessagesController.cs` [NEW]
+* `OPCBS/Hubs/ChatHub.cs` [NEW]
+* `OPCBS.Web/DTOs/MessagingDtos.cs` [NEW]
+* `OPCBS.Web/Pages/Doctor/Messages/Index.cshtml[.cs]` [NEW]
+* `OPCBS.Web/Pages/Patient/Messages/Index.cshtml[.cs]` [NEW]
+
+---
+
+## 21. Tính năng Bác sĩ yêu thích (Favorite Doctors)
+
+### Ngữ cảnh & Nghiệp vụ
+* Bệnh nhân có thể thêm các bác sĩ/chuyên gia vào danh sách yêu thích để dễ dàng theo dõi, tìm kiếm và đặt lịch hẹn khám sau này.
+
+### Thiết kế Kỹ thuật
+* **Entity:** `FavoriteDoctor` (`OPCBS.Domain/Entities/IdentityEntities.cs`)
+  - Chứa khóa ngoại kép: `PatientId` (tham chiếu tới PatientProfile) và `DoctorId` (tham chiếu tới DoctorProfile).
+* **API Endpoints (`FavoritesController`):**
+  - `POST api/v1/favorites/{doctorId}`: Thêm bác sĩ vào danh sách yêu thích.
+  - `DELETE api/v1/favorites/{doctorId}`: Xóa bác sĩ khỏi danh sách yêu thích.
+  - `GET api/v1/favorites`: Lấy danh sách toàn bộ bác sĩ yêu thích của bệnh nhân hiện tại.
+  - `GET api/v1/favorites/check/{doctorId}`: Kiểm tra nhanh trạng thái yêu thích của bác sĩ được chỉ định.
+* **Web UI Pages:**
+  - Bệnh nhân quản lý tại `/Patient/Favorites/Index` dạng card lưới trực quan.
+  - Tích hợp nút Trái tim (Heart toggle button) tại trang chi tiết bác sĩ `/Doctors/Details` để bệnh nhân có thể thích hoặc bỏ thích ngay tại chỗ.
+
+### Các file liên quan
+* `OPCBS.Application/Interfaces/Services/IFavoriteDoctorService.cs` [NEW]
+* `OPCBS.Application/Services/FavoriteDoctorService.cs` [NEW]
+* `OPCBS/Controllers/FavoritesController.cs` [NEW]
+* `OPCBS.Web/DTOs/FavoriteDtos.cs` [NEW]
+* `OPCBS.Web/Pages/Patient/Favorites/Index.cshtml[.cs]` [NEW]
+
+---
+
+## 22. Kênh thông báo Real-time qua SignalR (Real-time Notification Hub)
+
+### Ngữ cảnh & Nghiệp vụ
+* Các sự kiện quan trọng trong hệ thống (như khi lịch hẹn được duyệt/hủy, khi có bài tập trị liệu mới được giao/nộp, hay có tin nhắn mới) cần được thông báo tức thời tới người dùng mà không cần họ phải F5/reload trang.
+
+### Thiết kế Kỹ thuật
+* **SignalR Hub (`NotificationHub.cs`):**
+  - Được đăng ký tại `Program.cs` đường dẫn `/hubs/notifications`.
+  - Quản lý các kết nối của người dùng theo nhóm `UserId`.
+* **Phát thông báo từ Backend (`BusinessServices.cs` -> `CreateNotificationAsync`):**
+  - Khi lưu thông báo vào database, hệ thống đồng thời gọi `IHubContext<NotificationHub>` để gửi tin nhắn `ReceiveNotification` kèm theo thông tin chi tiết của thông báo đó.
+  - Client-side Razor Pages sử dụng thư viện JS SignalR lắng nghe sự kiện `ReceiveNotification` để hiển thị toast notification và cập nhật badge đếm số thông báo chưa đọc trên Header.
+
+### Các file liên quan
+* `OPCBS/Hubs/NotificationHub.cs` [NEW]
+* `OPCBS.Application/Services/BusinessServices.cs` (tích hợp SignalR HubContext vào `CreateNotificationAsync`)
+* `OPCBS.Web/Pages/Shared/_Header.cshtml` (tích hợp JS SignalR client)
+
+---
+
+## 23. Luồng Thay đổi Lịch hẹn (Appointment Rescheduling Flow)
+
+### Ngữ cảnh & Nghiệp vụ
+* Bệnh nhân có nhu cầu đổi cuộc hẹn đã đặt sang một khung giờ rảnh khác của cùng một bác sĩ.
+* **Chính sách 24h (24-Hour Policy):** Để bảo vệ lịch làm việc của bác sĩ, bệnh nhân chỉ được phép đổi lịch hẹn trước giờ bắt đầu của lịch cũ ít nhất 24 tiếng. Khung giờ mới chọn phải ở trạng thái trống (`Available`).
+
+### Thiết kế Kỹ thuật
+* **API Endpoint:** `PUT api/v1/appointments/{appointmentId}/reschedule`
+* **Xử lý Backend (`DoctorAppointmentServices.cs` -> `RescheduleAppointmentAsync`):**
+  - Kiểm tra xem thời gian bắt đầu của lịch cũ có cách thời điểm hiện tại từ 24 giờ trở lên hay không.
+  - Giải phóng khung giờ cũ: Cập nhật trạng thái slot cũ của lịch hẹn đó thành `Available`.
+  - Đặt trước khung giờ mới: Kiểm tra và khóa slot mới được chọn thành `Booked`.
+  - Cập nhật thông tin cuộc hẹn: Thay đổi ID slot tham chiếu, giờ bắt đầu/kết thúc, và reset trạng thái lịch hẹn về `Pending` (chờ bác sĩ phê duyệt lại).
+  - Ghi nhận lịch sử thay đổi vào bảng `AppointmentHistory`.
+* **Web UI Pages:**
+  - Bệnh nhân thực hiện đổi lịch tại `/Patient/Appointments/Reschedule?id={appointmentId}`.
+  - Giao diện cung cấp lịch biểu chọn ngày và hiển thị danh sách các slot trống (Available Slots) của bác sĩ đó.
+
+### Các file liên quan
+* `OPCBS.Domain/Entities/AppointmentEntities.cs` (Cập nhật lịch sử thay đổi)
+* `OPCBS.Application/Services/DoctorAppointmentServices.cs` (Phương thức `RescheduleAppointmentAsync`)
+* `OPCBS/Controllers/AppointmentsController.cs` (Định tuyến API đổi lịch)
+* `OPCBS.Web/Pages/Patient/Appointments/Reschedule.cshtml[.cs]` [NEW]
+
+---
+
+## 24. Quyền riêng tư & Ngày tư vấn tùy chỉnh cho Ghi chú tư vấn (Consultation Note Visibility & Custom Date)
+
+### Ngữ cảnh & Nghiệp vụ
+* **Quyền riêng tư (Note Visibility):** Ghi chú tư vấn của bác sĩ có thể chứa các chẩn đoán nhạy cảm hoặc giả thuyết lâm sàng chỉ nên lưu trữ nội bộ (`Doctor Only`), hoặc các lời khuyên, tóm tắt cần chia sẻ cho bệnh nhân xem (`Patient Visible`).
+* **Ngày tư vấn tùy chỉnh (Custom Consultation Date):** Đối với các ghi chú tạo độc lập (Walk-in / Không qua lịch hẹn hệ thống), bác sĩ cần được ghi nhận ngày thực hiện thực tế thay vì mặc định lấy ngày tạo bản ghi. Nếu ghi chú gắn liền với lịch hẹn, ngày tư vấn được tự động khóa theo ngày của lịch hẹn đó.
+
+### Thiết kế Kỹ thuật
+* **Trường dữ liệu mới:** Thực thể `ConsultationNote` được bổ sung hai thuộc tính mới:
+  - `Visibility` (`NoteVisibility` enum: `0 = DoctorOnly`, `1 = PatientVisible`).
+  - `ConsultationDate` (DateTime, cho phép lưu ngày diễn ra buổi tư vấn thực tế).
+* **Quy tắc Kiểm tra & Ánh xạ:**
+  - Bác sĩ khi tạo/chỉnh sửa bệnh án được chọn mức độ hiển thị và ngày tư vấn.
+  - Nếu ghi chú tư vấn liên kết với `AppointmentId`, trường `ConsultationDate` sẽ tự động lấy giá trị từ ngày hẹn (`AppointmentDate`) và khóa không cho phép sửa đổi ở Frontend.
+* **Web UI Pages:**
+  - Màn hình của Bác sĩ (`Doctor/ConsultationNotes/Create.cshtml`, `Edit.cshtml`) hiển thị dropdown chọn quyền riêng tư và ô chọn ngày tư vấn.
+  - Giao diện xem của bệnh nhân (`Patient/ConsultationRecords/Index.cshtml`) và các API lấy dữ liệu của bệnh nhân sẽ chỉ hiển thị các bệnh án có trạng thái `PatientVisible` (1).
+
+### Các file liên quan
+* `OPCBS.Domain/Enums/SystemEnums.cs` (Thêm enum `NoteVisibility`)
+* `OPCBS.Infrastructure/Migrations/20260726142232_AddConsultationNoteVisibilityAndDate.cs` [NEW]
+* `OPCBS.Application/Services/BusinessServices.cs` (Cập nhật `CreateAsync`, `UpdateAsync`, `EnrichRecordsAsync`)
+* `OPCBS.Web/DTOs/ConsultationRecordDtos.cs` (Cập nhật các thuộc tính hiển thị)
+* `OPCBS.Web/Pages/Doctor/ConsultationNotes/Create.cshtml` & `Edit.cshtml` (Thêm các trường input)
+
+---
+
+## 25. Tự động khởi tạo Ca điều trị khi Chấp nhận Gói (Auto-create Treatment Case on Package Acceptance)
+
+### Ngữ cảnh & Nghiệp vụ
+* Gói điều trị (`TreatmentPackage`) hoạt động như một template mẫu. Khi bệnh nhân đồng ý trị liệu và bấm chấp nhận gói khám đề xuất, hệ thống cần tự động tạo ra một Ca điều trị thực tế (`TreatmentCase`) làm trung tâm quản lý tiến trình, các buổi trị liệu cụ thể, mục tiêu và bài tập về nhà của bệnh nhân đó.
+
+### Thiết kế Kỹ thuật
+* **Tích hợp Quy trình (`TreatmentPackageService.cs` -> `AcceptPackageAsync`):**
+  - Khi bệnh nhân bấm chấp nhận gói điều trị, trạng thái gói được cập nhật thành `Active` (hoặc `Accepted`).
+  - Hệ thống kiểm tra xem đã có `TreatmentCase` nào liên kết với Gói điều trị, Bác sĩ và Bệnh nhân này chưa.
+  - Nếu chưa, tự động tạo mới một thực thể `TreatmentCase` với các thông số kế thừa từ gói template:
+    - `CaseName` = `Package.Name`
+    - `CaseDescription` = `Package.Description`
+    - `PrimaryConcern` = `Package.TargetOutcome`
+    - `TotalSessions` = `Package.SessionQuantity`
+    - `RemainingSessions` = `Package.SessionQuantity`
+    - `StartDate` = Thời gian hiện tại.
+    - `ExpectedEndDate` = Thời gian hiện tại cộng thêm số ngày hiệu lực của gói (`ValidityDays`).
+    - `Status` = `TreatmentCaseStatus.Active`.
+  - Thực thể mới được lưu xuống database trong cùng một transaction.
+
+### Các file liên quan
+* `OPCBS.Application/Services/BusinessServices.cs` (Phương thức `AcceptPackageAsync` xử lý tạo Case tự động)
+
+---
+
+## 26. Ràng buộc số lượng Gói điều trị hoạt động & Tính bất biến của gói đã gán (Treatment Package Active Count & Immutability Rules)
+
+### Ngữ cảnh & Nghiệp vụ
+* **Giới hạn số gói hoạt động:** Để tránh xung đột dữ liệu và luồng đặt lịch, một bệnh nhân và một bác sĩ chỉ được phép có tối đa **1 gói điều trị đang hoạt động** ở các trạng thái chưa kết thúc (`Active`, `Accepted`, `Created`, hoặc `Assigned`).
+* **Tính bất biến của gói đã gán (Immutability):** Gói điều trị sau khi đã được gán cho một bệnh nhân cụ thể (`PatientId` hợp lệ) thì trở thành **bất biến**. Bác sĩ không được phép chỉnh sửa các thông số của gói này để đảm bảo tính cam kết về giá và số buổi. Chỉ có các gói template dùng chung (chưa gán cho ai) mới có thể sửa đổi.
+
+### Thiết kế Kỹ thuật
+* **Kiểm tra giới hạn khi tạo (`TreatmentPackagesController` -> `Create`):**
+  - Quét toàn bộ danh sách gói điều trị hiện tại giữa Bác sĩ và Bệnh nhân.
+  - Nếu tồn tại bất kỳ gói nào có trạng thái `Active`, `Accepted`, `Created`, hoặc `Assigned`, API từ chối tạo và trả về mã lỗi `400 BadRequest`.
+* **Chặn chỉnh sửa gói đã gán (`TreatmentPackagesController` -> `Update`):**
+  - Trước khi thực hiện cập nhật gói điều trị, hệ thống kiểm tra trường `PatientId`.
+  - Nếu `PatientId` khác rỗng (đã được gán cho một bệnh nhân), hệ thống sẽ từ chối cập nhật và yêu cầu bác sĩ tạo một gói mới nếu muốn thay đổi thông tin.
+
+### Các file liên quan
+* `OPCBS/Controllers/BlogsReviewsController.cs` (Kiểm tra nghiệp vụ trong `Create` và `Update` thuộc `TreatmentPackagesController`)
+
+
+

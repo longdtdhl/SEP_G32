@@ -1,67 +1,219 @@
 @page
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.IndexModel
 @{
-    ViewData["Title"] = "Gói điều trị";
-    ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = "My Treatment Packages";
+    Layout = "_DashboardLayout";
+    var mode = Model.ViewMode;
+    var displayList = mode == "history" ? Model.HistoryPackages : Model.ActivePackages;
 }
 
-<div class="mb-page-header">
-    <h1><i class="bi bi-box-seam me-2" style="color:var(--mb-primary);"></i>Gói điều trị của tôi</h1>
-    <p class="text-muted mb-0">Theo dõi các gói điều trị được bác sĩ chỉ định</p>
+<style>
+    /* ── Segmented control ── */
+    .pp-seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; }
+    .pp-seg a {
+        padding: 7px 20px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+        color: #64748b; text-decoration: none; transition: all .2s; white-space: nowrap;
+    }
+    .pp-seg a.active { background: #fff; color: #0f766e; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .pp-seg a:hover:not(.active) { color: #0f766e; background: #e2e8f0; }
+    .pp-seg .seg-badge { background: #ef4444; color: #fff; font-size: 0.65rem; border-radius: 10px; padding: 1px 6px; margin-left: 4px; font-weight: 700; }
+
+    /* ── Search ── */
+    .pp-search { position: relative; max-width: 280px; }
+    .pp-search input {
+        padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.82rem; width: 100%; background: #fff; transition: border-color .2s;
+    }
+    .pp-search input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 3px rgba(13,148,136,.1); }
+    .pp-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }
+
+    /* ── Cards ── */
+    .pp-card {
+        background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden;
+        transition: all .25s ease; display: flex; flex-direction: column; height: 100%;
+    }
+    .pp-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.07); transform: translateY(-2px); }
+    .pp-card.pending { border-left: 4px solid #f59e0b; }
+    .pp-card-body { padding: 1.25rem; flex: 1; }
+    .pp-card-footer { padding: .75rem 1.25rem; border-top: 1px solid #f1f5f9; background: #fafbfc; }
+
+    /* ── Status ── */
+    .pp-status {
+        display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+        border-radius: 20px; font-size: 0.7rem; font-weight: 700; letter-spacing: .3px;
+    }
+    .pp-status.active   { background: #dcfce7; color: #15803d; }
+    .pp-status.pending  { background: #fef3c7; color: #92400e; }
+    .pp-status.completed{ background: #e0e7ff; color: #3730a3; }
+    .pp-status.expired  { background: #fee2e2; color: #991b1b; }
+    .pp-status.rejected { background: #fce7f3; color: #9d174d; }
+    .pp-status.cancelled{ background: #f1f5f9; color: #64748b; }
+    .pp-status.finished { background: #f0e7ff; color: #6d28d9; }
+
+    /* ── Meta ── */
+    .pp-meta { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #64748b; margin-bottom: 5px; }
+    .pp-meta i { color: #0d9488; width: 16px; text-align: center; font-size: .82rem; }
+    .pp-meta strong { color: #1e293b; }
+
+    /* ── Doctor chip ── */
+    .pp-doctor {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+        border-radius: 8px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        color: #166534; font-size: .78rem; font-weight: 600;
+    }
+
+    /* ── Progress ── */
+    .pp-progress-track { background: #e2e8f0; border-radius: 6px; height: 6px; overflow: hidden; }
+    .pp-progress-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
+
+    /* ── Empty state ── */
+    .pp-empty {
+        text-align: center; padding: 4rem 2rem; background: #fff;
+        border-radius: 16px; border: 2px dashed #e2e8f0;
+    }
+</style>
+
+<!-- ── Page Header ── -->
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h1 style="font-size:1.35rem; font-weight:800; margin:0; color:#1e293b;">
+            <i class="bi bi-box-seam-fill me-2" style="color:#0d9488;"></i>My Treatment Packages
+        </h1>
+        <p style="margin:4px 0 0; font-size:.82rem; color:#94a3b8;">Review packages from your therapist and track active treatments</p>
+    </div>
+    <div class="pp-search">
+        <i class="bi bi-search"></i>
+        <form method="get">
+            <input type="hidden" name="ViewMode" value="@mode" />
+            <input type="text" name="SearchTerm" value="@Model.SearchTerm" placeholder="Search packages..." />
+        </form>
+    </div>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
-
-@if (Model.Packages.Any())
+@if (Model.Error != null)
 {
-    <div class="row g-4">
-        @foreach (var pkg in Model.Packages)
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Segmented Control ── -->
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <div class="pp-seg">
+        <a href="?ViewMode=active&SearchTerm=@Model.SearchTerm" class="@(mode != "history" ? "active" : "")">
+            <i class="bi bi-lightning-charge me-1"></i>Active
+            @if (Model.PendingCount > 0) { <span class="seg-badge">@Model.PendingCount new</span> }
+        </a>
+        <a href="?ViewMode=history&SearchTerm=@Model.SearchTerm" class="@(mode == "history" ? "active" : "")">
+            <i class="bi bi-clock-history me-1"></i>History
+        </a>
+    </div>
+    <span class="text-muted" style="font-size:.78rem;">Showing @displayList.Count package(s)</span>
+</div>
+
+<!-- ── Package Cards ── -->
+@if (displayList.Any())
+{
+    <div class="row g-3">
+        @foreach (var pkg in displayList)
         {
+            var isPending = IndexModel.IsPending(pkg);
+            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && (pkg.Status == "Active" || pkg.Status == "Accepted");
+            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
+            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+
+            // Status resolve
+            string statusClass, statusLabel;
+            if (isFinished) { statusClass = "finished"; statusLabel = "All Sessions Done"; }
+            else if (pkg.IsExpired) { statusClass = "expired"; statusLabel = "Expired"; }
+            else if (isPending) { statusClass = "pending"; statusLabel = "Awaiting Your Response"; }
+            else
+            {
+                statusClass = pkg.Status switch { "Active" or "Accepted" => "active", "Completed" => "completed", "Cancelled" => "cancelled", "Rejected" => "rejected", _ => "pending" };
+                statusLabel = pkg.Status switch { "Active" or "Accepted" => "Active", "Completed" => "Completed", "Cancelled" => "Cancelled", "Rejected" => "Declined", _ => pkg.Status };
+            }
+
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="mb-0">@pkg.Title</h5>
-                            @{
-                                var badgeClass = pkg.Status switch
-                                {
-                                    "Active" => "bg-success",
-                                    "Pending" => "bg-warning text-dark",
-                                    "Completed" => "bg-info",
-                                    "Expired" => "bg-secondary",
-                                    "Rejected" => "bg-danger",
-                                    _ => "bg-secondary"
-                                };
-                            }
-                            <span class="badge @badgeClass">@pkg.Status</span>
+                <div class="pp-card @(isPending ? "pending" : "") h-100">
+                    <div class="pp-card-body">
+                        <!-- Title + Status -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 style="font-weight:700; font-size:.95rem; color:#1e293b; margin:0; max-width:65%;" class="text-truncate" title="@pkg.Title">@pkg.Title</h6>
+                            <span class="pp-status @statusClass">@statusLabel</span>
                         </div>
+
+                        <!-- Doctor -->
+                        <div class="pp-doctor mb-3">
+                            <i class="bi bi-person-badge"></i>Dr. @(pkg.DoctorName ?? "N/A")
+                        </div>
+
+                        <!-- Description -->
                         @if (!string.IsNullOrEmpty(pkg.Description))
                         {
-                            <p class="text-muted small mb-3">@pkg.Description</p>
+                            <p style="font-size:.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
                         }
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
-                                    <div class="fw-bold" style="color:var(--mb-primary);">@pkg.TotalSessions</div>
-                                    <small class="text-muted">Tổng buổi</small>
+
+                        <!-- Meta -->
+                        <div class="pp-meta"><i class="bi bi-camera-video"></i><span>Sessions: <strong>@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
+                        <div class="pp-meta"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong>@pkg.RemainingSessions</strong></span></div>
+                        <div class="pp-meta"><i class="bi bi-calendar-x"></i><span>Expires: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b")">@pkg.ExpirationDate.ToString("MMM dd, yyyy")</strong></span></div>
+                        <div class="pp-meta"><i class="bi bi-cash-stack"></i><span>Fee: <strong style="color:#0d9488;">@pkg.Price.ToString("N0") ₫</strong></span></div>
+
+                        <!-- Progress bar (for non-pending) -->
+                        @if (!isPending && pkg.TotalSessions > 0)
+                        {
+                            <div style="margin-top:10px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span style="font-size:.7rem; color:#94a3b8; font-weight:500;">Progress</span>
+                                    <span style="font-size:.7rem; color:@progressColor; font-weight:700;">@progress%</span>
                                 </div>
+                                <div class="pp-progress-track"><div class="pp-progress-fill" style="width:@progress%; background:@progressColor;"></div></div>
                             </div>
-                            <div class="col-6">
-                                <div class="p-2 rounded text-center" style="background:var(--mb-surface);">
-                                    <div class="fw-bold text-success">@pkg.RemainingSessions</div>
-                                    <small class="text-muted">Còn lại</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted"><i class="bi bi-wallet2 me-1"></i>@pkg.Price.ToString("N0") VND</small>
-                            <small class="text-muted"><i class="bi bi-calendar-x me-1"></i>HSD: @pkg.ExpirationDate.ToString("dd/MM/yyyy")</small>
-                        </div>
+                        }
                     </div>
-                    <div class="card-footer bg-transparent border-0 pb-3 px-3">
-                        <a asp-page="Details" asp-route-id="@pkg.Id" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-eye me-1"></i>Chi tiết
-                        </a>
+
+                    <!-- Footer Actions -->
+                    <div class="pp-card-footer d-flex gap-2">
+                        @if (isPending)
+                        {
+                            <a asp-page="Details" asp-route-id="@pkg.Id"
+                               class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
+                               style="border-radius:8px; font-size:.78rem; font-weight:700; background:#f59e0b; color:#fff; border:none;">
+                                <i class="bi bi-envelope-open"></i>Review & Respond
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-page="Details" asp-route-id="@pkg.Id"
+                               class="btn btn-sm btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                               style="border-radius:8px; font-size:.78rem; font-weight:600;">
+                                <i class="bi bi-eye"></i>Details
+                            </a>
+                            @if (isFinished)
+                            {
+                                <span class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
+                                   style="border-radius:8px; font-size:.78rem; font-weight:600; background:#f0e7ff; color:#6d28d9; border:1px solid #c4b5fd;">
+                                    <i class="bi bi-trophy-fill"></i>Completed!
+                                </span>
+                            }
+                            else if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
+                            {
+                                <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
+                                   class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
+                                   style="border-radius:8px; font-size:.78rem; font-weight:600; background:#0d9488; color:#fff; border:none;">
+                                    <i class="bi bi-calendar-plus"></i>Book Session
+                                </a>
+                            }
+                        }
                     </div>
                 </div>
             </div>
@@ -70,10 +222,20 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-box d-block mb-2" style="font-size:2.5rem;color:var(--mb-text-muted);"></i>
-            <p class="text-muted mb-0">Chưa có gói điều trị nào</p>
-        </div>
+    <div class="pp-empty">
+        <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
+        @if (mode == "history")
+        {
+            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No history yet</h5>
+            <p style="font-size:.85rem; color:#94a3b8;">Completed, declined, or expired packages will appear here.</p>
+        }
+        else
+        {
+            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No active packages</h5>
+            <p style="font-size:.85rem; color:#94a3b8; margin-bottom:1.5rem;">Your doctor will create a personalized treatment package for you after consultation.</p>
+            <a asp-page="/Doctors/Index" class="btn px-4 py-2" style="border-radius:10px; background:#0d9488; color:#fff; font-weight:600;">
+                <i class="bi bi-search me-1"></i>Find a Doctor
+            </a>
+        }
     </div>
 }

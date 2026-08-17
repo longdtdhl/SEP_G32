@@ -21,10 +21,10 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.Rating < 1 || Input.Rating > 5) { Error = "Vui lòng ch?n t? 1 ??n 5 sao."; return Page(); }
+        if (Input.Rating < 1 || Input.Rating > 5) { Error = "Please chá»n tá»« 1 Ä‘áº¿n 5 sao."; return Page(); }
         var (success, error) = await _service.CreateAsync(Input);
         if (!success) { Error = error; return Page(); }
-        TempData["SuccessMessage"] = "C?m ?n b?n ?ã ?ánh giá!";
-        return RedirectToPage("/Patient/Dashboard");
+        TempData["SuccessMessage"] = "Thank you for your review!";
+        return RedirectToPage("/Patient/Appointments/Index");
     }
 }

@@ -18,6 +18,16 @@ public interface IScheduleApiService
     Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId);
     Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes);
     Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto);
+    Task<(List<CalendarEventDto> Data, string? Error)> GetCalendarEventsAsync(DateTime? start = null, DateTime? end = null);
+    Task<(List<EligibleTreatmentPatientDto> Data, string? Error)> GetEligibleTreatmentPatientsAsync();
+    Task<(AppointmentSlotDto? Data, string? Error)> CreateTreatmentAppointmentAsync(CreateTreatmentAppointmentDto dto);
+    Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
+    Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto);
+    Task<(AppointmentSlotDto? Data, string? Error)> AssignTreatmentSlotAsync(AssignTreatmentSlotDto dto);
+    Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null);
+    Task<(ScheduleNoteWebDto? Data, string? Error)> CreateNoteAsync(CreateScheduleNoteWebDto dto);
+    Task<(ScheduleNoteWebDto? Data, string? Error)> UpdateNoteAsync(Guid id, UpdateScheduleNoteWebDto dto);
+    Task<(bool Success, string? Error)> DeleteNoteAsync(Guid id);
 }
 
 public interface IPatientRecordApiService
@@ -30,6 +40,8 @@ public interface IPatientRecordApiService
     Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId);
     Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id);
+    Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id);
 }
 
 public interface IConsultationNoteApiService
@@ -41,6 +53,7 @@ public interface IConsultationNoteApiService
     Task<(ConsultationNoteDto? Data, string? Error)> GetByAppointmentIdAsync(Guid appointmentId);
     Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto);
+    Task<(bool Success, string? Error)> ConfirmAsync(Guid recordId);
 }
 
 public interface ITreatmentPackageApiService
@@ -105,7 +118,7 @@ public interface IAdminApiService
 public interface ICustomerSupportApiService
 {
     Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync();
-    Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null);
+    Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null, string? search = null);
     Task<(VerificationDto? Data, string? Error)> GetApplicationByIdAsync(Guid id);
     Task<(bool Success, string? Error)> ReviewApplicationAsync(Guid id, ReviewVerificationDto dto);
     Task<(List<BlogListItemDto> Data, PaginationDto? Pagination, string? Error)> GetBlogModerationQueueAsync(int page = 1);
@@ -117,13 +130,13 @@ public interface ICustomerSupportApiService
 public interface IBusinessManagerApiService
 {
     Task<(DashboardStatsDto? Data, string? Error)> GetDashboardStatsAsync();
-    // Service Packages
     Task<(List<ServicePackageDto> Data, string? Error)> GetServicePackagesAsync();
     Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id);
     Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto);
     Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto);
     Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id);
-    // Specializations
+    Task<(List<SubscriptionDto> Data, PaginationDto? Pagination, string? Error)> GetSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10);
+    Task<(SubscriptionDto? Data, string? Error)> GetSubscriptionByIdAsync(Guid id);
     Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync();
     Task<(bool Success, string? Error)> CreateSpecializationAsync(CreateSpecializationDto dto);
     Task<(bool Success, string? Error)> UpdateSpecializationAsync(Guid id, CreateSpecializationDto dto);
@@ -133,11 +146,16 @@ public interface IBusinessManagerApiService
 public interface IPsychometricApiService
 {
     Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync();
+    Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId);
+    Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto);
+    Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto);
+    Task<(bool Success, string? Error)> DeleteTestAsync(Guid id);
     Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId);
     Task<(PsychometricSubmissionDto? Data, string? Error)> SubmitTestAsync(SubmitTestDto dto);
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByAppointmentAsync(Guid appointmentId);
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId);
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync();
+    Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId);
 }
 
 public interface INotificationApiService
@@ -150,14 +168,12 @@ public interface INotificationApiService
 
 public interface ITherapyApiService
 {
-    // Assignments
     Task<(List<TherapyAssignmentDto> Data, string? Error)> GetAssignmentsByPackageAsync(Guid packageId);
     Task<(TherapyAssignmentDto? Data, string? Error)> GetAssignmentByIdAsync(Guid id);
     Task<(TherapyAssignmentDto? Data, string? Error)> CreateAssignmentAsync(CreateAssignmentDto dto);
     Task<(bool Success, string? Error)> SubmitAssignmentAsync(Guid id, SubmitAssignmentDto dto);
     Task<(bool Success, string? Error)> FeedbackAssignmentAsync(Guid id, FeedbackAssignmentDto dto);
     Task<(bool Success, string? Error)> DeleteAssignmentAsync(Guid id);
-    // Journals
     Task<(List<EmotionJournalDto> Data, string? Error)> GetMyJournalsAsync();
     Task<(List<EmotionJournalDto> Data, string? Error)> GetPatientSharedJournalsAsync(Guid patientId);
     Task<(EmotionJournalDto? Data, string? Error)> CreateJournalAsync(CreateJournalDto dto);
@@ -185,22 +201,47 @@ public interface IMessagingApiService
 
 public interface ITreatmentCaseApiService
 {
-    // Case CRUD
     Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByDoctorAsync(Guid doctorUserId);
+    Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetMyDoctorCasesAsync();
     Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId);
     Task<(TreatmentCaseWebDto? Data, string? Error)> GetByIdAsync(Guid id);
     Task<(bool Success, string? Error)> CreateAsync(object dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, object dto);
     Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto);
-    // Sessions
+    Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto);
     Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateSessionAsync(object dto);
+    Task<(bool Success, string? Error)> UpdateSessionAsync(Guid sessionId, object dto);
+    Task<(bool Success, string? Error)> DeleteSessionAsync(Guid sessionId);
+    Task<(bool Success, string? Error)> ReorderSessionsAsync(object dto);
     Task<(bool Success, string? Error)> CompleteSessionAsync(Guid sessionId, object dto);
-    // Goals
     Task<(List<TreatmentGoalWebDto> Data, string? Error)> GetGoalsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateGoalAsync(object dto);
     Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto);
+    Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId);
+    // Goal Details (Milestones)
+    Task<(bool Success, string? Error)> CreateGoalDetailAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> UpdateGoalDetailAsync(Guid detailId, object dto);
+    Task<(bool Success, string? Error)> DeleteGoalDetailAsync(Guid detailId);
+    // Goal Success Criteria
+    Task<(bool Success, string? Error)> CreateSuccessCriteriaAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> UpdateSuccessCriteriaAsync(Guid criteriaId, object dto);
+    Task<(bool Success, string? Error)> DeleteSuccessCriteriaAsync(Guid criteriaId);
+    Task<(bool Success, string? Error)> EvaluateSuccessCriteriaAsync(Guid criteriaId, object dto);
+      // Homework
+      Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId);
+      Task<(List<TreatmentCaseFileWebDto> Data, string? Error)> GetPatientFilesAsync(Guid caseId);
+      Task<(bool Success, string? Error)> CreateHomeworkAsync(object dto);
+    Task<(bool Success, string? Error)> SubmitHomeworkAsync(Guid homeworkId, object dto);
+    Task<(bool Success, string? Error)> ReviewHomeworkAsync(Guid homeworkId, object dto);
+    // Mood
+    Task<(List<MoodEntryWebDto> Data, string? Error)> GetMoodEntriesAsync(Guid caseId);
+    Task<(bool Success, string? Error)> AddMoodEntryAsync(object dto);
     // Progress & Timeline
     Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId);
     Task<(List<TreatmentTimelineWebDto> Data, string? Error)> GetTimelineAsync(Guid caseId);
+    // Dashboard & Risk
+    Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync();
+    Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId);
 }

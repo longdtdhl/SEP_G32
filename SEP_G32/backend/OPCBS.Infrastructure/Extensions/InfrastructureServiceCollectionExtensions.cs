@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
@@ -15,7 +16,8 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
-        string connectionString)
+        string connectionString,
+        IConfiguration? configuration = null)
     {
         // Register DbContext
         services.AddDbContext<OpcbsDbContext>(options =>
@@ -32,10 +34,40 @@ public static class InfrastructureServiceCollectionExtensions
         // Register JWT Token Service
         services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-        // Register external service mock implementations (swap for real in production)
-        services.AddScoped<IEmailService, MockEmailService>();
-        services.AddScoped<IFileStorageService, MockFileStorageService>();
-        services.AddScoped<IPaymentService, MockPaymentService>();
+        // Register Email Service — use real SMTP if configured, otherwise mock
+        var smtpSection = configuration?.GetSection("SmtpSettings");
+        if (smtpSection != null && !string.IsNullOrEmpty(smtpSection["Username"]))
+        {
+            services.Configure<SmtpSettings>(smtpSection);
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, MockEmailService>();
+        }
+
+        // Register File Storage — use Cloudinary if configured, otherwise mock
+        var cloudinarySection = configuration?.GetSection("Cloudinary");
+        if (cloudinarySection != null && !string.IsNullOrEmpty(cloudinarySection["CloudName"]))
+        {
+            services.Configure<CloudinarySettings>(cloudinarySection);
+            services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService, MockFileStorageService>();
+        }
+        
+        var vnpaySection = configuration?.GetSection("VnPay");
+        if (vnpaySection != null && !string.IsNullOrEmpty(vnpaySection["TmnCode"]))
+        {
+            services.Configure<VnPaySettings>(vnpaySection);
+            services.AddScoped<IPaymentService, VnPayService>();
+        }
+        else
+        {
+            services.AddScoped<IPaymentService, MockPaymentService>();
+        }
 
         return services;
     }

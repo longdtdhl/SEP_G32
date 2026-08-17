@@ -1,0 +1,159 @@
+@page
+@model OPCBS.Web.Pages.CustomerSupport.ViolationReports.IndexModel
+@{
+    ViewData["Title"] = "Violation Report Queue";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    .cs-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-shield-exclamation me-2" style="color:var(--mb-primary);"></i>Violation Report Queue
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Review and investigate reported conduct issues and automated no-show alerts</p>
+    </div>
+    <a asp-page="/CustomerSupport/Dashboard" class="btn btn-outline-secondary btn-sm" style="border-radius:6px;">
+        <i class="bi bi-speedometer2 me-1"></i>CS Dashboard
+    </a>
+</div>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters Toolbar -->
+<div class="cs-card mb-3 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" asp-for="Search" class="form-control border-start-0 ps-0" placeholder="Search reporter, reported, reason..." />
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select asp-for="StatusFilter" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="UnderCustomerSupportReview">Under Review</option>
+                <option value="WarningIssued">Warning Issued</option>
+                <option value="EscalatedToAdmin">Escalated to Admin</option>
+                <option value="AccountDisabled">Account Disabled</option>
+                <option value="Dismissed">Dismissed</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select asp-for="CategoryFilter" class="form-select form-select-sm">
+                <option value="">All Reason Categories</option>
+                <option value="RepeatedNoShow">Repeated No-Show</option>
+                <option value="AppointmentCompletionDispute">Completion Dispute</option>
+                <option value="HarassmentOrAbuse">Harassment or Abuse</option>
+                <option value="FraudOrImpersonation">Fraud or Impersonation</option>
+                <option value="ProfessionalConduct">Professional Conduct</option>
+                <option value="PolicyViolation">Policy Violation</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-check-inline mb-0 pt-1">
+                <input class="form-check-input" type="checkbox" asp-for="NoShowOnly" id="chkNoShow" onchange="this.form.submit();" />
+                <label class="form-check-input-label small text-dark fw-medium" for="chkNoShow">No-Show Only</label>
+            </div>
+        </div>
+        <div class="col-md-2 text-end">
+            <button type="submit" class="btn btn-sm btn-primary px-3" style="border-radius:6px; font-size:0.8rem; background:#0d9488; border-color:#0d9488;">
+                <i class="bi bi-funnel me-1"></i>Filter
+            </button>
+            @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.StatusFilter) || !string.IsNullOrEmpty(Model.CategoryFilter) || Model.NoShowOnly)
+            {
+                <a asp-page="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.8rem;">Reset</a>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- Queue Table -->
+<div class="cs-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Source</th>
+                    <th>Reporter</th>
+                    <th>Reported User</th>
+                    <th>Category</th>
+                    <th>Warnings</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.FilteredReports.Any())
+                {
+                    @foreach (var r in Model.FilteredReports)
+                    {
+                        var sourceBadge = r.Source switch {
+                            OPCBS.Web.DTOs.ViolationReportSource.Patient => "badge bg-info text-white",
+                            OPCBS.Web.DTOs.ViolationReportSource.Doctor => "badge bg-purple text-white",
+                            OPCBS.Web.DTOs.ViolationReportSource.System => "badge bg-dark text-white",
+                            _ => "badge bg-secondary"
+                        };
+                        <tr>
+                            <td class="ps-3">
+                                <span class="@sourceBadge" style="font-size:0.7rem;">@r.Source</span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@(r.ReporterName ?? "System Auto-Report")</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@(r.ReportedUserName ?? "Unknown User")</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@r.ReasonCategoryDisplay</span>
+                            </td>
+                            <td>
+                                @if (r.WarningNumber > 0)
+                                {
+                                    <span class="badge bg-warning text-dark fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>#@r.WarningNumber</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">None</span>
+                                }
+                            </td>
+                            <td class="text-muted small">
+                                @r.CreatedAt.ToString("MM/dd/yyyy HH:mm")
+                            </td>
+                            <td>
+                                <span class="@r.StatusBadgeClass">@r.StatusText</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <a asp-page="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                    <i class="bi bi-search me-1"></i>Investigate
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle d-block mb-1" style="font-size:1.8rem; color:#cbd5e1;"></i>
+                            <small>No violation reports match your criteria.</small>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

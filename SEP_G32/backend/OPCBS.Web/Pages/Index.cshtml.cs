@@ -11,6 +11,7 @@ public class IndexModel : PageModel
 
     public List<DoctorListItemDto> FeaturedDoctors { get; set; } = new();
     public List<BlogListItemDto> LatestBlogs { get; set; } = new();
+    public List<string> Specializations { get; set; } = new();
 
     public IndexModel(IDoctorApiService doctorService, IBlogApiService blogService)
     {
@@ -31,6 +32,12 @@ public class IndexModel : PageModel
         {
             var (blogs, _, _) = await _blogService.GetAllAsync(new BlogFilterDto { PageSize = 3 });
             LatestBlogs = blogs;
+        }
+        catch { /* API may not be running */ }
+
+        try
+        {
+            Specializations = await _doctorService.GetSpecializationsAsync();
         }
         catch { /* API may not be running */ }
     }

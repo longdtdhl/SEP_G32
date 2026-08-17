@@ -2,8 +2,8 @@
 @model OPCBS.Web.Pages.BusinessManager.ReportsModel
 @{
     ViewData["Title"] = "Business Reports";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 <div class="mb-page-header"><h1><i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--mb-primary);"></i>Business Reports</h1></div>
 @if (Model.Error != null)

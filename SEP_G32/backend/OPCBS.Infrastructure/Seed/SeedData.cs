@@ -34,7 +34,7 @@ public static class SeedData
             PermissionConstants.ManageDoctorProfile,
             PermissionConstants.ManageSchedule,
             PermissionConstants.ManageDoctorAppointments,
-            PermissionConstants.ManageConsultationRecords,
+            PermissionConstants.ManageConsultationNotes,
             PermissionConstants.ManageTreatmentPackages,
             PermissionConstants.ManageDoctorBlogs,
             PermissionConstants.PurchaseSubscription,
@@ -90,7 +90,7 @@ public static class SeedData
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorProfile);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageSchedule);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorAppointments);
-        MapPermission(RoleConstants.Doctor, PermissionConstants.ManageConsultationRecords);
+        MapPermission(RoleConstants.Doctor, PermissionConstants.ManageConsultationNotes);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageTreatmentPackages);
         MapPermission(RoleConstants.Doctor, PermissionConstants.ManageDoctorBlogs);
         MapPermission(RoleConstants.Doctor, PermissionConstants.PurchaseSubscription);
@@ -137,10 +137,11 @@ public static class SeedData
         await context.SaveChangesAsync();
 
         // 5. Seed Service Packages
+        var freePkg = new ServicePackage { Name = "Free Trial", Description = "Free trial for demo — no payment required", DurationDays = 30, Price = 0, MaxPatientCapacity = 5, MaxDailySlotsCapacity = 3, DisplayOrder = 0 };
         var basicPkg = new ServicePackage { Name = "Basic", Description = "Basic plan for new doctors", DurationDays = 30, Price = 299000, MaxPatientCapacity = 10, MaxDailySlotsCapacity = 5, DisplayOrder = 1 };
         var proPkg = new ServicePackage { Name = "Professional", Description = "Professional plan with more capacity", DurationDays = 90, Price = 799000, MaxPatientCapacity = 30, MaxDailySlotsCapacity = 10, IsFeatured = true, DisplayOrder = 2 };
         var premPkg = new ServicePackage { Name = "Premium", Description = "Unlimited premium plan", DurationDays = 365, Price = 2499000, MaxPatientCapacity = 100, MaxDailySlotsCapacity = 20, DisplayOrder = 3 };
-        context.ServicePackages.AddRange(basicPkg, proPkg, premPkg);
+        context.ServicePackages.AddRange(freePkg, basicPkg, proPkg, premPkg);
         await context.SaveChangesAsync();
 
         // 6. Seed System Config
@@ -164,6 +165,10 @@ public static class SeedData
         var patient1User = CreateUser(context, "patient@opcbs.com", "Patient@123", "Nguyễn Văn An", "0912345678", roles[RoleConstants.Patient]);
         var patient2User = CreateUser(context, "patient2@opcbs.com", "Patient@123", "Trần Thị Bình", "0912345679", roles[RoleConstants.Patient]);
         var patient3User = CreateUser(context, "patient3@opcbs.com", "Patient@123", "Phạm Hoàng Cường", "0912345680", roles[RoleConstants.Patient]);
+
+        // Extra auth test accounts for login/OTP flows
+        CreateUser(context, "unverified@opcbs.com", "Unverified@123", "Người chưa xác thực", "0900000004", roles[RoleConstants.Patient], isEmailVerified: false, status: UserStatus.Inactive);
+        CreateUser(context, "locked@opcbs.com", "Locked@123", "Tài khoản bị khóa", "0900000005", roles[RoleConstants.Patient], isEmailVerified: true, status: UserStatus.Locked);
         await context.SaveChangesAsync();
 
         var patient1 = new PatientProfile { UserId = patient1User.Id, User = patient1User, DateOfBirth = new DateTime(1995, 5, 15), Gender = Gender.Male, Address = "123 Nguyễn Trãi, Q.1, TP.HCM" };
@@ -183,35 +188,57 @@ public static class SeedData
 
         var doc1 = new DoctorProfile
         {
-            UserId = doc1User.Id, User = doc1User,
+            UserId = doc1User.Id,
+            User = doc1User,
             ProfessionalTitle = "Tiến sĩ Tâm lý học lâm sàng",
             Biography = "Hơn 12 năm kinh nghiệm trong lĩnh vực tham vấn và trị liệu tâm lý. Tốt nghiệp ĐH Y Dược TP.HCM chuyên ngành Tâm lý lâm sàng. Chuyên gia trị liệu trầm cảm và rối loạn lo âu.",
-            ExperienceYears = 12, LicenseNumber = "LIC-2024-001", LicenseExpiryDate = new DateTime(2028, 12, 31),
-            VerificationStatus = VerificationStatus.Approved, IsVisible = true, AverageRating = 4.8m, ReviewCount = 32
+            ExperienceYears = 12,
+            LicenseNumber = "LIC-2024-001",
+            LicenseExpiryDate = new DateTime(2028, 12, 31),
+            VerificationStatus = VerificationStatus.Approved,
+            IsVisible = true,
+            AverageRating = 4.8m,
+            ReviewCount = 32
         };
         var doc2 = new DoctorProfile
         {
-            UserId = doc2User.Id, User = doc2User,
+            UserId = doc2User.Id,
+            User = doc2User,
             ProfessionalTitle = "Thạc sĩ Tâm lý trị liệu",
             Biography = "Chuyên gia tâm lý trẻ em và vị thành niên với 8 năm kinh nghiệm. Phương pháp trị liệu CBT và Play Therapy. Tốt nghiệp ĐH Sư phạm Hà Nội.",
-            ExperienceYears = 8, LicenseNumber = "LIC-2024-002", LicenseExpiryDate = new DateTime(2027, 6, 30),
-            VerificationStatus = VerificationStatus.Approved, IsVisible = true, AverageRating = 4.5m, ReviewCount = 18
+            ExperienceYears = 8,
+            LicenseNumber = "LIC-2024-002",
+            LicenseExpiryDate = new DateTime(2027, 6, 30),
+            VerificationStatus = VerificationStatus.Approved,
+            IsVisible = true,
+            AverageRating = 4.5m,
+            ReviewCount = 18
         };
         var doc3 = new DoctorProfile
         {
-            UserId = doc3User.Id, User = doc3User,
+            UserId = doc3User.Id,
+            User = doc3User,
             ProfessionalTitle = "Phó Giáo sư, Tiến sĩ Tâm lý học",
             Biography = "20 năm nghiên cứu và thực hành lâm sàng. Giảng viên ĐH Khoa học Xã hội và Nhân văn. Chuyên gia hàng đầu về trị liệu gia đình và các vấn đề hôn nhân.",
-            ExperienceYears = 20, LicenseNumber = "LIC-2024-003", LicenseExpiryDate = new DateTime(2029, 12, 31),
-            VerificationStatus = VerificationStatus.Approved, IsVisible = true, AverageRating = 4.9m, ReviewCount = 45
+            ExperienceYears = 20,
+            LicenseNumber = "LIC-2024-003",
+            LicenseExpiryDate = new DateTime(2029, 12, 31),
+            VerificationStatus = VerificationStatus.Approved,
+            IsVisible = true,
+            AverageRating = 4.9m,
+            ReviewCount = 45
         };
         var doc4 = new DoctorProfile
         {
-            UserId = doc4User.Id, User = doc4User,
+            UserId = doc4User.Id,
+            User = doc4User,
             ProfessionalTitle = "Thạc sĩ Tâm lý học",
             Biography = "Chuyên gia tâm lý nghề nghiệp và stress công sở. 5 năm kinh nghiệm tư vấn tại các doanh nghiệp lớn.",
-            ExperienceYears = 5, LicenseNumber = "LIC-2024-004", LicenseExpiryDate = new DateTime(2027, 12, 31),
-            VerificationStatus = VerificationStatus.Submitted, IsVisible = false
+            ExperienceYears = 5,
+            LicenseNumber = "LIC-2024-004",
+            LicenseExpiryDate = new DateTime(2027, 12, 31),
+            VerificationStatus = VerificationStatus.Submitted,
+            IsVisible = false
         };
         context.DoctorProfiles.AddRange(doc1, doc2, doc3, doc4);
         await context.SaveChangesAsync();
@@ -223,8 +250,10 @@ public static class SeedData
             {
                 context.DoctorSpecializations.Add(new DoctorSpecialization
                 {
-                    DoctorProfileId = doc.Id, SpecializationId = specEntities[idx].Id,
-                    DoctorProfile = doc, Specialization = specEntities[idx]
+                    DoctorProfileId = doc.Id,
+                    SpecializationId = specEntities[idx].Id,
+                    DoctorProfile = doc,
+                    Specialization = specEntities[idx]
                 });
             }
         }
@@ -239,24 +268,33 @@ public static class SeedData
         // ═══════════════════════════════════════════════
         context.DoctorSubscriptions.Add(new DoctorSubscription
         {
-            DoctorProfileId = doc1.Id, ServicePackageId = proPkg.Id,
+            DoctorProfileId = doc1.Id,
+            ServicePackageId = proPkg.Id,
             Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-30), ExpirationDate = DateTime.UtcNow.AddDays(60),
-            DoctorProfile = doc1, ServicePackage = proPkg
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            ExpirationDate = DateTime.UtcNow.AddDays(60),
+            DoctorProfile = doc1,
+            ServicePackage = proPkg
         });
         context.DoctorSubscriptions.Add(new DoctorSubscription
         {
-            DoctorProfileId = doc2.Id, ServicePackageId = basicPkg.Id,
+            DoctorProfileId = doc2.Id,
+            ServicePackageId = basicPkg.Id,
             Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-10), ExpirationDate = DateTime.UtcNow.AddDays(20),
-            DoctorProfile = doc2, ServicePackage = basicPkg
+            StartDate = DateTime.UtcNow.AddDays(-10),
+            ExpirationDate = DateTime.UtcNow.AddDays(20),
+            DoctorProfile = doc2,
+            ServicePackage = basicPkg
         });
         context.DoctorSubscriptions.Add(new DoctorSubscription
         {
-            DoctorProfileId = doc3.Id, ServicePackageId = premPkg.Id,
+            DoctorProfileId = doc3.Id,
+            ServicePackageId = premPkg.Id,
             Status = SubscriptionStatus.Active,
-            StartDate = DateTime.UtcNow.AddDays(-60), ExpirationDate = DateTime.UtcNow.AddDays(305),
-            DoctorProfile = doc3, ServicePackage = premPkg
+            StartDate = DateTime.UtcNow.AddDays(-60),
+            ExpirationDate = DateTime.UtcNow.AddDays(305),
+            DoctorProfile = doc3,
+            ServicePackage = premPkg
         });
         await context.SaveChangesAsync();
 
@@ -270,9 +308,13 @@ public static class SeedData
             var flagDays = DayOfWeekEnum.Monday | DayOfWeekEnum.Tuesday | DayOfWeekEnum.Wednesday | DayOfWeekEnum.Thursday | DayOfWeekEnum.Friday;
             context.Schedules.Add(new Schedule
             {
-                DoctorProfileId = doc.Id, WorkingDays = flagDays,
-                StartTime = new TimeOnly(startHour, 0), EndTime = new TimeOnly(endHour, 0),
-                SlotDuration = duration, IsActive = true, DoctorProfile = doc,
+                DoctorProfileId = doc.Id,
+                WorkingDays = flagDays,
+                StartTime = new TimeOnly(startHour, 0),
+                EndTime = new TimeOnly(endHour, 0),
+                SlotDuration = duration,
+                IsActive = true,
+                DoctorProfile = doc,
                 SlotsPerDay = (endHour - startHour) / ((int)duration == 30 ? 1 : ((int)duration == 60 ? 1 : 1))
             });
 
@@ -329,9 +371,14 @@ public static class SeedData
             var apt = new Appointment
             {
                 BookingCode = $"BK-{DateTime.UtcNow:yyyyMMdd}-{bookingCounter++:D4}",
-                AppointmentSlotId = slot.Id, DoctorId = doc.Id, PatientId = patient.Id,
-                Status = status, Notes = notes,
-                AppointmentSlot = slot, Doctor = doc, Patient = patient
+                AppointmentSlotId = slot.Id,
+                DoctorId = doc.Id,
+                PatientId = patient.Id,
+                Status = status,
+                Notes = notes,
+                AppointmentSlot = slot,
+                Doctor = doc,
+                Patient = patient
             };
             if (status == AppointmentStatus.Approved) apt.ApprovedAt = DateTime.UtcNow.AddDays(-2);
             if (status == AppointmentStatus.Completed) { apt.ApprovedAt = DateTime.UtcNow.AddDays(-5); apt.CompletedAt = DateTime.UtcNow.AddDays(-1); }
@@ -385,9 +432,15 @@ public static class SeedData
             var (rating, comment) = reviewData[i];
             context.Reviews.Add(new Review
             {
-                AppointmentId = apt.Id, DoctorId = apt.DoctorId, PatientId = apt.PatientId!.Value,
-                Rating = rating, Comment = comment, IsVisible = true,
-                Appointment = apt, Doctor = apt.Doctor, Patient = apt.Patient!
+                AppointmentId = apt.Id,
+                DoctorId = apt.DoctorId,
+                PatientId = apt.PatientId!.Value,
+                Rating = rating,
+                Comment = comment,
+                IsVisible = true,
+                Appointment = apt,
+                Doctor = apt.Doctor,
+                Patient = apt.Patient!
             });
         }
         await context.SaveChangesAsync();
@@ -397,61 +450,77 @@ public static class SeedData
         // ═══════════════════════════════════════════════
         context.BlogPosts.Add(new BlogPost
         {
-            DoctorId = doc1.Id, Doctor = doc1,
+            DoctorId = doc1.Id,
+            Doctor = doc1,
             Title = "5 Dấu Hiệu Bạn Đang Bị Trầm Cảm Mà Không Biết",
             Content = "<p>Trầm cảm là một rối loạn tâm thần phổ biến ảnh hưởng đến hàng triệu người trên thế giới. Nhiều người mắc trầm cảm mà không nhận ra...</p><h2>1. Mất hứng thú với mọi thứ</h2><p>Bạn từng yêu thích nhiều hoạt động nhưng giờ đây không còn quan tâm nữa...</p><h2>2. Thay đổi giấc ngủ</h2><p>Mất ngủ hoặc ngủ quá nhiều đều là dấu hiệu cảnh báo...</p><h2>3. Mệt mỏi kéo dài</h2><p>Cảm giác kiệt sức dù không làm gì nặng nhọc...</p><h2>4. Khó tập trung</h2><p>Trí nhớ kém, không thể đưa ra quyết định...</p><h2>5. Thay đổi cân nặng</h2><p>Ăn quá nhiều hoặc không muốn ăn...</p>",
             ThumbnailUrl = "https://images.unsplash.com/photo-1541199249251-f713e6145474?w=800",
             Excerpt = "Trầm cảm không phải lúc nào cũng rõ ràng. Hãy nhận biết 5 dấu hiệu thường bị bỏ qua để tìm kiếm sự giúp đỡ kịp thời.",
-            Status = BlogStatus.Published, ViewCount = 1250,
-            SubmittedAt = DateTime.UtcNow.AddDays(-15), ApprovedAt = DateTime.UtcNow.AddDays(-14), ApprovedBy = csUser.Id,
+            Status = BlogStatus.Published,
+            ViewCount = 1250,
+            SubmittedAt = DateTime.UtcNow.AddDays(-15),
+            ApprovedAt = DateTime.UtcNow.AddDays(-14),
+            ApprovedBy = csUser.Id,
             PublishedAt = DateTime.UtcNow.AddDays(-14)
         });
 
         context.BlogPosts.Add(new BlogPost
         {
-            DoctorId = doc2.Id, Doctor = doc2,
+            DoctorId = doc2.Id,
+            Doctor = doc2,
             Title = "Hướng Dẫn Cha Mẹ: Nhận Biết Khi Con Cần Hỗ Trợ Tâm Lý",
             Content = "<p>Trẻ em thường không biết cách diễn đạt cảm xúc của mình. Cha mẹ cần chú ý đến các dấu hiệu sau...</p><h2>Thay đổi hành vi đột ngột</h2><p>Trẻ từ hoạt bát trở nên thu mình, hoặc từ ngoan ngoãn trở nên hung hăng...</p><h2>Kết quả học tập giảm sút</h2><p>Sự suy giảm trong học tập có thể là dấu hiệu của vấn đề tâm lý...</p>",
             ThumbnailUrl = "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800",
             Excerpt = "Làm thế nào để biết con bạn đang gặp vấn đề tâm lý? Hướng dẫn dành cho phụ huynh.",
-            Status = BlogStatus.Published, ViewCount = 890,
-            SubmittedAt = DateTime.UtcNow.AddDays(-10), ApprovedAt = DateTime.UtcNow.AddDays(-9), ApprovedBy = csUser.Id,
+            Status = BlogStatus.Published,
+            ViewCount = 890,
+            SubmittedAt = DateTime.UtcNow.AddDays(-10),
+            ApprovedAt = DateTime.UtcNow.AddDays(-9),
+            ApprovedBy = csUser.Id,
             PublishedAt = DateTime.UtcNow.AddDays(-9)
         });
 
         context.BlogPosts.Add(new BlogPost
         {
-            DoctorId = doc3.Id, Doctor = doc3,
+            DoctorId = doc3.Id,
+            Doctor = doc3,
             Title = "Giao Tiếp Hiệu Quả Trong Hôn Nhân: 7 Nguyên Tắc Vàng",
             Content = "<p>Giao tiếp là nền tảng của mọi mối quan hệ. Trong hôn nhân, cách bạn nói chuyện với nhau quyết định sự bền vững của mối quan hệ...</p><h2>1. Lắng nghe chủ động</h2><p>Hãy thực sự lắng nghe, không chỉ chờ đến lượt nói...</p>",
             ThumbnailUrl = "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800",
             Excerpt = "7 nguyên tắc giao tiếp giúp vợ chồng hiểu nhau hơn và xây dựng hôn nhân bền vững.",
-            Status = BlogStatus.Published, ViewCount = 2100,
-            SubmittedAt = DateTime.UtcNow.AddDays(-20), ApprovedAt = DateTime.UtcNow.AddDays(-19), ApprovedBy = csUser.Id,
+            Status = BlogStatus.Published,
+            ViewCount = 2100,
+            SubmittedAt = DateTime.UtcNow.AddDays(-20),
+            ApprovedAt = DateTime.UtcNow.AddDays(-19),
+            ApprovedBy = csUser.Id,
             PublishedAt = DateTime.UtcNow.AddDays(-19)
         });
 
         // Pending blog (waiting for moderation)
         context.BlogPosts.Add(new BlogPost
         {
-            DoctorId = doc1.Id, Doctor = doc1,
+            DoctorId = doc1.Id,
+            Doctor = doc1,
             Title = "Thiền Định Và Sức Khỏe Tinh Thần: Khoa Học Nói Gì?",
             Content = "<p>Thiền định đã được nghiên cứu rộng rãi trong y học hiện đại...</p>",
             ThumbnailUrl = "https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=800",
             Excerpt = "Bằng chứng khoa học về lợi ích của thiền định đối với sức khỏe tâm thần.",
-            Status = BlogStatus.Pending, ViewCount = 0,
+            Status = BlogStatus.Pending,
+            ViewCount = 0,
             SubmittedAt = DateTime.UtcNow.AddDays(-1)
         });
 
         // Draft blog
         context.BlogPosts.Add(new BlogPost
         {
-            DoctorId = doc2.Id, Doctor = doc2,
+            DoctorId = doc2.Id,
+            Doctor = doc2,
             Title = "Trò Chơi Trị Liệu: Play Therapy Cho Trẻ Em",
             Content = "<p>Play Therapy là phương pháp trị liệu sử dụng trò chơi để giúp trẻ em biểu đạt cảm xúc...</p>",
             ThumbnailUrl = "https://images.unsplash.com/photo-1587654780291-39c9404d7dd0?w=800",
             Excerpt = "Tìm hiểu về phương pháp Play Therapy và cách nó giúp trẻ em vượt qua khó khăn tâm lý.",
-            Status = BlogStatus.Draft, ViewCount = 0
+            Status = BlogStatus.Draft,
+            ViewCount = 0
         });
         await context.SaveChangesAsync();
 
@@ -467,7 +536,7 @@ public static class SeedData
         await context.SaveChangesAsync();
 
         // ═══════════════════════════════════════════════
-        // 16. CONSULTATION RECORDS (for completed appointments)
+        // 16. CONSULTATION NOTES & PATIENT RECORDS (for completed appointments)
         // ═══════════════════════════════════════════════
         if (completedApts.Count > 0)
         {
@@ -518,9 +587,18 @@ public static class SeedData
             });
         }
         await context.SaveChangesAsync();
+        await SeedPsychometricsAsync(context);
     }
 
-    private static User CreateUser(OpcbsDbContext context, string email, string password, string fullName, string phone, Role role)
+    private static User CreateUser(
+        OpcbsDbContext context,
+        string email,
+        string password,
+        string fullName,
+        string phone,
+        Role role,
+        bool isEmailVerified = true,
+        UserStatus status = UserStatus.Active)
     {
         var user = new User
         {
@@ -530,10 +608,96 @@ public static class SeedData
             PhoneNumber = phone,
             RoleId = role.Id,
             Role = role,
-            Status = UserStatus.Active,
-            IsEmailVerified = true
+            Status = status,
+            IsEmailVerified = isEmailVerified
         };
         context.Users.Add(user);
         return user;
+    }
+
+    private static async Task SeedPsychometricsAsync(OpcbsDbContext context)
+    {
+        if (context.PsychometricTests.Any())
+            return;
+
+        // 1. Seed PHQ-9
+        var phq9 = new PsychometricTest
+        {
+            Title = "Patient Health Questionnaire (PHQ-9)",
+            Description = "A 9-question scale that helps assess the severity of your depression over the past 2 weeks.",
+            TestType = "PHQ9"
+        };
+        context.PsychometricTests.Add(phq9);
+
+        var phq9Questions = new[]
+        {
+            "Little interest or pleasure in doing things.",
+            "Feeling down, depressed, or hopeless.",
+            "Trouble falling or staying asleep, or sleeping too much.",
+            "Feeling tired or having little energy.",
+            "Poor appetite or overeating.",
+            "Feeling bad about yourself — or that you are a failure or have let yourself or your family down.",
+            "Trouble concentrating on things, such as reading the newspaper or watching television.",
+            "Moving or speaking so slowly that other people could have noticed. Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual.",
+            "Thoughts that you would be better off dead, or of hurting yourself in some way."
+        };
+
+        for (int i = 0; i < phq9Questions.Length; i++)
+        {
+            context.PsychometricQuestions.Add(new PsychometricQuestion
+            {
+                Test = phq9,
+                QuestionText = phq9Questions[i],
+                QuestionNumber = i + 1,
+                Category = "Depression"
+            });
+        }
+
+        // 2. Seed DASS-21
+        var dass21 = new PsychometricTest
+        {
+            Title = "Depression, Anxiety and Stress Scale (DASS-21)",
+            Description = "A 21-question assessment that helps evaluate your emotional state over the past week.",
+            TestType = "DASS21"
+        };
+        context.PsychometricTests.Add(dass21);
+
+        var dass21Questions = new[]
+        {
+            new { Text = "I found it hard to wind down.", Cat = "Stress" },
+            new { Text = "I was aware of dryness of my mouth.", Cat = "Anxiety" },
+            new { Text = "I couldn't seem to experience any positive feeling at all.", Cat = "Depression" },
+            new { Text = "I experienced breathing difficulty (e.g., excessively rapid breathing, breathlessness in the absence of physical exertion).", Cat = "Anxiety" },
+            new { Text = "I found it difficult to work up the initiative to do things.", Cat = "Depression" },
+            new { Text = "I tended to over-react to situations.", Cat = "Stress" },
+            new { Text = "I experienced trembling (e.g., in the hands).", Cat = "Anxiety" },
+            new { Text = "I felt that I was using a lot of nervous energy.", Cat = "Stress" },
+            new { Text = "I was worried about situations in which I might panic and make a fool of myself.", Cat = "Anxiety" },
+            new { Text = "I felt that I had nothing to look forward to.", Cat = "Depression" },
+            new { Text = "I found myself getting agitated.", Cat = "Stress" },
+            new { Text = "I found it difficult to relax.", Cat = "Stress" },
+            new { Text = "I felt down-hearted and blue.", Cat = "Depression" },
+            new { Text = "I was intolerant of anything that kept me from getting on with what I was doing.", Cat = "Stress" },
+            new { Text = "I felt I was close to panic.", Cat = "Anxiety" },
+            new { Text = "I was unable to become enthusiastic about anything.", Cat = "Depression" },
+            new { Text = "I felt I wasn't worth much as a person.", Cat = "Depression" },
+            new { Text = "I felt that I was rather touchy.", Cat = "Stress" },
+            new { Text = "I was aware of the action of my heart in the absence of physical exertion (e.g., sense of heart rate increase, heart missing a beat).", Cat = "Anxiety" },
+            new { Text = "I felt scared without any good reason.", Cat = "Anxiety" },
+            new { Text = "I felt that life was meaningless.", Cat = "Depression" }
+        };
+
+        for (int i = 0; i < dass21Questions.Length; i++)
+        {
+            context.PsychometricQuestions.Add(new PsychometricQuestion
+            {
+                Test = dass21,
+                QuestionText = dass21Questions[i].Text,
+                QuestionNumber = i + 1,
+                Category = dass21Questions[i].Cat
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 }

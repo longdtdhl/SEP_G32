@@ -1,19 +1,49 @@
-@* Appointment status badge partial — pass ViewData["Status"] *@
+@* Appointment status badge partial — pass ViewData["Status"] (int or string) *@
 @{
-    var status = (ViewData["Status"] as string ?? "Unknown").ToLower();
-    var cssClass = status switch
+    var rawStatus = ViewData["Status"];
+    string statusText;
+    string cssClass;
+    
+    if (rawStatus is int statusInt)
     {
-        "pending" => "badge-pending",
-        "confirmed" => "badge-confirmed",
-        "completed" => "badge-completed",
-        "cancelled" => "badge-cancelled",
-        "approved" => "badge-approved",
-        "rejected" => "badge-rejected",
-        "draft" => "badge-draft",
-        "active" => "badge-active",
-        "expired" => "badge-expired",
-        _ => "badge-draft"
-    };
-    var displayText = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(status);
+        statusText = statusInt switch
+        {
+            0 => "Pending",
+            1 => "Approved",
+            2 => "Rejected",
+            3 => "Cancelled",
+            4 => "Completed",
+            5 => "No Show",
+            _ => "Unknown"
+        };
+        cssClass = statusInt switch
+        {
+            0 => "badge-pending",
+            1 => "badge-approved",
+            2 => "badge-rejected",
+            3 => "badge-cancelled",
+            4 => "badge-completed",
+            5 => "badge-cancelled",
+            _ => "badge-draft"
+        };
+    }
+    else
+    {
+        var status = (rawStatus as string ?? "Unknown").ToLower();
+        cssClass = status switch
+        {
+            "pending" => "badge-pending",
+            "confirmed" => "badge-confirmed",
+            "completed" => "badge-completed",
+            "cancelled" => "badge-cancelled",
+            "approved" => "badge-approved",
+            "rejected" => "badge-rejected",
+            "draft" => "badge-draft",
+            "active" => "badge-active",
+            "expired" => "badge-expired",
+            _ => "badge-draft"
+        };
+        statusText = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(status);
+    }
 }
-<span class="badge-status @cssClass">@displayText</span>
+<span class="badge-status @cssClass">@statusText</span>

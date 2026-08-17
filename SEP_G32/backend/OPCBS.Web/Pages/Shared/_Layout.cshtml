@@ -1,3 +1,4 @@
+@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,11 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MindBridge</title>
     <meta name="description" content="MindBridge — Connecting Minds, Supporting Wellbeing. Professional mental health counseling platform." />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="~/images/logo-cropped.png" type="image/png" />
 
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
 
     <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -21,9 +25,9 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/OPCBS.Web.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="mb-has-header">
     <!-- Header -->
-    <header>
+    <header class="mb-header-wrapper">
         <partial name="_Header" />
     </header>
 
@@ -38,28 +42,25 @@
     }
 
     <!-- Main Content -->
-    @if (ViewData["UseDashboardLayout"] as bool? == true)
+    @if (ViewData["FullWidthLayout"] as bool? == true)
     {
-        <!-- Dashboard Layout with Sidebar -->
-        <partial name="_Sidebar" />
-        <div class="mb-dashboard-content">
+        <main role="main">
             @RenderBody()
-        </div>
+        </main>
     }
     else
     {
-        <!-- Standard Content Layout -->
         <div class="container py-4">
             <main role="main">
                 @RenderBody()
             </main>
         </div>
-
-        <!-- Footer (only for non-dashboard pages) -->
-        <footer>
-            <partial name="_Footer" />
-        </footer>
     }
+
+    <!-- Footer -->
+    <footer>
+        <partial name="_Footer" />
+    </footer>
 
     <!-- Scroll to top button -->
     <button id="scroll-to-top" class="scroll-to-top" aria-label="Scroll to top">
@@ -72,5 +73,11 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    @if (JwtService.IsLoggedIn)
+    {
+        <script src="~/js/notifications.js" asp-append-version="true"></script>
+    }
+
 </body>
 </html>

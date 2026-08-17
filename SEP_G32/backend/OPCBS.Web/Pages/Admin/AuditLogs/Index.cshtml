@@ -1,92 +1,113 @@
 @page
 @model OPCBS.Web.Pages.Admin.AuditLogs.IndexModel
 @{
-    ViewData["Title"] = "Audit Logs";
-    ViewData["UseDashboardLayout"] = true;
-    var entities = new[] { "User", "Appointment", "Schedule", "Blog", "ConsultationRecord", "TreatmentPackage", "Verification", "ServicePackage", "Subscription" };
+    ViewData["Title"] = "System Audit Logs";
+    Layout = "_DashboardLayout";
+    var entities = new[] { "User", "Appointment", "Schedule", "Blog", "ConsultationNote", "TreatmentPackage", "Verification", "ServicePackage", "Subscription" };
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>Audit Logs</h1>
+<style>
+    .adm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>System Audit & Security Activity Logs
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Immutable trace of system events, administrative changes, and user actions</p>
+    </div>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
-        <h6 class="mb-0 fw-semibold">System Activity Log</h6>
+<div class="adm-card">
+    <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Audit Trail History</h6>
         <form method="get" class="d-flex gap-2">
-            <select name="entityName" class="form-select form-select-sm" style="width:180px;">
+            <select asp-for="EntityName" class="form-select form-select-sm" style="width:180px;">
                 <option value="">All Entities</option>
-                @foreach (var e in entities) { <option value="@e" selected="@(Model.EntityName == e)">@e</option> }
+                @foreach (var e in entities)
+                {
+                    <option value="@e">@e</option>
+                }
             </select>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter me-1"></i>Filter</button>
+            <button type="submit" class="btn btn-primary btn-sm" style="border-radius:6px; font-size:0.8rem;"><i class="bi bi-funnel me-1"></i>Filter</button>
             @if (!string.IsNullOrEmpty(Model.EntityName))
             {
-                <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i></a>
+                <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; font-size:0.8rem;"><i class="bi bi-x-circle me-1"></i>Reset</a>
             }
         </form>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-sm align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Timestamp</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Entity</th>
-                        <th>Details</th>
-                        <th>IP Address</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Logs.Any())
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Timestamp</th>
+                    <th>User / Actor</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Event Description</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Logs.Any())
+                {
+                    @foreach (var log in Model.Logs)
                     {
-                        @foreach (var log in Model.Logs)
+                        var actionBadge = log.Action?.ToLower() switch
                         {
-                            var actionColor = log.Action?.ToLower() switch
-                            {
-                                var a when a != null && a.Contains("create") => "text-success",
-                                var a when a != null && a.Contains("delete") => "text-danger",
-                                var a when a != null && a.Contains("update") => "text-primary",
-                                var a when a != null && a.Contains("lock") => "text-warning",
-                                _ => "text-secondary"
-                            };
-                            <tr>
-                                <td class="ps-4 text-muted" style="font-size:0.8rem;white-space:nowrap;">@log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</td>
-                                <td style="font-size:0.85rem;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:28px;height:28px;">
-                                            <i class="bi bi-person-fill text-secondary" style="font-size:0.7rem;"></i>
-                                        </div>
-                                        <span>@(log.UserName ?? "System")</span>
+                            var a when a != null && (a.Contains("create") || a.Contains("add")) => "bg-success bg-opacity-10 text-success",
+                            var a when a != null && (a.Contains("delete") || a.Contains("remove")) => "bg-danger bg-opacity-10 text-danger",
+                            var a when a != null && (a.Contains("update") || a.Contains("modify")) => "bg-primary bg-opacity-10 text-primary",
+                            var a when a != null && (a.Contains("lock") || a.Contains("reject")) => "bg-warning bg-opacity-10 text-warning",
+                            _ => "bg-secondary bg-opacity-10 text-secondary"
+                        };
+                        <tr>
+                            <td class="ps-3 text-muted" style="font-size:0.8rem; white-space:nowrap;">@log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:26px;height:26px;min-width:26px;">
+                                        <i class="bi bi-person-fill text-secondary" style="font-size:0.7rem;"></i>
                                     </div>
-                                </td>
-                                <td><span class="fw-semibold @actionColor" style="font-size:0.85rem;">@log.Action</span></td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(log.EntityType))
-                                    {
-                                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.65rem;">@log.EntityType</span>
-                                    }
-                                </td>
-                                <td class="text-muted" style="font-size:0.8rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@(log.Details ?? "—")</td>
-                                <td class="text-muted" style="font-size:0.8rem;">@(log.IpAddress ?? "—")</td>
-                            </tr>
-                        }
+                                    <span class="fw-semibold text-dark">@(log.UserName ?? "System Automated")</span>
+                                </div>
+                            </td>
+                            <td><span class="badge @actionBadge" style="font-size:0.7rem; font-weight:700;">@log.Action</span></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(log.EntityType))
+                                {
+                                    <span class="badge bg-light text-dark border" style="font-size:0.7rem;">@log.EntityType</span>
+                                }
+                            </td>
+                            <td class="text-muted" style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@(log.Details ?? "—")</td>
+                            <td class="text-muted small"><code>@(log.IpAddress ?? "127.0.0.1")</code></td>
+                        </tr>
                     }
-                    else
-                    {
-                        <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-journal d-block mb-2" style="font-size:2rem;"></i><p>No audit logs found.</p></td></tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-x d-block mb-2" style="font-size:2rem; color:#cbd5e1;"></i>
+                            <p class="mb-0" style="font-size:0.85rem;">No audit log events found for the selected criteria.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
     @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
     {
-        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-            <small class="text-muted">Page @Model.Pagination.Page of @Model.Pagination.TotalPages</small>
+        <div class="p-2 border-top bg-light d-flex justify-content-between align-items-center">
+            <small class="text-muted ms-2">Page @Model.Pagination.Page of @Model.Pagination.TotalPages</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     @for (int i = 1; i <= Math.Min(Model.Pagination.TotalPages, 10); i++)

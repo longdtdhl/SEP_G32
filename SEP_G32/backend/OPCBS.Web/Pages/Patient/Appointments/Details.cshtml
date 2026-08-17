@@ -2,32 +2,32 @@
 @model OPCBS.Web.Pages.Patient.Appointments.DetailsModel
 @{
     ViewData["Title"] = "Appointment Details";
-    ViewData["UseDashboardLayout"] = true;
-}
+
+    Layout = "_DashboardLayout";}
 
 <style>
     /* ── Detail Info Rows ── */
     .detail-info-container {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
+        border-radius: 8px;
         overflow: hidden;
         margin-bottom: 1.5rem;
     }
     .detail-info-row {
         display: flex;
         align-items: center;
-        padding: 0.9rem 1.25rem;
+        padding: 0.8rem 1.25rem;
         border-bottom: 1px solid #f1f5f9;
     }
     .detail-info-row:last-child { border-bottom: none; }
     .detail-info-icon {
-        width: 38px; height: 38px;
-        border-radius: 10px;
+        width: 36px; height: 36px;
+        border-radius: 8px;
         display: flex; align-items: center; justify-content: center;
         font-size: 1rem;
         flex-shrink: 0;
-        margin-right: 1rem;
+        margin-right: 0.875rem;
     }
     .detail-info-icon.ic-blue    { background: rgba(59,130,246,0.12); color: #3b82f6; }
     .detail-info-icon.ic-purple  { background: rgba(139,92,246,0.12); color: #8b5cf6; }
@@ -45,23 +45,28 @@
         margin-bottom: 1px;
     }
     .detail-info-val {
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-weight: 600;
         color: #1e293b;
+    }
+    .detail-info-val.text-fallback {
+        color: #94a3b8;
+        font-weight: 500;
+        font-style: italic;
     }
 
     /* ── Status Banners ── */
     .apt-banner {
-        border-radius: 14px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        padding: 0.875rem 1.25rem;
+        margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 0.75rem;
     }
-    .apt-banner .banner-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+    .apt-banner .banner-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
     .apt-banner.b-pending    { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
     .apt-banner.b-approved   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
     .apt-banner.b-inprogress { background: #faf5ff; border: 1px solid #e9d5ff; color: #6b21a8; }
@@ -71,7 +76,7 @@
 
     /* ── Section Header ── */
     .section-hdr {
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-weight: 700;
         color: #1e293b;
         margin-bottom: 1rem;
@@ -84,8 +89,8 @@
     .detail-card {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1.5rem;
+        border-radius: 8px;
+        padding: 1.25rem;
         margin-bottom: 1.25rem;
     }
 
@@ -96,13 +101,14 @@
         justify-content: center;
         gap: 6px;
         width: 100%;
-        padding: 10px 16px;
-        border-radius: 12px;
+        padding: 9px 16px;
+        border-radius: 8px;
         font-size: 0.85rem;
         font-weight: 600;
         border: 1px solid;
         transition: all 0.15s ease;
         text-decoration: none;
+        cursor: pointer;
     }
     .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
     .action-btn.a-primary    { background: #3b82f6; border-color: #3b82f6; color: #fff; }
@@ -116,11 +122,62 @@
     .action-btn.a-chat       { background: #fff; border-color: #a5f3fc; color: #0891b2; }
     .action-btn.a-chat:hover { background: #ecfeff; }
 
+    .treatment-context {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .treatment-context-title { color: #115e59; font-size: .92rem; font-weight: 700; }
+    .treatment-context-meta { color: #475569; font-size: .8rem; }
+    .treatment-context-progress { height: 7px; background: #ccfbf1; border-radius: 99px; overflow: hidden; }
+    .treatment-context-progress > span { display: block; height: 100%; background: #0d9488; border-radius: inherit; }
+
+    /* Sticky Sidebar & Back to Top Button */
+    .sticky-sidebar {
+        position: sticky;
+        top: 90px;
+        z-index: 100;
+        transition: top 0.2s ease;
+    }
+    #btnBackToTop {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #0f766e;
+        color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 14px rgba(15, 118, 110, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        cursor: pointer;
+        z-index: 1050;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #btnBackToTop:hover {
+        background: #115e59;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(15, 118, 110, 0.5);
+        color: #ffffff;
+    }
+    #btnBackToTop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
     /* ── Notes Section ── */
     .note-block {
         background: #f8fafc;
-        border-radius: 10px;
-        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        padding: 0.875rem 1.125rem;
         border: 1px solid #f1f5f9;
         color: #475569;
         font-size: 0.875rem;
@@ -141,19 +198,19 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
         border-bottom: 1px solid #f1f5f9;
     }
     .doctor-avatar {
-        width: 60px; height: 60px;
+        width: 56px; height: 56px;
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid #eff6ff;
         flex-shrink: 0;
     }
     .doctor-avatar-placeholder {
-        width: 60px; height: 60px;
+        width: 56px; height: 56px;
         border-radius: 50%;
         background: #eff6ff;
         display: flex; align-items: center; justify-content: center;
@@ -163,24 +220,66 @@
         display: inline-block;
         background: #eff6ff;
         color: #2563eb;
-        padding: 2px 10px;
-        border-radius: 8px;
+        padding: 2px 8px;
+        border-radius: 6px;
         font-weight: 600;
         font-size: 0.72rem;
     }
 
-    /* ── Tips ── */
-    .tip-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        font-size: 0.8rem;
-        color: #64748b;
-        line-height: 1.5;
-        margin-bottom: 0.5rem;
+    /* ── Session Actions Hierarchy Styles ── */
+    .session-actions-card {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        background: #ffffff;
     }
-    .tip-item:last-child { margin-bottom: 0; }
-    .tip-item i { color: #3b82f6; margin-top: 2px; flex-shrink: 0; }
+    .session-primary-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        background: #0f766e !important;
+        border-color: #0f766e !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-size: 0.88rem;
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(15, 118, 110, 0.2);
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .session-primary-btn:hover {
+        background: #115e59 !important;
+        border-color: #115e59 !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(15, 118, 110, 0.3);
+    }
+    .session-sec-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .session-sec-btn:hover {
+        background: #f8fafc !important;
+        border-color: #94a3b8 !important;
+        color: #0f766e !important;
+    }
+    .session-action-info {
+        padding: 0.65rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        text-align: center;
+    }
 </style>
 
 <!-- Page Header -->
@@ -199,6 +298,12 @@
         <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
     </div>
 }
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" style="border-radius:12px; border:none;">
+        <i class="bi bi-check-circle-fill me-1"></i>@successMessage
+    </div>
+}
 
 @if (Model.Appointment != null)
 {
@@ -210,6 +315,7 @@
     var isCompleted = apt.Status == 4;
     var isCancelled = apt.Status == 5;
     var isRescheduleRequested = apt.Status == 6;
+    var isAwaitingPatientConfirmation = apt.Status == 7;
     var canCancel = isPending || isApproved;
 
     <!-- Status Banner -->
@@ -229,6 +335,20 @@
                 <i class="bi bi-hourglass-split"></i>
                 <span><strong>Pending Confirmation</strong> — The doctor will review and respond shortly.</span>
             </div>
+        </div>
+    }
+    else if (isAwaitingPatientConfirmation)
+    {
+        <div class="apt-banner b-inprogress" style="background:#f0fdfa; border-color:#99f6e4; color:#115e59;">
+            <div class="banner-text">
+                <i class="bi bi-shield-check fs-5"></i>
+                <span><strong>Confirmation Required</strong> - Your doctor marked this consultation as completed. Confirm only after the session has actually taken place.</span>
+            </div>
+            <form method="post" asp-page-handler="ConfirmCompletion" asp-route-id="@apt.Id">
+                <button type="submit" class="btn btn-success btn-sm" style="border-radius:10px; white-space:nowrap;">
+                    <i class="bi bi-check2-circle me-1"></i>Confirm Completion
+                </button>
+            </form>
         </div>
     }
     else if (isApproved)
@@ -263,7 +383,7 @@
                 <span><strong>Completed</strong> — Your consultation session has ended.</span>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:10px;">
+                <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-primary" style="border-radius:8px;">
                     <i class="bi bi-arrow-repeat me-1"></i>Book Again
                 </a>
             </div>
@@ -276,9 +396,6 @@
                 <i class="bi bi-x-circle-fill"></i>
                 <span><strong>Cancelled</strong> — This appointment has been cancelled.</span>
             </div>
-            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-danger" style="border-radius:10px;">
-                <i class="bi bi-arrow-repeat me-1"></i>Book Again
-            </a>
         </div>
     }
     else if (isRejected)
@@ -288,9 +405,6 @@
                 <i class="bi bi-x-octagon-fill"></i>
                 <span><strong>Rejected</strong> — The doctor has declined this appointment request.</span>
             </div>
-            <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" asp-route-returning="true" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;">
-                <i class="bi bi-arrow-repeat me-1"></i>Book Again
-            </a>
         </div>
     }
 
@@ -300,92 +414,242 @@
             <!-- Doctor Info + Appointment Details -->
             <div class="detail-card">
                 <!-- Doctor Header -->
-                <div class="doctor-header">
-                    @if (!string.IsNullOrEmpty(apt.DoctorAvatarUrl))
-                    {
-                        <img src="@apt.DoctorAvatarUrl" alt="@apt.DoctorName" class="doctor-avatar" />
-                    }
-                    else
-                    {
-                        <div class="doctor-avatar-placeholder">
-                            <i class="bi bi-person-fill" style="font-size:1.5rem; color:#3b82f6;"></i>
-                        </div>
-                    }
-                    <div style="flex:1;">
-                        <h4 class="mb-1" style="font-size:1.15rem; font-weight:700; color:#1e293b;">@apt.DoctorName</h4>
-                        <div class="d-flex flex-wrap gap-2 align-items-center">
-                            @if (!string.IsNullOrEmpty(apt.Specialization))
-                            {
-                                <span class="doc-spec-chip">@apt.Specialization</span>
-                            }
-                            @if (Model.VisitCount > 0)
-                            {
-                                <span style="display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#16a34a; padding:2px 10px; border-radius:8px; font-size:0.72rem; font-weight:600;">
-                                    <i class="bi bi-arrow-repeat"></i> Visit: @Model.VisitCount times
-                                </span>
-                            }
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pb-3 mb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        @if (!string.IsNullOrEmpty(apt.DoctorAvatarUrl))
+                        {
+                            <img src="@apt.DoctorAvatarUrl" alt="@apt.DoctorName" class="doctor-avatar" />
+                        }
+                        else
+                        {
+                            <div class="doctor-avatar-placeholder">
+                                <i class="bi bi-person-fill" style="font-size:1.5rem; color:#0f766e;"></i>
+                            </div>
+                        }
+                        <div>
+                            <div class="text-muted small fw-semibold" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px;">Assigned Specialist</div>
+                            <h4 class="mb-1" style="font-size:1.15rem; font-weight:700; color:#1e293b;">@apt.DoctorName</h4>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                @if (!string.IsNullOrEmpty(apt.Specialization))
+                                {
+                                    <span class="badge" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; font-weight:600; font-size:0.75rem;">@apt.Specialization</span>
+                                }
+                                @if (Model.VisitCount > 0)
+                                {
+                                    <span class="badge" style="background:#f0fdf4; color:#16a34a; border:1px solid #dcfce7; font-weight:600; font-size:0.75rem;">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Visit #@Model.VisitCount
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
+                    @if (isApproved || isInProgress || isCompleted)
+                    {
+                        <div>
+                            <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorProfileId" class="btn btn-sm btn-outline-primary" style="border-radius:8px; font-weight:600;">
+                                <i class="bi bi-chat-dots-fill me-1"></i>Direct Message
+                            </a>
+                        </div>
+                    }
                 </div>
 
-                <!-- Info Grid (Row-based) -->
-                <div class="detail-info-container" style="border:none; margin-bottom:0;">
-                    <div class="detail-info-row">
-                        <div class="detail-info-icon ic-blue"><i class="bi bi-calendar3"></i></div>
-                        <div style="flex:1;">
-                            <div class="detail-info-label">Appointment Date</div>
-                            <div class="detail-info-val">@apt.AppointmentDate</div>
+                <!-- Appointment & Location Info Grid (Modern 2-column) -->
+                <div class="row g-3">
+                    <!-- Date & Time -->
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                            <div class="detail-info-icon ic-blue me-3">
+                                <i class="bi bi-calendar3"></i>
+                            </div>
+                            <div>
+                                <div class="detail-info-label">Date & Time</div>
+                                <div class="detail-info-val">@apt.AppointmentDate</div>
+                                <div class="small text-muted font-monospace mt-0.5">@apt.StartTime — @apt.EndTime</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="detail-info-row">
-                        <div class="detail-info-icon ic-purple"><i class="bi bi-clock-fill"></i></div>
-                        <div style="flex:1;">
-                            <div class="detail-info-label">Time</div>
-                            <div class="detail-info-val">@apt.StartTime — @apt.EndTime</div>
+
+                    <!-- Consultation Mode -->
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                            <div class="detail-info-icon ic-teal me-3">
+                                <i class="bi @(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "bi-camera-video-fill" : "bi-geo-alt-fill")"></i>
+                            </div>
+                            <div>
+                                <div class="detail-info-label">Consultation Mode</div>
+                                <div class="mt-1">
+                                    <span class="badge rounded-pill px-2.5 py-1" style="@(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;" : "background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;")">
+                                        @(apt.ConsultationMode ?? (apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)"))
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Booking Code -->
                     @if (!string.IsNullOrEmpty(apt.BookingCode))
                     {
-                        <div class="detail-info-row">
-                            <div class="detail-info-icon ic-cyan"><i class="bi bi-upc-scan"></i></div>
-                            <div style="flex:1;">
-                                <div class="detail-info-label">Booking Code</div>
-                                <div class="detail-info-val" style="font-family:monospace; color:#3b82f6;">@apt.BookingCode</div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="detail-info-icon ic-cyan me-3">
+                                    <i class="bi bi-upc-scan"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-info-label">Booking Code</div>
+                                    <div class="detail-info-val" style="font-family:monospace; color:#0f766e; font-weight:700;">@apt.BookingCode</div>
+                                </div>
                             </div>
                         </div>
                     }
-                    @if (apt.Fee.HasValue && apt.Fee > 0)
-                    {
-                        <div class="detail-info-row">
-                            <div class="detail-info-icon ic-green"><i class="bi bi-wallet2"></i></div>
-                            <div style="flex:1;">
+
+                    <!-- Consultation Fee -->
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                            <div class="detail-info-icon ic-green me-3">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                            <div>
                                 <div class="detail-info-label">Consultation Fee</div>
-                                <div class="detail-info-val">@apt.Fee?.ToString("N0") VND</div>
+                                <div class="detail-info-val">
+                                    @if (apt.Fee.HasValue && apt.Fee > 0)
+                                    {
+                                        <span>@apt.Fee.Value.ToString("N0") VND</span>
+                                    }
+                                    else if (apt.TreatmentPackageId.HasValue)
+                                    {
+                                        <span class="text-success fw-semibold" style="font-size:0.85rem;"><i class="bi bi-check-circle me-1"></i>Covered by Package</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Complimentary / Free</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clinic / Doctor Address -->
+                    @if (!string.IsNullOrEmpty(apt.DoctorAddress))
+                    {
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="detail-info-icon ic-rose me-3">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="detail-info-label">Clinic / Doctor Address</div>
+                                    <div class="detail-info-val" style="font-size:0.88rem; font-weight:500; color:#334155;">@apt.DoctorAddress</div>
+                                </div>
                             </div>
                         </div>
                     }
+
+                    <!-- Patient Address -->
+                    @if (!string.IsNullOrEmpty(apt.PatientAddress))
+                    {
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="detail-info-icon ic-amber me-3">
+                                    <i class="bi bi-geo-alt"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="detail-info-label">Patient Address</div>
+                                    <div class="detail-info-val" style="font-size:0.88rem; font-weight:500; color:#334155;">@apt.PatientAddress</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Treatment Package (if linked) -->
                     @if (apt.TreatmentPackageId.HasValue && !string.IsNullOrEmpty(apt.TreatmentPackageName))
                     {
-                        <div class="detail-info-row">
-                            <div class="detail-info-icon ic-teal"><i class="bi bi-box-seam-fill"></i></div>
-                            <div style="flex:1;">
-                                <div class="detail-info-label">Treatment Package</div>
-                                <div class="detail-info-val">@apt.TreatmentPackageName</div>
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 border d-flex align-items-center" style="background-color: #f0fdf4; border-color: #bbf7d0 !important;">
+                                <div class="detail-info-icon ic-teal me-3" style="background:#dcfce7; color:#166534;">
+                                    <i class="bi bi-box-seam-fill"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="detail-info-label" style="color:#166534;">Connected Treatment Package</div>
+                                    <div class="detail-info-val text-dark">@apt.TreatmentPackageName</div>
+                                </div>
+                                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@apt.TreatmentPackageId" class="btn btn-sm btn-outline-success ms-2" style="border-radius:8px; font-size:0.8rem; font-weight:600;">
+                                    View Package
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Patient / Guest Contact Details (if available) -->
+                    @if (!string.IsNullOrEmpty(apt.PatientEmail) || !string.IsNullOrEmpty(apt.GuestEmail) || !string.IsNullOrEmpty(apt.GuestZaloNumber))
+                    {
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 border" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="detail-info-label mb-2"><i class="bi bi-person-lines-fill me-1"></i>Contact &amp; Notification Channels</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @if (!string.IsNullOrEmpty(apt.PatientEmail) || !string.IsNullOrEmpty(apt.GuestEmail))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-envelope text-primary"></i>
+                                            <span class="small fw-semibold text-dark">@(apt.PatientEmail ?? apt.GuestEmail)</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(apt.GuestZaloNumber))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-chat-dots text-info"></i>
+                                            <span class="small fw-semibold text-dark">Zalo: @apt.GuestZaloNumber</span>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
                     }
                 </div>
+
+                @if (Model.ClinicalContext?.TreatmentCaseContext is { } treatmentCase)
+                {
+                    var progress = Math.Clamp(treatmentCase.OverallProgressPercent, 0, 100);
+                    <div class="treatment-context mt-3">
+                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                            <div>
+                                <div class="treatment-context-title"><i class="bi bi-heart-pulse me-2"></i>Connected treatment plan</div>
+                                <div class="fw-semibold mt-1" style="color:#1e293b;">@treatmentCase.CaseName</div>
+                            </div>
+                            <span class="badge" style="background:#ccfbf1; color:#115e59;">@treatmentCase.Status</span>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2 mt-3 treatment-context-meta">
+                            <span>Session @(treatmentCase.CurrentSessionNumber?.ToString() ?? "-")</span>
+                            <strong>@treatmentCase.CompletedSessions / @treatmentCase.TotalSessions completed</strong>
+                        </div>
+                        <div class="treatment-context-progress mt-2" aria-label="Treatment progress">
+                            <span style="width:@progress%;"></span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 treatment-context-meta">
+                            <span>@progress% overall progress</span>
+                            <a asp-page="/Patient/TreatmentCases/Details" asp-route-id="@treatmentCase.TreatmentCaseId" class="text-decoration-none fw-semibold" style="color:#0f766e;">View treatment progress <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                }
             </div>
 
             <!-- Pre-Evaluation / Notes Section -->
             <div class="detail-card">
-                <div class="section-hdr">
-                    <i class="bi bi-journal-medical" style="color:#8b5cf6;"></i>Pre-Evaluation Information
+                <div class="d-flex align-items-center justify-content-between section-hdr mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-medical" style="color:#8b5cf6;"></i>Pre-Evaluation Information
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(apt.PreAppointmentNoteTitle))
+                    {
+                        <span class="badge px-3 py-1.5 rounded-pill" style="background:#ccfbf1; color:#0f766e; font-weight:600; font-size:0.8rem;">
+                            <i class="bi bi-patch-question me-1"></i>@apt.PreAppointmentNoteTitle
+                        </span>
+                    }
                 </div>
                 @{
-                    var hasCurrentEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations);
+                    var hasCustomEval = apt.CustomFields != null && apt.CustomFields.Any(cf => !string.IsNullOrWhiteSpace(cf.Content));
+                    var hasCurrentEval = !string.IsNullOrEmpty(apt.Symptoms) || !string.IsNullOrEmpty(apt.MedicalHistory) || !string.IsNullOrEmpty(apt.Expectations) || hasCustomEval;
                     var evalSource = hasCurrentEval ? apt : Model.LatestEvalAppointment;
-                    var hasAnyEval = evalSource != null && (!string.IsNullOrEmpty(evalSource.Symptoms) || !string.IsNullOrEmpty(evalSource.MedicalHistory) || !string.IsNullOrEmpty(evalSource.Expectations));
+                    var hasAnyEval = evalSource != null && (!string.IsNullOrEmpty(evalSource.Symptoms) || !string.IsNullOrEmpty(evalSource.MedicalHistory) || !string.IsNullOrEmpty(evalSource.Expectations) || (evalSource.CustomFields != null && evalSource.CustomFields.Any(cf => !string.IsNullOrWhiteSpace(cf.Content))));
                 }
                 @if (hasAnyEval)
                 {
@@ -425,7 +689,20 @@
                         @apt.Notes
                     </div>
                 }
-                @if (!hasAnyEval && string.IsNullOrEmpty(apt.Notes))
+                @if (apt.CustomFields != null && apt.CustomFields.Any())
+                {
+                    <div class="mt-3 pt-2">
+                        <div class="note-label mb-2"><i class="bi bi-tags me-1"></i>@(string.IsNullOrWhiteSpace(apt.PreAppointmentNoteTitle) ? "Additional Clinical Information" : apt.PreAppointmentNoteTitle)</div>
+                        @foreach (var cf in apt.CustomFields)
+                        {
+                            <div class="note-block mb-2">
+                                <div class="note-label">@(string.IsNullOrWhiteSpace(cf.Title) ? (apt.PreAppointmentNoteTitle ?? "Clinical Note") : cf.Title)</div>
+                                @cf.Content
+                            </div>
+                        }
+                    </div>
+                }
+                @if (!hasAnyEval && string.IsNullOrEmpty(apt.Notes) && (apt.CustomFields == null || !apt.CustomFields.Any()))
                 {
                     <p style="color:#94a3b8; font-size:0.85rem; margin:0;">No pre-evaluation information was recorded for this appointment.</p>
                 }
@@ -511,63 +788,101 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Actions -->
-            <div class="detail-card">
-                <div class="section-hdr" style="border-bottom:none; padding-bottom:0; margin-bottom:0.75rem;">
-                    <i class="bi bi-lightning-charge" style="color:#f59e0b;"></i>Actions
+        <div class="col-lg-4 sticky-sidebar">
+            <!-- Session Actions Card -->
+            <div class="detail-card session-actions-card p-3">
+                <div class="section-hdr d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="font-size: 0.95rem; font-weight: 700; color: #1e293b;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-activity me-1" style="color:#0f766e;"></i>Session Actions
+                    </div>
+                    @if (isCompleted) { <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Completed</span> }
+                    else if (isApproved) { <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Confirmed</span> }
+                    else if (isPending) { <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">Pending</span> }
+                    else if (isAwaitingPatientConfirmation) { <span class="badge rounded-pill text-white" style="background:#0f766e;">Action Required</span> }
+                    else if (isInProgress) { <span class="badge rounded-pill" style="background:#ede9fe; color:#4338ca; border:1px solid #c7d2fe;">In Progress</span> }
+                    else if (isRescheduleRequested) { <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">Reschedule</span> }
+                    else if (isCancelled) { <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cancelled</span> }
                 </div>
                 <div class="d-grid gap-2">
-                    @if (isCompleted)
+                    <!-- ── 1. PRIMARY ACTION ── -->
+                    @if (isAwaitingPatientConfirmation)
                     {
-                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="action-btn a-warning">
-                            <i class="bi bi-star"></i> Rate Doctor
-                        </a>
-                        <a asp-page="/Patient/ConsultationRecords/Index" class="action-btn a-outline">
-                            <i class="bi bi-file-medical"></i> View Consultation Records
+                        <form method="post" asp-page-handler="ConfirmCompletion" asp-route-id="@apt.Id" class="mb-1">
+                            <button type="submit" class="btn btn-primary session-primary-btn w-100">
+                                <i class="bi bi-shield-check me-1.5"></i>Confirm Completion
+                            </button>
+                        </form>
+                    }
+                    else if (isCompleted)
+                    {
+                        <a asp-page="/Patient/Reviews/Create" asp-route-appointmentId="@apt.Id" class="session-primary-btn w-100">
+                            <i class="bi bi-star-fill me-1.5"></i>Rate & Review Doctor
                         </a>
                     }
+                    else
+                    {
+                        <!-- Neutral status explanation -->
+                        <div class="session-action-info text-muted small mb-1">
+                            <i class="bi bi-info-circle me-1 text-secondary"></i>
+                            @if (isPending) { <span>Awaiting doctor's approval.</span> }
+                            else if (isApproved) { <span>Confirmed. Ready for scheduled session.</span> }
+                            else if (isInProgress) { <span>Session in progress with your doctor.</span> }
+                            else if (isRescheduleRequested) { <span>Reschedule request pending response.</span> }
+                            else if (isCancelled) { <span>This appointment was cancelled.</span> }
+                            else { <span>Appointment session has ended.</span> }
+                        </div>
+                    }
+
+                    <!-- ── 2. SECONDARY ACTIONS (OUTLINED BUTTONS) ── -->
                     @if (isApproved || isInProgress)
                     {
-                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-chat">
-                            <i class="bi bi-chat-dots-fill"></i> Chat with Doctor
+                        <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorProfileId" class="session-sec-btn w-100">
+                            <i class="bi bi-chat-dots me-1.5" style="color:#0f766e;"></i>Chat with Doctor
                         </a>
                     }
+
                     @if (apt.CanReschedule)
                     {
-                        <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="action-btn a-warning" style="background:#fff7ed; border-color:#fdba74; color:#c2410c;">
-                            <i class="bi bi-arrow-repeat me-1"></i> Request Reschedule
+                        <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@apt.Id" class="session-sec-btn w-100">
+                            <i class="bi bi-arrow-repeat me-1.5" style="color:#0f766e;"></i>Request Reschedule
                         </a>
                     }
-                    @if (canCancel)
-                    {
-                        <button type="button" class="action-btn a-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                            <i class="bi bi-x-circle me-1"></i> Cancel Appointment
-                        </button>
-                    }
-                    <hr style="margin:4px 0; border-color:#f1f5f9;" />
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="action-btn a-outline">
-                        <i class="bi bi-calendar-plus"></i> Book Again
-                    </a>
-                </div>
-            </div>
 
-            <!-- Tips -->
-            <div class="detail-card">
-                <div class="section-hdr" style="border-bottom:none; padding-bottom:0; margin-bottom:0.75rem;">
-                    <i class="bi bi-lightbulb" style="color:#f59e0b;"></i>Tips
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>Arrive on time for an effective consultation</span>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>Prepare your questions in advance</span>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>Cancel at least 24 hours before if you cannot attend</span>
+                    @if (isCompleted)
+                    {
+                        <a asp-page="/Patient/ConsultationRecords/Index" class="session-sec-btn w-100">
+                            <i class="bi bi-file-earmark-medical me-1.5" style="color:#0f766e;"></i>View Consultation Records
+                        </a>
+                    }
+
+                    @if (isCompleted)
+                    {
+                        <a asp-page="/Appointment/Book" asp-route-doctorId="@apt.DoctorProfileId" class="session-sec-btn w-100">
+                            <i class="bi bi-calendar-plus me-1.5" style="color:#0f766e;"></i>Book Again
+                        </a>
+                    }
+
+                    <!-- ── 3. MORE ACTIONS (THREE-DOT MENU) ── -->
+                    <div class="dropdown mt-2 pt-2 border-top">
+                        <button class="btn btn-outline-secondary btn-sm w-100 py-2 rounded-3 fw-medium d-flex align-items-center justify-content-center gap-1 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#ffffff; border-color:#cbd5e1; font-size:0.84rem; color:#475569;">
+                            <i class="bi bi-three-dots me-1"></i>More Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm w-100" style="border-radius:8px; border-color:#e2e8f0;">
+                            @if (canCancel)
+                            {
+                                <li>
+                                    <button type="button" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="font-size:0.85rem;">
+                                        <i class="bi bi-x-circle text-danger"></i>Cancel Appointment
+                                    </button>
+                                </li>
+                            }
+                            <li>
+                                <a asp-page="/Patient/Appointments/Report" asp-route-id="@apt.Id" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" style="font-size:0.85rem;">
+                                    <i class="bi bi-flag text-danger"></i>Report an Issue
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -624,3 +939,26 @@ else
         <a asp-page="Index" class="btn btn-primary mt-2" style="border-radius:12px;"><i class="bi bi-arrow-left me-1"></i>Back to Appointments</a>
     </div>
 }
+
+<!-- Back to Top Green Floating Button -->
+<button id="btnBackToTop" type="button" title="Back to top" aria-label="Back to top">
+    <i class="bi bi-arrow-up-lg"></i>
+</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('btnBackToTop');
+        if (btn) {
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 200) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            });
+            btn.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>

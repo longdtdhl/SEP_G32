@@ -13,15 +13,29 @@ public class EditModel : PageModel
     [BindProperty] public string? TagsInput { get; set; }
     public Guid BlogId { get; set; }
     public string? CurrentStatus { get; set; }
+    public string? RejectionReason { get; set; }
+    public int ViewCount { get; set; }
+    public DateTime? PublishedAt { get; set; }
     public string? Error { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         BlogId = id;
         var (data, error) = await _api.GetByIdAsync(id);
-        if (data == null) { Error = error ?? "Không tìm thấy."; return Page(); }
+        if (data == null) { Error = error ?? "Article not found."; return Page(); }
         CurrentStatus = data.Status;
-        Input = new UpdateBlogDto { Title = data.Title, Summary = data.Summary, Content = data.Content ?? "", Category = data.Category, ImageUrl = data.ImageUrl, Tags = data.Tags };
+        RejectionReason = data.RejectionReason;
+        ViewCount = data.ViewCount;
+        PublishedAt = data.PublishedAt;
+        Input = new UpdateBlogDto
+        {
+            Title = data.Title,
+            Summary = data.DisplaySummary,
+            Content = data.Content ?? "",
+            Category = data.Category,
+            ImageUrl = data.DisplayImage,
+            Tags = data.Tags
+        };
         TagsInput = string.Join(", ", data.Tags);
         return Page();
     }
@@ -29,10 +43,47 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
         BlogId = id;
-        if (!string.IsNullOrEmpty(TagsInput))
-            Input.Tags = TagsInput.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+        PrepareInput();
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success) { Error = error; return Page(); }
+        TempData["Success"] = "Article updated successfully.";
         return RedirectToPage("Index");
+    }
+
+    public async Task<IActionResult> OnPostSubmitAsync(Guid id)
+    {
+        BlogId = id;
+        PrepareInput();
+        var (success, error) = await _api.UpdateAsync(id, Input);
+        if (!success) { Error = error; return Page(); }
+        var (submitOk, submitError) = await _api.SubmitForReviewAsync(id);
+        if (!submitOk)
+        {
+            TempData["Error"] = submitError ?? "Unable to submit for approval.";
+        }
+        else
+        {
+            TempData["Success"] = "Article updated and submitted for approval successfully.";
+        }
+        return RedirectToPage("Index");
+    }
+
+    private void PrepareInput()
+    {
+        if (!string.IsNullOrEmpty(TagsInput))
+            Input.Tags = TagsInput.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        if (string.IsNullOrWhiteSpace(Input.ThumbnailUrl))
+        {
+            if (!string.IsNullOrWhiteSpace(Input.ImageUrl))
+                Input.ThumbnailUrl = Input.ImageUrl;
+            else
+                Input.ThumbnailUrl = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800";
+        }
+        if (string.IsNullOrWhiteSpace(Input.ImageUrl))
+            Input.ImageUrl = Input.ThumbnailUrl;
+
+        if (!string.IsNullOrEmpty(Input.Summary) && string.IsNullOrEmpty(Input.Excerpt))
+            Input.Excerpt = Input.Summary;
     }
 }

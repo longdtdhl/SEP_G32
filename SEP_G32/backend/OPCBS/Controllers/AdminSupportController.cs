@@ -21,11 +21,23 @@ public class VerificationsController : ControllerBase
     /// <summary>POST /api/v1/verifications/submit — Submit verification (Doctor)</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPost("submit")]
-    public async Task<IActionResult> SubmitVerification()
+    public async Task<IActionResult> SubmitVerification([FromBody] SubmitVerificationBody? body)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-        var result = await _verService.SubmitVerificationAsync(userId.Value);
+        var dto = body == null ? null : new OPCBS.Application.Interfaces.Services.SubmitVerificationDto
+        {
+            LicenseNumber = body.LicenseNumber,
+            Specialization = body.Specialization,
+            ExperienceYears = body.ExperienceYears,
+            Education = body.Education,
+            CertificateUrl = body.CertificateUrl,
+            CertificatePublicId = body.CertificatePublicId,
+            CertificateFileName = body.CertificateFileName,
+            CertificateContentType = body.CertificateContentType,
+            Notes = body.Notes
+        };
+        var result = await _verService.SubmitVerificationAsync(userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -89,6 +101,18 @@ public class VerificationsController : ControllerBase
 
 public class ApproveVerificationRequest { public Guid RequestId { get; set; } }
 public class RejectVerificationRequest { public Guid RequestId { get; set; } public string Reason { get; set; } = string.Empty; }
+public class SubmitVerificationBody
+{
+    public string? LicenseNumber { get; set; }
+    public string? Specialization { get; set; }
+    public int ExperienceYears { get; set; }
+    public string? Education { get; set; }
+    public string? CertificateUrl { get; set; }
+    public string? CertificatePublicId { get; set; }
+    public string? CertificateFileName { get; set; }
+    public string? CertificateContentType { get; set; }
+    public string? Notes { get; set; }
+}
 
 /// <summary>
 /// Notification APIs — /api/v1/notifications (spec §18)
@@ -132,6 +156,16 @@ public class NotificationsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/notifications/unread-count — Get unread count</summary>
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _notifService.GetUnreadCountAsync(userId.Value);
+        return Ok(result);
+    }
+
     private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -150,11 +184,11 @@ public class ServicePackagesController : ControllerBase
 
     public ServicePackagesController(IServicePackageService pkgService) => _pkgService = pkgService;
 
-    /// <summary>GET /api/v1/service-packages — Get active packages (Public)</summary>
+    /// <summary>GET /api/v1/service-packages — Get packages</summary>
     [HttpGet]
-    public async Task<IActionResult> GetActivePackages()
+    public async Task<IActionResult> GetActivePackages([FromQuery] bool includeInactive = false)
     {
-        var result = await _pkgService.GetActivePackagesAsync();
+        var result = await _pkgService.GetActivePackagesAsync(includeInactive);
         return Ok(result);
     }
 
@@ -200,12 +234,23 @@ public class SubscriptionsController : ControllerBase
 
     /// <summary>GET /api/v1/subscriptions/my-subscription — Get active subscription</summary>
     [HttpGet("my-subscription")]
+    [HttpGet("current")]
     public async Task<IActionResult> GetMySubscription()
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _subService.GetActiveSubscriptionAsync(userId.Value);
         return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>POST /api/v1/subscriptions — Subscribe package directly (activated immediately)</summary>
+    [HttpPost]
+    public async Task<IActionResult> Subscribe([FromBody] CreateSubscriptionRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _subService.CreateSubscriptionDirectAsync(userId.Value, request.ServicePackageId);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>POST /api/v1/subscriptions/purchase — Purchase subscription</summary>
@@ -233,6 +278,11 @@ public class SubscriptionsController : ControllerBase
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
+}
+
+public class CreateSubscriptionRequest
+{
+    public Guid ServicePackageId { get; set; }
 }
 
 public class PurchaseSubscriptionRequest
@@ -326,6 +376,54 @@ public class CustomerSupportController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/customer-support/doctor-applications — List verification requests with optional status filter</summary>
+    /// <summary>GET /api/v1/customer-support/doctor-applications — List verification requests with optional status and search filter</summary>
+    [HttpGet("doctor-applications")]
+    public async Task<IActionResult> GetDoctorApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null, [FromQuery] string? search = null)
+    {
+        var result = await _verService.GetAllVerificationsAsync(status, search, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/customer-support/doctor-applications/{id} — Get verification detail</summary>
+    [HttpGet("doctor-applications/{id}")]
+    public async Task<IActionResult> GetDoctorApplicationById(Guid id)
+    {
+        var result = await _verService.GetVerificationByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/doctor-applications/{id}/review — Approve, reject, or request additional info</summary>
+    [HttpPut("doctor-applications/{id}/review")]
+    public async Task<IActionResult> ReviewDoctorApplication(Guid id, [FromBody] ReviewApplicationBody body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (string.Equals(body.Action, "RequestInfo", StringComparison.OrdinalIgnoreCase) || string.Equals(body.Action, "AdditionalInfo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(body.RejectionReason))
+                return BadRequest(ApiResponse.ErrorResponse("A reason is required when requesting additional information."));
+
+            var result = await _verService.RequestAdditionalInfoAsync(id, userId.Value, body.RejectionReason);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        if (body.Approved || string.Equals(body.Action, "Approve", StringComparison.OrdinalIgnoreCase))
+        {
+            var result = await _verService.ApproveVerificationAsync(id, userId.Value);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(body.RejectionReason))
+                return BadRequest(ApiResponse.ErrorResponse("A reason is required when rejecting an application."));
+
+            var result = await _verService.RejectVerificationAsync(id, userId.Value, body.RejectionReason);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+    }
+
     /// <summary>GET /api/v1/customer-support/pending-blogs — Pending blog reviews</summary>
     [HttpGet("pending-blogs")]
     public async Task<IActionResult> GetPendingBlogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -333,6 +431,62 @@ public class CustomerSupportController : ControllerBase
         var result = await _blogService.GetPendingBlogsAsync(page, pageSize);
         return Ok(result);
     }
+
+    // ── Blog Moderation Routes (matched to Web client CSBlogModeration) ──
+
+    /// <summary>GET /api/v1/customer-support/blog-moderation — Alias for pending-blogs</summary>
+    [HttpGet("blog-moderation")]
+    public async Task<IActionResult> GetBlogModerationQueue([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _blogService.GetPendingBlogsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/customer-support/blog-moderation/{id} — Get blog detail for moderation</summary>
+    [HttpGet("blog-moderation/{id}")]
+    public async Task<IActionResult> GetBlogForModeration(Guid id)
+    {
+        var result = await _blogService.GetBlogByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/blog-moderation/{id}/approve — Approve blog</summary>
+    [HttpPut("blog-moderation/{id}/approve")]
+    public async Task<IActionResult> ApproveBlogModeration(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _blogService.ApproveBlogAsync(id, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/customer-support/blog-moderation/{id}/reject — Reject blog</summary>
+    [HttpPut("blog-moderation/{id}/reject")]
+    public async Task<IActionResult> RejectBlogModeration(Guid id, [FromBody] RejectBlogBody? body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _blogService.RejectBlogAsync(id, userId.Value, body?.Reason);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    private Guid? GetUserId()
+    {
+        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return claim != null && Guid.TryParse(claim, out var id) ? id : null;
+    }
+}
+
+public class RejectBlogBody
+{
+    public string? Reason { get; set; }
+}
+
+public class ReviewApplicationBody
+{
+    public bool Approved { get; set; }
+    public string? Action { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 /// <summary>
@@ -344,8 +498,13 @@ public class CustomerSupportController : ControllerBase
 public class BusinessManagerController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly ISubscriptionService _subService;
 
-    public BusinessManagerController(IAdminService adminService) => _adminService = adminService;
+    public BusinessManagerController(IAdminService adminService, ISubscriptionService subService)
+    {
+        _adminService = adminService;
+        _subService = subService;
+    }
 
     /// <summary>GET /api/v1/business-manager/dashboard — BM dashboard</summary>
     [HttpGet("dashboard")]
@@ -353,6 +512,22 @@ public class BusinessManagerController : ControllerBase
     {
         var result = await _adminService.GetDashboardStatsAsync();
         return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/business-manager/subscriptions — All doctor subscriptions</summary>
+    [HttpGet("subscriptions")]
+    public async Task<IActionResult> GetSubscriptions([FromQuery] string? status, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var result = await _subService.GetAllSubscriptionsAsync(status, search, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/v1/business-manager/subscriptions/{id} — Subscription details</summary>
+    [HttpGet("subscriptions/{id}")]
+    public async Task<IActionResult> GetSubscriptionById(Guid id)
+    {
+        var result = await _subService.GetSubscriptionByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     /// <summary>GET /api/v1/business-manager/analytics — Analytics (stub)</summary>
@@ -377,18 +552,20 @@ public class BusinessManagerController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>PUT /api/v1/business-manager/specializations/{id} — Update specialization (stub)</summary>
+    /// <summary>PUT /api/v1/business-manager/specializations/{id} — Update specialization</summary>
     [HttpPut("specializations/{id}")]
-    public Task<IActionResult> UpdateSpecialization(Guid id)
+    public async Task<IActionResult> UpdateSpecialization(Guid id, [FromBody] CreateSpecializationRequest request)
     {
-        return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Update specialization — to be implemented")));
+        var result = await _adminService.UpdateSpecializationAsync(id, request.Name, request.Description);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>DELETE /api/v1/business-manager/specializations/{id} — Delete specialization (stub)</summary>
+    /// <summary>DELETE /api/v1/business-manager/specializations/{id} — Delete specialization</summary>
     [HttpDelete("specializations/{id}")]
-    public Task<IActionResult> DeleteSpecialization(Guid id)
+    public async Task<IActionResult> DeleteSpecialization(Guid id)
     {
-        return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Delete specialization — to be implemented")));
+        var result = await _adminService.DeleteSpecializationAsync(id);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }
 
@@ -420,11 +597,22 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/admin/users/{id}</summary>
+    [HttpGet("users/{userId}")]
+    public async Task<IActionResult> GetUserById(Guid userId)
+    {
+        var result = await _adminService.GetUserByIdAsync(userId);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
     /// <summary>PUT /api/v1/admin/users/{id}/lock</summary>
     [HttpPut("users/{userId}/lock")]
     public async Task<IActionResult> LockUser(Guid userId)
     {
-        var result = await _adminService.LockUserAsync(userId);
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.LockUserAsync(userId, adminUserId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -432,7 +620,10 @@ public class AdminController : ControllerBase
     [HttpPut("users/{userId}/unlock")]
     public async Task<IActionResult> UnlockUser(Guid userId)
     {
-        var result = await _adminService.UnlockUserAsync(userId);
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.UnlockUserAsync(userId, adminUserId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -440,8 +631,8 @@ public class AdminController : ControllerBase
     [HttpGet("roles")]
     public async Task<IActionResult> GetRoles()
     {
-        var result = await _adminService.GetSpecializationsAsync(); // Reuse for now
-        return Ok(ApiResponse.SuccessResponse("Roles endpoint — to be expanded"));
+        var result = await _adminService.GetRolesAsync();
+        return Ok(result);
     }
 
     /// <summary>GET /api/v1/admin/permissions</summary>
@@ -464,6 +655,31 @@ public class AdminController : ControllerBase
     public Task<IActionResult> GetReports()
     {
         return Task.FromResult<IActionResult>(Ok(ApiResponse.SuccessResponse("Admin reports — to be expanded")));
+    }
+
+    /// <summary>GET /api/v1/admin/settings</summary>
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        var result = await _adminService.GetSystemSettingsAsync();
+        return Ok(result);
+    }
+
+    /// <summary>PUT /api/v1/admin/settings</summary>
+    [HttpPut("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] Dictionary<string, string> settings)
+    {
+        var adminUserId = GetUserId();
+        if (adminUserId == null) return Unauthorized();
+
+        var result = await _adminService.UpdateSystemSettingsAsync(settings, adminUserId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    private Guid? GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(claim, out var id) ? id : null;
     }
 }
 

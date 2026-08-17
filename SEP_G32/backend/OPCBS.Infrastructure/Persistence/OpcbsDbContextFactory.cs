@@ -14,7 +14,7 @@ public class OpcbsDbContextFactory : IDesignTimeDbContextFactory<OpcbsDbContext>
         
         // Default connection string for migrations
         // In production, this would come from configuration
-        var connectionString = "Server=localhost;Database=OPCBS;User Id=sa;Password=YourSecurePassword123!;TrustServerCertificate=true;";
+        var connectionString = "Server=localhost;Database=OPCBS;Trusted_Connection=True;TrustServerCertificate=True;";
         
         optionsBuilder.UseSqlServer(connectionString);
         

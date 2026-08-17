@@ -4,40 +4,808 @@
     ViewData["Title"] = "Track Appointment";
 }
 
-<div class="mb-auth-container">
-    <div class="mb-auth-card">
-        <h2><i class="bi bi-search me-2" style="color:var(--mb-primary);"></i>Track Appointment</h2>
-        <p class="auth-subtitle">Enter your email or tracking code to find your appointments.</p>
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
-        <form method="post">
-            <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input asp-for="Input.Email" class="form-control" placeholder="your@email.com" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Tracking Code (optional)</label>
-                <input asp-for="Input.TrackingCode" class="form-control" placeholder="e.g. APT-XXXXX" />
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Track</button>
-        </form>
-    </div>
-
-    @if (Model.Results != null && Model.Results.Any())
+@functions {
+    public string MaskEmail(string? email)
     {
-        <div class="mt-4">
-            <h5>Your Appointments</h5>
-            @foreach (var apt in Model.Results)
-            {
-                <div class="card mb-2">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-semibold">@apt.DoctorName</div>
-                            <small class="text-muted">@apt.StartAt.ToString("MMM dd, yyyy HH:mm")</small>
+        if (string.IsNullOrWhiteSpace(email)) return "-";
+        var parts = email.Trim().Split('@');
+        if (parts.Length != 2) return email;
+        var name = parts[0];
+        var domain = parts[1];
+        if (name.Length <= 2)
+            return $"{name[0]}***@{domain}";
+        return $"{name[0]}***{name[^1]}@{domain}";
+    }
+
+    public string DisplayConsultationMode(string? mode)
+    {
+        if (string.IsNullOrWhiteSpace(mode)) return "Online Video Consultation";
+        if (mode.Contains("Online", StringComparison.OrdinalIgnoreCase) ||
+            mode.Contains("Trực tuyến", StringComparison.OrdinalIgnoreCase))
+            return "Online Video Consultation";
+        if (mode.Contains("In-person", StringComparison.OrdinalIgnoreCase) ||
+            mode.Contains("Trực tiếp", StringComparison.OrdinalIgnoreCase))
+            return "In-person Consultation";
+        return mode;
+    }
+}
+
+<style>
+    /* ── OPCBS Guest Track Appointment Styles ── */
+    .guest-track-container {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    .track-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .track-card-header {
+        background: #f8fbfb;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 1.25rem;
+    }
+
+    .track-card-body {
+        padding: 1.25rem;
+    }
+
+    /* Primary Action Buttons */
+    .track-primary-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0f766e !important;
+        border-color: #0f766e !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-size: 0.88rem;
+        font-weight: 600;
+        min-height: 42px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .track-primary-btn:hover {
+        background: #115e59 !important;
+        border-color: #115e59 !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(15, 118, 110, 0.25);
+    }
+
+    .track-sec-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-height: 40px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .track-sec-btn:hover {
+        background: #f8fafc !important;
+        border-color: #94a3b8 !important;
+        color: #0f766e !important;
+    }
+
+    /* ── Compact Status Timeline ── */
+    .track-status-badge {
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 0.82rem;
+        font-weight: 800;
+        gap: 0.4rem;
+        line-height: 1.2;
+        padding: 0.5rem 0.8rem;
+        white-space: normal;
+    }
+    .track-status-pending { background: #fff4d6; border-color: #f59e0b; color: #92400e; }
+    .track-status-confirmed { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
+    .track-status-progress { background: #ede9fe; border-color: #7c3aed; color: #4c1d95; }
+    .track-status-completion { background: #ccfbf1; border-color: #14b8a6; color: #115e59; }
+    .track-status-completed { background: #dcfce7; border-color: #22c55e; color: #14532d; }
+    .track-status-cancelled,
+    .track-status-danger { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+    .track-status-muted { background: #e2e8f0; border-color: #94a3b8; color: #334155; }
+
+    .timeline-steps {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        position: relative;
+        padding: 1rem 0 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .timeline-steps::before {
+        content: "";
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        right: 24px;
+        height: 2px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+    .timeline-step {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+        padding: 0 4px;
+    }
+    .timeline-step-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        transition: all 0.2s ease;
+    }
+    .timeline-step.completed .timeline-step-icon {
+        background: #0f766e;
+        border-color: #0f766e;
+        color: #ffffff;
+    }
+    .timeline-step.active .timeline-step-icon {
+        background: #ffffff;
+        border-color: #0f766e;
+        color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+    }
+    .timeline-step.abnormal .timeline-step-icon {
+        background: #fee2e2;
+        border-color: #dc2626;
+        color: #dc2626;
+    }
+    .timeline-step-label {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: #64748b;
+        line-height: 1.25;
+    }
+    .timeline-step.completed .timeline-step-label,
+    .timeline-step.active .timeline-step-label {
+        color: #0f766e;
+        font-weight: 700;
+    }
+    .timeline-step.abnormal .timeline-step-label {
+        color: #dc2626;
+        font-weight: 700;
+    }
+
+    /* Info Grid Blocks */
+    .info-block {
+        background: #f8fbfb;
+        border: 1px solid #e1e8ea;
+        border-radius: 8px;
+        padding: 1rem;
+        height: 100%;
+    }
+    .info-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.35rem;
+    }
+    .info-val {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .track-security-note {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 0.75rem;
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .track-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.6rem;
+    }
+
+    @@media (max-width: 576px) {
+        .track-actions { grid-template-columns: 1fr; }
+        .timeline-steps {
+            flex-direction: column;
+            gap: 1rem;
+            padding-left: 1rem;
+        }
+        .timeline-steps::before {
+            top: 16px;
+            bottom: 16px;
+            left: 31px;
+            width: 2px;
+            height: auto;
+            right: auto;
+        }
+        .timeline-step {
+            flex-direction: row;
+            gap: 12px;
+            text-align: left;
+            align-items: center;
+        }
+        .timeline-step-icon { margin-bottom: 0; }
+    }
+</style>
+
+<section class="py-4 py-md-5">
+    <div class="container guest-track-container">
+        
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center mb-2" style="width:48px; height:48px; border-radius:8px; background:#ccfbf1; color:#0f766e;">
+                <i class="bi bi-search-heart" style="font-size:1.5rem;"></i>
+            </div>
+            <h2 class="fw-bold text-dark mb-1" style="font-size:1.45rem;">Track Guest Appointment</h2>
+            <p class="text-muted small mb-0" style="max-width: 520px; margin: 0 auto;">
+                Enter your <strong>Booking Code</strong> and registered <strong>Email</strong> to view real-time appointment progress, consultation details, and actions.
+            </p>
+        </div>
+
+        <!-- Alert Notifications -->
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger border-0 shadow-sm mb-3 d-flex align-items-start gap-2.5" role="alert" style="border-radius:8px; background-color:#fef2f2; color:#991b1b;">
+                <i class="bi bi-exclamation-octagon-fill fs-5 text-danger flex-shrink-0 mt-0.5"></i>
+                <div class="small">
+                    <div class="fw-bold mb-0.5">Lookup Notice</div>
+                    <div>@Model.ErrorMessage</div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success border-0 shadow-sm mb-3 d-flex align-items-start gap-2.5" role="alert" style="border-radius:8px; background-color:#f0fdf4; color:#166534;">
+                <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0 mt-0.5"></i>
+                <div class="small">
+                    <div class="fw-bold mb-0.5">Success</div>
+                    <div>@Model.SuccessMessage</div>
+                </div>
+            </div>
+        }
+
+        <!-- Lookup Form Card -->
+        <div class="track-card mb-4">
+            <div class="track-card-body p-3 p-md-4">
+                <form method="post" id="trackForm" onsubmit="showLoadingState()">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="txtBookingCode">
+                                <i class="bi bi-upc-scan me-1" style="color:#0f766e;"></i>Booking Code <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Input.BookingCode" id="txtBookingCode" class="form-control text-uppercase fw-semibold" 
+                                   placeholder="e.g. OPCBS-20260806-ABCD1234" required 
+                                   style="border-radius:8px; font-size:0.9rem;" autocomplete="off" />
                         </div>
-                        <partial name="_StatusBadge" view-data='@(new ViewDataDictionary(ViewData) { { "Status", apt.Status } })' />
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark mb-1" for="txtEmail">
+                                <i class="bi bi-envelope me-1" style="color:#0f766e;"></i>Registered Email <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Input.Email" id="txtEmail" type="email" class="form-control" 
+                                   placeholder="e.g. patient@example.com" required 
+                                   style="border-radius:8px; font-size:0.9rem;" autocomplete="email" />
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <button type="submit" id="btnSubmit" class="btn btn-primary track-primary-btn w-100">
+                            <i class="bi bi-search me-1.5"></i>
+                            <span id="btnSubmitText">Track Appointment</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="track-security-note">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Your booking details are shown only after both fields are verified.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        @if (Model.AppointmentResult != null)
+        {
+            var apt = Model.AppointmentResult;
+            var displayEmail = MaskEmail(apt.PatientEmail ?? apt.GuestEmail ?? Model.Input.Email);
+
+            <div class="track-card mb-4">
+                <!-- Card Header with Booking Code & Semantic Status Badge -->
+                <div class="track-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>
+                        <span class="text-muted small fw-bold text-uppercase d-block" style="font-size:0.7rem; letter-spacing:0.04em;">Booking Code</span>
+                        <div class="d-flex align-items-center gap-1.5 mt-0.5">
+                            <span class="fw-bold font-monospace fs-5 text-dark">@apt.BookingCode</span>
+                            <button type="button" class="btn btn-sm btn-light border p-1 text-muted" style="border-radius:6px; line-height:1;" onclick="copyBookingCode('@apt.BookingCode')" title="Copy Booking Code" data-bs-toggle="tooltip">
+                                <i class="bi bi-copy" id="copyIcon"></i>
+                            </button>
+                            <span id="copyFeedback" class="small text-success d-none fw-semibold">Copied!</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        @if (apt.Status == 9)
+                        {
+                            <span class="track-status-badge track-status-pending">
+                                <i class="bi bi-envelope-check me-1"></i>Awaiting Email Confirmation
+                            </span>
+                        }
+                        else if (apt.Status == 0)
+                        {
+                            <span class="track-status-badge track-status-pending">
+                                <i class="bi bi-clock-history me-1"></i>Pending Doctor Approval
+                            </span>
+                        }
+                        else if (apt.Status == 1)
+                        {
+                            <span class="track-status-badge track-status-confirmed">
+                                <i class="bi bi-check-circle-fill me-1"></i>Confirmed
+                            </span>
+                        }
+                        else if (apt.Status == 3)
+                        {
+                            <span class="track-status-badge track-status-progress">
+                                <i class="bi bi-camera-video-fill me-1"></i>In Progress
+                            </span>
+                        }
+                        else if (apt.Status == 10 || apt.Status == 7)
+                        {
+                            <span class="track-status-badge track-status-completion">
+                                <i class="bi bi-hourglass-split me-1"></i>Awaiting Completion Confirmation
+                            </span>
+                        }
+                        else if (apt.Status == 4)
+                        {
+                            <span class="track-status-badge track-status-completed">
+                                <i class="bi bi-patch-check-fill me-1"></i>Completed
+                            </span>
+                        }
+                        else if (apt.Status == 5)
+                        {
+                            <span class="track-status-badge track-status-cancelled">
+                                <i class="bi bi-x-circle-fill me-1"></i>Cancelled
+                            </span>
+                        }
+                        else if (apt.Status == 2)
+                        {
+                            <span class="track-status-badge track-status-muted">
+                                <i class="bi bi-slash-circle me-1"></i>Declined by Doctor
+                            </span>
+                        }
+                        else if (apt.Status == 6)
+                        {
+                            <span class="track-status-badge track-status-pending">
+                                <i class="bi bi-arrow-repeat me-1"></i>Reschedule Requested
+                            </span>
+                        }
+                        else if (apt.Status == 8)
+                        {
+                            <span class="track-status-badge track-status-danger">
+                                <i class="bi bi-person-x-fill me-1"></i>No Show
+                            </span>
+                        }
+                        else if (apt.Status == 11)
+                        {
+                            <span class="track-status-badge track-status-danger">
+                                <i class="bi bi-shield-exclamation me-1"></i>Disputed (Under Support Review)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="track-status-badge track-status-confirmed">
+                                Scheduled Session
+                            </span>
+                        }
                     </div>
                 </div>
-            }
+
+                <div class="track-card-body p-3 p-md-4">
+                    
+                    <!-- ── Status Journey Progression ── -->
+                    <div class="mb-4 pb-2 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small fw-bold text-dark"><i class="bi bi-diagram-3 me-1" style="color:#0f766e;"></i>Appointment Journey</span>
+                            <span class="text-muted small">Updated in real-time</span>
+                        </div>
+
+                        @if (apt.Status == 5)
+                        {
+                            <!-- Cancelled Path -->
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+                                <div class="timeline-step abnormal">
+                                    <div class="timeline-step-icon"><i class="bi bi-x-lg"></i></div>
+                                    <div class="timeline-step-label">Cancelled</div>
+                                </div>
+                            </div>
+                        }
+                        else if (apt.Status == 2)
+                        {
+                            <!-- Declined Path -->
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+                                <div class="timeline-step abnormal">
+                                    <div class="timeline-step-icon"><i class="bi bi-slash-circle"></i></div>
+                                    <div class="timeline-step-label">Declined</div>
+                                </div>
+                            </div>
+                        }
+                        else if (apt.Status == 6)
+                        {
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Confirmed</div>
+                                </div>
+                                <div class="timeline-step active">
+                                    <div class="timeline-step-icon"><i class="bi bi-arrow-repeat"></i></div>
+                                    <div class="timeline-step-label">Reschedule Review</div>
+                                </div>
+                            </div>
+                        }
+                        else if (apt.Status == 8)
+                        {
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Confirmed</div>
+                                </div>
+                                <div class="timeline-step abnormal">
+                                    <div class="timeline-step-icon"><i class="bi bi-person-x"></i></div>
+                                    <div class="timeline-step-label">No Show</div>
+                                </div>
+                            </div>
+                        }
+                        else if (apt.Status == 11)
+                        {
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Session Ended</div>
+                                </div>
+                                <div class="timeline-step abnormal">
+                                    <div class="timeline-step-icon"><i class="bi bi-shield-exclamation"></i></div>
+                                    <div class="timeline-step-label">Support Review</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Standard Lifecycle Path -->
+                            <div class="timeline-steps">
+                                <!-- Step 1: Booked -->
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Booked</div>
+                                </div>
+
+                                <!-- Step 2: Email Confirmation -->
+                                <div class="timeline-step @(apt.Status == 9 ? "active" : "completed")">
+                                    <div class="timeline-step-icon">
+                                        @if (apt.Status == 9) { <i class="bi bi-envelope"></i> }
+                                        else { <i class="bi bi-check-lg"></i> }
+                                    </div>
+                                    <div class="timeline-step-label">Email Confirm</div>
+                                </div>
+
+                                <!-- Step 3: Doctor Approval -->
+                                <div class="timeline-step @(apt.Status == 0 ? "active" : (apt.Status == 1 || apt.Status == 3 || apt.Status == 4 || apt.Status == 7 || apt.Status == 10 ? "completed" : ""))">
+                                    <div class="timeline-step-icon">
+                                        @if (apt.Status == 0) { <i class="bi bi-clock"></i> }
+                                        else if (apt.Status == 1 || apt.Status == 3 || apt.Status == 4 || apt.Status == 7 || apt.Status == 10) { <i class="bi bi-check-lg"></i> }
+                                        else { <span>3</span> }
+                                    </div>
+                                    <div class="timeline-step-label">Doctor Approval</div>
+                                </div>
+
+                                <!-- Step 4: Consultation -->
+                                <div class="timeline-step @(apt.Status == 3 ? "active" : (apt.Status == 4 || apt.Status == 10 || apt.Status == 7 || apt.Status == 11 ? "completed" : ""))">
+                                    <div class="timeline-step-icon">
+                                        @if (apt.Status == 3) { <i class="bi bi-camera-video"></i> }
+                                        else if (apt.Status == 4 || apt.Status == 10 || apt.Status == 7 || apt.Status == 11) { <i class="bi bi-check-lg"></i> }
+                                        else { <span>4</span> }
+                                    </div>
+                                    <div class="timeline-step-label">Session</div>
+                                </div>
+
+                                <!-- Step 5: Completed -->
+                                <div class="timeline-step @(apt.Status == 4 ? "completed" : (apt.Status == 10 || apt.Status == 7 ? "active" : ""))">
+                                    <div class="timeline-step-icon">
+                                        @if (apt.Status == 4) { <i class="bi bi-check-lg"></i> }
+                                        else { <span>5</span> }
+                                    </div>
+                                    <div class="timeline-step-label">Completed</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ── Main Information Grid ── -->
+                    <div class="row g-3">
+                        <!-- Specialist Info -->
+                        <div class="col-md-6">
+                            <div class="info-block">
+                                <div class="info-label"><i class="bi bi-person-badge me-1" style="color:#0f766e;"></i>Consulting Specialist</div>
+                                <div class="info-val">@(string.IsNullOrWhiteSpace(apt.DoctorName) ? "Psychologist / Specialist" : apt.DoctorName)</div>
+                                <div class="small fw-semibold mt-1" style="color:#0f766e;">
+                                    <i class="bi bi-award me-1"></i>@(string.IsNullOrWhiteSpace(apt.Specialization) ? "Clinical Psychology" : apt.Specialization)
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-laptop me-1"></i>Mode: <strong>@DisplayConsultationMode(apt.ConsultationMode)</strong>
+                                </div>
+                                @if (!string.IsNullOrEmpty(apt.DoctorAddress))
+                                {
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-geo-alt me-1"></i>Clinic Address: <strong>@apt.DoctorAddress</strong>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Schedule Time Info -->
+                        <div class="col-md-6">
+                            <div class="info-block">
+                                <div class="info-label"><i class="bi bi-calendar3 me-1" style="color:#0f766e;"></i>Schedule Time</div>
+                                <div class="info-val">
+                                    <i class="bi bi-calendar-event me-1 text-primary"></i>@apt.AppointmentDate
+                                </div>
+                                <div class="small fw-bold text-primary mt-1">
+                                    <i class="bi bi-clock me-1"></i>@apt.StartTime — @apt.EndTime
+                                </div>
+                                @if (apt.Fee.HasValue && apt.Fee > 0)
+                                {
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-cash-stack me-1"></i>Consultation Fee: <strong>@apt.Fee.Value.ToString("N0") VND</strong>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Patient Info (Masked for privacy) -->
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-sm-6">
+                                        <span class="text-muted small d-block">Registered Patient Name</span>
+                                        <strong class="text-dark">@(string.IsNullOrWhiteSpace(apt.PatientName) ? "Guest Patient" : apt.PatientName)</strong>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-muted small d-block">Registered Email (Masked for Security)</span>
+                                        <span class="font-monospace fw-semibold text-dark">@displayEmail</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(apt.PatientAddress))
+                                    {
+                                        <div class="col-12 mt-2 pt-2 border-top">
+                                            <span class="text-muted small d-block">Patient Address</span>
+                                            <span class="fw-semibold text-dark">@apt.PatientAddress</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Treatment Package Info (if applicable) -->
+                        @if (!string.IsNullOrWhiteSpace(apt.TreatmentPackageName))
+                        {
+                            <div class="col-12">
+                                <div class="p-3 rounded-3 border" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-box-seam fs-5" style="color:#0f766e;"></i>
+                                        <div>
+                                            <div class="small fw-bold" style="color:#0f766e;">Linked Treatment Package</div>
+                                            <div class="fw-semibold text-dark small">@apt.TreatmentPackageName</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Cancellation or Rejection Reason -->
+                        @if (!string.IsNullOrWhiteSpace(apt.CancellationReason))
+                        {
+                            <div class="col-12">
+                                <div class="p-3 rounded-3 bg-danger-subtle border border-danger-subtle text-danger">
+                                    <div class="fw-bold small mb-1"><i class="bi bi-info-circle me-1"></i>Cancellation / Rejection Reason:</div>
+                                    <div class="small">@apt.CancellationReason</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ── Session Actions Area ── -->
+                    <div class="mt-4 pt-3 border-top">
+                        <div>
+                            <!-- Primary Action Depending on Status -->
+                            @if (apt.Status == 9)
+                            {
+                                <div class="col-12 mb-2">
+                                    <div class="p-2.5 rounded-3 bg-warning-subtle border border-warning-subtle d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                        <div class="small text-warning-emphasis">
+                                            <i class="bi bi-envelope-exclamation me-1"></i><strong>Action Required:</strong> Confirm the verification link sent to your email to forward this request to your doctor.
+                                        </div>
+                                        <form method="post" asp-page-handler="Resend" id="resendForm" class="m-0">
+                                            <input type="hidden" name="Input.BookingCode" value="@apt.BookingCode" />
+                                            <input type="hidden" name="Input.Email" value="@Model.Input.Email" />
+                                            <button type="submit" id="btnResend" class="btn btn-sm btn-outline-dark fw-semibold" style="border-radius:6px;">
+                                                <i class="bi bi-send-check me-1"></i><span id="resendText">Resend Confirmation Email</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            }
+                            else if (apt.Status == 10 || apt.Status == 7)
+                            {
+                                <div class="col-12 mb-2">
+                                    <div class="p-2.5 rounded-3 bg-teal-subtle border border-teal-subtle d-flex flex-wrap align-items-center justify-content-between gap-2" style="background:#ccfbf1; border-color:#99f6e4;">
+                                        <div class="small" style="color:#115e59;">
+                                            <i class="bi bi-shield-check me-1"></i><strong>Consultation Ended:</strong> Please check your email to confirm consultation completion or request a support review.
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Action Buttons -->
+                            <div class="track-actions">
+                                <a asp-page="/Doctors/Index" class="btn @(apt.Status == 2 || apt.Status == 4 || apt.Status == 5 || apt.Status == 8 ? "track-primary-btn" : "track-sec-btn") w-100">
+                                    <i class="bi bi-calendar-plus me-1.5"></i>Book Another Appointment
+                                </a>
+
+                                <a asp-page="/Index" class="btn track-sec-btn w-100">
+                                    <i class="bi bi-house me-1.5"></i>Back to Home
+                                </a>
+
+                            <!-- More Actions Dropdown -->
+                            <div>
+                                <div class="dropdown w-100">
+                                    <button class="btn track-sec-btn w-100 dropdown-toggle d-flex align-items-center justify-content-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots me-1"></i>More Actions
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm w-100" style="border-radius:8px; border-color:#e2e8f0;">
+                                        @if (apt.Status == 0 || apt.Status == 1 || apt.Status == 9)
+                                        {
+                                            <li>
+                                                <form method="post" asp-page-handler="RequestCancellation" onsubmit="return confirm('Send a secure cancellation link to your email?');" class="m-0">
+                                                    <input type="hidden" name="Input.BookingCode" value="@apt.BookingCode" />
+                                                    <input type="hidden" name="Input.Email" value="@Model.Input.Email" />
+                                                    <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" style="font-size:0.85rem;">
+                                                        <i class="bi bi-x-circle text-danger"></i>Request Cancellation Link
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        }
+                                        <li>
+                                            <a href="mailto:support@opcbs.com?subject=Inquiry%20regarding%20Booking%20@apt.BookingCode" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" style="font-size:0.85rem;">
+                                                <i class="bi bi-flag text-danger"></i>Report an Issue / Support
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+        else if (Model.HasSearched && string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="text-center py-5 bg-white rounded-3 shadow-sm mb-4 border" style="border-radius:8px;">
+                <i class="bi bi-calendar-x text-muted" style="font-size:2.5rem;"></i>
+                <h5 class="fw-bold mt-3 text-dark">No Appointment Found</h5>
+                <p class="text-muted small mb-0" style="max-width: 440px; margin: 0 auto;">
+                    Please double-check your <strong>Booking Code</strong> and <strong>Registered Email</strong>. Ensure there are no extra spaces or typographical errors.
+                </p>
+            </div>
+        }
+
+        <!-- Help Footer -->
+        <div class="text-center text-muted small mt-4">
+            Need immediate assistance? Contact OPCBS Patient Support at <a href="mailto:support@opcbs.com" class="fw-semibold text-decoration-underline" style="color:#0f766e;">support@opcbs.com</a>
         </div>
-    }
-</div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function showLoadingState() {
+            var btn = document.getElementById('btnSubmit');
+            var txt = document.getElementById('btnSubmitText');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Tracking Appointment...';
+            }
+        }
+
+        function copyBookingCode(code) {
+            if (!code) return;
+            navigator.clipboard.writeText(code).then(function() {
+                var feedback = document.getElementById('copyFeedback');
+                if (feedback) {
+                    feedback.classList.remove('d-none');
+                    setTimeout(function() { feedback.classList.add('d-none'); }, 2500);
+                }
+            });
+        }
+
+        // Handle Resend Email Cooldown
+        document.addEventListener('DOMContentLoaded', function () {
+            var resendForm = document.getElementById('resendForm');
+            if (resendForm) {
+                resendForm.addEventListener('submit', function (e) {
+                    var btn = document.getElementById('btnResend');
+                    var txt = document.getElementById('resendText');
+                    if (btn && !btn.disabled) {
+                        btn.disabled = true;
+                        var seconds = 60;
+                        txt.innerText = 'Please wait (' + seconds + 's)';
+                        
+                        var timer = setInterval(function () {
+                            seconds--;
+                            if (seconds <= 0) {
+                                clearInterval(timer);
+                                btn.disabled = false;
+                                txt.innerText = 'Resend Confirmation Email';
+                            } else {
+                                txt.innerText = 'Please wait (' + seconds + 's)';
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+
+            // Initialize tooltips
+            var tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipElements.forEach(function (el) {
+                new bootstrap.Tooltip(el);
+            });
+        });
+    </script>
+}

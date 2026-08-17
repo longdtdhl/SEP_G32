@@ -1,151 +1,357 @@
-@page "{id:guid}"
+@page "{id:guid?}"
 @model OPCBS.Web.Pages.Patient.TreatmentPackages.DetailsModel
 @{
-    ViewData["Title"] = "Chi tiết gói điều trị";
-    ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = "Treatment Package Details";
+    Layout = "_DashboardLayout";
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Chi tiết gói điều trị</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+<style>
+    /* ── Sections ── */
+    .pd-section {
+        background: #fff; border-radius: 14px; border: 1px solid #e2e8f0;
+        overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); margin-bottom: 1rem;
+    }
+    .pd-section-head {
+        padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+        font-weight: 700; font-size: .88rem; color: #1e293b; display: flex;
+        align-items: center; gap: 8px; background: #fafbfc;
+    }
+    .pd-section-head i { color: #0d9488; }
+    .pd-section-body { padding: 1.25rem; }
+    .pd-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 0; font-size: .85rem; border-bottom: 1px solid #f8fafc;
+    }
+    .pd-row:last-child { border-bottom: none; }
+    .pd-row .label { color: #64748b; }
+    .pd-row .value { font-weight: 600; color: #1e293b; }
+    .pd-info-box {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 14px; font-size: .85rem; color: #334155; white-space: pre-line; line-height: 1.65;
+    }
+
+    /* ── Pending banner ── */
+    .pd-pending-banner {
+        background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a;
+        border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .pd-pending-banner h5 { color: #92400e; font-weight: 700; font-size: 1rem; margin-bottom: .5rem; }
+    .pd-pending-banner p { color: #a16207; font-size: .85rem; margin-bottom: 0; }
+
+    /* ── Doctor card ── */
+    .pd-doctor-card {
+        text-align: center; padding: 1.5rem 1.25rem;
+    }
+    .pd-doctor-avatar {
+        width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        color: #166534; display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-weight: 700; margin: 0 auto 10px;
+    }
+
+    /* ── Action area ── */
+    .pd-action-area { padding: 1.25rem; }
+    .pd-accept-btn {
+        background: #0d9488; border: none; color: #fff; font-weight: 700;
+        border-radius: 10px; padding: 12px 0; width: 100%; font-size: .9rem; transition: all .2s;
+    }
+    .pd-accept-btn:hover { background: #0f766e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,.3); }
+    .pd-decline-btn {
+        border: 1px solid #fecaca; background: #fff; color: #dc2626; font-weight: 600;
+        border-radius: 10px; padding: 10px 0; width: 100%; font-size: .85rem; transition: all .2s;
+    }
+    .pd-decline-btn:hover { background: #fef2f2; }
+</style>
+
+<!-- ── Breadcrumb ── -->
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-page="Index" class="text-decoration-none" style="color:#64748b; font-size:.85rem;">
+        <i class="bi bi-arrow-left me-1"></i>My Packages
+    </a>
+    <span style="color:#cbd5e1;">/</span>
+    <span style="font-size:.85rem; font-weight:600; color:#1e293b;">Package Details</span>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" style="border-radius:12px; border:none;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (Model.Package != null)
 {
     var pkg = Model.Package;
-    var isPending = pkg.Status == "Pending" || pkg.Status == "0";
-    var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+    var docName = string.IsNullOrWhiteSpace(pkg.DoctorName) ? "Your Therapist" : pkg.DoctorName;
+    var isPending = pkg.Status == "Pending" || pkg.Status == "Assigned";
+    var isActive = pkg.Status == "Active" || pkg.Status == "Accepted";
+    var isCancellationPending = pkg.IsCancellationPending;
+
+    <!-- Pending Banner -->
+    @if (isPending)
+    {
+        <div class="pd-pending-banner">
+            <h5><i class="bi bi-bell-fill me-2"></i>Your Doctor Has Proposed a Treatment Plan</h5>
+            <p>Review the details below, then accept to begin your treatment or decline if it doesn't feel right. You can always discuss changes with your doctor.</p>
+        </div>
+    }
 
     <div class="row g-4">
+        <!-- ── Main Column ── -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h3 class="mb-1">@pkg.Title</h3>
-                            <span class="text-muted">Bác sĩ: @(pkg.DoctorName ?? "N/A")</span>
-                        </div>
-                        @{
-                            var badgeClass = pkg.Status switch { "Active" => "bg-success", "Pending" => "bg-warning text-dark", "Completed" => "bg-info", _ => "bg-secondary" };
-                        }
-                        <span class="badge @badgeClass fs-6">@pkg.Status</span>
-                    </div>
+            <!-- Package Overview -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-info-circle-fill"></i>About This Package</div>
+                <div class="pd-section-body">
+                    <h4 class="fw-bold mb-2" style="color:#1e293b;">@pkg.Title</h4>
+                    <p style="font-size:.9rem; color:#475569; line-height:1.7;">@(pkg.Description ?? "No description provided.")</p>
 
-                    @if (!string.IsNullOrEmpty(pkg.Description))
+                    @if (pkg.BasicInformationFields != null && pkg.BasicInformationFields.Any())
                     {
-                        <div class="mb-4">
-                            <h6>Mô tả</h6>
-                            <p class="text-muted">@pkg.Description</p>
+                        <div class="mt-3 pt-3 border-top">
+                            <span class="fw-bold d-block mb-2 text-dark" style="font-size:.85rem;"><i class="bi bi-tags text-teal me-1" style="color:#0d9488;"></i>Additional Package Information</span>
+                            <div class="row g-2">
+                                @foreach (var f in pkg.BasicInformationFields)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="p-2 rounded-2 bg-light border">
+                                            <div class="text-muted small fw-semibold" style="font-size:0.75rem;">@f.Title</div>
+                                            <div class="fw-bold text-dark mt-0.5" style="font-size:0.85rem;">@f.Content</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
+                </div>
+            </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold" style="color:var(--mb-primary);">@pkg.TotalSessions</div>
-                                <small class="text-muted">Tổng buổi</small>
+            <!-- Treatment Plan & Goals -->
+            @if (!string.IsNullOrEmpty(pkg.TargetOutcome) || !string.IsNullOrEmpty(pkg.RecommendedExercises) || !string.IsNullOrEmpty(pkg.Instructions) || (pkg.ClinicalGuidelinesFields != null && pkg.ClinicalGuidelinesFields.Any()))
+            {
+                <div class="pd-section">
+                    <div class="pd-section-head"><i class="bi bi-journal-medical"></i>What to Expect</div>
+                    <div class="pd-section-body">
+                        @if (!string.IsNullOrEmpty(pkg.TargetOutcome))
+                        {
+                            <div class="mb-3">
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-trophy me-1" style="color:#f59e0b;"></i>Expected Outcomes
+                                </span>
+                                <div class="pd-info-box">@pkg.TargetOutcome</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(pkg.RecommendedExercises))
+                        {
+                            <div class="mb-3">
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-journal-check me-1" style="color:#3b82f6;"></i>Recommended Activities
+                                </span>
+                                <div class="pd-info-box">@pkg.RecommendedExercises</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(pkg.Instructions))
+                        {
+                            <div class="mb-3">
+                                <span class="fw-bold d-block mb-1" style="font-size:.88rem; color:#1e293b;">
+                                    <i class="bi bi-lightbulb me-1" style="color:#10b981;"></i>Your Guidance
+                                </span>
+                                <div class="pd-info-box">@pkg.Instructions</div>
+                            </div>
+                        }
+
+                        @if (pkg.ClinicalGuidelinesFields != null && pkg.ClinicalGuidelinesFields.Any())
+                        {
+                            <div class="mt-3 pt-3 border-top">
+                                <span class="fw-bold d-block mb-2 text-dark" style="font-size:.85rem;"><i class="bi bi-tags text-teal me-1" style="color:#0d9488;"></i>Clinical Guidance Points</span>
+                                <div class="row g-2">
+                                    @foreach (var f in pkg.ClinicalGuidelinesFields)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="p-2 rounded-2 bg-light border">
+                                                <div class="text-muted small fw-semibold" style="font-size:0.75rem;">@f.Title</div>
+                                                <div class="fw-bold text-dark mt-0.5" style="font-size:0.85rem;">@f.Content</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- What Happens Next (for pending) -->
+            @if (isPending)
+            {
+                <div class="pd-section">
+                    <div class="pd-section-head"><i class="bi bi-arrow-right-circle"></i>What Happens After You Accept?</div>
+                    <div class="pd-section-body" style="font-size:.85rem; color:#475569;">
+                        <div class="d-flex gap-3 mb-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">1</div>
+                            <div>
+                                <strong style="color:#1e293b;">Treatment Case Created</strong>
+                                <p class="mb-0 text-muted">A personalized treatment case will be set up for you automatically.</p>
                             </div>
                         </div>
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold text-success">@pkg.CompletedSessions</div>
-                                <small class="text-muted">Đã hoàn thành</small>
+                        <div class="d-flex gap-3 mb-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#e0e7ff; color:#3730a3; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">2</div>
+                            <div>
+                                <strong style="color:#1e293b;">Sessions Scheduled</strong>
+                                <p class="mb-0 text-muted">Your doctor will set up a session schedule that fits your availability.</p>
                             </div>
                         </div>
-                        <div class="col-sm-4">
-                            <div class="p-3 rounded text-center" style="background:var(--mb-surface);">
-                                <div class="fs-4 fw-bold text-info">@pkg.RemainingSessions</div>
-                                <small class="text-muted">Còn lại</small>
+                        <div class="d-flex gap-3">
+                            <div style="width:32px; height:32px; border-radius:8px; background:#fef3c7; color:#92400e; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">3</div>
+                            <div>
+                                <strong style="color:#1e293b;">Track Your Progress</strong>
+                                <p class="mb-0 text-muted">Goals, homework, and mood tracking will be available throughout your journey.</p>
                             </div>
                         </div>
                     </div>
+                </div>
+            }
+        </div>
 
-                    <!-- Progress bar -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="fw-semibold">Tiến độ</small>
-                            <small>@progress%</small>
-                        </div>
-                        <div class="progress" style="height:8px;">
-                            <div class="progress-bar" style="width:@(progress)%;background:var(--mb-primary);"></div>
-                        </div>
-                    </div>
+        <!-- ── Sidebar ── -->
+        <div class="col-lg-4">
+            <!-- Doctor -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-person-badge-fill"></i>Your Doctor</div>
+                <div class="pd-doctor-card">
+                    <div class="pd-doctor-avatar"><i class="bi bi-person-fill"></i></div>
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b;">Dr. @docName</div>
+                </div>
+            </div>
 
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <small class="text-muted d-block"><i class="bi bi-wallet2 me-1"></i>Phí</small>
-                            <strong>@pkg.Price.ToString("N0") VND</strong>
+            <!-- Package Specs -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-sliders"></i>Package Details</div>
+                <div style="padding: 1rem 1.25rem;">
+                    <div class="pd-row"><span class="label">Total Sessions</span><span class="value">@pkg.TotalSessions</span></div>
+                    @if (!isPending)
+                    {
+                        <div class="pd-row"><span class="label">Completed</span><span class="value text-success">@pkg.CompletedSessions</span></div>
+                        <div class="pd-row"><span class="label">Remaining</span><span class="value">@pkg.RemainingSessions</span></div>
+                    }
+                    <div class="pd-row"><span class="label">Duration</span><span class="value">@pkg.ValidityDays days</span></div>
+
+                    <div class="pd-row"><span class="label">Fee</span><span class="value" style="color:#0d9488; font-size:1.05rem;">@pkg.Price.ToString("N0") ₫</span></div>
+                    <div class="pd-row"><span class="label">Expires</span><span class="value" style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b")">@pkg.ExpirationDate.ToString("MMM dd, yyyy")</span></div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pd-section">
+                <div class="pd-section-head"><i class="bi bi-lightning-charge"></i>Actions</div>
+                <div class="pd-action-area">
+                    @if (isPending)
+                    {
+                        <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id" class="mb-2">
+                            <button type="submit" class="pd-accept-btn">
+                                <i class="bi bi-check-circle me-1"></i>Accept & Begin Treatment
+                            </button>
+                        </form>
+                        <button type="button" class="pd-decline-btn" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-circle me-1"></i>Decline Package
+                        </button>
+                    }
+                    else if (isActive)
+                    {
+                        <a asp-page="/Patient/TreatmentCases/Details" class="pd-accept-btn d-block text-center text-decoration-none mb-2">
+                            <i class="bi bi-journal-medical me-1"></i>View Treatment Case
+                        </a>
+                        @if (isCancellationPending)
+                        {
+                            <div class="rounded-2 p-2 mb-2" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:.78rem;">
+                                <i class="bi bi-hourglass-split me-1"></i>
+                                @if (Model.IsCancellationRequester)
+                                {
+                                    <span>Cancellation request sent. Waiting for your doctor to confirm.</span>
+                                }
+                                else
+                                {
+                                    <span>Cancellation requested by @pkg.CancellationRequestedByName. Your confirmation is required.</span>
+                                }
+                            </div>
+                            @if (!Model.IsCancellationRequester)
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px; font-weight:600;">
+                                    <i class="bi bi-check2-circle me-1"></i> Confirm Cancellation
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:10px; font-weight:600;">
+                                <i class="bi bi-x-octagon me-1"></i> Request Cancellation
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted" style="font-size:.85rem;">
+                            Status: <strong style="color:#1e293b;">@pkg.Status</strong>
                         </div>
-                        <div class="col-sm-6">
-                            <small class="text-muted d-block"><i class="bi bi-calendar-x me-1"></i>Hạn sử dụng</small>
-                            <strong>@pkg.ExpirationDate.ToString("dd/MM/yyyy")</strong>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-lg-4">
-            @if (isPending)
-            {
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white"><h6 class="mb-0">Phản hồi</h6></div>
-                    <div class="card-body d-grid gap-2">
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle me-1"></i>Bác sĩ đã chỉ định gói điều trị này cho bạn. Vui lòng xác nhận.
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+            <div class="modal-content" style="border-radius:16px; border:none;">
+                <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
+                    <div class="modal-body text-center p-4">
+                        <div style="width:48px; height:48px; border-radius:12px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin:0 auto 12px;">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
                         </div>
-                        <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id">
-                            <button type="submit" class="btn btn-success w-100 mb-2">
-                                <i class="bi bi-check-circle me-1"></i>Chấp nhận
-                            </button>
-                        </form>
-                        <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                            <i class="bi bi-x-circle me-1"></i>Từ chối
-                        </button>
+                        <h5 class="fw-bold mb-1" style="color:#1e293b;">Decline This Package?</h5>
+                        <p style="font-size:.85rem; color:#64748b; margin-bottom:16px;">Please let your doctor know why you're declining so they can propose an alternative that better suits your needs.</p>
+                        <div class="mb-3 text-start">
+                            <label class="form-label" style="font-size:.8rem; font-weight:600; color:#475569;">Reason (optional)</label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="e.g. Schedule doesn't fit, prefer a different approach..." style="border-radius:10px; font-size:.85rem;"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light flex-grow-1" data-bs-dismiss="modal" style="border-radius:10px; font-weight:600; font-size:.85rem;">Keep Package</button>
+                            <button type="submit" class="btn btn-danger flex-grow-1" style="border-radius:10px; font-weight:600; font-size:.85rem;">Decline</button>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Reject Modal -->
-                <div class="modal fade" id="rejectModal" tabindex="-1">
-                    <div class="modal-dialog"><div class="modal-content">
-                        <form method="post" asp-page-handler="Reject" asp-route-id="@pkg.Id">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Từ chối gói điều trị</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Lý do từ chối</label>
-                                    <textarea asp-for="RejectReason" class="form-control" rows="3" placeholder="Nhập lý do..."></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
-                            </div>
-                        </form>
-                    </div></div>
-                </div>
-            }
-            else
-            {
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white"><h6 class="mb-0">Thao tác</h6></div>
-                    <div class="card-body d-grid gap-2">
-                        <a asp-page="/Doctors/Index" class="btn btn-primary"><i class="bi bi-calendar-plus me-1"></i>Đặt lịch tư vấn</a>
-                        <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
-                    </div>
-                </div>
-            }
+                </form>
+            </div>
         </div>
     </div>
-}
-else
-{
-    <div class="text-center py-5">
-        <i class="bi bi-box d-block mb-2" style="font-size:3rem;color:var(--mb-text-muted);"></i>
-        <h5>Không tìm thấy gói điều trị</h5>
-    </div>
+
+    <!-- Cancel Modal -->
+    @if (isActive && (!isCancellationPending || !Model.IsCancellationRequester))
+    {
+        <div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+                <div class="modal-content" style="border-radius:16px; border:none;">
+                    <form method="post" asp-page-handler="Cancel" asp-route-id="@pkg.Id">
+                        <div class="modal-body text-center p-4">
+                            <div style="width:48px; height:48px; border-radius:12px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin:0 auto 12px;">
+                                <i class="bi bi-shield-exclamation"></i>
+                            </div>
+                            <h5 class="fw-bold mb-1" style="color:#1e293b;">@(isCancellationPending ? "Confirm Cancellation?" : "Request Package Cancellation?")</h5>
+                            <p style="font-size:.85rem; color:#64748b; margin-bottom:16px;">@(isCancellationPending ? "Confirming will terminate this treatment package and its active case." : "The package remains active until your doctor confirms this request.")</p>
+                            @if (!isCancellationPending)
+                            {
+                                <div class="mb-3 text-start">
+                                    <label class="form-label" style="font-size:.8rem; font-weight:600; color:#475569;">Reason (optional)</label>
+                                    <textarea name="reason" class="form-control" rows="3" placeholder="Explain why you wish to cancel this package..." style="border-radius:10px; font-size:.85rem;"></textarea>
+                                </div>
+                            }
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-light flex-grow-1" data-bs-dismiss="modal" style="border-radius:10px; font-weight:600; font-size:.85rem;">Keep Package</button>
+                                <button type="submit" class="btn btn-danger flex-grow-1" style="border-radius:10px; font-weight:600; font-size:.85rem;">@(isCancellationPending ? "Confirm Cancellation" : "Send Request")</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }

@@ -28,6 +28,12 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         return (data, error);
     }
 
+    public async Task<(AppointmentClinicalContextDto? Data, string? Error)> GetClinicalContextAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<AppointmentClinicalContextDto>($"{ApiRoutes.Appointments}/{id}/clinical-context");
+        return (data, error);
+    }
+
     public async Task<(AppointmentDto? Data, string? Error)> BookAsync(CreateAppointmentDto dto)
     {
         var (data, error) = await PostAsync<AppointmentDto>(ApiRoutes.Appointments, dto);
@@ -36,6 +42,9 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
 
     public async Task<(bool Success, string? Error)> RescheduleAsync(Guid id, RescheduleAppointmentDto dto)
         => await PutAsync($"{ApiRoutes.Appointments}/reschedule/{id}", dto);
+
+    public async Task<(bool Success, string? Error)> DoctorRescheduleAsync(Guid id, RescheduleAppointmentDto dto)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/doctor-reschedule", dto);
 
     public async Task<(bool Success, string? Error)> ApproveRescheduleAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/{id}/approve-reschedule");
@@ -49,34 +58,56 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Error)> ConfirmAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/approve/{id}");
 
+    public async Task<(bool Success, string? Error)> ConfirmCompletionAsync(Guid id)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/confirm-completion");
+
     public async Task<(bool Success, string? Error)> StartAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/start/{id}");
 
     public async Task<(bool Success, string? Error)> CompleteAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/complete/{id}");
 
-    public async Task<(List<AppointmentListItemDto> Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
+    public async Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
     {
-        // Backend: GET /api/v1/appointments/track/{bookingCode}?email={email}
-        if (string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
-        {
-            // Search by email only - use a placeholder code or the email-based search
-            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.Email)}?email={Uri.EscapeDataString(dto.Email)}";
-            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
-            return (data ?? new(), error);
-        }
-        else if (!string.IsNullOrWhiteSpace(dto.BookingCode) && !string.IsNullOrWhiteSpace(dto.Email))
-        {
-            var url = $"{ApiRoutes.AppointmentTrack}/{Uri.EscapeDataString(dto.BookingCode)}?email={Uri.EscapeDataString(dto.Email)}";
-            var (data, _, error) = await GetAsync<List<AppointmentListItemDto>>(url);
-            return (data ?? new(), error);
-        }
-        else
-        {
-            // Fallback: try POST
-            var (data, error) = await PostAsync<List<AppointmentListItemDto>>(ApiRoutes.AppointmentTrack, dto);
-            return (data ?? new(), error);
-        }
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return (null, "Vui lòng nhập đầy đủ Mã đặt lịch và Email.");
+
+        var url = $"{ApiRoutes.Appointments}/track/{Uri.EscapeDataString(dto.BookingCode.Trim())}?email={Uri.EscapeDataString(dto.Email.Trim())}";
+        var (data, _, error) = await GetAsync<AppointmentDto>(url);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Message, string? Error)> ResendConfirmationAsync(ResendConfirmationRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return (false, null, "Mã đặt lịch và Email là bắt buộc.");
+
+        var (res, error) = await PostAsync<dynamic>($"{ApiRoutes.Appointments}/resend-confirmation", dto);
+        if (error != null) return (false, null, error);
+        return (true, "Đã gửi lại email xác nhận lịch hẹn thành công.", null);
+    }
+
+    public async Task<(bool Success, string? Error)> ConfirmGuestAppointmentAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return (false, "The confirmation link is invalid.");
+
+        return await PostAsync($"{ApiRoutes.Appointments}/guest/confirm", new ConfirmGuestAppointmentDto { Token = token.Trim() });
+    }
+
+    public async Task<(bool Success, string? Error)> CancelGuestAppointmentAsync(string token, string? reason = null)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/cancel", new GuestAppointmentActionDto { Token = token.Trim(), Reason = reason });
+
+    public async Task<(bool Success, string? Error)> ConfirmGuestCompletionAsync(string token)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/confirm-completion", new GuestAppointmentActionDto { Token = token.Trim() });
+
+    public async Task<(bool Success, string? Error)> DisputeGuestCompletionAsync(string token, string? reason = null)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/dispute-completion", new GuestAppointmentActionDto { Token = token.Trim(), Reason = reason });
+
+    public async Task<(bool Success, string? Message, string? Error)> RequestGuestCancellationLinkAsync(RequestGuestCancellationLinkDto dto)
+    {
+        var (result, error) = await PostAsync<dynamic>($"{ApiRoutes.Appointments}/guest/request-cancellation-link", dto);
+        return error == null ? (true, "If eligible, a cancellation link was sent to the registered email.", null) : (false, null, error);
     }
 
     public async Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null)
@@ -104,6 +135,7 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         if (filter == null) return baseUrl;
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(filter.Status)) parts.Add($"status={filter.Status}");
+        if (!string.IsNullOrEmpty(filter.View)) parts.Add($"view={filter.View}");
         if (!string.IsNullOrEmpty(filter.Search)) parts.Add($"search={Uri.EscapeDataString(filter.Search)}");
         if (filter.FromDate.HasValue) parts.Add($"fromDate={filter.FromDate:yyyy-MM-dd}");
         if (filter.ToDate.HasValue) parts.Add($"toDate={filter.ToDate:yyyy-MM-dd}");

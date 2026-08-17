@@ -7,6 +7,10 @@ public class ServicePackageDto
     public string? Description { get; set; }
     public decimal Price { get; set; }
     public int DurationDays { get; set; }
+    public int? MaxDailySlotsCapacity { get; set; }
+    public int? MaxPatientCapacity { get; set; }
+    public bool IsFeatured { get; set; }
+    // Retained for older manager pages. New service-package API uses the two capacity fields above.
     public int MaxAppointments { get; set; }
     public bool IsActive { get; set; } = true;
     public List<string> Features { get; set; } = new();

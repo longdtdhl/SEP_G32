@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -7,16 +7,18 @@ using OPCBS.Application.Extensions;
 using OPCBS.Infrastructure.Extensions;
 using OPCBS.Infrastructure.Persistence;
 using OPCBS.Infrastructure.Seed;
+using OPCBS.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 // Infrastructure services (DbContext, repositories, external services)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddInfrastructureServices(connectionString);
+builder.Services.AddInfrastructureServices(connectionString, builder.Configuration);
 
 // Application services (business services, validators, AutoMapper)
 builder.Services.AddApplicationServices();
@@ -42,6 +44,35 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    // SignalR sends JWT token via query string (?access_token=...)
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var userIdValue = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                context.Fail("Invalid account identity.");
+                return;
+            }
+
+            var db = context.HttpContext.RequestServices.GetRequiredService<OpcbsDbContext>();
+            var user = await db.Users.FindAsync([userId]);
+            if (user == null || user.IsDeleted || user.Status != OPCBS.Domain.Enums.UserStatus.Active)
+                context.Fail("Account is inactive or locked.");
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -51,7 +82,9 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policy.AllowAnyMethod().AllowAnyHeader()
+              .AllowCredentials()
+              .SetIsOriginAllowed(_ => true);
     });
 });
 
@@ -91,14 +124,47 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Background Services
+builder.Services.AddHostedService<OPCBS.Services.AppointmentReminderService>();
+
 var app = builder.Build();
 
-// Seed database on startup
+// Database deletion must be an explicit one-off action. Normal restarts preserve all data.
+var resetDatabase = string.Equals(
+    Environment.GetEnvironmentVariable("RESET_DB"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+
+if (resetDatabase)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
+        context.Database.EnsureDeleted();
+    }
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
-    context.Database.Migrate();
-    await SeedData.SeedAsync(context);
+    try
+    {
+        Console.WriteLine("Applying Database Migrations...");
+        await context.Database.MigrateAsync();
+        Console.WriteLine("Applying Schema Upgrades...");
+        await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
+        Console.WriteLine("Seeding Database...");
+        await SeedData.SeedAsync(context);
+        Console.WriteLine("Database initialization and seed complete!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CRITICAL ERROR] Database initialization failed: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+        }
+    }
 }
 
 // Đặt các dòng này ngay sau khi Build, trước các middleware khác
@@ -117,5 +183,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

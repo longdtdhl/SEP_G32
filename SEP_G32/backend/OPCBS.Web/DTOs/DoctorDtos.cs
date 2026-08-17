@@ -45,6 +45,7 @@ public class DoctorDto
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }
     public string? LicenseNumber { get; set; }
+    public DateTime? LicenseExpiryDate { get; set; }
 }
 
 public class DoctorListItemDto
@@ -92,7 +93,7 @@ public class DoctorListItemDto
 public class DoctorFilterDto
 {
     public string? Search { get; set; }
-    public string? Specialization { get; set; }
+    public Guid? SpecializationId { get; set; }
     public double? MinRating { get; set; }
     public decimal? MaxFee { get; set; }
     public string? Gender { get; set; }
@@ -146,4 +147,7 @@ public class UpdateDoctorProfileDto
 
     [JsonPropertyName("licenseNumber")]
     public string? LicenseNumber { get; set; }
+
+    [JsonPropertyName("licenseExpiryDate")]
+    public DateTime? LicenseExpiryDate { get; set; }
 }

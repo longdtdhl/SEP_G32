@@ -10,7 +10,7 @@ public class DaysOffModel : PageModel
     private readonly IScheduleApiService _api;
     public DaysOffModel(IScheduleApiService api) => _api = api;
     public List<DayOffDto> DaysOff { get; set; } = new();
-    [BindProperty] public CreateDayOffDto Input { get; set; } = new();
+    [BindProperty] public CreateDayOffDto Input { get; set; } = new() { StartDate = DateTime.Today, EndDate = DateTime.Today };
     public string? Error { get; set; }
 
     public async Task OnGetAsync()
@@ -22,6 +22,11 @@ public class DaysOffModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (Input.StartDate.Date < DateTime.Today)
+        {
+            TempData["Error"] = "Cannot select days off in the past.";
+            return RedirectToPage();
+        }
         if (Input.EndDate == default) Input.EndDate = Input.StartDate;
         var (success, error) = await _api.CreateDayOffAsync(Input);
         if (!success) TempData["Error"] = error;

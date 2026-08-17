@@ -1,0 +1,81 @@
+@page
+@model OPCBS.Web.Pages.Doctor.TreatmentCases.Sessions.CompleteModel
+@{
+    ViewData["Title"] = "Complete Session & Record Notes";
+    Layout = "_DashboardLayout";
+}
+
+<div class="container-fluid py-2" style="max-width: 760px;">
+    <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="text-decoration-none text-muted fs-7 d-inline-block mb-2">
+        <i class="bi bi-arrow-left me-1"></i> Back to Case Sessions
+    </a>
+    <h1 class="fs-4 fw-bold text-dark mb-1">
+        <i class="bi bi-check-circle-fill text-success me-2"></i> Complete Session & Record Notes
+    </h1>
+    <p class="text-muted fs-7 mb-3">Record clinical notes, session summaries, pre/post mood scores, and mark session as completed.</p>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Session == null)
+    {
+        <div class="alert alert-warning rounded-3">Session not found.</div>
+        return;
+    }
+
+    <div class="bg-white border rounded-3 p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <div>
+                <span class="badge bg-teal me-2" style="background:#0d9488;">Session #@Model.Session.SessionNumber</span>
+                <span class="@Model.Session.StatusBadgeClass">@Model.Session.StatusText</span>
+            </div>
+            @if (Model.Session.PlannedStartTime.HasValue)
+            {
+                <span class="text-muted fs-7"><i class="bi bi-clock me-1 text-teal" style="color:#0d9488;"></i>@Model.Session.PlannedStartTime.Value.ToString("MMM dd, yyyy HH:mm")</span>
+            }
+        </div>
+
+        <form method="post" asp-page-handler="Complete">
+            <input type="hidden" name="caseId" value="@Model.CaseId" />
+            <input type="hidden" name="sessionId" value="@Model.SessionId" />
+
+            <div class="mb-3">
+                <label class="form-label fs-7 fw-bold text-dark">Session Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" value="@(Model.Session.Title ?? $"Session {Model.Session.SessionNumber}")" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fs-7 fw-bold text-dark">Patient Summary <small class="text-muted fw-normal">(visible to patient)</small></label>
+                <textarea name="patientFriendlySummary" class="form-control" rows="3" placeholder="Summary of key discussion topics and coping recommendations for the patient...">@Model.Session.PatientFriendlySummary</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fs-7 fw-bold text-danger"><i class="bi bi-lock-fill me-1"></i>Doctor Confidential Clinical Notes <small class="text-muted fw-normal">(doctor view only)</small></label>
+                <textarea name="doctorPrivateNotes" class="form-control border-danger-subtle" rows="3" placeholder="Confidential clinical observations, diagnostic hypotheses, and progress evaluation...">@Model.Session.DoctorPrivateNotes</textarea>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fs-7 fw-bold text-dark">Pre-Session Patient Mood (1–10)</label>
+                    <input type="number" name="moodBefore" class="form-control" min="1" max="10" value="@Model.Session.MoodBefore" placeholder="Score 1 - 10" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fs-7 fw-bold text-dark">Post-Session Patient Mood (1–10)</label>
+                    <input type="number" name="moodAfter" class="form-control" min="1" max="10" value="@Model.Session.MoodAfter" placeholder="Score 1 - 10" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                <button type="submit" class="btn btn-success px-4 py-2 d-inline-flex align-items-center gap-2" style="border-radius:8px; font-weight:600;">
+                    <i class="bi bi-check-circle-fill"></i> Complete Session & Save Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

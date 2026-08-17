@@ -1,134 +1,2042 @@
 @page
+@using System.Text.Encodings.Web
 @model OPCBS.Web.Pages.Doctor.Schedules.IndexModel
 @{
-    ViewData["Title"] = "Quản lý lịch làm việc";
-    ViewData["UseDashboardLayout"] = true;
-    var today = DateTime.Today;
-    var dayNames = new[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" };
-    var prevWeek = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd");
-    var nextWeek = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd");
-    var weekNumber = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(Model.WeekStart, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+    ViewData["Title"] = "Schedule Management";
+    Layout = "_DashboardLayout";
+
+    var selectedDateStr = Model.SelectedDate.ToString("yyyy-MM-dd");
+    var todayStr = DateTime.Today.ToString("yyyy-MM-dd");
+    var schedulableDateStr = Model.SelectedDate.Date < DateTime.Today ? todayStr : selectedDateStr;
+    var jsonOptions = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+    var eventsJson = System.Text.Json.JsonSerializer.Serialize(Model.CalendarEvents, jsonOptions);
+    var allNotesJson = System.Text.Json.JsonSerializer.Serialize(Model.AllNotes, jsonOptions);
+    var eligiblePatientsJson = System.Text.Json.JsonSerializer.Serialize(Model.EligiblePatients, jsonOptions);
 }
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-calendar-week me-2" style="color:var(--mb-primary);"></i>Quản lý lịch làm việc</h1>
-    <div class="d-flex gap-2">
-        <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tạo slot tư vấn</a>
-        <a asp-page="DaysOff" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-x me-1"></i>Ngày nghỉ</a>
+<style>
+    /* ── Schedule Management Styles ── */
+    .doctor-schedule-container { max-width: 100%; margin: 0 auto; }
+
+    /* Toolbar */
+    .doctor-schedule-toolbar {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .doctor-schedule-segmented {
+        display: inline-flex;
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 3px;
+        gap: 2px;
+    }
+    .doctor-schedule-segmented .btn-segment {
+        border: none;
+        background: transparent;
+        color: #475569;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 5px 14px;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .doctor-schedule-segmented .btn-segment.active {
+        background: #ffffff;
+        color: #0f766e;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Filter Dropdown Menu */
+    .filter-menu-dropdown {
+        min-width: 230px;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .filter-check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 0;
+        font-size: 0.84rem;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+    }
+    .filter-color-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    /* Main Calendar Card */
+    .doctor-schedule-card {
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+        position: relative;
+    }
+    .doctor-schedule-card-body { padding: 1rem; }
+
+    /* FullCalendar Customization */
+    .fc { font-family: inherit; }
+    .fc-theme-standard th { background: #f8fafc; padding: 8px 0; font-weight: 600; color: #334155; font-size: 0.85rem; }
+    .fc-timegrid-slot { height: 2.85em; }
+    .fc-day-today { background-color: rgba(15, 118, 110, 0.03) !important; }
+    
+    /* Current time indicator */
+    .fc-timegrid-now-indicator-line {
+        border-color: #0d9488 !important;
+        border-width: 2px !important;
+    }
+    .fc-timegrid-now-indicator-arrow {
+        border-color: #0d9488 !important;
+        border-top-color: transparent !important;
+        border-bottom-color: transparent !important;
+    }
+
+    /* Event Styles - High contrast & clean hierarchy */
+    .fc-event {
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 3px 6px !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        text-shadow: none !important;
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .fc-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(15, 23, 42, 0.12);
+    }
+    
+    /* Event Semantic Themes */
+    .fc-event-available {
+        background-color: #ccfbf1 !important;
+        color: #115e59 !important;
+        --fc-event-text-color: #115e59 !important;
+        border-left: 4px solid #0d9488 !important;
+    }
+    .fc-event-pending {
+        background-color: #fef3c7 !important;
+        color: #78350f !important;
+        --fc-event-text-color: #78350f !important;
+        border-left: 4px solid #d97706 !important;
+    }
+    .fc-event-approved, .fc-event-booked, .fc-event-appointment {
+        background-color: #dbeafe !important;
+        color: #1e3a8a !important;
+        --fc-event-text-color: #1e3a8a !important;
+        border-left: 4px solid #2563eb !important;
+    }
+    .fc-event-inprogress {
+        background-color: #ede9fe !important;
+        color: #4338ca !important;
+        --fc-event-text-color: #4338ca !important;
+        border-left: 4px solid #6366f1 !important;
+    }
+    .fc-event-completed {
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
+        --fc-event-text-color: #334155 !important;
+        border-left: 4px solid #64748b !important;
+    }
+    .fc-event-blocked {
+        background-color: #fee2e2 !important;
+        color: #7f1d1d !important;
+        --fc-event-text-color: #7f1d1d !important;
+        border-left: 4px solid #dc2626 !important;
+    }
+    .fc-event-expired {
+        background-color: #f1f5f9 !important;
+        color: #64748b !important;
+        --fc-event-text-color: #64748b !important;
+        border-left: 4px solid #94a3b8 !important;
+        opacity: 0.85;
+    }
+    .fc-event-cancelled {
+        background-color: #ffe4e6 !important;
+        color: #9f1239 !important;
+        --fc-event-text-color: #9f1239 !important;
+        border-left: 4px solid #e11d48 !important;
+        opacity: 0.85;
+    }
+
+    .fc-event .fc-event-main,
+    .fc-event .fc-custom-event-container,
+    .fc-event .fc-custom-event-time,
+    .fc-event .fc-custom-event-title,
+    .fc-event .fc-custom-event-sub {
+        color: var(--fc-event-text-color) !important;
+        opacity: 1 !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
+    .fc-custom-event-container {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        line-height: 1.25;
+    }
+    .fc-custom-event-time {
+        font-size: 10.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.9;
+    }
+    .fc-custom-event-title {
+        font-size: 12.5px;
+        font-weight: 750;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 1px 0;
+    }
+    .fc-custom-event-sub {
+        font-size: 10.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    /* Empty state overlay */
+    .calendar-empty-state {
+        padding: 3rem 1.5rem;
+        text-align: center;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+        margin: 1rem 0;
+    }
+
+    /* Legend Bar */
+    .doctor-schedule-legend {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .legend-dots { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .legend-dot-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; color: #475569; }
+    .legend-dot-box { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* Year View Grid */
+    .doctor-schedule-year-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+    .year-month-card {
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem;
+        text-align: center;
+    }
+    .year-month-title {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+    }
+    .year-month-title:hover { color: #0f766e; }
+    .year-days-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+    .year-days-table th { color: #94a3b8; font-weight: 600; padding: 2px 0; }
+    .year-days-table td { padding: 3px 0; cursor: pointer; border-radius: 4px; }
+    .year-days-table td:hover { background: #e2e8f0; }
+    .year-days-table td.has-available { background: #ccfbf1; color: #0f766e; font-weight: 700; }
+    .year-days-table td.has-appt { background: #dbeafe; color: #1e40af; font-weight: 700; }
+
+    /* Offcanvas Slide-over Drawer */
+    .schedule-drawer {
+        border-left: 1px solid #e2e8f0 !important;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15) !important;
+        z-index: 1065 !important;
+    }
+    .schedule-drawer.show {
+        transform: none !important;
+        visibility: visible !important;
+    }
+    .schedule-drawer .offcanvas-header {
+        padding: 1.1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+    .schedule-drawer .offcanvas-body {
+        padding: 1.25rem;
+    }
+    .drawer-patient-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .drawer-info-row {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.85rem;
+    }
+    .drawer-info-row:last-child { border-bottom: none; }
+    .drawer-info-label {
+        width: 120px;
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+    .drawer-info-val {
+        flex: 1;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* Dedicated Notes Section in Drawer */
+    .drawer-notes-section {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .drawer-note-content-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.84rem;
+        color: #334155;
+        white-space: pre-wrap;
+    }
+
+    /* Modal Styling for Weekly Config */
+    .modal-content.schedule-modal { border: 1px solid #dbe7e4 !important; border-radius: 8px !important; }
+    .schedule-modal .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb !important; }
+    .schedule-modal .modal-body { padding: 1.25rem; }
+    .schedule-modal .modal-footer { padding: 0.85rem 1.25rem; border-top: 1px solid #e5e7eb !important; }
+    .weekly-day-option { min-width: 64px; margin: 0 !important; background: #f8fafc; border: 1px solid #dbe3ea; border-radius: 6px; }
+    .weekly-time-panel { background: #f8fafc; border: 1px solid #dbe3ea; border-radius: 8px; padding: 1rem; }
+
+    @@media (max-width: 1024px) {
+        .doctor-schedule-year-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @@media (max-width: 640px) {
+        .doctor-schedule-year-grid { grid-template-columns: 1fr; }
+        .doctor-schedule-toolbar { flex-direction: column; align-items: stretch; }
+    }
+</style>
+
+<div class="doctor-schedule-container">
+
+    <!-- Page Header (Compact & Balanced) -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h1 style="font-size:1.35rem; font-weight:700; margin:0; color:#1e293b;">
+                <i class="bi bi-calendar-week me-2" style="color:#0f766e;"></i>Schedule Management
+            </h1>
+            <p style="margin:2px 0 0; font-size:0.84rem; color:#64748b;">
+                Manage consultation availability, treatment appointments, and clinical schedule.
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button class="btn btn-outline-secondary btn-sm" style="border-radius:8px; border-color:#0f766e; color:#0f766e;" data-bs-toggle="modal" data-bs-target="#configureWeeklyModal">
+                <i class="bi bi-gear-wide-connected me-1"></i>Configure Weekly Schedule
+            </button>
+            <form method="post" asp-page-handler="ResetSchedule" class="m-0 p-0 d-inline-block" onsubmit="return confirm('Are you sure you want to delete all available slots? (Booked and blocked slots will be kept)');">
+                <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius:8px;" title="Clear all open availability slots">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Slots
+                </button>
+            </form>
+        </div>
     </div>
-</div>
 
-@if (Model.Success != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@Model.Success<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+    <!-- Alerts -->
+    @if (Model.Success != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius:8px;">
+            <i class="bi bi-check-circle-fill me-2"></i>@Model.Success
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius:8px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-<!-- Weekly Calendar -->
-<div class="week-calendar shadow-sm">
-    <!-- Navigation bar -->
-    <div class="wc-nav">
+    <!-- Toolbar with Professional Control Group -->
+    <div class="doctor-schedule-toolbar">
+        <!-- View Switcher -->
+        <div class="doctor-schedule-segmented">
+            <a href="?view=day&date=@selectedDateStr" class="btn-segment @(Model.View == "day" ? "active" : "")">Day</a>
+            <a href="?view=week&date=@selectedDateStr" class="btn-segment @(Model.View == "week" ? "active" : "")">Week</a>
+            <a href="?view=month&date=@selectedDateStr" class="btn-segment @(Model.View == "month" ? "active" : "")">Month</a>
+            <a href="?view=year&date=@selectedDateStr" class="btn-segment @(Model.View == "year" ? "active" : "")">Year</a>
+        </div>
+
+        <!-- Date Navigation -->
         <div class="d-flex align-items-center gap-2">
-            <div class="btn-group btn-group-sm">
-                <a asp-page="Index" asp-route-week="@prevWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
-                <a asp-page="Index" asp-route-week="@nextWeek" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+            <div class="btn-group">
+                <button id="btnPrev" class="btn btn-outline-secondary btn-sm" style="border-radius:8px 0 0 8px;"><i class="bi bi-chevron-left"></i></button>
+                <button id="btnToday" class="btn btn-outline-secondary btn-sm">Today</button>
+                <button id="btnNext" class="btn btn-outline-secondary btn-sm" style="border-radius:0 8px 8px 0;"><i class="bi bi-chevron-right"></i></button>
             </div>
+            
+            @if (Model.View == "day")
+            {
+                <input type="date" id="calendarDatePicker" class="form-control form-control-sm" value="@selectedDateStr" style="border-radius:8px; width:auto;" />
+            }
         </div>
-        <span class="wc-title">@Model.WeekStart.ToString("MMM dd") — @Model.WeekEnd.ToString("MMM dd, yyyy")</span>
-        <span class="wc-badge">Tuần @weekNumber</span>
-        <div class="ms-auto">
-            <a asp-page="Index" class="btn btn-sm btn-outline-primary">Hôm nay</a>
+
+        <!-- Multi-Type Event Filter Group (Appointments, Available, Blocked) -->
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="eventFilterDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="border-radius:8px;">
+                <i class="bi bi-funnel me-1"></i>Filter Events <span id="filterActiveBadge" class="badge rounded-pill bg-teal text-white ms-1" style="background:#0f766e; font-size:0.72rem;">All</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end filter-menu-dropdown" aria-labelledby="eventFilterDropdownBtn">
+                <div class="fw-bold text-dark small mb-2 border-bottom pb-1">Show Event Types</div>
+                <label class="filter-check-item">
+                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAppts" value="Appointment" checked>
+                    <div class="filter-color-dot" style="background:#2563eb;"></div>
+                    <span>Appointments</span>
+                </label>
+                <label class="filter-check-item">
+                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAvailable" value="Availability" checked>
+                    <div class="filter-color-dot" style="background:#0d9488;"></div>
+                    <span>Available Slots</span>
+                </label>
+                <label class="filter-check-item">
+                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterBlocked" value="Blocked" checked>
+                    <div class="filter-color-dot" style="background:#dc2626;"></div>
+                    <span>Blocked Slots</span>
+                </label>
+            </div>
         </div>
     </div>
 
-    <!-- Day headers -->
-    <div class="week-calendar-header">
-        <div class="wc-time-col"></div>
-        @foreach (var day in Model.WeekDays)
-        {
-            var isToday = day.Date == today;
-            var isDayOff = Model.IsDayOff(day);
-            <div class="wc-day-col @(isToday ? "today" : "")">
-                <div class="wc-day-name">@dayNames[(int)day.DayOfWeek]</div>
-                <div class="wc-day-num">@day.Day</div>
-                @if (isDayOff)
-                {
-                    <small class="text-danger" style="font-size:0.6rem;"><i class="bi bi-x-circle"></i> Nghỉ</small>
-                }
+    <!-- Main Calendar Container -->
+    <div class="doctor-schedule-card">
+        <div class="doctor-schedule-card-body">
+            <!-- Empty State Message (hidden by default) -->
+            <div id="calendarEmptyState" class="calendar-empty-state d-none">
+                <i class="bi bi-calendar-x display-6 text-muted mb-2"></i>
+                <h6 class="fw-bold text-dark">No events scheduled</h6>
+                <p class="text-muted small mb-3">There are no appointments, available slots, or blocked slots in this view.</p>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openCreateDrawer('slot')" style="background:#0f766e; border-color:#0f766e; border-radius:8px;">
+                    <i class="bi bi-plus-lg me-1"></i>Add Availability
+                </button>
             </div>
-        }
+
+            <!-- FullCalendar Container for Day, Week, Month -->
+            <div id="calendar" style="@(Model.View == "year" ? "display:none;" : "")"></div>
+
+            <!-- Year View Overview Container -->
+            <div id="yearCalendarGrid" class="doctor-schedule-year-grid" style="@(Model.View == "year" ? "" : "display:none;")"></div>
+        </div>
     </div>
 
-    <!-- Time grid -->
-    <div class="week-calendar-body">
-        @for (int hour = Model.CalStartHour; hour <= Model.CalEndHour; hour++)
-        {
-            <div class="wc-time-row">
-                <div class="wc-time-label">@hour.ToString("00"):00</div>
-                @foreach (var day in Model.WeekDays)
-                {
-                    var isToday = day.Date == today;
-                    var isDayOff = Model.IsDayOff(day);
-                    var schedules = Model.DayScheduleMap.GetValueOrDefault(day.DayOfWeek, new());
+    <!-- Event Legend Bar -->
+    <div class="doctor-schedule-legend">
+        <div class="legend-dots">
+            <span class="fw-semibold text-dark small"><i class="bi bi-palette me-1"></i>Legend:</span>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ccfbf1; border:1px solid #0d9488;"></div>Available Slot</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>Confirmed Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fef3c7; border:1px solid #d97706;"></div>Pending Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ede9fe; border:1px solid #6366f1;"></div>In Progress</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fee2e2; border:1px solid #dc2626;"></div>Blocked Slot</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #64748b;"></div>Completed Appt</div>
+        </div>
+        <div class="text-muted small"><i class="bi bi-cursor-fill me-1"></i>Click any event or empty future time slot to view details, notes, or schedule.</div>
+    </div>
 
-                    <div class="wc-time-cell @(isToday ? "today-col" : "") @(isDayOff ? "opacity-25" : "")">
-                        @foreach (var s in schedules)
-                        {
-                            if (TimeOnly.TryParse(s.StartTime, out var st) && st.Hour == hour)
-                            {
-                                TimeOnly.TryParse(s.EndTime, out var et);
-                                var durationHours = (et.ToTimeSpan() - st.ToTimeSpan()).TotalHours;
-                                var heightPx = (int)(durationHours * 64);
-                                <div class="wc-slot available" style="top:2px;height:@(heightPx - 4)px;" title="@s.StartTime - @s.EndTime (@(s.SlotDuration)min slots)">
-                                    <span class="slot-time">@s.StartTime - @s.EndTime</span>
-                                    <span class="slot-label">@(s.SlotDuration) phút/slot</span>
-                                    <span class="slot-count">@s.SlotsPerDay slots</span>
-                                </div>
-                            }
-                        }
+</div>
+
+<!-- ══ RIGHT-SIDE SLIDE-OVER DRAWER (NON-MODAL PANEL) ══ -->
+<div class="offcanvas offcanvas-end schedule-drawer" tabindex="-1" id="scheduleDrawer" style="width: 480px; max-width: 92vw;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title fw-bold text-dark" id="drawerTitle">Schedule Details</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        
+        <!-- ── PANEL A: APPOINTMENT DETAILS ── -->
+        <div id="drawerAppointmentPanel" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span id="drawerApptBadge" class="badge px-3 py-1.5 rounded-pill fs-7 fw-semibold">Status</span>
+                <span id="drawerApptDate" class="text-muted small fw-medium"></span>
+            </div>
+
+            <!-- Patient Info Box -->
+            <div class="drawer-patient-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div id="drawerApptAvatar" class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="width:38px; height:38px; background:#0f766e; font-size:0.9rem;">
+                        PT
                     </div>
-                }
+                    <div>
+                        <div class="fw-bold text-dark" id="drawerApptPatientName" style="font-size:0.95rem;">Patient Name</div>
+                        <div class="text-muted small" id="drawerApptContext">General Consultation</div>
+                    </div>
+                </div>
+                <div class="drawer-info-row">
+                    <div class="drawer-info-label">Schedule Time</div>
+                    <div class="drawer-info-val text-teal" id="drawerApptTime" style="color:#0f766e;">--:-- - --:--</div>
+                </div>
+                <div class="drawer-info-row" id="drawerApptPackageRow">
+                    <div class="drawer-info-label">Treatment Case</div>
+                    <div class="drawer-info-val" id="drawerApptPackageName">—</div>
+                </div>
+                <div class="drawer-info-row" id="drawerApptSessionRow">
+                    <div class="drawer-info-label">Session #</div>
+                    <div class="drawer-info-val" id="drawerApptSessionNum">—</div>
+                </div>
             </div>
-        }
+
+            <!-- Dedicated Notes Section for Appointment -->
+            <div class="drawer-notes-section">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-1.5 fw-bold text-dark small">
+                        <i class="bi bi-journal-text" style="color:#0f766e;"></i>
+                        <span>Notes</span>
+                    </div>
+                    <span id="drawerApptNoteCountBadge" class="badge bg-light text-secondary border">0 notes</span>
+                </div>
+
+                <!-- Note Preview Box -->
+                <div id="drawerApptNotePreviewBox" class="drawer-note-content-box mb-2">
+                    <span id="drawerApptNoteText" class="text-muted fst-italic">No notes recorded for this appointment.</span>
+                </div>
+
+                <!-- Inline Add / Edit Note Form -->
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="btnToggleApptNoteEdit" onclick="toggleApptNoteForm()" style="border-radius:6px; font-size:0.8rem;">
+                    <i class="bi bi-pencil me-1"></i>Add / Edit Note
+                </button>
+
+                <div id="drawerApptNoteFormContainer" class="d-none mt-2 pt-2 border-top">
+                    <form method="post" asp-page-handler="CreateNote" id="drawerApptNoteForm">
+                        <input type="hidden" name="date" id="dApptNoteDate" />
+                        <input type="hidden" name="startTime" id="dApptNoteStartTime" />
+                        <input type="hidden" name="endTime" id="dApptNoteEndTime" />
+                        <input type="hidden" name="patientId" id="dApptNotePatientId" />
+                        <input type="hidden" name="treatmentCaseId" id="dApptNoteCaseId" />
+                        <input type="hidden" name="appointmentSlotId" id="dApptNoteSlotId" />
+                        <input type="hidden" name="category" value="Booked Slot Note" />
+                        <input type="hidden" name="noteTitle" value="Appointment Clinical Note" />
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Appointment Note Content</label>
+                            <textarea name="noteContent" id="dApptNoteInput" class="form-control form-control-sm" rows="3" placeholder="Enter session note or observations..." required style="border-radius:6px; font-size:0.85rem;"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-light flex-fill" onclick="toggleApptNoteForm()" style="border-radius:6px;">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-primary flex-fill" style="background:#0f766e; border-color:#0f766e; border-radius:6px; font-weight:600;">Save Note</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex flex-column gap-2 mt-3">
+                <a id="drawerBtnViewAppt" href="#" class="btn btn-primary w-100" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600; min-height:40px; display:flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-box-arrow-up-right me-1.5"></i>View Full Appointment Details
+                </a>
+                <a id="drawerBtnChat" href="#" class="btn btn-outline-secondary w-100 d-none" style="border-radius:8px; font-weight:600; min-height:40px; display:flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-chat-dots me-1.5" style="color:#0f766e;"></i>Chat with Patient
+                </a>
+
+                <!-- Inline Cancel Form -->
+                <div id="drawerCancelApptContainer" class="border-top pt-3 mt-2">
+                    <form method="post" asp-page-handler="CancelAppointment" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                        <input type="hidden" name="appointmentId" id="drawerCancelApptId" />
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-danger">Cancellation Reason (optional)</label>
+                            <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason for cancellation..." style="border-radius:8px;" />
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100" style="border-radius:8px; font-weight:600; min-height:38px;">
+                            <i class="bi bi-x-circle me-1"></i>Cancel Appointment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL B: AVAILABLE / BLOCKED SLOT DETAILS ── -->
+        <div id="drawerSlotPanel" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span id="drawerSlotStatusBadge" class="badge px-3 py-1.5 rounded-pill fs-7 fw-semibold">Available</span>
+                <span id="drawerSlotDate" class="text-muted small fw-medium"></span>
+            </div>
+
+            <!-- Capacity / Bookings Status Box -->
+            <div class="drawer-patient-card mb-3 py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="drawer-info-label" style="width:auto;"><i class="bi bi-people-fill me-1" style="color:#0f766e;"></i>Bookings / Capacity</span>
+                    <span id="drawerSlotBookingInfo" class="fw-bold text-dark small">0 / 1 patients</span>
+                </div>
+            </div>
+
+            <!-- Primary Action for Available Slots: Schedule Treatment Appointment -->
+            <div id="dSlotConvertTreatmentContainer" class="mb-3">
+                <button type="button" class="btn btn-primary w-100" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600; min-height:42px; display:flex; align-items:center; justify-content:center;" onclick="convertToTreatmentScheduleFromSlot()">
+                    <i class="bi bi-journal-medical me-1.5"></i>Schedule Treatment Appointment
+                </button>
+            </div>
+
+            <!-- Slot Update Form -->
+            <form method="post" asp-page-handler="UpdateSlot" id="drawerUpdateSlotForm" class="mb-3">
+                <input type="hidden" name="slotId" id="dSlotId" />
+                
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">Start Time</label>
+                        <input type="time" name="startTime" id="dSlotStartTime" step="300" min="07:00" max="22:55" class="form-control" style="border-radius:8px;" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">End Time</label>
+                        <input type="time" name="endTime" id="dSlotEndTime" step="300" min="07:05" max="23:00" class="form-control" style="border-radius:8px;" />
+                    </div>
+                </div>
+                <div id="dSlotDurationPreview" class="small mb-3 fw-semibold text-teal" style="color:#0f766e;">Duration: 1 hour</div>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
+                    <input type="number" name="maxPatients" id="dSlotMaxPatients" class="form-control" min="1" max="10" style="border-radius:8px;" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Consultation Mode</label>
+                    <select name="consultationMode" id="dSlotConsultationMode" class="form-select" style="border-radius:8px;">
+                        <option value="Both">Both (Online & In-Person)</option>
+                        <option value="Online">Online Consultation</option>
+                        <option value="Offline">In-Person (Offline)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 p-2.5 rounded-3 border" style="background:#f8fafc;">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="isPreAppointmentNoteRequired" id="dSlotNoteRequired" value="true">
+                        <label class="form-check-label small fw-semibold text-dark" for="dSlotNoteRequired">Require Pre-Appointment Evaluation</label>
+                    </div>
+                    <div>
+                        <label class="form-label small text-secondary">Evaluation Title (optional)</label>
+                        <input type="text" name="preAppointmentNoteTitle" id="dSlotNoteTitle" class="form-control form-control-sm" placeholder="e.g., Initial Symptom Assessment" style="border-radius:6px;" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" id="dSlotSaveBtn" class="btn btn-outline-secondary w-100" style="border-radius:8px; font-weight:600; min-height:40px;">Save Slot Details</button>
+                </div>
+            </form>
+
+            <!-- Dedicated Notes Section for Slot -->
+            <div class="drawer-notes-section">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-1.5 fw-bold text-dark small">
+                        <i class="bi bi-journal-text" style="color:#0f766e;"></i>
+                        <span>Slot Notes</span>
+                    </div>
+                    <span id="drawerSlotNoteCountBadge" class="badge bg-light text-secondary border">0 notes</span>
+                </div>
+
+                <!-- Slot Note Preview -->
+                <div id="drawerSlotNotePreviewBox" class="drawer-note-content-box mb-2">
+                    <span id="drawerSlotNoteText" class="text-muted fst-italic">No notes attached to this slot.</span>
+                </div>
+
+                <!-- Inline Add / Edit Slot Note Form -->
+                <form method="post" asp-page-handler="UpdateSlotNotes" id="drawerSlotNotesForm">
+                    <input type="hidden" name="slotId" id="dSlotNotesSlotId" />
+                    <div class="mb-2">
+                        <textarea name="notes" id="dSlotNotesInput" class="form-control form-control-sm" rows="2" placeholder="Write or update slot note..." style="border-radius:6px; font-size:0.85rem;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100" style="border-radius:6px; font-weight:600;">
+                        <i class="bi bi-check2 me-1"></i>Save Slot Note
+                    </button>
+                </form>
+            </div>
+
+            <!-- Block & Delete actions -->
+            <div class="d-flex gap-2 border-top pt-3">
+                <form method="post" asp-page-handler="ToggleBlock" class="flex-fill m-0">
+                    <input type="hidden" name="slotId" id="dSlotBlockId" />
+                    <button type="submit" id="dSlotBlockBtn" class="btn btn-outline-warning w-100" style="border-radius:8px; font-weight:600; min-height:38px;"><i class="bi bi-slash-circle me-1"></i>Block Slot</button>
+                </form>
+                <form method="post" asp-page-handler="DeleteSlot" class="flex-fill m-0" onsubmit="return confirm('Are you sure you want to delete this slot?');">
+                    <input type="hidden" name="slotId" id="dSlotDeleteId" />
+                    <button type="submit" id="dSlotDeleteBtn" class="btn btn-outline-danger w-100" style="border-radius:8px; font-weight:600; min-height:38px;"><i class="bi bi-trash me-1"></i>Delete Slot</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── PANEL C: INLINE CREATION DRAWER (SLOT / TREATMENT APPT) ── -->
+        <div id="drawerCreatePanel" class="d-none">
+            <!-- Inline validation feedback -->
+            <div id="drawerCreateAlert" class="alert alert-danger d-none rounded-3 py-2 small mb-3"></div>
+
+            <!-- Segmented Mode Switch (Available Slot vs Treatment Appt only) -->
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">Entry Type</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="drawerCreateMode" id="dModeSlot" value="slot" checked onchange="onDrawerModeChanged(this.value)">
+                    <label class="btn btn-outline-primary btn-sm py-2 fw-semibold" for="dModeSlot"><i class="bi bi-calendar-check me-1"></i>Available Slot</label>
+
+                    <input type="radio" class="btn-check" name="drawerCreateMode" id="dModeTreatment" value="treatment" onchange="onDrawerModeChanged(this.value)">
+                    <label class="btn btn-outline-teal btn-sm py-2 fw-semibold" for="dModeTreatment" style="color:#0f766e; border-color:#0f766e;"><i class="bi bi-journal-medical me-1"></i>Treatment Appt</label>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <form id="drawerCreateForm" method="post" asp-page-handler="CreateSlot">
+                <!-- Date -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Date</label>
+                    <input type="date" name="date" id="dCreateDate" class="form-control" value="@schedulableDateStr" min="@todayStr" required style="border-radius:8px;" />
+                </div>
+
+                <!-- Time Range -->
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">Start Time</label>
+                        <input type="time" name="startTime" id="dCreateStartTime" step="300" min="07:00" max="22:55" class="form-control" value="08:00" required style="border-radius:8px;" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">End Time</label>
+                        <input type="time" name="endTime" id="dCreateEndTime" step="300" min="07:05" max="23:00" class="form-control" value="09:00" required style="border-radius:8px;" />
+                    </div>
+                </div>
+                <div id="dCreateDurationPreview" class="small mb-3 fw-semibold text-teal" style="color:#0f766e;">Duration: 1 hour</div>
+
+                <!-- Treatment-Specific Fields -->
+                <div id="dCreateTreatmentFields" class="d-none p-3 bg-light rounded-3 border mb-3">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-dark"><i class="bi bi-person-fill me-1" style="color:#0f766e;"></i>Select Active Treatment Patient</label>
+                        <select id="dCreatePatientSelect" class="form-select form-select-sm" onchange="onDrawerPatientSelected(this)" style="border-radius:8px;">
+                            <option value="">-- Choose Eligible Patient --</option>
+                            @foreach (var p in Model.EligiblePatients.GroupBy(x => x.PatientId).Select(g => g.First()))
+                            {
+                                <option value="@p.PatientId">@p.PatientName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Case Selector if multiple cases -->
+                    <div id="dCreateCaseContainer" class="mb-2 d-none">
+                        <label class="form-label small fw-semibold text-dark">Select Case</label>
+                        <select id="dCreateCaseSelect" class="form-select form-select-sm" onchange="onDrawerCaseSelected(this)" style="border-radius:8px;">
+                            <option value="">-- Select Active Case --</option>
+                        </select>
+                    </div>
+
+                    <input type="hidden" name="patientId" id="dCreatePatientId" />
+                    <input type="hidden" name="treatmentCaseId" id="dCreateCaseId" />
+                    <input type="hidden" name="treatmentSessionId" id="dCreateSessionId" />
+
+                    <div id="dCreateCaseInfoCard" class="p-2.5 rounded-3 border small d-none" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                        <div><strong>Package:</strong> <span id="dInfoPkgName" style="color:#0f766e;"></span></div>
+                        <div><strong>Progress:</strong> <span id="dInfoProgress"></span> | <strong>Session:</strong> #<span id="dInfoSessionNum"></span></div>
+                    </div>
+                </div>
+
+                <!-- Slot-Specific Fields -->
+                <div id="dCreateSlotFields">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
+                        <input type="number" name="maxPatients" id="dCreateMaxPatients" class="form-control" value="1" min="1" max="10" style="border-radius:8px;" />
+                    </div>
+                </div>
+
+                <!-- Consultation Mode Selection -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Consultation Mode</label>
+                    <select name="consultationMode" id="dCreateConsultationMode" class="form-select" style="border-radius:8px;">
+                        <option value="Both" selected>Both (Online & In-Person)</option>
+                        <option value="Online">Online Consultation</option>
+                        <option value="Offline">In-Person (Offline)</option>
+                    </select>
+                </div>
+
+                <!-- Pre-Appointment Note Evaluation Configuration -->
+                <div class="mb-3 p-2.5 rounded-3 border" style="background:#f8fafc;">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="isPreAppointmentNoteRequired" id="dCreateNoteRequired" value="true">
+                        <label class="form-check-label small fw-semibold text-dark" for="dCreateNoteRequired">Require Pre-Appointment Evaluation</label>
+                    </div>
+                    <div>
+                        <label class="form-label small text-secondary">Evaluation Title (optional)</label>
+                        <input type="text" name="preAppointmentNoteTitle" id="dCreateNoteTitle" class="form-control form-control-sm" placeholder="e.g., Initial Symptom Assessment" style="border-radius:6px;" />
+                    </div>
+                </div>
+
+                <!-- Slot / Appt Initial Notes -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Notes (optional)</label>
+                    <textarea name="notes" id="dCreateSlotNotes" class="form-control" rows="2" placeholder="Internal clinical or schedule note..." style="border-radius:8px; resize:none;"></textarea>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="offcanvas" style="border-radius:8px;">Cancel</button>
+                    <button type="submit" id="dCreateSubmitBtn" class="btn btn-primary flex-fill" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600;">Save Entry</button>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
 
-<!-- Legend & Schedule table -->
-<div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div class="wc-legend">
-        <div class="wc-legend-item"><div class="legend-dot" style="background:var(--mb-primary-light);border:1px solid rgba(78,139,112,0.25);"></div>Lịch làm việc</div>
-        <div class="wc-legend-item"><div class="legend-dot" style="background:#f0f0f0;border:1px solid #ddd;"></div>Ngày nghỉ</div>
-    </div>
-</div>
+<!-- ══ CONFIGURE WEEKLY SCHEDULE MODAL (SECONDARY ACTION) ══ -->
+<div class="modal fade" id="configureWeeklyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content schedule-modal" style="box-shadow:0 20px 40px rgba(0,0,0,0.12);">
+            <form method="post" asp-page-handler="GenerateWeeklySchedule" id="weeklyScheduleForm">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-gear-wide-connected me-2" style="color:#0f766e;"></i>Configure Weekly Working Schedule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Working Days Checkboxes -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Working Days</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Monday" id="wdMon" checked>
+                                <label class="form-check-label fw-semibold small" for="wdMon">Mon</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Tuesday" id="wdTue" checked>
+                                <label class="form-check-label fw-semibold small" for="wdTue">Tue</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Wednesday" id="wdWed" checked>
+                                <label class="form-check-label fw-semibold small" for="wdWed">Wed</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Thursday" id="wdThu" checked>
+                                <label class="form-check-label fw-semibold small" for="wdThu">Thu</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Friday" id="wdFri" checked>
+                                <label class="form-check-label fw-semibold small" for="wdFri">Fri</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Saturday" id="wdSat">
+                                <label class="form-check-label fw-semibold small" for="wdSat">Sat</label>
+                            </div>
+                            <div class="form-check form-check-inline weekly-day-option px-3 py-2">
+                                <input class="form-check-input" type="checkbox" name="workingDays" value="Sunday" id="wdSun">
+                                <label class="form-check-label fw-semibold small" for="wdSun">Sun</label>
+                            </div>
+                        </div>
+                    </div>
 
-<!-- Schedule list (compact) -->
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-list-ul me-1"></i>Danh sách lịch</h6>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0">
-                <thead class="table-light">
-                    <tr><th>Ngày</th><th>Giờ</th><th>Slot</th><th>Trạng thái</th><th class="text-end"></th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var s in Model.Schedules)
-                    {
-                        <tr>
-                            <td><strong>@s.DayOfWeek</strong></td>
-                            <td>@s.StartTime — @s.EndTime</td>
-                            <td>@(s.SlotDuration) phút</td>
-                            <td><span class="badge @(s.IsActive ? "bg-success" : "bg-secondary") bg-opacity-75">@(s.IsActive ? "Hoạt động" : "Tắt")</span></td>
-                            <td class="text-end">
-                                <a asp-page="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                <form method="post" asp-page-handler="Delete" class="d-inline">
-                                    <input type="hidden" name="id" value="@s.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa lịch này?')"><i class="bi bi-trash"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Schedules.Any()) { <tr><td colspan="5" class="text-center py-3 text-muted">Chưa có lịch</td></tr> }
-                </tbody>
-            </table>
+                    <!-- Daily Working Hours -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Daily Working Hours</label>
+                        <div class="weekly-time-panel">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold text-dark">Start time</label>
+                                    <input type="time" name="startTime" id="weeklyStartTime" class="form-control" value="08:00" min="07:00" max="22:55" step="300" required style="border-radius:8px;" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold text-dark">End time</label>
+                                    <input type="time" name="endTime" id="weeklyEndTime" class="form-control" value="17:00" min="07:05" max="23:00" step="300" required style="border-radius:8px;" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold text-dark">Slot duration</label>
+                                    <select name="slotDurationMinutes" id="weeklyDuration" class="form-select" required style="border-radius:8px;">
+                                        <option value="30">30 minutes</option>
+                                        <option value="45">45 minutes</option>
+                                        <option value="60" selected>60 minutes</option>
+                                        <option value="90">90 minutes</option>
+                                        <option value="120">120 minutes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slot Configurations -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Consultation Mode</label>
+                            <select name="consultationMode" id="weeklyConsultationMode" class="form-select" style="border-radius:8px;">
+                                <option value="Both" selected>Both (Online & In-Person)</option>
+                                <option value="Online">Online Consultation</option>
+                                <option value="Offline">In-Person (Offline)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Default Max Patients</label>
+                            <input type="number" name="defaultMaxPatients" class="form-control" value="1" min="1" max="10" style="border-radius:8px;" />
+                        </div>
+                    </div>
+
+                    <!-- Application Period -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Start Date</label>
+                            <input type="date" name="startDate" id="weeklyStartDate" class="form-control" value="@schedulableDateStr" min="@todayStr" required style="border-radius:8px;" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-secondary">Apply for (Weeks)</label>
+                            <input type="number" name="weeksToApply" id="weeklyWeeks" class="form-control" value="4" min="1" max="52" required style="border-radius:8px;" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Default Slot Notes (optional)</label>
+                        <input type="text" name="defaultNotes" class="form-control" placeholder="e.g. Regular weekly consultation slot" style="border-radius:8px;" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600;">Generate Slots</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script>
+        var rawEvents = @Html.Raw(eventsJson);
+        var rawNotes = @Html.Raw(allNotesJson);
+        var eligiblePatientsData = @Html.Raw(eligiblePatientsJson);
+        var currentView = '@Model.View';
+        var selectedDateStr = '@selectedDateStr';
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function isPastSlot(dateStr, timeStr) {
+            if (!dateStr || !timeStr) return true;
+            return new Date(dateStr + 'T' + timeStr + ':00') <= new Date();
+        }
+
+        function getDrawer() {
+            var el = document.getElementById('scheduleDrawer');
+            if (!el) {
+                console.error('scheduleDrawer element not found in DOM');
+                return null;
+            }
+            if (typeof window.bootstrap !== 'undefined' && window.bootstrap.Offcanvas) {
+                return window.bootstrap.Offcanvas.getOrCreateInstance(el);
+            }
+            if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                return bootstrap.Offcanvas.getOrCreateInstance(el);
+            }
+
+            // Keep the schedule usable if the Bootstrap bundle is unavailable.
+            return {
+                show: function() {
+                    el.classList.add('show');
+                    el.style.visibility = 'visible';
+                    el.setAttribute('aria-modal', 'true');
+                    el.setAttribute('role', 'dialog');
+                    document.body.classList.add('offcanvas-open');
+                },
+                hide: function() {
+                    el.classList.remove('show');
+                    el.style.visibility = 'hidden';
+                    el.removeAttribute('aria-modal');
+                    document.body.classList.remove('offcanvas-open');
+                }
+            };
+        }
+
+        function openCalendarEventDrawer(eventObj) {
+            if (!eventObj) return;
+
+            var props = eventObj.extendedProps || {};
+            var mergedProps = Object.assign({}, props, {
+                id: props.id || props.Id || eventObj.id,
+                title: props.title || props.Title || eventObj.title,
+                start: props.start || props.Start || eventObj.startStr || (eventObj.start ? eventObj.start.toISOString() : ''),
+                end: props.end || props.End || eventObj.endStr || (eventObj.end ? eventObj.end.toISOString() : ''),
+                isAllDay: props.isAllDay !== undefined ? props.isAllDay : eventObj.allDay
+            });
+
+            var type = String(mergedProps.eventType || mergedProps.EventType || '').toLowerCase();
+            var apptId = mergedProps.appointmentId || mergedProps.AppointmentId;
+            var isAppointment = type === 'appointment' || type === 'booked' ||
+                Boolean(apptId && type !== 'availability' && type !== 'available' && type !== 'blocked');
+
+            if (isAppointment) openAppointmentDrawer(mergedProps);
+            else openSlotDrawer(mergedProps);
+        }
+
+        function hideAllDrawerPanels() {
+            var apptPanel = document.getElementById('drawerAppointmentPanel');
+            var slotPanel = document.getElementById('drawerSlotPanel');
+            var createPanel = document.getElementById('drawerCreatePanel');
+            var noteFormCont = document.getElementById('drawerApptNoteFormContainer');
+
+            if (apptPanel) apptPanel.classList.add('d-none');
+            if (slotPanel) slotPanel.classList.add('d-none');
+            if (createPanel) createPanel.classList.add('d-none');
+            if (noteFormCont) noteFormCont.classList.add('d-none');
+        }
+
+        function initTooltips(container) {
+            if (!container || typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+            var tooltipElements = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipElements.forEach(function(el) {
+                new bootstrap.Tooltip(el);
+            });
+        }
+
+        function parseDateAndTime(startVal, endVal) {
+            var dateStr = '';
+            var startTimeStr = '';
+            var endTimeStr = '';
+            if (startVal) {
+                var sStr = typeof startVal === 'string' ? startVal : (startVal.toISOString ? startVal.toISOString() : String(startVal));
+                if (sStr.includes('T')) {
+                    var parts = sStr.split('T');
+                    dateStr = parts[0];
+                    startTimeStr = parts[1].substring(0, 5);
+                } else if (sStr.includes(' ')) {
+                    var parts = sStr.split(' ');
+                    dateStr = parts[0];
+                    startTimeStr = parts[1].substring(0, 5);
+                } else {
+                    startTimeStr = sStr.substring(0, 5);
+                }
+            }
+            if (endVal) {
+                var eStr = typeof endVal === 'string' ? endVal : (endVal.toISOString ? endVal.toISOString() : String(endVal));
+                if (eStr.includes('T')) {
+                    endTimeStr = eStr.split('T')[1].substring(0, 5);
+                } else if (eStr.includes(' ')) {
+                    endTimeStr = eStr.split(' ')[1].substring(0, 5);
+                } else {
+                    endTimeStr = eStr.substring(0, 5);
+                }
+            }
+            return {
+                dateStr: dateStr,
+                startTime: startTimeStr || '08:00',
+                endTime: endTimeStr || '09:00',
+                displayTime: startTimeStr ? (endTimeStr ? startTimeStr + ' — ' + endTimeStr : startTimeStr) : '--:--'
+            };
+        }
+
+        function updateDurationText(startVal, endVal, targetElId) {
+            var target = document.getElementById(targetElId);
+            if (!target) return;
+            if (!startVal || !endVal) {
+                target.textContent = '';
+                return;
+            }
+            var s = startVal.split(':');
+            var e = endVal.split(':');
+            var startMin = parseInt(s[0]) * 60 + parseInt(s[1]);
+            var endMin = parseInt(e[0]) * 60 + parseInt(e[1]);
+            var diff = endMin - startMin;
+            if (diff <= 0) {
+                target.textContent = 'Start time must be before end time.';
+                target.className = 'small mb-3 fw-semibold text-danger';
+                return;
+            }
+            target.className = 'small mb-3 fw-semibold text-teal';
+            target.style.color = '#0f766e';
+            var hrs = Math.floor(diff / 60);
+            var mins = diff % 60;
+            var text = 'Duration: ';
+            if (hrs > 0 && mins > 0) {
+                text += (hrs === 1 ? '1 hour ' : hrs + ' hours ') + mins + ' minutes';
+            } else if (hrs > 0) {
+                text += hrs === 1 ? '1 hour' : hrs + ' hours';
+            } else {
+                text += mins + ' minutes';
+            }
+            target.textContent = text;
+        }
+
+        function toggleApptNoteForm() {
+            var formContainer = document.getElementById('drawerApptNoteFormContainer');
+            if (formContainer) {
+                formContainer.classList.toggle('d-none');
+            }
+        }
+
+        async function fetchNotesForDrawer(slotId, previewEl, countBadgeEl, inputEl, fallbackDescription) {
+            if (!previewEl || !countBadgeEl) return;
+            
+            var initialText = String(fallbackDescription || '').trim();
+            if (initialText) {
+                previewEl.textContent = initialText;
+                previewEl.className = 'drawer-note-content-box mb-2 text-dark';
+                if (inputEl) inputEl.value = initialText;
+                countBadgeEl.textContent = '1 note';
+            } else {
+                previewEl.innerHTML = '<span class="text-muted fst-italic">No notes recorded yet.</span>';
+                previewEl.className = 'drawer-note-content-box mb-2 text-muted fst-italic';
+                if (inputEl) inputEl.value = '';
+                countBadgeEl.textContent = '0 notes';
+            }
+
+            if (!slotId || slotId === '00000000-0000-0000-0000-000000000000') {
+                return;
+            }
+
+            // Visible loading state
+            previewEl.innerHTML = '<div class="d-flex align-items-center gap-2 text-muted py-1 small">' +
+                '<span class="spinner-border spinner-border-sm text-teal" style="color:#0f766e;" role="status"></span>' +
+                '<span>Loading notes...</span></div>';
+
+            try {
+                var response = await fetch('/Doctor/Schedules?handler=Notes&appointmentSlotId=' + encodeURIComponent(slotId), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                var result = await response.json();
+                if (result && result.success && Array.isArray(result.data)) {
+                    var notes = result.data;
+                    var totalNotes = notes.length;
+                    
+                    if (totalNotes > 0) {
+                        countBadgeEl.textContent = totalNotes + (totalNotes === 1 ? ' note' : ' notes');
+                        var html = notes.map(function(n) {
+                            var title = n.title ? '<strong class="d-block text-dark small mb-1">' + escapeHtml(n.title) + '</strong>' : '';
+                            var content = '<div class="text-dark small">' + escapeHtml(n.content || '') + '</div>';
+                            var dateInfo = n.createdAt ? '<div class="text-muted" style="font-size:0.75rem; margin-top:2px;">' + new Date(n.createdAt).toLocaleDateString() + '</div>' : '';
+                            return '<div class="pb-2 mb-2 border-bottom">' + title + content + dateInfo + '</div>';
+                        }).join('');
+                        previewEl.innerHTML = html;
+                        previewEl.className = 'drawer-note-content-box mb-2 text-dark';
+                        if (inputEl && notes[0] && notes[0].content) {
+                            inputEl.value = notes[0].content;
+                        }
+                    } else if (initialText) {
+                        countBadgeEl.textContent = '1 note';
+                        previewEl.textContent = initialText;
+                        previewEl.className = 'drawer-note-content-box mb-2 text-dark';
+                    } else {
+                        countBadgeEl.textContent = '0 notes';
+                        previewEl.innerHTML = '<span class="text-muted fst-italic">No notes recorded yet.</span>';
+                        previewEl.className = 'drawer-note-content-box mb-2 text-muted fst-italic';
+                    }
+                } else if (initialText) {
+                    previewEl.textContent = initialText;
+                    previewEl.className = 'drawer-note-content-box mb-2 text-dark';
+                    countBadgeEl.textContent = '1 note';
+                } else {
+                    countBadgeEl.textContent = '0 notes';
+                    previewEl.innerHTML = '<span class="text-muted fst-italic">No notes recorded yet.</span>';
+                    previewEl.className = 'drawer-note-content-box mb-2 text-muted fst-italic';
+                }
+            } catch (err) {
+                console.warn('Note fetch error:', err);
+                if (initialText) {
+                    previewEl.textContent = initialText;
+                    previewEl.className = 'drawer-note-content-box mb-2 text-dark';
+                    countBadgeEl.textContent = '1 note';
+                } else {
+                    previewEl.innerHTML = '<div class="alert alert-warning py-1.5 px-2 mb-0 small text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Unable to load notes.</div>';
+                    previewEl.className = 'drawer-note-content-box mb-2';
+                }
+            }
+        }
+
+        // ── Drawer Opener Functions ──
+        function openAppointmentDrawer(props) {
+            props = props || {};
+            hideAllDrawerPanels();
+            var drawerTitle = document.getElementById('drawerTitle');
+            if (drawerTitle) drawerTitle.textContent = 'Appointment Details';
+
+            var badge = document.getElementById('drawerApptBadge');
+            var rawStatus = props.status || props.Status || 'Approved';
+            var statusStr = String(rawStatus).replace('InProgress', 'In Progress');
+            if (badge) {
+                badge.textContent = statusStr;
+
+                var sLow = statusStr.toLowerCase();
+                if (sLow.includes('pending')) {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-warning text-dark';
+                } else if (sLow.includes('inprogress') || sLow.includes('in progress')) {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary text-white';
+                } else if (sLow.includes('completed')) {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success text-white';
+                } else if (sLow.includes('cancelled')) {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger text-white';
+                } else {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-info text-white';
+                }
+            }
+
+            var timeInfo = parseDateAndTime(props.start || props.Start, props.end || props.End);
+            var timeEl = document.getElementById('drawerApptTime');
+            if (timeEl) timeEl.textContent = timeInfo.displayTime;
+            var dateEl = document.getElementById('drawerApptDate');
+            if (dateEl) dateEl.textContent = timeInfo.dateStr;
+
+            var pName = String(props.patientName || props.PatientName || '').trim() || 'Patient';
+            var nameEl = document.getElementById('drawerApptPatientName');
+            if (nameEl) nameEl.textContent = pName;
+
+            var avatarEl = document.getElementById('drawerApptAvatar');
+            if (avatarEl) {
+                var words = pName.split(/\s+/).filter(Boolean);
+                var initials = words.map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase() || 'PT';
+                avatarEl.textContent = initials;
+            }
+
+            var pkgName = props.treatmentCaseName || props.TreatmentCaseName;
+            var ctxEl = document.getElementById('drawerApptContext');
+            if (ctxEl) ctxEl.textContent = pkgName ? 'Treatment Case Session' : 'General Consultation';
+
+            var pkgRow = document.getElementById('drawerApptPackageRow');
+            var pkgNameEl = document.getElementById('drawerApptPackageName');
+            if (pkgRow && pkgNameEl) {
+                if (pkgName) {
+                    pkgRow.classList.remove('d-none');
+                    pkgNameEl.textContent = pkgName;
+                } else {
+                    pkgRow.classList.add('d-none');
+                }
+            }
+
+            var sessionNum = props.sessionNumber !== undefined && props.sessionNumber !== null ? props.sessionNumber : props.SessionNumber;
+            var sessionRow = document.getElementById('drawerApptSessionRow');
+            var sessionNumEl = document.getElementById('drawerApptSessionNum');
+            if (sessionRow && sessionNumEl) {
+                if (sessionNum) {
+                    sessionRow.classList.remove('d-none');
+                    sessionNumEl.textContent = '#' + sessionNum;
+                } else {
+                    sessionRow.classList.add('d-none');
+                }
+            }
+
+            var slotId = props.slotId || props.SlotId || props.appointmentSlotId || props.AppointmentSlotId || '';
+            var patientId = props.patientId || props.PatientId || '';
+            var caseId = props.treatmentCaseId || props.TreatmentCaseId || '';
+            var apptId = props.appointmentId || props.AppointmentId || props.id || props.Id || '';
+
+            var dDate = document.getElementById('dApptNoteDate');
+            if (dDate) dDate.value = timeInfo.dateStr;
+            var dStart = document.getElementById('dApptNoteStartTime');
+            if (dStart) dStart.value = timeInfo.startTime;
+            var dEnd = document.getElementById('dApptNoteEndTime');
+            if (dEnd) dEnd.value = timeInfo.endTime;
+            var dPat = document.getElementById('dApptNotePatientId');
+            if (dPat) dPat.value = patientId;
+            var dCase = document.getElementById('dApptNoteCaseId');
+            if (dCase) dCase.value = caseId;
+            var dSlot = document.getElementById('dApptNoteSlotId');
+            if (dSlot) dSlot.value = slotId;
+
+            // Dedicated Notes Section in Drawer
+            var noteCountBadge = document.getElementById('drawerApptNoteCountBadge');
+            var noteTextEl = document.getElementById('drawerApptNoteText');
+            var noteInputEl = document.getElementById('dApptNoteInput');
+            var initialDescription = props.description || props.Description || '';
+            fetchNotesForDrawer(slotId, noteTextEl, noteCountBadge, noteInputEl, initialDescription);
+
+            // Permitted Action buttons
+            var btnView = document.getElementById('drawerBtnViewAppt');
+            if (btnView) {
+                if (apptId) {
+                    btnView.href = '/Doctor/Appointments/Details/' + encodeURIComponent(apptId);
+                    btnView.classList.remove('d-none');
+                } else {
+                    btnView.classList.add('d-none');
+                }
+            }
+
+            var sLow = statusStr.toLowerCase();
+            var btnChat = document.getElementById('drawerBtnChat');
+            if (btnChat) {
+                if (patientId && (sLow.includes('approved') || sLow.includes('inprogress') || sLow.includes('in progress') || sLow.includes('completed'))) {
+                    btnChat.href = '/Doctor/Messages/Index?patientId=' + encodeURIComponent(patientId);
+                    btnChat.classList.remove('d-none');
+                } else {
+                    btnChat.classList.add('d-none');
+                }
+            }
+
+            var cancelContainer = document.getElementById('drawerCancelApptContainer');
+            var cancelApptIdEl = document.getElementById('drawerCancelApptId');
+            if (cancelContainer && cancelApptIdEl) {
+                if (apptId && (sLow.includes('pending') || sLow.includes('approved') || sLow.includes('confirmed'))) {
+                    cancelApptIdEl.value = apptId;
+                    cancelContainer.classList.remove('d-none');
+                } else {
+                    cancelContainer.classList.add('d-none');
+                }
+            }
+
+            var panel = document.getElementById('drawerAppointmentPanel');
+            if (panel) panel.classList.remove('d-none');
+
+            var drawer = getDrawer();
+            if (drawer) drawer.show();
+        }
+
+        function openSlotDrawer(props) {
+            props = props || {};
+            hideAllDrawerPanels();
+            var drawerTitle = document.getElementById('drawerTitle');
+            if (drawerTitle) drawerTitle.textContent = 'Slot Details';
+
+            var slotId = props.slotId || props.SlotId || props.id || props.Id || '';
+            var elSlotId = document.getElementById('dSlotId');
+            if (elSlotId) elSlotId.value = slotId;
+            var elDelId = document.getElementById('dSlotDeleteId');
+            if (elDelId) elDelId.value = slotId;
+            var elBlockId = document.getElementById('dSlotBlockId');
+            if (elBlockId) elBlockId.value = slotId;
+            var elNotesSlotId = document.getElementById('dSlotNotesSlotId');
+            if (elNotesSlotId) elNotesSlotId.value = slotId;
+
+            var timeInfo = parseDateAndTime(props.start || props.Start, props.end || props.End);
+            var startTimeInput = document.getElementById('dSlotStartTime');
+            if (startTimeInput) startTimeInput.value = timeInfo.startTime;
+            var endTimeInput = document.getElementById('dSlotEndTime');
+            if (endTimeInput) endTimeInput.value = timeInfo.endTime;
+            var dateEl = document.getElementById('drawerSlotDate');
+            if (dateEl) dateEl.textContent = timeInfo.dateStr;
+
+            var statusStr = props.status || props.Status || 'Available';
+            var sLow = statusStr.toLowerCase();
+            var badge = document.getElementById('drawerSlotStatusBadge');
+            if (badge) {
+                badge.textContent = statusStr;
+                if (sLow.includes('available')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success bg-opacity-10 text-success border border-success-subtle';
+                else if (sLow.includes('blocked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger bg-opacity-10 text-danger border border-danger-subtle';
+                else if (sLow.includes('booked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary bg-opacity-10 text-primary border border-primary-subtle';
+                else badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle';
+            }
+
+            var maxPatients = Number(props.maxPatients !== undefined ? props.maxPatients : (props.MaxPatients || 1)) || 1;
+            var currentBookings = Number(props.currentBookings !== undefined ? props.currentBookings : (props.CurrentBookings || 0)) || 0;
+            var maxPatInput = document.getElementById('dSlotMaxPatients');
+            if (maxPatInput) maxPatInput.value = maxPatients;
+
+            var modeInput = document.getElementById('dSlotConsultationMode');
+            if (modeInput) {
+                var cMode = props.consultationMode !== undefined ? props.consultationMode : (props.ConsultationMode !== undefined ? props.ConsultationMode : 'Both');
+                if (cMode === 0 || cMode === '0' || cMode === 'Online') modeInput.value = 'Online';
+                else if (cMode === 1 || cMode === '1' || cMode === 'Offline') modeInput.value = 'Offline';
+                else modeInput.value = 'Both';
+            }
+
+            var noteReqInput = document.getElementById('dSlotNoteRequired');
+            if (noteReqInput) {
+                noteReqInput.checked = !!(props.isPreAppointmentNoteRequired || props.IsPreAppointmentNoteRequired);
+            }
+            var noteTitleInput = document.getElementById('dSlotNoteTitle');
+            if (noteTitleInput) {
+                noteTitleInput.value = props.preAppointmentNoteTitle || props.PreAppointmentNoteTitle || '';
+            }
+
+            var bookingInfoEl = document.getElementById('drawerSlotBookingInfo');
+            if (bookingInfoEl) {
+                bookingInfoEl.textContent = currentBookings + ' / ' + maxPatients + ' patient' + (maxPatients === 1 ? '' : 's');
+            }
+
+            // Dedicated Notes Section for Slot
+            var noteCountBadge = document.getElementById('drawerSlotNoteCountBadge');
+            var noteTextEl = document.getElementById('drawerSlotNoteText');
+            var noteInputEl = document.getElementById('dSlotNotesInput');
+            var initialDescription = props.description || props.Description || '';
+            fetchNotesForDrawer(slotId, noteTextEl, noteCountBadge, noteInputEl, initialDescription);
+
+            var hasBookings = currentBookings > 0;
+            var slotHasEnded = (props.end || props.End) ? new Date(props.end || props.End) <= new Date() : false;
+            var canManage = (sLow === 'available' || sLow === 'blocked') && !hasBookings && !slotHasEnded;
+
+            if (startTimeInput) startTimeInput.disabled = !canManage;
+            if (endTimeInput) endTimeInput.disabled = !canManage;
+            if (maxPatInput) maxPatInput.disabled = !canManage;
+            var saveBtn = document.getElementById('dSlotSaveBtn');
+            if (saveBtn) saveBtn.classList.toggle('d-none', !canManage);
+
+            var blockBtn = document.getElementById('dSlotBlockBtn');
+            if (blockBtn) {
+                blockBtn.disabled = !canManage;
+                var isBlocked = sLow === 'blocked';
+                blockBtn.className = isBlocked ? 'btn btn-outline-success w-100' : 'btn btn-outline-warning w-100';
+                blockBtn.innerHTML = isBlocked ? '<i class="bi bi-unlock me-1"></i>Unblock Slot' : '<i class="bi bi-slash-circle me-1"></i>Block Slot';
+            }
+
+            var delBtn = document.getElementById('dSlotDeleteBtn');
+            if (delBtn) {
+                delBtn.disabled = hasBookings || sLow === 'booked' || sLow === 'completed';
+            }
+
+            var convertContainer = document.getElementById('dSlotConvertTreatmentContainer');
+            if (convertContainer) {
+                if (sLow === 'available' && !slotHasEnded) {
+                    convertContainer.classList.remove('d-none');
+                } else {
+                    convertContainer.classList.add('d-none');
+                }
+            }
+
+            if (startTimeInput && endTimeInput) {
+                updateDurationText(startTimeInput.value, endTimeInput.value, 'dSlotDurationPreview');
+            }
+
+            var panel = document.getElementById('drawerSlotPanel');
+            if (panel) panel.classList.remove('d-none');
+
+            var drawer = getDrawer();
+            if (drawer) drawer.show();
+        }
+
+        function openCreateDrawer(initialMode, dateStr, startTime, endTime) {
+            hideAllDrawerPanels();
+            var drawerTitle = document.getElementById('drawerTitle');
+            if (drawerTitle) drawerTitle.textContent = 'Create Schedule Entry';
+            var alertEl = document.getElementById('drawerCreateAlert');
+            if (alertEl) alertEl.classList.add('d-none');
+
+            var todayDate = new Date().toISOString().split('T')[0];
+            var dateInput = document.getElementById('dCreateDate');
+            if (dateInput) {
+                if (dateStr) dateInput.value = dateStr;
+                else if (!dateInput.value) dateInput.value = todayDate;
+            }
+
+            var startInput = document.getElementById('dCreateStartTime');
+            if (startInput && startTime) startInput.value = startTime;
+
+            var endInput = document.getElementById('dCreateEndTime');
+            if (endInput && endTime) endInput.value = endTime;
+
+            var mode = initialMode === 'treatment' ? 'treatment' : 'slot';
+            var modeTreatmentRadio = document.getElementById('dModeTreatment');
+            var modeSlotRadio = document.getElementById('dModeSlot');
+            if (mode === 'treatment' && modeTreatmentRadio) modeTreatmentRadio.checked = true;
+            else if (modeSlotRadio) modeSlotRadio.checked = true;
+
+            onDrawerModeChanged(mode);
+            if (startInput && endInput) {
+                updateDurationText(startInput.value, endInput.value, 'dCreateDurationPreview');
+            }
+
+            var panel = document.getElementById('drawerCreatePanel');
+            if (panel) panel.classList.remove('d-none');
+
+            var drawer = getDrawer();
+            if (drawer) drawer.show();
+        }
+
+        function convertToTreatmentScheduleFromSlot() {
+            var dateEl = document.getElementById('drawerSlotDate');
+            var dateVal = dateEl ? dateEl.textContent : '';
+            var startEl = document.getElementById('dSlotStartTime');
+            var startVal = startEl ? startEl.value : '08:00';
+            var endEl = document.getElementById('dSlotEndTime');
+            var endVal = endEl ? endEl.value : '09:00';
+            openCreateDrawer('treatment', dateVal, startVal, endVal);
+        }
+
+        function onDrawerModeChanged(mode) {
+            var form = document.getElementById('drawerCreateForm');
+            var slotFields = document.getElementById('dCreateSlotFields');
+            var treatmentFields = document.getElementById('dCreateTreatmentFields');
+            var submitBtn = document.getElementById('dCreateSubmitBtn');
+
+            if (slotFields) slotFields.classList.add('d-none');
+            if (treatmentFields) treatmentFields.classList.add('d-none');
+
+            if (mode === 'treatment') {
+                if (form) form.action = '?handler=CreateTreatmentAppointment';
+                if (treatmentFields) treatmentFields.classList.remove('d-none');
+                if (submitBtn) submitBtn.textContent = 'Schedule Treatment Appointment';
+            } else {
+                if (form) form.action = '?handler=CreateSlot';
+                if (slotFields) slotFields.classList.remove('d-none');
+                if (submitBtn) submitBtn.textContent = 'Save Available Slot';
+            }
+        }
+
+        function onDrawerPatientSelected(selectEl) {
+            var patId = selectEl.value;
+            var caseSelectContainer = document.getElementById('dCreateCaseContainer');
+            var caseSelect = document.getElementById('dCreateCaseSelect');
+            var infoCard = document.getElementById('dCreateCaseInfoCard');
+
+            if (caseSelect) caseSelect.innerHTML = '<option value="">-- Select Active Case --</option>';
+
+            if (!patId) {
+                if (caseSelectContainer) caseSelectContainer.classList.add('d-none');
+                if (infoCard) infoCard.classList.add('d-none');
+                var elPat = document.getElementById('dCreatePatientId');
+                if (elPat) elPat.value = '';
+                var elCase = document.getElementById('dCreateCaseId');
+                if (elCase) elCase.value = '';
+                var elSess = document.getElementById('dCreateSessionId');
+                if (elSess) elSess.value = '';
+                return;
+            }
+
+            var matchingCases = eligiblePatientsData.filter(function(item) {
+                return item.patientId === patId || item.PatientId === patId;
+            });
+
+            if (matchingCases.length === 0) {
+                if (caseSelectContainer) caseSelectContainer.classList.add('d-none');
+                if (infoCard) infoCard.classList.add('d-none');
+                return;
+            }
+
+            if (matchingCases.length === 1) {
+                if (caseSelectContainer) caseSelectContainer.classList.add('d-none');
+                populateDrawerCaseDetails(matchingCases[0]);
+            } else {
+                matchingCases.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.treatmentCaseId || item.TreatmentCaseId;
+                    opt.textContent = (item.packageName || item.PackageName) + ' (Remaining: ' + (item.remainingSessions || item.RemainingSessions) + ')';
+                    opt.setAttribute('data-item', JSON.stringify(item));
+                    if (caseSelect) caseSelect.appendChild(opt);
+                });
+                if (caseSelectContainer) caseSelectContainer.classList.remove('d-none');
+                populateDrawerCaseDetails(matchingCases[0]);
+            }
+        }
+
+        function onDrawerCaseSelected(selectEl) {
+            var opt = selectEl.options[selectEl.selectedIndex];
+            if (opt && opt.getAttribute('data-item')) {
+                var item = JSON.parse(opt.getAttribute('data-item'));
+                populateDrawerCaseDetails(item);
+            }
+        }
+
+        function populateDrawerCaseDetails(item) {
+            var infoCard = document.getElementById('dCreateCaseInfoCard');
+            var elPat = document.getElementById('dCreatePatientId');
+            if (elPat) elPat.value = item.patientId || item.PatientId || '';
+            var elCase = document.getElementById('dCreateCaseId');
+            if (elCase) elCase.value = item.treatmentCaseId || item.TreatmentCaseId || '';
+            var elSess = document.getElementById('dCreateSessionId');
+            if (elSess) elSess.value = item.nextUnscheduledSessionId || item.NextUnscheduledSessionId || '';
+
+            var elPkg = document.getElementById('dInfoPkgName');
+            if (elPkg) elPkg.textContent = item.packageName || item.PackageName || 'Treatment Case';
+            var completed = item.completedSessions !== undefined ? item.completedSessions : (item.CompletedSessions || 0);
+            var total = item.totalSessions !== undefined ? item.totalSessions : (item.TotalSessions || 0);
+            var sessionNum = item.nextSessionNumber !== undefined ? item.nextSessionNumber : (item.NextSessionNumber || 1);
+
+            var elProg = document.getElementById('dInfoProgress');
+            if (elProg) elProg.textContent = completed + '/' + total + ' completed';
+            var elSessNum = document.getElementById('dInfoSessionNum');
+            if (elSessNum) elSessNum.textContent = sessionNum;
+
+            if (infoCard) infoCard.classList.remove('d-none');
+        }
+
+        // ── FullCalendar Events Formatting with Multi-Filter ──
+        function getFilteredCalendarEvents() {
+            var chkAppts = document.getElementById('chkFilterAppts');
+            var chkAvailable = document.getElementById('chkFilterAvailable');
+            var chkBlocked = document.getElementById('chkFilterBlocked');
+
+            var showAppts = chkAppts ? chkAppts.checked : true;
+            var showAvailable = chkAvailable ? chkAvailable.checked : true;
+            var showBlocked = chkBlocked ? chkBlocked.checked : true;
+
+            var activeCount = (showAppts?1:0) + (showAvailable?1:0) + (showBlocked?1:0);
+            var badgeEl = document.getElementById('filterActiveBadge');
+            if (badgeEl) {
+                badgeEl.textContent = activeCount === 3 ? 'All' : activeCount + ' active';
+            }
+
+            var eventsList = [];
+
+            // Process appointments and availability/blocked slots case-insensitively
+            rawEvents.forEach(function(e) {
+                var type = (e.eventType || e.EventType || '').toLowerCase();
+                var status = (e.status || e.Status || '').toLowerCase();
+
+                if (type === 'appointment' || (e.appointmentId && type !== 'availability' && type !== 'available' && type !== 'blocked')) {
+                    if (showAppts) eventsList.push(e);
+                } else if (type === 'blocked' || status === 'blocked') {
+                    if (showBlocked) eventsList.push(e);
+                } else if (type === 'availability' || type === 'available' || status === 'available') {
+                    if (showAvailable) eventsList.push(e);
+                } else {
+                    if (showAvailable) eventsList.push(e);
+                }
+            });
+
+            // Deduplicate appointments referencing same slots
+            var slotIdsWithAppt = new Set();
+            var seenApptIds = new Set();
+            eventsList.forEach(function(e) {
+                var type = (e.eventType || e.EventType || '').toLowerCase();
+                var sId = e.slotId || e.SlotId;
+                if ((type === 'appointment' || e.appointmentId) && sId) {
+                    slotIdsWithAppt.add(sId);
+                }
+            });
+
+            var deduplicated = [];
+            eventsList.forEach(function(e) {
+                var type = (e.eventType || e.EventType || '').toLowerCase();
+                if (type === 'appointment' || e.appointmentId) {
+                    var apptKey = e.appointmentId || e.AppointmentId || e.id || e.Id;
+                    if (seenApptIds.has(apptKey)) return;
+                    seenApptIds.add(apptKey);
+                    deduplicated.push(e);
+                } else {
+                    var sId = e.slotId || e.SlotId;
+                    if (sId && slotIdsWithAppt.has(sId)) return;
+                    deduplicated.push(e);
+                }
+            });
+
+            return deduplicated.map(function(e) {
+                return {
+                    id: String(e.id || e.Id || ''),
+                    title: e.title || e.Title || '',
+                    start: e.start || e.Start || '',
+                    end: e.end || e.End || '',
+                    allDay: Boolean(e.isAllDay || e.IsAllDay),
+                    extendedProps: e
+                };
+            });
+        }
+
+        function refreshCalendarView() {
+            if (!window.fcObj) return;
+            window.fcObj.removeAllEvents();
+            var events = getFilteredCalendarEvents();
+            window.fcObj.addEventSource(events);
+
+            var emptyState = document.getElementById('calendarEmptyState');
+            if (emptyState) {
+                if (events.length === 0) emptyState.classList.remove('d-none');
+                else emptyState.classList.add('d-none');
+            }
+            setTimeout(function() {
+                initTooltips(document.getElementById('calendar'));
+            }, 100);
+        }
+
+        function renderYearView(year, eventsList) {
+            var grid = document.getElementById('yearCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+            for (var m = 0; m < 12; m++) {
+                var card = document.createElement('div');
+                card.className = 'year-month-card';
+
+                var title = document.createElement('div');
+                title.className = 'year-month-title';
+                title.textContent = monthNames[m];
+                (function(monthIdx) {
+                    title.onclick = function() {
+                        var targetDate = year + '-' + String(monthIdx + 1).padStart(2, '0') + '-01';
+                        window.location.href = '?view=month&date=' + targetDate;
+                    };
+                })(m);
+                card.appendChild(title);
+
+                var table = document.createElement('table');
+                table.className = 'year-days-table';
+                table.innerHTML = '<thead><tr><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th>S</th></tr></thead>';
+
+                var tbody = document.createElement('tbody');
+                var firstDay = new Date(year, m, 1);
+                var daysInMonth = new Date(year, m + 1, 0).getDate();
+                var startDay = (firstDay.getDay() + 6) % 7;
+
+                var row = document.createElement('tr');
+                for (var i = 0; i < startDay; i++) {
+                    row.appendChild(document.createElement('td'));
+                }
+
+                for (var day = 1; day <= daysInMonth; day++) {
+                    if ((startDay + day - 1) % 7 === 0 && day > 1) {
+                        tbody.appendChild(row);
+                        row = document.createElement('tr');
+                    }
+                    var cell = document.createElement('td');
+                    cell.textContent = day;
+                    var dateKey = year + '-' + String(m + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+
+                    var hasAppt = eventsList.some(function(e) {
+                        var s = e.start || e.Start || '';
+                        var t = (e.eventType || e.EventType || '').toLowerCase();
+                        return s.startsWith(dateKey) && (t === 'appointment' || e.appointmentId);
+                    });
+                    var hasAvailable = eventsList.some(function(e) {
+                        var s = e.start || e.Start || '';
+                        var t = (e.eventType || e.EventType || '').toLowerCase();
+                        return s.startsWith(dateKey) && (t === 'availability' || t === 'available');
+                    });
+                    if (hasAppt) cell.className = 'has-appt';
+                    else if (hasAvailable) cell.className = 'has-available';
+
+                    (function(dKey) {
+                        cell.onclick = function() {
+                            openCreateDrawer('slot', dKey, '08:00', '09:00');
+                        };
+                    })(dateKey);
+
+                    row.appendChild(cell);
+                }
+                tbody.appendChild(row);
+                table.appendChild(tbody);
+                card.appendChild(table);
+                grid.appendChild(card);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var drawerElement = document.getElementById('scheduleDrawer');
+            if (drawerElement) {
+                drawerElement.querySelectorAll('[data-bs-dismiss="offcanvas"]').forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        if (typeof bootstrap === 'undefined' || !bootstrap.Offcanvas) {
+                            var drawer = getDrawer();
+                            if (drawer) drawer.hide();
+                        }
+                    });
+                });
+            }
+
+            // Live duration preview syncs
+            var dStart = document.getElementById('dCreateStartTime');
+            var dEnd = document.getElementById('dCreateEndTime');
+            if (dStart && dEnd) {
+                var syncCreate = function() { updateDurationText(dStart.value, dEnd.value, 'dCreateDurationPreview'); };
+                dStart.addEventListener('change', syncCreate);
+                dEnd.addEventListener('change', syncCreate);
+                syncCreate();
+            }
+
+            var dsStart = document.getElementById('dSlotStartTime');
+            var dsEnd = document.getElementById('dSlotEndTime');
+            if (dsStart && dsEnd) {
+                var syncSlot = function() { updateDurationText(dsStart.value, dsEnd.value, 'dSlotDurationPreview'); };
+                dsStart.addEventListener('change', syncSlot);
+                dsEnd.addEventListener('change', syncSlot);
+            }
+
+            // Calendar Setup
+            var fcView = currentView === 'day' ? 'timeGridDay' : currentView === 'month' ? 'dayGridMonth' : 'timeGridWeek';
+            var calendarEl = document.getElementById('calendar');
+
+            if (calendarEl && currentView === 'year') {
+                var year = new Date(selectedDateStr).getFullYear();
+                renderYearView(year, rawEvents);
+            } else if (calendarEl && typeof FullCalendar !== 'undefined') {
+                var initialEvents = getFilteredCalendarEvents();
+
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: fcView,
+                    initialDate: selectedDateStr,
+                    locale: 'en',
+                    headerToolbar: false,
+                    slotMinTime: '07:00:00',
+                    slotMaxTime: '23:00:00',
+                    scrollTime: '08:00:00',
+                    allDaySlot: false,
+                    selectable: true,
+                    selectMirror: true,
+                    events: initialEvents,
+                    dayMaxEvents: 4,
+                    height: 'auto',
+                    nowIndicator: true,
+                    eventClassNames: function(arg) {
+                        var props = arg.event.extendedProps || {};
+                        var type = (props.eventType || props.EventType || '').toLowerCase();
+                        var status = (props.status || props.Status || '').toLowerCase();
+
+                        if (status.includes('cancelled')) return ['fc-event-cancelled'];
+                        if (status.includes('expired')) return ['fc-event-expired'];
+                        if (status.includes('completed')) return ['fc-event-completed'];
+                        if (status.includes('inprogress') || status.includes('in progress')) return ['fc-event-inprogress'];
+                        if (status.includes('pending') || status.includes('reschedule')) return ['fc-event-pending'];
+                        if (type === 'blocked' || status.includes('blocked')) return ['fc-event-blocked'];
+                        if (type === 'appointment' || type === 'booked' || status.includes('booked') || status.includes('approved') || status.includes('confirmed') || props.appointmentId) {
+                            return ['fc-event-approved'];
+                        }
+                        return ['fc-event-available'];
+                    },
+                    eventContent: function(arg) {
+                        var event = arg.event;
+                        var props = event.extendedProps || {};
+                        var viewType = arg.view.type;
+                        
+                        // Status mapping
+                        var rawStatus = props.status || props.Status || '';
+                        var displayStatus = String(rawStatus).replace('InProgress', 'In Progress');
+                        if (displayStatus.toLowerCase() === 'approved') displayStatus = 'Confirmed';
+
+                        var desc = String(props.description || props.Description || '').trim();
+                        var hasNote = Boolean(props.hasNote || props.HasNote || props.hasNotes || props.HasNotes || desc.length > 0);
+                        var hasPackage = Boolean(props.treatmentCaseName || props.TreatmentCaseName || props.treatmentCaseId || props.TreatmentCaseId);
+
+                        var container = document.createElement('div');
+                        container.className = 'fc-custom-event-container';
+
+                        // Tooltip
+                        var tooltipParts = [];
+                        var pName = props.patientName || props.PatientName;
+                        var cName = props.treatmentCaseName || props.TreatmentCaseName;
+                        if (pName) tooltipParts.push(pName);
+                        if (cName) tooltipParts.push('(' + cName + ')');
+                        if (displayStatus) tooltipParts.push('[' + displayStatus + ']');
+                        if (hasNote) tooltipParts.push('• Note available');
+                        if (tooltipParts.length > 0) {
+                            container.setAttribute('title', tooltipParts.join(' '));
+                        }
+
+                        var startTime = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
+                        var endTime = event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : '';
+                        var timeRangeStr = (startTime && endTime) ? (startTime + ' - ' + endTime) : event.title;
+
+                        if (viewType === 'dayGridMonth') {
+                            var monthTitle = document.createElement('div');
+                            monthTitle.className = 'fc-custom-event-title';
+                            var titleText = pName || event.title;
+                            monthTitle.textContent = titleText + (displayStatus ? ' (' + displayStatus + ')' : '');
+                            container.appendChild(monthTitle);
+                        } else {
+                            // Line 1: Time Range
+                            var timeEl = document.createElement('div');
+                            timeEl.className = 'fc-custom-event-time';
+                            timeEl.textContent = timeRangeStr;
+                            container.appendChild(timeEl);
+
+                            // Line 2: Patient Name or Slot title
+                            var titleEl = document.createElement('div');
+                            titleEl.className = 'fc-custom-event-title';
+                            var type = (props.eventType || props.EventType || '').toLowerCase();
+                            var curBookings = props.currentBookings !== undefined ? props.currentBookings : (props.CurrentBookings || 0);
+                            var maxPat = props.maxPatients !== undefined ? props.maxPatients : (props.MaxPatients || 1);
+
+                            if (pName) {
+                                titleEl.textContent = pName;
+                            } else if (type === 'availability' || type === 'available') {
+                                titleEl.textContent = 'Available (' + curBookings + '/' + maxPat + ')';
+                            } else if (type === 'blocked' || displayStatus.toLowerCase() === 'blocked') {
+                                titleEl.textContent = 'Blocked Slot';
+                            } else {
+                                titleEl.textContent = event.title || 'Schedule slot';
+                            }
+                            container.appendChild(titleEl);
+
+                            // Line 3: Context / Status with icons
+                            var subEl = document.createElement('div');
+                            subEl.className = 'fc-custom-event-sub';
+
+                            var subHtml = '';
+                            if (hasNote) {
+                                subHtml += '<i class="bi bi-journal-text me-1" title="Note available" data-bs-toggle="tooltip"></i>';
+                            }
+                            if (hasPackage) {
+                                subHtml += '<i class="bi bi-box-seam me-1" title="Treatment Package" data-bs-toggle="tooltip"></i>';
+                            }
+
+                            var sessNum = props.sessionNumber !== undefined ? props.sessionNumber : props.SessionNumber;
+                            if (cName) {
+                                subHtml += '<span>Package' + (sessNum ? ' · Session #' + sessNum : '') + ' · ' + displayStatus + '</span>';
+                            } else if (hasNote || hasPackage) {
+                                subHtml += '<span>· ' + displayStatus + '</span>';
+                            } else {
+                                subHtml += '<span>' + displayStatus + '</span>';
+                            }
+
+                            subEl.innerHTML = subHtml;
+                            container.appendChild(subEl);
+                        }
+
+                        return { domNodes: [container] };
+                    },
+                    eventDidMount: function(info) {
+                        info.el.setAttribute('tabindex', '0');
+                        info.el.setAttribute('role', 'button');
+                        info.el.setAttribute('aria-label', 'Open schedule details for ' + (info.event.title || 'this event'));
+                        info.el.addEventListener('keydown', function(event) {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                openCalendarEventDrawer(info.event);
+                            }
+                        });
+                        initTooltips(info.el);
+                    },
+                    eventClick: function(info) {
+                        if (info && info.jsEvent) {
+                            info.jsEvent.preventDefault();
+                            info.jsEvent.stopPropagation();
+                        }
+                        openCalendarEventDrawer(info && info.event ? info.event : null);
+                    },
+                    dateClick: function(info) {
+                        var clickedDate = info.date || new Date();
+                        var dateStr = info.dateStr ? info.dateStr.split('T')[0] : new Date().toISOString().split('T')[0];
+                        var startTime = (info.dateStr && info.dateStr.includes('T'))
+                            ? info.dateStr.split('T')[1].substring(0, 5)
+                            : '08:00';
+                        var endDate = new Date(clickedDate.getTime() + 60 * 60 * 1000);
+                        var endHours = String(endDate.getHours()).padStart(2, '0');
+                        var endMins = String(endDate.getMinutes()).padStart(2, '0');
+                        var endTime = endHours + ':' + endMins;
+
+                        openCreateDrawer('slot', dateStr, startTime, endTime);
+                    },
+                    select: function(info) {
+                        var dateStr = info.startStr ? info.startStr.split('T')[0] : new Date().toISOString().split('T')[0];
+                        var startTime = '08:00';
+                        var endTime = '09:00';
+                        if (info.startStr && info.startStr.includes('T')) {
+                            startTime = info.startStr.split('T')[1].substring(0, 5);
+                        }
+                        if (info.endStr && info.endStr.includes('T')) {
+                            endTime = info.endStr.split('T')[1].substring(0, 5);
+                        }
+                        openCreateDrawer('slot', dateStr, startTime, endTime);
+                    }
+                });
+
+                calendar.render();
+                window.fcObj = calendar;
+
+                var emptyState = document.getElementById('calendarEmptyState');
+                if (emptyState && initialEvents.length === 0) {
+                    emptyState.classList.remove('d-none');
+                }
+                setTimeout(function() {
+                    initTooltips(calendarEl);
+                }, 100);
+            }
+
+            // Filter Checkbox Listeners
+            var filterCheckboxes = document.querySelectorAll('.filter-checkbox');
+            filterCheckboxes.forEach(function(cb) {
+                cb.addEventListener('change', refreshCalendarView);
+            });
+
+            // Navigation buttons
+            var btnPrev = document.getElementById('btnPrev');
+            if (btnPrev) {
+                btnPrev.addEventListener('click', function() {
+                    var dt = new Date(selectedDateStr);
+                    if (currentView === 'day') dt.setDate(dt.getDate() - 1);
+                    else if (currentView === 'month') dt.setMonth(dt.getMonth() - 1);
+                    else if (currentView === 'year') dt.setFullYear(dt.getFullYear() - 1);
+                    else dt.setDate(dt.getDate() - 7);
+                    var newDate = dt.toISOString().split('T')[0];
+                    window.location.href = '?view=' + currentView + '&date=' + newDate;
+                });
+            }
+
+            var btnToday = document.getElementById('btnToday');
+            if (btnToday) {
+                btnToday.addEventListener('click', function() {
+                    var todayStr = new Date().toISOString().split('T')[0];
+                    window.location.href = '?view=' + currentView + '&date=' + todayStr;
+                });
+            }
+
+            var btnNext = document.getElementById('btnNext');
+            if (btnNext) {
+                btnNext.addEventListener('click', function() {
+                    var dt = new Date(selectedDateStr);
+                    if (currentView === 'day') dt.setDate(dt.getDate() + 1);
+                    else if (currentView === 'month') dt.setMonth(dt.getMonth() + 1);
+                    else if (currentView === 'year') dt.setFullYear(dt.getFullYear() + 1);
+                    else dt.setDate(dt.getDate() + 7);
+                    var newDate = dt.toISOString().split('T')[0];
+                    window.location.href = '?view=' + currentView + '&date=' + newDate;
+                });
+            }
+
+            var calendarDatePicker = document.getElementById('calendarDatePicker');
+            if (calendarDatePicker) {
+                calendarDatePicker.addEventListener('change', function() {
+                    window.location.href = '?view=day&date=' + this.value;
+                });
+            }
+
+            // Form validation for creation drawer
+            var drawerCreateForm = document.getElementById('drawerCreateForm');
+            if (drawerCreateForm) {
+                drawerCreateForm.addEventListener('submit', function(event) {
+                    var alertBox = document.getElementById('drawerCreateAlert');
+                    var dateVal = document.getElementById('dCreateDate').value;
+                    var startVal = document.getElementById('dCreateStartTime').value;
+
+                    if (isPastSlot(dateVal, startVal)) {
+                        event.preventDefault();
+                        alertBox.textContent = 'Cannot schedule an entry in the past.';
+                        alertBox.classList.remove('d-none');
+                        return;
+                    }
+
+                    var isTreatment = document.getElementById('dModeTreatment').checked;
+                    if (isTreatment) {
+                        var patVal = document.getElementById('dCreatePatientId').value;
+                        var caseVal = document.getElementById('dCreateCaseId').value;
+                        if (!patVal || !caseVal) {
+                            event.preventDefault();
+                            alertBox.textContent = 'Please select a patient and active treatment case before saving.';
+                            alertBox.classList.remove('d-none');
+                            return;
+                        }
+                    }
+
+                    alertBox.classList.add('d-none');
+                });
+            }
+        });
+    </script>
+}

@@ -1,20 +1,317 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.Doctor.TreatmentPackages.EditModel
-@{ ViewData["Title"] = "Sửa gói trị liệu"; ViewData["UseDashboardLayout"] = true; }
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Edit Treatment Package Template";
+    Layout = "_DashboardLayout";
+}
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Sửa gói trị liệu</h1>
-    <a asp-page="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+<style>
+    .tp-form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
+    }
+    .tp-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafbfc;
+        border-top-left-radius: 11px;
+        border-top-right-radius: 11px;
+    }
+    .tp-form-body {
+        padding: 1.5rem;
+    }
+    .tp-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .tp-section-title i {
+        color: #0d9488;
+    }
+    .tp-preview-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: sticky;
+        top: 80px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a asp-page="Index" class="text-decoration-none text-muted fs-7 d-inline-block mb-1">
+            <i class="bi bi-arrow-left me-1"></i> Back to Packages & Templates
+        </a>
+        <h1 class="fs-4 fw-bold text-dark mb-0">
+            <i class="bi bi-pencil-square text-teal me-2" style="color:#0d9488;"></i> Edit Treatment Package Template
+        </h1>
+        <p class="text-muted fs-7 mb-0">Update template parameters, session quantities, and clinical recommendations.</p>
+    </div>
 </div>
-@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
-<div class="card border-0 shadow-sm"><div class="card-body">
-    <form method="post" asp-route-id="@Model.PackageId">
-        <div class="row g-3">
-            <div class="col-md-8"><label class="form-label">Tên gói</label><input asp-for="Input.Title" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Số phiên</label><input type="number" asp-for="Input.TotalSessions" class="form-control" min="1" /></div>
-            <div class="col-12"><label class="form-label">Mô tả</label><textarea asp-for="Input.Description" class="form-control" rows="3"></textarea></div>
-            <div class="col-md-6"><label class="form-label">Giá (₫)</label><input type="number" asp-for="Input.Price" class="form-control" /></div>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-warning alert-dismissible fade show rounded-3 shadow-sm border-0 mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form method="post" asp-route-id="@Model.PackageId">
+    <fieldset disabled="@Model.IsReadOnly">
+        <div class="row g-4">
+            <!-- Form Main Content (8 cols) -->
+            <div class="col-lg-8">
+                <!-- Section 1: Basic Information -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-info-circle-fill"></i> 1. Basic Information
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Template title and general clinical description.</p>
+                    </div>
+                    <div class="tp-form-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Template Title <span class="text-danger">*</span></label>
+                            <input asp-for="Input.Title" class="form-control" placeholder="e.g. CBT Anxiety Recovery Protocol (8 Sessions)" required />
+                            <span asp-validation-for="Input.Title" class="text-danger fs-8"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Description & Scope</label>
+                            <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Provide a summary of the clinical approach, methodology, and therapeutic scope..."></textarea>
+                        </div>
+
+                        <!-- Basic Information Custom Fields -->
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-bold text-dark fs-7"><i class="bi bi-tags me-1 text-teal" style="color:#0d9488;"></i> Custom Basic Information Fields</span>
+                                @if (!Model.IsReadOnly)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px;" onclick="addBasicInfoField()">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Field
+                                    </button>
+                                }
+                            </div>
+                            <div id="basicInfoFieldsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Therapy Structure -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-calendar2-range-fill"></i> 2. Therapy Structure & Schedule Pace
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Configure session count, validity timeframe, and recommended pace per week.</p>
+                    </div>
+                    <div class="tp-form-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Total Sessions <span class="text-danger">*</span></label>
+                                <input type="number" asp-for="Input.TotalSessions" id="inputTotalSessions" class="form-control" min="1" max="50" required onchange="updatePreview()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Sessions / Week</label>
+                                <input type="number" asp-for="Input.RecommendedSessionsPerWeek" id="inputPace" class="form-control" min="1" max="7" onchange="updatePreview()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark fs-7">Validity (Days)</label>
+                                <input type="number" asp-for="Input.ValidityDays" id="inputValidity" class="form-control" min="1" max="365" onchange="updatePreview()" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Clinical Guidelines & Pricing -->
+                <div class="tp-form-card">
+                    <div class="tp-form-header">
+                        <h5 class="tp-section-title">
+                            <i class="bi bi-journal-medical"></i> 3. Clinical Guidelines & Pricing
+                        </h5>
+                        <p class="text-muted fs-8 mb-0">Specify expected outcomes, exercises, instructions, and package fee.</p>
+                    </div>
+                    <div class="tp-form-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Target Outcomes</label>
+                            <textarea asp-for="Input.TargetOutcome" class="form-control" rows="2" placeholder="Target outcomes..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Recommended Exercises</label>
+                            <textarea asp-for="Input.RecommendedExercises" class="form-control" rows="2" placeholder="List recommended activities..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Patient Guidance & Preparation</label>
+                            <textarea asp-for="Input.Instructions" class="form-control" rows="2" placeholder="Special guidance..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark fs-7">Package Fee (VND)</label>
+                            <div class="input-group">
+                                <input type="number" asp-for="Input.Price" id="inputPrice" class="form-control" placeholder="0" onchange="updatePreview()" />
+                                <span class="input-group-text bg-light text-muted">VND</span>
+                            </div>
+                        </div>
+
+                        <!-- Clinical Guidelines Custom Fields -->
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-bold text-dark fs-7"><i class="bi bi-tags me-1 text-teal" style="color:#0d9488;"></i> Custom Clinical Guidelines Fields</span>
+                                @if (!Model.IsReadOnly)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px;" onclick="addClinicalGuideField()">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Field
+                                    </button>
+                                }
+                            </div>
+                            <div id="clinicalGuideFieldsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Buttons -->
+                @if (!Model.IsReadOnly)
+                {
+                    <div class="d-flex justify-content-end gap-2 mb-4">
+                        <a asp-page="Index" class="btn btn-outline-secondary px-4" style="border-radius:8px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="background:#0d9488; border-color:#0d9488; border-radius:8px; font-weight:600;">
+                            <i class="bi bi-check-circle-fill"></i> Save Template Changes
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar Summary Preview (4 cols) -->
+            <div class="col-lg-4">
+                <div class="tp-preview-box">
+                    <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-eye text-teal" style="color:#0d9488;"></i> Template Summary
+                    </h6>
+                    <div class="mb-3 pb-3 border-bottom">
+                        <span class="badge bg-light text-dark border mb-1 fs-8">Existing Template</span>
+                        <h6 class="fw-bold text-dark mb-1" id="prevTitle">@Model.Input.Title</h6>
+                        <p class="text-muted fs-8 mb-0" id="prevType">Reusable Protocol Template</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-calendar-event me-1"></i> Total Sessions:</span>
+                            <strong class="text-dark" id="prevSessions">@Model.Input.TotalSessions Sessions</strong>
+                        </div>
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-speedometer2 me-1"></i> Recommended Pace:</span>
+                            <strong class="text-dark" id="prevPace">@Model.Input.RecommendedSessionsPerWeek session / wk</strong>
+                        </div>
+                        <div class="d-flex justify-content-between fs-7 mb-2">
+                            <span class="text-muted"><i class="bi bi-hourglass-split me-1"></i> Validity Period:</span>
+                            <strong class="text-dark" id="prevValidity">@Model.Input.ValidityDays Days</strong>
+                        </div>
+                        <div class="d-flex justify-content-between fs-7 mb-0">
+                            <span class="text-muted"><i class="bi bi-tag me-1"></i> Package Fee:</span>
+                            <strong class="text-teal fw-bold" style="color:#0d9488;" id="prevPrice">@Model.Input.Price.ToString("N0") VND</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="mt-4"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Cập nhật</button> <a asp-page="Index" class="btn btn-outline-secondary ms-2">Hủy</a></div>
-    </form>
-</div></div>
+    </fieldset>
+</form>
+
+@section Scripts {
+    <script>
+        let basicInfoCount = 0;
+        function addBasicInfoField(title = '', content = '') {
+            const container = document.getElementById('basicInfoFieldsContainer');
+            const index = basicInfoCount++;
+            const div = document.createElement('div');
+            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
+            div.id = `basicFieldRow_${index}`;
+            div.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" name="Input.BasicInformationFields[${index}].Title" value="${title.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Field Title (e.g. Modality, Target Age)" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="Input.BasicInformationFields[${index}].Content" value="${content.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Value / Details" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('basicFieldRow_${index}').remove()" style="border-radius:6px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        let clinicalGuideCount = 0;
+        function addClinicalGuideField(title = '', content = '') {
+            const container = document.getElementById('clinicalGuideFieldsContainer');
+            const index = clinicalGuideCount++;
+            const div = document.createElement('div');
+            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
+            div.id = `guideFieldRow_${index}`;
+            div.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" name="Input.ClinicalGuidelinesFields[${index}].Title" value="${title.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Field Title (e.g. Assessment Interval)" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="Input.ClinicalGuidelinesFields[${index}].Content" value="${content.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Value / Instructions" style="border-radius:6px;" required />
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('guideFieldRow_${index}').remove()" style="border-radius:6px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updatePreview() {
+            var title = document.querySelector('[name="Input.Title"]').value;
+            var sessions = document.getElementById('inputTotalSessions').value || 0;
+            var pace = document.getElementById('inputPace').value || 1;
+            var validity = document.getElementById('inputValidity').value || 90;
+            var price = parseFloat(document.getElementById('inputPrice').value || 0);
+
+            document.getElementById('prevTitle').innerText = title || "Treatment Package";
+            document.getElementById('prevSessions').innerText = sessions + " Sessions";
+            document.getElementById('prevPace').innerText = pace + " session / wk";
+            document.getElementById('prevValidity').innerText = validity + " Days";
+            document.getElementById('prevPrice').innerText = price.toLocaleString('vi-VN') + " VND";
+        }
+
+        document.querySelector('[name="Input.Title"]').addEventListener('input', updatePreview);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            @if (Model.Input.BasicInformationFields != null && Model.Input.BasicInformationFields.Any())
+            {
+                @foreach (var bf in Model.Input.BasicInformationFields)
+                {
+                    <text>addBasicInfoField('@Html.Raw(JavaScriptEncoder.Default.Encode(bf.Title ?? ""))', '@Html.Raw(JavaScriptEncoder.Default.Encode(bf.Content ?? ""))');</text>
+                }
+            }
+            @if (Model.Input.ClinicalGuidelinesFields != null && Model.Input.ClinicalGuidelinesFields.Any())
+            {
+                @foreach (var cgf in Model.Input.ClinicalGuidelinesFields)
+                {
+                    <text>addClinicalGuideField('@Html.Raw(JavaScriptEncoder.Default.Encode(cgf.Title ?? ""))', '@Html.Raw(JavaScriptEncoder.Default.Encode(cgf.Content ?? ""))');</text>
+                }
+            }
+        });
+    </script>
+}

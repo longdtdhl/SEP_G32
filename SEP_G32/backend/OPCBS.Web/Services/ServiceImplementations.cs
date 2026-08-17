@@ -47,8 +47,79 @@ public class ScheduleApiService : ApiServiceBase, IScheduleApiService
     public async Task<(bool Success, string? Error)> DeleteSlotAsync(Guid slotId) => await base.DeleteAsync($"{ApiRoutes.Schedules}/slots/{slotId}");
     public async Task<(bool Success, string? Error)> UpdateSlotNotesAsync(Guid slotId, string? notes) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}/notes", new { Notes = notes });
     public async Task<(bool Success, string? Error)> UpdateSlotAsync(Guid slotId, UpdateSlotDto dto) => await PutAsync($"{ApiRoutes.Schedules}/slots/{slotId}", dto);
-}
 
+    public async Task<(List<CalendarEventDto> Data, string? Error)> GetCalendarEventsAsync(DateTime? start = null, DateTime? end = null)
+    {
+        var url = $"{ApiRoutes.Schedules}/calendar";
+        var queryParams = new List<string>();
+        if (start.HasValue) queryParams.Add($"start={start.Value:yyyy-MM-ddTHH:mm:ss}");
+        if (end.HasValue) queryParams.Add($"end={end.Value:yyyy-MM-ddTHH:mm:ss}");
+        if (queryParams.Any()) url += "?" + string.Join("&", queryParams);
+
+        var (data, _, error) = await GetAsync<List<CalendarEventDto>>(url);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<EligibleTreatmentPatientDto> Data, string? Error)> GetEligibleTreatmentPatientsAsync()
+    {
+        var (data, _, error) = await GetAsync<List<EligibleTreatmentPatientDto>>($"{ApiRoutes.Schedules}/eligible-treatment-patients");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(AppointmentSlotDto? Data, string? Error)> CreateTreatmentAppointmentAsync(CreateTreatmentAppointmentDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentSlotDto>($"{ApiRoutes.Schedules}/treatment-appointments", dto);
+        return (data, error);
+    }
+
+    public async Task<(WeeklySchedulePreviewDto? Data, string? Error)> PreviewWeeklyScheduleAsync(WeeklyScheduleConfigDto dto)
+    {
+        var (data, error) = await PostAsync<WeeklySchedulePreviewDto>($"{ApiRoutes.Schedules}/preview-weekly", dto);
+        return (data, error);
+    }
+
+    public async Task<(int GeneratedCount, string? Error)> GenerateWeeklyScheduleAsync(WeeklyScheduleConfigDto dto)
+    {
+        var (data, error) = await PostAsync<int>($"{ApiRoutes.Schedules}/generate-weekly", dto);
+        return (data, error);
+    }
+
+    public async Task<(AppointmentSlotDto? Data, string? Error)> AssignTreatmentSlotAsync(AssignTreatmentSlotDto dto)
+    {
+        var (data, error) = await PostAsync<AppointmentSlotDto>($"{ApiRoutes.Schedules}/assign-treatment-slot", dto);
+        return (data, error);
+    }
+
+    public async Task<(List<ScheduleNoteWebDto> Data, string? Error)> GetNotesAsync(string? search = null, string? category = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 10, Guid? appointmentSlotId = null)
+    {
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrWhiteSpace(category)) queryParams.Add($"category={Uri.EscapeDataString(category)}");
+        if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+        if (appointmentSlotId.HasValue) queryParams.Add($"appointmentSlotId={appointmentSlotId.Value}");
+
+        var url = "api/v1/schedule-notes?" + string.Join("&", queryParams);
+        var (data, _, error) = await GetAsync<List<ScheduleNoteWebDto>>(url);
+        return (data ?? new(), error);
+    }
+
+    public async Task<(ScheduleNoteWebDto? Data, string? Error)> CreateNoteAsync(CreateScheduleNoteWebDto dto)
+    {
+        var (data, error) = await PostAsync<ScheduleNoteWebDto>("api/v1/schedule-notes", dto);
+        return (data, error);
+    }
+
+    public async Task<(ScheduleNoteWebDto? Data, string? Error)> UpdateNoteAsync(Guid id, UpdateScheduleNoteWebDto dto)
+    {
+        var (data, error) = await PutAsync<ScheduleNoteWebDto>($"api/v1/schedule-notes/{id}", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteNoteAsync(Guid id) => await base.DeleteAsync($"api/v1/schedule-notes/{id}");
+}
 // --- Consultation Record ---
 public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
 {
@@ -99,8 +170,17 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
     {
         return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
     }
-}
 
+    public async Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/{id}/create-account", new { });
+    }
+
+    public async Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/{id}/resend-invitation", new { });
+    }
+}
 public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiService
 {
     public ConsultationNoteApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
@@ -133,6 +213,7 @@ public class ConsultationNoteApiService : ApiServiceBase, IConsultationNoteApiSe
     }
     public async Task<(bool Success, string? Error)> CreateAsync(CreateConsultationNoteDto dto) => await PostAsync(ApiRoutes.ConsultationNotes, dto);
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdateConsultationNoteDto dto) => await PutAsync($"{ApiRoutes.ConsultationNotes}/{id}", dto);
+    public async Task<(bool Success, string? Error)> ConfirmAsync(Guid recordId) => await PostAsync($"{ApiRoutes.ConsultationNotes}/{recordId}/confirm", new { });
 }
 
 // --- Treatment Package ---
@@ -317,10 +398,11 @@ public class CustomerSupportApiService : ApiServiceBase, ICustomerSupportApiServ
         var (data, _, error) = await GetAsync<DashboardStatsDto>($"{ApiRoutes.CSDoctorApplications}/../dashboard");
         return (data, error);
     }
-    public async Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null)
+    public async Task<(List<VerificationDto> Data, PaginationDto? Pagination, string? Error)> GetDoctorApplicationsAsync(int page = 1, string? status = null, string? search = null)
     {
         var url = $"{ApiRoutes.CSDoctorApplications}?page={page}";
         if (!string.IsNullOrEmpty(status)) url += $"&status={status}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
         var (data, pagination, error) = await GetAsync<List<VerificationDto>>(url);
         return (data ?? new(), pagination, error);
     }
@@ -368,6 +450,20 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     public async Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto) => await PostAsync(ApiRoutes.ServicePackages, dto);
     public async Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto) => await PutAsync($"{ApiRoutes.ServicePackages}/{id}", dto);
     public async Task<(bool Success, string? Error)> DeleteServicePackageAsync(Guid id) => await base.DeleteAsync($"{ApiRoutes.ServicePackages}/{id}");
+    // Doctor Subscriptions
+    public async Task<(List<SubscriptionDto> Data, PaginationDto? Pagination, string? Error)> GetSubscriptionsAsync(string? status = null, string? search = null, int page = 1, int pageSize = 10)
+    {
+        var url = $"api/v1/business-manager/subscriptions?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(status)) url += $"&status={status}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
+        var (data, pagination, error) = await GetAsync<List<SubscriptionDto>>(url);
+        return (data ?? new(), pagination, error);
+    }
+    public async Task<(SubscriptionDto? Data, string? Error)> GetSubscriptionByIdAsync(Guid id)
+    {
+        var (data, _, error) = await GetAsync<SubscriptionDto>($"api/v1/business-manager/subscriptions/{id}");
+        return (data, error);
+    }
     // Specializations
     public async Task<(List<SpecializationDto> Data, string? Error)> GetSpecializationsAsync()
     {
@@ -387,6 +483,28 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
     {
         var (data, _, error) = await GetAsync<List<PsychometricTestDto>>($"{ApiRoutes.Psychometrics}/tests");
         return (data ?? new(), error);
+    }
+
+    public async Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId)
+    {
+        var (data, _, error) = await GetAsync<PsychometricTestDetailDto>($"{ApiRoutes.Psychometrics}/tests/{testId}");
+        return (data, error);
+    }
+
+    public async Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>($"{ApiRoutes.Psychometrics}/tests", dto);
+        return (data, error);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto)
+    {
+        return await PutAsync($"{ApiRoutes.Psychometrics}/tests/{id}", dto);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteTestAsync(Guid id)
+    {
+        return await DeleteAsync($"{ApiRoutes.Psychometrics}/tests/{id}");
     }
 
     public async Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId)
@@ -416,6 +534,12 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
     public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync()
     {
         var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/my");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/case/{caseId}");
         return (data ?? new(), error);
     }
 }
@@ -588,6 +712,12 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
         return (data ?? new(), error);
     }
 
+    public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetMyDoctorCasesAsync()
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/doctor/me");
+        return (data ?? new(), error);
+    }
+
     public async Task<(List<TreatmentCaseListWebDto> Data, string? Error)> GetByPatientAsync(Guid patientUserId)
     {
         var (data, _, error) = await GetAsync<List<TreatmentCaseListWebDto>>($"{ApiRoutes.TreatmentCases}/patient/{patientUserId}");
@@ -609,6 +739,10 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     public async Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/close", dto);
 
+    // Schedule Generation
+    public async Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/generate-schedule", dto);
+
     // Sessions
     public async Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId)
     {
@@ -618,6 +752,15 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> CreateSessionAsync(object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/sessions", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateSessionAsync(Guid sessionId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteSessionAsync(Guid sessionId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}");
+
+    public async Task<(bool Success, string? Error)> ReorderSessionsAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/sessions/reorder", dto);
 
     public async Task<(bool Success, string? Error)> CompleteSessionAsync(Guid sessionId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/sessions/{sessionId}/complete", dto);
@@ -635,6 +778,70 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     public async Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}", dto);
 
+    public async Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/progress", dto);
+
+    public async Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentGoalProgressWebDto>>($"{ApiRoutes.TreatmentCases}/goals/{goalId}/progress");
+        return (data ?? new(), error);
+    }
+
+    // Goal Details (Milestones)
+    public async Task<(bool Success, string? Error)> CreateGoalDetailAsync(Guid goalId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}/details", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateGoalDetailAsync(Guid detailId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/goal-details/{detailId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteGoalDetailAsync(Guid detailId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/goal-details/{detailId}");
+
+    // Goal Success Criteria
+    public async Task<(bool Success, string? Error)> CreateSuccessCriteriaAsync(Guid goalId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}/success-criteria", dto);
+
+    public async Task<(bool Success, string? Error)> UpdateSuccessCriteriaAsync(Guid criteriaId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteSuccessCriteriaAsync(Guid criteriaId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}");
+
+    public async Task<(bool Success, string? Error)> EvaluateSuccessCriteriaAsync(Guid criteriaId, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/success-criteria/{criteriaId}/evaluations", dto);
+
+    // Homework
+    public async Task<(List<HomeworkWebDto> Data, string? Error)> GetHomeworkAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<HomeworkWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/homework");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<TreatmentCaseFileWebDto> Data, string? Error)> GetPatientFilesAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<TreatmentCaseFileWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/files");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> CreateHomeworkAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/homework", dto);
+
+    public async Task<(bool Success, string? Error)> SubmitHomeworkAsync(Guid homeworkId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/homework/{homeworkId}/submit", dto);
+
+    public async Task<(bool Success, string? Error)> ReviewHomeworkAsync(Guid homeworkId, object dto) =>
+        await PutAsync($"{ApiRoutes.TreatmentCases}/homework/{homeworkId}/review", dto);
+
+    // Mood Tracking
+    public async Task<(List<MoodEntryWebDto> Data, string? Error)> GetMoodEntriesAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<List<MoodEntryWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/mood");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(bool Success, string? Error)> AddMoodEntryAsync(object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/mood", dto);
+
     // Progress & Timeline
     public async Task<(TreatmentProgressWebDto? Data, string? Error)> GetProgressAsync(Guid caseId)
     {
@@ -646,5 +853,18 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     {
         var (data, _, error) = await GetAsync<List<TreatmentTimelineWebDto>>($"{ApiRoutes.TreatmentCases}/{caseId}/timeline");
         return (data ?? new(), error);
+    }
+
+    // Dashboard & Risk
+    public async Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorTreatmentDashboardWebDto>($"{ApiRoutes.TreatmentCases}/doctor/dashboard");
+        return (data, error);
+    }
+
+    public async Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId)
+    {
+        var (data, _, error) = await GetAsync<TreatmentCaseRiskWebDto>($"{ApiRoutes.TreatmentCases}/{caseId}/risk");
+        return (data, error);
     }
 }

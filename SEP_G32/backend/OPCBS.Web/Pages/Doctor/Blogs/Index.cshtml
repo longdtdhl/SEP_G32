@@ -1,68 +1,323 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Blogs.IndexModel
-@{ ViewData["Title"] = "Bài viết của tôi"; ViewData["UseDashboardLayout"] = true; }
+@{
+    ViewData["Title"] = "My Articles"; 
+    Layout = "_DashboardLayout";
+}
 
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <h1>Bài viết của tôi</h1>
-    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Viết bài mới</a>
+<style>
+    .doc-blog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .doc-blog-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .doc-blog-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    /* Article filters */
+    .doc-filter-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+    }
+    .doc-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1 1 620px;
+    }
+    .doc-filter-search { min-width: 220px; flex: 1 1 280px; }
+    .doc-filter-status { min-width: 160px; }
+    .doc-filter-form .form-control,
+    .doc-filter-form .form-select { border-radius: 6px; font-size: 0.85rem; }
+    @@media (max-width: 576px) {
+        .doc-filter-form { align-items: stretch; flex-wrap: wrap; }
+        .doc-filter-search, .doc-filter-status { min-width: 0; flex: 1 1 100%; }
+    }
+
+    /* Dashboard Table Card */
+    .doc-table-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    .doc-table-card .table {
+        margin-bottom: 0;
+    }
+    .doc-table-card .table th {
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #64748b;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .doc-table-card .table td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.875rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .doc-table-card .table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Article Info Cell */
+    .article-thumb-sm {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+    }
+    .article-thumb-sm img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Status Badges */
+    .status-badge-semantic {
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .status-badge-draft {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+    .status-badge-pending {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    .status-badge-published {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .status-badge-rejected {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* Rejection Callout Row */
+    .rejection-notice-box {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.78rem;
+        color: #991b1b;
+        margin-top: 0.4rem;
+    }
+
+    /* Empty State */
+    .doc-empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+    }
+</style>
+
+<!-- Header -->
+<div class="doc-blog-header">
+    <div>
+        <h1 class="doc-blog-title"><i class="bi bi-journal-text me-2" style="color:var(--mb-primary);"></i>My Articles</h1>
+        <p class="doc-blog-subtitle">Create, edit, and track your clinical publication submissions.</p>
+    </div>
+    <a asp-page="Create" class="btn btn-primary btn-sm px-3" style="border-radius: 6px; font-weight: 600;">
+        <i class="bi bi-plus-lg me-1"></i>Create New Article
+    </a>
 </div>
 
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
+<!-- Alerts -->
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-3" style="border-radius: 6px;">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Success"] is string suc)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" style="border-radius: 6px;">
+        <i class="bi bi-check-circle me-1"></i>@suc
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-<!-- Filter -->
-<div class="card border-0 shadow-sm mb-3"><div class="card-body py-2">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-auto">
-            <select asp-for="Status" class="form-select form-select-sm">
-                <option value="">Tất cả</option>
-                <option value="Draft">Bản nháp</option>
-                <option value="Pending">Chờ duyệt</option>
-                <option value="Published">Đã xuất bản</option>
-                <option value="Rejected">Bị từ chối</option>
-            </select>
+@{ var allBlogs = Model.Blogs; }
+
+<!-- Filters -->
+<div class="doc-filter-bar">
+    <form method="get" class="doc-filter-form">
+        <div class="input-group doc-filter-search">
+            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+            <input asp-for="Search" class="form-control" placeholder="Search title or content..." />
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter"></i> Lọc</button></div>
+        <select asp-for="Status" class="form-select doc-filter-status">
+            <option value="">All statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="Pending">Pending review</option>
+            <option value="Published">Published</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+        <button type="submit" class="btn btn-primary" title="Apply filters" aria-label="Apply filters">
+            <i class="bi bi-funnel"></i>
+        </button>
+        <a asp-page="Index" class="btn btn-outline-secondary" title="Clear filters" aria-label="Clear filters">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
     </form>
-</div></div>
+</div>
 
-<div class="card border-0 shadow-sm"><div class="card-body p-0">
-    <div class="table-responsive"><table class="table table-hover mb-0">
-        <thead class="table-light"><tr><th>Tiêu đề</th><th>Danh mục</th><th>Trạng thái</th><th>Ngày tạo</th><th class="text-end">Hành động</th></tr></thead>
-        <tbody>
-            @if (Model.Blogs.Any())
-            {
-                @foreach (var b in Model.Blogs)
-                {
-                    var badge = b.Status switch {
-                        "Draft" => "bg-secondary", "Pending" => "bg-warning text-dark",
-                        "Published" => "bg-success", "Rejected" => "bg-danger", _ => "bg-secondary"
-                    };
+<!-- Articles Table -->
+@if (allBlogs.Any())
+{
+    <div class="doc-table-card">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
                     <tr>
-                        <td><strong>@b.Title</strong><br /><small class="text-muted">@(b.Summary?.Length > 60 ? b.Summary[..60] + "..." : b.Summary)</small></td>
-                        <td>@(b.Category ?? "-")</td>
-                        <td><span class="badge @badge">@(b.Status ?? "Draft")</span></td>
-                        <td>@b.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td class="text-end">
-                            <a asp-page="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                            @if (b.Status is "Draft" or null)
-                            {
-                                <form method="post" asp-page-handler="Submit" class="d-inline">
-                                    <input type="hidden" name="id" value="@b.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Gửi duyệt"><i class="bi bi-send"></i></button>
-                                </form>
-                            }
-                            <form method="post" asp-page-handler="Delete" class="d-inline">
-                                <input type="hidden" name="id" value="@b.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa bài viết này?')"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
+                        <th style="width: 60px;">Thumbnail</th>
+                        <th>Article Details</th>
+                        <th style="width: 140px;">Category</th>
+                        <th style="width: 140px;">Status</th>
+                        <th style="width: 130px;">Created Date</th>
+                        <th style="width: 90px;" class="text-center">Views</th>
+                        <th style="width: 140px;" class="text-end">Actions</th>
                     </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có bài viết nào</td></tr>
-            }
-        </tbody>
-    </table></div>
-</div></div>
+                </thead>
+                <tbody>
+                    @foreach (var b in allBlogs)
+                    {
+                        var (badgeClass, statusText, statusIcon) = b.Status switch
+                        {
+                            "Draft" => ("status-badge-draft", "Draft", "bi-file-earmark"),
+                            "Pending" or "PendingApproval" => ("status-badge-pending", "Pending Review", "bi-hourglass-split"),
+                            "Published" => ("status-badge-published", "Published", "bi-check-circle"),
+                            "Rejected" => ("status-badge-rejected", "Rejected", "bi-x-circle"),
+                            _ => ("status-badge-draft", "Draft", "bi-file-earmark")
+                        };
+
+                        <tr>
+                            <td>
+                                <div class="article-thumb-sm">
+                                    @if (!string.IsNullOrEmpty(b.DisplayImage))
+                                    {
+                                        <img src="@b.DisplayImage" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-file-text text-muted"></i>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 380px;" title="@b.Title">
+                                    @b.Title
+                                </div>
+                                <div class="text-muted text-xs text-truncate" style="max-width: 380px;">
+                                    @(b.DisplaySummary ?? "No summary provided")
+                                </div>
+                                @if (b.Status == "Rejected" && !string.IsNullOrEmpty(b.RejectionReason))
+                                {
+                                    <div class="rejection-notice-box">
+                                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Rejection Note:</strong> @b.RejectionReason
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-medium" style="font-size: 0.75rem;">
+                                    @(b.Category ?? "General")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge-semantic @badgeClass">
+                                    <i class="bi @statusIcon"></i>@statusText
+                                </span>
+                            </td>
+                            <td class="small text-muted">
+                                @b.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="text-center small font-mono">
+                                @b.ViewCount
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <a asp-page="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-secondary" title="Edit Article" style="border-radius: 4px;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    @if (b.Status is "Draft" or "Rejected" or null)
+                                    {
+                                        <form method="post" asp-page-handler="Submit" class="d-inline">
+                                            <input type="hidden" name="id" value="@b.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Submit for Review" style="border-radius: 4px;">
+                                                <i class="bi bi-send"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <form method="post" asp-page-handler="Delete" class="d-inline">
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Article" onclick="return confirm('Are you sure you want to delete this article?')" style="border-radius: 4px;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="doc-empty-state">
+        <i class="bi bi-journal-plus text-muted display-6 mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark mb-1">No Articles Found</h5>
+        <p class="text-muted small mb-3">You haven't created any articles in this status filter yet.</p>
+        <a asp-page="Create" class="btn btn-sm btn-primary px-3" style="border-radius: 4px;">
+            <i class="bi bi-plus-lg me-1"></i>Create Your First Article
+        </a>
+    </div>
+}

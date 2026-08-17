@@ -170,6 +170,12 @@ public class PatientProfile : BaseEntity
     /// <summary>Navigation property: treatment packages assigned to patient</summary>
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
 
+    /// <summary>Navigation property: treatment cases for this patient</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
+
+    /// <summary>Navigation property: consultation records for this patient</summary>
+    public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
+
     /// <summary>Navigation property: reviews submitted by this patient</summary>
     public virtual ICollection<Review>? Reviews { get; set; }
 
@@ -242,6 +248,33 @@ public class DoctorProfile : BaseEntity
     /// <summary>Average rating from patient reviews</summary>
     public decimal AverageRating { get; set; } = 0;
 
+    /// <summary>Doctor's Gender</summary>
+    public Gender? Gender { get; set; }
+
+    /// <summary>Doctor's Date of Birth</summary>
+    public DateTime? DateOfBirth { get; set; }
+
+    /// <summary>Doctor's Address</summary>
+    public string? Address { get; set; }
+
+    /// <summary>Highest Academic Degree / Education</summary>
+    public string? Education { get; set; }
+
+    /// <summary>Professional Background / Career History</summary>
+    public string? CareerBackground { get; set; }
+
+    /// <summary>Consultation Fee</summary>
+    public decimal ConsultationFee { get; set; } = 0;
+
+    /// <summary>Care Approach / Strengths</summary>
+    public string? CareApproach { get; set; }
+
+    /// <summary>Spoken Languages (e.g., "English, Vietnamese")</summary>
+    public string? Languages { get; set; }
+
+    /// <summary>Consultation Types (e.g., "Online, In-person")</summary>
+    public string? ConsultationTypes { get; set; }
+
     /// <summary>Total number of reviews</summary>
     public int ReviewCount { get; set; } = 0;
 
@@ -277,6 +310,12 @@ public class DoctorProfile : BaseEntity
 
     /// <summary>Navigation property: treatment packages created by doctor</summary>
     public virtual ICollection<TreatmentPackage>? TreatmentPackages { get; set; }
+
+    /// <summary>Navigation property: treatment cases managed by doctor</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
+
+    /// <summary>Navigation property: consultation records created by doctor</summary>
+    public virtual ICollection<ConsultationNote>? ConsultationNotes { get; set; }
 
     /// <summary>Navigation property: blog posts by this doctor</summary>
     public virtual ICollection<BlogPost>? BlogPosts { get; set; }
@@ -341,6 +380,40 @@ public class VerificationRequest : BaseEntity
     /// <summary>URL of the uploaded practice certificate or related documents</summary>
     public string? CertificateUrl { get; set; }
 
+    /// <summary>Cloudinary public ID for the uploaded certificate file</summary>
+    public string? CertificatePublicId { get; set; }
+
+    /// <summary>Original file name of the certificate document</summary>
+    public string? CertificateFileName { get; set; }
+
+    /// <summary>Content/MIME type of the certificate file</summary>
+    public string? CertificateContentType { get; set; }
+
+    /// <summary>Timestamp when the certificate file was uploaded</summary>
+    public DateTime? CertificateUploadedAt { get; set; }
+
+    /// <summary>Timestamp when verification request was submitted</summary>
+    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
+}
+
+/// <summary>
+/// Favorite doctor entity - patient saves doctors they are interested in.
+/// Doctors do NOT know who added them.
+/// </summary>
+public class FavoriteDoctor : BaseEntity
+{
+    /// <summary>Foreign key to PatientProfile (via UserId)</summary>
+    public Guid PatientId { get; set; }
+
+    /// <summary>Foreign key to DoctorProfile (via UserId)</summary>
+    public Guid DoctorId { get; set; }
+
+    /// <summary>Navigation property to PatientProfile</summary>
+    public virtual required PatientProfile Patient { get; set; }
+
+    /// <summary>Navigation property to DoctorProfile</summary>
+    public virtual required DoctorProfile Doctor { get; set; }
 }

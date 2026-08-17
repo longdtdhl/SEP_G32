@@ -79,6 +79,39 @@ public class ConsultationNote : BaseEntity
     /// <summary>Next appointment recommendation date (if applicable)</summary>
     public DateTime? NextAppointmentRecommendedDate { get; set; }
 
+    /// <summary>Next appointment recommendation slot ID (if applicable)</summary>
+    public Guid? NextAppointmentRecommendedSlotId { get; set; }
+
+    /// <summary>Navigation property to recommended slot</summary>
+    public virtual AppointmentSlot? NextAppointmentRecommendedSlot { get; set; }
+
+    /// <summary>Follow-up appointment ID created when patient confirms recommendation</summary>
+    public Guid? FollowUpAppointmentId { get; set; }
+
+    /// <summary>Navigation property to created follow-up appointment</summary>
+    public virtual Appointment? FollowUpAppointment { get; set; }
+
+    /// <summary>Date of the consultation. Auto-filled from appointment if linked, otherwise doctor inputs manually.</summary>
+    public DateTime? ConsultationDate { get; set; }
+
+    /// <summary>Visibility control: DoctorOnly (internal clinical notes) or PatientVisible (shared with patient)</summary>
+    public NoteVisibility Visibility { get; set; } = NoteVisibility.DoctorOnly;
+
+    /// <summary>Whether patient has confirmed reviewing these consultation notes</summary>
+    public bool IsPatientConfirmed { get; set; } = false;
+
+    /// <summary>Timestamp when patient confirmed the consultation notes</summary>
+    public DateTime? PatientConfirmedAt { get; set; }
+
+    /// <summary>User ID of the patient who confirmed</summary>
+    public Guid? PatientConfirmedById { get; set; }
+
+    /// <summary>Timestamp when notes were last edited by doctor</summary>
+    public DateTime? LastEditedAt { get; set; }
+
+    /// <summary>Doctor Profile ID of the doctor who last edited</summary>
+    public Guid? LastEditedByDoctorId { get; set; }
+
     /// <summary>Navigation property to Appointment</summary>
     public virtual Appointment? Appointment { get; set; }
 
@@ -97,14 +130,23 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Foreign key to DoctorProfile who created this package</summary>
     public Guid DoctorId { get; set; }
 
-    /// <summary>Foreign key to PatientProfile to whom package is assigned</summary>
-    public Guid PatientId { get; set; }
+    /// <summary>Foreign key to PatientProfile to whom package is assigned (nullable for doctor template packages)</summary>
+    public Guid? PatientId { get; set; }
 
     /// <summary>Package name</summary>
     public required string Name { get; set; }
 
     /// <summary>Package description and details</summary>
     public string? Description { get; set; }
+
+    /// <summary>Target outcomes / Goal of the treatment package</summary>
+    public string? TargetOutcome { get; set; }
+
+    /// <summary>Recommended exercises and therapeutic activities</summary>
+    public string? RecommendedExercises { get; set; }
+
+    /// <summary>Instructions and guidance for the patient</summary>
+    public string? Instructions { get; set; }
 
     /// <summary>Total number of counseling sessions in package</summary>
     public int SessionQuantity { get; set; }
@@ -114,6 +156,9 @@ public class TreatmentPackage : BaseEntity
 
     /// <summary>Validity period in days</summary>
     public int ValidityDays { get; set; }
+
+    /// <summary>Recommended sessions per week (default 1, max 7)</summary>
+    public int RecommendedSessionsPerWeek { get; set; } = 1;
 
     /// <summary>Expiration date of the package</summary>
     public DateTime ExpirationDate { get; set; }
@@ -136,11 +181,23 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Reason if package was rejected</summary>
     public string? RejectionReason { get; set; }
 
+    /// <summary>User who initiated the cancellation request. The other party must confirm it.</summary>
+    public Guid? CancellationRequestedByUserId { get; set; }
+
+    /// <summary>When the cancellation request was submitted.</summary>
+    public DateTime? CancellationRequestedAt { get; set; }
+
+    /// <summary>Optional reason supplied by the cancellation requester.</summary>
+    public string? CancellationReason { get; set; }
+
     /// <summary>Navigation property to Doctor</summary>
     public virtual required DoctorProfile Doctor { get; set; }
 
     /// <summary>Navigation property to Patient</summary>
-    public virtual required PatientProfile Patient { get; set; }
+    public virtual PatientProfile? Patient { get; set; }
+
+    /// <summary>Navigation property: treatment cases created from this package template</summary>
+    public virtual ICollection<TreatmentCase>? TreatmentCases { get; set; }
 
     /// <summary>Navigation property: appointments using this package</summary>
     public virtual ICollection<Appointment>? Appointments { get; set; }

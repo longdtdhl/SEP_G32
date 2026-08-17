@@ -8,13 +8,15 @@ public class UserListItemDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public string? Role { get; set; }
-    public bool IsActive { get; set; }
-    public bool EmailConfirmed { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool IsEmailVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public string? AvatarUrl { get; set; }
 
     // Computed helpers
+    public bool IsActive => Status == "Active" || Status == "0";
+    public bool EmailConfirmed => IsEmailVerified;
     public string StatusText => IsActive ? "Active" : "Locked";
     public string StatusBadgeClass => IsActive ? "bg-success" : "bg-danger";
     public string Initials => string.Join("", (FullName ?? "U").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpper();
@@ -40,13 +42,19 @@ public class AuditLogDto
 {
     public Guid Id { get; set; }
     public string? UserId { get; set; }
-    public string? UserName { get; set; }
-    public string Action { get; set; } = string.Empty;
-    public string? EntityType { get; set; }
+    public string? UserEmail { get; set; }
+    public string EntityName { get; set; } = string.Empty;
     public string? EntityId { get; set; }
-    public string? Details { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string? ActionDescription { get; set; }
     public string? IpAddress { get; set; }
-    public DateTime Timestamp { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    // Computed helpers for view compatibility
+    public string? UserName => UserEmail;
+    public string? EntityType => EntityName;
+    public string? Details => ActionDescription;
+    public DateTime Timestamp => CreatedAt;
 }
 
 public class DashboardStatsDto

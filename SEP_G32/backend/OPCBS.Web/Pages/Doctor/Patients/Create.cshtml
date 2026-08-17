@@ -1,0 +1,122 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Patients.CreateModel
+@{
+    ViewData["Title"] = "Create Patient Profile";
+
+    Layout = "_DashboardLayout";}
+
+<style>
+    .form-section { margin-bottom: 1.5rem; }
+    .form-section-title {
+        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title i { color: var(--mb-primary); }
+
+    .patient-info-card {
+        background: linear-gradient(135deg, #f0fdf8, #ecfdf5); border-radius: 14px; padding: 1.25rem;
+        border: 1px solid rgba(16,185,129,0.15);
+    }
+    
+    .form-control { border-radius: 10px; }
+</style>
+
+<div class="mb-page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
+            <i class="bi bi-person-plus-fill me-2" style="color:var(--mb-primary);"></i>Create New Patient Record
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Fill in basic information and psychological history of the patient</p>
+    </div>
+    <a asp-page="./Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3" style="border-radius:12px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form method="post" class="mt-4">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section-title">
+                        <i class="bi bi-person-badge"></i>Personal Information
+                    </div>
+                    
+                    <input type="hidden" asp-for="Input.PatientId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Patient Name <span class="text-danger">*</span></label>
+                        <input type="text" asp-for="Input.GuestName" class="form-control" required placeholder="John Doe" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phone Number</label>
+                        <input type="tel" asp-for="Input.GuestPhone" class="form-control" placeholder="0901234567" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" asp-for="Input.GuestEmail" class="form-control" placeholder="email@example.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Date of Birth</label>
+                        <input type="date" asp-for="Input.GuestDateOfBirth" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Gender</label>
+                        <select asp-for="Input.GuestGender" class="form-select" style="border-radius:10px;">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="form-section-title">
+                        <i class="bi bi-heart-pulse-fill"></i>Clinical & Psychology Information
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Psychological History</label>
+                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3" placeholder="Previous diagnoses, treatment history..."></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Current Symptoms</label>
+                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3" placeholder="Anxiety, insomnia, depression..."></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">Stress Factors</label>
+                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3" placeholder="Work pressure, family conflicts..."></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label fw-bold">General Notes</label>
+                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 pt-3 mt-4" style="border-top:2px solid #f1f5f9;">
+                        <a asp-page="./Index" class="btn btn-outline-secondary px-4 py-2 fw-bold" style="border-radius:10px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
+                            <i class="bi bi-save2-fill"></i>Save Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

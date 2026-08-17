@@ -1,0 +1,116 @@
+@page
+@model OPCBS.Web.Pages.Appointment.SuccessModel
+@{
+    ViewData["Title"] = "Booking Successful";
+}
+
+<div class="booking-success-container">
+    <div class="booking-success-card">
+        <!-- Success Icon -->
+        <div class="success-icon-wrapper">
+            <div class="success-icon-circle">
+                <i class="bi bi-check-lg"></i>
+            </div>
+            <div class="success-confetti"></div>
+        </div>
+
+        <h1 class="success-title">Booking Submitted!</h1>
+        <p class="success-subtitle">@(Model.IsGuest ? "Please confirm the booking from the email we sent before the doctor can review it." : "Your appointment has been recorded and is awaiting doctor confirmation.")</p>
+
+        <!-- Booking Details -->
+        @if (!string.IsNullOrEmpty(Model.BookingCode) || !string.IsNullOrEmpty(Model.DoctorName))
+        {
+            <div class="success-details">
+                @if (!string.IsNullOrEmpty(Model.BookingCode))
+                {
+                    <div class="detail-item highlight">
+                        <div class="detail-icon"><i class="bi bi-upc-scan"></i></div>
+                        <div>
+                            <span class="detail-label">Booking Code</span>
+                            <span class="detail-value booking-code">@Model.BookingCode</span>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.DoctorName))
+                {
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="bi bi-person-heart"></i></div>
+                        <div>
+                            <span class="detail-label">Specialist</span>
+                            <span class="detail-value">@Model.DoctorName</span>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.AppointmentDate))
+                {
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="bi bi-calendar-event"></i></div>
+                        <div>
+                            <span class="detail-label">Appointment Date</span>
+                            <span class="detail-value">@Model.AppointmentDate</span>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.StartTime))
+                {
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="bi bi-clock"></i></div>
+                        <div>
+                            <span class="detail-label">Time</span>
+                            <span class="detail-value">@Model.StartTime @(!string.IsNullOrEmpty(Model.EndTime) ? $"— {Model.EndTime}" : "")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Status Info -->
+        <div class="success-status-info">
+            <i class="bi bi-info-circle me-2"></i>
+            @if (Model.IsGuest)
+            {
+                <span>Status: <strong>Waiting for email confirmation</strong>. Confirm the link in your email to send the request to the doctor.</span>
+            }
+            else
+            {
+                <span>Status: <strong>Pending Confirmation</strong>. The doctor will confirm your appointment as soon as possible.</span>
+            }
+        </div>
+
+        @if (Model.IsGuest && !string.IsNullOrEmpty(Model.BookingCode))
+        {
+            <div class="success-guest-note">
+                <i class="bi bi-envelope-heart me-2"></i>
+                Please check your email to confirm the booking, and save your <strong>booking code</strong> to track its status.
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="success-actions">
+            @if (Model.IsGuest)
+            {
+                <a asp-page="/Appointment/Track" class="btn btn-primary btn-lg success-btn">
+                    <i class="bi bi-search me-2"></i>Track Appointment
+                </a>
+                <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-lg success-btn">
+                    <i class="bi bi-search-heart me-2"></i>Find Another Specialist
+                </a>
+            }
+            else
+            {
+                <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-lg success-btn">
+                    <i class="bi bi-calendar-check me-2"></i>View My Appointments
+                </a>
+                <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-lg success-btn">
+                    <i class="bi bi-search-heart me-2"></i>Book Again
+                </a>
+            }
+            <a asp-page="/Index" class="btn btn-link text-muted mt-2">
+                <i class="bi bi-house me-1"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>

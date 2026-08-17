@@ -32,7 +32,7 @@ public class VerificationModel : PageModel
         {
             Verification = data;
             var statusLower = data.Status?.ToLower();
-
+            
             // If submitted or approved (or rejected without resubmit flag), show existing request summary view
             if ((statusLower == "submitted" || statusLower == "pending" || statusLower == "approved" || (statusLower == "rejected" && !resubmit))
                 && statusLower != "draft")

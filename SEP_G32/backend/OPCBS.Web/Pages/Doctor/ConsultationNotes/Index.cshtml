@@ -1,0 +1,12 @@
+@page
+@model OPCBS.Web.Pages.Doctor.ConsultationNotes.IndexModel
+@{
+    ViewData["Title"] = "Redirecting...";
+    Layout = "_DashboardLayout";
+}
+
+<div class="text-center py-5">
+    <div class="spinner-border text-primary mb-3" role="status"></div>
+    <p class="text-muted">Redirecting to Patient Records...</p>
+    <a asp-page="/Doctor/Patients/Index" class="btn btn-sm btn-primary">Go to Patient Records</a>
+</div>

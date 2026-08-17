@@ -8,9 +8,19 @@ public interface IEmailService
     Task SendEmailAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default);
     Task SendOtpEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default);
     Task SendPasswordResetEmailAsync(string to, string otpCode, CancellationToken cancellationToken = default);
+    Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
     Task SendAppointmentCancelledEmailAsync(string to, string recipientName, string cancelledBy, string date, string reason, CancellationToken cancellationToken = default);
     Task SendAppointmentCompletedEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
-    Task SendAppointmentConfirmedEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
+    Task SendAppointmentReminderEmailAsync(string to, string patientName, string doctorName, string date, string time, CancellationToken cancellationToken = default);
+    Task SendConsultationNoteEmailAsync(string to, string patientName, string doctorName, CancellationToken cancellationToken = default);
+    Task SendFollowUpReminderEmailAsync(string to, string patientName, string doctorName, string date, CancellationToken cancellationToken = default);
+    Task SendAppointmentBookingConfirmationEmailAsync(string to, string patientName, string doctorName, string bookingCode, string date, string time, string consultationMode, string statusText, string trackUrl, CancellationToken cancellationToken = default);
+}
+
+public class FileUploadResult
+{
+    public string Url { get; set; } = string.Empty;
+    public string PublicId { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -19,6 +29,7 @@ public interface IEmailService
 public interface IFileStorageService
 {
     Task<string> UploadAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default);
+    Task<FileUploadResult> UploadFileAsync(Stream fileStream, string fileName, string folder, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default);
 }
 

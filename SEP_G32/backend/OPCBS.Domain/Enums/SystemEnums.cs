@@ -36,7 +36,68 @@ public enum AppointmentStatus
     Completed = 4,
     
     /// <summary>Appointment cancelled</summary>
-    Cancelled = 5
+    Cancelled = 5,
+    
+    /// <summary>Reschedule requested by patient, pending doctor approval</summary>
+    RescheduleRequested = 6,
+
+    /// <summary>Doctor requested the patient's confirmation before completion</summary>
+    AwaitingPatientConfirmation = 7,
+
+    /// <summary>Patient did not attend the appointment</summary>
+    NoShow = 8,
+
+    /// <summary>Guest booking is waiting for email confirmation before doctor review</summary>
+    AwaitingGuestConfirmation = 9,
+
+    /// <summary>Doctor requested completion confirmation from a guest by email.</summary>
+    AwaitingGuestCompletionConfirmation = 10,
+
+    /// <summary>The patient or guest disputed the requested completion and Support review is required.</summary>
+    CompletionDisputed = 11
+}
+
+/// <summary>Patient response to a doctor's appointment-completion request.</summary>
+public enum AppointmentCompletionConfirmationStatus
+{
+    Pending = 0,
+    Confirmed = 1,
+    ExpiredAndAccountLocked = 2,
+    Cancelled = 3,
+    Disputed = 4,
+    EscalatedForSupportReview = 5
+}
+
+/// <summary>Origin of a violation report.</summary>
+public enum ViolationReportSource
+{
+    Patient = 0,
+    Doctor = 1,
+    System = 2
+}
+
+/// <summary>Reason categories used for report routing and policy analytics.</summary>
+public enum ViolationReason
+{
+    Other = 0,
+    RepeatedNoShow = 1,
+    AppointmentCompletionDispute = 2,
+    HarassmentOrAbuse = 3,
+    FraudOrImpersonation = 4,
+    ProfessionalConduct = 5,
+    PolicyViolation = 6
+}
+
+/// <summary>Lifecycle of a report as it moves from Customer Support to Admin.</summary>
+public enum ViolationReportStatus
+{
+    Submitted = 0,
+    UnderCustomerSupportReview = 1,
+    WarningIssued = 2,
+    EscalatedToAdmin = 3,
+    AccountDisabled = 4,
+    Dismissed = 5,
+    Resolved = 6
 }
 
 /// <summary>
@@ -78,7 +139,10 @@ public enum VerificationStatus
     Approved = 2,
     
     /// <summary>Rejected by customer support - can resubmit</summary>
-    Rejected = 3
+    Rejected = 3,
+
+    /// <summary>Additional information or document requested by customer support</summary>
+    RequiresAdditionalInfo = 4
 }
 
 /// <summary>
@@ -107,6 +171,9 @@ public enum BlogStatus
 /// </summary>
 public enum TreatmentPackageStatus
 {
+    /// <summary>Package template in draft state</summary>
+    Draft = -1,
+
     /// <summary>Package created but not assigned</summary>
     Created = 0,
     
@@ -129,7 +196,13 @@ public enum TreatmentPackageStatus
     Rejected = 6,
     
     /// <summary>Package was cancelled</summary>
-    Cancelled = 7
+    Cancelled = 7,
+
+    /// <summary>Package template archived and no longer available for assignment</summary>
+    Archived = 8,
+
+    /// <summary>Cancellation requested by one party and awaiting confirmation from the other.</summary>
+    CancellationPending = 9
 }
 
 /// <summary>
@@ -186,7 +259,16 @@ public enum NotificationType
     Package = 4,
     
     /// <summary>System notifications</summary>
-    System = 5
+    System = 5,
+
+    /// <summary>Appointment reminder (1 hour before)</summary>
+    Reminder = 6,
+
+    /// <summary>Consultation record notification</summary>
+    ConsultationNote = 7,
+
+    /// <summary>New message notification</summary>
+    Message = 8
 }
 
 /// <summary>
@@ -284,4 +366,209 @@ public enum AuditAction
     
     /// <summary>Custom action specific to the entity type</summary>
     Custom = 3
+}
+
+/// <summary>
+/// Conversation status for doctor-patient messaging
+/// </summary>
+public enum ConversationStatus
+{
+    /// <summary>Conversation is open and active</summary>
+    Open = 0,
+
+    /// <summary>Conversation is closed and read-only</summary>
+    Closed = 1
+}
+
+/// <summary>
+/// Treatment case lifecycle status
+/// </summary>
+public enum TreatmentCaseStatus
+{
+    /// <summary>Case is currently active and in progress</summary>
+    Active = 0,
+
+    /// <summary>Case is temporarily on hold</summary>
+    OnHold = 1,
+
+    /// <summary>Case completed successfully (all sessions done)</summary>
+    Completed = 2,
+
+    /// <summary>Case terminated early by doctor or patient</summary>
+    Terminated = 3,
+
+    /// <summary>Case transferred to another doctor</summary>
+    Transferred = 4,
+
+    /// <summary>Case was cancelled</summary>
+    Cancelled = 5
+}
+
+/// <summary>
+/// Treatment session status within a case
+/// </summary>
+public enum TreatmentSessionStatus
+{
+    /// <summary>Session scheduled but not yet started</summary>
+    Scheduled = 0,
+
+    /// <summary>Session currently in progress</summary>
+    InProgress = 1,
+
+    /// <summary>Session completed successfully</summary>
+    Completed = 2,
+
+    /// <summary>Session was cancelled</summary>
+    Cancelled = 3,
+
+    /// <summary>Patient did not attend the session</summary>
+    NoShow = 4,
+
+    /// <summary>Patient missed the session (alias for NoShow in some contexts)</summary>
+    Missed = 5,
+
+    /// <summary>Session planned but not yet linked to an appointment slot</summary>
+    Planned = 6
+}
+
+/// <summary>
+/// Treatment goal priority level
+/// </summary>
+public enum GoalPriority
+{
+    /// <summary>Low priority goal</summary>
+    Low = 0,
+
+    /// <summary>Medium priority goal</summary>
+    Medium = 1,
+
+    /// <summary>High priority goal</summary>
+    High = 2,
+
+    /// <summary>Critical priority goal — requires urgent attention</summary>
+    Critical = 3
+}
+
+/// <summary>
+/// Treatment goal completion status
+/// </summary>
+public enum GoalStatus
+{
+    /// <summary>Goal has not been started</summary>
+    NotStarted = 0,
+
+    /// <summary>Goal is actively being worked on</summary>
+    InProgress = 1,
+
+    /// <summary>Goal has been achieved</summary>
+    Achieved = 2,
+
+    /// <summary>Goal is temporarily paused by the treating doctor</summary>
+    OnHold = 3,
+
+    /// <summary>Goal has been cancelled</summary>
+    Cancelled = 4,
+
+    /// <summary>Goal is being prepared and is not yet visible in the active treatment plan</summary>
+    Draft = 5
+}
+
+/// <summary>Execution status for a concrete milestone under a treatment goal.</summary>
+public enum GoalDetailStatus
+{
+    NotStarted = 0,
+    InProgress = 1,
+    Completed = 2,
+    OnHold = 3,
+    Cancelled = 4
+}
+
+/// <summary>Clinical or operational measurement represented by a goal success criterion.</summary>
+public enum GoalSuccessCriteriaType
+{
+    ProgressPercentage = 0,
+    HomeworkCompletion = 1,
+    Attendance = 2,
+    DoctorApproval = 3,
+    AssessmentScore = 4,
+    Custom = 99
+}
+
+/// <summary>Source used to synchronize a criterion's current value.</summary>
+public enum GoalCriteriaDataSource
+{
+    Manual = 0,
+    GoalProgress = 1,
+    Homework = 2,
+    Attendance = 3,
+    Assessment = 4,
+    DoctorApproval = 5
+}
+
+/// <summary>Comparison applied to a criterion target and current value.</summary>
+public enum GoalCriteriaOperator
+{
+    GreaterThan = 0,
+    GreaterThanOrEqual = 1,
+    LessThan = 2,
+    LessThanOrEqual = 3,
+    Equal = 4
+}
+
+/// <summary>
+/// Consultation note visibility - controls who can view the note
+/// </summary>
+public enum NoteVisibility
+{
+    /// <summary>Only the doctor can see this note (clinical hypotheses, internal observations)</summary>
+    DoctorOnly = 0,
+
+    /// <summary>Both doctor and patient can see this note (session summary, advice, homework)</summary>
+    PatientVisible = 1
+}
+
+/// <summary>
+/// Goal category for standardized clinical metrics
+/// </summary>
+public enum GoalCategory
+{
+    /// <summary>Emotional regulation and well-being</summary>
+    Emotion = 0,
+    /// <summary>Sleep quality and patterns</summary>
+    Sleep = 1,
+    /// <summary>Stress management</summary>
+    Stress = 2,
+    /// <summary>Anxiety level (GAD-7: 0-21)</summary>
+    Anxiety = 3,
+    /// <summary>Depression level (PHQ-9: 0-27)</summary>
+    Depression = 4,
+    /// <summary>Communication skills</summary>
+    Communication = 5,
+    /// <summary>Relationship quality</summary>
+    Relationship = 6,
+    /// <summary>Work performance and satisfaction</summary>
+    Work = 7,
+    /// <summary>Academic performance</summary>
+    Study = 8,
+    /// <summary>Self-esteem and confidence</summary>
+    SelfEsteem = 9,
+    /// <summary>Lifestyle habits and health</summary>
+    Lifestyle = 10,
+    /// <summary>Custom / other category</summary>
+    Other = 99
+}
+
+/// <summary>
+/// Status of a homework/therapy assignment
+/// </summary>
+public enum HomeworkStatus
+{
+    /// <summary>Assigned to patient, not yet submitted</summary>
+    Assigned = 0,
+    /// <summary>Patient has submitted their response</summary>
+    Submitted = 1,
+    /// <summary>Doctor has reviewed the submission</summary>
+    Reviewed = 2,
+    /// <summary>Assignment was cancelled</summary>
+    Cancelled = 3
 }

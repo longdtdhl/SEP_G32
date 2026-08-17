@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.DTOs.Auth;
+using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
 using OPCBS.Domain.Constants;
+using OPCBS.Domain.Entities;
 using OPCBS.Shared.Models;
 
 namespace OPCBS.Controllers;
@@ -39,11 +41,15 @@ public class DoctorsController : ControllerBase
     public async Task<IActionResult> GetDoctors(
         [FromQuery] string? keyword,
         [FromQuery] Guid? specializationId,
+        [FromQuery] double? minRating,
         [FromQuery] decimal? rating,
+        [FromQuery] decimal? maxFee,
+        [FromQuery] string? gender,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, page, pageSize);
+        var effectiveMinRating = minRating ?? (rating.HasValue ? (double?)rating.Value : null);
+        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, effectiveMinRating, maxFee, gender, page, pageSize);
         return Ok(result);
     }
 
@@ -92,10 +98,26 @@ public class DoctorsController : ControllerBase
 public class DoctorProfileController : ControllerBase
 {
     private readonly IDoctorService _doctorService;
+    private readonly IFileStorageService _fileStorage;
+    private readonly IRepository<User> _userRepo;
+    private readonly IRepository<DoctorProfile> _doctorRepo;
+    private readonly IUnitOfWork _uow;
+    private readonly ILogger<DoctorProfileController> _logger;
 
-    public DoctorProfileController(IDoctorService doctorService)
+    public DoctorProfileController(
+        IDoctorService doctorService,
+        IFileStorageService fileStorage,
+        IRepository<User> userRepo,
+        IRepository<DoctorProfile> doctorRepo,
+        IUnitOfWork uow,
+        ILogger<DoctorProfileController> logger)
     {
         _doctorService = doctorService;
+        _fileStorage = fileStorage;
+        _userRepo = userRepo;
+        _doctorRepo = doctorRepo;
+        _uow = uow;
+        _logger = logger;
     }
 
     /// <summary>GET /api/v1/doctor-profile - Get own profile</summary>
@@ -118,20 +140,106 @@ public class DoctorProfileController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>POST /api/v1/doctor-profile/avatar - Upload avatar (stub - returns upload URL pattern)</summary>
+    /// <summary>POST /api/v1/doctor-profile/avatar - Upload avatar image</summary>
     [HttpPost("avatar")]
-    public IActionResult UploadAvatar()
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
-        // TODO: integrate Cloudinary file upload
-        return BadRequest(ApiResponse.ErrorResponse("File upload requires Cloudinary configuration."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse.ErrorResponse("No file provided."));
+
+        // Validate image type
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(ApiResponse.ErrorResponse("Invalid file type. Only JPG, JPEG, PNG, WEBP images are allowed."));
+
+        // Max 2MB
+        if (file.Length > 2 * 1024 * 1024)
+            return BadRequest(ApiResponse.ErrorResponse("File size exceeds the maximum limit of 2MB."));
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var url = await _fileStorage.UploadAsync(stream, file.FileName, "avatars");
+
+            // Update User.AvatarUrl in DB
+            var users = await _userRepo.GetAllAsync();
+            var user = users.FirstOrDefault(u => u.Id == userId.Value);
+            if (user == null)
+                return NotFound(ApiResponse.ErrorResponse("User not found."));
+
+            user.AvatarUrl = url;
+            await _uow.SaveChangesAsync();
+
+            return Ok(ApiResponse<object>.SuccessResponse(new { avatarUrl = url }, "Avatar uploaded successfully."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload avatar for user {UserId}", userId);
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while uploading avatar. Please try again later."));
+        }
     }
 
-    /// <summary>POST /api/v1/doctor-profile/certificates - Upload certificates (stub)</summary>
+    /// <summary>POST /api/v1/doctor-profile/certificates - Upload certificate file</summary>
     [HttpPost("certificates")]
-    public IActionResult UploadCertificates()
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadCertificates(IFormFile file)
     {
-        // TODO: integrate Cloudinary file upload
-        return BadRequest(ApiResponse.ErrorResponse("File upload requires Cloudinary configuration."));
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse.ErrorResponse("No file provided or file is empty."));
+
+        // Validate file extension
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(ApiResponse.ErrorResponse("Invalid file type. Only JPG, JPEG, PNG, WEBP, and PDF files are allowed."));
+
+        // Validate MIME type
+        var allowedMimeTypes = new[] { "application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif" };
+        if (!string.IsNullOrEmpty(file.ContentType) && !allowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+            return BadRequest(ApiResponse.ErrorResponse("Invalid file format/MIME type."));
+
+        // Max 10MB
+        const long maxFileSize = 10 * 1024 * 1024;
+        if (file.Length > maxFileSize)
+            return BadRequest(ApiResponse.ErrorResponse("File size exceeds the maximum limit of 10MB."));
+
+        try
+        {
+            var doctor = (await _doctorRepo.GetAllAsync()).FirstOrDefault(d => d.UserId == userId.Value);
+            var folderName = doctor != null ? $"verifications/{doctor.Id}" : "verifications";
+
+            using var stream = file.OpenReadStream();
+            var uploadResult = await _fileStorage.UploadFileAsync(stream, file.FileName, folderName);
+
+            if (uploadResult == null || string.IsNullOrWhiteSpace(uploadResult.Url))
+            {
+                return BadRequest(ApiResponse.ErrorResponse("Failed to store certificate file. Please try again."));
+            }
+
+            var responseData = new
+            {
+                certificateUrl = uploadResult.Url,
+                certificatePublicId = uploadResult.PublicId,
+                certificateFileName = file.FileName,
+                certificateContentType = file.ContentType,
+                certificateUploadedAt = DateTime.UtcNow
+            };
+
+            return Ok(ApiResponse<object>.SuccessResponse(responseData, "Certificate uploaded successfully."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading certificate file for doctor user {UserId}", userId);
+            return StatusCode(500, ApiResponse.ErrorResponse("An error occurred while uploading your certificate. Please try again later."));
+        }
     }
 
     private Guid? GetUserId()
@@ -140,3 +248,4 @@ public class DoctorProfileController : ControllerBase
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
     }
 }
+

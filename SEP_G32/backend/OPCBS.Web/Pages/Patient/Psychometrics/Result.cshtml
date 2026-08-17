@@ -1,0 +1,212 @@
+@page
+@model OPCBS.Web.Pages.Patient.Psychometrics.ResultModel
+@{
+    ViewData["Title"] = "Psychometric Assessment Results";
+
+    Layout = "_DashboardLayout";}
+
+<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1><i class="bi bi-bar-chart-line-fill me-2" style="color:var(--mb-primary);"></i>Psychometric Assessment Results</h1>
+        <p class="text-muted mb-0">View your detailed results and helpful recommendations.</p>
+    </div>
+    @if (Model.Submission?.AppointmentId != null)
+    {
+        <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.Submission.AppointmentId.Value" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Appointment</a>
+    }
+    else
+    {
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Appointments</a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger mt-3">
+        <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
+    </div>
+}
+else if (Model.Submission != null)
+{
+    var sub = Model.Submission;
+    var isDass21 = sub.TestType == "DASS21";
+    
+    <div class="row g-4 mt-2">
+        <!-- Chart & Score Card -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">@sub.TestTitle</h5>
+                    
+                    @if (isDass21)
+                    {
+                        <!-- Depression Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Depression</strong>
+                                <span class="badge @GetDassBadgeClass(Model.DepressionScore, "Depression")">@Model.DepressionScore / 42 — @GetDassInterpretationText(Model.DepressionScore, "Depression")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.DepressionScore, "Depression")" role="progressbar" style="width: @(Model.DepressionScore * 100 / 42)%;" aria-valuenow="@Model.DepressionScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Measures feelings of reduced interest, discouragement, hopelessness and loss of motivation.</small>
+                        </div>
+
+                        <!-- Anxiety Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Anxiety</strong>
+                                <span class="badge @GetDassBadgeClass(Model.AnxietyScore, "Anxiety")">@Model.AnxietyScore / 42 — @GetDassInterpretationText(Model.AnxietyScore, "Anxiety")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.AnxietyScore, "Anxiety")" role="progressbar" style="width: @(Model.AnxietyScore * 100 / 42)%;" aria-valuenow="@Model.AnxietyScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Measures irrational fear responses, trembling, difficulty breathing and worry about panic situations.</small>
+                        </div>
+
+                        <!-- Stress Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>Stress</strong>
+                                <span class="badge @GetDassBadgeClass(Model.StressScore, "Stress")">@Model.StressScore / 42 — @GetDassInterpretationText(Model.StressScore, "Stress")</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetDassProgressBarClass(Model.StressScore, "Stress")" role="progressbar" style="width: @(Model.StressScore * 100 / 42)%;" aria-valuenow="@Model.StressScore" aria-valuemin="0" aria-valuemax="42"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Measures difficulty relaxing, irritability, impatience and tendency to overreact.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- PHQ-9 Score -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>PHQ-9 Depression Score</strong>
+                                <span class="badge @GetPhq9BadgeClass(sub.TotalScore)">@sub.TotalScore / 27 — @sub.Interpretation</span>
+                            </div>
+                            <div class="progress" style="height: 12px; border-radius: 6px;">
+                                <div class="progress-bar @GetPhq9ProgressBarClass(sub.TotalScore)" role="progressbar" style="width: @(sub.TotalScore * 100 / 27)%;" aria-valuenow="@sub.TotalScore" aria-valuemin="0" aria-valuemax="27"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Patient Health Questionnaire measuring the severity of depressive symptoms over the past 2 weeks.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Interpretation & Next Steps -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="mb-0"><i class="bi bi-shield-heart text-danger me-2"></i>Results Interpretation</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-3">Based on your responses, the system has assessed your current emotional state:</p>
+                    <div class="alert alert-secondary border-0 p-3 mb-4 text-center fs-5 fw-bold" style="border-radius:12px; background:#f0f2f5;">
+                        @sub.Interpretation
+                    </div>
+
+                    <h6>MindBridge Recommendations:</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2 text-muted small mt-2">
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>These results are based on self-reported answers and do not replace an in-depth medical diagnosis.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>Please share these results with your psychologist during your upcoming consultation to help guide more accurate therapy.</li>
+                        <li><i class="bi bi-circle-fill text-primary me-2" style="font-size:0.5rem; vertical-align:middle;"></i>If your scores are at the <strong>Severe or Very Severe</strong> level, we strongly recommend booking a consultation as soon as possible for timely professional support.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                @if (sub.AppointmentId != null)
+                {
+                    <a asp-page="/Patient/Appointments/Details" asp-route-id="@sub.AppointmentId.Value" class="btn btn-primary btn-lg"><i class="bi bi-calendar-check me-2"></i>Back to Appointment Details</a>
+                }
+                else
+                {
+                    <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-lg"><i class="bi bi-list-check me-2"></i>View Appointments</a>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    private string GetDassInterpretationText(int score, string category)
+    {
+        if (category == "Depression")
+        {
+            if (score <= 9) return "Normal";
+            if (score <= 13) return "Mild";
+            if (score <= 20) return "Moderate";
+            if (score <= 27) return "Severe";
+            return "Very Severe";
+        }
+        else if (category == "Anxiety")
+        {
+            if (score <= 7) return "Normal";
+            if (score <= 9) return "Mild";
+            if (score <= 14) return "Moderate";
+            if (score <= 19) return "Severe";
+            return "Very Severe";
+        }
+        else // Stress
+        {
+            if (score <= 14) return "Normal";
+            if (score <= 18) return "Mild";
+            if (score <= 25) return "Moderate";
+            if (score <= 33) return "Severe";
+            return "Very Severe";
+        }
+    }
+
+    private string GetDassBadgeClass(int score, string category)
+    {
+        var interpretation = GetDassInterpretationText(score, category);
+        return interpretation switch
+        {
+            "Normal" => "bg-success-subtle text-success",
+            "Mild" => "bg-info-subtle text-info",
+            "Moderate" => "bg-warning-subtle text-warning",
+            "Severe" => "bg-danger-subtle text-danger",
+            "Very Severe" => "bg-danger text-white",
+            _ => "bg-secondary-subtle text-secondary"
+        };
+    }
+
+    private string GetDassProgressBarClass(int score, string category)
+    {
+        var interpretation = GetDassInterpretationText(score, category);
+        return interpretation switch
+        {
+            "Normal" => "bg-success",
+            "Mild" => "bg-info",
+            "Moderate" => "bg-warning",
+            "Severe" => "bg-danger",
+            "Very Severe" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetPhq9BadgeClass(int score)
+    {
+        if (score <= 4) return "bg-success-subtle text-success";
+        if (score <= 9) return "bg-info-subtle text-info";
+        if (score <= 14) return "bg-warning-subtle text-warning";
+        return "bg-danger-subtle text-danger";
+    }
+
+    private string GetPhq9ProgressBarClass(int score)
+    {
+        if (score <= 4) return "bg-success";
+        if (score <= 9) return "bg-info";
+        if (score <= 14) return "bg-warning";
+        return "bg-danger";
+    }
+}

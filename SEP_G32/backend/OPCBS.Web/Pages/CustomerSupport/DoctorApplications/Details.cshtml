@@ -1,146 +1,306 @@
 @page "{id:guid}"
 @model OPCBS.Web.Pages.CustomerSupport.DoctorApplications.DetailsModel
 @{
-    ViewData["Title"] = "Application Review";
-    ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = "Practitioner Verification Review";
+    Layout = "_DashboardLayout";
 }
 
+<style>
+    .vf-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .vf-status { display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+    .vf-status.submitted { background: #fef3c7; color: #92400e; }
+    .vf-status.requiresadditionalinfo { background: #e0f2fe; color: #0369a1; }
+    .vf-status.approved { background: #dcfce7; color: #15803d; }
+    .vf-status.rejected { background: #fee2e2; color: #991b1b; }
+</style>
+
 @{ var suc = TempData["Success"] as string; }
-@if (suc != null) { <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-1"></i>@suc<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-@if (Model.Error != null) { <div class="alert alert-warning alert-dismissible fade show"><i class="bi bi-exclamation-triangle me-1"></i>@Model.Error<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+@if (suc != null) { <div class="alert alert-success alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;"><i class="bi bi-check-circle-fill me-2"></i>@suc<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button></div> }
+@if (Model.Error != null) { <div class="alert alert-danger alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;"><i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button></div> }
 
 @if (Model.Application == null)
 {
     <div class="mb-page-header"><h1>Application Not Found</h1></div>
-    <div class="text-center py-5 text-muted"><i class="bi bi-person-x d-block mb-2" style="font-size:3rem;"></i><p>This application could not be found.</p><a asp-page="Index" class="btn btn-primary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+    <div class="text-center py-5 text-muted"><i class="bi bi-person-x d-block mb-2" style="font-size:3rem;"></i><p>This application could not be found.</p><a asp-page="Index" class="btn btn-primary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
     return;
 }
 
-@{ var app = Model.Application; var isPending = app.Status?.Equals("Pending", StringComparison.OrdinalIgnoreCase) == true; }
+@{
+    var app = Model.Application;
+    var isPending = string.Equals(app.Status, "Submitted", StringComparison.OrdinalIgnoreCase) || string.Equals(app.Status, "Pending", StringComparison.OrdinalIgnoreCase) || string.Equals(app.Status, "RequiresAdditionalInfo", StringComparison.OrdinalIgnoreCase);
+    var statusClass = app.Status?.ToLower() switch {
+        "submitted" or "pending" => "submitted",
+        "requiresadditionalinfo" => "requiresadditionalinfo",
+        "approved" => "approved",
+        "rejected" => "rejected",
+        _ => "submitted"
+    };
+    var displayStatus = app.Status?.ToLower() switch {
+        "submitted" or "pending" => "Pending Review",
+        "requiresadditionalinfo" => "Additional Info Requested",
+        "approved" => "Approved",
+        "rejected" => "Rejected",
+        _ => app.Status ?? "Unknown"
+    };
+    var initials = app.DoctorName?.Split(' ').Where(w => w.Length > 0).Select(w => w[0]).Take(2).Aggregate("", (a, c) => a + c).ToUpper() ?? "?";
+}
 
-<div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div class="d-flex align-items-center gap-3">
-        <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
-        <h1 class="mb-0"><i class="bi bi-person-check me-2" style="color:var(--mb-primary);"></i>Application Review</h1>
+<!-- Back Navigation -->
+<div class="mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" style="border-radius:6px; font-size:0.8rem;">
+        <i class="bi bi-arrow-left"></i> Back to Verification Queue
+    </a>
+</div>
+
+<!-- Profile Header Card -->
+<div class="vf-card p-4 mb-4 text-center">
+    <div class="d-flex justify-content-center mb-3">
+        @if (!string.IsNullOrEmpty(app.AvatarUrl))
+        {
+            <img src="@app.AvatarUrl" class="rounded-circle border shadow-sm" style="width:84px;height:84px;object-fit:cover;" alt="@app.DoctorName" />
+        }
+        else
+        {
+            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" style="width:84px;height:84px;background:var(--mb-primary);font-size:1.6rem;">
+                @initials
+            </div>
+        }
     </div>
-    @{
-        var badgeClass = app.Status?.ToLower() switch { "pending" => "bg-warning text-dark", "approved" => "bg-success", "rejected" => "bg-danger", _ => "bg-secondary" };
-    }
-    <span class="badge @badgeClass fs-6">@(app.Status ?? "Pending")</span>
+    <h3 class="fw-bold mb-1" style="font-size:1.3rem;">@(app.DoctorName ?? "Unknown Doctor")</h3>
+    <p class="text-muted mb-2" style="font-size:0.85rem;">@(app.Specialization ?? "Practitioner") • @app.ExperienceYears years experience</p>
+    <span class="vf-status @statusClass">@displayStatus</span>
 </div>
 
 <div class="row g-4">
-    <!-- Doctor Info -->
+    <!-- Left Column: Details & Certificate Evidence -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-person me-1"></i>Doctor Information</h6></div>
-            <div class="card-body">
-                <div class="row g-3">
+        <!-- Personal & License Info -->
+        <div class="vf-card mb-4">
+            <div class="p-3 border-bottom bg-light">
+                <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-person-vcard me-1 text-primary"></i>Practitioner Information
+                </h6>
+            </div>
+            <div class="p-3">
+                <div class="row g-3" style="font-size:0.85rem;">
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Full Name</label>
-                        <p class="fw-semibold mb-2">@(app.DoctorName ?? "—")</p>
+                        <div class="text-muted small">Full Name</div>
+                        <div class="fw-semibold text-dark">@(app.DoctorName ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Specialization</label>
-                        <p class="fw-semibold mb-2">@(app.Specialization ?? "—")</p>
+                        <div class="text-muted small">Specialization / Title</div>
+                        <div class="fw-semibold text-dark">@(app.Specialization ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">License Number</label>
-                        <p class="fw-semibold mb-2"><code>@(app.LicenseNumber ?? "—")</code></p>
+                        <div class="text-muted small">License Number</div>
+                        <div><code class="bg-light px-2 py-1 rounded text-dark" style="font-size:0.8rem;">@(app.LicenseNumber ?? "—")</code></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Experience</label>
-                        <p class="fw-semibold mb-2">@app.ExperienceYears years</p>
+                        <div class="text-muted small">Experience</div>
+                        <div class="fw-semibold text-dark">@app.ExperienceYears Years</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Education</label>
-                        <p class="fw-semibold mb-2">@(app.Education ?? "—")</p>
+                        <div class="text-muted small">Education / Degree</div>
+                        <div class="fw-semibold text-dark">@(app.Education ?? "—")</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-muted small mb-0">Submitted</label>
-                        <p class="fw-semibold mb-2">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        <div class="text-muted small">Submitted Date</div>
+                        <div class="fw-semibold text-dark">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
                     </div>
                 </div>
-
-                @if (!string.IsNullOrEmpty(app.Notes))
-                {
-                    <hr />
-                    <label class="form-label text-muted small mb-1">Notes</label>
-                    <p class="mb-0">@app.Notes</p>
-                }
-
-                @if (!string.IsNullOrEmpty(app.CertificateUrl))
-                {
-                    <hr />
-                    <label class="form-label text-muted small mb-1">Certificate / Documents</label>
-                    <div><a href="@app.CertificateUrl" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>View Document</a></div>
-                }
             </div>
         </div>
 
+        <!-- Previously Approved Certificate Card (History) -->
+        @if (!string.IsNullOrEmpty(app.PreviousApprovedCertificateUrl))
+        {
+            var prevUrl = app.PreviousApprovedCertificateUrl;
+            var isPrevImg = prevUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || prevUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || prevUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || prevUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+
+            <div class="vf-card mb-4 border-success">
+                <div class="p-3 border-bottom bg-success bg-opacity-10 d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small text-success"><i class="bi bi-shield-check me-1"></i>Previously Approved Certificate</span>
+                    <span class="badge bg-success text-white small">Approved Record</span>
+                </div>
+                <div class="p-3">
+                    @if (isPrevImg)
+                    {
+                        <div class="text-center mb-3">
+                            <img src="@prevUrl" alt="Previously Approved Certificate" class="img-fluid rounded border" style="max-height: 250px; cursor: pointer;" onclick="window.open(this.src, '_blank')" />
+                        </div>
+                    }
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                        <span class="text-muted small"><i class="bi bi-file-earmark-check text-success me-1"></i>@(app.PreviousApprovedCertificateFileName ?? "Approved Document")</span>
+                        <div class="d-flex gap-2">
+                            <a href="@prevUrl" target="_blank" class="btn btn-sm btn-outline-success" style="border-radius:6px; font-size:0.78rem;"><i class="bi bi-eye me-1"></i>View</a>
+                            <a href="@prevUrl" download class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.78rem;"><i class="bi bi-download me-1"></i>Download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Certificate Evidence Card -->
+        @if (!string.IsNullOrEmpty(app.CertificateUrl))
+        {
+            var certUrl = app.CertificateUrl;
+            var isImage = certUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || certUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || certUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || certUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) || certUrl.Contains("/image/upload/", StringComparison.OrdinalIgnoreCase);
+            var isPdf = certUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) || certUrl.Contains("/raw/upload/", StringComparison.OrdinalIgnoreCase);
+
+            <div class="vf-card mb-4">
+                <div class="p-3 border-bottom bg-light d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                        <i class="bi bi-file-earmark-medical me-1 text-primary"></i>Submitted Certificate Evidence
+                    </h6>
+                    @if (app.CertificateUploadedAt.HasValue)
+                    {
+                        <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Uploaded: @app.CertificateUploadedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    }
+                </div>
+                <div class="p-3">
+                    @if (isImage)
+                    {
+                        <div class="text-center mb-3">
+                            <img src="@certUrl" alt="Practitioner Certificate" class="img-fluid rounded border shadow-sm" style="max-height: 450px; cursor: pointer;" onclick="window.open(this.src, '_blank')" title="Click to view full size" />
+                        </div>
+                    }
+                    else if (isPdf)
+                    {
+                        <div class="ratio ratio-16x9 mb-3">
+                            <iframe src="@certUrl" title="Certificate PDF Document" class="rounded border"></iframe>
+                        </div>
+                    }
+
+                    <div class="p-3 bg-light rounded d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi @(isPdf ? "bi-file-earmark-pdf text-danger" : isImage ? "bi-file-earmark-image text-primary" : "bi-file-earmark-text text-secondary")" style="font-size:1.4rem;"></i>
+                            <div>
+                                <div class="fw-semibold small text-dark">@(app.CertificateFileName ?? "Practitioner License Certificate")</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Uploaded: @(app.CertificateUploadedAt?.ToString("dd/MM/yyyy HH:mm") ?? app.SubmittedAt.ToString("dd/MM/yyyy HH:mm"))</div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="@certUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:0.78rem;">
+                                <i class="bi bi-eye me-1"></i>Open Certificate
+                            </a>
+                            <a href="@certUrl" download class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.78rem;">
+                                <i class="bi bi-download me-1"></i>Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Rejection / Additional Info Reason History -->
         @if (!string.IsNullOrEmpty(app.RejectionReason))
         {
-            <div class="card border-0 shadow-sm mt-3 border-start border-danger border-3">
-                <div class="card-body">
-                    <label class="form-label text-danger small mb-1"><i class="bi bi-x-circle me-1"></i>Rejection Reason</label>
-                    <p class="mb-0">@app.RejectionReason</p>
+            <div class="vf-card mb-4 p-3 border-start border-warning border-4 bg-light">
+                <div class="fw-bold small text-dark mb-1">
+                    <i class="bi bi-info-circle me-1 text-warning"></i>Reviewer Note / Reason
                 </div>
+                <p class="mb-0 text-muted" style="font-size:0.85rem;">@app.RejectionReason</p>
             </div>
         }
     </div>
 
-    <!-- Review Actions -->
+    <!-- Right Column: Actions & Review Timeline -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clipboard-check me-1"></i>Review Actions</h6></div>
-            <div class="card-body">
+        <!-- Review Action Panel -->
+        <div class="vf-card mb-4">
+            <div class="p-3 border-bottom bg-light">
+                <h6 class="mb-0 fw-bold small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-clipboard-check me-1 text-primary"></i>Review Action
+                </h6>
+            </div>
+            <div class="p-3">
                 @if (isPending)
                 {
-                    <!-- Approve -->
-                    <form method="post" asp-page-handler="Approve" asp-route-id="@app.Id" class="mb-3">
-                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this doctor application?')">
-                            <i class="bi bi-check-circle me-1"></i>Approve Application
+                    <!-- Action Buttons Tab / Segment -->
+                    <div class="d-grid gap-2 mb-3">
+                        <form method="post" asp-page-handler="Approve" asp-route-id="@app.Id">
+                            <button type="submit" class="btn btn-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1" style="border-radius:6px; font-weight:600;" onclick="return confirm('Approve this practitioner verification?')">
+                                <i class="bi bi-check-circle-fill me-1"></i> Approve Verification
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr />
+
+                    <!-- Request Additional Information -->
+                    <form method="post" asp-page-handler="RequestInfo" asp-route-id="@app.Id" class="mb-3">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Request Additional Info <span class="text-danger">*</span></label>
+                            <textarea asp-for="AdditionalInfoReason" class="form-control form-control-sm" rows="3" placeholder="Explain what additional documents or information are needed..." required style="font-size:0.82rem;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" style="border-radius:6px; font-weight:600;">
+                            <i class="bi bi-question-circle me-1"></i> Request Additional Info
                         </button>
                     </form>
 
-                    <!-- Reject -->
+                    <hr />
+
+                    <!-- Reject Application -->
                     <form method="post" asp-page-handler="Reject" asp-route-id="@app.Id">
                         <div class="mb-2">
-                            <label class="form-label small fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
-                            <textarea asp-for="RejectionReason" class="form-control" rows="3" placeholder="Provide a reason for rejection..." required></textarea>
+                            <label class="form-label small fw-semibold">Reject Application <span class="text-danger">*</span></label>
+                            <textarea asp-for="RejectionReason" class="form-control form-control-sm" rows="3" placeholder="Provide a reason for rejection..." required style="font-size:0.82rem;"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this application?')">
-                            <i class="bi bi-x-circle me-1"></i>Reject Application
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-1" style="border-radius:6px; font-weight:600;" onclick="return confirm('Reject this application?')">
+                            <i class="bi bi-x-circle me-1"></i> Reject Application
                         </button>
                     </form>
                 }
                 else
                 {
                     <div class="text-center py-3 text-muted">
-                        <i class="bi bi-check-all d-block mb-2" style="font-size:2rem;"></i>
-                        <p class="mb-1">This application has been <strong>@app.Status?.ToLower()</strong>.</p>
+                        <i class="bi bi-check-all d-block mb-2" style="font-size:2rem; color:var(--mb-primary);"></i>
+                        <p class="mb-1 small">Verification has been <strong>@displayStatus.ToLower()</strong>.</p>
                         @if (app.ReviewedAt.HasValue)
                         {
-                            <small class="text-muted">Reviewed on @app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                            <small class="d-block text-muted" style="font-size:0.75rem;">Reviewed on @app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                        }
+                        @if (!string.IsNullOrEmpty(app.ReviewedByName))
+                        {
+                            <small class="d-block text-muted" style="font-size:0.75rem;">Reviewed by @app.ReviewedByName</small>
                         }
                     </div>
                 }
             </div>
         </div>
 
-        <!-- Timeline -->
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-white"><h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Timeline</h6></div>
-            <div class="card-body">
+        <!-- Verification Timeline -->
+        <div class="vf-card">
+            <div class="p-3 border-bottom bg-light">
+                <h6 class="mb-0 fw-bold small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-clock-history me-1 text-primary"></i>Verification Timeline
+                </h6>
+            </div>
+            <div class="p-3" style="font-size:0.82rem;">
                 <div class="d-flex gap-2 mb-3">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi bi-send text-white" style="font-size:0.7rem;"></i></div>
-                    <div><small class="fw-semibold">Submitted</small><small class="text-muted d-block">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</small></div>
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:26px;height:26px;min-width:26px;font-size:0.7rem;">
+                        <i class="bi bi-send"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-dark">Application Submitted</div>
+                        <div class="text-muted small">@app.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
                 </div>
+
                 @if (app.ReviewedAt.HasValue)
                 {
                     <div class="d-flex gap-2">
-                        <div class="rounded-circle @(app.Status == "Approved" ? "bg-success" : "bg-danger") d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;"><i class="bi @(app.Status == "Approved" ? "bi-check" : "bi-x") text-white" style="font-size:0.7rem;"></i></div>
-                        <div><small class="fw-semibold">@(app.Status ?? "Reviewed")</small><small class="text-muted d-block">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</small></div>
+                        <div class="rounded-circle @(app.Status == "Approved" ? "bg-success" : app.Status == "RequiresAdditionalInfo" ? "bg-info" : "bg-danger") text-white d-flex align-items-center justify-content-center" style="width:26px;height:26px;min-width:26px;font-size:0.7rem;">
+                            <i class="bi @(app.Status == "Approved" ? "bi-check-lg" : app.Status == "RequiresAdditionalInfo" ? "bi-question" : "bi-x-lg")"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold text-dark">@displayStatus</div>
+                            <div class="text-muted small">@app.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                            @if (!string.IsNullOrEmpty(app.ReviewedByName))
+                            {
+                                <div class="text-muted small">By: @app.ReviewedByName</div>
+                            }
+                        </div>
                     </div>
                 }
             </div>

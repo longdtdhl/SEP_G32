@@ -39,8 +39,10 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ITherapyAssignmentService, TherapyAssignmentService>();
         services.AddScoped<IEmotionJournalService, EmotionJournalService>();
         services.AddScoped<IFavoriteDoctorService, FavoriteDoctorService>();
+        services.AddScoped<IFavoriteDoctorNotificationService, FavoriteDoctorNotificationService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<ITreatmentCaseService, TreatmentCaseService>();
+        services.AddScoped<IViolationReportService, ViolationReportService>();
 
         return services;
     }

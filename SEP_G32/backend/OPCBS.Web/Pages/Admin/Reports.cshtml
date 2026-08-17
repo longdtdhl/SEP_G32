@@ -1,94 +1,76 @@
 @page
 @model OPCBS.Web.Pages.Admin.ReportsModel
 @{
-    ViewData["Title"] = "Reports";
-    ViewData["UseDashboardLayout"] = true;
+    ViewData["Title"] = "System Reports & Data Export";
+    Layout = "_DashboardLayout";
 }
 
-<div class="mb-page-header">
-    <h1><i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--mb-primary);"></i>Reports</h1>
-</div>
+<style>
+    .adm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+</style>
 
-<div class="row g-4">
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(78,139,112,0.1);">
-                    <i class="bi bi-people fs-3" style="color:var(--mb-primary);"></i>
-                </div>
-                <h6 class="fw-bold">User Report</h6>
-                <p class="text-muted small mb-3">Overview of all registered users, roles, and account status.</p>
-                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
-                <!-- TODO: Implement user report export -->
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(99,102,241,0.1);">
-                    <i class="bi bi-calendar-check fs-3" style="color:#6366f1;"></i>
-                </div>
-                <h6 class="fw-bold">Appointment Report</h6>
-                <p class="text-muted small mb-3">Statistics on appointments, completion rates, and scheduling patterns.</p>
-                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
-                <!-- TODO: Implement appointment report export -->
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(16,185,129,0.1);">
-                    <i class="bi bi-currency-dollar fs-3 text-success"></i>
-                </div>
-                <h6 class="fw-bold">Revenue Report</h6>
-                <p class="text-muted small mb-3">Subscription revenue, payment history, and financial overview.</p>
-                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
-                <!-- TODO: Implement revenue report export -->
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(245,158,11,0.1);">
-                    <i class="bi bi-journal-text fs-3 text-warning"></i>
-                </div>
-                <h6 class="fw-bold">Audit Report</h6>
-                <p class="text-muted small mb-3">System activity logs, security events, and admin actions.</p>
-                <a asp-page="AuditLogs/Index" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>View Logs</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(236,72,153,0.1);">
-                    <i class="bi bi-heart-pulse fs-3" style="color:#ec4899;"></i>
-                </div>
-                <h6 class="fw-bold">Doctor Performance</h6>
-                <p class="text-muted small mb-3">Ratings, consultation counts, and doctor engagement metrics.</p>
-                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
-                <!-- TODO: Implement doctor performance report -->
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(59,130,246,0.1);">
-                    <i class="bi bi-graph-up fs-3" style="color:#3b82f6;"></i>
-                </div>
-                <h6 class="fw-bold">Platform Analytics</h6>
-                <p class="text-muted small mb-3">Usage trends, growth metrics, and platform health indicators.</p>
-                <button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-bar-chart me-1"></i>View Analytics</button>
-                <!-- TODO: Implement platform analytics -->
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
+            <i class="bi bi-file-earmark-bar-graph-fill me-2" style="color:var(--mb-primary);"></i>System Reports & Data Export
+        </h1>
+        <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Generate operational summaries and export system datasets to CSV</p>
     </div>
 </div>
 
-<div class="mt-4 text-muted small">
-    <i class="bi bi-info-circle me-1"></i>Export and analytics features are coming soon. Currently only audit logs are viewable.
+@if (Model.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" style="border-radius:8px; font-size:0.85rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-3">
+    <!-- User Directory Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="adm-card h-100 p-4 text-center">
+            <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(78,139,112,0.1);">
+                <i class="bi bi-people fs-3" style="color:var(--mb-primary);"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">User Account Directory</h6>
+            <p class="text-muted small mb-3">Export full list of registered accounts, role assignments, and verification statuses.</p>
+            <a asp-page-handler="ExportUsers" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:0.8rem; font-weight:600;">
+                <i class="bi bi-download me-1"></i> Export Users (CSV)
+            </a>
+        </div>
+    </div>
+
+    <!-- Audit Log Activity Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="adm-card h-100 p-4 text-center">
+            <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(245,158,11,0.1);">
+                <i class="bi bi-journal-text fs-3 text-warning"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">System Audit Trail</h6>
+            <p class="text-muted small mb-3">Export immutable audit log events, administrative actions, and IP activity.</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a asp-page-handler="ExportAuditLogs" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:0.8rem; font-weight:600;">
+                    <i class="bi bi-download me-1"></i> Export Logs
+                </a>
+                <a asp-page="AuditLogs/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.8rem;">
+                    <i class="bi bi-eye me-1"></i> View Grid
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Roles Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="adm-card h-100 p-4 text-center">
+            <div class="rounded-3 p-3 d-inline-flex mb-3" style="background:rgba(99,102,241,0.1);">
+                <i class="bi bi-shield-check fs-3" style="color:#6366f1;"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">Role Matrix Directory</h6>
+            <p class="text-muted small mb-3">Export list of configured system roles and active user distribution.</p>
+            <a asp-page-handler="ExportRoles" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:0.8rem; font-weight:600;">
+                <i class="bi bi-download me-1"></i> Export Roles (CSV)
+            </a>
+        </div>
+    </div>
 </div>
