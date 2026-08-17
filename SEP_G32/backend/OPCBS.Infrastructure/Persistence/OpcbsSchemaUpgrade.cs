@@ -22,14 +22,6 @@ public static class OpcbsSchemaUpgrade
                 );
             END
 
-            IF OBJECT_ID(N'[Permissions]', N'U') IS NOT NULL
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20260806092731_NormalizeTreatmentRelationships')
-                    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20260806092731_NormalizeTreatmentRelationships', N'8.0.0');
-                IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20260812071000_AddAppointmentGuestZaloNumber')
-                    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20260812071000_AddAppointmentGuestZaloNumber', N'8.0.0');
-            END
-
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationTokenHash') IS NULL
                 ALTER TABLE [Appointments] ADD [GuestConfirmationTokenHash] nvarchar(64) NULL;
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationLastSentAt') IS NULL

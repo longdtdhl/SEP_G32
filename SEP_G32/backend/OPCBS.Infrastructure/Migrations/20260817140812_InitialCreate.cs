@@ -6,11 +6,66 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace OPCBS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class NormalizeTreatmentRelationships : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AppointmentCompletionConfirmations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReminderDueAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EscalationDueAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReminderSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LockedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DoctorNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    GuestEmail = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    GuestTokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    DisputedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DisputeReason = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppointmentCompletionConfirmations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CustomClinicalFields",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnerType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SectionKey = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", maxLength: 5000, nullable: true),
+                    FieldType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    OrderIndex = table.Column<int>(type: "int", nullable: false),
+                    CreatedByDoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomClinicalFields", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Permissions",
                 columns: table => new
@@ -132,6 +187,38 @@ namespace OPCBS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ViolationReports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ReporterUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ReportedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Source = table.Column<int>(type: "int", nullable: false),
+                    ReasonCategory = table.Column<int>(type: "int", nullable: false),
+                    ReasonDetail = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    RelatedAppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RelatedTreatmentCaseId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CustomerSupportUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CustomerSupportNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    WarningIssuedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    WarningNumber = table.Column<int>(type: "int", nullable: false),
+                    EscalatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AdminUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AdminNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ViolationReports", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PsychometricQuestions",
                 columns: table => new
                 {
@@ -218,6 +305,35 @@ namespace OPCBS.Infrastructure.Migrations
                         principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ViolationReportEvidences",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ViolationReportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    PublicId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    FileSizeBytes = table.Column<long>(type: "bigint", nullable: false),
+                    UploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ViolationReportEvidences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ViolationReportEvidences_ViolationReports_ViolationReportId",
+                        column: x => x.ViolationReportId,
+                        principalTable: "ViolationReports",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -384,10 +500,14 @@ namespace OPCBS.Infrastructure.Migrations
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
+                    ConsultationMode = table.Column<int>(type: "int", nullable: false),
+                    PreAppointmentNoteTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsPreAppointmentNoteRequired = table.Column<bool>(type: "bit", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MaxPatients = table.Column<int>(type: "int", nullable: false),
                     CurrentBookings = table.Column<int>(type: "int", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -575,6 +695,7 @@ namespace OPCBS.Infrastructure.Migrations
                     SlotDuration = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     SlotsPerDay = table.Column<int>(type: "int", nullable: false),
+                    ConsultationMode = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -714,6 +835,9 @@ namespace OPCBS.Infrastructure.Migrations
                     AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActiveDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CancellationRequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CancellationRequestedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CancellationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -869,6 +993,12 @@ namespace OPCBS.Infrastructure.Migrations
                     GuestName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     GuestEmail = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     GuestPhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    GuestZaloNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    GuestConfirmationTokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    GuestConfirmationLastSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GuestConfirmationSendCount = table.Column<int>(type: "int", nullable: false),
+                    GuestConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GuestActionTokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Symptoms = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MedicalHistory = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -885,6 +1015,7 @@ namespace OPCBS.Infrastructure.Migrations
                     ProposedSlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RescheduleReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AppointmentDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConsultationMode = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1005,18 +1136,69 @@ namespace OPCBS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ScheduleNotes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppointmentSlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    NoteDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    StartTime = table.Column<TimeOnly>(type: "time", nullable: true),
+                    EndTime = table.Column<TimeOnly>(type: "time", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    TreatmentCaseId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduleNotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ScheduleNotes_AppointmentSlots_AppointmentSlotId",
+                        column: x => x.AppointmentSlotId,
+                        principalTable: "AppointmentSlots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ScheduleNotes_DoctorProfiles_DoctorProfileId",
+                        column: x => x.DoctorProfileId,
+                        principalTable: "DoctorProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ScheduleNotes_PatientProfiles_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "PatientProfiles",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ScheduleNotes_TreatmentCases_TreatmentCaseId",
+                        column: x => x.TreatmentCaseId,
+                        principalTable: "TreatmentCases",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TreatmentGoals",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TreatmentCaseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedByDoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Category = table.Column<int>(type: "int", nullable: false),
                     Priority = table.Column<int>(type: "int", nullable: false),
+                    OrderIndex = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ProgressPercent = table.Column<int>(type: "int", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TargetValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     CurrentValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Unit = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -1049,6 +1231,8 @@ namespace OPCBS.Infrastructure.Migrations
                     PreviousStatus = table.Column<int>(type: "int", nullable: true),
                     NewStatus = table.Column<int>(type: "int", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ChangedByRole = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -1077,6 +1261,8 @@ namespace OPCBS.Infrastructure.Migrations
                     FollowUpNotes = table.Column<string>(type: "nvarchar(max)", maxLength: 5000, nullable: true),
                     TherapyPlan = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     NextAppointmentRecommendedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    NextAppointmentRecommendedSlotId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    FollowUpAppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ConsultationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Visibility = table.Column<int>(type: "int", nullable: false),
                     IsPatientConfirmed = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
@@ -1084,7 +1270,6 @@ namespace OPCBS.Infrastructure.Migrations
                     PatientConfirmedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LastEditedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastEditedByDoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    DoctorProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PatientProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1096,22 +1281,29 @@ namespace OPCBS.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_ConsultationNotes", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_ConsultationNotes_AppointmentSlots_NextAppointmentRecommendedSlotId",
+                        column: x => x.NextAppointmentRecommendedSlotId,
+                        principalTable: "AppointmentSlots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
                         name: "FK_ConsultationNotes_Appointments_AppointmentId",
                         column: x => x.AppointmentId,
                         principalTable: "Appointments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ConsultationNotes_Appointments_FollowUpAppointmentId",
+                        column: x => x.FollowUpAppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_ConsultationNotes_DoctorProfiles_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "DoctorProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ConsultationNotes_DoctorProfiles_DoctorProfileId",
-                        column: x => x.DoctorProfileId,
-                        principalTable: "DoctorProfiles",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ConsultationNotes_PatientProfiles_PatientProfileId",
                         column: x => x.PatientProfileId,
@@ -1122,7 +1314,7 @@ namespace OPCBS.Infrastructure.Migrations
                         column: x => x.PatientRecordId,
                         principalTable: "PatientRecords",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1302,6 +1494,69 @@ namespace OPCBS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GoalDetails",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GoalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Objective = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ExpectedOutcome = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    OrderIndex = table.Column<int>(type: "int", nullable: false),
+                    ProgressPercent = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    EstimatedSessions = table.Column<int>(type: "int", nullable: true),
+                    CompletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GoalDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GoalDetails_TreatmentGoals_GoalId",
+                        column: x => x.GoalId,
+                        principalTable: "TreatmentGoals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GoalSuccessCriteria",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GoalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CriteriaType = table.Column<int>(type: "int", nullable: false),
+                    DataSource = table.Column<int>(type: "int", nullable: false),
+                    Operator = table.Column<int>(type: "int", nullable: false),
+                    TargetValue = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    CurrentValue = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    Weight = table.Column<decimal>(type: "decimal(8,2)", precision: 8, scale: 2, nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GoalSuccessCriteria", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GoalSuccessCriteria_TreatmentGoals_GoalId",
+                        column: x => x.GoalId,
+                        principalTable: "TreatmentGoals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
@@ -1410,6 +1665,7 @@ namespace OPCBS.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GoalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TreatmentSessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    GoalDetailId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ProgressPercent = table.Column<int>(type: "int", nullable: false),
                     CurrentValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     DoctorComment = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -1423,6 +1679,12 @@ namespace OPCBS.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TreatmentGoalProgresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TreatmentGoalProgresses_GoalDetails_GoalDetailId",
+                        column: x => x.GoalDetailId,
+                        principalTable: "GoalDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_TreatmentGoalProgresses_TreatmentGoals_GoalId",
                         column: x => x.GoalId,
@@ -1441,16 +1703,24 @@ namespace OPCBS.Infrastructure.Migrations
                 name: "TreatmentSessionGoals",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TreatmentSessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TreatmentGoalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    GoalDetailId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderIndex = table.Column<int>(type: "int", nullable: false),
+                    PlannedActivity = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TreatmentSessionGoals", x => new { x.TreatmentSessionId, x.TreatmentGoalId });
+                    table.PrimaryKey("PK_TreatmentSessionGoals", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TreatmentSessionGoals_TreatmentGoals_TreatmentGoalId",
-                        column: x => x.TreatmentGoalId,
-                        principalTable: "TreatmentGoals",
+                        name: "FK_TreatmentSessionGoals_GoalDetails_GoalDetailId",
+                        column: x => x.GoalDetailId,
+                        principalTable: "GoalDetails",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1461,6 +1731,48 @@ namespace OPCBS.Infrastructure.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "SuccessCriteriaEvaluations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SuccessCriteriaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TreatmentSessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CurrentValue = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    IsPassed = table.Column<bool>(type: "bit", nullable: false),
+                    EvaluatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EvaluatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SuccessCriteriaEvaluations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SuccessCriteriaEvaluations_GoalSuccessCriteria_SuccessCriteriaId",
+                        column: x => x.SuccessCriteriaId,
+                        principalTable: "GoalSuccessCriteria",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SuccessCriteriaEvaluations_TreatmentSessions_TreatmentSessionId",
+                        column: x => x.TreatmentSessionId,
+                        principalTable: "TreatmentSessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentCompletionConfirmations_AppointmentId",
+                table: "AppointmentCompletionConfirmations",
+                column: "AppointmentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentCompletionConfirmations_Status_ReminderDueAt",
+                table: "AppointmentCompletionConfirmations",
+                columns: new[] { "Status", "ReminderDueAt" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AppointmentHistories_AppointmentId",
                 table: "AppointmentHistories",
@@ -1469,8 +1781,7 @@ namespace OPCBS.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_AppointmentSlotId",
                 table: "Appointments",
-                column: "AppointmentSlotId",
-                unique: true);
+                column: "AppointmentSlotId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_BookingCode",
@@ -1553,9 +1864,14 @@ namespace OPCBS.Infrastructure.Migrations
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConsultationNotes_DoctorProfileId",
+                name: "IX_ConsultationNotes_FollowUpAppointmentId",
                 table: "ConsultationNotes",
-                column: "DoctorProfileId");
+                column: "FollowUpAppointmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConsultationNotes_NextAppointmentRecommendedSlotId",
+                table: "ConsultationNotes",
+                column: "NextAppointmentRecommendedSlotId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConsultationNotes_PatientProfileId",
@@ -1586,6 +1902,16 @@ namespace OPCBS.Infrastructure.Migrations
                 name: "IX_Conversations_TreatmentPackageId",
                 table: "Conversations",
                 column: "TreatmentPackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomClinicalFields_OwnerId_SectionKey_OrderIndex",
+                table: "CustomClinicalFields",
+                columns: new[] { "OwnerId", "SectionKey", "OrderIndex" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomClinicalFields_OwnerType_OwnerId",
+                table: "CustomClinicalFields",
+                columns: new[] { "OwnerType", "OwnerId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_DoctorDayOffs_DoctorProfileId",
@@ -1633,6 +1959,16 @@ namespace OPCBS.Infrastructure.Migrations
                 table: "FavoriteDoctors",
                 columns: new[] { "PatientId", "DoctorId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GoalDetails_GoalId_OrderIndex",
+                table: "GoalDetails",
+                columns: new[] { "GoalId", "OrderIndex" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GoalSuccessCriteria_GoalId",
+                table: "GoalSuccessCriteria",
+                column: "GoalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_ConversationId",
@@ -1767,6 +2103,26 @@ namespace OPCBS.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ScheduleNotes_AppointmentSlotId",
+                table: "ScheduleNotes",
+                column: "AppointmentSlotId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduleNotes_DoctorProfileId_NoteDate",
+                table: "ScheduleNotes",
+                columns: new[] { "DoctorProfileId", "NoteDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduleNotes_PatientId",
+                table: "ScheduleNotes",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduleNotes_TreatmentCaseId",
+                table: "ScheduleNotes",
+                column: "TreatmentCaseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Schedules_DoctorProfileId",
                 table: "Schedules",
                 column: "DoctorProfileId");
@@ -1782,6 +2138,16 @@ namespace OPCBS.Infrastructure.Migrations
                 table: "Specializations",
                 column: "Name",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SuccessCriteriaEvaluations_SuccessCriteriaId_EvaluatedAt",
+                table: "SuccessCriteriaEvaluations",
+                columns: new[] { "SuccessCriteriaId", "EvaluatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SuccessCriteriaEvaluations_TreatmentSessionId",
+                table: "SuccessCriteriaEvaluations",
+                column: "TreatmentSessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SystemConfigs_Key",
@@ -1820,6 +2186,11 @@ namespace OPCBS.Infrastructure.Migrations
                 column: "TreatmentPackageId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TreatmentGoalProgresses_GoalDetailId",
+                table: "TreatmentGoalProgresses",
+                column: "GoalDetailId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TreatmentGoalProgresses_GoalId",
                 table: "TreatmentGoalProgresses",
                 column: "GoalId");
@@ -1845,9 +2216,15 @@ namespace OPCBS.Infrastructure.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TreatmentSessionGoals_TreatmentGoalId",
+                name: "IX_TreatmentSessionGoals_GoalDetailId",
                 table: "TreatmentSessionGoals",
-                column: "TreatmentGoalId");
+                column: "GoalDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TreatmentSessionGoals_TreatmentSessionId_GoalDetailId",
+                table: "TreatmentSessionGoals",
+                columns: new[] { "TreatmentSessionId", "GoalDetailId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TreatmentSessions_AppointmentId",
@@ -1889,11 +2266,34 @@ namespace OPCBS.Infrastructure.Migrations
                 name: "IX_VerificationRequests_DoctorProfileId",
                 table: "VerificationRequests",
                 column: "DoctorProfileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ViolationReportEvidences_ViolationReportId",
+                table: "ViolationReportEvidences",
+                column: "ViolationReportId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ViolationReports_CreatedAt",
+                table: "ViolationReports",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ViolationReports_ReportedUserId_Status",
+                table: "ViolationReports",
+                columns: new[] { "ReportedUserId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ViolationReports_ReporterUserId_ReasonCategory_Status",
+                table: "ViolationReports",
+                columns: new[] { "ReporterUserId", "ReasonCategory", "Status" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AppointmentCompletionConfirmations");
+
             migrationBuilder.DropTable(
                 name: "AppointmentHistories");
 
@@ -1908,6 +2308,9 @@ namespace OPCBS.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "ConsultationNotes");
+
+            migrationBuilder.DropTable(
+                name: "CustomClinicalFields");
 
             migrationBuilder.DropTable(
                 name: "DoctorDayOffs");
@@ -1946,7 +2349,13 @@ namespace OPCBS.Infrastructure.Migrations
                 name: "RolePermissions");
 
             migrationBuilder.DropTable(
+                name: "ScheduleNotes");
+
+            migrationBuilder.DropTable(
                 name: "Schedules");
+
+            migrationBuilder.DropTable(
+                name: "SuccessCriteriaEvaluations");
 
             migrationBuilder.DropTable(
                 name: "SystemConfigs");
@@ -1962,6 +2371,9 @@ namespace OPCBS.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "VerificationRequests");
+
+            migrationBuilder.DropTable(
+                name: "ViolationReportEvidences");
 
             migrationBuilder.DropTable(
                 name: "BlogPosts");
@@ -1988,16 +2400,25 @@ namespace OPCBS.Infrastructure.Migrations
                 name: "Permissions");
 
             migrationBuilder.DropTable(
-                name: "TreatmentGoals");
+                name: "GoalSuccessCriteria");
+
+            migrationBuilder.DropTable(
+                name: "GoalDetails");
 
             migrationBuilder.DropTable(
                 name: "TreatmentSessions");
+
+            migrationBuilder.DropTable(
+                name: "ViolationReports");
 
             migrationBuilder.DropTable(
                 name: "ServicePackages");
 
             migrationBuilder.DropTable(
                 name: "PsychometricTests");
+
+            migrationBuilder.DropTable(
+                name: "TreatmentGoals");
 
             migrationBuilder.DropTable(
                 name: "Appointments");
