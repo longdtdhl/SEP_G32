@@ -134,7 +134,9 @@ public class DoctorService : IDoctorService
 
         return ApiResponse<List<DoctorProfileDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata
         {
-            Page = page, PageSize = pageSize, TotalItems = total
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
         });
     }
 
@@ -540,7 +542,7 @@ public class AppointmentService : IAppointmentService
                 slotDict.TryGetValue(a.AppointmentSlotId, out var s) &&
                 s.SlotDate == slot.SlotDate &&
                 s.StartTime == slot.StartTime);
-            
+
             if (hasOverlapTime)
                 return ApiResponse<AppointmentDto>.ErrorResponse("Bạn đã có một lịch hẹn khác trong khung giờ này.");
         }
@@ -568,7 +570,7 @@ public class AppointmentService : IAppointmentService
                 (p.Status == TreatmentPackageStatus.Active || p.Status == TreatmentPackageStatus.Accepted) &&
                 p.ExpirationDate > DateTime.UtcNow &&
                 p.RemainingSessions > 0);
-            
+
             if (treatmentPackage != null)
             {
                 dto.TreatmentPackageId = treatmentPackage.Id;
@@ -661,6 +663,7 @@ public class AppointmentService : IAppointmentService
             }
 
             await _apptRepo.AddAsync(appointment, ct);
+            await _uow.SaveChangesAsync(ct);
 
             if (linkedCase != null && _sessionRepo != null)
             {
@@ -680,8 +683,11 @@ public class AppointmentService : IAppointmentService
                     TreatmentCase = linkedCase
                 };
                 await _sessionRepo.AddAsync(session, ct);
+                await _uow.SaveChangesAsync(ct);
+
                 appointment.TreatmentSessionId = session.Id;
                 _apptRepo.Update(appointment);
+                await _uow.SaveChangesAsync(ct);
             }
 
             if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
@@ -1074,8 +1080,8 @@ public class AppointmentService : IAppointmentService
             var allDoctors = await _doctorRepo.GetAllAsync(ct);
             var allUsers = await _userRepo.GetAllAsync(ct);
             var docUsers = allDoctors.Join(allUsers, d => d.UserId, u => u.Id, (d, u) => new { DoctorId = d.Id, FullName = u.FullName }).ToList();
-            
-            myAppts = myAppts.Where(a => 
+
+            myAppts = myAppts.Where(a =>
                 (a.BookingCode != null && a.BookingCode.ToLower().Contains(searchLower)) ||
                 (a.Notes != null && a.Notes.ToLower().Contains(searchLower)) ||
                 docUsers.Any(d => d.DoctorId == a.DoctorId && d.FullName.ToLower().Contains(searchLower))
@@ -1368,8 +1374,12 @@ public class AppointmentService : IAppointmentService
             _slotRepo.Update(slot);
             await _historyRepo.AddAsync(new AppointmentHistory
             {
-                AppointmentId = appointment.Id, PreviousStatus = previousStatus, NewStatus = AppointmentStatus.Cancelled,
-                Reason = appointment.CancellationReason, ChangedByRole = "Guest", Appointment = appointment
+                AppointmentId = appointment.Id,
+                PreviousStatus = previousStatus,
+                NewStatus = AppointmentStatus.Cancelled,
+                Reason = appointment.CancellationReason,
+                ChangedByRole = "Guest",
+                Appointment = appointment
             }, ct);
             await _uow.SaveChangesAsync(ct);
             await _uow.CommitTransactionAsync(ct);
@@ -1943,10 +1953,10 @@ public class AppointmentService : IAppointmentService
 
 
     public async Task<ApiResponse<List<AppointmentListItemDto>>> GetDoctorAppointmentsAsync(
-        Guid doctorUserId, 
-        int page = 1, 
-        int pageSize = 10, 
-        string? status = null, 
+        Guid doctorUserId,
+        int page = 1,
+        int pageSize = 10,
+        string? status = null,
         string? search = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
@@ -1998,7 +2008,7 @@ public class AppointmentService : IAppointmentService
             var allUsers = await _userRepo.GetAllAsync(ct);
             var patientUsers = allPatients.Join(allUsers, p => p.UserId, u => u.Id, (p, u) => new { PatientId = p.Id, FullName = u.FullName }).ToList();
 
-            doctorAppts = doctorAppts.Where(a => 
+            doctorAppts = doctorAppts.Where(a =>
                 (a.BookingCode != null && a.BookingCode.ToLower().Contains(searchLower)) ||
                 (a.Notes != null && a.Notes.ToLower().Contains(searchLower)) ||
                 (a.GuestName != null && a.GuestName.ToLower().Contains(searchLower)) ||
@@ -2515,8 +2525,13 @@ public class AppointmentService : IAppointmentService
         await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Completed, ct);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
-            AppointmentId = appointmentId, PreviousStatus = prevStatus, NewStatus = AppointmentStatus.Completed,
-            Reason = "Confirmed by patient", ChangedByUserId = patientUserId, ChangedByRole = "Patient", Appointment = appointment
+            AppointmentId = appointmentId,
+            PreviousStatus = prevStatus,
+            NewStatus = AppointmentStatus.Completed,
+            Reason = "Confirmed by patient",
+            ChangedByUserId = patientUserId,
+            ChangedByRole = "Patient",
+            Appointment = appointment
         }, ct);
         await _uow.SaveChangesAsync(ct);
         if (appointment.TreatmentCaseId.HasValue && _treatmentCaseService != null)
@@ -2554,8 +2569,12 @@ public class AppointmentService : IAppointmentService
         await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Completed, ct);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
-            AppointmentId = appointment.Id, PreviousStatus = previousStatus, NewStatus = AppointmentStatus.Completed,
-            Reason = "Confirmed by guest", ChangedByRole = "Guest", Appointment = appointment
+            AppointmentId = appointment.Id,
+            PreviousStatus = previousStatus,
+            NewStatus = AppointmentStatus.Completed,
+            Reason = "Confirmed by guest",
+            ChangedByRole = "Guest",
+            Appointment = appointment
         }, ct);
         await _uow.SaveChangesAsync(ct);
         if (appointment.TreatmentCaseId.HasValue && _treatmentCaseService != null)
@@ -2613,8 +2632,13 @@ public class AppointmentService : IAppointmentService
         _completionConfirmationRepo!.Update(confirmation);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
-            AppointmentId = appointment.Id, PreviousStatus = previousStatus, NewStatus = AppointmentStatus.CompletionDisputed,
-            Reason = confirmation.DisputeReason, ChangedByUserId = actorUserId, ChangedByRole = actorRole, Appointment = appointment
+            AppointmentId = appointment.Id,
+            PreviousStatus = previousStatus,
+            NewStatus = AppointmentStatus.CompletionDisputed,
+            Reason = confirmation.DisputeReason,
+            ChangedByUserId = actorUserId,
+            ChangedByRole = actorRole,
+            Appointment = appointment
         }, ct);
         await _uow.SaveChangesAsync(ct);
         var doctor = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == appointment.DoctorId);
@@ -2718,9 +2742,13 @@ public class AppointmentService : IAppointmentService
         await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.NoShow, ct);
         await _historyRepo.AddAsync(new AppointmentHistory
         {
-            AppointmentId = appointmentId, PreviousStatus = prevStatus, NewStatus = AppointmentStatus.NoShow,
+            AppointmentId = appointmentId,
+            PreviousStatus = prevStatus,
+            NewStatus = AppointmentStatus.NoShow,
             Reason = string.IsNullOrWhiteSpace(reason) ? "Patient did not attend" : reason.Trim(),
-            ChangedByUserId = doctorUserId, ChangedByRole = "Doctor", Appointment = appointment
+            ChangedByUserId = doctorUserId,
+            ChangedByRole = "Doctor",
+            Appointment = appointment
         }, ct);
         await _uow.SaveChangesAsync(ct);
 
@@ -3003,7 +3031,7 @@ public class AppointmentService : IAppointmentService
                 )).OrderBy(a => a.AppointmentDate ?? a.CreatedAt).ToList();
 
                 var currentSession = sessions.FirstOrDefault(s => s.AppointmentId == appointmentId || (appt.TreatmentSessionId.HasValue && s.Id == appt.TreatmentSessionId.Value));
-                
+
                 int currentSessionNumber;
                 if (currentSession != null)
                 {
@@ -3197,12 +3225,12 @@ public class ScheduleService : IScheduleService
 
         // Load existing slots to avoid duplicates, and delete future available slots to sync with new schedule
         var allSlots = await _slotRepo.GetAllAsync(ct);
-        
+
         // Remove existing available slots from today onwards to regenerate them
         var futureAvailableSlots = allSlots
             .Where(s => s.DoctorProfileId == doctor.Id && s.SlotDate >= today && s.Status == AppointmentSlotStatus.Available)
             .ToList();
-            
+
         if (futureAvailableSlots.Count > 0)
         {
             _slotRepo.DeleteRange(futureAvailableSlots);
@@ -3572,7 +3600,7 @@ public class ScheduleService : IScheduleService
 
         if (!DateOnly.TryParse(dto.Date, out var slotDate))
             return ApiResponse<AppointmentSlotDto>.ErrorResponse("Invalid date format");
-            
+
         if (!TimeOnly.TryParse(dto.StartTime, out var startTime) || !TimeOnly.TryParse(dto.EndTime, out var endTime))
             return ApiResponse<AppointmentSlotDto>.ErrorResponse("Invalid time format");
 
@@ -3606,7 +3634,7 @@ public class ScheduleService : IScheduleService
             return ApiResponse<AppointmentSlotDto>.ErrorResponse(
                 $"Your active service package allows up to {dailySlotCapacity.Value} slot(s) per day.");
         }
-        
+
         foreach (var existing in existingSlots)
         {
             if (startTime < existing.EndTime && endTime > existing.StartTime)
@@ -4010,8 +4038,8 @@ public class ScheduleService : IScheduleService
             var patientName = patUser?.FullName ?? appt.GuestName ?? "Unknown patient";
             var apptStatus = appt.Status.ToString();
             var apptSlot = appt.AppointmentSlot ?? doctorSlots.FirstOrDefault(s => s.Id == appt.AppointmentSlotId) ?? allSlots.FirstOrDefault(s => s.Id == appt.AppointmentSlotId);
-            var apptDateStr = appt.AppointmentDate.HasValue 
-                ? appt.AppointmentDate.Value.ToString("yyyy-MM-dd") 
+            var apptDateStr = appt.AppointmentDate.HasValue
+                ? appt.AppointmentDate.Value.ToString("yyyy-MM-dd")
                 : (apptSlot != null ? apptSlot.SlotDate.ToString("yyyy-MM-dd") : startDate.ToString("yyyy-MM-dd"));
             var startTimeStr = apptSlot != null ? apptSlot.StartTime.ToString("HH\\:mm\\:ss") : "08:00:00";
             var endTimeStr = apptSlot != null ? apptSlot.EndTime.ToString("HH\\:mm\\:ss") : "09:00:00";

@@ -191,30 +191,53 @@
                         </div>
                     </div>
 
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="bi bi-calendar"></i>Expected Follow-up Date & Slot
-                        </div>
-                        <div class="row g-2 align-items-end mb-3">
-                            <div class="col-sm-7 col-md-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Select Follow-up Date</label>
-                                <input asp-for="Input.NextAppointmentRecommendedDate" id="createRecDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" onchange="loadCreateRecommendedSlots(this.value)" />
+                    @{
+                        bool isPackageNote = Model.SelectedAppointment?.TreatmentPackageId.HasValue == true
+                                          || Model.SelectedAppointment?.TreatmentCaseId.HasValue == true
+                                          || !string.IsNullOrWhiteSpace(Model.SelectedAppointment?.TreatmentPackageName);
+                    }
+
+                    @if (isPackageNote)
+                    {
+                        <div class="form-section">
+                            <div class="p-3 rounded-3 border" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="bi bi-box-seam text-teal" style="font-size:1.1rem; color:#0d9488;"></i>
+                                    <span class="fw-bold text-dark" style="font-size:0.88rem;">Treatment Package Active</span>
+                                </div>
+                                <p class="text-muted small mb-0">
+                                    This consultation is linked to a Treatment Package@(string.IsNullOrWhiteSpace(Model.SelectedAppointment?.TreatmentPackageName) ? "" : $" ({Model.SelectedAppointment.TreatmentPackageName})"). Subsequent therapy sessions are scheduled and managed through the Treatment Plan roadmap.
+                                </p>
                             </div>
-                            <div class="col-sm-5 col-md-4">
-                                <button type="button" class="btn btn-outline-primary w-100" style="border-radius:10px; border-color:#0d9488; color:#0d9488;" onclick="loadCreateRecommendedSlots(document.getElementById('createRecDateInput').value)">
-                                    <i class="bi bi-search me-1"></i>View Slots
-                                </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-calendar"></i>Expected Follow-up Date & Slot
+                            </div>
+                            <div class="row g-2 align-items-end mb-3">
+                                <div class="col-sm-7 col-md-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Select Follow-up Date</label>
+                                    <input asp-for="Input.NextAppointmentRecommendedDate" id="createRecDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" type="date" style="border-radius:10px;" onchange="loadCreateRecommendedSlots(this.value)" />
+                                </div>
+                                <div class="col-sm-5 col-md-4">
+                                    <button type="button" class="btn btn-outline-primary w-100" style="border-radius:10px; border-color:#0d9488; color:#0d9488;" onclick="loadCreateRecommendedSlots(document.getElementById('createRecDateInput').value)">
+                                        <i class="bi bi-search me-1"></i>View Slots
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="createRecSlotContainer" class="mb-2" style="display:none;">
+                                <label class="form-label small fw-bold text-dark mb-2" id="createRecSlotHeader">Available Time Slots for Follow-up</label>
+                                <div id="createRecSlotsGrid" class="row g-2"></div>
+                                <input type="hidden" asp-for="Input.NextAppointmentRecommendedSlotId" id="createRecSlotInput" />
+                            </div>
+                            <div id="createRecSlotMsg" class="form-text small text-muted mt-2">
+                                <i class="bi bi-info-circle me-1 text-primary"></i>Selecting a follow-up time slot will automatically create the follow-up appointment card for the patient.
                             </div>
                         </div>
-                        <div id="createRecSlotContainer" class="mb-2" style="display:none;">
-                            <label class="form-label small fw-bold text-dark mb-2" id="createRecSlotHeader">Available Time Slots for Follow-up</label>
-                            <div id="createRecSlotsGrid" class="row g-2"></div>
-                            <input type="hidden" asp-for="Input.NextAppointmentRecommendedSlotId" id="createRecSlotInput" />
-                        </div>
-                        <div id="createRecSlotMsg" class="form-text small text-muted mt-2">
-                            <i class="bi bi-info-circle me-1"></i>This saves a recommended follow-up slot for the patient. It does not automatically create an appointment.
-                        </div>
-                    </div>
+                    }
 
                     <!-- Consultation Date -->
                     <div class="form-section">

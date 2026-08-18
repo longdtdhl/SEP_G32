@@ -481,34 +481,90 @@
         </div>
     }
 
-    <!-- 5. Follow-up & Next Steps -->
+    <!-- 5. Follow-up Appointment & Guidance -->
     <div class="cnd-card">
-        <div class="cnd-card-header">
-            <h5 class="cnd-card-title">
-                <i class="bi bi-calendar-check" style="color:var(--mb-primary-teal);"></i>
-                Follow-up & Next Steps
+        <div class="cnd-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="cnd-card-title mb-0">
+                <i class="bi bi-calendar-check-fill" style="color:var(--mb-primary-teal);"></i>
+                Follow-up Appointment & Guidance
             </h5>
+            @if (r.FollowUpAppointmentId.HasValue)
+            {
+                <span class="badge rounded-pill px-3 py-1.5 fw-semibold" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:0.8rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Follow-up Scheduled
+                </span>
+            }
         </div>
         <div class="cnd-card-body">
-            @if (r.NextAppointmentRecommendedDate.HasValue || !string.IsNullOrWhiteSpace(r.FollowUpNotes))
+            @if (r.FollowUpAppointmentId.HasValue)
             {
                 <div class="row g-4 align-items-center">
                     <div class="col-lg-7">
+                        <div class="p-3 rounded-3 mb-3 border d-flex align-items-start gap-3" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#ccfbf1;color:#0f766e;font-size:1.3rem;">
+                                <i class="bi bi-calendar-event"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small text-uppercase fw-bold text-muted" style="font-size:0.7rem; letter-spacing:0.5px;">SCHEDULED FOLLOW-UP TIME</div>
+                                <div class="fw-bold text-dark fs-6 mt-0.5">
+                                    @(r.NextAppointmentRecommendedDate.HasValue ? r.NextAppointmentRecommendedDate.Value.ToString("dddd, MMMM dd, yyyy") : "Scheduled")
+                                </div>
+                                @if (!string.IsNullOrEmpty(r.NextAppointmentRecommendedSlotStartTime))
+                                {
+                                    <div class="text-muted small mt-0.5">
+                                        <i class="bi bi-clock me-1 text-teal"></i>Time Slot: <strong>@r.NextAppointmentRecommendedSlotStartTime - @r.NextAppointmentRecommendedSlotEndTime</strong>
+                                    </div>
+                                }
+                                <div class="text-muted small mt-0.5">
+                                    <i class="bi bi-person-badge me-1 text-teal"></i>Doctor: <strong>Dr. @(r.DoctorName ?? "Your Therapist")</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(r.FollowUpNotes))
+                        {
+                            <div class="cnd-clinical-box mb-0">
+                                <div class="cnd-clinical-label">
+                                    <i class="bi bi-chat-left-text-fill"></i>DOCTOR'S FOLLOW-UP GUIDANCE
+                                </div>
+                                <div class="cnd-clinical-text">@r.FollowUpNotes</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-lg-5 text-center text-lg-start border-start-lg ps-lg-4">
+                        <div class="p-4 rounded-4 text-center border shadow-sm" style="background:#ffffff; border-color:#e2e8f0;">
+                            <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size:0.72rem;">FOLLOW-UP BOOKING CODE</div>
+                            <div class="font-monospace fw-bold text-dark fs-5 mb-2 py-1 px-2 rounded-2 d-inline-block" style="background:#f1f5f9; color:#0f766e;">
+                                @(r.FollowUpAppointmentBookingCode ?? "OPCBS-FOLLOWUP")
+                            </div>
+                            <p class="text-muted small mb-3">Your follow-up appointment has been scheduled by your doctor. You can view full details or manage the appointment below.</p>
+                            <a href="/Patient/Appointments/Details/@r.FollowUpAppointmentId" class="btn btn-primary fw-bold px-4 py-2.5 w-100 shadow-sm" style="border-radius:10px; background:var(--mb-primary-teal); border-color:var(--mb-primary-teal);">
+                                <i class="bi bi-calendar2-check me-1.5"></i>View Follow-up Appointment Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (r.NextAppointmentRecommendedDate.HasValue || !string.IsNullOrWhiteSpace(r.FollowUpNotes))
+            {
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-8">
                         @if (r.NextAppointmentRecommendedDate.HasValue)
                         {
                             <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3 border">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#e6f4f1;color:#0f766e;font-size:1.3rem;">
-                                    <i class="bi bi-alarm"></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;background:#e6f4f1;color:#0f766e;font-size:1.2rem;">
+                                    <i class="bi bi-calendar-date"></i>
                                 </div>
                                 <div>
-                                    <div class="small text-uppercase fw-bold text-muted" style="font-size:0.7rem;">RECOMMENDED NEXT SESSION</div>
-                                    <div class="fw-bold text-dark fs-6 mt-1">
+                                    <div class="small text-uppercase fw-bold text-muted" style="font-size:0.7rem;">RECOMMENDED NEXT SESSION DATE</div>
+                                    <div class="fw-bold text-dark fs-6 mt-0.5">
                                         @r.NextAppointmentRecommendedDate.Value.ToString("dddd, MMMM dd, yyyy")
                                     </div>
                                     @if (!string.IsNullOrEmpty(r.NextAppointmentRecommendedSlotStartTime))
                                     {
                                         <div class="text-muted small">
-                                            <i class="bi bi-clock me-1"></i>Suggested Time: @r.NextAppointmentRecommendedSlotStartTime - @r.NextAppointmentRecommendedSlotEndTime
+                                            <i class="bi bi-clock me-1"></i>Time Slot: @r.NextAppointmentRecommendedSlotStartTime - @r.NextAppointmentRecommendedSlotEndTime
                                         </div>
                                     }
                                 </div>
@@ -519,48 +575,48 @@
                         {
                             <div class="cnd-clinical-box mb-0">
                                 <div class="cnd-clinical-label">
-                                    <i class="bi bi-chat-left-text"></i>FOLLOW-UP GUIDANCE
+                                    <i class="bi bi-chat-left-text-fill"></i>FOLLOW-UP INSTRUCTIONS
                                 </div>
                                 <div class="cnd-clinical-text">@r.FollowUpNotes</div>
                             </div>
                         }
                     </div>
-
-                    <div class="col-lg-5 text-center text-lg-start border-start-lg ps-lg-4">
-                        @if (r.FollowUpAppointmentId.HasValue && !string.IsNullOrEmpty(r.FollowUpAppointmentBookingCode))
-                        {
-                            <div class="p-3 bg-success-subtle rounded-3 border border-success-subtle mb-3 text-center">
-                                <div class="small fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-1"></i>Follow-up Scheduled</div>
-                                <div class="font-monospace fw-bold text-dark">@r.FollowUpAppointmentBookingCode</div>
-                                <a href="/Patient/Appointments/Details/@r.FollowUpAppointmentId" class="btn btn-sm btn-success mt-2" style="border-radius:8px;">
-                                    View Follow-up Appointment
-                                </a>
-                            </div>
-                        }
-                        else
-                        {
-                            var targetDateStr = r.NextAppointmentRecommendedDate?.ToString("yyyy-MM-dd");
-                            <div class="p-4 bg-light rounded-4 text-center border">
-                                <i class="bi bi-calendar-plus text-teal mb-2 d-block" style="font-size:2rem; color:var(--mb-primary-teal);"></i>
-                                <h6 class="fw-bold text-dark mb-1">Book Your Follow-up Session</h6>
-                                <p class="text-muted small mb-3">Reserve your recommended time slot with Dr. @(r.DoctorName ?? "your therapist")</p>
-                                <a asp-page="/Appointment/Book" asp-route-doctorId="@r.DoctorId" asp-route-week="@targetDateStr" asp-route-returning="true" class="btn btn-primary fw-semibold px-4 py-2 w-100" style="border-radius:10px; background:var(--mb-primary-teal); border-color:var(--mb-primary-teal);">
-                                    <i class="bi bi-calendar-check me-1"></i>Book Follow-up Slot
-                                </a>
-                            </div>
-                        }
+                    <div class="col-lg-4 text-center">
+                        <a href="/Patient/Appointments/History" class="btn btn-outline-primary fw-semibold px-3 py-2 w-100" style="border-radius:10px;">
+                            <i class="bi bi-calendar-week me-1"></i>View My Appointments
+                        </a>
                     </div>
                 </div>
             }
             else
             {
-                <div class="text-center py-4">
-                    <i class="bi bi-calendar-heart text-muted mb-2 d-block" style="font-size:2rem;"></i>
-                    <p class="text-muted small mb-3">No specific follow-up date has been scheduled yet. You can book an appointment at any time.</p>
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@r.DoctorId" asp-route-returning="true" class="btn btn-outline-primary btn-sm" style="border-radius:8px;">
-                        <i class="bi bi-calendar-plus me-1"></i>Schedule Next Appointment
-                    </a>
-                </div>
+                if (!string.IsNullOrEmpty(r.PackageName) || Model.TreatmentCase != null || Model.TreatmentPackage != null)
+                {
+                    <div class="p-3 rounded-3 border d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px; height:44px; background:#ccfbf1; color:#0f766e; font-size:1.2rem;">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark fs-6">Treatment Package Roadmap</div>
+                                <div class="text-muted small">This consultation is part of your treatment package@(string.IsNullOrEmpty(r.PackageName) ? "" : $" ({r.PackageName})"). All upcoming sessions are organized in your Treatment Plan.</div>
+                            </div>
+                        </div>
+                        @if (Model.TreatmentCase != null)
+                        {
+                            <a href="/Patient/TreatmentCases/Details/@Model.TreatmentCase.Id" class="btn btn-sm btn-primary flex-shrink-0 px-3 py-2" style="background:var(--mb-primary-teal); border-color:var(--mb-primary-teal); border-radius:8px;">
+                                <i class="bi bi-journal-medical me-1"></i>View Treatment Plan
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check-circle text-success mb-2 d-block" style="font-size:2rem;"></i>
+                        <p class="small mb-0">Consultation completed. No specific follow-up appointment required.</p>
+                    </div>
+                }
             }
         </div>
     </div>

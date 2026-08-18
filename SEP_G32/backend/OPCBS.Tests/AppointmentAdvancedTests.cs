@@ -291,8 +291,9 @@ public class AppointmentAdvancedTests
         var doctorProfileId = Guid.NewGuid();
         var slotId = Guid.NewGuid();
 
+        var nowVn = DateTime.UtcNow.AddHours(7);
         var doc = new DoctorProfile { Id = doctorProfileId, UserId = doctorUserId, User = new User { Email = "d@test.com", PasswordHash = "h", FullName = "Doc", PhoneNumber = "2", Role = new Role { Name = "Doctor" } } };
-        var slot = new AppointmentSlot { Id = slotId, SlotDate = DateOnly.FromDateTime(DateTime.UtcNow), StartTime = new TimeOnly(0, 0), EndTime = new TimeOnly(23, 59), DoctorProfile = doc };
+        var slot = new AppointmentSlot { Id = slotId, SlotDate = DateOnly.FromDateTime(nowVn), StartTime = new TimeOnly(0, 0), EndTime = new TimeOnly(23, 59), DoctorProfile = doc };
         var appt = new Appointment { Id = apptId, BookingCode = "BK-1", DoctorId = doctorProfileId, AppointmentSlotId = slotId, Status = AppointmentStatus.Approved, Doctor = doc, AppointmentSlot = slot };
 
         _apptRepo.Setup(r => r.GetByIdAsync(apptId, It.IsAny<CancellationToken>())).ReturnsAsync(appt);

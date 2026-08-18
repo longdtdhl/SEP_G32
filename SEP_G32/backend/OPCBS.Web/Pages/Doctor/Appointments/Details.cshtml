@@ -1197,12 +1197,65 @@
                                         <textarea asp-for="NoteInput.FollowUpNotes" class="form-control form-control-sm" rows="2" placeholder="Follow-up instructions..." style="border-radius:10px; font-size:0.875rem;"></textarea>
                                     </div>
 
-                                    <div class="mb-3 pt-2 border-top">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
-                                            <i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date
-                                        </label>
-                                        <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" style="border-radius:10px; font-size:0.875rem;" />
-                                    </div>
+                                    @{
+                                        bool isPackageEnrolled = (Model.Appointment?.TreatmentPackageId.HasValue == true && Model.Appointment.TreatmentPackageId.Value != Guid.Empty)
+                                                              || (Model.Appointment?.TreatmentCaseId.HasValue == true && Model.Appointment.TreatmentCaseId.Value != Guid.Empty)
+                                                              || Model.ActiveTreatmentPackage != null;
+                                    }
+
+                                    @if (isPackageEnrolled)
+                                    {
+                                        <div class="mb-3 pt-2 border-top">
+                                            <div class="p-3 rounded-3 border" style="background:#f0fdfa; border-color:#99f6e4 !important;">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <i class="bi bi-box-seam text-teal" style="font-size:1.1rem; color:#0d9488;"></i>
+                                                    <span class="fw-bold text-dark" style="font-size:0.85rem;">Treatment Package Active</span>
+                                                </div>
+                                                <p class="text-muted small mb-0" style="font-size:0.78rem;">
+                                                    This patient is enrolled in a treatment package@(Model.ActiveTreatmentPackage != null ? $" ({Model.ActiveTreatmentPackage.Title})" : ""). Subsequent therapy sessions are scheduled and managed through the Treatment Plan roadmap.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mb-3 pt-2 border-top">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="form-label small fw-semibold text-dark mb-0">
+                                                    <i class="bi bi-calendar-plus me-1 text-primary"></i>Recommended Follow-up Date
+                                                </label>
+                                                <button type="button" class="btn btn-link p-0 text-muted small text-decoration-none" style="font-size:0.75rem;" onclick="clearFollowUpSelection()">
+                                                    <i class="bi bi-x-circle me-0.5"></i>Reset
+                                                </button>
+                                            </div>
+                                            <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" id="followUpDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm mb-2" style="border-radius:8px; font-size:0.875rem;" onchange="loadFollowUpSlots(this.value)" />
+
+                                            <!-- Hidden input bound to model -->
+                                            <input type="hidden" asp-for="NoteInput.NextAppointmentRecommendedSlotId" id="followUpSlotInput" />
+
+                                            <!-- Interactive Slot List -->
+                                            <div class="mt-2">
+                                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                    <label class="form-label small fw-semibold text-dark mb-0">
+                                                        <i class="bi bi-clock-history me-1 text-primary"></i>Recommended Follow-up Slot
+                                                    </label>
+                                                    <span id="followUpSlotCount" class="badge rounded-pill bg-light text-muted border" style="font-size:0.7rem; font-weight:500;">0 slots</span>
+                                                </div>
+
+                                                <div id="followUpSlotsList" class="d-flex flex-column gap-1.5" style="max-height: 200px; overflow-y: auto; padding-right: 2px;">
+                                                    <!-- Dynamic Slot Cards rendered by JS -->
+                                                </div>
+
+                                                <div id="followUpSlotsPlaceholder" class="p-2.5 rounded-3 bg-light border text-center text-muted small" style="font-size:0.78rem;">
+                                                    <i class="bi bi-calendar-event me-1"></i>Select a date above to choose an available slot
+                                                </div>
+                                            </div>
+
+                                            <div class="form-text small text-muted mt-2" style="font-size:0.75rem;">
+                                                <i class="bi bi-info-circle me-1 text-primary"></i>Selecting a time slot will automatically create the follow-up appointment card for the patient.
+                                            </div>
+                                        </div>
+                                    }
 
                                     <button type="submit" class="btn btn-success w-100 py-2.5 rounded-3 fw-bold shadow-sm">
                                         <i class="bi bi-check-all me-1"></i>Save Note & Complete
@@ -1342,6 +1395,134 @@
 </button>
 
 <script>
+    var currentFollowUpSlots = [];
+
+    function renderFollowUpSlotCard(slot, isSelected) {
+        var bgStyle = isSelected 
+            ? 'background:#f0fdfa; border:1.5px solid #0d9488 !important; box-shadow:0 1px 3px rgba(13,148,136,0.15);' 
+            : 'background:#ffffff; border:1px solid #e2e8f0;';
+        var iconBg = isSelected ? '#0d9488' : '#f1f5f9';
+        var iconColor = isSelected ? '#ffffff' : '#64748b';
+        var iconClass = isSelected ? 'bi-check2-circle' : 'bi-clock';
+        var textClass = isSelected ? 'fw-bold' : 'fw-semibold';
+        var textColor = isSelected ? 'color:#0f766e;' : 'color:#1e293b;';
+        var badgeHtml = isSelected
+            ? '<span class="badge" style="background:#0d9488; color:#fff; font-size:0.68rem; font-weight:600;"><i class="bi bi-check me-0.5"></i>Selected</span>'
+            : '<span class="badge bg-light text-muted border" style="font-size:0.68rem; font-weight:500;">Available</span>';
+
+        return '<div class="p-2 rounded-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
+               'style="cursor:pointer; transition:all 0.15s ease; ' + bgStyle + '" ' +
+               'onclick="selectFollowUpSlot(\'' + slot.id + '\')">' +
+                   '<div class="d-flex align-items-center gap-2">' +
+                       '<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:26px; height:26px; background:' + iconBg + '; color:' + iconColor + '; font-size:0.85rem;">' +
+                           '<i class="bi ' + iconClass + '"></i>' +
+                       '</div>' +
+                       '<div>' +
+                           '<div class="' + textClass + '" style="font-size:0.84rem; ' + textColor + '">' + slot.startTime + ' - ' + slot.endTime + '</div>' +
+                           (slot.label ? '<div class="text-muted" style="font-size:0.7rem;">' + slot.label + '</div>' : '') +
+                       '</div>' +
+                   '</div>' +
+                   '<div>' + badgeHtml + '</div>' +
+               '</div>';
+    }
+
+    function renderAllFollowUpSlots(selectedId) {
+        var list = document.getElementById('followUpSlotsList');
+        var countBadge = document.getElementById('followUpSlotCount');
+        if (!list) return;
+
+        if (countBadge) {
+            countBadge.textContent = currentFollowUpSlots.length + (currentFollowUpSlots.length === 1 ? ' slot' : ' slots');
+            if (currentFollowUpSlots.length > 0) {
+                countBadge.className = 'badge rounded-pill bg-primary-subtle text-primary border';
+            } else {
+                countBadge.className = 'badge rounded-pill bg-light text-muted border';
+            }
+        }
+
+        if (currentFollowUpSlots.length === 0) {
+            list.innerHTML = '';
+            return;
+        }
+
+        var html = '';
+        currentFollowUpSlots.forEach(function (s) {
+            html += renderFollowUpSlotCard(s, s.id === selectedId);
+        });
+        list.innerHTML = html;
+    }
+
+    function loadFollowUpSlots(dateStr) {
+        var placeholder = document.getElementById('followUpSlotsPlaceholder');
+        var list = document.getElementById('followUpSlotsList');
+        var slotInput = document.getElementById('followUpSlotInput');
+        var countBadge = document.getElementById('followUpSlotCount');
+
+        if (!dateStr) {
+            if (placeholder) {
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = '<i class="bi bi-calendar-event me-1"></i>Select a date above to choose an available slot';
+            }
+            if (list) list.innerHTML = '';
+            if (slotInput) slotInput.value = '';
+            if (countBadge) {
+                countBadge.textContent = '0 slots';
+                countBadge.className = 'badge rounded-pill bg-light text-muted border';
+            }
+            currentFollowUpSlots = [];
+            return;
+        }
+
+        if (placeholder) placeholder.style.display = 'none';
+        if (list) list.innerHTML = '<div class="p-3 text-center text-muted small"><span class="spinner-border spinner-border-sm me-2 text-primary"></span>Loading available slots...</div>';
+
+        fetch(`?handler=Slots&date=${encodeURIComponent(dateStr)}`)
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.success && data.slots && data.slots.length > 0) {
+                    currentFollowUpSlots = data.slots;
+                    var selectedId = slotInput ? slotInput.value : '';
+                    renderAllFollowUpSlots(selectedId);
+                } else {
+                    currentFollowUpSlots = [];
+                    if (slotInput) slotInput.value = '';
+                    if (countBadge) {
+                        countBadge.textContent = '0 slots';
+                        countBadge.className = 'badge rounded-pill bg-light text-muted border';
+                    }
+                    if (list) {
+                        list.innerHTML = '<div class="p-3 text-center bg-light rounded-3 border text-muted small"><i class="bi bi-calendar-x d-block fs-5 mb-1 text-warning"></i>No available slots found for this date.</div>';
+                    }
+                }
+            })
+            .catch(function (err) {
+                currentFollowUpSlots = [];
+                if (list) list.innerHTML = '<div class="p-2 text-center text-danger small">Error loading slots. Please try again.</div>';
+            });
+    }
+
+    function selectFollowUpSlot(slotId) {
+        var slotInput = document.getElementById('followUpSlotInput');
+        if (!slotInput) return;
+
+        // Toggle selection if clicking the same slot again
+        if (slotInput.value === slotId) {
+            slotInput.value = '';
+            renderAllFollowUpSlots('');
+        } else {
+            slotInput.value = slotId;
+            renderAllFollowUpSlots(slotId);
+        }
+    }
+
+    function clearFollowUpSelection() {
+        var dateInput = document.getElementById('followUpDateInput');
+        var slotInput = document.getElementById('followUpSlotInput');
+        if (dateInput) dateInput.value = '';
+        if (slotInput) slotInput.value = '';
+        loadFollowUpSlots('');
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var btn = document.getElementById('btnBackToTop');
         if (btn) {

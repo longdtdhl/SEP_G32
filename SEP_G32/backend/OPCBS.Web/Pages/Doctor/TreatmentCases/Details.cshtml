@@ -456,22 +456,55 @@
         <!-- ── TAB 2: SESSIONS ── -->
         @if (Model.ActiveTab == "sessions")
         {
+            var isSessionsFull = c.TotalSessions > 0 && (c.CompletedSessions >= c.TotalSessions || c.RemainingSessions <= 0 || Model.Sessions.Count(s => s.Status != 3) >= c.TotalSessions);
             <div class="cd-box">
                 <div class="cd-box-head">
                     <h6 class="cd-box-title"><i class="bi bi-calendar2-check me-2"></i>Treatment Sessions</h6>
                     @if (c.Status == 0)
                     {
-                        <a href="/Doctor/TreatmentCases/Sessions/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-plus-lg me-1"></i>Add Session
-                        </a>
+                        if (isSessionsFull)
+                        {
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1.5 px-2.5" style="font-size:0.75rem; font-weight:600;">
+                                    <i class="bi bi-hourglass-split me-1"></i>Package Full (@c.CompletedSessions/@c.TotalSessions)
+                                </span>
+                                <a href="/Doctor/TreatmentPackages/Create?patientId=@c.PatientId" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                    <i class="bi bi-box-seam me-1"></i>New Package
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="/Doctor/TreatmentCases/Sessions/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                <i class="bi bi-plus-lg me-1"></i>Add Session
+                            </a>
+                        }
                     }
                 </div>
+
+                @if (isSessionsFull)
+                {
+                    <div class="alert p-3 mb-3 rounded-3 d-flex align-items-start gap-3" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
+                        <div style="font-size:1.4rem; line-height:1;"><i class="bi bi-exclamation-triangle-fill text-warning"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold fs-7 mb-0.5" style="color:#92400e;">Maximum Package Sessions Reached (@c.CompletedSessions/@c.TotalSessions)</div>
+                            <div style="font-size:0.82rem; color:#b45309;">This treatment package has no sessions remaining (@(Model.Sessions.Count(s => s.Status != 3))/@c.TotalSessions sessions already planned or completed). Create or assign a new package before adding more treatment sessions.</div>
+                        </div>
+                        <a href="/Doctor/TreatmentPackages/Create?patientId=@c.PatientId" class="btn btn-sm btn-warning text-dark fw-semibold flex-shrink-0" style="border-radius:8px; font-size:0.78rem;">
+                            <i class="bi bi-plus-circle me-1"></i>Assign New Package
+                        </a>
+                    </div>
+                }
+
                 @if (!Model.Sessions.Any())
                 {
                     <div class="cd-empty">
                         <i class="bi bi-calendar-x"></i>
                         <p>No sessions created yet</p>
-                        <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Generate Schedule</a>
+                        @if (!isSessionsFull)
+                        {
+                            <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Generate Schedule</a>
+                        }
                     </div>
                 }
                 else

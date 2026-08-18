@@ -84,8 +84,31 @@
     var pkg = Model.Package;
     var docName = string.IsNullOrWhiteSpace(pkg.DoctorName) ? "Your Therapist" : pkg.DoctorName;
     var isPending = pkg.Status == "Pending" || pkg.Status == "Assigned";
-    var isActive = pkg.Status == "Active" || pkg.Status == "Accepted";
+    var isActive = pkg.Status is "Active" or "Accepted" or "CancellationPending";
     var isCancellationPending = pkg.IsCancellationPending;
+
+    <!-- Cancellation Pending Banner -->
+    @if (isCancellationPending)
+    {
+        <div class="alert p-3 mb-4 rounded-3 d-flex align-items-start gap-3" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
+            <div style="font-size:1.5rem; line-height:1;"><i class="bi bi-exclamation-triangle-fill text-warning"></i></div>
+            <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1" style="color:#92400e;">Treatment Package Cancellation in Progress</h6>
+                @if (Model.IsCancellationRequester)
+                {
+                    <p class="mb-0" style="font-size:0.875rem;">You requested cancellation for this treatment package@(pkg.CancellationRequestedAt.HasValue ? $" on {pkg.CancellationRequestedAt.Value:MMM dd, yyyy HH:mm}" : ""). The package remains active until your doctor confirms the cancellation.</p>
+                }
+                else
+                {
+                    <p class="mb-2" style="font-size:0.875rem;">Dr. @docName has requested to cancel this treatment package@(string.IsNullOrWhiteSpace(pkg.CancellationReason) ? "." : $". Reason: \"{pkg.CancellationReason}\"")</p>
+                    <p class="mb-2 text-muted" style="font-size:0.82rem;">Please review and confirm to finalize the cancellation.</p>
+                    <button type="button" class="btn btn-sm btn-danger px-3 py-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#cancelModal" style="border-radius:8px;">
+                        <i class="bi bi-check2-circle me-1"></i> Review & Confirm Cancellation
+                    </button>
+                }
+            </div>
+        </div>
+    }
 
     <!-- Pending Banner -->
     @if (isPending)
@@ -258,6 +281,14 @@
                     }
                     else if (isActive)
                     {
+                        @if (pkg.RemainingSessions <= 0)
+                        {
+                            <div class="rounded-3 p-3 mb-2 text-center" style="background:#fef3c7; border:1px solid #fde68a; color:#92400e; font-size:0.82rem;">
+                                <i class="bi bi-check-circle-fill d-block fs-4 text-warning mb-1"></i>
+                                <div class="fw-bold fs-7">All Package Sessions Used (@pkg.CompletedSessions/@pkg.TotalSessions)</div>
+                                <div class="text-muted small mt-1">You have utilized all allocated sessions in this package. To continue your therapy sessions, please ask your doctor to assign a new package.</div>
+                            </div>
+                        }
                         <a asp-page="/Patient/TreatmentCases/Details" class="pd-accept-btn d-block text-center text-decoration-none mb-2">
                             <i class="bi bi-journal-medical me-1"></i>View Treatment Case
                         </a>

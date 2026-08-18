@@ -131,15 +131,15 @@
             var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
             var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
 
-            // Status resolve
             string statusClass, statusLabel;
-            if (isFinished) { statusClass = "finished"; statusLabel = "All Sessions Done"; }
+            if (pkg.IsCancellationPending) { statusClass = "pending"; statusLabel = "Cancellation Pending"; }
+            else if (isFinished) { statusClass = "finished"; statusLabel = "All Sessions Done"; }
             else if (pkg.IsExpired) { statusClass = "expired"; statusLabel = "Expired"; }
             else if (isPending) { statusClass = "pending"; statusLabel = "Awaiting Your Response"; }
             else
             {
-                statusClass = pkg.Status switch { "Active" or "Accepted" => "active", "Completed" => "completed", "Cancelled" => "cancelled", "Rejected" => "rejected", _ => "pending" };
-                statusLabel = pkg.Status switch { "Active" or "Accepted" => "Active", "Completed" => "Completed", "Cancelled" => "Cancelled", "Rejected" => "Declined", _ => pkg.Status };
+                statusClass = pkg.Status switch { "Active" or "Accepted" => "active", "Completed" => "completed", "Cancelled" => "cancelled", "Rejected" => "rejected", "CancellationPending" => "pending", _ => "pending" };
+                statusLabel = pkg.Status switch { "Active" or "Accepted" => "Active", "Completed" => "Completed", "Cancelled" => "Cancelled", "Rejected" => "Declined", "CancellationPending" => "Cancellation Pending", _ => pkg.Status };
             }
 
             <div class="col-md-6 col-xl-4">
