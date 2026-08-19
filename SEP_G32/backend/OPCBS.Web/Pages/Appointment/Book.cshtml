@@ -259,7 +259,7 @@
                                                             }
                                                             else
                                                             {
-                                                                <span>ONLINE / IN-PERSON</span>
+                                                                <span class="slot-label-both">Online / In-person</span>
                                                             }
                                                         </span>
                                                         @if (slot.ConsultationMode != OPCBS.Domain.Enums.ConsultationMode.Both)
@@ -341,13 +341,23 @@
                             <input asp-for="Input.GuestEmail" type="email" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="email@example.com" style="border-radius:12px;padding:10px 14px;" required readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER</label>
-                        <input asp-for="Input.GuestPhoneNumber" type="tel" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
-                        @if (Model.IsReturningPatient)
-                        {
-                            <div class="form-text text-muted small mt-1"><i class="bi bi-lock-fill text-secondary me-1"></i>Contact information is locked for follow-up visits with this doctor.</div>
-                        }
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER</label>
+                            <input asp-for="Input.GuestPhoneNumber" id="guestPhoneInput" type="tel" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
+                            @if (Model.IsReturningPatient)
+                            {
+                                <div class="form-text text-muted small mt-1"><i class="bi bi-lock-fill text-secondary me-1"></i>Contact information is locked for follow-up visits with this doctor.</div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">ZALO NUMBER</label>
+                            <input asp-for="Input.GuestZaloNumber" id="guestZaloInput" type="tel" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="sameAsPhoneCheck" @(Model.IsReturningPatient ? "checked disabled" : "") />
+                                <label class="form-check-label small text-muted" for="sameAsPhoneCheck">Same as phone number</label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -408,18 +418,10 @@
                     <div id="slotCustomNoteSection" class="mb-3" style="display:none;">
                         <div class="p-3 rounded-3 border" style="background:#f0fdfa; border-color:#ccfbf1 !important;">
                             <label id="slotCustomNoteLabel" class="form-label small text-uppercase fw-bold text-dark d-flex align-items-center gap-1.5" style="letter-spacing:0.03em; font-size:0.8rem; color:#0f766e !important;"></label>
-                            <input type="hidden" name="Input.CustomFields[0].Title" id="slotCustomNoteTitleInput" />
-                            <input type="hidden" name="Input.CustomFields[0].SectionKey" value="PreAppointmentEvaluation" />
-                            <textarea name="Input.CustomFields[0].Content" id="slotCustomNoteContent" class="form-control" rows="2" placeholder="Your response to the doctor's inquiry..." style="border-radius:10px; resize:vertical; font-size:0.875rem;"></textarea>
+                            <input type="hidden" id="slotCustomNoteTitleInput" disabled />
+                            <input type="hidden" id="slotCustomNoteSectionKeyInput" value="PreAppointmentEvaluation" disabled />
+                            <textarea id="slotCustomNoteContent" class="form-control" rows="2" placeholder="Your response to the doctor's inquiry..." style="border-radius:10px; resize:vertical; font-size:0.875rem;" disabled></textarea>
                         </div>
-                    </div>
-
-                    <!-- Additional Custom Clinical Fields Container -->
-                    <div id="patientCustomFieldsContainer" class="mb-2"></div>
-                    <div class="mb-3">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPatientCustomField()" style="border-radius:8px; font-size:0.78rem; font-weight:600;">
-                            <i class="bi bi-plus-circle me-1"></i>Add Additional Clinical Note
-                        </button>
                     </div>
 
                     <!-- Privacy note -->
@@ -442,30 +444,42 @@
 
 @section Scripts {
     <script>
-        let patientFieldCount = 1;
-        function addPatientCustomField(title = '', content = '') {
-            const container = document.getElementById('patientCustomFieldsContainer');
-            const index = patientFieldCount++;
-            const div = document.createElement('div');
-            div.className = 'p-2.5 rounded-3 mb-2 border bg-light';
-            div.id = `patientFieldRow_${index}`;
-            div.innerHTML = `
-                <div class="row g-2 align-items-center">
-                    <div class="col-md-5">
-                        <input type="text" name="Input.CustomFields[${index}].Title" value="${title.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Note Title (e.g. Current Medication)" style="border-radius:6px;" required />
-                        <input type="hidden" name="Input.CustomFields[${index}].SectionKey" value="PreAppointmentEvaluation" />
-                    </div>
-                    <div class="col-md-6">
-                        <input type="text" name="Input.CustomFields[${index}].Content" value="${content.replace(/"/g, '&quot;')}" class="form-control form-control-sm" placeholder="Details / Response" style="border-radius:6px;" required />
-                    </div>
-                    <div class="col-md-1 text-end">
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('patientFieldRow_${index}').remove()" style="border-radius:6px;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(div);
+        function setSlotCustomFieldEnabled(enabled) {
+            const titleInput = document.getElementById('slotCustomNoteTitleInput');
+            const sectionInput = document.getElementById('slotCustomNoteSectionKeyInput');
+            const contentInput = document.getElementById('slotCustomNoteContent');
+
+            if (titleInput && sectionInput && contentInput) {
+                [titleInput, sectionInput, contentInput].forEach(input => input.disabled = !enabled);
+
+                if (enabled) {
+                    titleInput.name = 'Input.CustomFields[0].Title';
+                    sectionInput.name = 'Input.CustomFields[0].SectionKey';
+                    contentInput.name = 'Input.CustomFields[0].Content';
+                } else {
+                    titleInput.removeAttribute('name');
+                    sectionInput.removeAttribute('name');
+                    contentInput.removeAttribute('name');
+                }
+            }
+        }
+
+        function syncZaloWithPhone() {
+            const sameAsPhone = document.getElementById('sameAsPhoneCheck');
+            const phoneInput = document.getElementById('guestPhoneInput');
+            const zaloInput = document.getElementById('guestZaloInput');
+            if (!sameAsPhone || !phoneInput || !zaloInput) return;
+
+            if (sameAsPhone.checked) {
+                zaloInput.value = phoneInput.value;
+                if (!zaloInput.hasAttribute('readonly')) {
+                    zaloInput.readOnly = true;
+                    zaloInput.classList.add('bg-light');
+                }
+            } else if (!sameAsPhone.disabled) {
+                zaloInput.readOnly = false;
+                zaloInput.classList.remove('bg-light');
+            }
         }
 
         function fillSlotData(el) {
@@ -516,24 +530,31 @@
             var slotNoteSec = document.getElementById('slotCustomNoteSection');
             var slotNoteLabel = document.getElementById('slotCustomNoteLabel');
             var slotNoteTitleInput = document.getElementById('slotCustomNoteTitleInput');
+            var slotNoteSectionKeyInput = document.getElementById('slotCustomNoteSectionKeyInput');
             var slotNoteContent = document.getElementById('slotCustomNoteContent');
 
-            if (slotNoteSec && slotNoteLabel && slotNoteTitleInput && slotNoteContent) {
+            if (slotNoteSec && slotNoteLabel && slotNoteTitleInput && slotNoteSectionKeyInput && slotNoteContent) {
                 if (noteTitle && noteTitle.trim() !== '') {
                     slotNoteSec.style.display = 'block';
                     slotNoteTitleInput.value = noteTitle.trim();
+                    slotNoteSectionKeyInput.value = 'PreAppointmentEvaluation';
                     slotNoteLabel.innerHTML = '<i class="bi bi-patch-question me-1" style="color:#0f766e;"></i>' + noteTitle.trim() + (noteReq ? ' <span class="text-danger">*</span>' : ' <span class="text-muted fw-normal small">(Optional)</span>');
                     slotNoteContent.required = noteReq;
+                    setSlotCustomFieldEnabled(true);
                 } else if (noteReq) {
                     slotNoteSec.style.display = 'block';
                     slotNoteTitleInput.value = 'Pre-Appointment Evaluation Note';
+                    slotNoteSectionKeyInput.value = 'PreAppointmentEvaluation';
                     slotNoteLabel.innerHTML = '<i class="bi bi-patch-question me-1" style="color:#0f766e;"></i>Doctor\'s Required Evaluation Note <span class="text-danger">*</span>';
                     slotNoteContent.required = true;
+                    setSlotCustomFieldEnabled(true);
                 } else {
                     slotNoteSec.style.display = 'none';
                     slotNoteTitleInput.value = '';
+                    slotNoteSectionKeyInput.value = 'PreAppointmentEvaluation';
                     slotNoteContent.value = '';
                     slotNoteContent.required = false;
+                    setSlotCustomFieldEnabled(false);
                 }
             }
             
@@ -541,5 +562,23 @@
             document.querySelectorAll('.wc-slot').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const sameAsPhone = document.getElementById('sameAsPhoneCheck');
+            const phoneInput = document.getElementById('guestPhoneInput');
+
+            if (sameAsPhone) {
+                sameAsPhone.addEventListener('change', syncZaloWithPhone);
+            }
+
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function () {
+                    const sameAsPhone = document.getElementById('sameAsPhoneCheck');
+                    if (sameAsPhone?.checked) syncZaloWithPhone();
+                });
+            }
+
+            syncZaloWithPhone();
+        });
     </script>
 }

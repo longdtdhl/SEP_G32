@@ -920,7 +920,7 @@ public class BusinessServicesTests
     }
 
     [Fact]
-    public async Task ConsultationNoteService_ConfirmByPatientAsync_WhenSlotRecommended_AutoBooksAppointment()
+    public async Task ConsultationNoteService_ConfirmByPatientAsync_WhenSlotRecommended_KeepsRecommendationOnly()
     {
         var recordRepo = new Mock<IRepository<ConsultationNote>>();
         var apptRepo = new Mock<IRepository<Appointment>>();
@@ -996,19 +996,19 @@ public class BusinessServicesTests
 
         var service = new ConsultationNoteService(
             recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object,
-            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object,
-            slotRepo.Object, apptService.Object);
+            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var result = await service.ConfirmByPatientAsync(recordId, patientUserId, default);
 
         Assert.True(result.Success);
         Assert.True(note.IsPatientConfirmed);
-        Assert.Equal(createdApptId, note.FollowUpAppointmentId);
-        apptService.Verify(s => s.CreateAppointmentAsync(It.Is<CreateAppointmentDto>(d => d.AppointmentSlotId == recommendedSlotId), patientUserId, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(recommendedSlotId, note.NextAppointmentRecommendedSlotId);
+        Assert.Null(note.FollowUpAppointmentId);
+        apptService.Verify(s => s.CreateAppointmentAsync(It.IsAny<CreateAppointmentDto>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task ConsultationNoteService_CreateAsync_WhenSlotRecommended_AutoBooksAppointment()
+    public async Task ConsultationNoteService_CreateAsync_WhenSlotRecommended_KeepsRecommendationOnly()
     {
         var recordRepo = new Mock<IRepository<ConsultationNote>>();
         var apptRepo = new Mock<IRepository<Appointment>>();
@@ -1079,8 +1079,7 @@ public class BusinessServicesTests
 
         var service = new ConsultationNoteService(
             recordRepo.Object, apptRepo.Object, doctorRepo.Object, patientRepo.Object,
-            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object,
-            slotRepo.Object, apptService.Object);
+            patientRecordRepo.Object, userRepo.Object, packageRepo.Object, notifService.Object, uow.Object, mapper.Object);
 
         var dto = new CreateConsultationNoteDto
         {
@@ -1093,8 +1092,10 @@ public class BusinessServicesTests
         var result = await service.CreateAsync(doctorUserId, dto, default);
 
         Assert.True(result.Success);
-        apptService.Verify(s => s.CreateAppointmentAsync(It.Is<CreateAppointmentDto>(d => d.AppointmentSlotId == recommendedSlotId), patientUserId, It.IsAny<CancellationToken>()), Times.Once);
-        recordRepo.Verify(r => r.AddAsync(It.Is<ConsultationNote>(n => n.FollowUpAppointmentId == createdApptId), It.IsAny<CancellationToken>()), Times.Once);
+        apptService.Verify(s => s.CreateAppointmentAsync(It.IsAny<CreateAppointmentDto>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+        recordRepo.Verify(r => r.AddAsync(It.Is<ConsultationNote>(n =>
+            n.NextAppointmentRecommendedSlotId == recommendedSlotId &&
+            n.FollowUpAppointmentId == null), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -1128,13 +1128,14 @@ body.mb-has-header {
 .wc-time-cell.today-col { background: rgba(78,139,112,0.03); }
 
 /* Slot blocks */
-.wc-slot { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 5px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 5; }
+.wc-slot { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; z-index: 5; overflow: hidden; }
 .wc-slot:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .wc-slot.available { background: #c8f5e4; border: 1px solid rgba(15,118,110,0.35); color: #064e3b; }
 .wc-slot.full { background: #f0f0f0; border: 1px solid #ddd; color: var(--mb-text-muted); opacity: 0.7; cursor: not-allowed; }
 .wc-slot.booked { background: #fff3cd; border: 1px solid #ffc107; color: #856404; }
 .wc-slot.selected { background: var(--mb-primary); color: white; border-color: var(--mb-primary); box-shadow: 0 4px 16px rgba(78,139,112,0.3); }
-.wc-slot .slot-label { display: inline-flex; align-items: center; justify-content: center; gap: 2px; font-weight: 800; text-transform: uppercase; font-size: 0.64rem; letter-spacing: 0.04em; line-height: 1.1; white-space: nowrap; color: inherit; }
+.wc-slot .slot-label { display: inline-flex; align-items: center; justify-content: center; gap: 2px; max-width: 100%; font-weight: 800; text-transform: uppercase; font-size: 0.64rem; letter-spacing: 0.04em; line-height: 1.1; white-space: nowrap; color: inherit; }
+.wc-slot .slot-label-both { display: block; max-width: 100%; text-align: center; text-transform: none; letter-spacing: 0; white-space: normal; overflow-wrap: anywhere; font-size: 0.62rem; line-height: 1.05; }
 .wc-slot .slot-count { font-size: 0.75rem; font-weight: 600; }
 .wc-slot .slot-mode-text { font-size: 0.6rem; font-weight: 700; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; }
 .wc-slot .slot-time { font-size: 0.64rem; font-weight: 700; line-height: 1.1; color: inherit; }

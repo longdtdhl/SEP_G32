@@ -147,9 +147,24 @@ if (resetDatabase)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
-    context.Database.EnsureCreated();
-    await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
-    await SeedData.SeedAsync(context);
+    try
+    {
+        Console.WriteLine("Applying Database Migrations...");
+        await context.Database.MigrateAsync();
+        Console.WriteLine("Applying Schema Upgrades...");
+        await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
+        Console.WriteLine("Seeding Database...");
+        await SeedData.SeedAsync(context);
+        Console.WriteLine("Database initialization and seed complete!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CRITICAL ERROR] Database initialization failed: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+        }
+    }
 }
 
 // Đặt các dòng này ngay sau khi Build, trước các middleware khác

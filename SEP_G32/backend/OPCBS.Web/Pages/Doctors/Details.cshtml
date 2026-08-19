@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.FullName} - Doctor Profile" : "Doctor Details";
     var isPatient = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Patient", StringComparison.OrdinalIgnoreCase);
+    var isDoctorRole = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Doctor", StringComparison.OrdinalIgnoreCase);
 }
 
 @if (Model.Doctor == null)
@@ -1015,9 +1016,12 @@
 
                 <!-- Primary CTA Action (ONLY ONE BOOK APPOINTMENT BUTTON) -->
                 <div class="d-grid gap-2">
-                    <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.Doctor.Id" class="dr-btn-primary-cta">
-                        <i class="bi bi-calendar-check"></i> Book Appointment
-                    </a>
+                    @if (!isDoctorRole)
+                    {
+                        <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.Doctor.Id" class="dr-btn-primary-cta">
+                            <i class="bi bi-calendar-check"></i> Book Appointment
+                        </a>
+                    }
                     @if (isPatient)
                     {
                         <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@Model.Doctor.Id" class="dr-btn-secondary-cta">

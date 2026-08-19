@@ -44,7 +44,9 @@ public class BlogService : IBlogService
             blogs = blogs.Where(b => b.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
         var total = blogs.Count;
         var items = blogs.OrderByDescending(b => b.PublishedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<BlogPostDto>>.SuccessResponse(_mapper.Map<List<BlogPostDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+        var dtos = _mapper.Map<List<BlogPostDto>>(items);
+        await EnrichBlogAuthorsAsync(dtos, items, ct);
+        return ApiResponse<List<BlogPostDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
     public async Task<ApiResponse<BlogPostDto>> GetBlogByIdAsync(Guid blogId, CancellationToken ct)
@@ -54,7 +56,9 @@ public class BlogService : IBlogService
         blog.ViewCount++;
         _blogRepo.Update(blog);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<BlogPostDto>.SuccessResponse(_mapper.Map<BlogPostDto>(blog));
+        var dto = _mapper.Map<BlogPostDto>(blog);
+        await EnrichBlogAuthorsAsync(new List<BlogPostDto> { dto }, new List<BlogPost> { blog }, ct);
+        return ApiResponse<BlogPostDto>.SuccessResponse(dto);
     }
 
     public async Task<ApiResponse<BlogPostDto>> CreateBlogAsync(Guid doctorUserId, CreateBlogPostDto dto, CancellationToken ct)
@@ -133,7 +137,9 @@ public class BlogService : IBlogService
 
         var total = blogs.Count;
         var items = blogs.OrderByDescending(b => b.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<BlogPostDto>>.SuccessResponse(_mapper.Map<List<BlogPostDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+        var dtos = _mapper.Map<List<BlogPostDto>>(items);
+        await EnrichBlogAuthorsAsync(dtos, items, ct);
+        return ApiResponse<List<BlogPostDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
     public async Task<ApiResponse<List<BlogPostDto>>> GetPendingBlogsAsync(int page, int pageSize, CancellationToken ct)
@@ -142,7 +148,43 @@ public class BlogService : IBlogService
         var blogs = all.Where(b => b.Status == BlogStatus.Pending).ToList();
         var total = blogs.Count;
         var items = blogs.OrderBy(b => b.SubmittedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<BlogPostDto>>.SuccessResponse(_mapper.Map<List<BlogPostDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+        var dtos = _mapper.Map<List<BlogPostDto>>(items);
+        await EnrichBlogAuthorsAsync(dtos, items, ct);
+        return ApiResponse<List<BlogPostDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+    }
+
+    private async Task EnrichBlogAuthorsAsync(List<BlogPostDto> dtos, List<BlogPost> sourceBlogs, CancellationToken ct)
+    {
+        if (!dtos.Any() || !sourceBlogs.Any()) return;
+
+        var doctors = await _doctorRepo.GetAllAsync(ct);
+        var users = await _userRepo.GetAllAsync(ct);
+        var doctorById = doctors.Where(d => !d.IsDeleted).ToDictionary(d => d.Id);
+        var userById = users.ToDictionary(u => u.Id);
+        var sourceById = sourceBlogs.ToDictionary(b => b.Id);
+
+        foreach (var dto in dtos)
+        {
+            if (string.IsNullOrWhiteSpace(dto.AuthorName))
+                dto.AuthorName = "OPCBS Specialist";
+
+            if (!sourceById.TryGetValue(dto.Id, out var source) ||
+                !doctorById.TryGetValue(source.DoctorId, out var doctor))
+            {
+                continue;
+            }
+
+            dto.AuthorId = doctor.Id;
+            dto.AuthorExperienceYears = doctor.ExperienceYears;
+            dto.AuthorIsVerified = doctor.VerificationStatus == VerificationStatus.Approved;
+            dto.AuthorProfessionalTitle = doctor.ProfessionalTitle ?? dto.AuthorProfessionalTitle;
+
+            if (userById.TryGetValue(doctor.UserId, out var user))
+            {
+                dto.AuthorName = string.IsNullOrWhiteSpace(user.FullName) ? dto.AuthorName : user.FullName;
+                dto.AuthorAvatarUrl = string.IsNullOrWhiteSpace(user.AvatarUrl) ? dto.AuthorAvatarUrl : user.AvatarUrl;
+            }
+        }
     }
 
     public async Task<ApiResponse> ApproveBlogAsync(Guid blogId, Guid supportUserId, CancellationToken ct)
@@ -584,6 +626,7 @@ public class ConsultationNoteService : IConsultationNoteService
             FollowUpNotes = dto.FollowUpNotes,
             TherapyPlan = dto.TherapyPlan,
             NextAppointmentRecommendedDate = dto.NextAppointmentRecommendedDate,
+            NextAppointmentRecommendedSlotId = dto.NextAppointmentRecommendedSlotId,
             ConsultationDate = dto.ConsultationDate,
             Visibility = (NoteVisibility)dto.Visibility,
             Doctor = doctor,

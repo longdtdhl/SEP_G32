@@ -440,6 +440,94 @@
         .blog-related-card { grid-template-columns: 120px minmax(0, 1fr); grid-template-rows: 1fr; }
         .blog-related-thumb { aspect-ratio: auto; min-height: 112px; }
     }
+
+    /* OPCBS article polish */
+    .blog-detail-container {
+        max-width: 1220px;
+    }
+
+    .blog-article-header {
+        background: #ffffff;
+        border: 1px solid #dbe7e2;
+        border-radius: 8px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+        max-width: 1040px;
+        padding: 2rem;
+    }
+
+    .blog-article-title {
+        font-size: clamp(2rem, 3vw, 2.65rem);
+        max-width: 880px;
+    }
+
+    .blog-article-meta {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .blog-author-avatar {
+        background: #e8f8f3;
+        border: 1px solid #bfe6d8;
+        color: #0f766e;
+    }
+
+    .blog-cover-img {
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+        max-width: 1040px;
+    }
+
+    .blog-detail-layout {
+        grid-template-columns: minmax(0, 780px) 320px;
+        max-width: 1160px;
+    }
+
+    .blog-summary-callout {
+        background: #eefaf6;
+        border: 1px solid #cde9dc;
+        border-left: 4px solid var(--mb-primary);
+        border-radius: 8px;
+    }
+
+    .blog-article-body {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+        color: #243447;
+        padding: 2rem;
+    }
+
+    .blog-sidebar-card {
+        border-color: #dbe7e2;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .blog-author-card {
+        border-color: #cde9dc;
+    }
+
+    .blog-related-card {
+        border-color: #dbe7e2;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .blog-related-thumb {
+        min-height: 128px;
+    }
+
+    .blog-related-thumb img {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        .blog-article-header,
+        .blog-article-body {
+            padding: 1.25rem;
+        }
+    }
 </style>
 
 @if (Model.Blog == null)
@@ -492,7 +580,7 @@
                     }
                     else
                     {
-                        @(string.IsNullOrEmpty(blog.AuthorName) ? "A" : blog.AuthorName[..1].ToUpper())
+                        @authorInitials
                     }
                 </div>
                 <span>
