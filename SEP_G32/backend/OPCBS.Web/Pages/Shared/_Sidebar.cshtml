@@ -30,56 +30,75 @@
 <aside class="mb-sidebar" id="mb-sidebar">
     @if (isPatient)
     {
-        <div class="sidebar-header">Patient Portal</div>
+        <!-- ==================== PATIENT PORTAL ==================== -->
+        <div class="sidebar-header">Main</div>
         <nav class="nav flex-column">
-            <a class="nav-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
-                <i class="bi bi-calendar-check"></i> My Appointments
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/appointments/history") ? "active" : "")" asp-page="/Patient/Appointments/History">
-                <i class="bi bi-clock-history"></i> Appointment History
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index">
-                <i class="bi bi-file-medical"></i> Consultation Records
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index">
-                <i class="bi bi-heart-pulse"></i> Treatment Progress
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
-                <i class="bi bi-box-seam"></i> Treatment Packages
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
-                <i class="bi bi-journal-heart"></i> Mood Journal
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/patient/psyformetrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
-                <i class="bi bi-clipboard2-pulse"></i> Psychometric Tests
+            <a class="nav-link @(currentPath == "/patient/dashboard" || currentPath == "/patient/dashboard/index" ? "active" : "")" asp-page="/Patient/Dashboard">
+                <i class="bi bi-house"></i> Dashboard
             </a>
             <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
                 <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge"></span>
             </a>
-            <div class="sidebar-header mt-3">Quick Actions</div>
-            <a class="nav-link" asp-page="/Doctors/Index">
+        </nav>
+
+        <div class="sidebar-header mt-3">Care & Appointments</div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
+                <i class="bi bi-calendar-check"></i> My Appointments
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/treatmentcases") ? "active" : "")" asp-page="/Patient/TreatmentCases/Index">
+                <i class="bi bi-heart-pulse"></i> Treatment Progress
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/consultationrecords") ? "active" : "")" asp-page="/Patient/ConsultationRecords/Index">
+                <i class="bi bi-file-medical"></i> Consultation Records
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Daily Wellness & Tools</div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
+                <i class="bi bi-journal-heart"></i> Mood & Sleep Journal
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
+                <i class="bi bi-clipboard2-pulse"></i> Psychometric Tests
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Explore & Services</div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(currentPath.StartsWith("/doctors") ? "active" : "")" asp-page="/Doctors/Index">
                 <i class="bi bi-search-heart"></i> Find a Therapist
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/favorites") ? "active" : "")" asp-page="/Patient/Favorites/Index">
+                <i class="bi bi-bookmark-heart"></i> Saved Therapists
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
+                <i class="bi bi-box-seam"></i> Treatment Packages
             </a>
         </nav>
     }
     else if (isDoctor)
     {
-        <div class="sidebar-header">Doctor Portal</div>
+        <!-- ==================== DOCTOR PORTAL ==================== -->
+        <div class="sidebar-header">Main</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/doctor/dashboard" ? "active" : "")" asp-page="/Doctor/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
+                <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge-doc"></span>
+            </a>
+        </nav>
 
+        <div class="sidebar-header mt-3">Clinical & Patients</div>
+        <nav class="nav flex-column">
             @if (isVerified)
             {
                 <a class="nav-link @(currentPath == "/doctor/appointments" || currentPath == "/doctor/appointments/index" ? "active" : "")" asp-page="/Doctor/Appointments/Index">
-                    <i class="bi bi-calendar-check"></i> Appointment Management
-                </a>
-                <a class="nav-link @(currentPath.StartsWith("/doctor/appointments/history") ? "active" : "")" asp-page="/Doctor/Appointments/History">
-                    <i class="bi bi-clock-history"></i> Appointment History
+                    <i class="bi bi-calendar-check"></i> Appointments
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
-                    <i class="bi bi-clock"></i> Schedules
+                    <i class="bi bi-clock"></i> Schedules & Hours
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/patients") ? "active" : "")" asp-page="/Doctor/Patients/Index">
                     <i class="bi bi-person-lines-fill"></i> Patient Records
@@ -87,19 +106,12 @@
                 <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index">
                     <i class="bi bi-heart-pulse"></i> Treatment Progress
                 </a>
-                <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
-                    <i class="bi bi-box-seam"></i> Treatment Packages
-                </a>
-                <a class="nav-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
-                    <i class="bi bi-journal-text"></i> Blog Posts
-                </a>
-                <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
-                    <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge-doc"></span>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/psychometrics") ? "active" : "")" asp-page="/Doctor/Psychometrics/Index">
+                    <i class="bi bi-clipboard2-pulse"></i> Psychometrics
                 </a>
             }
             else
             {
-                <!-- Disabled items for unverified doctors -->
                 <span class="nav-link disabled text-muted" title="Verification required">
                     <i class="bi bi-calendar-check"></i> Appointments <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
@@ -110,14 +122,44 @@
                     <i class="bi bi-person-lines-fill"></i> Patient Records <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
                 <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-heart-pulse"></i> Treatment Progress <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-clipboard2-pulse"></i> Psychometrics <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+            }
+        </nav>
+
+        <div class="sidebar-header mt-3">Services & Content</div>
+        <nav class="nav flex-column">
+            @if (isVerified)
+            {
+                <a class="nav-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
+                    <i class="bi bi-box-seam"></i> Treatment Packages
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
+                    <i class="bi bi-gem"></i> Service Packages
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/doctor/blogs") ? "active" : "")" asp-page="/Doctor/Blogs/Index">
+                    <i class="bi bi-journal-text"></i> Blog Posts
+                </a>
+            }
+            else
+            {
+                <span class="nav-link disabled text-muted" title="Verification required">
                     <i class="bi bi-box-seam"></i> Treatment Packages <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
+                </span>
+                <span class="nav-link disabled text-muted" title="Verification required">
+                    <i class="bi bi-gem"></i> Service Packages <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
                 <span class="nav-link disabled text-muted" title="Verification required">
                     <i class="bi bi-journal-text"></i> Blog Posts <i class="bi bi-lock-fill ms-auto" style="font-size:0.7rem;"></i>
                 </span>
             }
+        </nav>
 
-            <div class="sidebar-header mt-3">Account</div>
+        <div class="sidebar-header mt-3">Practice & Finance</div>
+        <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/doctor/verification") ? "active" : "")" asp-page="/Doctor/Verification">
                 <i class="bi bi-patch-check"></i> Identity Verification
                 @if (!isVerified)
@@ -131,9 +173,6 @@
                 <a class="nav-link @(currentPath.StartsWith("/doctor/revenue") ? "active" : "")" asp-page="/Doctor/Revenue/Index">
                     <i class="bi bi-wallet2"></i> Earnings & Revenue
                 </a>
-                <a class="nav-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
-                    <i class="bi bi-gem"></i> Service Packages
-                </a>
                 <a class="nav-link @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
                     <i class="bi bi-credit-card"></i> Subscription Status
                 </a>
@@ -142,64 +181,108 @@
     }
     else if (isCS)
     {
-        <div class="sidebar-header">Customer Support</div>
+        <!-- ==================== CUSTOMER SUPPORT ==================== -->
+        <div class="sidebar-header">Main</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/customersupport/dashboard" ? "active" : "")" asp-page="/CustomerSupport/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
+                <i class="bi bi-bell"></i> Notifications
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Moderation & Review</div>
+        <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/customersupport/doctorapplications") ? "active" : "")" asp-page="/CustomerSupport/DoctorApplications/Index">
                 <i class="bi bi-person-check"></i> Doctor Applications
             </a>
             <a class="nav-link @(currentPath.StartsWith("/customersupport/blogmoderation") ? "active" : "")" asp-page="/CustomerSupport/BlogModeration/Index">
                 <i class="bi bi-journal-check"></i> Blog Moderation
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/customersupport/violationreports") ? "active" : "")" asp-page="/CustomerSupport/ViolationReports/Index">
+                <i class="bi bi-shield-exclamation"></i> Violation Reports
+            </a>
         </nav>
     }
     else if (isBM)
     {
-        <div class="sidebar-header">Business Manager</div>
+        <!-- ==================== BUSINESS MANAGER ==================== -->
+        <div class="sidebar-header">Main</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/businessmanager/dashboard" ? "active" : "")" asp-page="/BusinessManager/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
+                <i class="bi bi-bell"></i> Notifications
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Catalog & Services</div>
+        <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/businessmanager/servicepackages") ? "active" : "")" asp-page="/BusinessManager/ServicePackages/Index">
                 <i class="bi bi-gem"></i> Service Packages
             </a>
             <a class="nav-link @(currentPath.StartsWith("/businessmanager/specializations") ? "active" : "")" asp-page="/BusinessManager/Specializations/Index">
                 <i class="bi bi-tags"></i> Specializations
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/businessmanager/psychometrics") ? "active" : "")" asp-page="/BusinessManager/Psychometrics/Index">
+                <i class="bi bi-clipboard2-pulse"></i> Psychometric Templates
+            </a>
+            <a class="nav-link @(currentPath.StartsWith("/businessmanager/subscriptions") ? "active" : "")" asp-page="/BusinessManager/Subscriptions/Index">
+                <i class="bi bi-credit-card-2-front"></i> Doctor Subscriptions
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Analytics & Reports</div>
+        <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/businessmanager/analytics") ? "active" : "")" asp-page="/BusinessManager/Analytics">
-                <i class="bi bi-graph-up"></i> Analytics
+                <i class="bi bi-graph-up"></i> Business Analytics
             </a>
             <a class="nav-link @(currentPath.StartsWith("/businessmanager/reports") ? "active" : "")" asp-page="/BusinessManager/Reports">
-                <i class="bi bi-file-earmark-bar-graph"></i> Reports
+                <i class="bi bi-file-earmark-bar-graph"></i> Financial Reports
             </a>
         </nav>
     }
     else if (isAdmin)
     {
-        <div class="sidebar-header">System Admin</div>
+        <!-- ==================== SYSTEM ADMIN ==================== -->
+        <div class="sidebar-header">Main</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath == "/admin/dashboard" ? "active" : "")" asp-page="/Admin/Dashboard">
                 <i class="bi bi-house"></i> Dashboard
             </a>
+            <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
+                <i class="bi bi-bell"></i> Notifications
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">User & Access Management</div>
+        <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/admin/users") ? "active" : "")" asp-page="/Admin/Users/Index">
-                <i class="bi bi-people"></i> Users
+                <i class="bi bi-people"></i> User Directory
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/roles") ? "active" : "")" asp-page="/Admin/Roles/Index">
-                <i class="bi bi-shield-check"></i> Roles
+                <i class="bi bi-shield-check"></i> System Roles
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/permissions") ? "active" : "")" asp-page="/Admin/Permissions/Index">
                 <i class="bi bi-key"></i> Permissions
+            </a>
+        </nav>
+
+        <div class="sidebar-header mt-3">Governance & System</div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(currentPath.StartsWith("/admin/violationreports") ? "active" : "")" asp-page="/Admin/ViolationReports/Index">
+                <i class="bi bi-shield-exclamation"></i> Violation Reports
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
                 <i class="bi bi-journal-text"></i> Audit Logs
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports">
-                <i class="bi bi-file-earmark-bar-graph"></i> Reports
+                <i class="bi bi-file-earmark-bar-graph"></i> System Reports
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/settings") ? "active" : "")" asp-page="/Admin/Settings">
-                <i class="bi bi-gear"></i> Settings
+                <i class="bi bi-gear"></i> System Settings
             </a>
         </nav>
     }

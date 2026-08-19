@@ -622,6 +622,10 @@ public class TreatmentCaseService : ITreatmentCaseService
                 }
                 else
                 {
+                    double spanHours = (endTime - startTime).TotalHours;
+                    if (spanHours <= 0) spanHours = 1.0;
+                    decimal slotFee = Math.Round((doctorProfile.ConsultationFee > 0 ? doctorProfile.ConsultationFee : 500000m) * (decimal)spanHours, 0);
+
                     // Create new AppointmentSlot
                     slot = new AppointmentSlot
                     {
@@ -629,6 +633,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                         SlotDate = slotDate,
                         StartTime = startTime,
                         EndTime = endTime,
+                        Price = slotFee,
                         ConsultationMode = dto.ConsultationMode,
                         Status = AppointmentSlotStatus.Booked,
                         CurrentBookings = 1,
@@ -851,12 +856,17 @@ public class TreatmentCaseService : ITreatmentCaseService
 
                     if (appointmentSlot == null)
                     {
+                        double spanHours = (slotEnd - slotStart).TotalHours;
+                        if (spanHours <= 0) spanHours = 1.0;
+                        decimal slotFee = Math.Round((doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m) * (decimal)spanHours, 0);
+
                         appointmentSlot = new AppointmentSlot
                         {
                             DoctorProfileId = doctor.Id,
                             SlotDate = slotDate,
                             StartTime = slotStart,
                             EndTime = slotEnd,
+                            Price = slotFee,
                             ConsultationMode = dto.ConsultationMode,
                             MaxPatients = 1,
                             CurrentBookings = 1,
@@ -1947,6 +1957,8 @@ public class TreatmentCaseService : ITreatmentCaseService
                     PatientId = j.PatientId,
                     MoodScore = moodScore,
                     StressScore = stressScore,
+                    SleepQualityScore = j.SleepHours.HasValue ? (int)Math.Round((double)j.SleepHours.Value) : null,
+                    DepressionScore = j.DepressionScale.HasValue ? (j.DepressionScale.Value <= 5 ? j.DepressionScale.Value * 2 : j.DepressionScale.Value) : null,
                     Note = !string.IsNullOrWhiteSpace(j.Title) ? (string.IsNullOrWhiteSpace(j.Content) ? j.Title : $"{j.Title}: {j.Content}") : j.Content,
                     RecordedAt = j.CreatedAt
                 });

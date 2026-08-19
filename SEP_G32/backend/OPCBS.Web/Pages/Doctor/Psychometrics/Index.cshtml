@@ -1,0 +1,1203 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Psychometrics.IndexModel
+@{
+    ViewData["Title"] = "Psychometric Assessments";
+    Layout = "_DashboardLayout";
+}
+
+<style>
+    /* ─── Global Section & Library Container ─── */
+    .assess-library-wrapper {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+        margin-bottom: 1.75rem;
+    }
+
+    .library-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .library-search-box {
+        position: relative;
+        min-width: 240px;
+        max-width: 320px;
+        flex-grow: 1;
+    }
+    .library-search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    .library-search-box input {
+        padding-left: 34px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        transition: all 0.15s ease;
+    }
+    .library-search-box input:focus {
+        background: #ffffff;
+        border-color: var(--mb-primary, #0d9488);
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+    }
+
+    /* ─── Segmented Pill Filter Buttons (Light Green Active) ─── */
+    .filter-segment-group {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 3px;
+        border-radius: 10px;
+        gap: 2px;
+    }
+    .filter-segment-btn {
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 0.4rem 0.95rem;
+        border-radius: 8px;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+    }
+    .filter-segment-btn:hover:not(.active) {
+        color: #1e293b;
+        background: rgba(255, 255, 255, 0.6);
+    }
+    .filter-segment-btn.active {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #86efac !important;
+        font-weight: 700 !important;
+        box-shadow: 0 1px 2px rgba(22, 101, 52, 0.08);
+    }
+    .filter-segment-btn .count-badge {
+        font-size: 0.7rem;
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .filter-segment-btn.active .count-badge {
+        background: #bbf7d0;
+        color: #14532d;
+    }
+
+    /* ─── Assessment Card Styling ─── */
+    .doc-assess-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+    .doc-assess-card.system-card {
+        border-top: 3px solid #3b82f6;
+    }
+    .doc-assess-card.my-card {
+        border-top: 3px solid #10b981;
+    }
+    .doc-assess-card:hover {
+        transform: translateY(-2px);
+        border-color: #cbd5e1;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    /* ─── Slide-over Drawer (Offcanvas) Customizations ─── */
+    .drawer-header-custom {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafbfc;
+    }
+    .drawer-body-custom {
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+    .drawer-footer-custom {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #f1f5f9;
+        background: #ffffff;
+    }
+
+    .scoring-range-bar {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .scoring-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.35rem 0;
+        font-size: 0.84rem;
+        border-bottom: 1px dashed #f1f5f9;
+    }
+    .scoring-row:last-child {
+        border-bottom: none;
+    }
+
+    .status-badge-assigned { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .status-badge-progress { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+    .status-badge-completed { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-badge-expired { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+</style>
+
+<div class="container-fluid px-0 py-2">
+    <!-- Main Page Header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-clipboard2-pulse me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Psychometric Assessments
+            </h1>
+            <p class="text-muted mb-0" style="font-size:0.85rem;">Manage clinical questionnaires, evaluate patient symptoms, and track therapeutic outcomes.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Doctor/Psychometrics/Create" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" style="border-radius:8px; font-size:0.84rem;">
+                <i class="bi bi-plus-lg me-1"></i>Create Assessment
+            </a>
+            <button type="button" class="btn btn-sm px-3.5 py-2 fw-semibold text-white shadow-sm" onclick="openAssignDrawer()" style="border-radius:8px; font-size:0.84rem; background:var(--mb-primary, #0d9488);">
+                <i class="bi bi-send-check-fill me-1.5"></i>Assign Assessment
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+            <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @{
+        var allLibrary = new List<OPCBS.Web.DTOs.PsychometricTestDto>();
+        allLibrary.AddRange(Model.Overview.SystemTemplates);
+        allLibrary.AddRange(Model.Overview.MyAssessments);
+        var sysCount = Model.Overview.SystemTemplates.Count;
+        var myCount = Model.Overview.MyAssessments.Count;
+    }
+
+    <!-- 1. Assessment Library Section (Card Wrapper) -->
+    <div class="assess-library-wrapper">
+        <div class="library-toolbar">
+            <div>
+                <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size:1.02rem;">
+                    <i class="bi bi-collection-fill text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assessment Library
+                    <span class="badge bg-light text-muted border" style="font-size:0.75rem; font-weight:600;">@allLibrary.Count templates</span>
+                </h5>
+                <p class="text-muted mb-0 mt-0.5" style="font-size:0.78rem;">Standard clinical screening questionnaires & custom evaluation forms.</p>
+            </div>
+
+            <div class="d-flex align-items-center gap-2.5 flex-wrap">
+                <!-- Search Box -->
+                <div class="library-search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="librarySearchInput" onkeyup="filterLibraryCards()" class="form-control form-control-sm" placeholder="Search templates or categories..." />
+                </div>
+
+                <!-- Segmented Tabs -->
+                <div class="filter-segment-group" role="group">
+                    <button type="button" class="filter-segment-btn active" id="pillAll" onclick="setLibraryTab('all')">
+                        All <span class="count-badge">@allLibrary.Count</span>
+                    </button>
+                    <button type="button" class="filter-segment-btn" id="pillSystem" onclick="setLibraryTab('system')">
+                        System Templates <span class="count-badge">@sysCount</span>
+                    </button>
+                    <button type="button" class="filter-segment-btn" id="pillMy" onclick="setLibraryTab('my')">
+                        My Assessments <span class="count-badge">@myCount</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" id="libraryCardsContainer">
+            @foreach (var test in allLibrary)
+            {
+                var isSys = test.IsSystemTemplate;
+                <div class="col-12 col-md-6 col-xl-4 library-card-item" data-type="@(isSys ? "system" : "my")" data-title="@test.Title.ToLower()" data-category="@((test.Category ?? "").ToLower())">
+                    <div class="doc-assess-card @(isSys ? "system-card" : "my-card")">
+                        <div>
+                            <!-- Header: Title & Distinct Badges -->
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                    @if (isSys)
+                                    {
+                                        <div class="d-inline-flex align-items-center gap-1 badge mb-1.5" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.7rem; font-weight:700; padding:3px 8px;">
+                                            <i class="bi bi-circle-fill text-primary" style="font-size:0.5rem;"></i> System Template
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-inline-flex align-items-center gap-1 badge mb-1.5" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.7rem; font-weight:700; padding:3px 8px;">
+                                            <i class="bi bi-circle-fill text-success" style="font-size:0.5rem;"></i> My Assessment
+                                        </div>
+                                    }
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size:0.96rem; line-height:1.35; letter-spacing:-0.01em;">@test.Title</h6>
+                                </div>
+                            </div>
+
+                            <p class="text-muted mb-2.5" style="font-size:0.82rem; line-height:1.45;">
+                                @(string.IsNullOrWhiteSpace(test.Description) ? (test.Purpose ?? "Clinical psychometric screening questionnaire.") : test.Description)
+                            </p>
+
+                            <!-- Metadata: Questions count & Category -->
+                            <div class="d-flex align-items-center gap-3 text-muted mb-2" style="font-size:0.76rem; font-weight:600;">
+                                <div>
+                                    <i class="bi bi-question-circle me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>@test.QuestionCount Questions
+                                </div>
+                                <div>
+                                    <i class="bi bi-tag me-1"></i>@(test.Category ?? "General Wellbeing")
+                                </div>
+                            </div>
+
+                            @if (!isSys && !string.IsNullOrWhiteSpace(test.DoctorName))
+                            {
+                                <div class="text-muted small mb-2.5" style="font-size:0.74rem;">
+                                    <i class="bi bi-person-fill text-secondary me-1"></i>Created by @test.DoctorName
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center pt-2.5 border-top gap-2">
+                            <div class="d-flex gap-1.5">
+                                @if (!isSys)
+                                {
+                                    <a asp-page="/Doctor/Psychometrics/Create" asp-route-editId="@test.Id" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:7px; font-size:0.78rem;">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </a>
+                                }
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold btn-view-details"
+                                        data-testid="@test.Id"
+                                        data-testtitle="@test.Title"
+                                        data-issys="@(isSys ? "true" : "false")"
+                                        data-category="@(test.Category ?? "General")"
+                                        data-qcount="@test.QuestionCount"
+                                        data-desc="@(test.Description ?? test.Purpose ?? "")"
+                                        style="border-radius:7px; font-size:0.78rem;">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-1.5">
+                                @if (!isSys)
+                                {
+                                    <form method="post" asp-page-handler="DeleteTest" asp-route-id="@test.Id" onsubmit="return confirm('Do you want to delete this custom assessment?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm px-2 py-1" title="Delete" style="border-radius:7px; font-size:0.78rem;">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                }
+                                <button type="button" class="btn btn-sm px-3 py-1 fw-semibold text-white shadow-sm btn-assign-test"
+                                        data-testid="@test.Id"
+                                        data-testtitle="@test.Title"
+                                        style="border-radius:7px; font-size:0.78rem; background:var(--mb-primary, #0d9488);">
+                                    <i class="bi bi-send me-1"></i>Assign
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- 2. Recent Patient Assessments Section (BOTTOM) -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size:1.02rem;">
+                        <i class="bi bi-clock-history me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Recent Patient Assessments
+                    </h5>
+                    <p class="text-muted mb-0" style="font-size:0.78rem;">List of assigned questionnaires and completed psychometric submissions.</p>
+                </div>
+                <span class="badge bg-light text-muted border px-2.5 py-1" style="font-size:0.75rem;">
+                    @Model.Overview.RecentAssessments.Count entries
+                </span>
+            </div>
+
+            @if (!Model.Overview.RecentAssessments.Any())
+            {
+                <div class="text-center py-5 text-muted border border-dashed rounded-3" style="background:#fafbfc;">
+                    <i class="bi bi-clipboard2-x d-block mb-2" style="font-size: 2.5rem; opacity:0.3;"></i>
+                    <h6 class="fw-bold text-dark">No assessment submissions yet</h6>
+                    <span class="small">Assign assessments to patients from the Library above to start tracking their clinical scores.</span>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0" style="font-size:0.86rem;">
+                        <thead style="background:#f8fafc; font-size:0.75rem; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">
+                            <tr>
+                                <th class="ps-3 py-3">Patient</th>
+                                <th class="py-3">Assessment</th>
+                                <th class="py-3">Date / Due</th>
+                                <th class="py-3">Score</th>
+                                <th class="py-3">Status</th>
+                                <th class="text-end pe-3 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var sub in Model.Overview.RecentAssessments)
+                            {
+                                var sev = sub.GetEffectiveSeverity();
+                                <tr>
+                                    <td class="ps-3 py-3">
+                                        <div class="fw-bold text-dark">@sub.PatientName</div>
+                                        @if (!string.IsNullOrWhiteSpace(sub.TreatmentCaseTitle))
+                                        {
+                                            <div class="text-muted small" style="font-size:0.75rem;">
+                                                <i class="bi bi-heart-pulse me-1"></i>@sub.TreatmentCaseTitle
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="fw-semibold text-dark">@sub.TestTitle</div>
+                                        <div class="text-muted small" style="font-size:0.75rem;">@(sub.Category ?? sub.Purpose ?? "Screening")</div>
+                                    </td>
+                                    <td class="py-3 text-muted">
+                                        @if (sub.Status == "Completed")
+                                        {
+                                            <span>@sub.SubmittedAt.ToString("MMM dd, yyyy")</span>
+                                        }
+                                        else if (sub.DueDate.HasValue)
+                                        {
+                                            <span class="text-warning fw-semibold">Due: @sub.DueDate.Value.ToString("MMM dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>—</span>
+                                        }
+                                    </td>
+                                    <td class="py-3">
+                                        @if (sub.Status == "Completed")
+                                        {
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-dark" style="font-size:0.95rem;">@sub.TotalScore / @sub.CalculatedMaxScore</span>
+                                                <span class="badge" style="background:@sev.Bg; color:@sev.Text; border:1px solid @sev.Border; font-size:0.7rem; font-weight:700;">
+                                                    @sev.En
+                                                </span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Pending</span>
+                                        }
+                                    </td>
+                                    <td class="py-3">
+                                        @if (sub.Status == "Completed")
+                                        {
+                                            <span class="badge status-badge-completed px-2.5 py-1" style="font-size:0.72rem; font-weight:700;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Completed
+                                            </span>
+                                        }
+                                        else if (sub.Status == "InProgress")
+                                        {
+                                            <span class="badge status-badge-progress px-2.5 py-1" style="font-size:0.72rem; font-weight:700;">
+                                                <i class="bi bi-clock-history me-1"></i>In Progress
+                                            </span>
+                                        }
+                                        else if (sub.Status == "Expired")
+                                        {
+                                            <span class="badge status-badge-expired px-2.5 py-1" style="font-size:0.72rem; font-weight:700;">
+                                                <i class="bi bi-x-circle me-1"></i>Expired
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge status-badge-assigned px-2.5 py-1" style="font-size:0.72rem; font-weight:700;">
+                                                <i class="bi bi-send me-1"></i>Assigned
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3 py-3">
+                                        @if (sub.Status == "Completed")
+                                        {
+                                            <a asp-page="/Doctor/Psychometrics/Details" asp-route-id="@sub.Id" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:6px; font-size:0.78rem;">
+                                                <i class="bi bi-eye me-1"></i>View Details
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DRAWER 1: ASSESSMENT DETAILS & EDIT SLIDE-OVER ==================== -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="assessmentDetailsDrawer" style="width: 620px; max-width: 95vw; z-index: 1060;">
+    <div class="offcanvas-header drawer-header-custom d-flex justify-content-between align-items-start border-bottom pb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="text-uppercase text-muted fw-bold small" style="font-size:0.72rem; letter-spacing:0.04em;">Assessment</span>
+                <span id="dtModeBadge" class="badge bg-light text-muted border" style="font-size:0.68rem;">View Mode</span>
+            </div>
+            <h5 class="offcanvas-title fw-bold text-dark mb-0" id="dtTitle">Assessment Title</h5>
+            <div class="text-muted small mt-0.5" id="dtSubtitle">Detailed Scale Description</div>
+        </div>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <!-- VIEW MODE BODY -->
+    <div class="offcanvas-body drawer-body-custom" id="dtViewSection">
+        <div id="dtViewSuccessAlert" class="d-none alert alert-success py-2 mb-3 small"></div>
+
+        <!-- Badge & Metrics Bar -->
+        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+            <div>
+                <span id="dtBadge" class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700;">
+                    System Template
+                </span>
+            </div>
+            <div class="text-muted small fw-semibold" style="font-size:0.78rem;" id="dtMetrics">
+                0 Questions · ~5 minutes · Category: General
+            </div>
+        </div>
+
+        <!-- Purpose -->
+        <div class="mb-3">
+            <h6 class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
+                Purpose
+            </h6>
+            <div class="p-3 rounded-3" style="background:#ffffff; border:1px solid #e2e8f0; font-size:0.86rem; color:#334155; line-height:1.55;" id="dtPurpose">
+                Clinical screening and psychological assessment.
+            </div>
+        </div>
+
+        <!-- Scoring Scale -->
+        <div class="mb-3">
+            <h6 class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
+                Scoring Scale & Clinical Cut-offs
+            </h6>
+            <div class="scoring-range-bar" id="dtScoringBar">
+                <!-- Dynamically filled by JS -->
+            </div>
+        </div>
+
+        <!-- Questions List -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold text-dark small text-uppercase mb-0" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
+                    Questions (<span id="dtQuestionsCount">0</span>)
+                </h6>
+                <button type="button" class="btn btn-outline-primary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:6px; font-size:0.76rem;" onclick="enableDrawerEditMode()">
+                    <i class="bi bi-pencil-square me-1"></i>Edit Questions
+                </button>
+            </div>
+            <div id="dtQuestionsList" class="list-group list-group-flush border rounded-3 overflow-hidden">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-teal mb-2" style="color:#0d9488;"></div>
+                    <div>Loading questions...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW MODE FOOTER -->
+    <div class="offcanvas-footer drawer-footer-custom d-flex justify-content-between align-items-center border-top p-3" id="dtViewFooter">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="offcanvas" style="border-radius:8px;">
+            Close
+        </button>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold" onclick="enableDrawerEditMode()" style="border-radius:8px;">
+                <i class="bi bi-pencil me-1"></i>Edit Questions
+            </button>
+            <button type="button" class="btn btn-sm px-3.5 py-1.5 fw-semibold text-white" id="dtAssignBtn" onclick="onDrawerAssignClick()" style="border-radius:8px; background:var(--mb-primary, #0d9488);">
+                <i class="bi bi-send me-1.5"></i>Assign Assessment
+            </button>
+        </div>
+    </div>
+
+    <!-- EDIT MODE BODY -->
+    <div class="offcanvas-body drawer-body-custom d-none" id="dtEditSection">
+        <div id="dtEditAlert" class="d-none alert py-2 mb-3 small"></div>
+
+        <div class="p-3 rounded-3 mb-3 bg-light border">
+            <div class="mb-2.5">
+                <label class="form-label fw-bold small text-dark mb-1">Assessment Title <span class="text-danger">*</span></label>
+                <input type="text" id="dtEditTitle" class="form-control form-control-sm" style="border-radius:8px;" placeholder="e.g. Anxiety & Mood Check-in" required />
+            </div>
+
+            <div class="row g-2 mb-2.5">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-dark mb-1">Category</label>
+                    <select id="dtEditCategory" class="form-select form-select-sm" style="border-radius:8px;">
+                        <option value="Anxiety">Anxiety</option>
+                        <option value="Depression">Depression</option>
+                        <option value="Stress">Stress</option>
+                        <option value="General Wellbeing">General Wellbeing</option>
+                        <option value="PTSD">PTSD / Trauma</option>
+                        <option value="Sleep Quality">Sleep Quality</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-dark mb-1">Test Type Identifier</label>
+                    <input type="text" id="dtEditTestType" class="form-control form-control-sm bg-white" style="border-radius:8px;" placeholder="CUSTOM" readonly />
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label fw-bold small text-dark mb-1">Purpose / Clinical Description</label>
+                <textarea id="dtEditPurpose" class="form-control form-control-sm" rows="2" style="border-radius:8px;" placeholder="Outline the clinical goal and measurement targets..."></textarea>
+            </div>
+        </div>
+
+        <!-- Editable Questions List -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold text-dark small text-uppercase mb-0" style="font-size:0.75rem; letter-spacing:0.04em; color:#0d9488;">
+                    <i class="bi bi-list-check me-1"></i>Configure Questionnaire Items
+                </h6>
+                <button type="button" class="btn btn-sm btn-outline-success px-2.5 py-1 fw-semibold" style="border-radius:6px; font-size:0.76rem;" onclick="addEditQuestionRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Add Question
+                </button>
+            </div>
+
+            <div id="dtEditQuestionsList" class="d-flex flex-column gap-2.5">
+                <!-- Dynamically populated question rows -->
+            </div>
+
+            <div class="text-center mt-3">
+                <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 w-100 fw-semibold" style="border-radius:8px; border-style:dashed;" onclick="addEditQuestionRow()">
+                    <i class="bi bi-plus-circle me-1.5"></i>Add Another Question Item
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MODE FOOTER -->
+    <div class="offcanvas-footer drawer-footer-custom d-none justify-content-between align-items-center border-top p-3" id="dtEditFooter">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="cancelDrawerEditMode()" style="border-radius:8px;">
+            <i class="bi bi-x-lg me-1"></i>Cancel Edit
+        </button>
+        <button type="button" class="btn btn-sm px-4 py-2 fw-semibold text-white shadow-sm" id="dtSaveBtn" onclick="saveTestChanges()" style="border-radius:8px; background:var(--mb-primary, #0d9488);">
+            <i class="bi bi-check2-circle me-1.5"></i>Save Changes
+        </button>
+    </div>
+</div>
+
+<!-- ==================== DRAWER 2: ASSIGN ASSESSMENT SLIDE-OVER ==================== -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="assignAssessmentDrawer" style="width: 520px; max-width: 90vw; z-index: 1065;">
+    <div class="offcanvas-header drawer-header-custom d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="offcanvas-title fw-bold text-dark mb-0">
+                <i class="bi bi-person-check-fill me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assign Assessment
+            </h5>
+            <div class="text-muted small mt-0.5">Send questionnaire to patient for clinical evaluation</div>
+        </div>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body drawer-body-custom">
+        <div id="assignDrawerAlert" class="d-none"></div>
+
+        <form id="assignDrawerForm" onsubmit="submitAssignDrawer(event)">
+            <!-- Select Assessment -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Select Assessment <span class="text-danger">*</span></label>
+                <select id="assignDrawerTestId" class="form-select form-select-sm" style="border-radius:8px;" required>
+                    <option value="">-- Choose an assessment template --</option>
+                    @foreach (var t in allLibrary)
+                    {
+                        <option value="@t.Id">@t.Title (@(t.IsSystemTemplate ? "System" : "Custom")) - @t.QuestionCount Qs</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Select Patient -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Select Patient <span class="text-danger">*</span></label>
+                <select id="assignDrawerPatientId" class="form-select form-select-sm" style="border-radius:8px;" required onchange="onAssignPatientChange()">
+                    <option value="">-- Choose a patient --</option>
+                    @foreach (var p in Model.PatientOptions)
+                    {
+                        <option value="@p.PatientId" data-caseid="@p.CaseId" data-casetitle="@p.CaseTitle">@p.PatientName @(p.CaseTitle != null ? $"({p.CaseTitle})" : "")</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Linked Treatment Case (Auto) -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Linked Treatment Case</label>
+                <input type="text" id="assignDrawerCaseTitle" class="form-control form-control-sm bg-light" readonly placeholder="Auto-linked if patient has active case" style="border-radius:8px;" />
+                <input type="hidden" id="assignDrawerCaseId" />
+            </div>
+
+            <!-- Due Date -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-dark small">Due Date</label>
+                <input type="date" id="assignDrawerDueDate" class="form-control form-control-sm" style="border-radius:8px;" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" />
+                <div class="form-text small" style="font-size:0.75rem;">Default deadline: 7 days from today.</div>
+            </div>
+
+            <!-- Doctor Notes / Instructions -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-dark small">Clinical Instructions / Patient Note</label>
+                <textarea id="assignDrawerNote" class="form-control" rows="3" placeholder="e.g. Please complete this assessment before our Thursday session to review anxiety triggers." style="border-radius:8px; font-size:0.84rem;"></textarea>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-sm py-2 text-white fw-semibold shadow-sm" id="assignDrawerSubmitBtn" style="border-radius:8px; background:var(--mb-primary, #0d9488); font-size:0.88rem;">
+                    <i class="bi bi-send me-1.5"></i>Assign Assessment to Patient
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let currentSelectedTestId = null;
+        let currentLoadedAssessment = null;
+
+        function setLibraryTab(tab) {
+            document.querySelectorAll('.filter-segment-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'all') document.getElementById('pillAll').classList.add('active');
+            if (tab === 'system') document.getElementById('pillSystem').classList.add('active');
+            if (tab === 'my') document.getElementById('pillMy').classList.add('active');
+
+            const items = document.querySelectorAll('.library-card-item');
+            items.forEach(item => {
+                const itemType = item.getAttribute('data-type');
+                if (tab === 'all' || itemType === tab) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function filterLibraryCards() {
+            const query = document.getElementById('librarySearchInput').value.toLowerCase().trim();
+            const items = document.querySelectorAll('.library-card-item');
+            items.forEach(item => {
+                const title = item.getAttribute('data-title') || '';
+                const cat = item.getAttribute('data-category') || '';
+                if (!query || title.includes(query) || cat.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function getOffcanvas(element) {
+            if (!element) return null;
+            if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                if (typeof bootstrap.Offcanvas.getOrCreateInstance === 'function') {
+                    return bootstrap.Offcanvas.getOrCreateInstance(element);
+                }
+                return bootstrap.Offcanvas.getInstance(element) || new bootstrap.Offcanvas(element);
+            }
+            return null;
+        }
+
+        // Open Right-Side Slide-Over Assessment Details Drawer
+        async function openDetailsDrawer(testId, title, isSys, category, qCount, desc) {
+            currentSelectedTestId = testId;
+            currentLoadedAssessment = null;
+            cancelDrawerEditMode();
+
+            document.getElementById('dtTitle').textContent = title || "Assessment Details";
+            document.getElementById('dtSubtitle').textContent = desc || "Clinical standardized psychological screening assessment.";
+            document.getElementById('dtPurpose').textContent = desc || "Used for diagnostic screening and clinical evaluation.";
+
+            const badge = document.getElementById('dtBadge');
+            if (isSys) {
+                badge.className = "badge";
+                badge.style.background = "#eff6ff";
+                badge.style.color = "#1d4ed8";
+                badge.style.border = "1px solid #bfdbfe";
+                badge.innerHTML = '<i class="bi bi-circle-fill text-primary" style="font-size:0.5rem;"></i> System Template';
+            } else {
+                badge.className = "badge";
+                badge.style.background = "#ecfdf5";
+                badge.style.color = "#047857";
+                badge.style.border = "1px solid #a7f3d0";
+                badge.innerHTML = '<i class="bi bi-circle-fill text-success" style="font-size:0.5rem;"></i> My Assessment';
+            }
+
+            document.getElementById('dtMetrics').textContent = `${qCount || 0} Questions · ~${Math.max(3, Math.round((qCount || 5) * 0.6))} minutes · Category: ${category || 'General'}`;
+            document.getElementById('dtQuestionsCount').textContent = qCount || 0;
+
+            // Build Scoring Scale Table
+            const scoringBar = document.getElementById('dtScoringBar');
+            const safeTitle = (title || '').toUpperCase();
+            if (safeTitle.includes('PHQ-9') || safeTitle.includes('PHQ9')) {
+                scoringBar.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2 fw-bold text-dark" style="font-size:0.85rem;">
+                        <span>0</span>
+                        <span style="color:#94a3b8; font-weight:normal;">────────────────────────────────</span>
+                        <span>27</span>
+                    </div>
+                    <div class="scoring-row"><span>0–4</span><span class="badge bg-success-subtle text-success">Minimal</span></div>
+                    <div class="scoring-row"><span>5–9</span><span class="badge bg-info-subtle text-info-emphasis">Mild</span></div>
+                    <div class="scoring-row"><span>10–14</span><span class="badge bg-warning-subtle text-warning-emphasis">Moderate</span></div>
+                    <div class="scoring-row"><span>15–19</span><span class="badge" style="background:#fff7ed; color:#9a3412;">Moderately Severe</span></div>
+                    <div class="scoring-row"><span>20–27</span><span class="badge bg-danger-subtle text-danger">Severe</span></div>
+                `;
+            } else if (safeTitle.includes('GAD-7') || safeTitle.includes('GAD7')) {
+                scoringBar.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2 fw-bold text-dark" style="font-size:0.85rem;">
+                        <span>0</span>
+                        <span style="color:#94a3b8; font-weight:normal;">────────────────────────────────</span>
+                        <span>21</span>
+                    </div>
+                    <div class="scoring-row"><span>0–4</span><span class="badge bg-success-subtle text-success">Minimal Anxiety</span></div>
+                    <div class="scoring-row"><span>5–9</span><span class="badge bg-info-subtle text-info-emphasis">Mild Anxiety</span></div>
+                    <div class="scoring-row"><span>10–14</span><span class="badge bg-warning-subtle text-warning-emphasis">Moderate Anxiety</span></div>
+                    <div class="scoring-row"><span>15–21</span><span class="badge bg-danger-subtle text-danger">Severe Anxiety</span></div>
+                `;
+            } else if (safeTitle.includes('DASS')) {
+                scoringBar.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2 fw-bold text-dark" style="font-size:0.85rem;">
+                        <span>0</span>
+                        <span style="color:#94a3b8; font-weight:normal;">────────────────────────────────</span>
+                        <span>126</span>
+                    </div>
+                    <div class="scoring-row"><span>Depression</span><span class="text-muted">0-9 Normal, 10-13 Mild, 14-20 Mod, 21-27 Sev, 28+ Ext</span></div>
+                    <div class="scoring-row"><span>Anxiety</span><span class="text-muted">0-7 Normal, 8-9 Mild, 10-14 Mod, 15-19 Sev, 20+ Ext</span></div>
+                    <div class="scoring-row"><span>Stress</span><span class="text-muted">0-14 Normal, 15-18 Mild, 19-25 Mod, 26-33 Sev, 34+ Ext</span></div>
+                `;
+            } else {
+                scoringBar.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2 fw-bold text-dark" style="font-size:0.85rem;">
+                        <span>0%</span>
+                        <span style="color:#94a3b8; font-weight:normal;">────────────────────────────────</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="scoring-row"><span>0% – 25%</span><span class="badge bg-success-subtle text-success">Minimal</span></div>
+                    <div class="scoring-row"><span>26% – 50%</span><span class="badge bg-info-subtle text-info-emphasis">Mild</span></div>
+                    <div class="scoring-row"><span>51% – 75%</span><span class="badge bg-warning-subtle text-warning-emphasis">Moderate</span></div>
+                    <div class="scoring-row"><span>76% – 100%</span><span class="badge bg-danger-subtle text-danger">High / Severe</span></div>
+                `;
+            }
+
+            const qContainer = document.getElementById('dtQuestionsList');
+            qContainer.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm mb-2" style="color:#0d9488;"></div><div>Loading questions...</div></div>';
+
+            const drawerEl = document.getElementById('assessmentDetailsDrawer');
+            const drawer = getOffcanvas(drawerEl);
+            if (drawer) {
+                drawer.show();
+            } else if (drawerEl) {
+                drawerEl.classList.add('show');
+                drawerEl.style.visibility = 'visible';
+            }
+
+            try {
+                const res = await fetch(`?handler=TestDetails&testId=${encodeURIComponent(testId)}`);
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                if (!json.success || !json.data) throw new Error(json.message || "Failed to load");
+                const test = json.data;
+                currentLoadedAssessment = test;
+
+                // Sync view header
+                document.getElementById('dtTitle').textContent = test.title || title;
+                document.getElementById('dtSubtitle').textContent = test.description || desc || "Clinical standardized psychological screening assessment.";
+                document.getElementById('dtPurpose').textContent = test.purpose || test.description || desc || "Used for diagnostic screening and clinical evaluation.";
+
+                renderViewQuestions(test.questions);
+            } catch (err) {
+                qContainer.innerHTML = '<div class="alert alert-danger py-2 m-2">Unable to load test details. Please try again.</div>';
+            }
+        }
+
+        function renderViewQuestions(questions) {
+            const qContainer = document.getElementById('dtQuestionsList');
+            if (questions && questions.length > 0) {
+                document.getElementById('dtQuestionsCount').textContent = questions.length;
+                let html = '';
+                questions.forEach((q, idx) => {
+                    html += `
+                        <div class="list-group-item px-3 py-2.5">
+                            <div class="d-flex align-items-start gap-2.5">
+                                <span class="badge bg-light text-dark border px-2 py-1" style="font-size:0.75rem;">Q${q.questionNumber || (idx + 1)}</span>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold text-dark" style="font-size:0.86rem;">${q.questionText}</div>
+                                    <div class="text-muted small mt-0.5" style="font-size:0.72rem;">Scale: ${q.questionType || '0-3 standard'} ${q.category ? `• ${q.category}` : ''}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                qContainer.innerHTML = html;
+            } else {
+                document.getElementById('dtQuestionsCount').textContent = "0";
+                qContainer.innerHTML = '<p class="text-muted text-center my-3">No questions configured for this template.</p>';
+            }
+        }
+
+        // ─── Edit Mode in Drawer ───
+        function enableDrawerEditMode() {
+            if (!currentLoadedAssessment && !currentSelectedTestId) return;
+
+            document.getElementById('dtModeBadge').textContent = 'Edit Mode';
+            document.getElementById('dtModeBadge').className = 'badge bg-warning-subtle text-warning-emphasis border border-warning';
+
+            document.getElementById('dtViewSection').classList.add('d-none');
+            document.getElementById('dtViewFooter').classList.add('d-none');
+
+            document.getElementById('dtEditSection').classList.remove('d-none');
+            document.getElementById('dtEditFooter').classList.remove('d-none');
+            document.getElementById('dtEditFooter').classList.add('d-flex');
+
+            // Populate Edit Fields
+            const test = currentLoadedAssessment || {
+                title: document.getElementById('dtTitle').textContent,
+                category: 'General',
+                purpose: document.getElementById('dtPurpose').textContent,
+                testType: 'CUSTOM',
+                questions: []
+            };
+
+            document.getElementById('dtEditTitle').value = test.title || '';
+            document.getElementById('dtEditCategory').value = test.category || 'General';
+            document.getElementById('dtEditTestType').value = test.testType || 'CUSTOM';
+            document.getElementById('dtEditPurpose').value = test.purpose || test.description || '';
+
+            const editList = document.getElementById('dtEditQuestionsList');
+            editList.innerHTML = '';
+
+            if (test.questions && test.questions.length > 0) {
+                test.questions.forEach((q, idx) => {
+                    addEditQuestionRow(q.questionText, q.questionType, q.category);
+                });
+            } else {
+                addEditQuestionRow('', 'Rating1To5', test.category || 'General');
+            }
+        }
+
+        function cancelDrawerEditMode() {
+            document.getElementById('dtModeBadge').textContent = 'View Mode';
+            document.getElementById('dtModeBadge').className = 'badge bg-light text-muted border';
+
+            document.getElementById('dtEditSection').classList.add('d-none');
+            document.getElementById('dtEditFooter').classList.add('d-none');
+            document.getElementById('dtEditFooter').classList.remove('d-flex');
+
+            document.getElementById('dtViewSection').classList.remove('d-none');
+            document.getElementById('dtViewFooter').classList.remove('d-none');
+            document.getElementById('dtEditAlert').classList.add('d-none');
+        }
+
+        function addEditQuestionRow(qText = '', qType = 'Rating1To5', qCat = '') {
+            const list = document.getElementById('dtEditQuestionsList');
+            const rowCount = list.children.length + 1;
+
+            const div = document.createElement('div');
+            div.className = 'p-3 rounded-3 bg-white border question-edit-item shadow-xs';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-light text-dark border px-2 py-1 q-num-badge" style="font-size:0.75rem;">Item #${rowCount}</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm py-0.5 px-2" style="font-size:0.72rem; border-radius:6px;" onclick="removeEditQuestionRow(this)" title="Delete Item">
+                        <i class="bi bi-trash3"></i> Delete
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small text-muted mb-1 fw-semibold">Question Prompt <span class="text-danger">*</span></label>
+                    <textarea class="form-control form-control-sm q-text-input" rows="2" style="border-radius:6px;" placeholder="Enter question statement here..." required>${qText || ''}</textarea>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Response Scale</label>
+                        <select class="form-select form-select-sm q-type-input" style="border-radius:6px;">
+                            <option value="Rating1To5" ${qType === 'Rating1To5' ? 'selected' : ''}>1-5 Likert (Never to Always)</option>
+                            <option value="Rating0To3" ${qType === 'Rating0To3' ? 'selected' : ''}>0-3 Scale (PHQ-9 / DASS / GAD-7)</option>
+                            <option value="Rating1To10" ${qType === 'Rating1To10' ? 'selected' : ''}>1-10 Intensity Scale</option>
+                            <option value="MultipleChoice" ${qType === 'MultipleChoice' ? 'selected' : ''}>Multiple Choice</option>
+                            <option value="YesNo" ${qType === 'YesNo' ? 'selected' : ''}>Yes / No</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Subscale / Category</label>
+                        <input type="text" class="form-control form-control-sm q-cat-input" style="border-radius:6px;" value="${qCat || ''}" placeholder="e.g. Depression, Anxiety" />
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        function removeEditQuestionRow(btn) {
+            const list = document.getElementById('dtEditQuestionsList');
+            if (list.children.length <= 1) {
+                alert("An assessment must have at least 1 question.");
+                return;
+            }
+            const item = btn.closest('.question-edit-item');
+            if (item) item.remove();
+
+            // Re-index
+            const items = list.querySelectorAll('.question-edit-item');
+            items.forEach((it, idx) => {
+                const badge = it.querySelector('.q-num-badge');
+                if (badge) badge.textContent = `Item #${idx + 1}`;
+            });
+        }
+
+        async function saveTestChanges() {
+            const alertBox = document.getElementById('dtEditAlert');
+            const saveBtn = document.getElementById('dtSaveBtn');
+
+            const title = document.getElementById('dtEditTitle').value.trim();
+            const category = document.getElementById('dtEditCategory').value.trim();
+            const purpose = document.getElementById('dtEditPurpose').value.trim();
+            const testType = document.getElementById('dtEditTestType').value.trim() || "CUSTOM";
+
+            if (!title) {
+                alertBox.className = "alert alert-danger py-2 mb-3";
+                alertBox.textContent = "Assessment title cannot be empty.";
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            const items = document.querySelectorAll('#dtEditQuestionsList .question-edit-item');
+            const questions = [];
+            items.forEach((it, idx) => {
+                const text = it.querySelector('.q-text-input')?.value.trim() || '';
+                const type = it.querySelector('.q-type-input')?.value || 'Rating1To5';
+                const cat = it.querySelector('.q-cat-input')?.value.trim() || category;
+                if (text) {
+                    questions.push({
+                        questionNumber: idx + 1,
+                        questionText: text,
+                        questionType: type,
+                        category: cat
+                    });
+                }
+            });
+
+            if (questions.length === 0) {
+                alertBox.className = "alert alert-danger py-2 mb-3";
+                alertBox.textContent = "Please provide text for at least one question.";
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+            try {
+                const payload = {
+                    testId: currentSelectedTestId,
+                    title: title,
+                    category: category,
+                    purpose: purpose,
+                    description: purpose,
+                    testType: testType,
+                    questions: questions
+                };
+
+                const res = await fetch('?handler=UpdateTest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    // Update cache
+                    if (!currentLoadedAssessment) currentLoadedAssessment = {};
+                    currentLoadedAssessment.title = title;
+                    currentLoadedAssessment.category = category;
+                    currentLoadedAssessment.purpose = purpose;
+                    currentLoadedAssessment.description = purpose;
+                    currentLoadedAssessment.questions = questions;
+
+                    // Update View UI
+                    document.getElementById('dtTitle').textContent = title;
+                    document.getElementById('dtPurpose').textContent = purpose || "Used for diagnostic screening and clinical evaluation.";
+                    document.getElementById('dtMetrics').textContent = `${questions.length} Questions · Category: ${category}`;
+                    renderViewQuestions(questions);
+
+                    // Switch back to view mode
+                    cancelDrawerEditMode();
+
+                    // Show success banner in view mode
+                    const succAlert = document.getElementById('dtViewSuccessAlert');
+                    succAlert.textContent = "Assessment and questions updated successfully!";
+                    succAlert.classList.remove('d-none');
+                    setTimeout(() => succAlert.classList.add('d-none'), 4000);
+                } else {
+                    alertBox.className = "alert alert-danger py-2 mb-3";
+                    alertBox.textContent = json.message || "Failed to save assessment changes.";
+                    alertBox.classList.remove('d-none');
+                }
+            } catch (err) {
+                alertBox.className = "alert alert-danger py-2 mb-3";
+                alertBox.textContent = "An error occurred while saving changes.";
+                alertBox.classList.remove('d-none');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check2-circle me-1.5"></i>Save Changes';
+            }
+        }
+
+        function onDrawerAssignClick() {
+            const dtDrawerEl = document.getElementById('assessmentDetailsDrawer');
+            if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                const dtDrawer = bootstrap.Offcanvas.getInstance(dtDrawerEl);
+                if (dtDrawer) dtDrawer.hide();
+            } else if (dtDrawerEl) {
+                dtDrawerEl.classList.remove('show');
+            }
+
+            setTimeout(() => {
+                openAssignDrawer(currentSelectedTestId);
+            }, 300);
+        }
+
+        // Open Right-Side Slide-Over Assign Drawer
+        function openAssignDrawer(testId) {
+            if (testId) {
+                document.getElementById('assignDrawerTestId').value = testId;
+            }
+            const drawerEl = document.getElementById('assignAssessmentDrawer');
+            if (typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                const drawer = (typeof bootstrap.Offcanvas.getOrCreateInstance === 'function')
+                    ? bootstrap.Offcanvas.getOrCreateInstance(drawerEl)
+                    : (bootstrap.Offcanvas.getInstance(drawerEl) || new bootstrap.Offcanvas(drawerEl));
+                drawer.show();
+            } else if (drawerEl) {
+                drawerEl.classList.add('show');
+                drawerEl.style.visibility = 'visible';
+            }
+        }
+
+        function onAssignPatientChange() {
+            const select = document.getElementById('assignDrawerPatientId');
+            const opt = select.options[select.selectedIndex];
+            const caseId = opt ? opt.getAttribute('data-caseid') : '';
+            const caseTitle = opt ? opt.getAttribute('data-casetitle') : '';
+
+            document.getElementById('assignDrawerCaseId').value = caseId || '';
+            document.getElementById('assignDrawerCaseTitle').value = caseTitle || 'No active treatment case';
+        }
+
+        async function submitAssignDrawer(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('assignDrawerAlert');
+            const submitBtn = document.getElementById('assignDrawerSubmitBtn');
+
+            const testId = document.getElementById('assignDrawerTestId').value;
+            const patientId = document.getElementById('assignDrawerPatientId').value;
+            const caseId = document.getElementById('assignDrawerCaseId').value || null;
+            const dueDate = document.getElementById('assignDrawerDueDate').value || null;
+            const note = document.getElementById('assignDrawerNote').value || null;
+
+            if (!testId || !patientId) {
+                alertBox.className = "alert alert-danger py-2 mb-3";
+                alertBox.textContent = "Please select both an assessment and a patient.";
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Assigning...';
+
+            try {
+                const payload = {
+                    testId: testId,
+                    patientId: patientId,
+                    treatmentCaseId: caseId,
+                    dueDate: dueDate,
+                    doctorNote: note
+                };
+
+                const res = await fetch('?handler=Assign', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    window.location.reload();
+                } else {
+                    alertBox.className = "alert alert-danger py-2 mb-3";
+                    alertBox.textContent = json.message || "Failed to assign assessment.";
+                    alertBox.classList.remove('d-none');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-send me-1.5"></i>Assign Assessment to Patient';
+                }
+            } catch {
+                alertBox.className = "alert alert-danger py-2 mb-3";
+                alertBox.textContent = "An error occurred while assigning.";
+                alertBox.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send me-1.5"></i>Assign Assessment to Patient';
+            }
+        }
+
+        // ─── Event Delegation for View & Assign buttons ───
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.btn-view-details').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const testId = this.dataset.testid;
+                    const title = this.dataset.testtitle;
+                    const isSys = this.dataset.issys === 'true';
+                    const category = this.dataset.category;
+                    const qCount = parseInt(this.dataset.qcount) || 0;
+                    const desc = this.dataset.desc;
+                    openDetailsDrawer(testId, title, isSys, category, qCount, desc);
+                });
+            });
+
+            document.querySelectorAll('.btn-assign-test').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const testId = this.dataset.testid;
+                    openAssignDrawer(testId);
+                });
+            });
+        });
+    </script>
+}

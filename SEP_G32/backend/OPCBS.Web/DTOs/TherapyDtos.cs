@@ -71,6 +71,9 @@ public class EmotionJournalDto
     public bool IsShared { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public decimal? SleepHours { get; set; }
+    public int? DepressionScale { get; set; }
+
     public string MoodEmoji => MoodScale switch
     {
         1 => "😢",
@@ -83,22 +86,62 @@ public class EmotionJournalDto
 
     public string MoodText => MoodScale switch
     {
-        1 => "Rất tệ",
-        2 => "Tệ",
-        3 => "Bình thường",
-        4 => "Tốt",
-        5 => "Rất tốt",
+        1 => "Very Bad",
+        2 => "Bad",
+        3 => "Neutral",
+        4 => "Good",
+        5 => "Great",
         _ => "N/A"
     };
 
     public string StressText => StressScale switch
     {
-        1 => "Rất thấp",
-        2 => "Thấp",
-        3 => "Trung bình",
-        4 => "Cao",
-        5 => "Rất cao",
+        1 => "Very Low",
+        2 => "Low",
+        3 => "Moderate",
+        4 => "High",
+        5 => "Extreme",
         _ => "N/A"
+    };
+
+    public string DepressionText => DepressionScale switch
+    {
+        1 => "Very Low",
+        2 => "Low",
+        3 => "Moderate",
+        4 => "High",
+        5 => "Extreme",
+        _ => "N/A"
+    };
+
+    public (string Bg, string Text, string Border) MoodStyle => MoodScale switch
+    {
+        1 => ("#fef2f2", "#991b1b", "#fecaca"),
+        2 => ("#fff7ed", "#9a3412", "#fed7aa"),
+        3 => ("#f8fafc", "#475569", "#e2e8f0"),
+        4 => ("#eff6ff", "#1e40af", "#bfdbfe"),
+        5 => ("#f0fdf4", "#166534", "#bbf7d0"),
+        _ => ("#f8fafc", "#475569", "#e2e8f0")
+    };
+
+    public (string Bg, string Text, string Border) StressStyle => StressScale switch
+    {
+        1 => ("#f0fdf4", "#166534", "#bbf7d0"),
+        2 => ("#eff6ff", "#1e40af", "#bfdbfe"),
+        3 => ("#fefce8", "#854d0e", "#fef08a"),
+        4 => ("#fff7ed", "#9a3412", "#fed7aa"),
+        5 => ("#fef2f2", "#991b1b", "#fecaca"),
+        _ => ("#f8fafc", "#475569", "#e2e8f0")
+    };
+
+    public (string Bg, string Text, string Border) DepressionStyle => DepressionScale switch
+    {
+        1 => ("#f0fdf4", "#166534", "#bbf7d0"),
+        2 => ("#eff6ff", "#1e40af", "#bfdbfe"),
+        3 => ("#fefce8", "#854d0e", "#fef08a"),
+        4 => ("#fff7ed", "#9a3412", "#fed7aa"),
+        5 => ("#fef2f2", "#991b1b", "#fecaca"),
+        _ => ("#f8fafc", "#475569", "#e2e8f0")
     };
 }
 
@@ -108,5 +151,7 @@ public class CreateJournalDto
     public string? Content { get; set; }
     public int MoodScale { get; set; }
     public int StressScale { get; set; }
+    public decimal? SleepHours { get; set; }
+    public int? DepressionScale { get; set; }
     public bool IsShared { get; set; }
 }

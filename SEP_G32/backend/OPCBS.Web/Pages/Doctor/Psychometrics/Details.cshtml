@@ -1,0 +1,417 @@
+@page "{id:guid?}"
+@model OPCBS.Web.Pages.Doctor.Psychometrics.DetailsModel
+@{
+    ViewData["Title"] = $"{Model.Submission.PatientName} - {Model.Submission.TestTitle}";
+    Layout = "_DashboardLayout";
+    var sub = Model.Submission;
+    var sev = sub.GetEffectiveSeverity();
+}
+
+<style>
+    .patient-header-hero {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        margin-bottom: 1.5rem;
+    }
+    .patient-avatar-circle {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #0d9488, #0f766e);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+    .total-score-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.75rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .total-score-label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-bottom: 0.4rem;
+    }
+    .total-score-number {
+        font-size: 2.75rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        margin-bottom: 0.75rem;
+    }
+    .breakdown-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .clinical-disclaimer-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #64748b;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.78rem;
+        color: #475569;
+        margin-top: 1rem;
+    }
+</style>
+
+<div class="container-fluid px-0 py-2" style="max-width: 1080px;">
+    <!-- Navigation Back Link -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-page="/Doctor/Psychometrics/Index" class="btn btn-link text-decoration-none p-0 text-muted d-inline-flex align-items-center" style="font-size:0.84rem; font-weight:600;">
+            <i class="bi bi-arrow-left me-1.5"></i>Back to Assessments Library
+        </a>
+        @if (sub.TreatmentCaseId.HasValue)
+        {
+            <a href="/Doctor/TreatmentCases/Details?id=@sub.TreatmentCaseId.Value&tab=activities&subTab=assessments" class="btn btn-outline-secondary btn-sm px-3 py-1 fw-semibold shadow-sm" style="border-radius:8px; font-size:0.8rem;">
+                <i class="bi bi-heart-pulse me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>View Treatment Case
+            </a>
+        }
+    </div>
+
+    <!-- Enhanced Patient Title Header -->
+    <div class="patient-header-hero">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="patient-avatar-circle flex-shrink-0">
+                    @{
+                        var initials = "PT";
+                        if (!string.IsNullOrWhiteSpace(sub.PatientName))
+                        {
+                            var parts = sub.PatientName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                            initials = parts.Length >= 2 ? $"{parts[0][0]}{parts[^1][0]}".ToUpper() : parts[0][0].ToString().ToUpper();
+                        }
+                    }
+                    @initials
+                </div>
+                <div>
+                    <div class="text-uppercase fw-bold text-muted small mb-0.5" style="font-size:0.72rem; letter-spacing:0.06em;">
+                        Patient Assessment Result
+                    </div>
+                    <h2 class="fw-extrabold text-dark mb-1" style="font-size:1.45rem; font-weight:800; letter-spacing:-0.01em;">
+                        @sub.PatientName
+                    </h2>
+                    <div class="d-flex align-items-center gap-2 flex-wrap text-muted" style="font-size:0.84rem;">
+                        <span class="fw-bold text-dark"><i class="bi bi-clipboard2-check me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>@sub.TestTitle</span>
+                        <span>•</span>
+                        <span class="badge bg-light text-secondary border" style="font-size:0.72rem;">@(sub.Category ?? "Psychological Screening")</span>
+                        <span>•</span>
+                        <span><i class="bi bi-calendar3 me-1"></i>Completed: @sub.SubmittedAt.ToString("MMM dd, yyyy · HH:mm")</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; font-size:0.82rem; font-weight:700; padding:8px 14px; border-radius:8px;">
+                    <i class="bi bi-check-circle-fill me-1.5"></i>Completed
+                </span>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+            <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- 2 CORE CARDS ON ONE ROW: TOTAL SCORE & SCORE BREAKDOWN -->
+    <div class="row g-3 mb-4">
+        <!-- Card 1: TOTAL SCORE -->
+        <div class="col-12 col-lg-5">
+            <div class="total-score-card">
+                <div class="total-score-label">
+                    <i class="bi bi-speedometer2 me-1"></i>Total Score
+                </div>
+                <div class="total-score-number">
+                    @sub.TotalScore <span class="text-muted fw-normal" style="font-size:1.5rem;">/ @sub.CalculatedMaxScore</span>
+                </div>
+                <div class="mb-3">
+                    <span class="badge" style="background:@sev.Bg; color:@sev.Text; border:1.5px solid @sev.Border; font-size:0.95rem; font-weight:800; padding:7px 18px; border-radius:8px;">
+                        @sev.En
+                    </span>
+                </div>
+                <div class="p-2.5 rounded-3 text-muted text-start" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.8rem; line-height:1.45;">
+                    <i class="bi bi-info-circle me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>
+                    Overall severity reflects standardized clinical score interpretation for @sub.TestTitle.
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: SCORE BREAKDOWN -->
+        <div class="col-12 col-lg-7">
+            <div class="breakdown-card">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0" style="font-size:0.96rem;">
+                            <i class="bi bi-bar-chart-fill me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Score Breakdown
+                        </h5>
+                        <span class="badge bg-light text-muted border" style="font-size:0.7rem;">Domain Subscales</span>
+                    </div>
+                    @{
+                        var breakdowns = sub.GetScoreBreakdown();
+                    }
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var item in breakdowns)
+                        {
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold text-dark" style="font-size:0.86rem;">@item.Domain</span>
+                                    <span class="fw-bold text-dark" style="font-size:0.86rem;">@item.Score / @item.MaxScore</span>
+                                </div>
+                                <div class="progress" style="height:8px; background:#f1f5f9; border-radius:6px;">
+                                    <div class="progress-bar" style="width:@item.Percent%; background:@item.BarColor; border-radius:6px;"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="text-muted small text-end mt-3" style="font-size:0.74rem;">
+                    Updated based on patient submitted responses
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. CLINICAL INTERPRETATION CARD -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold text-dark mb-2" style="font-size:0.98rem;">
+                <i class="bi bi-file-earmark-medical-fill me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Clinical Interpretation
+            </h5>
+            <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.9rem; color:#1e293b; line-height:1.6;">
+                @sub.GetEnglishInterpretation()
+            </div>
+
+            <div class="clinical-disclaimer-box">
+                <i class="bi bi-shield-exclamation me-1 text-muted"></i>
+                <strong>Clinical Notice:</strong> Psychometric assessment results are intended as screening and supporting clinical evidence, and should not be treated as an independent standalone medical diagnosis.
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. DOCTOR'S CLINICAL NOTE EDITOR -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold text-dark mb-1" style="font-size:0.98rem;">
+                <i class="bi bi-pencil-square me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Doctor's Clinical Note
+            </h5>
+            <p class="text-muted mb-3" style="font-size:0.8rem;">Add your clinical observation, therapeutic notes, or specific recommendations based on this assessment.</p>
+
+            <form method="post" asp-page-handler="SaveNote" asp-route-id="@sub.Id">
+                <div class="mb-3">
+                    <textarea asp-for="DoctorNotes" id="doctorNotesTextarea" class="form-control" rows="3" placeholder="Add clinical interpretation, triggers observed, or next steps for upcoming sessions..." style="border-radius:10px; font-size:0.86rem; line-height:1.55;"></textarea>
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" onclick="copyToConsultationNote()" style="border-radius:8px; font-size:0.84rem;">
+                        <i class="bi bi-clipboard-plus me-1.5"></i>Add to Consultation Record
+                    </button>
+                    <button type="submit" class="btn btn-sm px-3.5 py-2 fw-semibold text-white" style="border-radius:8px; background:var(--mb-primary, #0d9488); font-size:0.84rem;">
+                        <i class="bi bi-floppy me-1.5"></i>Save Clinical Note
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. ASSESSMENT HISTORY & TREND -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0" style="font-size:0.98rem;">
+                        <i class="bi bi-graph-up-arrow me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assessment History & Progress
+                    </h5>
+                    <p class="text-muted mb-0" style="font-size:0.78rem;">Compare repeated completions of this assessment over time</p>
+                </div>
+                <span class="badge bg-light text-muted border px-2.5 py-1" style="font-size:0.75rem;">
+                    @Model.History.Count submissions
+                </span>
+            </div>
+
+            @if (Model.History.Count > 1)
+            {
+                var latest = Model.History.FirstOrDefault();
+                var previous = Model.History.Skip(1).FirstOrDefault();
+                if (latest != null && previous != null)
+                {
+                    int scoreDiff = latest.Score - previous.Score;
+                    <div class="p-3 mb-3 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="font-size:0.85rem;">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-dark">Score Comparison:</span>
+                                <span class="text-muted">Previous (@previous.Date.ToString("MMM dd")):</span>
+                                <span class="fw-bold">@previous.Score/@previous.MaxScore</span>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                                <span class="text-muted">Current (@latest.Date.ToString("MMM dd")):</span>
+                                <span class="fw-bold text-dark">@latest.Score/@latest.MaxScore</span>
+                            </div>
+                            <div>
+                                @if (scoreDiff < 0)
+                                {
+                                    <span class="badge bg-success-subtle text-success fw-bold" style="font-size:0.78rem;">
+                                        ↓ @Math.Abs(scoreDiff) Score Improvement
+                                    </span>
+                                }
+                                else if (scoreDiff > 0)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size:0.78rem;">
+                                        ↑ +@scoreDiff Score Elevated
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary fw-bold" style="font-size:0.78rem;">
+                                        — Score Stable
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:0.84rem;">
+                    <thead style="background:#f8fafc; font-size:0.75rem; color:#64748b; text-transform:uppercase;">
+                        <tr>
+                            <th class="ps-3 py-2.5">Date</th>
+                            <th class="py-2.5">Score</th>
+                            <th class="py-2.5">Severity</th>
+                            <th class="py-2.5">Change</th>
+                            <th class="text-end pe-3 py-2.5">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.History)
+                        {
+                            <tr style="@(item.IsCurrent ? "background:#f0fdfa; font-weight:600;" : "")">
+                                <td class="ps-3 py-2.5">
+                                    <span>@item.Date.ToString("MMM dd, yyyy")</span>
+                                    @if (item.IsCurrent)
+                                    {
+                                        <span class="badge ms-1.5" style="background:#0d9488; color:#ffffff; font-size:0.65rem; font-weight:700;">Current</span>
+                                    }
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="fw-bold text-dark">@item.Score</span> / @item.MaxScore
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="badge bg-light text-dark border" style="font-size:0.72rem;">@item.Severity</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="@item.ChangeClass" style="font-size:0.8rem; font-weight:700;">
+                                        @item.ChangeText
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3 py-2.5">
+                                    @if (!item.IsCurrent)
+                                    {
+                                        <a asp-page="/Doctor/Psychometrics/Details" asp-route-id="@item.SubmissionId" class="btn btn-outline-secondary btn-sm px-2 py-0.5" style="border-radius:6px; font-size:0.74rem;">
+                                            View
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. QUESTION-BY-QUESTION RESPONSES -->
+    @if (sub.Answers != null && sub.Answers.Any())
+    {
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark mb-3" style="font-size:0.98rem;">
+                    <i class="bi bi-card-checklist me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Question-by-Question Responses
+                </h5>
+
+                <div class="list-group list-group-flush">
+                    @foreach (var ans in sub.Answers)
+                    {
+                        <div class="list-group-item px-0 py-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div class="d-flex gap-2.5 flex-grow-1">
+                                    <span class="badge bg-light text-dark border px-2 py-1 align-self-start" style="font-size:0.75rem;">Q@ans.QuestionNumber</span>
+                                    <div>
+                                        <div class="fw-semibold text-dark" style="font-size:0.88rem;">@ans.QuestionText</div>
+                                        @if (!string.IsNullOrWhiteSpace(ans.Category))
+                                        {
+                                            <span class="badge bg-light text-muted border mt-1" style="font-size:0.68rem;">@ans.Category</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(ans.TextAnswer))
+                                        {
+                                            <div class="mt-1.5 p-2 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.82rem; color:#334155;">
+                                                <em>" @ans.TextAnswer "</em>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.8rem; font-weight:700; padding:5px 10px;">
+                                        Score: @ans.Score
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function copyToConsultationNote() {
+            const notesText = document.getElementById('doctorNotesTextarea');
+            const summary = `[${new Date().toLocaleDateString('en-US')}] Assessment: @sub.TestTitle | Score: @sub.TotalScore/@sub.MaxScore (@sev.En)\nInterpretation: @sub.GetEnglishInterpretation().Replace("\r\n", " ").Replace("\n", " ")\nDoctor Observation: ${notesText.value || 'None'}`;
+            
+            navigator.clipboard.writeText(summary).then(() => {
+                alert('Assessment summary copied to clipboard! You can paste it into Consultation Records or Session Notes.');
+            }).catch(() => {
+                alert('Assessment Summary:\n' + summary);
+            });
+        }
+    </script>
+}

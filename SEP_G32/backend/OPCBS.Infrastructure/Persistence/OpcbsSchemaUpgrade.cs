@@ -80,6 +80,36 @@ public static class OpcbsSchemaUpgrade
                 ALTER TABLE [AppointmentSlots] ADD [MaxPatients] int NOT NULL CONSTRAINT [DF_AppointmentSlots_MaxPatients] DEFAULT 1;
             IF COL_LENGTH(N'AppointmentSlots', N'CurrentBookings') IS NULL
                 ALTER TABLE [AppointmentSlots] ADD [CurrentBookings] int NOT NULL CONSTRAINT [DF_AppointmentSlots_CurrentBookings] DEFAULT 0;
+
+            IF COL_LENGTH(N'EmotionJournals', N'SleepHours') IS NULL
+                ALTER TABLE [EmotionJournals] ADD [SleepHours] decimal(4,1) NULL;
+            IF COL_LENGTH(N'EmotionJournals', N'DepressionScale') IS NULL
+                ALTER TABLE [EmotionJournals] ADD [DepressionScale] int NULL;
+
+            IF COL_LENGTH(N'PsychometricTests', N'Category') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [Category] nvarchar(100) NULL;
+            IF COL_LENGTH(N'PsychometricTests', N'Purpose') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [Purpose] nvarchar(255) NULL;
+            IF COL_LENGTH(N'PsychometricTests', N'DoctorId') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [DoctorId] uniqueidentifier NULL;
+            IF COL_LENGTH(N'PsychometricTests', N'ScoreRangesJson') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [ScoreRangesJson] nvarchar(max) NULL;
+            IF COL_LENGTH(N'PsychometricTests', N'IsActive') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [IsActive] bit NOT NULL CONSTRAINT [DF_PsychometricTests_IsActive] DEFAULT 1;
+
+            IF COL_LENGTH(N'PsychometricQuestions', N'QuestionType') IS NULL
+                ALTER TABLE [PsychometricQuestions] ADD [QuestionType] nvarchar(50) NOT NULL CONSTRAINT [DF_PsychometricQuestions_QuestionType] DEFAULT 'Rating1To5';
+            IF COL_LENGTH(N'PsychometricQuestions', N'OptionsJson') IS NULL
+                ALTER TABLE [PsychometricQuestions] ADD [OptionsJson] nvarchar(max) NULL;
+
+            IF COL_LENGTH(N'PsychometricSubmissions', N'AssignedByDoctorId') IS NULL
+                ALTER TABLE [PsychometricSubmissions] ADD [AssignedByDoctorId] uniqueidentifier NULL;
+            IF COL_LENGTH(N'PsychometricSubmissions', N'DoctorNotes') IS NULL
+                ALTER TABLE [PsychometricSubmissions] ADD [DoctorNotes] nvarchar(max) NULL;
+            IF COL_LENGTH(N'PsychometricSubmissions', N'DueDate') IS NULL
+                ALTER TABLE [PsychometricSubmissions] ADD [DueDate] datetime2 NULL;
+            IF COL_LENGTH(N'PsychometricSubmissions', N'Status') IS NULL
+                ALTER TABLE [PsychometricSubmissions] ADD [Status] nvarchar(50) NOT NULL CONSTRAINT [DF_PsychometricSubmissions_Status] DEFAULT 'Completed';
             """, ct);
 
         await context.Database.ExecuteSqlRawAsync("""

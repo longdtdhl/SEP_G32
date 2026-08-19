@@ -16,6 +16,7 @@ public class DashboardModel : PageModel
     private readonly ITreatmentCaseApiService _caseApi;
     private readonly IDoctorRevenueApiService _revenueApi;
     private readonly IDoctorApiService? _doctorApi;
+    private readonly IPatientRecordApiService? _patientRecordApi;
 
     public DashboardModel(
         IAuthApiService auth,
@@ -26,7 +27,8 @@ public class DashboardModel : PageModel
         ITreatmentPackageApiService treatment,
         ITreatmentCaseApiService caseApi,
         IDoctorRevenueApiService revenueApi,
-        IDoctorApiService? doctorApi = null)
+        IDoctorApiService? doctorApi = null,
+        IPatientRecordApiService? patientRecordApi = null)
     {
         _auth = auth;
         _appointments = appointments;
@@ -37,6 +39,7 @@ public class DashboardModel : PageModel
         _caseApi = caseApi;
         _revenueApi = revenueApi;
         _doctorApi = doctorApi;
+        _patientRecordApi = patientRecordApi;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -269,47 +272,83 @@ public class DashboardModel : PageModel
         UpcomingSessionsCount = allApts.Count(a => !IsDateToday(a) && GetAppointmentDate(a) > today && GetAppointmentDate(a) <= weekAhead && a.Status is 0 or 1 or 3 or 7);
 
         // Patient metrics & Retention Analysis
-        var allPatientIds = allApts.Where(a => a.PatientId.HasValue).Select(a => a.PatientId!.Value).Distinct().ToList();
-        ActivePatientsCount = allPatientIds.Count == 0 ? 1 : allPatientIds.Count;
+        List<PatientRecordDto> myPatients = new();
+        if (_patientRecordApi != null)
+        {
+            try
+            {
+                var (patientsData, _) = await _patientRecordApi.GetMyPatientsAsync();
+                if (patientsData != null)
+                {
+                    myPatients = patientsData;
+                }
+            }
+            catch { }
+        }
 
-        // Group all appointments by unique patient identity (PatientId or PatientName)
-        var patientGroups = allApts
-            .GroupBy(a => a.PatientId.HasValue ? a.PatientId.Value.ToString() : (!string.IsNullOrWhiteSpace(a.PatientName) ? a.PatientName : a.Id.ToString()))
+        // Registered Patients under doctor's care
+        var registeredPatientIds = new HashSet<Guid>();
+        foreach (var p in myPatients.Where(p => !p.IsGuest && p.PatientId.HasValue && p.PatientId.Value != Guid.Empty))
+        {
+            registeredPatientIds.Add(p.PatientId!.Value);
+        }
+        foreach (var a in allApts.Where(a => a.PatientId.HasValue && a.PatientId.Value != Guid.Empty))
+        {
+            registeredPatientIds.Add(a.PatientId!.Value);
+        }
+
+        // Active Patients = Total distinct registered patients under doctor's care
+        ActivePatientsCount = registeredPatientIds.Count;
+
+        // Group registered patient appointments by PatientId
+        var registeredPatientGroups = allApts
+            .Where(a => a.PatientId.HasValue && a.PatientId.Value != Guid.Empty)
+            .GroupBy(a => a.PatientId!.Value)
             .ToList();
 
-        TotalUniquePatientsCount = patientGroups.Count > 0 ? patientGroups.Count : 1;
-        var singleVisitGroups = patientGroups.Where(g => g.Count() == 1).ToList();
-        var repeat2To3Groups = patientGroups.Where(g => g.Count() is 2 or 3).ToList();
-        var loyal4PlusGroups = patientGroups.Where(g => g.Count() >= 4).ToList();
+        TotalUniquePatientsCount = registeredPatientIds.Count;
+        var singleVisitGroups = registeredPatientGroups.Where(g => g.Count() == 1).ToList();
+        var repeat2To3Groups = registeredPatientGroups.Where(g => g.Count() is 2 or 3).ToList();
+        var loyal4PlusGroups = registeredPatientGroups.Where(g => g.Count() >= 4).ToList();
 
         SingleVisitPatientsCount = singleVisitGroups.Count;
         Repeat2To3PatientsCount = repeat2To3Groups.Count;
         Loyal4PlusPatientsCount = loyal4PlusGroups.Count;
 
-        var returningGroups = patientGroups.Where(g => g.Count() >= 2).ToList();
+        var returningGroups = registeredPatientGroups.Where(g => g.Count() >= 2).ToList();
         ReturningPatientsCount = returningGroups.Count;
         ReturningSessionsCount = returningGroups.Sum(g => g.Count());
 
-        if (TotalUniquePatientsCount > 0 && ReturningPatientsCount > 0)
+        if (TotalUniquePatientsCount > 0)
         {
-            SingleVisitPercent = (int)Math.Round((double)SingleVisitPatientsCount * 100.0 / TotalUniquePatientsCount);
-            Repeat2To3Percent = (int)Math.Round((double)Repeat2To3PatientsCount * 100.0 / TotalUniquePatientsCount);
-            Loyal4PlusPercent = Math.Max(0, 100 - SingleVisitPercent - Repeat2To3Percent);
-
-            ReturningPatientRate = Math.Round((double)ReturningPatientsCount * 100.0 / TotalUniquePatientsCount, 1);
-            AvgVisitsPerPatient = Math.Round((double)allApts.Count / TotalUniquePatientsCount, 1);
+            if (ReturningPatientsCount > 0)
+            {
+                SingleVisitPercent = (int)Math.Round((double)SingleVisitPatientsCount * 100.0 / TotalUniquePatientsCount);
+                Repeat2To3Percent = (int)Math.Round((double)Repeat2To3PatientsCount * 100.0 / TotalUniquePatientsCount);
+                Loyal4PlusPercent = Math.Max(0, 100 - SingleVisitPercent - Repeat2To3Percent);
+                ReturningPatientRate = Math.Round((double)ReturningPatientsCount * 100.0 / TotalUniquePatientsCount, 1);
+            }
+            else
+            {
+                SingleVisitPercent = 100;
+                Repeat2To3Percent = 0;
+                Loyal4PlusPercent = 0;
+                ReturningPatientRate = 0.0;
+            }
+            var regApptsCount = allApts.Count(a => a.PatientId.HasValue && a.PatientId.Value != Guid.Empty);
+            AvgVisitsPerPatient = Math.Round((double)regApptsCount / TotalUniquePatientsCount, 1);
         }
         else
         {
-            ReturningPatientRate = 64.8; // Realistic baseline retention for specialized clinical practice
-            ReturningPatientsCount = Math.Max(1, (int)Math.Round(ActivePatientsCount * 0.648));
-            SingleVisitPatientsCount = Math.Max(1, ActivePatientsCount - ReturningPatientsCount);
-            Repeat2To3PatientsCount = (int)Math.Round(ReturningPatientsCount * 0.7);
-            Loyal4PlusPatientsCount = Math.Max(0, ReturningPatientsCount - Repeat2To3PatientsCount);
-            SingleVisitPercent = 35;
-            Repeat2To3Percent = 45;
-            Loyal4PlusPercent = 20;
-            AvgVisitsPerPatient = 2.4;
+            ReturningPatientRate = 0.0;
+            ReturningPatientsCount = 0;
+            SingleVisitPatientsCount = 0;
+            Repeat2To3PatientsCount = 0;
+            Loyal4PlusPatientsCount = 0;
+            SingleVisitPercent = 0;
+            Repeat2To3Percent = 0;
+            Loyal4PlusPercent = 0;
+            AvgVisitsPerPatient = 0.0;
         }
 
         // Group patients by their earliest appointment

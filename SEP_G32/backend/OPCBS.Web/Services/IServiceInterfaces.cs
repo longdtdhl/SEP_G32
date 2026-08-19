@@ -150,6 +150,11 @@ public interface IPsychometricApiService
     Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync();
     Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId);
     Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto);
+    Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> AssignAssessmentAsync(AssignAssessmentDto dto);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> SaveDoctorNoteAsync(Guid submissionId, string? doctorNotes);
+    Task<(List<AssessmentHistoryItemDto> Data, string? Error)> GetAssessmentHistoryAsync(Guid submissionId);
+    Task<(DoctorAssessmentsOverviewDto? Data, string? Error)> GetDoctorOverviewAsync();
     Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto);
     Task<(bool Success, string? Error)> DeleteTestAsync(Guid id);
     Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId);

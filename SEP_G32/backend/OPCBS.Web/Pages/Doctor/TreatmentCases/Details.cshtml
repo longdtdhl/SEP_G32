@@ -89,6 +89,238 @@
     .goal-card-title { font-size:0.82rem; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; color:#1e293b; margin:0; display:flex; align-items:center; gap:0.4rem; }
     .goal-card-body { padding:1rem 1.25rem; flex-grow:1; }
 
+    /* ─── Goal Status & Trend Badges ─── */
+    .goal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .goal-badge-improving {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .goal-badge-stable {
+        background: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+    .goal-badge-attention {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    .goal-badge-initial {
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+    .goal-badge-achieved {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .goal-badge-inprogress {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+    }
+    .goal-badge-notstarted {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+
+    /* ─── Psychometrics Clinical Timeline ─── */
+    .psy-timeline {
+        position: relative;
+        padding-left: 2.25rem;
+        margin-top: 0.75rem;
+    }
+    .psy-timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        bottom: 24px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    .psy-timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .psy-timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    .psy-timeline-dot {
+        position: absolute;
+        left: -2.25rem;
+        top: 14px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #0d9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d9488;
+        font-size: 0.8rem;
+        box-shadow: 0 0 0 3px #f0fdfa;
+        z-index: 2;
+    }
+    .psy-timeline-dot.latest {
+        background: #0d9488;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+    }
+    .psy-timeline-card {
+        transition: all 0.2s ease;
+    }
+    .psy-timeline-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* ─── Homework Tab Styling ─── */
+    .hw-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .hw-stat-card:hover {
+        border-color: #0d9488;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+    }
+    .hw-stat-card.active {
+        border-color: #0d9488;
+        background: #f0fdfa;
+        box-shadow: 0 0 0 1px #0d9488;
+    }
+    .hw-stat-num {
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+    .hw-stat-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 0.25rem;
+    }
+
+    /* ─── Doctor Mood & Trends Styling ─── */
+    .doc-mood-trend-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.85rem 1.15rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+    .doc-mood-trend-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.25rem;
+    }
+    .doc-mood-trend-val {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .doc-trend-stat-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+        text-align: left;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+    .doc-trend-stat-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .doc-trend-stat-main {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .doc-trend-stat-diff {
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .doc-journal-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .doc-journal-row:hover {
+        background-color: #f0fdfa !important;
+    }
+
+    /* ─── Doctor Trends Filter & Toggle Buttons (Light Green Active) ─── */
+    .trend-filter-btn {
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 0.32rem 0.8rem;
+        transition: all 0.15s ease;
+    }
+    .trend-filter-btn:hover {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #86efac;
+    }
+    .trend-filter-btn.active {
+        background: #dcfce7 !important; /* Xanh lá cây nhạt */
+        color: #166534 !important; /* Chữ xanh lá đậm */
+        border-color: #86efac !important; /* Viền xanh lá mềm */
+        font-weight: 700 !important;
+        box-shadow: 0 1px 3px rgba(22, 101, 52, 0.1);
+    }
+    .btn-group .trend-filter-btn:first-child {
+        border-top-left-radius: 8px !important;
+        border-bottom-left-radius: 8px !important;
+    }
+    .btn-group .trend-filter-btn:last-child {
+        border-top-right-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
     @@media (max-width:991.98px) {
         .cd-strip { flex-direction:column; align-items:stretch; }
     }
@@ -214,13 +446,13 @@
             <i class="bi bi-grid-1x2 me-1"></i>Overview
         </a>
         <a class="nav-link @(Model.ActiveTab == "sessions" ? "active" : "")" href="?id=@c.Id&tab=sessions">
-            <i class="bi bi-calendar2-check me-1"></i>Sessions <span class="badge bg-light text-dark border">@Model.Sessions.Count</span>
+            <i class="bi bi-calendar2-check me-1"></i>Sessions <span class="badge bg-light text-dark border">@Model.Sessions.Count(s => s.Status != 3)</span>
         </a>
         <a class="nav-link @(Model.ActiveTab == "goals" ? "active" : "")" href="?id=@c.Id&tab=goals">
             <i class="bi bi-bullseye me-1"></i>Goals <span class="badge bg-light text-dark border">@Model.Goals.Count</span>
         </a>
         <a class="nav-link @(Model.ActiveTab == "activities" ? "active" : "")" href="?id=@c.Id&tab=activities">
-            <i class="bi bi-journal-medical me-1"></i>Activities <span class="badge bg-light text-dark border">@(Model.HomeworkList.Count + Model.MoodEntries.Count)</span>
+            <i class="bi bi-journal-medical me-1"></i>Activities <span class="badge bg-light text-dark border">@(Model.HomeworkList.Count + Model.SharedJournals.Count)</span>
         </a>
         <a class="nav-link @(Model.ActiveTab == "timeline" ? "active" : "")" href="?id=@c.Id&tab=timeline">
             <i class="bi bi-clock-history me-1"></i>Timeline <span class="badge bg-light text-dark border">@Model.Timeline.Count</span>
@@ -281,12 +513,15 @@
                             }
 
                             <!-- Recent Sessions -->
+                            @{
+                                var overviewSessions = Model.Sessions.Where(s => s.Status != 3).OrderBy(s => s.PlannedStartTime ?? DateTime.MaxValue).ThenBy(s => s.SessionNumber).Take(4).ToList();
+                            }
                             <h6 class="mt-3" style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;">
                                 <i class="bi bi-calendar-week me-1" style="color:#0d9488;"></i>Recent & Scheduled Sessions
                             </h6>
-                            @if (!Model.Sessions.Any())
+                            @if (!overviewSessions.Any())
                             {
-                                <p class="text-muted" style="font-size:0.8rem;">No sessions scheduled yet.</p>
+                                <p class="text-muted" style="font-size:0.8rem;">No active sessions scheduled yet.</p>
                             }
                             else
                             {
@@ -296,11 +531,12 @@
                                             <th>#</th><th>Title</th><th>Planned</th><th>Status</th><th class="text-end">Actions</th>
                                         </tr></thead>
                                         <tbody>
-                                            @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber).Take(4))
+                                            @for (int i = 0; i < overviewSessions.Count; i++)
                                             {
+                                                var s = overviewSessions[i];
                                                 <tr>
-                                                    <td class="fw-bold text-muted">@s.SessionNumber</td>
-                                                    <td class="fw-semibold text-dark">@(s.Title ?? $"Session {s.SessionNumber}")</td>
+                                                    <td class="fw-bold text-muted">@(i + 1)</td>
+                                                    <td class="fw-semibold text-dark">@(s.Title ?? $"Session {i + 1}")</td>
                                                     <td class="text-muted">@(s.PlannedStartTime?.ToString("MMM dd, HH:mm") ?? "Planned")</td>
                                                     <td><span class="@s.StatusBadgeClass" style="font-size:0.7rem;">@s.StatusText</span></td>
                                                     <td class="text-end">
@@ -467,17 +703,24 @@
         <!-- ── TAB 2: SESSIONS ── -->
         @if (Model.ActiveTab == "sessions")
         {
-            var isSessionsFull = c.TotalSessions > 0 && (c.CompletedSessions >= c.TotalSessions || c.RemainingSessions <= 0 || Model.Sessions.Count(s => s.Status != 3) >= c.TotalSessions);
+            var activeSessions = Model.Sessions.Where(s => s.Status != 3).OrderBy(s => s.PlannedStartTime ?? DateTime.MaxValue).ThenBy(s => s.SessionNumber).ToList();
+            var completedCount = activeSessions.Count(s => s.Status == 2);
+            var isSessionsFull = c.TotalSessions > 0 && (activeSessions.Count >= c.TotalSessions);
             <div class="cd-box">
                 <div class="cd-box-head">
-                    <h6 class="cd-box-title"><i class="bi bi-calendar2-check me-2"></i>Treatment Sessions</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="cd-box-title mb-0"><i class="bi bi-calendar2-check me-2"></i>Treatment Sessions</h6>
+                        <span class="badge bg-light text-muted border" style="font-size:0.72rem; font-weight:600;">
+                            @activeSessions.Count/@(c.TotalSessions > 0 ? c.TotalSessions : activeSessions.Count) Active (@completedCount Completed)
+                        </span>
+                    </div>
                     @if (c.Status == 0)
                     {
                         if (isSessionsFull)
                         {
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1.5 px-2.5" style="font-size:0.75rem; font-weight:600;">
-                                    <i class="bi bi-hourglass-split me-1"></i>Package Full (@c.CompletedSessions/@c.TotalSessions)
+                                <span class="badge rounded-pill bg-warning text-dark border py-1.5 px-2.5" style="font-size:0.75rem; font-weight:600;">
+                                    <i class="bi bi-hourglass-split me-1"></i>Package Full (@activeSessions.Count/@c.TotalSessions)
                                 </span>
                                 <a href="/Doctor/TreatmentPackages/Create?patientId=@c.PatientId" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.78rem; font-weight:600;">
                                     <i class="bi bi-box-seam me-1"></i>New Package
@@ -498,8 +741,8 @@
                     <div class="alert p-3 mb-3 rounded-3 d-flex align-items-start gap-3" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
                         <div style="font-size:1.4rem; line-height:1;"><i class="bi bi-exclamation-triangle-fill text-warning"></i></div>
                         <div class="flex-grow-1">
-                            <div class="fw-bold fs-7 mb-0.5" style="color:#92400e;">Maximum Package Sessions Reached (@c.CompletedSessions/@c.TotalSessions)</div>
-                            <div style="font-size:0.82rem; color:#b45309;">This treatment package has no sessions remaining (@(Model.Sessions.Count(s => s.Status != 3))/@c.TotalSessions sessions already planned or completed). Create or assign a new package before adding more treatment sessions.</div>
+                            <div class="fw-bold fs-7 mb-0.5" style="color:#92400e;">Maximum Package Sessions Reached (@activeSessions.Count/@c.TotalSessions)</div>
+                            <div style="font-size:0.82rem; color:#b45309;">This treatment package has reached its planned capacity (@activeSessions.Count/@c.TotalSessions active sessions scheduled or completed, cancelled sessions excluded). Create or assign a new package before adding more treatment sessions.</div>
                         </div>
                         <a href="/Doctor/TreatmentPackages/Create?patientId=@c.PatientId" class="btn btn-sm btn-warning text-dark fw-semibold flex-shrink-0" style="border-radius:8px; font-size:0.78rem;">
                             <i class="bi bi-plus-circle me-1"></i>Assign New Package
@@ -507,11 +750,11 @@
                     </div>
                 }
 
-                @if (!Model.Sessions.Any())
+                @if (!activeSessions.Any())
                 {
                     <div class="cd-empty">
                         <i class="bi bi-calendar-x"></i>
-                        <p>No sessions created yet</p>
+                        <p>No active sessions created yet</p>
                         @if (!isSessionsFull)
                         {
                             <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Generate Schedule</a>
@@ -526,13 +769,14 @@
                                 <th>#</th><th>Title</th><th>Type</th><th>Planned Time</th><th>Booking</th><th>Record</th><th>Status</th><th class="text-end">Actions</th>
                             </tr></thead>
                             <tbody>
-                                @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
+                                @for (int i = 0; i < activeSessions.Count; i++)
                                 {
+                                    var s = activeSessions[i];
                                     var isOff = s.IsOffline;
                                     <tr>
-                                        <td class="fw-bold text-muted">@s.SessionNumber</td>
+                                        <td class="fw-bold text-muted">@(i + 1)</td>
                                         <td>
-                                            <div class="fw-semibold text-dark">@(s.Title ?? $"Session {s.SessionNumber}")</div>
+                                            <div class="fw-semibold text-dark">@(s.Title ?? $"Session {i + 1}")</div>
                                             @if (!string.IsNullOrEmpty(s.Description))
                                             {
                                                 <div class="text-muted" style="font-size:0.75rem;">@s.Description</div>
@@ -591,11 +835,6 @@
                                                         <i class="bi bi-arrow-repeat"></i>
                                                     </a>
                                                 }
-                                                <form method="post" asp-page-handler="DeleteSession" asp-route-caseId="@c.Id" asp-route-sessionId="@s.Id" onsubmit="return confirm('Delete this session?');" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:5px; font-size:0.72rem; padding:3px 8px;" title="Delete">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
                                             </div>
                                         </td>
                                     </tr>
@@ -612,28 +851,6 @@
         {
             var activeGoal = (Guid.TryParse(Request.Query["goalId"], out var qGid) ? Model.Goals.FirstOrDefault(g => g.Id == qGid) : null)
                              ?? Model.Goals.OrderBy(x => x.OrderIndex).FirstOrDefault();
-
-            <!-- Header and Action bar -->
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <div>
-                    <div class="text-muted small mb-1" style="font-size:0.78rem;">
-                        <a href="/Doctor/TreatmentCases" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Treatment Cases</a>
-                        <span class="mx-1 text-slate-300">/</span>
-                        <span class="text-dark fw-semibold">@(c.PatientName ?? "Patient")</span>
-                        <span class="mx-1 text-slate-300">/</span>
-                        <span class="fw-bold" style="color:#0d9488;">Goals</span>
-                    </div>
-                    <h2 class="h5 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-bullseye text-teal" style="color:#0d9488;"></i>Goal Management
-                    </h2>
-                    <div class="text-muted" style="font-size:0.8rem;">Track and manage treatment goals and patient progress across sessions</div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm text-white shadow-sm" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 14px;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
-                        <i class="bi bi-plus-lg me-1"></i>Add Goal
-                    </button>
-                </div>
-            </div>
 
             @if (!Model.Goals.Any() || activeGoal == null)
             {
@@ -670,7 +887,7 @@
                     var mText = !string.IsNullOrEmpty(activeGoal.Unit) ? $"{val:0.#} {activeGoal.Unit}" : $"{val:0.#}/10";
 
                     string resText = "Initial";
-                    string bClass = "bg-secondary-subtle text-secondary";
+                    string bClass = "goal-badge goal-badge-initial";
                     string iClass = "bi-circle";
 
                     if (lastVal.HasValue)
@@ -678,19 +895,19 @@
                         if (val < lastVal.Value)
                         {
                             resText = "↓ Improved";
-                            bClass = "bg-success-subtle text-success border border-success-subtle";
+                            bClass = "goal-badge goal-badge-improving";
                             iClass = "bi-arrow-down-right";
                         }
                         else if (val == lastVal.Value)
                         {
                             resText = "→ Stable";
-                            bClass = "bg-info-subtle text-info-emphasis border border-info-subtle";
+                            bClass = "goal-badge goal-badge-stable";
                             iClass = "bi-arrow-right";
                         }
                         else
                         {
                             resText = "↑ Elevated";
-                            bClass = "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+                            bClass = "goal-badge goal-badge-attention";
                             iClass = "bi-arrow-up-right";
                         }
                     }
@@ -702,7 +919,7 @@
 
                 if (!sessionMeasurements.Any() && currentVal.HasValue)
                 {
-                    sessionMeasurements.Add(("S1", activeGoal.CreatedAt.ToString("MMM dd"), $"{currentVal.Value:0.#}/10", "Initial", "bg-secondary-subtle text-secondary", "bi-circle", currentVal.Value, activeGoal.CreatedAt));
+                    sessionMeasurements.Add(("S1", activeGoal.CreatedAt.ToString("MMM dd"), $"{currentVal.Value:0.#}/10", "Initial", "goal-badge goal-badge-initial", "bi-circle", currentVal.Value, activeGoal.CreatedAt));
                 }
 
                 // Reverse for descending list display
@@ -710,33 +927,38 @@
 
                 // Trend status text
                 string trendText = "Patient Improving";
-                string trendBadgeClass = "bg-success-subtle text-success border border-success-subtle";
+                string trendBadgeClass = "goal-badge goal-badge-improving";
                 if (sessionMeasurements.Count >= 2)
                 {
                     var first = sessionMeasurements.First().Val;
                     var last = sessionMeasurements.Last().Val;
-                    if (last < first) { trendText = "↓ Improving Trend"; trendBadgeClass = "bg-success-subtle text-success border border-success-subtle"; }
-                    else if (last == first) { trendText = "→ Stable Trend"; trendBadgeClass = "bg-info-subtle text-info-emphasis border border-info-subtle"; }
-                    else { trendText = "↑ Attention Needed"; trendBadgeClass = "bg-warning-subtle text-warning-emphasis border border-warning-subtle"; }
+                    if (last < first) { trendText = "↓ Improving Trend"; trendBadgeClass = "goal-badge goal-badge-improving"; }
+                    else if (last == first) { trendText = "→ Stable Trend"; trendBadgeClass = "goal-badge goal-badge-stable"; }
+                    else { trendText = "↑ Attention Needed"; trendBadgeClass = "goal-badge goal-badge-attention"; }
                 }
 
-                <!-- Goal Switcher Pills (when multiple goals exist) -->
-                @if (Model.Goals.Count > 1)
-                {
-                    <div class="goal-switcher-pills">
-                        <span class="text-muted small fw-bold me-1" style="font-size:0.75rem;"><i class="bi bi-filter-left me-1"></i>Select Goal:</span>
-                        @foreach (var g in Model.Goals.OrderBy(x => x.OrderIndex))
+                <!-- Goal Switcher Pills & Action Bar -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="goal-switcher-pills mb-0">
+                        @if (Model.Goals.Count > 1)
                         {
-                            var isActive = g.Id == activeGoal.Id;
-                            var pColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#0d9488" : "#d97706";
-                            <a href="?id=@c.Id&tab=goals&goalId=@g.Id" class="goal-pill-btn @(isActive ? "active" : "")">
-                                <i class="bi bi-bullseye" style="color:@(isActive ? "#0d9488" : "#64748b");"></i>
-                                <span>@g.Title</span>
-                                <span class="badge rounded-pill" style="font-size:0.68rem; background:@(isActive ? "#0d9488" : "#f1f5f9"); color:@(isActive ? "#ffffff" : "#475569");">@g.ProgressPercent%</span>
-                            </a>
+                            <span class="text-muted small fw-bold me-1" style="font-size:0.75rem;"><i class="bi bi-filter-left me-1"></i>Select Goal:</span>
+                            @foreach (var g in Model.Goals.OrderBy(x => x.OrderIndex))
+                            {
+                                var isActive = g.Id == activeGoal.Id;
+                                var pColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#0d9488" : "#d97706";
+                                <a href="?id=@c.Id&tab=goals&goalId=@g.Id" class="goal-pill-btn @(isActive ? "active" : "")">
+                                    <i class="bi bi-bullseye" style="color:@(isActive ? "#0d9488" : "#64748b");"></i>
+                                    <span>@g.Title</span>
+                                    <span class="badge rounded-pill" style="font-size:0.68rem; background:@(isActive ? "#0d9488" : "#f1f5f9"); color:@(isActive ? "#ffffff" : "#475569");">@g.ProgressPercent%</span>
+                                </a>
+                            }
                         }
                     </div>
-                }
+                    <button type="button" class="btn btn-sm text-white shadow-sm ms-auto" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 14px;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                        <i class="bi bi-plus-lg me-1"></i>Add Goal
+                    </button>
+                </div>
 
                 <!-- ══ 1. GOAL HEADER CARD ══ -->
                 <div class="goal-hero-card">
@@ -816,7 +1038,7 @@
                         <div class="goal-card-panel">
                             <div class="goal-card-header">
                                 <h6 class="goal-card-title"><i class="bi bi-graph-up" style="color:#0d9488;"></i>Progress Trend</h6>
-                                <span class="badge @trendBadgeClass" style="font-size:0.7rem;">@trendText</span>
+                                <span class="@trendBadgeClass">@trendText</span>
                             </div>
                             <div class="goal-card-body d-flex flex-column justify-content-between">
                                 <div style="position:relative; width:100%; height:200px;">
@@ -855,7 +1077,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="badge @(scPassed ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")" style="font-size:0.7rem;">
+                                                    <span class="goal-badge @(scPassed ? "goal-badge-achieved" : "goal-badge-inprogress")">
                                                         @(scPassed ? "Achieved" : "In Progress")
                                                     </span>
                                                     <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Remove this criterion?');">
@@ -880,7 +1102,7 @@
                                                     <small class="text-muted">@(currentVal.HasValue ? $"{currentVal.Value:0.#}/10" : "N/A")</small>
                                                 </div>
                                             </div>
-                                            <span class="badge @(activeGoal.ProgressPercent >= 100 ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")" style="font-size:0.7rem;">
+                                            <span class="goal-badge @(activeGoal.ProgressPercent >= 100 ? "goal-badge-achieved" : "goal-badge-inprogress")">
                                                 @(activeGoal.ProgressPercent >= 100 ? "Achieved" : "In Progress")
                                             </span>
                                         </div>
@@ -892,7 +1114,7 @@
                                                     <small class="text-muted">@sessionProg% (@completedSessions/@totalSessions sessions)</small>
                                                 </div>
                                             </div>
-                                            <span class="badge @(sessionProg >= 80 ? "bg-success-subtle text-success border border-success-subtle" : "bg-info-subtle text-info-emphasis border border-info-subtle")" style="font-size:0.7rem;">
+                                            <span class="goal-badge @(sessionProg >= 80 ? "goal-badge-achieved" : "goal-badge-inprogress")">
                                                 @(sessionProg >= 80 ? "Achieved" : "In Progress")
                                             </span>
                                         </div>
@@ -904,7 +1126,7 @@
                                                     <small class="text-muted">@completedHomework/@totalHomework completed</small>
                                                 </div>
                                             </div>
-                                            <span class="badge @(totalHomework > 0 && completedHomework >= totalHomework ? "bg-success-subtle text-success border border-success-subtle" : "bg-secondary-subtle text-secondary border")" style="font-size:0.7rem;">
+                                            <span class="goal-badge @(totalHomework > 0 && completedHomework >= totalHomework ? "goal-badge-achieved" : (completedHomework > 0 ? "goal-badge-inprogress" : "goal-badge-notstarted"))">
                                                 @(totalHomework > 0 && completedHomework >= totalHomework ? "Achieved" : (completedHomework > 0 ? "In Progress" : "Not Started"))
                                             </span>
                                         </div>
@@ -1032,7 +1254,7 @@
                                                         <td class="text-muted">@sm.DateFormatted</td>
                                                         <td class="fw-semibold text-dark">@(sm.MeasurementText)</td>
                                                         <td>
-                                                            <span class="badge @sm.BadgeClass" style="font-size:0.68rem;">
+                                                            <span class="@sm.BadgeClass">
                                                                 <i class="bi @sm.IconClass me-1"></i>@sm.ResultText
                                                             </span>
                                                         </td>
@@ -1369,78 +1591,218 @@
                         <i class="bi bi-journal-check me-1"></i>Homework (@Model.HomeworkList.Count)
                     </a>
                     <a class="@(Model.ActivitySubTab == "mood" ? "active" : "")" href="?id=@c.Id&tab=activities&subTab=mood">
-                        <i class="bi bi-emoji-smile me-1"></i>Mood (@Model.MoodEntries.Count)
+                        <i class="bi bi-emoji-smile me-1"></i>Mood (@Model.SharedJournals.Count)
                     </a>
                     <a class="@(Model.ActivitySubTab == "assessments" ? "active" : "")" href="?id=@c.Id&tab=activities&subTab=assessments">
                         <i class="bi bi-clipboard2-pulse me-1"></i>Assessments (@Model.RecentAssessments.Count)
                     </a>
                 </div>
 
-                <!-- Homework -->
+                <!-- Homework Sub-tab -->
                 @if (Model.ActivitySubTab == "homework")
                 {
+                    var totalHw = Model.HomeworkList.Count;
+                    var assignedHw = Model.HomeworkList.Count(h => h.Status == 0 && !h.IsOverdue);
+                    var submittedHw = Model.HomeworkList.Count(h => h.Status == 1);
+                    var overdueHw = Model.HomeworkList.Count(h => h.IsOverdue);
+                    var reviewedHw = Model.HomeworkList.Count(h => h.Status == 2);
+
                     <div style="padding:0 1.25rem 1.25rem;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold text-dark mb-0" style="font-size:0.88rem;">Assigned Homework</h6>
-                            <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
-                                <i class="bi bi-plus-lg me-1"></i>Assign
+                        <!-- ══ Stat Counter Cards Strip ══ -->
+                        <div class="row g-2 g-md-3 mb-3 pt-1">
+                            <div class="col-6 col-md-3">
+                                <div class="hw-stat-card active" id="stat-all" onclick="filterHomeworkByStatus('all')">
+                                    <div class="hw-stat-num text-dark">@totalHw</div>
+                                    <div class="hw-stat-label text-muted">Total</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="hw-stat-card" id="stat-0" onclick="filterHomeworkByStatus('0')">
+                                    <div class="hw-stat-num" style="color:#0284c7;">@assignedHw</div>
+                                    <div class="hw-stat-label text-muted">Assigned</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="hw-stat-card" id="stat-1" onclick="filterHomeworkByStatus('1')">
+                                    <div class="hw-stat-num" style="color:#d97706;">@submittedHw</div>
+                                    <div class="hw-stat-label text-muted">Submitted</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="hw-stat-card" id="stat-overdue" onclick="filterHomeworkByStatus('overdue')">
+                                    <div class="hw-stat-num" style="color:#dc2626;">@overdueHw</div>
+                                    <div class="hw-stat-label text-muted">Overdue</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ Search, Filter & Action Toolbar ══ -->
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <div class="d-flex align-items-center flex-wrap gap-2 flex-grow-1" style="max-width:760px;">
+                                <div class="input-group input-group-sm" style="max-width:240px;">
+                                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius:8px 0 0 8px;"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="hwSearchInput" class="form-control border-start-0" placeholder="Search homework..." oninput="applyHomeworkFilters()" style="border-radius:0 8px 8px 0;" />
+                                </div>
+                                <select id="hwStatusFilter" class="form-select form-select-sm" style="width:auto; border-radius:8px;" onchange="applyHomeworkFilters()">
+                                    <option value="all">Status: All</option>
+                                    <option value="0">Assigned</option>
+                                    <option value="1">Submitted</option>
+                                    <option value="2">Reviewed</option>
+                                    <option value="overdue">Overdue</option>
+                                </select>
+                                <select id="hwGoalFilter" class="form-select form-select-sm" style="width:auto; border-radius:8px;" onchange="applyHomeworkFilters()">
+                                    <option value="all">Goal: All</option>
+                                    @foreach (var g in Model.Goals)
+                                    {
+                                        <option value="@g.Id">@g.Title</option>
+                                    }
+                                </select>
+                                <select id="hwSortSelect" class="form-select form-select-sm" style="width:auto; border-radius:8px;" onchange="applyHomeworkFilters()">
+                                    <option value="due-asc">Sort: Due Date (Earliest)</option>
+                                    <option value="due-desc">Sort: Due Date (Latest)</option>
+                                    <option value="title-asc">Sort: Title (A-Z)</option>
+                                    <option value="status">Sort: Status</option>
+                                </select>
+                            </div>
+                            <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm text-white px-3 fw-semibold shadow-sm" style="background:#0d9488; border-radius:8px; font-size:0.8rem; padding:6px 14px;">
+                                <i class="bi bi-plus-lg me-1"></i>Assign Homework
                             </a>
                         </div>
+
+                        <!-- ══ Homework Table ══ -->
                         @if (!Model.HomeworkList.Any())
                         {
-                            <div class="cd-empty"><i class="bi bi-journal-x"></i><p>No homework assigned yet.</p></div>
+                            <div class="cd-empty py-5">
+                                <i class="bi bi-journal-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+                                <h6 class="fw-bold text-dark mb-1">No homework assigned yet</h6>
+                                <p class="text-muted small mb-3">Assign therapeutic exercises, reflections, or coping logs for the patient to practice between sessions.</p>
+                                <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">
+                                    <i class="bi bi-plus-lg me-1"></i>Assign First Homework
+                                </a>
+                            </div>
                         }
                         else
                         {
-                            <div class="table-responsive">
-                                <table class="table cd-table align-middle">
-                                    <thead><tr>
-                                        <th>Title</th><th>Instructions</th><th>Due Date</th><th>Submission</th><th>Status</th><th class="text-end">Action</th>
-                                    </tr></thead>
-                                    <tbody>
+                            <div class="table-responsive" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+                                <table class="table cd-table align-middle mb-0" id="homeworkTable" style="font-size:0.82rem;">
+                                    <thead style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                                        <tr>
+                                            <th style="padding:10px 14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">TITLE</th>
+                                            <th style="padding:10px 14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">GOAL / MILESTONE</th>
+                                            <th style="padding:10px 14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">DUE</th>
+                                            <th style="padding:10px 14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">STATUS</th>
+                                            <th class="text-end" style="padding:10px 14px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">ACTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="hwTableBody">
                                         @foreach (var hw in Model.HomeworkList)
                                         {
-                                            <tr>
-                                                <td>
-                                                    <div class="fw-semibold text-dark">@hw.Title</div>
+                                            var linkedSess = hw.TreatmentSessionId.HasValue
+                                                ? Model.Sessions.FirstOrDefault(s => s.Id == hw.TreatmentSessionId)
+                                                : null;
+
+                                            var linkedGoal = Model.Goals.FirstOrDefault(g =>
+                                                (!string.IsNullOrEmpty(hw.Title) && g.Title.Contains(hw.Title, StringComparison.OrdinalIgnoreCase)) ||
+                                                (linkedSess != null && g.Title.Contains(linkedSess.Title ?? "", StringComparison.OrdinalIgnoreCase))
+                                            ) ?? Model.Goals.FirstOrDefault();
+
+                                            var linkedMilestone = linkedGoal?.Details.FirstOrDefault(d =>
+                                                !string.IsNullOrEmpty(hw.Title) && d.Title.Contains(hw.Title, StringComparison.OrdinalIgnoreCase)
+                                            ) ?? linkedGoal?.Details.FirstOrDefault();
+
+                                            var isOverdue = hw.IsOverdue;
+                                            var statusVal = isOverdue ? "overdue" : hw.Status.ToString();
+                                            var goalIdVal = linkedGoal?.Id.ToString() ?? "";
+                                            var dueSortVal = hw.DueDate.HasValue ? hw.DueDate.Value.ToString("yyyyMMdd") : "99999999";
+
+                                            <tr class="hw-row" 
+                                                data-id="@hw.Id"
+                                                data-title="@hw.Title.ToLower()" 
+                                                data-status="@statusVal" 
+                                                data-goal="@goalIdVal"
+                                                data-duesort="@dueSortVal"
+                                                style="border-bottom:1px solid #f1f5f9;">
+                                                <td style="padding:12px 14px;">
+                                                    <div class="fw-bold text-dark mb-0" style="font-size:0.86rem;">@hw.Title</div>
                                                     @if (!string.IsNullOrEmpty(hw.Description))
                                                     {
-                                                        <div class="text-muted" style="font-size:0.75rem;">@hw.Description</div>
+                                                        <div class="text-muted text-truncate" style="font-size:0.75rem; max-width:240px;" title="@hw.Description">@hw.Description</div>
                                                     }
                                                 </td>
-                                                <td style="max-width:180px;" class="text-muted" title="@hw.DetailedInstructions">
-                                                    @(string.IsNullOrWhiteSpace(hw.DetailedInstructions) ? "—" : (hw.DetailedInstructions.Length > 60 ? hw.DetailedInstructions[..60] + "..." : hw.DetailedInstructions))
-                                                </td>
-                                                <td class="text-muted">@(hw.DueDate?.ToString("MMM dd, yyyy") ?? "No due date")</td>
-                                                <td>
-                                                    @if (!string.IsNullOrEmpty(hw.PatientSubmission))
+                                                <td style="padding:12px 14px;">
+                                                    @if (linkedGoal != null)
                                                     {
-                                                        <div class="text-dark text-truncate" style="max-width:150px; font-size:0.8rem;">@hw.PatientSubmission</div>
-                                                        <div class="text-muted" style="font-size:0.72rem;">@hw.SubmittedAt?.ToString("MMM dd HH:mm")</div>
+                                                        <div class="fw-semibold text-dark" style="font-size:0.82rem;">
+                                                            <i class="bi bi-bullseye me-1" style="color:#0d9488; font-size:0.75rem;"></i>@linkedGoal.Title
+                                                        </div>
+                                                        @if (linkedMilestone != null)
+                                                        {
+                                                            <div class="text-muted small" style="font-size:0.72rem;">
+                                                                <span class="text-teal" style="color:#0d9488;">•</span> @linkedMilestone.Title
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else if (linkedSess != null)
+                                                    {
+                                                        <div class="text-dark fw-semibold" style="font-size:0.8rem;">Session @linkedSess.SessionNumber</div>
+                                                        <div class="text-muted small" style="font-size:0.72rem;">• Treatment Activity</div>
                                                     }
                                                     else
                                                     {
-                                                        <span class="text-muted" style="font-size:0.78rem;">Not submitted</span>
+                                                        <span class="text-muted small" style="font-size:0.75rem;">General Treatment Activity</span>
                                                     }
                                                 </td>
-                                                <td><span class="@hw.StatusBadgeClass" style="font-size:0.7rem;">@hw.StatusText</span></td>
-                                                <td class="text-end">
-                                                    @if (hw.Status == 1)
+                                                <td style="padding:12px 14px;">
+                                                    @if (hw.DueDate.HasValue)
                                                     {
-                                                        <details class="text-start">
-                                                            <summary class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;">Review</summary>
-                                                            <form method="post" asp-page-handler="ReviewHomework" class="mt-2 p-2 border rounded-2 bg-light" style="min-width:240px;">
-                                                                <input type="hidden" name="caseId" value="@c.Id" />
-                                                                <input type="hidden" name="homeworkId" value="@hw.Id" />
-                                                                <label class="form-label fw-semibold" style="font-size:0.78rem;">Feedback</label>
-                                                                <textarea name="doctorFeedback" class="form-control form-control-sm mb-2" rows="2" required placeholder="Your feedback..." style="border-radius:5px;"></textarea>
-                                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.75rem;">Save</button>
-                                                            </form>
-                                                        </details>
+                                                        <div class="@(isOverdue ? "text-danger fw-bold" : "text-dark fw-semibold")" style="font-size:0.8rem;">
+                                                            @hw.DueDate.Value.ToString("MMM dd")
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:0.7rem;">@hw.DueDate.Value.ToString("yyyy")</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted" style="font-size:0.75rem;">No due date</span>
+                                                    }
+                                                </td>
+                                                <td style="padding:12px 14px;">
+                                                    @if (isOverdue)
+                                                    {
+                                                        <span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.72rem; padding:3px 8px; font-weight:600;">
+                                                            <i class="bi bi-exclamation-circle me-1"></i>Overdue
+                                                        </span>
+                                                    }
+                                                    else if (hw.Status == 1)
+                                                    {
+                                                        <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:0.72rem; padding:3px 8px; font-weight:600;">
+                                                            <i class="bi bi-clock-history me-1"></i>Submitted
+                                                        </span>
                                                     }
                                                     else if (hw.Status == 2)
                                                     {
-                                                        <span class="cd-badge active"><i class="bi bi-check-circle-fill"></i>Reviewed</span>
+                                                        <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.72rem; padding:3px 8px; font-weight:600;">
+                                                            <i class="bi bi-check-circle-fill me-1"></i>Reviewed
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; padding:3px 8px; font-weight:600;">
+                                                            <i class="bi bi-journal-text me-1"></i>Assigned
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td class="text-end" style="padding:12px 14px;">
+                                                    @if (hw.Status == 1)
+                                                    {
+                                                        <button type="button" class="btn btn-sm text-white fw-bold shadow-sm" style="background:#0d9488; border-radius:6px; font-size:0.75rem; padding:4px 12px;" onclick="openHomeworkModal('@hw.Id')">
+                                                            Review <i class="bi bi-arrow-right ms-1"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" style="border-radius:6px; font-size:0.75rem; padding:4px 10px;" onclick="openHomeworkModal('@hw.Id')">
+                                                            View
+                                                        </button>
                                                     }
                                                 </td>
                                             </tr>
@@ -1450,51 +1812,547 @@
                             </div>
                         }
                     </div>
+
+                    <!-- ══ Interactive Homework Details / Review Modals (One per Homework) ══ -->
+                    @foreach (var hw in Model.HomeworkList)
+                    {
+                        var modalLinkedSess = hw.TreatmentSessionId.HasValue
+                            ? Model.Sessions.FirstOrDefault(s => s.Id == hw.TreatmentSessionId)
+                            : null;
+
+                        var modalLinkedGoal = Model.Goals.FirstOrDefault(g =>
+                            (!string.IsNullOrEmpty(hw.Title) && g.Title.Contains(hw.Title, StringComparison.OrdinalIgnoreCase)) ||
+                            (modalLinkedSess != null && g.Title.Contains(modalLinkedSess.Title ?? "", StringComparison.OrdinalIgnoreCase))
+                        ) ?? Model.Goals.FirstOrDefault();
+
+                        var modalLinkedMilestone = modalLinkedGoal?.Details.FirstOrDefault(d =>
+                            !string.IsNullOrEmpty(hw.Title) && d.Title.Contains(hw.Title, StringComparison.OrdinalIgnoreCase)
+                        ) ?? modalLinkedGoal?.Details.FirstOrDefault();
+
+                        <div class="modal fade" id="hwModal-@hw.Id" tabindex="-1" aria-labelledby="hwModalLabel-@hw.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content" style="border-radius:14px; border:none; box-shadow:0 10px 30px rgba(15,23,42,0.12);">
+                                    <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1.25rem 1.5rem;">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <h5 class="modal-title fw-bold text-dark mb-0" id="hwModalLabel-@hw.Id" style="font-size:1.1rem;">
+                                                    @hw.Title
+                                                </h5>
+                                                @if (hw.IsOverdue)
+                                                {
+                                                    <span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:0.72rem;">Overdue</span>
+                                                }
+                                                else if (hw.Status == 1)
+                                                {
+                                                    <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:0.72rem;">Submitted</span>
+                                                }
+                                                else if (hw.Status == 2)
+                                                {
+                                                    <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.72rem;">Reviewed</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem;">Assigned</span>
+                                                }
+                                            </div>
+                                            <div class="text-muted small" style="font-size:0.78rem;">
+                                                <span><i class="bi bi-calendar-event me-1"></i>Due: <strong>@(hw.DueDate?.ToString("MMM dd, yyyy") ?? "No due date")</strong></span>
+                                                @if (modalLinkedGoal != null)
+                                                {
+                                                    <span class="ms-3"><i class="bi bi-bullseye me-1 text-teal" style="color:#0d9488;"></i>Goal: <strong>@modalLinkedGoal.Title</strong></span>
+                                                }
+                                                @if (modalLinkedSess != null)
+                                                {
+                                                    <span class="ms-3"><i class="bi bi-camera-video me-1"></i>Session @modalLinkedSess.SessionNumber</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body" style="padding:1.5rem;">
+                                        <!-- Instructions & Description -->
+                                        <div class="mb-4">
+                                            <label class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.72rem; letter-spacing:0.04em; color:#64748b;">Clinical Instructions</label>
+                                            <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.86rem; color:#334155; line-height:1.6;">
+                                                @if (!string.IsNullOrEmpty(hw.Description))
+                                                {
+                                                    <div class="fw-semibold mb-1 text-dark">@hw.Description</div>
+                                                }
+                                                <div>@(string.IsNullOrWhiteSpace(hw.DetailedInstructions) ? "Practice assigned clinical techniques daily." : hw.DetailedInstructions)</div>
+                                                @if (!string.IsNullOrEmpty(hw.ResourceUrl))
+                                                {
+                                                    <div class="mt-2 pt-2 border-top">
+                                                        <a href="@hw.ResourceUrl" target="_blank" class="text-decoration-none small text-teal fw-semibold" style="color:#0d9488;">
+                                                            <i class="bi bi-link-45deg me-1"></i>Resource Link: @hw.ResourceUrl
+                                                        </a>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Patient Submission Section -->
+                                        <div class="mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="fw-bold text-dark small text-uppercase mb-0" style="font-size:0.72rem; letter-spacing:0.04em; color:#64748b;">
+                                                    <i class="bi bi-person-fill me-1 text-teal" style="color:#0d9488;"></i>Patient Submission
+                                                </label>
+                                                @if (hw.SubmittedAt.HasValue)
+                                                {
+                                                    <span class="text-muted small" style="font-size:0.75rem;">Submitted on @hw.SubmittedAt.Value.ToString("MMM dd, yyyy HH:mm")</span>
+                                                }
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(hw.PatientSubmission) || !string.IsNullOrEmpty(hw.PatientSubmissionUrl))
+                                            {
+                                                <div class="p-3 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.86rem; color:#0f766e; line-height:1.6;">
+                                                    @if (!string.IsNullOrEmpty(hw.PatientSubmission))
+                                                    {
+                                                        <div style="white-space:pre-line;">@hw.PatientSubmission</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(hw.PatientSubmissionUrl))
+                                                    {
+                                                        <div class="mt-2 pt-2 border-top" style="border-color:#ccfbf1 !important;">
+                                                            <a href="@hw.PatientSubmissionUrl" target="_blank" class="btn btn-sm btn-outline-teal d-inline-flex align-items-center gap-1.5 fw-semibold" style="background:#ffffff; color:#0d9488; border-color:#0d9488; font-size:0.78rem; border-radius:6px;">
+                                                                <i class="bi bi-paperclip"></i> View Attached Document / Media
+                                                            </a>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="p-3 rounded-3 text-center text-muted" style="background:#f8fafc; border:1px dashed #cbd5e1; font-size:0.82rem;">
+                                                    <i class="bi bi-hourglass-split me-1 text-warning"></i> Waiting for patient to submit their response or evidence.
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <!-- Doctor Feedback Section -->
+                                        <div>
+                                            <label class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.72rem; letter-spacing:0.04em; color:#64748b;">
+                                                <i class="bi bi-chat-heart-fill me-1" style="color:#6366f1;"></i>Doctor Feedback & Review
+                                            </label>
+
+                                            @if (hw.Status == 2 && !string.IsNullOrEmpty(hw.DoctorFeedback))
+                                            {
+                                                <div class="p-3 rounded-3 mb-3" style="background:#ecfdf5; border:1px solid #a7f3d0; font-size:0.86rem; color:#065f46; line-height:1.6;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <strong style="color:#047857;"><i class="bi bi-check2-circle me-1"></i>Previous Feedback</strong>
+                                                        @if (hw.FeedbackAt.HasValue)
+                                                        {
+                                                            <span class="text-muted small" style="font-size:0.72rem;">@hw.FeedbackAt.Value.ToString("MMM dd, yyyy HH:mm")</span>
+                                                        }
+                                                    </div>
+                                                    <div style="white-space:pre-line;">@hw.DoctorFeedback</div>
+                                                </div>
+                                            }
+
+                                            <form method="post" asp-page-handler="ReviewHomework">
+                                                <input type="hidden" name="caseId" value="@c.Id" />
+                                                <input type="hidden" name="homeworkId" value="@hw.Id" />
+                                                <div class="mb-3">
+                                                    <textarea name="doctorFeedback" class="form-control" rows="3" placeholder="Write constructive feedback, positive reinforcement, or guidance for the patient..." style="border-radius:8px; font-size:0.86rem;" required>@(hw.Status == 2 ? hw.DoctorFeedback : "")</textarea>
+                                                </div>
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-sm text-white px-3 fw-semibold shadow-sm" style="background:#0d9488; border-radius:6px; font-size:0.82rem;">
+                                                        <i class="bi bi-check2-square me-1"></i>@(hw.Status == 2 ? "Update Feedback" : "Mark as Reviewed")
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 }
 
-                <!-- Mood -->
+                <!-- Mood Sub-tab -->
                 @if (Model.ActivitySubTab == "mood")
                 {
+                    var sharedList = Model.SharedJournals.OrderByDescending(j => j.CreatedAt).ToList();
+                    
+                    var recentList = (sharedList.Count >= 4) 
+                        ? sharedList.Take(sharedList.Count / 2).ToList() 
+                        : (sharedList.Count >= 2 ? sharedList.Take(1).ToList() : sharedList.ToList());
+
+                    var prevList = (sharedList.Count >= 4) 
+                        ? sharedList.Skip(sharedList.Count / 2).Take(sharedList.Count / 2).ToList() 
+                        : (sharedList.Count >= 2 ? sharedList.Skip(1).Take(1).ToList() : new List<OPCBS.Web.DTOs.EmotionJournalDto>());
+
+                    var curAvgMood = recentList.Any() ? recentList.Average(j => (double)j.MoodScale) : (sharedList.Any() ? sharedList.Average(j => (double)j.MoodScale) : 0);
+                    var prevAvgMood = prevList.Any() ? prevList.Average(j => (double)j.MoodScale) : curAvgMood;
+                    var diffMood = prevList.Any() ? (curAvgMood - prevAvgMood) : 0.0;
+
+                    var curAvgStress = recentList.Any() ? recentList.Average(j => (double)j.StressScale) : (sharedList.Any() ? sharedList.Average(j => (double)j.StressScale) : 0);
+                    var prevAvgStress = prevList.Any() ? prevList.Average(j => (double)j.StressScale) : curAvgStress;
+                    var diffStress = prevList.Any() ? (curAvgStress - prevAvgStress) : 0.0;
+
+                    var recentSleepList = recentList.Where(j => j.SleepHours.HasValue).ToList();
+                    var prevSleepList = prevList.Where(j => j.SleepHours.HasValue).ToList();
+                    var curAvgSleep = recentSleepList.Any() ? recentSleepList.Average(j => (double)j.SleepHours!.Value) : (sharedList.Where(j => j.SleepHours.HasValue).Any() ? sharedList.Where(j => j.SleepHours.HasValue).Average(j => (double)j.SleepHours!.Value) : 0);
+                    var prevAvgSleep = prevSleepList.Any() ? prevSleepList.Average(j => (double)j.SleepHours!.Value) : curAvgSleep;
+                    var diffSleep = prevSleepList.Any() ? (curAvgSleep - prevAvgSleep) : 0.0;
+
+                    var recentDepList = recentList.Where(j => j.DepressionScale.HasValue).ToList();
+                    var prevDepList = prevList.Where(j => j.DepressionScale.HasValue).ToList();
+                    var curAvgDep = recentDepList.Any() ? recentDepList.Average(j => (double)j.DepressionScale!.Value) : (sharedList.Where(j => j.DepressionScale.HasValue).Any() ? sharedList.Where(j => j.DepressionScale.HasValue).Average(j => (double)j.DepressionScale!.Value) : 0);
+                    var prevAvgDep = prevDepList.Any() ? prevDepList.Average(j => (double)j.DepressionScale!.Value) : curAvgDep;
+                    var diffDep = prevDepList.Any() ? (curAvgDep - prevAvgDep) : 0.0;
+
+                    var lastEntry = sharedList.FirstOrDefault();
+
                     <div style="padding:0 1.25rem 1.25rem;">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size:0.88rem;">Patient Mood Journey</h6>
-                        @if (!Model.MoodEntries.Any())
-                        {
-                            <div class="cd-empty"><i class="bi bi-emoji-smile"></i><p>No mood entries recorded by the patient.</p></div>
-                        }
-                        else
-                        {
-                            <!-- Mood Chart -->
-                            <div class="d-flex gap-1 align-items-end mb-3" style="height:80px;">
-                                @foreach (var m in Model.MoodEntries.OrderBy(x => x.RecordedAt))
-                                {
-                                    var h = Math.Max(8, m.MoodScore * 8);
-                                    var mc = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
-                                    <div title="@m.RecordedAt.ToString("MMM dd, HH:mm") — Mood: @m.MoodScore" style="flex:1; min-width:6px; max-width:18px; height:@(h)px; background:@mc; border-radius:3px 3px 0 0; opacity:0.75; cursor:default;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'"></div>
-                                }
+                        <!-- VIEW 1: MOOD & EMOTION JOURNAL TABLE VIEW -->
+                        <div id="doctorMoodJournalView">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size:0.95rem;">
+                                        <span class="me-1">😊</span>Mood & Emotion Journal
+                                    </h6>
+                                    <p class="text-muted mb-0" style="font-size:0.75rem;">Patient's shared emotional and wellbeing journal</p>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-sm fw-semibold" onclick="toggleDoctorMoodView('trends')" style="border-radius:8px; font-size:0.78rem; border:1px solid #0d9488; color:#0d9488; background:#f0fdfa;">
+                                        View Trends →
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Mood Table -->
-                            <div class="table-responsive">
-                                <table class="table cd-table align-middle">
-                                    <thead><tr>
-                                        <th>Date</th><th>Mood</th><th>Anxiety</th><th>Stress</th><th>Sleep</th><th>Depression</th><th>Note</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        @foreach (var m in Model.MoodEntries.OrderByDescending(x => x.RecordedAt))
-                                        {
-                                            var mc = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
+                            @if (!sharedList.Any())
+                            {
+                                <div class="cd-empty">
+                                    <i class="bi bi-emoji-smile"></i>
+                                    <p>No shared mood or journal entries from the patient yet.</p>
+                                    <span class="text-muted small">Only entries that the patient has explicitly chosen to share with their therapist will appear here.</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- 3 Stat Summary Cards -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-12 col-md-4">
+                                        <div class="doc-mood-trend-card">
+                                            <div class="doc-mood-trend-title">Mood Trend</div>
+                                            <div class="doc-mood-trend-val">
+                                                <span>@(Math.Abs(diffMood) < 0.05 ? "➖" : (diffMood > 0 ? "📈" : "📉"))</span>
+                                                <span>@(curAvgMood > 0 ? curAvgMood.ToString("0.0") : "—")/5</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <div class="doc-mood-trend-card">
+                                            <div class="doc-mood-trend-title">Stress Trend</div>
+                                            <div class="doc-mood-trend-val">
+                                                <span>@(Math.Abs(diffStress) < 0.05 ? "➖" : (diffStress < 0 ? "📉" : "📈"))</span>
+                                                <span>@(curAvgStress > 0 ? curAvgStress.ToString("0.0") : "—")/5</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <div class="doc-mood-trend-card">
+                                            <div class="doc-mood-trend-title">Sleep Trend</div>
+                                            <div class="doc-mood-trend-val">
+                                                <span>@(Math.Abs(diffSleep) < 0.05 ? "➖" : (diffSleep > 0 ? "📈" : "📉"))</span>
+                                                <span>@(curAvgSleep > 0 ? curAvgSleep.ToString("0.0") + " hrs" : "—")</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Shared Journals Table -->
+                                <div class="table-responsive">
+                                    <table class="table cd-table align-middle">
+                                        <thead>
                                             <tr>
-                                                <td class="text-muted">@m.RecordedAt.ToString("MMM dd, HH:mm")</td>
-                                                <td><span class="fw-bold" style="color:@mc;">@m.MoodScore/10</span></td>
-                                                <td class="text-muted">@(m.AnxietyScore?.ToString() ?? "—")</td>
-                                                <td class="text-muted">@(m.StressScore?.ToString() ?? "—")</td>
-                                                <td class="text-muted">@(m.SleepQualityScore?.ToString() ?? "—")</td>
-                                                <td class="text-muted">@(m.DepressionScore?.ToString() ?? "—")</td>
-                                                <td class="text-muted text-truncate" style="max-width:180px;">@(string.IsNullOrEmpty(m.Note) ? "—" : m.Note)</td>
+                                                <th>DATE</th>
+                                                <th>MOOD</th>
+                                                <th>STRESS</th>
+                                                <th>SLEEP</th>
+                                                <th>DEPRESSION</th>
+                                                <th>STATUS</th>
+                                                <th class="text-end">ACTION</th>
                                             </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var j in sharedList)
+                                            {
+                                                var sEmoji = j.StressScale switch { 1 => "🟢", 2 => "🟡", 3 => "🟠", 4 => "🔴", 5 => "⛔", _ => "⚪" };
+                                                <tr class="doc-journal-row" onclick="openSharedJournalModal('@j.Id')">
+                                                    <td class="fw-semibold text-dark">@j.CreatedAt.ToString("MMM dd")</td>
+                                                    <td>
+                                                        <span class="fw-bold">@j.MoodEmoji @j.MoodScale/5</span>
+                                                    </td>
+                                                    <td>
+                                                        <span>@sEmoji @j.StressScale/5</span>
+                                                    </td>
+                                                    <td>
+                                                        <span>@(j.SleepHours.HasValue ? $"{j.SleepHours.Value}h" : "—")</span>
+                                                    </td>
+                                                    <td>
+                                                        <span>@(j.DepressionScale.HasValue ? $"{j.DepressionScale.Value}/5" : "—")</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.72rem;">Shared with Dr</span>
+                                                    </td>
+                                                    <td class="text-end" onclick="event.stopPropagation()">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2" style="font-size:0.75rem; border-radius:6px;" onclick="openSharedJournalModal('@j.Id')">
+                                                            <i class="bi bi-eye me-1"></i>View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- VIEW 2: MOOD & WELLBEING TRENDS VIEW -->
+                        <div id="doctorMoodTrendsView" style="display:none;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <button type="button" class="btn btn-link text-decoration-none p-0 text-muted mb-1" onclick="toggleDoctorMoodView('journal')" style="font-size:0.78rem; font-weight:600;">
+                                        <i class="bi bi-arrow-left me-1"></i>Back to Mood Journal
+                                    </button>
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size:1rem;">Mood & Wellbeing Trends</h6>
+                                    <p class="text-muted mb-0" style="font-size:0.75rem;">Track shared emotional and wellbeing changes over time</p>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn trend-filter-btn active" id="btnRange7D" onclick="filterTrendsRange(7)">7D</button>
+                                    <button type="button" class="btn trend-filter-btn" id="btnRange30D" onclick="filterTrendsRange(30)">30D</button>
+                                    <button type="button" class="btn trend-filter-btn" id="btnRange90D" onclick="filterTrendsRange(90)">90D</button>
+                                </div>
+                            </div>
+
+                            <!-- 4 Detailed Metric Trend Cards -->
+                            <div class="row g-3 mb-4">
+                                <!-- Mood Stat (Higher is better) -->
+                                @{
+                                    string mColor = Math.Abs(diffMood) < 0.05 ? "text-secondary" : (diffMood > 0 ? "text-success" : "text-danger");
+                                    string mIcon = Math.Abs(diffMood) < 0.05 ? "bi-dash-lg" : (diffMood > 0 ? "bi-arrow-up" : "bi-arrow-down");
+                                    string mBadge = Math.Abs(diffMood) < 0.05 ? "bg-secondary-subtle text-secondary" : (diffMood > 0 ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger");
+                                    string mText = Math.Abs(diffMood) < 0.05 ? "Stable" : (diffMood > 0 ? "Improving" : "Declining");
+                                    string mSign = diffMood > 0.04 ? "+" : "";
+                                }
+                                <div class="col-6 col-md-3">
+                                    <div class="doc-trend-stat-box">
+                                        <div class="doc-trend-stat-header">
+                                            <span>😊</span> MOOD
+                                        </div>
+                                        <div class="doc-trend-stat-main" id="docTrendMoodMain">@(curAvgMood > 0 ? curAvgMood.ToString("0.0") : "—") <span style="font-size:0.8rem; color:#64748b; font-weight:600;">/ 5</span></div>
+                                        <div class="doc-trend-stat-diff @mColor" id="docTrendMoodDiff">
+                                            <i class="bi @mIcon" id="docTrendMoodIcon"></i>
+                                            <span id="docTrendMoodDiffVal">@(Math.Abs(diffMood) < 0.05 ? "0.0" : $"{mSign}{diffMood:0.0}")</span>
+                                            <span class="badge @mBadge" id="docTrendMoodBadge" style="font-size:0.68rem;">
+                                                @mText
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stress Stat (Lower is better) -->
+                                @{
+                                    string stressColor = Math.Abs(diffStress) < 0.05 ? "text-secondary" : (diffStress < 0 ? "text-success" : "text-danger");
+                                    string stressIcon = Math.Abs(diffStress) < 0.05 ? "bi-dash-lg" : (diffStress < 0 ? "bi-arrow-down" : "bi-arrow-up");
+                                    string stressBadge = Math.Abs(diffStress) < 0.05 ? "bg-secondary-subtle text-secondary" : (diffStress < 0 ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger");
+                                    string stressText = Math.Abs(diffStress) < 0.05 ? "Stable" : (diffStress < 0 ? "Improving" : "Elevated");
+                                    string stressSign = diffStress > 0.04 ? "+" : "";
+                                }
+                                <div class="col-6 col-md-3">
+                                    <div class="doc-trend-stat-box">
+                                        <div class="doc-trend-stat-header">
+                                            <span>😰</span> STRESS
+                                        </div>
+                                        <div class="doc-trend-stat-main" id="docTrendStressMain">@(curAvgStress > 0 ? curAvgStress.ToString("0.0") : "—") <span style="font-size:0.8rem; color:#64748b; font-weight:600;">/ 5</span></div>
+                                        <div class="doc-trend-stat-diff @stressColor" id="docTrendStressDiff">
+                                            <i class="bi @stressIcon" id="docTrendStressIcon"></i>
+                                            <span id="docTrendStressDiffVal">@(Math.Abs(diffStress) < 0.05 ? "0.0" : $"{stressSign}{diffStress:0.0}")</span>
+                                            <span class="badge @stressBadge" id="docTrendStressBadge" style="font-size:0.68rem;">
+                                                @stressText
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Sleep Stat (Higher is better) -->
+                                @{
+                                    string slColor = Math.Abs(diffSleep) < 0.05 ? "text-secondary" : (diffSleep > 0 ? "text-success" : "text-danger");
+                                    string slIcon = Math.Abs(diffSleep) < 0.05 ? "bi-dash-lg" : (diffSleep > 0 ? "bi-arrow-up" : "bi-arrow-down");
+                                    string slBadge = Math.Abs(diffSleep) < 0.05 ? "bg-secondary-subtle text-secondary" : (diffSleep > 0 ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger");
+                                    string slText = Math.Abs(diffSleep) < 0.05 ? "Stable" : (diffSleep > 0 ? "Improving" : "Decreased");
+                                    string slSign = diffSleep > 0.04 ? "+" : "";
+                                }
+                                <div class="col-6 col-md-3">
+                                    <div class="doc-trend-stat-box">
+                                        <div class="doc-trend-stat-header">
+                                            <span>😴</span> SLEEP
+                                        </div>
+                                        <div class="doc-trend-stat-main" id="docTrendSleepMain">@(curAvgSleep > 0 ? curAvgSleep.ToString("0.0") : "—") <span style="font-size:0.8rem; color:#64748b; font-weight:600;">hrs</span></div>
+                                        <div class="doc-trend-stat-diff @slColor" id="docTrendSleepDiff">
+                                            <i class="bi @slIcon" id="docTrendSleepIcon"></i>
+                                            <span id="docTrendSleepDiffVal">@(Math.Abs(diffSleep) < 0.05 ? "0.0" : $"{slSign}{diffSleep:0.0}")</span>
+                                            <span class="badge @slBadge" id="docTrendSleepBadge" style="font-size:0.68rem;">
+                                                @slText
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Depression Stat (Lower is better) -->
+                                @{
+                                    string dColor = Math.Abs(diffDep) < 0.05 ? "text-secondary" : (diffDep < 0 ? "text-success" : "text-danger");
+                                    string dIcon = Math.Abs(diffDep) < 0.05 ? "bi-dash-lg" : (diffDep < 0 ? "bi-arrow-down" : "bi-arrow-up");
+                                    string dBadge = Math.Abs(diffDep) < 0.05 ? "bg-secondary-subtle text-secondary" : (diffDep < 0 ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger");
+                                    string dText = Math.Abs(diffDep) < 0.05 ? "Stable" : (diffDep < 0 ? "Improving" : "Elevated");
+                                    string dSign = diffDep > 0.04 ? "+" : "";
+                                }
+                                <div class="col-6 col-md-3">
+                                    <div class="doc-trend-stat-box">
+                                        <div class="doc-trend-stat-header">
+                                            <span>🌧</span> DEPRESSION
+                                        </div>
+                                        <div class="doc-trend-stat-main" id="docTrendDepMain">@(curAvgDep > 0 ? curAvgDep.ToString("0.0") : "—") <span style="font-size:0.8rem; color:#64748b; font-weight:600;">/ 5</span></div>
+                                        <div class="doc-trend-stat-diff @dColor" id="docTrendDepDiff">
+                                            <i class="bi @dIcon" id="docTrendDepIcon"></i>
+                                            <span id="docTrendDepDiffVal">@(Math.Abs(diffDep) < 0.05 ? "0.0" : $"{dSign}{diffDep:0.0}")</span>
+                                            <span class="badge @dBadge" id="docTrendDepBadge" style="font-size:0.68rem;">
+                                                @dText
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Emotional & Wellbeing Trend Chart -->
+                            <div class="p-3 mb-4 rounded-3" style="background:#ffffff; border:1px solid #e2e8f0;">
+                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                    <span class="fw-bold text-dark" style="font-size:0.85rem;">Emotional & Wellbeing Trend</span>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn trend-filter-btn active" id="btnToggleAllTrends" onclick="setTrendsDatasetVisibility('all')">All</button>
+                                        <button type="button" class="btn trend-filter-btn" id="btnToggleMood" onclick="setTrendsDatasetVisibility('mood')">😊 Mood</button>
+                                        <button type="button" class="btn trend-filter-btn" id="btnToggleStress" onclick="setTrendsDatasetVisibility('stress')">😰 Stress</button>
+                                        <button type="button" class="btn trend-filter-btn" id="btnToggleDep" onclick="setTrendsDatasetVisibility('depression')">🌧 Depression</button>
+                                    </div>
+                                </div>
+                                <div style="height:210px;">
+                                    <canvas id="docMoodTrendsChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Sleep Trend Chart -->
+                            <div class="p-3 mb-4 rounded-3" style="background:#ffffff; border:1px solid #e2e8f0;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark" style="font-size:0.85rem;">Sleep Trend</span>
+                                    <span class="text-muted small">Hours per night</span>
+                                </div>
+                                <div style="height:170px;">
+                                    <canvas id="docSleepTrendsChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Recent Changes Summary -->
+                            <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <h6 class="fw-bold text-dark mb-2.5" style="font-size:0.85rem;">Recent Changes</h6>
+                                <div class="row g-2 mb-3" style="font-size:0.82rem;">
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi @(diffMood > 0.04 ? "bi-check2-circle text-success" : (diffMood < -0.04 ? "bi-exclamation-circle text-danger" : "bi-dash-circle text-secondary"))" id="recentSummaryMoodIcon"></i>
+                                            <span class="text-muted" id="recentSummaryMoodLabel">Mood @(diffMood > 0.04 ? "improved" : (diffMood < -0.04 ? "declined" : "stable")):</span>
+                                            <span class="fw-bold text-dark" id="recentSummaryMoodVal">@(prevAvgMood > 0 ? prevAvgMood.ToString("0.0") : "—") → @(curAvgMood > 0 ? curAvgMood.ToString("0.0") : "—")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi @(diffStress < -0.04 ? "bi-check2-circle text-success" : (diffStress > 0.04 ? "bi-exclamation-circle text-danger" : "bi-dash-circle text-secondary"))" id="recentSummaryStressIcon"></i>
+                                            <span class="text-muted" id="recentSummaryStressLabel">Stress @(diffStress < -0.04 ? "decreased" : (diffStress > 0.04 ? "increased" : "stable")):</span>
+                                            <span class="fw-bold text-dark" id="recentSummaryStressVal">@(prevAvgStress > 0 ? prevAvgStress.ToString("0.0") : "—") → @(curAvgStress > 0 ? curAvgStress.ToString("0.0") : "—")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi @(diffSleep > 0.04 ? "bi-check2-circle text-success" : (diffSleep < -0.04 ? "bi-exclamation-circle text-danger" : "bi-dash-circle text-secondary"))" id="recentSummarySleepIcon"></i>
+                                            <span class="text-muted" id="recentSummarySleepLabel">Sleep @(diffSleep > 0.04 ? "increased" : (diffSleep < -0.04 ? "decreased" : "stable")):</span>
+                                            <span class="fw-bold text-dark" id="recentSummarySleepVal">@(prevAvgSleep > 0 ? prevAvgSleep.ToString("0.0") + "h" : "—") → @(curAvgSleep > 0 ? curAvgSleep.ToString("0.0") + "h" : "—")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi @(diffDep < -0.04 ? "bi-check2-circle text-success" : (diffDep > 0.04 ? "bi-exclamation-circle text-danger" : "bi-dash-circle text-secondary"))" id="recentSummaryDepIcon"></i>
+                                            <span class="text-muted" id="recentSummaryDepLabel">Depression @(diffDep < -0.04 ? "decreased" : (diffDep > 0.04 ? "increased" : "stable")):</span>
+                                            <span class="fw-bold text-dark" id="recentSummaryDepVal">@(prevAvgDep > 0 ? prevAvgDep.ToString("0.0") : "—") → @(curAvgDep > 0 ? curAvgDep.ToString("0.0") : "—")</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (lastEntry != null)
+                                {
+                                    <div class="text-muted pt-2 border-top" style="font-size:0.75rem;">
+                                        <i class="bi bi-clock me-1"></i>Last shared entry: <strong>@lastEntry.CreatedAt.ToString("MMM dd, yyyy · HH:mm")</strong>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- MODALS: Detail Modal for each shared entry -->
+                        @foreach (var j in sharedList)
+                        {
+                            var mStyle = j.MoodStyle;
+                            var sStyle = j.StressStyle;
+                            var dStyle = j.DepressionStyle;
+
+                            <div class="modal fade" id="sharedJournalModal-@j.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content" style="border-radius:16px; border:1px solid #e2e8f0; box-shadow:0 12px 30px rgba(0,0,0,0.12);">
+                                        <div class="modal-header border-0 pb-0">
+                                            <div>
+                                                <span class="text-muted fw-semibold" style="font-size:0.78rem;">
+                                                    <i class="bi bi-calendar3 me-1"></i>@j.CreatedAt.ToString("MMM dd, yyyy · HH:mm")
+                                                </span>
+                                                <h5 class="modal-title fw-bold text-dark mt-1" style="font-size:1.1rem;">
+                                                    @j.MoodEmoji @j.MoodText <span class="badge ms-2" style="background:@mStyle.Bg; color:@mStyle.Text; border:1px solid @mStyle.Border; font-size:0.75rem;">Mood @j.MoodScale/5</span>
+                                                </h5>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body pt-3">
+                                            <!-- Metric Quick Summary -->
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-4">
+                                                    <div class="p-2.5 rounded-3 text-center" style="background:@sStyle.Bg; border:1px solid @sStyle.Border;">
+                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Stress</div>
+                                                        <div class="fw-bold" style="color:@sStyle.Text; font-size:0.85rem;">@j.StressText (@j.StressScale/5)</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="p-2.5 rounded-3 text-center" style="background:#f5f3ff; border:1px solid #ddd6fe;">
+                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Sleep</div>
+                                                        <div class="fw-bold" style="color:#5b21b6; font-size:0.85rem;">@(j.SleepHours.HasValue ? $"{j.SleepHours.Value:0.#} hrs" : "—")</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="p-2.5 rounded-3 text-center" style="background:@dStyle.Bg; border:1px solid @dStyle.Border;">
+                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Depression</div>
+                                                        <div class="fw-bold" style="color:@dStyle.Text; font-size:0.85rem;">@(j.DepressionScale.HasValue ? $"{j.DepressionText} ({j.DepressionScale.Value}/5)" : "—")</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Patient Note -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold text-dark mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Patient Note</label>
+                                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid var(--mb-primary, #0d9488); font-size:0.88rem; color:#334155; line-height:1.6; min-height:60px; white-space:pre-line;">
+                                                    @(string.IsNullOrWhiteSpace(j.Content) ? (string.IsNullOrWhiteSpace(j.Title) ? "No additional note written." : j.Title) : $"\"{j.Content}\"")
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-center text-success" style="font-size:0.78rem; font-weight:600;">
+                                                <i class="bi bi-shield-check me-1.5 fs-6"></i>Shared with therapist ✓
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
@@ -1504,48 +2362,288 @@
                 @if (Model.ActivitySubTab == "assessments")
                 {
                     <div style="padding:0 1.25rem 1.25rem;">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size:0.88rem;">Psychometric Assessments</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0" style="font-size:0.95rem;">
+                                    <i class="bi bi-clock-history me-1.5 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Psychometric Assessments Timeline
+                                </h6>
+                                <p class="text-muted mb-0" style="font-size:0.75rem;">Chronological progression of standardized psychometric questionnaires for this case</p>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge bg-light text-muted border px-2.5 py-1.5" style="font-size:0.74rem;">
+                                    @Model.RecentAssessments.Count submissions
+                                </span>
+                                <a href="/Doctor/Psychometrics/Index" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" style="border-radius:8px; font-size:0.78rem;">
+                                    <i class="bi bi-collection me-1.5"></i>Psychometrics Hub
+                                </a>
+                                <a href="/Doctor/Psychometrics/Assign?caseId=@c.Id&patientId=@c.PatientId" class="btn btn-sm fw-semibold text-white px-3 py-1.5" style="border-radius:8px; font-size:0.78rem; background:var(--mb-primary, #0d9488);">
+                                    <i class="bi bi-send-fill me-1.5"></i>Assign Assessment
+                                </a>
+                            </div>
+                        </div>
+
                         @if (!Model.RecentAssessments.Any())
                         {
-                            <div class="cd-empty"><i class="bi bi-clipboard2-pulse"></i><p>No assessment submissions linked to this case.</p></div>
+                            <div class="cd-empty">
+                                <i class="bi bi-clipboard2-pulse"></i>
+                                <p>No assessment submissions linked to this case yet.</p>
+                                <a href="/Doctor/Psychometrics/Assign?caseId=@c.Id&patientId=@c.PatientId" class="btn btn-outline-secondary btn-sm px-3 mt-1" style="border-radius:8px; font-size:0.78rem;">
+                                    <i class="bi bi-plus-lg me-1"></i>Assign First Assessment
+                                </a>
+                            </div>
                         }
                         else
                         {
-                            <div class="row g-3">
-                                @foreach (var a in Model.RecentAssessments)
+                            <div class="psy-timeline">
+                                @for (int idx = 0; idx < Model.RecentAssessments.Count; idx++)
                                 {
-                                    <div class="col-md-6">
-                                        <div class="cd-goal">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <div class="fw-bold text-dark" style="font-size:0.86rem;">@a.TestTitle</div>
-                                                    <div class="text-muted" style="font-size:0.72rem;"><i class="bi bi-calendar3 me-1"></i>@a.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                    var a = Model.RecentAssessments[idx];
+                                    var sev = a.GetEffectiveSeverity();
+                                    var isDass = a.TestType == "DASS21";
+                                    var isCompleted = a.Status == "Completed";
+                                    var isInProgress = a.Status == "InProgress";
+                                    var isOverdue = a.DueDate.HasValue && a.DueDate.Value < DateTime.Now && !isCompleted;
+                                    var isLatest = idx == 0;
+                                    var isBaseline = idx == Model.RecentAssessments.Count - 1;
+
+                                    <div class="psy-timeline-item">
+                                        <!-- Timeline Node Dot -->
+                                        <div class="psy-timeline-dot @(isCompleted ? (isLatest ? "latest" : "") : "")" style="@(!isCompleted ? "border-color:#f59e0b; color:#f59e0b; box-shadow:0 0 0 3px #fffbeb;" : "")" title="@(isCompleted ? "Completed Assessment" : "Assigned (Pending)")">
+                                            @if (isCompleted)
+                                            {
+                                                <i class="bi @(isLatest ? "bi-star-fill" : "bi-check2")"></i>
+                                            }
+                                            else if (isInProgress)
+                                            {
+                                                <i class="bi bi-clock-history"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-hourglass-split"></i>
+                                            }
+                                        </div>
+
+                                        <!-- Timeline Card -->
+                                        <div class="card border shadow-sm psy-timeline-card" style="border-radius:14px; border-color:@(isCompleted ? "#e2e8f0" : "#fde68a") !important; background:#ffffff;">
+                                            <div class="p-3.5" style="padding:1.25rem;">
+                                                <!-- Card Header -->
+                                                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                                                    <div class="d-flex align-items-start gap-2.5">
+                                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width:38px; height:38px; background:@(isCompleted ? "#f0fdfa" : "#fffbeb"); border:1px solid @(isCompleted ? "#ccfbf1" : "#fde68a");">
+                                                            <i class="bi @(isCompleted ? "bi-clipboard2-pulse-fill" : "bi-hourglass-split")" style="font-size:1.1rem; color:@(isCompleted ? "var(--mb-primary, #0d9488)" : "#b45309");"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                                @if (isCompleted)
+                                                                {
+                                                                    if (isLatest)
+                                                                    {
+                                                                        <span class="badge" style="background:#0d9488; color:#fff; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:6px;">Latest Check-in</span>
+                                                                    }
+                                                                    else if (isBaseline)
+                                                                    {
+                                                                        <span class="badge bg-light text-muted border" style="font-size:0.68rem; padding:2px 8px; border-radius:6px;">Baseline Evaluation</span>
+                                                                    }
+                                                                    <span class="text-muted" style="font-size:0.75rem;">
+                                                                        <i class="bi bi-calendar3 me-1"></i>Completed on @a.SubmittedAt.ToString("MMM dd, yyyy · HH:mm")
+                                                                    </span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (isInProgress)
+                                                                    {
+                                                                        <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px;">
+                                                                            <i class="bi bi-clock-history me-1"></i>In Progress
+                                                                        </span>
+                                                                    }
+                                                                    else if (isOverdue)
+                                                                    {
+                                                                        <span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px;">
+                                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
+                                                                        </span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px;">
+                                                                            <i class="bi bi-send-check me-1"></i>Assigned (Pending Patient Action)
+                                                                        </span>
+                                                                    }
+                                                                    @if (a.DueDate.HasValue)
+                                                                    {
+                                                                        <span class="badge" style="background:#fffbeb !important; color:#92400e !important; border:1px solid #fde68a !important; font-size:0.72rem; font-weight:700; border-radius:6px; padding:3px 8px;">
+                                                                            <i class="bi bi-calendar-event me-1"></i>Due: @a.DueDate.Value.ToString("MMM dd, yyyy")
+                                                                        </span>
+                                                                    }
+                                                                }
+                                                                <span class="text-muted">•</span>
+                                                                <span class="text-secondary fw-semibold small" style="font-size:0.75rem;">@(a.Category ?? "Psychological Screening")</span>
+                                                            </div>
+                                                            <h6 class="fw-bold text-dark mb-0" style="font-size:0.95rem; letter-spacing:-0.01em;">@a.TestTitle</h6>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="text-end flex-shrink-0">
+                                                        @if (isCompleted)
+                                                        {
+                                                            <span class="badge px-2.5 py-1" style="background:@sev.Bg; color:@sev.Text; border:1px solid @sev.Border; font-size:0.74rem; font-weight:700; border-radius:6px;">
+                                                                @sev.En
+                                                            </span>
+                                                            <div class="mt-1 d-flex align-items-baseline justify-content-end gap-1">
+                                                                <span class="fw-extrabold text-dark" style="font-size:1.15rem; font-weight:800;">@a.TotalScore</span>
+                                                                <span class="text-muted" style="font-size:0.75rem; font-weight:600;">/ @a.CalculatedMaxScore</span>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge px-2.5 py-1" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.74rem; font-weight:700; border-radius:6px;">
+                                                                <i class="bi bi-hourglass-split me-1"></i>Pending
+                                                            </span>
+                                                            <div class="text-muted small mt-1" style="font-size:0.75rem;">Not submitted yet</div>
+                                                        }
+                                                    </div>
                                                 </div>
-                                                <span class="cd-badge info">Score: @a.TotalScore</span>
-                                            </div>
-                                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:0.5rem 0.75rem; font-size:0.78rem; color:#64748b; margin-bottom:0.5rem;">
-                                                <strong>Result:</strong> @a.Interpretation
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center pt-1">
-                                                @if (a.ScoreChange.HasValue)
+
+                                                @if (isCompleted)
                                                 {
-                                                    if (a.ScoreChange < 0)
+                                                    <!-- Clinical Interpretation Section -->
+                                                    @if (isDass)
                                                     {
-                                                        <span class="cd-badge active"><i class="bi bi-arrow-down"></i>@a.ScoreChange (Improved)</span>
-                                                    }
-                                                    else if (a.ScoreChange > 0)
-                                                    {
-                                                        <span class="cd-badge hold"><i class="bi bi-arrow-up"></i>+@a.ScoreChange</span>
+                                                        var depSev = a.GetDepressionSeverity();
+                                                        var anxSev = a.GetAnxietySeverity();
+                                                        var strSev = a.GetStressSeverity();
+                                                        <div class="p-2.5 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                <div class="d-flex align-items-center gap-1.5 fw-bold text-dark" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
+                                                                    <i class="bi bi-diagram-3-fill" style="color:var(--mb-primary, #0d9488);"></i> Clinical Tri-Axial Breakdown
+                                                                </div>
+                                                                <span class="badge bg-light text-muted border" style="font-size:0.68rem;">DASS-21 Subscales</span>
+                                                            </div>
+                                                            <div class="row g-2">
+                                                                <!-- Depression -->
+                                                                <div class="col-4">
+                                                                    <div class="p-2 rounded-2 bg-white border" style="border-color:@depSev.Border !important;">
+                                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Depression</div>
+                                                                        <div class="d-flex justify-content-between align-items-baseline mt-0.5">
+                                                                            <span class="fw-bold" style="font-size:0.78rem; color:@depSev.Text;">@depSev.En</span>
+                                                                            <span class="fw-bold text-dark" style="font-size:0.76rem;">@a.DepressionScore<span class="text-muted" style="font-size:0.65rem;">/42</span></span>
+                                                                        </div>
+                                                                        <div class="progress mt-1.5" style="height:4px; background:#f1f5f9; border-radius:2px;">
+                                                                            <div class="progress-bar" style="width:@((a.DepressionScore * 100) / 42)%; background-color:@depSev.Bar;"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- Anxiety -->
+                                                                <div class="col-4">
+                                                                    <div class="p-2 rounded-2 bg-white border" style="border-color:@anxSev.Border !important;">
+                                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Anxiety</div>
+                                                                        <div class="d-flex justify-content-between align-items-baseline mt-0.5">
+                                                                            <span class="fw-bold" style="font-size:0.78rem; color:@anxSev.Text;">@anxSev.En</span>
+                                                                            <span class="fw-bold text-dark" style="font-size:0.76rem;">@a.AnxietyScore<span class="text-muted" style="font-size:0.65rem;">/42</span></span>
+                                                                        </div>
+                                                                        <div class="progress mt-1.5" style="height:4px; background:#f1f5f9; border-radius:2px;">
+                                                                            <div class="progress-bar" style="width:@((a.AnxietyScore * 100) / 42)%; background-color:@anxSev.Bar;"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- Stress -->
+                                                                <div class="col-4">
+                                                                    <div class="p-2 rounded-2 bg-white border" style="border-color:@strSev.Border !important;">
+                                                                        <div class="text-muted" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Stress</div>
+                                                                        <div class="d-flex justify-content-between align-items-baseline mt-0.5">
+                                                                            <span class="fw-bold" style="font-size:0.78rem; color:@strSev.Text;">@strSev.En</span>
+                                                                            <span class="fw-bold text-dark" style="font-size:0.76rem;">@a.StressScore<span class="text-muted" style="font-size:0.65rem;">/42</span></span>
+                                                                        </div>
+                                                                        <div class="progress mt-1.5" style="height:4px; background:#f1f5f9; border-radius:2px;">
+                                                                            <div class="progress-bar" style="width:@((a.StressScore * 100) / 42)%; background-color:@strSev.Bar;"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     }
                                                     else
                                                     {
-                                                        <span class="cd-badge muted">No change</span>
+                                                        <div class="p-2.5 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3.5px solid @sev.Bar;">
+                                                            <div class="d-flex align-items-center gap-1.5 mb-1 text-dark" style="font-size:0.76rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">
+                                                                <i class="bi bi-file-earmark-medical" style="color:var(--mb-primary, #0d9488);"></i> Clinical Interpretation
+                                                            </div>
+                                                            <div style="font-size:0.82rem; color:#334155; line-height:1.45;">
+                                                                @a.GetEnglishInterpretation()
+                                                            </div>
+                                                        </div>
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    <span class="cd-badge muted">Initial</span>
+                                                    <!-- Pending Patient Information Box -->
+                                                    <div class="p-2.5 rounded-3 mb-3" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:0.8rem;">
+                                                        <i class="bi bi-info-circle-fill me-1.5 text-warning"></i>
+                                                        <strong>Pending Completion:</strong> Assessment has been assigned to patient. Clinical scores and interpretation will update automatically once the patient submits the questionnaire.
+                                                    </div>
                                                 }
+
+                                                <!-- Doctor Notes (if any) -->
+                                                @if (!string.IsNullOrWhiteSpace(a.DoctorNotes))
+                                                {
+                                                    <div class="p-2.5 rounded-3 mb-3" style="background:#f0fdf4; border:1px solid #bbf7d0; font-size:0.78rem; color:#166534;">
+                                                        <i class="bi bi-chat-quote-fill me-1"></i><strong>Doctor Note:</strong> "@a.DoctorNotes"
+                                                    </div>
+                                                }
+
+                                                <!-- Card Footer: Trend & Actions -->
+                                                <div class="d-flex justify-content-between align-items-center pt-2.5 border-top">
+                                                    <div>
+                                                        @if (isCompleted)
+                                                        {
+                                                            if (a.ScoreChange.HasValue)
+                                                            {
+                                                                if (a.ScoreChange < 0)
+                                                                {
+                                                                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.72rem; font-weight:700; padding:4px 8px;">
+                                                                        <i class="bi bi-arrow-down-right me-0.5"></i>@Math.Abs(a.ScoreChange.Value) Points Improved
+                                                                    </span>
+                                                                }
+                                                                else if (a.ScoreChange > 0)
+                                                                {
+                                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size:0.72rem; font-weight:700; padding:4px 8px;">
+                                                                        <i class="bi bi-arrow-up-right me-0.5"></i>+@a.ScoreChange.Value Points Elevated
+                                                                    </span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-secondary-subtle text-secondary border" style="font-size:0.72rem; padding:4px 8px;">
+                                                                        — Stable
+                                                                    </span>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge bg-white text-muted border" style="font-size:0.7rem; padding:4px 8px;">
+                                                                    <i class="bi bi-flag me-1"></i>Baseline Reference
+                                                                </span>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px;">
+                                                                <i class="bi bi-hourglass-split me-1"></i>Waiting for Patient
+                                                            </span>
+                                                        }
+                                                    </div>
+
+                                                    @if (isCompleted)
+                                                    {
+                                                        <a href="/Doctor/Psychometrics/Details/@a.Id" class="btn btn-sm px-3 py-1.5 fw-semibold text-white shadow-sm" style="border-radius:7px; font-size:0.78rem; background:var(--mb-primary, #0d9488);">
+                                                            <i class="bi bi-file-earmark-medical me-1"></i>View Full Report →
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small" style="font-size:0.75rem;">
+                                                            <i class="bi bi-send me-1"></i>Assigned on @a.SubmittedAt.ToString("MMM dd, yyyy")
+                                                        </span>
+                                                    }
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1750,6 +2848,365 @@
             pct = Math.round(Math.min(100, Math.max(0, pct)));
             progInput.value = pct;
             if (progPreview) progPreview.innerText = pct + '%';
+        }
+    }
+
+    // ══ Homework Filtering, Searching & Modals ══
+    function openHomeworkModal(id) {
+        const modalEl = document.getElementById('hwModal-' + id);
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
+    function filterHomeworkByStatus(status) {
+        const statusSelect = document.getElementById('hwStatusFilter');
+        if (statusSelect) {
+            statusSelect.value = status;
+            applyHomeworkFilters();
+        }
+
+        // Highlight active stat card
+        document.querySelectorAll('.hw-stat-card').forEach(c => c.classList.remove('active'));
+        const activeCard = document.getElementById('stat-' + status);
+        if (activeCard) activeCard.classList.add('active');
+    }
+
+    function applyHomeworkFilters() {
+        const searchVal = (document.getElementById('hwSearchInput')?.value || '').toLowerCase().trim();
+        const statusVal = document.getElementById('hwStatusFilter')?.value || 'all';
+        const goalVal = document.getElementById('hwGoalFilter')?.value || 'all';
+        const sortVal = document.getElementById('hwSortSelect')?.value || 'due-asc';
+
+        const rows = Array.from(document.querySelectorAll('.hw-row'));
+        const tbody = document.getElementById('hwTableBody');
+
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title') || '';
+            const status = row.getAttribute('data-status') || '';
+            const goal = row.getAttribute('data-goal') || '';
+
+            const matchSearch = !searchVal || title.includes(searchVal);
+            const matchStatus = (statusVal === 'all') || (status === statusVal);
+            const matchGoal = (goalVal === 'all') || (goal === goalVal);
+
+            if (matchSearch && matchStatus && matchGoal) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Sorting
+        const visibleRows = rows.filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            if (sortVal === 'due-asc') {
+                return (a.getAttribute('data-duesort') || '').localeCompare(b.getAttribute('data-duesort') || '');
+            } else if (sortVal === 'due-desc') {
+                return (b.getAttribute('data-duesort') || '').localeCompare(a.getAttribute('data-duesort') || '');
+            } else if (sortVal === 'title-asc') {
+                return (a.getAttribute('data-title') || '').localeCompare(b.getAttribute('data-title') || '');
+            } else if (sortVal === 'status') {
+                return (a.getAttribute('data-status') || '').localeCompare(b.getAttribute('data-status') || '');
+            }
+            return 0;
+        });
+
+        if (tbody) {
+            visibleRows.forEach(r => tbody.appendChild(r));
+        }
+    }
+
+    // ══ Doctor Mood Journal & Trends Functions ══
+    function openSharedJournalModal(id) {
+        const modalEl = document.getElementById('sharedJournalModal-' + id);
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
+    let docMoodChartInstance = null;
+    let docSleepChartInstance = null;
+
+    const allDoctorJournalData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.SharedJournals.OrderBy(j => j.CreatedAt).Select(j => new {
+            id = j.Id,
+            date = j.CreatedAt.ToString("MMM dd"),
+            rawDate = j.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss"),
+            mood = j.MoodScale,
+            stress = j.StressScale,
+            sleep = j.SleepHours ?? 7,
+            depression = j.DepressionScale ?? 1
+        })
+    ));
+
+    function toggleDoctorMoodView(view) {
+        const journalView = document.getElementById('doctorMoodJournalView');
+        const trendsView = document.getElementById('doctorMoodTrendsView');
+        if (!journalView || !trendsView) return;
+
+        if (view === 'trends') {
+            journalView.style.display = 'none';
+            trendsView.style.display = 'block';
+            initDoctorTrendCharts(7);
+        } else {
+            trendsView.style.display = 'none';
+            journalView.style.display = 'block';
+        }
+    }
+
+    function filterTrendsRange(days) {
+        document.querySelectorAll('#btnRange7D, #btnRange30D, #btnRange90D').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.getElementById('btnRange' + days + 'D');
+        if (activeBtn) activeBtn.classList.add('active');
+        initDoctorTrendCharts(days);
+    }
+
+    function setTrendsDatasetVisibility(type) {
+        if (!docMoodChartInstance) return;
+        document.querySelectorAll('#btnToggleAllTrends, #btnToggleMood, #btnToggleStress, #btnToggleDep').forEach(b => b.classList.remove('active'));
+
+        if (type === 'all') {
+            document.getElementById('btnToggleAllTrends')?.classList.add('active');
+            docMoodChartInstance.data.datasets.forEach(ds => ds.hidden = false);
+        } else if (type === 'mood') {
+            document.getElementById('btnToggleMood')?.classList.add('active');
+            docMoodChartInstance.data.datasets[0].hidden = false;
+            docMoodChartInstance.data.datasets[1].hidden = true;
+            docMoodChartInstance.data.datasets[2].hidden = true;
+        } else if (type === 'stress') {
+            document.getElementById('btnToggleStress')?.classList.add('active');
+            docMoodChartInstance.data.datasets[0].hidden = true;
+            docMoodChartInstance.data.datasets[1].hidden = false;
+            docMoodChartInstance.data.datasets[2].hidden = true;
+        } else if (type === 'depression') {
+            document.getElementById('btnToggleDep')?.classList.add('active');
+            docMoodChartInstance.data.datasets[0].hidden = true;
+            docMoodChartInstance.data.datasets[1].hidden = true;
+            docMoodChartInstance.data.datasets[2].hidden = false;
+        }
+        docMoodChartInstance.update();
+    }
+
+    function updateDocTrendStatBox(metricType, curAvg, diffVal) {
+        const isHigherBetter = (metricType === 'mood' || metricType === 'sleep');
+        const cap = metricType === 'dep' ? 'Dep' : (metricType.charAt(0).toUpperCase() + metricType.slice(1));
+        const mainEl = document.getElementById(`docTrend${cap}Main`);
+        const diffEl = document.getElementById(`docTrend${cap}Diff`);
+        const iconEl = document.getElementById(`docTrend${cap}Icon`);
+        const valEl = document.getElementById(`docTrend${cap}DiffVal`);
+        const badgeEl = document.getElementById(`docTrend${cap}Badge`);
+
+        if (!mainEl || !diffEl || !iconEl || !valEl || !badgeEl) return;
+
+        const unit = metricType === 'sleep' ? ' hrs' : ' / 5';
+        mainEl.innerHTML = (curAvg > 0 ? curAvg.toFixed(1) : '—') + `<span style="font-size:0.8rem; color:#64748b; font-weight:600;">${unit}</span>`;
+
+        const isStable = Math.abs(diffVal) < 0.05;
+        if (isStable) {
+            diffEl.className = 'doc-trend-stat-diff text-secondary';
+            iconEl.className = 'bi bi-dash-lg';
+            valEl.textContent = '0.0';
+            badgeEl.className = 'badge bg-secondary-subtle text-secondary';
+            badgeEl.textContent = 'Stable';
+            return;
+        }
+
+        if (isHigherBetter) {
+            if (diffVal > 0) {
+                diffEl.className = 'doc-trend-stat-diff text-success';
+                iconEl.className = 'bi bi-arrow-up';
+                valEl.textContent = `+${diffVal.toFixed(1)}`;
+                badgeEl.className = 'badge bg-success-subtle text-success';
+                badgeEl.textContent = 'Improving';
+            } else {
+                diffEl.className = 'doc-trend-stat-diff text-danger';
+                iconEl.className = 'bi bi-arrow-down';
+                valEl.textContent = `${diffVal.toFixed(1)}`;
+                badgeEl.className = 'badge bg-danger-subtle text-danger';
+                badgeEl.textContent = metricType === 'sleep' ? 'Decreased' : 'Declining';
+            }
+        } else {
+            // Stress & Depression: Lower is Better
+            if (diffVal < 0) {
+                diffEl.className = 'doc-trend-stat-diff text-success';
+                iconEl.className = 'bi bi-arrow-down';
+                valEl.textContent = `${diffVal.toFixed(1)}`;
+                badgeEl.className = 'badge bg-success-subtle text-success';
+                badgeEl.textContent = 'Improving';
+            } else {
+                diffEl.className = 'doc-trend-stat-diff text-danger';
+                iconEl.className = 'bi bi-arrow-up';
+                valEl.textContent = `+${diffVal.toFixed(1)}`;
+                badgeEl.className = 'badge bg-danger-subtle text-danger';
+                badgeEl.textContent = 'Elevated';
+            }
+        }
+    }
+
+    function initDoctorTrendCharts(days) {
+        if (!allDoctorJournalData || allDoctorJournalData.length === 0) return;
+
+        let filtered = allDoctorJournalData;
+        if (days) {
+            filtered = allDoctorJournalData.slice(-days);
+        }
+
+        // Calculate stat averages & diffs for the current filtered window
+        let recentSlice = [];
+        let prevSlice = [];
+        if (filtered.length >= 4) {
+            const half = Math.floor(filtered.length / 2);
+            recentSlice = filtered.slice(half);
+            prevSlice = filtered.slice(0, half);
+        } else if (filtered.length >= 2) {
+            recentSlice = [filtered[filtered.length - 1]];
+            prevSlice = [filtered[0]];
+        } else {
+            recentSlice = filtered;
+            prevSlice = [];
+        }
+
+        function calcAvg(arr, key) {
+            if (!arr || arr.length === 0) return 0;
+            const valid = arr.filter(x => x[key] !== null && x[key] !== undefined && x[key] > 0);
+            if (valid.length === 0) return 0;
+            return valid.reduce((sum, x) => sum + x[key], 0) / valid.length;
+        }
+
+        const curMood = calcAvg(recentSlice, 'mood') || calcAvg(filtered, 'mood');
+        const prevMood = prevSlice.length > 0 ? calcAvg(prevSlice, 'mood') : curMood;
+        const diffM = prevSlice.length > 0 ? (curMood - prevMood) : 0;
+        updateDocTrendStatBox('mood', curMood, diffM);
+
+        const curStress = calcAvg(recentSlice, 'stress') || calcAvg(filtered, 'stress');
+        const prevStress = prevSlice.length > 0 ? calcAvg(prevSlice, 'stress') : curStress;
+        const diffS = prevSlice.length > 0 ? (curStress - prevStress) : 0;
+        updateDocTrendStatBox('stress', curStress, diffS);
+
+        const curSleep = calcAvg(recentSlice, 'sleep') || calcAvg(filtered, 'sleep');
+        const prevSleep = prevSlice.length > 0 ? calcAvg(prevSlice, 'sleep') : curSleep;
+        const diffSl = prevSlice.length > 0 ? (curSleep - prevSleep) : 0;
+        updateDocTrendStatBox('sleep', curSleep, diffSl);
+
+        const curDep = calcAvg(recentSlice, 'depression') || calcAvg(filtered, 'depression');
+        const prevDep = prevSlice.length > 0 ? calcAvg(prevSlice, 'depression') : curDep;
+        const diffD = prevSlice.length > 0 ? (curDep - prevDep) : 0;
+        updateDocTrendStatBox('dep', curDep, diffD);
+
+        const labels = filtered.map(d => d.date);
+        const moodData = filtered.map(d => d.mood);
+        const stressData = filtered.map(d => d.stress);
+        const depData = filtered.map(d => d.depression);
+        const sleepData = filtered.map(d => d.sleep);
+
+        // 1. Emotional & Wellbeing Trends Chart
+        const moodCanvas = document.getElementById('docMoodTrendsChart');
+        if (moodCanvas) {
+            if (docMoodChartInstance) docMoodChartInstance.destroy();
+            const ctxMood = moodCanvas.getContext('2d');
+            docMoodChartInstance = new Chart(ctxMood, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '😊 Mood (1-5)',
+                            data: moodData,
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13,148,136,0.08)',
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#0d9488'
+                        },
+                        {
+                            label: '😰 Stress (1-5)',
+                            data: stressData,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245,158,11,0.08)',
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f59e0b'
+                        },
+                        {
+                            label: '🌧 Depression (1-5)',
+                            data: depData,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.08)',
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#6366f1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: val => {
+                                    const map = { 1: '1 (Low)', 3: '3 (Neutral)', 5: '5 (High)' };
+                                    return map[val] || val;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 2. Sleep Trend Chart
+        const sleepCanvas = document.getElementById('docSleepTrendsChart');
+        if (sleepCanvas) {
+            if (docSleepChartInstance) docSleepChartInstance.destroy();
+            const ctxSleep = sleepCanvas.getContext('2d');
+            docSleepChartInstance = new Chart(ctxSleep, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '😴 Sleep (Hours)',
+                            data: sleepData,
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124,58,237,0.1)',
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#7c3aed'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 12,
+                            ticks: {
+                                stepSize: 2,
+                                callback: val => val + 'h'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
         }
     }
 </script>

@@ -1,168 +1,491 @@
 @page
 @model OPCBS.Web.Pages.Patient.Psychometrics.TakeTestModel
 @{
-    ViewData["Title"] = Model.Test?.Title ?? "Psychometric Screening";
+    ViewData["Title"] = Model.Test?.Title ?? "Psychometric Assessments";
     Layout = "_DashboardLayout";
 }
 
-@if (Model.Test != null)
-{
-    <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-            <h1><i class="bi bi-clipboard2-pulse me-2" style="color:var(--mb-primary);"></i>@Model.Test.Title</h1>
-            <p class="text-muted mb-0">@Model.Test.Description</p>
-        </div>
-        @if (Model.AppointmentId.HasValue)
-        {
-            <a asp-page="/Patient/Appointments/Details" asp-route-id="@Model.AppointmentId.Value" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back to Appointment</a>
-        }
-        else
-        {
-            <a asp-page="TakeTest" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back to List</a>
-        }
-    </div>
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert" style="border-radius:12px; border:none;">
-            <i class="bi bi-exclamation-triangle me-1"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+<style>
+    .psy-banner-card {
+        background: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
+        color: #ffffff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.15);
+        margin-bottom: 1.5rem;
     }
 
-    @if (Model.Error != null)
-    {
-        <div class="alert alert-danger mt-3" style="border-radius:12px; border:none;">
-            <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
-        </div>
+    .assigned-card {
+        background: #ffffff;
+        border: 1.5px solid #ccfbf1;
+        border-left: 5px solid #0d9488 !important;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.06);
+        transition: transform 0.15s ease;
+        margin-bottom: 1rem;
     }
-    else
+    .assigned-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .test-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        transition: all 0.15s ease;
+    }
+    .test-card:hover {
+        transform: translateY(-2px);
+        border-color: #cbd5e1;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .q-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.35rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+        transition: border-color 0.15s;
+    }
+    .q-card.answered {
+        border-color: #99f6e4;
+        background: #fcfffe;
+    }
+
+    .scale-option-label {
+        display: block;
+        padding: 0.75rem 0.5rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        background: #ffffff;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+    .scale-option-label:hover {
+        border-color: #99f6e4;
+        background: #f0fdf4;
+    }
+    .scale-option-input:checked + .scale-option-label {
+        background: #dcfce7 !important;
+        border-color: #86efac !important;
+        color: #166534 !important;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(22, 101, 52, 0.12);
+    }
+
+    .sticky-submit-bar {
+        position: sticky;
+        bottom: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        z-index: 100;
+    }
+
+    /* ─── Timeline Styling ─── */
+    .psy-timeline {
+        position: relative;
+        padding-left: 2.25rem;
+        margin-top: 0.5rem;
+    }
+    .psy-timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        bottom: 24px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    .psy-timeline-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+    }
+    .psy-timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    .psy-timeline-dot {
+        position: absolute;
+        left: -2.25rem;
+        top: 12px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #0d9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d9488;
+        font-size: 0.8rem;
+        box-shadow: 0 0 0 3px #f0fdfa;
+        z-index: 2;
+    }
+    .psy-timeline-dot.latest {
+        background: #0d9488;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+    }
+    .psy-timeline-card {
+        transition: all 0.2s ease;
+    }
+    .psy-timeline-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+    }
+</style>
+
+<div class="container-fluid px-0 py-2">
+    @if (Model.Test != null)
     {
-        var isPhq9 = Model.Test.TestType == "PHQ9";
-        
-        <form method="post" asp-page-handler="Submit" asp-route-testId="@Model.Test.Id" asp-route-appointmentId="@Model.AppointmentId" id="testForm" class="mt-4">
-            <div class="d-flex flex-column gap-3 mb-4">
-                @foreach (var q in Model.Questions)
+        <!-- ==================== TEST-TAKING MODE ==================== -->
+        <div class="mb-4">
+            <a asp-page="TakeTest" class="btn btn-link text-decoration-none p-0 text-muted mb-2" style="font-size:0.84rem; font-weight:600;">
+                <i class="bi bi-arrow-left me-1"></i>Back to Assessments Overview
+            </a>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1 class="h4 fw-bold text-dark mb-1">@Model.Test.Title</h1>
+                    <p class="text-muted mb-0" style="font-size:0.85rem;">
+                        @(string.IsNullOrWhiteSpace(Model.Test.Description) ? (Model.Test.Purpose ?? "Please answer each question honestly based on how you have felt recently.") : Model.Test.Description)
+                    </p>
+                </div>
+                <div class="badge" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; font-size:0.8rem; font-weight:700; padding:6px 14px; border-radius:8px;">
+                    <i class="bi bi-question-circle me-1"></i>@Model.Questions.Count Questions
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.DoctorInstructions))
+        {
+            <div class="alert alert-info d-flex align-items-start gap-2.5 mb-4" style="border-radius:12px; border:1px solid #bfdbfe; background:#eff6ff;">
+                <i class="bi bi-person-fill-check fs-5 text-primary"></i>
+                <div>
+                    <div class="fw-bold text-primary mb-0.5" style="font-size:0.88rem;">Doctor's Clinical Note:</div>
+                    <div class="text-dark" style="font-size:0.84rem; line-height:1.5;">@Model.DoctorInstructions</div>
+                    @if (Model.DueDate.HasValue)
+                    {
+                        <div class="text-muted small mt-1">Requested Due Date: <strong>@Model.DueDate.Value.ToString("MMM dd, yyyy")</strong></div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <form method="post" asp-page-handler="Submit" id="takeTestForm">
+            <input type="hidden" name="testId" value="@Model.Test.Id" />
+            @if (Model.AppointmentId.HasValue && Model.AppointmentId.Value != Guid.Empty)
+            {
+                <input type="hidden" name="appointmentId" value="@Model.AppointmentId.Value" />
+            }
+            @if (Model.TreatmentCaseId.HasValue && Model.TreatmentCaseId.Value != Guid.Empty)
+            {
+                <input type="hidden" name="treatmentCaseId" value="@Model.TreatmentCaseId.Value" />
+            }
+            @if (Model.SubmissionId.HasValue && Model.SubmissionId.Value != Guid.Empty)
+            {
+                <input type="hidden" name="submissionId" value="@Model.SubmissionId.Value" />
+            }
+
+            <div class="mb-4">
+                @for (int i = 0; i < Model.Questions.Count; i++)
                 {
-                    <div class="card border-0 shadow-sm question-card" id="q-card-@q.Id" style="border-radius:16px;">
-                        <div class="card-body p-4">
-                            <h5 class="card-title d-flex align-items-start gap-2 fs-6">
-                                <span class="badge bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width:24px;height:24px;flex-shrink:0; background-color:var(--mb-primary) !important;">@q.QuestionNumber</span>
-                                <span class="lh-sm" style="color:#1e293b; font-weight:700;">@q.QuestionText</span>
-                            </h5>
-                            <div class="row g-2 mt-3 option-group">
-                                @if (isPhq9)
+                    var q = Model.Questions[i];
+                    var qNum = q.QuestionNumber > 0 ? q.QuestionNumber : (i + 1);
+                    var qType = q.QuestionType ?? "Rating1To5";
+                    var isPhq9 = Model.Test.TestType == "PHQ9";
+                    var isGad7 = Model.Test.TestType == "GAD7";
+                    var isDass21 = Model.Test.TestType == "DASS21";
+
+                    <div class="q-card" id="q-box-@q.Id">
+                        <div class="d-flex align-items-start gap-2.5 mb-3">
+                            <span class="badge" style="background:#0d9488; color:#ffffff; font-size:0.8rem; font-weight:700; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;">
+                                @qNum
+                            </span>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold text-dark mb-1" style="font-size:0.95rem; line-height:1.45;">@q.QuestionText</h6>
+                                @if (!string.IsNullOrWhiteSpace(q.Category))
                                 {
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="0" required class="d-none" />
-                                            <strong>0</strong>
-                                            <span class="d-block small text-muted mt-1">Not at all</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="1" class="d-none" />
-                                            <strong>1</strong>
-                                            <span class="d-block small text-muted mt-1">Several days</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="2" class="d-none" />
-                                            <strong>2</strong>
-                                            <span class="d-block small text-muted mt-1">More than half the days</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="3" class="d-none" />
-                                            <strong>3</strong>
-                                            <span class="d-block small text-muted mt-1">Nearly every day</span>
-                                        </label>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="0" required class="d-none" />
-                                            <strong>0</strong>
-                                            <span class="d-block small text-muted mt-1">Not at all</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="1" class="d-none" />
-                                            <strong>1</strong>
-                                            <span class="d-block small text-muted mt-1">Several days</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="2" class="d-none" />
-                                            <strong>2</strong>
-                                            <span class="d-block small text-muted mt-1">More than half the days</span>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <label class="option-label text-center p-3 rounded border w-100 cursor-pointer d-block" style="border-radius:12px !important;">
-                                            <input type="radio" name="answers[@q.Id]" value="3" class="d-none" />
-                                            <strong>3</strong>
-                                            <span class="d-block small text-muted mt-1">Nearly every day</span>
-                                        </label>
-                                    </div>
+                                    <span class="badge bg-light text-muted border" style="font-size:0.68rem;">@q.Category</span>
                                 }
                             </div>
                         </div>
+
+                        @if (isPhq9 || isGad7)
+                        {
+                            <!-- Standard 0 to 3 PHQ-9 / GAD-7 Scale -->
+                            <div class="row g-2">
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_0" value="0" class="d-none scale-option-input" required onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_0" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">0</div>
+                                        <div class="small" style="font-size:0.75rem;">Not at all</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_1" value="1" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_1" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">1</div>
+                                        <div class="small" style="font-size:0.75rem;">Several days</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_2" value="2" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_2" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">2</div>
+                                        <div class="small" style="font-size:0.75rem;">More than half the days</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_3" value="3" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_3" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">3</div>
+                                        <div class="small" style="font-size:0.75rem;">Nearly every day</div>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        else if (isDass21)
+                        {
+                            <!-- Standard 0 to 3 DASS-21 Scale -->
+                            <div class="row g-2">
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_0" value="0" class="d-none scale-option-input" required onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_0" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">0</div>
+                                        <div class="small" style="font-size:0.72rem;">Did not apply at all</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_1" value="1" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_1" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">1</div>
+                                        <div class="small" style="font-size:0.72rem;">Applied some degree</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_2" value="2" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_2" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">2</div>
+                                        <div class="small" style="font-size:0.72rem;">Considerable degree</div>
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_3" value="3" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_3" class="scale-option-label">
+                                        <div class="fw-bold" style="font-size:1.05rem;">3</div>
+                                        <div class="small" style="font-size:0.72rem;">Applied very much</div>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        else if (qType == "YesNo")
+                        {
+                            <!-- Yes / No Format -->
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_0" value="0" class="d-none scale-option-input" required onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_0" class="scale-option-label py-3">
+                                        <div class="fw-bold text-secondary" style="font-size:1.1rem;"><i class="bi bi-x-circle me-1"></i>No</div>
+                                        <div class="small text-muted" style="font-size:0.75rem;">Does not apply</div>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_1" value="1" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_1" class="scale-option-label py-3">
+                                        <div class="fw-bold text-success" style="font-size:1.1rem;"><i class="bi bi-check-circle me-1"></i>Yes</div>
+                                        <div class="small text-muted" style="font-size:0.75rem;">Applies to me</div>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        else if (qType == "ShortText")
+                        {
+                            <!-- Short Text Response -->
+                            <textarea name="textAnswers[@q.Id]" class="form-control" rows="3" placeholder="Type your personal reflection or observation here..." style="border-radius:10px; font-size:0.86rem;" oninput="onAnswerSelected('@q.Id')"></textarea>
+                        }
+                        else
+                        {
+                            <!-- Rating 1-5 Scale -->
+                            <div class="row g-2">
+                                <div class="col-12 col-sm">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_1" value="1" class="d-none scale-option-input" required onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_1" class="scale-option-label">
+                                        <div class="fw-bold">1</div>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Never / None</div>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_2" value="2" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_2" class="scale-option-label">
+                                        <div class="fw-bold">2</div>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Rarely</div>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_3" value="3" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_3" class="scale-option-label">
+                                        <div class="fw-bold">3</div>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Sometimes</div>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_4" value="4" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_4" class="scale-option-label">
+                                        <div class="fw-bold">4</div>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Often</div>
+                                    </label>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <input type="radio" name="answers[@q.Id]" id="ans_@(q.Id)_5" value="5" class="d-none scale-option-input" onchange="onAnswerSelected('@q.Id')" />
+                                    <label for="ans_@(q.Id)_5" class="scale-option-label">
+                                        <div class="fw-bold">5</div>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Always</div>
+                                    </label>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>
 
-            <div class="card border-0 shadow-sm mb-5" style="border-radius:16px;">
-                <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <span class="text-muted fw-semibold" id="progressText">Answered: 0/@Model.Questions.Count questions</span>
-                    <button type="submit" class="btn btn-primary px-4 py-2" id="submitBtn" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;"><i class="bi bi-send-check me-2"></i>Submit Results</button>
+            <!-- Sticky Bottom Submission Bar -->
+            <div class="sticky-submit-bar d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="fw-bold text-dark" id="progressSummary" style="font-size:0.9rem;">
+                        Progress: 0 / @Model.Questions.Count answered
+                    </span>
+                    <div class="progress mt-1.5" style="height:6px; width:160px; background:#f1f5f9; border-radius:4px;">
+                        <div class="progress-bar" id="progressBarFill" role="progressbar" style="width:0%; background:#0d9488; border-radius:4px;"></div>
+                    </div>
                 </div>
+                <button type="submit" class="btn px-4 py-2 fw-semibold text-white shadow-sm" style="border-radius:10px; background:var(--mb-primary, #0d9488); font-size:0.9rem;">
+                    <i class="bi bi-send-check me-1.5"></i>Submit Assessment
+                </button>
             </div>
         </form>
     }
-}
-else
-{
-    <!-- Overview/Landing page mode: list all tests & past submissions -->
-    <div class="mb-page-header">
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-clipboard2-pulse-fill me-2" style="color:var(--mb-primary);"></i>Psychometric Screening
-        </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Take quick tests to monitor your psyforlogical state</p>
-    </div>
-
-    @if (Model.Error != null)
-    {
-        <div class="alert alert-danger mt-3" style="border-radius:12px; border:none;">
-            <i class="bi bi-exclamation-triangle me-1"></i>@Model.Error
-        </div>
-    }
     else
     {
-        <div class="row g-4 mt-2">
-            <!-- Left Panel: Available Tests -->
-            <div class="col-lg-6">
-                <h5 class="fw-bold mb-3" style="font-size:1rem; color:#1e293b;">
-                    <i class="bi bi-patch-check-fill me-2" style="color:var(--mb-primary);"></i>Available Tests
-                </h5>
-                <div class="d-flex flex-column gap-3">
-                    @foreach (var t in Model.AvailableTests)
+        <!-- ==================== LANDING / OVERVIEW MODE ==================== -->
+        <div class="psy-banner-card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h4 fw-bold mb-1"><i class="bi bi-clipboard2-pulse me-2"></i>Psychometric Tests & Screening</h1>
+                    <p class="mb-0 text-white-50" style="font-size:0.86rem;">Complete doctor-assigned assessments and self-guided questionnaires to track mental wellbeing.</p>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- 1. Doctor Assigned Assessments (Action Required) -->
+        @if (Model.AssignedAssessments.Any())
+        {
+            <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size:1.05rem;">
+                        <i class="bi bi-bell-fill me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assigned by Your Doctor
+                    </h5>
+                    <span class="badge px-2.5 py-1" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:0.75rem; font-weight:700;">
+                        <i class="bi bi-hourglass-split me-1"></i>@Model.AssignedAssessments.Count pending action
+                    </span>
+                </div>
+
+                <div class="row g-3">
+                    @foreach (var ass in Model.AssignedAssessments)
                     {
-                        <div class="card border-0 shadow-sm" style="border-radius:16px; border-left: 4px solid var(--mb-primary) !important;">
-                            <div class="card-body p-4">
-                                <h6 class="fw-bold mb-2 text-dark" style="font-size:1rem;">@t.Title</h6>
-                                <p class="text-secondary small mb-3" style="line-height:1.6;">@t.Description</p>
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <span class="badge bg-light text-dark px-2.5 py-1.5 rounded-pill" style="font-size:0.75rem; font-weight:600;">Type: @t.TestType</span>
-                                    <a asp-page="TakeTest" asp-route-testId="@t.Id" class="btn btn-primary btn-sm px-3" style="border-radius:8px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-                                        Start Test <i class="bi bi-arrow-right ms-1"></i>
+                        var isOverdue = ass.DueDate.HasValue && ass.DueDate.Value < DateTime.Now;
+                        var isInProgress = ass.Status == "InProgress";
+
+                        <div class="col-12 col-md-6">
+                            <div class="assigned-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1.5">
+                                            @if (isInProgress)
+                                            {
+                                                <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:3px 8px;">
+                                                    <i class="bi bi-clock-history me-1"></i>In Progress
+                                                </span>
+                                            }
+                                            else if (isOverdue)
+                                            {
+                                                <span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.72rem; font-weight:700; padding:3px 8px;">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:3px 8px;">
+                                                    <i class="bi bi-hourglass-split me-1"></i>Assigned (Action Required)
+                                                </span>
+                                            }
+                                            <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">
+                                                @(ass.TestType ?? "Clinical Test")
+                                            </span>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size:0.98rem; letter-spacing:-0.01em;">@ass.TestTitle</h6>
+                                        <div class="text-muted small d-flex align-items-center gap-2 flex-wrap" style="font-size:0.76rem;">
+                                            <span>
+                                                <i class="bi bi-person-badge-fill me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>
+                                                <strong>@(ass.AssignedByDoctorName ?? "Your Doctor")</strong>
+                                            </span>
+                                            @if (!string.IsNullOrWhiteSpace(ass.TreatmentCaseTitle))
+                                            {
+                                                <span>•</span>
+                                                <span><i class="bi bi-folder2-open me-1"></i>@ass.TreatmentCaseTitle</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (ass.DueDate.HasValue)
+                                    {
+                                        <span class="badge" style="@(isOverdue ? "background:#fef2f2 !important; color:#dc2626 !important; border:1px solid #fecaca !important;" : "background:#fffbeb !important; color:#92400e !important; border:1px solid #fde68a !important;") font-size:0.74rem; font-weight:700; border-radius:6px; padding:3px 8px;">
+                                            <i class="bi bi-calendar-event me-1"></i>Due: @ass.DueDate.Value.ToString("MMM dd, yyyy")
+                                        </span>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(ass.DoctorNotes))
+                                {
+                                    <div class="p-2.5 my-2.5 rounded-3" style="background:#f0fdf4; border:1px solid #bbf7d0; font-size:0.8rem; color:#166534;">
+                                        <i class="bi bi-chat-quote-fill me-1"></i><strong>Doctor Note:</strong> "@ass.DoctorNotes"
+                                    </div>
+                                }
+
+                                <div class="d-flex justify-content-between align-items-center pt-2.5 border-top">
+                                    <div class="text-muted small" style="font-size:0.75rem;">
+                                        <i class="bi bi-info-circle me-1 text-primary"></i>Please complete before next session
+                                    </div>
+                                    <a asp-page="TakeTest" asp-route-submissionId="@ass.Id" class="btn btn-sm px-3.5 py-1.5 fw-semibold text-white shadow-sm" style="border-radius:8px; background:var(--mb-primary, #0d9488); font-size:0.82rem;">
+                                        <i class="bi bi-play-fill me-1"></i>Start Assessment →
                                     </a>
                                 </div>
                             </div>
@@ -170,40 +493,153 @@ else
                     }
                 </div>
             </div>
+        }
 
-            <!-- Right Panel: Submission History -->
-            <div class="col-lg-6">
-                <h5 class="fw-bold mb-3" style="font-size:1rem; color:#1e293b;">
-                    <i class="bi bi-clock-history me-2" style="color:#6366f1;"></i>Test History
-                </h5>
-                @if (Model.Submissions.Any())
+        <div class="row g-4">
+            <!-- Left: Available Self-Screenings -->
+            <div class="col-lg-5">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size:1.02rem;">
+                        <i class="bi bi-collection-fill me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Available Screenings
+                    </h5>
+                    <span class="badge bg-light text-muted border" style="font-size:0.75rem;">@Model.AvailableTests.Count available</span>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var test in Model.AvailableTests)
+                    {
+                        <div class="test-card">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size:0.96rem;">@test.Title</h6>
+                                    <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.68rem; font-weight:700;">
+                                        @test.TestType
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-3" style="font-size:0.82rem; line-height:1.45;">
+                                    @(string.IsNullOrWhiteSpace(test.Description) ? (test.Purpose ?? "Standard clinical psychometric questionnaire.") : test.Description)
+                                </p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2.5 border-top gap-2">
+                                <span class="text-muted small" style="font-size:0.76rem;">
+                                    <i class="bi bi-question-circle me-1"></i>@test.QuestionCount questions
+                                </span>
+                                <a asp-page="TakeTest" asp-route-testId="@test.Id" class="btn btn-sm px-3 py-1 fw-semibold text-white shadow-sm" style="border-radius:8px; background:var(--mb-primary, #0d9488); font-size:0.8rem;">
+                                    Take Test <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right: Completed Test History Timeline -->
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size:1.02rem;">
+                        <i class="bi bi-clock-history me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assessment History Timeline
+                    </h5>
+                    <span class="badge bg-light text-muted border" style="font-size:0.75rem;">@Model.CompletedSubmissions.Count completed</span>
+                </div>
+
+                @if (Model.CompletedSubmissions.Any())
                 {
-                    <div class="d-flex flex-column gap-3">
-                        @foreach (var s in Model.Submissions)
+                    <div class="psy-timeline">
+                        @for (int idx = 0; idx < Model.CompletedSubmissions.Count; idx++)
                         {
-                            <div class="card border-0 shadow-sm" style="border-radius:16px;">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <h6 class="fw-bold mb-1 text-dark" style="font-size:0.9rem;">@s.TestTitle</h6>
-                                            <div style="font-size:0.72rem; color:#94a3b8;">
-                                                <i class="bi bi-calendar3 me-1"></i>@s.SubmittedAt.ToString("MM/dd/yyyy HH:mm")
+                            var sub = Model.CompletedSubmissions[idx];
+                            var sev = sub.GetEffectiveSeverity();
+                            var isLatest = idx == 0;
+                            var isDass = sub.TestType == "DASS21";
+
+                            <div class="psy-timeline-item">
+                                <!-- Timeline Node -->
+                                <div class="psy-timeline-dot @(isLatest ? "latest" : "")" title="@(isLatest ? "Latest Assessment" : "Historical Assessment")">
+                                    <i class="bi @(isLatest ? "bi-star-fill" : "bi-check2")"></i>
+                                </div>
+
+                                <!-- Timeline Content Card -->
+                                <div class="card border-0 shadow-sm psy-timeline-card" style="border-radius:14px; border:1px solid #e2e8f0 !important;">
+                                    <div class="card-body p-3.5">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    @if (isLatest)
+                                                    {
+                                                        <span class="badge" style="background:#0d9488; color:#fff; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:6px;">Latest</span>
+                                                    }
+                                                    else if (idx == Model.CompletedSubmissions.Count - 1)
+                                                    {
+                                                        <span class="badge bg-light text-muted border" style="font-size:0.68rem; padding:2px 8px; border-radius:6px;">Baseline</span>
+                                                    }
+                                                    <span class="text-muted" style="font-size:0.74rem;">
+                                                        <i class="bi bi-calendar3 me-1"></i>@sub.SubmittedAt.ToString("MMM dd, yyyy · HH:mm")
+                                                    </span>
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-0.5" style="font-size:0.95rem;">@sub.TestTitle</h6>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-dark" style="font-size:0.92rem;">Score: @sub.TotalScore / @sub.CalculatedMaxScore</span>
+                                                <span class="badge" style="background:@sev.Bg; color:@sev.Text; border:1px solid @sev.Border; font-size:0.72rem; font-weight:700;">
+                                                    @sev.En
+                                                </span>
                                             </div>
                                         </div>
-                                        <span class="badge bg-primary rounded-pill px-2.5 py-1" style="font-size:0.75rem; background-color:rgba(78,139,112,0.12) !important; color:var(--mb-primary) !important;">
-                                            Score: @s.TotalScore
-                                        </span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(s.Interpretation))
-                                    {
-                                        <div class="p-2 rounded-3 mb-2 small text-secondary" style="background:#f8fafc; border-left:3px solid #cbd5e1;">
-                                            <strong>Result:</strong> @s.Interpretation
+
+                                        @if (isDass)
+                                        {
+                                            var depSev = sub.GetDepressionSeverity();
+                                            var anxSev = sub.GetAnxietySeverity();
+                                            var strSev = sub.GetStressSeverity();
+                                            <div class="row g-1.5 my-2 p-2 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.75rem;">
+                                                <div class="col-4 text-center border-end">
+                                                    <span class="text-muted">Depression:</span>
+                                                    <strong class="d-block" style="color:@depSev.Text;">@sub.DepressionScore/42 (@depSev.En)</strong>
+                                                </div>
+                                                <div class="col-4 text-center border-end">
+                                                    <span class="text-muted">Anxiety:</span>
+                                                    <strong class="d-block" style="color:@anxSev.Text;">@sub.AnxietyScore/42 (@anxSev.En)</strong>
+                                                </div>
+                                                <div class="col-4 text-center">
+                                                    <span class="text-muted">Stress:</span>
+                                                    <strong class="d-block" style="color:@strSev.Text;">@sub.StressScore/42 (@strSev.En)</strong>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(sub.DoctorNotes))
+                                        {
+                                            <div class="p-2.5 my-2 rounded-3" style="background:#f0fdf4; border:1px solid #bbf7d0; font-size:0.78rem; color:#166534;">
+                                                <i class="bi bi-chat-quote-fill me-1"></i><strong>Doctor Note:</strong> "@sub.DoctorNotes"
+                                            </div>
+                                        }
+
+                                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                            <div class="text-muted small" style="font-size:0.74rem;">
+                                                @if (sub.ScoreChange.HasValue)
+                                                {
+                                                    if (sub.ScoreChange < 0)
+                                                    {
+                                                        <span class="text-success fw-bold"><i class="bi bi-arrow-down me-0.5"></i>@Math.Abs(sub.ScoreChange.Value) score points improvement</span>
+                                                    }
+                                                    else if (sub.ScoreChange > 0)
+                                                    {
+                                                        <span class="text-danger fw-bold"><i class="bi bi-arrow-up me-0.5"></i>+@sub.ScoreChange.Value score points elevated</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span><i class="bi bi-dash me-0.5"></i>Score stable vs previous</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span>Initial reference score</span>
+                                                }
+                                            </div>
+                                            <a asp-page="Result" asp-route-submissionId="@sub.Id" class="btn btn-outline-secondary btn-sm px-3 py-1 fw-semibold" style="border-radius:7px; font-size:0.78rem;">
+                                                View Report <i class="bi bi-arrow-right ms-1"></i>
+                                            </a>
                                         </div>
-                                    }
-                                    <div class="text-end">
-                                        <a asp-page="Result" asp-route-submissionId="@s.Id" class="btn btn-link btn-sm text-decoration-none p-0 fw-bold" style="font-size:0.78rem;">
-                                            View detailed results <i class="bi bi-arrow-right"></i>
-                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -212,101 +648,38 @@ else
                 }
                 else
                 {
-                    <div class="text-center py-5 text-muted border border-dashed rounded-3" style="border-radius:16px; background:#fafbfc;">
-                        <i class="bi bi-clipboard2-x d-block mb-2" style="font-size:2.5rem; opacity:0.3;"></i>
-                        <h6 class="fw-bold text-dark">No test submissions yet</h6>
-                        <span class="small">Your screening test history will appear here.</span>
+                    <div class="text-center py-5 text-muted border border-dashed rounded-3" style="background:#fafbfc; border-radius:14px;">
+                        <i class="bi bi-clipboard2-check d-block mb-2" style="font-size:2.5rem; opacity:0.3;"></i>
+                        <h6 class="fw-bold text-dark">No completed tests yet</h6>
+                        <span class="small">Complete an assigned assessment or take a screening test to see your progress here.</span>
                     </div>
                 }
             </div>
         </div>
     }
-}
-
-<style>
-    .option-label {
-        transition: all 0.2s ease;
-        background: var(--mb-bg-light, #f8f9fa);
-        border-color: #dee2e6;
-    }
-    .option-label:hover {
-        background: #e9ecef;
-        border-color: #adb5bd;
-    }
-    .option-label.selected {
-        background: rgba(78,139,112,0.08) !important;
-        border-color: var(--mb-primary, #4e8b70) !important;
-        color: var(--mb-primary, #4e8b70) !important;
-        box-shadow: 0 0 0 3px rgba(78, 139, 112, 0.15);
-    }
-    .question-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent !important;
-    }
-    .question-card.answered {
-        border-left-color: var(--mb-primary, #4e8b70) !important;
-    }
-    .question-card.error {
-        border-left-color: #dc3545 !important;
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
-    }
-    .cursor-pointer {
-        cursor: pointer;
-    }
-</style>
+</div>
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const form = document.getElementById("testForm");
+        const totalQuestions = @(Model.Questions?.Count ?? 0);
+
+        function onAnswerSelected(qId) {
+            const card = document.getElementById('q-box-' + qId);
+            if (card) card.classList.add('answered');
+
+            // Count answered
+            const form = document.getElementById('takeTestForm');
             if (!form) return;
 
-            const totalQuestions = @Model.Questions.Count;
-            const progressText = document.getElementById("progressText");
+            const answered = form.querySelectorAll('.q-card.answered').length;
+            const summary = document.getElementById('progressSummary');
+            const bar = document.getElementById('progressBarFill');
 
-            // Attach event listener to all radio options
-            form.querySelectorAll("input[type='radio']").forEach(radio => {
-                radio.addEventListener("change", function () {
-                    const group = this.closest(".option-group");
-                    const card = this.closest(".question-card");
-
-                    // Clear previous selection in this group
-                    group.querySelectorAll(".option-label").forEach(label => {
-                        label.classList.remove("selected");
-                    });
-
-                    // Highlight selected option
-                    this.closest(".option-label").classList.add("selected");
-                    card.classList.add("answered");
-                    card.classList.remove("error");
-
-                    // Update progress
-                    const answeredCount = form.querySelectorAll(".question-card.answered").length;
-                    progressText.textContent = `Answered: ${answeredCount}/${totalQuestions} questions`;
-                });
-            });
-
-            // Prevent form submit if not all questions are answered
-            form.addEventListener("submit", function (e) {
-                let hasError = false;
-                form.querySelectorAll(".question-card").forEach(card => {
-                    const radioChecked = card.querySelector("input[type='radio']:checked");
-                    if (!radioChecked) {
-                        card.classList.add("error");
-                        hasError = true;
-                    }
-                });
-
-                if (hasError) {
-                    e.preventDefault();
-                    // Scroll to first unanswered question
-                    const firstError = form.querySelector(".question-card.error");
-                    if (firstError) {
-                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    alert("Please answer all questions before submitting.");
-                }
-            });
-        });
+            if (summary) summary.textContent = `Progress: ${answered} / ${totalQuestions} answered`;
+            if (bar && totalQuestions > 0) {
+                const pct = Math.min(100, Math.round((answered / totalQuestions) * 100));
+                bar.style.width = pct + '%';
+            }
+        }
     </script>
 }

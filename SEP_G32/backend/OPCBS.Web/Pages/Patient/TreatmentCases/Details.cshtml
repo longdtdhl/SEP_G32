@@ -53,6 +53,58 @@
 
     /* ── Quick action card ── */
     .pw-quick { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); border: 1px solid #99f6e4; border-radius: 12px; padding: 1.25rem; }
+
+    /* ── Psychometrics Clinical Timeline ── */
+    .psy-timeline {
+        position: relative;
+        padding-left: 2.25rem;
+        margin-top: 0.75rem;
+    }
+    .psy-timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        bottom: 24px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    .psy-timeline-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+    }
+    .psy-timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    .psy-timeline-dot {
+        position: absolute;
+        left: -2.25rem;
+        top: 12px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #0d9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d9488;
+        font-size: 0.8rem;
+        box-shadow: 0 0 0 3px #f0fdfa;
+        z-index: 2;
+    }
+    .psy-timeline-dot.latest {
+        background: #0d9488;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+    }
+    .psy-timeline-card {
+        transition: all 0.2s ease;
+    }
+    .psy-timeline-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+    }
 </style>
 
 <div class="container-fluid py-3">
@@ -592,8 +644,11 @@
             {
                 <div class="pw-section">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0"><i class="bi bi-clipboard2-pulse me-2" style="color:#0d9488;"></i>Psychometric Assessment Results</h6>
-                        <a href="/Patient/Psychometrics" class="btn btn-sm px-3" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
+                        <div>
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Assessment Timeline & Progress</h6>
+                            <small class="text-muted">Track your mental health assessment scores across your treatment journey</small>
+                        </div>
+                        <a href="/Patient/Psychometrics/TakeTest?treatmentCaseId=@Model.Case?.Id" class="btn btn-sm px-3" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
                             <i class="bi bi-journal-plus me-1"></i>Take Assessment
                         </a>
                     </div>
@@ -603,51 +658,193 @@
                         <div class="pw-empty">
                             <i class="bi bi-clipboard2-x"></i>
                             <p>No psychometric assessment results recorded yet.</p>
-                            <a href="/Patient/Psychometrics" class="btn btn-sm px-3 mt-2" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
+                            <a href="/Patient/Psychometrics/TakeTest?treatmentCaseId=@Model.Case?.Id" class="btn btn-sm px-3 mt-2" style="background:#0d9488; color:#fff; font-weight:600; border-radius:8px;">
                                 <i class="bi bi-pencil-square me-1"></i>Take Assessment
                             </a>
                         </div>
                     }
                     else
                     {
-                        <div class="row g-3">
-                            @foreach (var a in Model.RecentAssessments)
+                        <div class="psy-timeline">
+                            @for (int idx = 0; idx < Model.RecentAssessments.Count; idx++)
                             {
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-white border rounded-3 h-100 shadow-sm">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                var a = Model.RecentAssessments[idx];
+                                var sev = a.GetEffectiveSeverity();
+                                var isCompleted = a.Status == "Completed";
+                                var isInProgress = a.Status == "InProgress";
+                                var isOverdue = a.DueDate.HasValue && a.DueDate.Value < DateTime.Now && !isCompleted;
+                                var isLatest = idx == 0;
+                                var isBaseline = idx == Model.RecentAssessments.Count - 1;
+                                var isDass = a.TestType == "DASS21";
+
+                                <div class="psy-timeline-item">
+                                    <!-- Timeline Node -->
+                                    <div class="psy-timeline-dot @(isCompleted ? (isLatest ? "latest" : "") : "")" style="@(!isCompleted ? "border-color:#f59e0b; color:#f59e0b; box-shadow:0 0 0 3px #fffbeb;" : "")" title="@(isCompleted ? "Completed Assessment" : "Assigned (Action Required)")">
+                                        @if (isCompleted)
+                                        {
+                                            <i class="bi @(isLatest ? "bi-star-fill" : "bi-check2")"></i>
+                                        }
+                                        else if (isInProgress)
+                                        {
+                                            <i class="bi bi-clock-history"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-hourglass-split"></i>
+                                        }
+                                    </div>
+
+                                    <!-- Timeline Card -->
+                                    <div class="p-3 bg-white border rounded-3 shadow-sm psy-timeline-card" style="border-color:@(isCompleted ? "#e2e8f0" : "#fde68a") !important;">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                                             <div>
-                                                <span class="fw-bold text-dark" style="font-size:.92rem;">@a.TestTitle</span>
-                                                <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i>Completed @a.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</div>
-                                            </div>
-                                            <span class="badge" style="background:#0d9488; color:#fff; font-size:.8rem;">Score: @a.TotalScore</span>
-                                        </div>
-                                        <div class="p-2 rounded-2 small text-secondary mb-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                                            <strong>Screening result:</strong> @a.Interpretation
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                            <div>
-                                                @if (a.ScoreChange.HasValue)
-                                                {
-                                                    if (a.ScoreChange < 0)
+                                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                    @if (isCompleted)
                                                     {
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-arrow-down me-1"></i>Score @a.ScoreChange (Improved)</span>
-                                                    }
-                                                    else if (a.ScoreChange > 0)
-                                                    {
-                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="bi bi-arrow-up me-1"></i>Score +@a.ScoreChange</span>
+                                                        if (isLatest)
+                                                        {
+                                                            <span class="badge" style="background:#0d9488; color:#fff; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:6px;">Latest Check-in</span>
+                                                        }
+                                                        else if (isBaseline)
+                                                        {
+                                                            <span class="badge bg-light text-muted border" style="font-size:0.68rem; padding:2px 8px; border-radius:6px;">Baseline</span>
+                                                        }
+                                                        <span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>Completed @a.SubmittedAt.ToString("MMM dd, yyyy · HH:mm")</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-light text-secondary border"><i class="bi bi-dash me-1"></i>No score change</span>
+                                                        if (isInProgress)
+                                                        {
+                                                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.7rem; font-weight:700; padding:3px 8px;">
+                                                                <i class="bi bi-clock-history me-1"></i>In Progress
+                                                            </span>
+                                                        }
+                                                        else if (isOverdue)
+                                                        {
+                                                            <span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.7rem; font-weight:700; padding:3px 8px;">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.7rem; font-weight:700; padding:3px 8px;">
+                                                                <i class="bi bi-bell-fill me-1"></i>Assigned by Doctor
+                                                            </span>
+                                                        }
+                                                        @if (a.DueDate.HasValue)
+                                                        {
+                                                            <span class="badge" style="@(isOverdue ? "background:#fef2f2 !important; color:#dc2626 !important; border:1px solid #fecaca !important;" : "background:#fffbeb !important; color:#92400e !important; border:1px solid #fde68a !important;") font-size:0.72rem; font-weight:700; border-radius:6px; padding:3px 8px;">
+                                                                <i class="bi bi-calendar-event me-1"></i>Due: @a.DueDate.Value.ToString("MMM dd, yyyy")
+                                                            </span>
+                                                        }
+                                                    }
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-0" style="font-size:.92rem;">@a.TestTitle</h6>
+                                            </div>
+                                            <div class="text-end">
+                                                @if (isCompleted)
+                                                {
+                                                    <span class="badge" style="background:@sev.Bg; color:@sev.Text; border:1px solid @sev.Border; font-size:.75rem; font-weight:700;">@sev.En</span>
+                                                    <div class="fw-bold text-dark mt-0.5" style="font-size:0.85rem;">Score: @a.TotalScore / @a.CalculatedMaxScore</div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge px-2.5 py-1" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.74rem; font-weight:700; border-radius:6px;">
+                                                        <i class="bi bi-hourglass-split me-1"></i>Action Required
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        @if (isCompleted)
+                                        {
+                                            @if (isDass)
+                                            {
+                                                var depSev = a.GetDepressionSeverity();
+                                                var anxSev = a.GetAnxietySeverity();
+                                                var strSev = a.GetStressSeverity();
+                                                <div class="row g-1.5 my-2 p-2 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.75rem;">
+                                                    <div class="col-4 text-center border-end">
+                                                        <span class="text-muted">Depression:</span>
+                                                        <strong class="d-block" style="color:@depSev.Text;">@a.DepressionScore/42 (@depSev.En)</strong>
+                                                    </div>
+                                                    <div class="col-4 text-center border-end">
+                                                        <span class="text-muted">Anxiety:</span>
+                                                        <strong class="d-block" style="color:@anxSev.Text;">@a.AnxietyScore/42 (@anxSev.En)</strong>
+                                                    </div>
+                                                    <div class="col-4 text-center">
+                                                        <span class="text-muted">Stress:</span>
+                                                        <strong class="d-block" style="color:@strSev.Text;">@a.StressScore/42 (@strSev.En)</strong>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="p-2 rounded-2 small mb-2" style="background:#f8fafc; border:1px solid #e2e8f0; color:#334155; line-height:1.45;">
+                                                    <i class="bi bi-file-earmark-medical me-1 text-teal" style="color:var(--mb-primary, #0d9488);"></i>
+                                                    @a.GetEnglishInterpretation()
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="p-2.5 rounded-2 small my-2" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
+                                                <i class="bi bi-info-circle-fill me-1.5 text-warning"></i>
+                                                Your doctor assigned this assessment for your treatment plan. Please take a few minutes to complete it.
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(a.DoctorNotes))
+                                        {
+                                            <div class="p-2 my-2 rounded-2 small" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;">
+                                                <i class="bi bi-chat-quote-fill me-1"></i><strong>Doctor Note:</strong> "@a.DoctorNotes"
+                                            </div>
+                                        }
+
+                                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                            <div>
+                                                @if (isCompleted)
+                                                {
+                                                    if (a.ScoreChange.HasValue)
+                                                    {
+                                                        if (a.ScoreChange < 0)
+                                                        {
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-arrow-down me-1"></i>@Math.Abs(a.ScoreChange.Value) Improved</span>
+                                                        }
+                                                        else if (a.ScoreChange > 0)
+                                                        {
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-arrow-up me-1"></i>+@a.ScoreChange.Value Elevated</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-light text-secondary border"><i class="bi bi-dash me-1"></i>Stable</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-light text-muted border">Initial assessment</span>
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-light text-muted border">Initial assessment</span>
+                                                    <span class="text-muted small" style="font-size:0.75rem;">
+                                                        <i class="bi bi-clock me-1"></i>Assigned on @a.SubmittedAt.ToString("MMM dd, yyyy")
+                                                    </span>
                                                 }
                                             </div>
-                                            <a href="/Patient/Psychometrics" class="small fw-semibold text-decoration-none" style="color:#0d9488;">View details →</a>
+
+                                            @if (isCompleted)
+                                            {
+                                                <a href="/Patient/Psychometrics/Result?submissionId=@a.Id" class="btn btn-outline-secondary btn-sm px-2.5 py-0.5" style="border-radius:6px; font-size:0.75rem; font-weight:600;">
+                                                    View details →
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="/Patient/Psychometrics/TakeTest?submissionId=@a.Id" class="btn btn-sm px-3 py-1 fw-semibold text-white shadow-sm" style="border-radius:7px; background:var(--mb-primary, #0d9488); font-size:0.78rem;">
+                                                    <i class="bi bi-play-fill me-1"></i>Take Test Now →
+                                                </a>
+                                            }
                                         </div>
                                     </div>
                                 </div>

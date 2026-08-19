@@ -69,9 +69,6 @@
             <a class="sb-link @(currentPath == "/patient/appointments" || currentPath == "/patient/appointments/index" ? "active" : "")" asp-page="/Patient/Appointments/Index">
                 <i class="bi bi-calendar-check"></i><span>My Appointments</span>
             </a>
-            <a class="sb-link @(currentPath.StartsWith("/patient/appointments/history") ? "active" : "")" asp-page="/Patient/Appointments/History">
-                <i class="bi bi-clock-history"></i><span>Appointment History</span>
-            </a>
 
             <div class="sb-divider"></div>
             <div class="sb-section-label">Treatment</div>
@@ -123,9 +120,6 @@
                 <a class="sb-link @(currentPath == "/doctor/appointments" || currentPath == "/doctor/appointments/index" ? "active" : "")" asp-page="/Doctor/Appointments/Index">
                     <i class="bi bi-calendar-check"></i><span>Appointments</span>
                 </a>
-                <a class="sb-link @(currentPath.StartsWith("/doctor/appointments/history") ? "active" : "")" asp-page="/Doctor/Appointments/History">
-                    <i class="bi bi-clock-history"></i><span>Appointment History</span>
-                </a>
                 <a class="sb-link @(currentPath.StartsWith("/doctor/schedules") ? "active" : "")" asp-page="/Doctor/Schedules/Index">
                     <i class="bi bi-calendar-week"></i><span>Calendar & Availability</span>
                 </a>
@@ -139,12 +133,18 @@
                 <a class="sb-link @(currentPath.StartsWith("/doctor/treatmentcases") ? "active" : "")" asp-page="/Doctor/TreatmentCases/Index">
                     <i class="bi bi-heart-pulse"></i><span>Treatment Cases</span>
                 </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/psychometrics") ? "active" : "")" asp-page="/Doctor/Psychometrics/Index">
+                    <i class="bi bi-clipboard2-pulse"></i><span>Psychometric Assessments</span>
+                </a>
 
                 <div class="sb-divider"></div>
-                <div class="sb-section-label">Care Programs</div>
+                <div class="sb-section-label">Care Programs & Services</div>
 
                 <a class="sb-link @(currentPath.StartsWith("/doctor/treatmentpackages") ? "active" : "")" asp-page="/Doctor/TreatmentPackages/Index">
                     <i class="bi bi-box-seam"></i><span>Treatment Packages</span>
+                </a>
+                <a class="sb-link @(currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/ServicePackages/Index">
+                    <i class="bi bi-gem"></i><span>Service Packages</span>
                 </a>
 
                 <div class="sb-divider"></div>
@@ -167,9 +167,11 @@
                 <div class="sb-section-label">Clinical Care</div>
                 <span class="sb-link sb-disabled"><i class="bi bi-people"></i><span>Patient Records</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <span class="sb-link sb-disabled"><i class="bi bi-heart-pulse"></i><span>Treatment Cases</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-clipboard2-pulse"></i><span>Psychometric Assessments</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <div class="sb-divider"></div>
-                <div class="sb-section-label">Care Programs</div>
+                <div class="sb-section-label">Care Programs & Services</div>
                 <span class="sb-link sb-disabled"><i class="bi bi-box-seam"></i><span>Treatment Packages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
+                <span class="sb-link sb-disabled"><i class="bi bi-gem"></i><span>Service Packages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
                 <div class="sb-divider"></div>
                 <div class="sb-section-label">Communication</div>
                 <span class="sb-link sb-disabled"><i class="bi bi-chat-dots"></i><span>Messages</span><i class="bi bi-lock-fill sb-lock-icon"></i></span>
@@ -204,7 +206,7 @@
                 <a class="sb-link @(currentPath.StartsWith("/doctor/revenue") ? "active" : "")" asp-page="/Doctor/Revenue/Index">
                     <i class="bi bi-wallet2"></i><span>Earnings & Revenue</span>
                 </a>
-                <a class="sb-link @(currentPath.StartsWith("/doctor/subscriptions") || currentPath.StartsWith("/doctor/servicepackages") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
+                <a class="sb-link @(currentPath.StartsWith("/doctor/subscriptions") ? "active" : "")" asp-page="/Doctor/Subscriptions/Status">
                     <i class="bi bi-credit-card"></i><span>Plan & Billing</span>
                 </a>
             }
@@ -223,6 +225,9 @@
             <a class="sb-link @(currentPath.StartsWith("/customersupport/blogmoderation") ? "active" : "")" asp-page="/CustomerSupport/BlogModeration/Index">
                 <i class="bi bi-journal-check"></i><span>Blog Moderation</span>
                 <span class="sb-badge d-none" id="sb-blog-badge"></span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/customersupport/violationreports") ? "active" : "")" asp-page="/CustomerSupport/ViolationReports/Index">
+                <i class="bi bi-shield-exclamation"></i><span>Violation Reports</span>
             </a>
 
             <div class="sb-divider"></div>
@@ -282,6 +287,9 @@
             </a>
             <a class="sb-link @(currentPath.StartsWith("/admin/permissions") ? "active" : "")" asp-page="/Admin/Permissions/Index">
                 <i class="bi bi-key"></i><span>Permission Management</span>
+            </a>
+            <a class="sb-link @(currentPath.StartsWith("/admin/violationreports") ? "active" : "")" asp-page="/Admin/ViolationReports/Index">
+                <i class="bi bi-shield-exclamation"></i><span>Violation Reports</span>
             </a>
             <a class="sb-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
                 <i class="bi bi-journal-text"></i><span>Audit Logs</span>

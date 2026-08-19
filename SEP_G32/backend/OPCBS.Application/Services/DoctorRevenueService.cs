@@ -89,6 +89,9 @@ public class DoctorRevenueService : IDoctorRevenueService
 
         var eligibleAppts = allAppts.Where(a =>
         {
+            if (a.Status is AppointmentStatus.Cancelled or AppointmentStatus.Rejected)
+                return false;
+
             var apptDate = a.CreatedAt;
             if (allSlots.TryGetValue(a.AppointmentSlotId, out var slot))
             {
@@ -145,6 +148,11 @@ public class DoctorRevenueService : IDoctorRevenueService
             {
                 decimal hourlyRate = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
                 slotPrice = Math.Round(hourlyRate * (decimal)durationHours, 0);
+                if (slot != null)
+                {
+                    slot.Price = slotPrice;
+                    _slotRepo.Update(slot);
+                }
             }
 
             var netAmount = slotPrice; // 100% Doctor Receives (Gross == Net)
@@ -200,10 +208,6 @@ public class DoctorRevenueService : IDoctorRevenueService
                     serviceTypeMap[serviceType] = (0, 0);
                 var (cnt, gross) = serviceTypeMap[serviceType];
                 serviceTypeMap[serviceType] = (cnt + 1, gross + slotPrice);
-            }
-            else if (appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Rejected)
-            {
-                settlementStatus = "Cancelled";
             }
             else
             {

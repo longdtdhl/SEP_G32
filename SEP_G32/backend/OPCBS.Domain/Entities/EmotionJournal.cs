@@ -23,6 +23,12 @@ public class EmotionJournal : BaseEntity
     /// <summary>Thang điểm căng thẳng (1 = Rất thấp, 2 = Thấp, 3 = Trung bình, 4 = Cao, 5 = Rất cao)</summary>
     public int StressScale { get; set; }
 
+    /// <summary>Số giờ ngủ đêm qua (hours of sleep last night)</summary>
+    public decimal? SleepHours { get; set; }
+
+    /// <summary>Thang điểm trầm cảm (1 = Rất thấp/Very Low, 2 = Thấp/Low, 3 = Trung bình/Moderate, 4 = Cao/High, 5 = Rất cao/Very High)</summary>
+    public int? DepressionScale { get; set; }
+
     /// <summary>Có chia sẻ nhật ký này với bác sĩ trị liệu hay không</summary>
     public bool IsShared { get; set; } = false;
 

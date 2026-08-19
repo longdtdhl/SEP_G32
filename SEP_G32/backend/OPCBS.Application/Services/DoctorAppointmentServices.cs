@@ -18,6 +18,7 @@ public class DoctorService : IDoctorService
     private readonly IRepository<Specialization> _specRepo;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
+    private readonly IRepository<AppointmentSlot>? _slotRepo;
 
     public DoctorService(
         IRepository<DoctorProfile> doctorRepo,
@@ -25,7 +26,8 @@ public class DoctorService : IDoctorService
         IRepository<DoctorSpecialization> doctorSpecRepo,
         IRepository<Specialization> specRepo,
         IMapper mapper,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IRepository<AppointmentSlot>? slotRepo = null)
     {
         _doctorRepo = doctorRepo;
         _userRepo = userRepo;
@@ -33,6 +35,7 @@ public class DoctorService : IDoctorService
         _specRepo = specRepo;
         _mapper = mapper;
         _uow = uow;
+        _slotRepo = slotRepo;
     }
 
     public async Task<ApiResponse<List<DoctorProfileDto>>> GetDoctorsAsync(string? search, Guid? specializationId, double? minRating = null, decimal? maxFee = null, string? gender = null, int page = 1, int pageSize = 10, CancellationToken ct = default)
@@ -243,8 +246,28 @@ public class DoctorService : IDoctorService
             doctor.Education = dto.Education;
         if (dto.CareerBackground != null)
             doctor.CareerBackground = dto.CareerBackground;
-        if (dto.ConsultationFee.HasValue)
+        if (dto.ConsultationFee.HasValue && dto.ConsultationFee.Value != doctor.ConsultationFee)
+        {
+            var oldFee = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
+            if (_slotRepo != null)
+            {
+                var allSlots = await _slotRepo.GetAllAsync(ct);
+                var doctorSlots = allSlots.Where(s => s.DoctorProfileId == doctor.Id && (s.Price == null || s.Price.Value <= 0)).ToList();
+                foreach (var s in doctorSlots)
+                {
+                    double durationHours = 1.0;
+                    if (s.EndTime > s.StartTime)
+                    {
+                        var span = (s.EndTime - s.StartTime).TotalHours;
+                        if (span > 0) durationHours = span;
+                    }
+                    s.Price = Math.Round(oldFee * (decimal)durationHours, 0);
+                    s.UpdatedAt = DateTime.UtcNow;
+                    _slotRepo.Update(s);
+                }
+            }
             doctor.ConsultationFee = dto.ConsultationFee.Value;
+        }
         if (dto.CareApproach != null)
             doctor.CareApproach = dto.CareApproach;
         if (dto.Languages != null)
@@ -3349,12 +3372,17 @@ public class ScheduleService : IScheduleService
 
                 if (!existingKeys.Contains(key))
                 {
+                    double slotHours = (double)slotDurationMinutes / 60.0;
+                    if (slotHours <= 0) slotHours = 1.0;
+                    decimal slotFee = Math.Round((doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m) * (decimal)slotHours, 0);
+
                     newSlots.Add(new AppointmentSlot
                     {
                         DoctorProfileId = doctor.Id,
                         SlotDate = date,
                         StartTime = currentTime,
                         EndTime = slotEnd,
+                        Price = slotFee,
                         Status = AppointmentSlotStatus.Available,
                         ConsultationMode = schedule.ConsultationMode,
                         DoctorProfile = doctor
@@ -3716,12 +3744,17 @@ public class ScheduleService : IScheduleService
             }
         }
 
+        double slotSpan = (endTime - startTime).TotalHours;
+        if (slotSpan <= 0) slotSpan = 1.0;
+        decimal defaultSlotPrice = Math.Round((doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m) * (decimal)slotSpan, 0);
+
         var slot = new AppointmentSlot
         {
             DoctorProfileId = doctor.Id,
             SlotDate = slotDate,
             StartTime = startTime,
             EndTime = endTime,
+            Price = defaultSlotPrice,
             Status = AppointmentSlotStatus.Available,
             Notes = dto.Notes,
             MaxPatients = dto.MaxPatients > 0 ? dto.MaxPatients : 1,
@@ -4666,12 +4699,17 @@ public class ScheduleService : IScheduleService
 
                         if (!existingKeys.Contains(key) && !hasOverlap)
                         {
+                            double bulkSpan = (slotEnd - currentTime).TotalHours;
+                            if (bulkSpan <= 0) bulkSpan = 1.0;
+                            decimal bulkSlotPrice = Math.Round((doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m) * (decimal)bulkSpan, 0);
+
                             newSlots.Add(new AppointmentSlot
                             {
                                 DoctorProfileId = doctor.Id,
                                 SlotDate = currDate,
                                 StartTime = currentTime,
                                 EndTime = slotEnd,
+                                Price = bulkSlotPrice,
                                 Status = AppointmentSlotStatus.Available,
                                 MaxPatients = dto.DefaultMaxPatients > 0 ? dto.DefaultMaxPatients : 1,
                                 CurrentBookings = 0,

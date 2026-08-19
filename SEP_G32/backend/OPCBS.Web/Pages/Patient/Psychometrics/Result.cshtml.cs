@@ -24,12 +24,22 @@ public class ResultModel : PageModel
     public int AnxietyScore { get; set; }
     public int StressScore { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(Guid submissionId)
+    public async Task<IActionResult> OnGetAsync(Guid? submissionId, [FromQuery(Name = "id")] Guid? id)
     {
-        var (data, error) = await _psychService.GetSubmissionByIdAsync(submissionId);
+        var targetId = (submissionId.HasValue && submissionId.Value != Guid.Empty)
+            ? submissionId.Value
+            : (id.HasValue && id.Value != Guid.Empty ? id.Value : Guid.Empty);
+
+        if (targetId == Guid.Empty)
+        {
+            Error = "Assessment result ID is required.";
+            return Page();
+        }
+
+        var (data, error) = await _psychService.GetSubmissionByIdAsync(targetId);
         if (data == null)
         {
-            Error = error ?? "Not found kết quả trắc nghiệm.";
+            Error = error ?? "Assessment result not found.";
             return Page();
         }
 

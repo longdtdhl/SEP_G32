@@ -60,6 +60,8 @@ public class EmotionJournalDto
     public string? Content { get; set; }
     public int MoodScale { get; set; }
     public int StressScale { get; set; }
+    public decimal? SleepHours { get; set; }
+    public int? DepressionScale { get; set; }
     public bool IsShared { get; set; }
     public DateTime CreatedAt { get; set; }
 }
@@ -70,5 +72,7 @@ public class CreateJournalDto
     public string? Content { get; set; }
     public int MoodScale { get; set; }
     public int StressScale { get; set; }
+    public decimal? SleepHours { get; set; }
+    public int? DepressionScale { get; set; }
     public bool IsShared { get; set; }
 }

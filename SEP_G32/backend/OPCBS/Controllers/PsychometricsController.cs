@@ -39,7 +39,7 @@ public class PsychometricsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>POST /api/v1/psychometrics/tests - Create a new psychometric test</summary>
+    /// <summary>POST /api/v1/psychometrics/tests - Create a new psychometric test (Admin/Manager)</summary>
     [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
     [HttpPost("tests")]
     public async Task<IActionResult> CreateTest([FromBody] CreatePsychometricTestDto dto)
@@ -48,8 +48,61 @@ public class PsychometricsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>POST /api/v1/psychometrics/custom-tests - Create a custom assessment by Doctor</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("custom-tests")]
+    public async Task<IActionResult> CreateCustomTest([FromBody] CreatePsychometricTestDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _psychService.CreateCustomTestAsync(dto, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/psychometrics/assign - Assign an assessment to a patient</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("assign")]
+    public async Task<IActionResult> AssignAssessment([FromBody] AssignAssessmentDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _psychService.AssignAssessmentAsync(dto, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/psychometrics/submissions/{submissionId}/doctor-notes - Save clinical note for submission</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("submissions/{submissionId:guid}/doctor-notes")]
+    public async Task<IActionResult> SaveDoctorNote(Guid submissionId, [FromBody] SaveDoctorNoteDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _psychService.SaveDoctorNoteAsync(submissionId, dto.DoctorNotes, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/psychometrics/submissions/{submissionId}/history - Get assessment score history</summary>
+    [Authorize(Roles = $"{RoleConstants.Doctor},{RoleConstants.Patient},{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [HttpGet("submissions/{submissionId:guid}/history")]
+    public async Task<IActionResult> GetAssessmentHistory(Guid submissionId)
+    {
+        var result = await _psychService.GetAssessmentHistoryAsync(submissionId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>GET /api/v1/psychometrics/doctor-overview - Get doctor assessment metrics & library</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpGet("doctor-overview")]
+    public async Task<IActionResult> GetDoctorOverview()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _psychService.GetDoctorAssessmentsOverviewAsync(userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>PUT /api/v1/psychometrics/tests/{testId} - Update a psychometric test</summary>
-    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin},{RoleConstants.Doctor}")]
     [HttpPut("tests/{testId:guid}")]
     public async Task<IActionResult> UpdateTest(Guid testId, [FromBody] UpdatePsychometricTestDto dto)
     {
@@ -58,7 +111,7 @@ public class PsychometricsController : ControllerBase
     }
 
     /// <summary>DELETE /api/v1/psychometrics/tests/{testId} - Delete a psychometric test</summary>
-    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin},{RoleConstants.Doctor}")]
     [HttpDelete("tests/{testId:guid}")]
     public async Task<IActionResult> DeleteTest(Guid testId)
     {

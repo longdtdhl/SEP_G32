@@ -178,6 +178,7 @@ public class DetailsModel : PageModel
                         .Where(c => (patientGuid.HasValue && (c.PatientId == patientGuid.Value || c.PatientId == targetId)) ||
                                     c.PatientId == resolvedRecordId ||
                                     (!string.IsNullOrWhiteSpace(PatientRecord.ResolvedDisplayName) && string.Equals(c.PatientName, PatientRecord.ResolvedDisplayName, StringComparison.OrdinalIgnoreCase)))
+                        .Where(c => c.Status == 0)
                         .ToList();
 
                     var allGoals = new List<TreatmentGoalWebDto>();

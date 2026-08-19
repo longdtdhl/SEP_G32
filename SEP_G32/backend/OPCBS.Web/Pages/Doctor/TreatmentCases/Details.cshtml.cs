@@ -11,17 +11,20 @@ public class DetailsModel : PageModel
     private readonly ITreatmentCaseApiService _api;
     private readonly IPsychometricApiService _psychApi;
     private readonly IPatientRecordApiService _patientRecordApi;
+    private readonly ITherapyApiService _therapyApi;
     private readonly JwtCookieService _jwt;
 
     public DetailsModel(
         ITreatmentCaseApiService api,
         IPsychometricApiService psychApi,
         IPatientRecordApiService patientRecordApi,
+        ITherapyApiService therapyApi,
         JwtCookieService jwt)
     {
         _api = api;
         _psychApi = psychApi;
         _patientRecordApi = patientRecordApi;
+        _therapyApi = therapyApi;
         _jwt = jwt;
     }
 
@@ -31,6 +34,7 @@ public class DetailsModel : PageModel
     public List<TreatmentGoalWebDto> Goals { get; set; } = new();
     public List<HomeworkWebDto> HomeworkList { get; set; } = new();
     public List<MoodEntryWebDto> MoodEntries { get; set; } = new();
+    public List<EmotionJournalDto> SharedJournals { get; set; } = new();
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
     public List<PsychometricSubmissionDto> RecentAssessments { get; set; } = new();
@@ -84,6 +88,56 @@ public class DetailsModel : PageModel
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
 
+        // Load shared journals from patient
+        var combinedList = new List<EmotionJournalDto>();
+        try
+        {
+            var (journals, _) = await _therapyApi.GetPatientSharedJournalsAsync(caseData.PatientId);
+            if (journals != null)
+            {
+                combinedList.AddRange(journals);
+            }
+        }
+        catch { }
+
+        // Also incorporate/backfill from MoodEntries
+        if (MoodEntries.Any())
+        {
+            foreach (var m in MoodEntries)
+            {
+                var existing = combinedList.FirstOrDefault(j => j.Id == m.Id);
+                if (existing != null)
+                {
+                    if (!existing.SleepHours.HasValue && m.SleepQualityScore.HasValue)
+                    {
+                        existing.SleepHours = (decimal)m.SleepQualityScore.Value;
+                    }
+                    if (!existing.DepressionScale.HasValue && m.DepressionScore.HasValue)
+                    {
+                        existing.DepressionScale = Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5);
+                    }
+                }
+                else
+                {
+                    combinedList.Add(new EmotionJournalDto
+                    {
+                        Id = m.Id,
+                        PatientId = m.PatientId,
+                        Title = string.IsNullOrWhiteSpace(m.Note) ? "Mood Check-in" : (m.Note.Length > 40 ? m.Note.Substring(0, 40) + "..." : m.Note),
+                        Content = m.Note,
+                        MoodScale = Math.Clamp((int)Math.Round((double)m.MoodScore / 2.0), 1, 5),
+                        StressScale = m.StressScore.HasValue ? Math.Clamp((int)Math.Round((double)m.StressScore.Value / 2.0), 1, 5) : 1,
+                        SleepHours = m.SleepQualityScore.HasValue ? (decimal)m.SleepQualityScore.Value : null,
+                        DepressionScale = m.DepressionScore.HasValue ? Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5) : null,
+                        IsShared = true,
+                        CreatedAt = m.RecordedAt
+                    });
+                }
+            }
+        }
+
+        SharedJournals = combinedList.OrderByDescending(j => j.CreatedAt).ToList();
+
         // Load psychometric assessments associated with this treatment case
         try
         {
@@ -133,6 +187,76 @@ public class DetailsModel : PageModel
         MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
+
+        var combinedReloadList = new List<EmotionJournalDto>();
+        try
+        {
+            var (journals, _) = await _therapyApi.GetPatientSharedJournalsAsync(caseData.PatientId);
+            if (journals != null)
+            {
+                combinedReloadList.AddRange(journals);
+            }
+        }
+        catch { }
+
+        if (MoodEntries.Any())
+        {
+            foreach (var m in MoodEntries)
+            {
+                var existing = combinedReloadList.FirstOrDefault(j => j.Id == m.Id);
+                if (existing != null)
+                {
+                    if (!existing.SleepHours.HasValue && m.SleepQualityScore.HasValue)
+                    {
+                        existing.SleepHours = (decimal)m.SleepQualityScore.Value;
+                    }
+                    if (!existing.DepressionScale.HasValue && m.DepressionScore.HasValue)
+                    {
+                        existing.DepressionScale = Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5);
+                    }
+                }
+                else
+                {
+                    combinedReloadList.Add(new EmotionJournalDto
+                    {
+                        Id = m.Id,
+                        PatientId = m.PatientId,
+                        Title = string.IsNullOrWhiteSpace(m.Note) ? "Mood Check-in" : (m.Note.Length > 40 ? m.Note.Substring(0, 40) + "..." : m.Note),
+                        Content = m.Note,
+                        MoodScale = Math.Clamp((int)Math.Round((double)m.MoodScore / 2.0), 1, 5),
+                        StressScale = m.StressScore.HasValue ? Math.Clamp((int)Math.Round((double)m.StressScore.Value / 2.0), 1, 5) : 1,
+                        SleepHours = m.SleepQualityScore.HasValue ? (decimal)m.SleepQualityScore.Value : null,
+                        DepressionScale = m.DepressionScore.HasValue ? Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5) : null,
+                        IsShared = true,
+                        CreatedAt = m.RecordedAt
+                    });
+                }
+            }
+        }
+
+        SharedJournals = combinedReloadList.OrderByDescending(j => j.CreatedAt).ToList();
+
+        // Load psychometric assessments
+        try
+        {
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(caseId);
+            if (caseSubs != null && caseSubs.Any())
+            {
+                RecentAssessments = caseSubs.Take(10).ToList();
+            }
+            else
+            {
+                var apptIds = Sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToList();
+                var assessments = new List<PsychometricSubmissionDto>();
+                foreach (var apptId in apptIds.Take(10))
+                {
+                    var (sub, _) = await _psychApi.GetSubmissionByAppointmentAsync(apptId);
+                    if (sub != null) assessments.Add(sub);
+                }
+                RecentAssessments = assessments;
+            }
+        }
+        catch { }
     }
 
     private async Task ResolvePatientRecordIdAsync(Guid patientUserId)

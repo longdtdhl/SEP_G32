@@ -1238,8 +1238,23 @@ else
                                                     </td>
                                                     <td class="text-muted" style="font-size:0.78rem;">@sub.SubmittedAt.ToString("MMM dd, yyyy")</td>
                                                     <td class="text-end" style="padding-right:1.25rem;">
-                                                         <span class="badge bg-light text-dark border">@(string.IsNullOrEmpty(sub.Interpretation) ? (string.IsNullOrEmpty(sub.TestType) ? "Submitted" : sub.TestType) : sub.Interpretation)</span>
-                                                     </td>
+                                                        @if (sub.TestType == "DASS21")
+                                                        {
+                                                            var dS = sub.GetDepressionSeverity();
+                                                            var aS = sub.GetAnxietySeverity();
+                                                            var sS = sub.GetStressSeverity();
+                                                            <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                                                <span class="badge" style="background:@dS.Bg; color:@dS.Text; border:1px solid @dS.Border; font-size:0.68rem;" title="Depression: @sub.DepressionScore/42">D: @dS.En</span>
+                                                                <span class="badge" style="background:@aS.Bg; color:@aS.Text; border:1px solid @aS.Border; font-size:0.68rem;" title="Anxiety: @sub.AnxietyScore/42">A: @aS.En</span>
+                                                                <span class="badge" style="background:@sS.Bg; color:@sS.Text; border:1px solid @sS.Border; font-size:0.68rem;" title="Stress: @sub.StressScore/42">S: @sS.En</span>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            var pS = sub.GetPhq9Severity();
+                                                            <span class="badge" style="background:@pS.Bg; color:@pS.Text; border:1px solid @pS.Border; font-size:0.72rem;">@pS.En</span>
+                                                        }
+                                                    </td>
                                                 </tr>
                                             }
                                         </tbody>

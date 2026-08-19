@@ -166,12 +166,17 @@ public class EmotionJournalService : IEmotionJournalService
     {
         var patient = await _patientRepo.GetByIdAsync(patientId, ct);
         if (patient == null)
+        {
+            var allPatients = await _patientRepo.GetAllAsync(ct);
+            patient = allPatients.FirstOrDefault(p => p.Id == patientId || p.UserId == patientId);
+        }
+        if (patient == null)
             return ApiResponse<List<EmotionJournalDto>>.ErrorResponse("Không tìm thấy hồ sơ bệnh nhân.");
 
         var user = await _userRepo.GetByIdAsync(patient.UserId, ct);
         var all = await _journalRepo.GetAllAsync(ct);
         var filtered = all
-            .Where(j => j.PatientId == patientId && j.IsShared && !j.IsDeleted)
+            .Where(j => (j.PatientId == patient.Id || j.PatientId == patient.UserId) && j.IsShared && !j.IsDeleted)
             .OrderByDescending(j => j.CreatedAt)
             .Select(j => MapToDto(j, user?.FullName))
             .ToList();
@@ -189,6 +194,10 @@ public class EmotionJournalService : IEmotionJournalService
             return ApiResponse<EmotionJournalDto>.ErrorResponse("Thang điểm cảm xúc phải từ 1 đến 5.");
         if (dto.StressScale < 1 || dto.StressScale > 5)
             return ApiResponse<EmotionJournalDto>.ErrorResponse("Thang điểm căng thẳng phải từ 1 đến 5.");
+        if (dto.DepressionScale.HasValue && (dto.DepressionScale.Value < 1 || dto.DepressionScale.Value > 5))
+            return ApiResponse<EmotionJournalDto>.ErrorResponse("Thang điểm trầm cảm phải từ 1 đến 5.");
+        if (dto.SleepHours.HasValue && (dto.SleepHours.Value < 0 || dto.SleepHours.Value > 24))
+            return ApiResponse<EmotionJournalDto>.ErrorResponse("Số giờ ngủ phải từ 0 đến 24 giờ.");
 
         var user = await _userRepo.GetByIdAsync(patient.UserId, ct);
         var entity = new EmotionJournal
@@ -198,6 +207,8 @@ public class EmotionJournalService : IEmotionJournalService
             Content = dto.Content,
             MoodScale = dto.MoodScale,
             StressScale = dto.StressScale,
+            SleepHours = dto.SleepHours,
+            DepressionScale = dto.DepressionScale,
             IsShared = dto.IsShared,
             Patient = patient
         };
@@ -232,6 +243,8 @@ public class EmotionJournalService : IEmotionJournalService
         Content = j.Content,
         MoodScale = j.MoodScale,
         StressScale = j.StressScale,
+        SleepHours = j.SleepHours,
+        DepressionScale = j.DepressionScale,
         IsShared = j.IsShared,
         CreatedAt = j.CreatedAt
     };

@@ -507,6 +507,36 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
         return (data, error);
     }
 
+    public async Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>($"{ApiRoutes.Psychometrics}/custom-tests", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> AssignAssessmentAsync(AssignAssessmentDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/assign", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> SaveDoctorNoteAsync(Guid submissionId, string? doctorNotes)
+    {
+        var (data, error) = await PutAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/submissions/{submissionId}/doctor-notes", new SaveDoctorNoteDto { SubmissionId = submissionId, DoctorNotes = doctorNotes });
+        return (data, error);
+    }
+
+    public async Task<(List<AssessmentHistoryItemDto> Data, string? Error)> GetAssessmentHistoryAsync(Guid submissionId)
+    {
+        var (data, _, error) = await GetAsync<List<AssessmentHistoryItemDto>>($"{ApiRoutes.Psychometrics}/submissions/{submissionId}/history");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(DoctorAssessmentsOverviewDto? Data, string? Error)> GetDoctorOverviewAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorAssessmentsOverviewDto>($"{ApiRoutes.Psychometrics}/doctor-overview");
+        return (data, error);
+    }
+
     public async Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto)
     {
         return await PutAsync($"{ApiRoutes.Psychometrics}/tests/{id}", dto);
