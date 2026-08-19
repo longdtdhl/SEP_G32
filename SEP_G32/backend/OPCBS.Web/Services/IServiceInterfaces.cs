@@ -39,7 +39,9 @@ public interface IPatientRecordApiService
     Task<(PatientRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
     Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId);
     Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> CreateBatchAsync(List<CreatePatientRecordDto> dtos);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> DeleteAsync(Guid id);
     Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id);
     Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id);
 }
@@ -219,6 +221,7 @@ public interface ITreatmentCaseApiService
     Task<(List<TreatmentGoalWebDto> Data, string? Error)> GetGoalsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateGoalAsync(object dto);
     Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> DeleteGoalAsync(Guid goalId);
     Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto);
     Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId);
     // Goal Details (Milestones)

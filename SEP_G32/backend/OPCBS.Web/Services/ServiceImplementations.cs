@@ -166,9 +166,19 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
         return await PostAsync(ApiRoutes.PatientRecords, dto);
     }
 
+    public async Task<(bool Success, string? Error)> CreateBatchAsync(List<CreatePatientRecordDto> dtos)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/batch", dtos);
+    }
+
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto)
     {
         return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteAsync(Guid id)
+    {
+        return await base.DeleteAsync($"{ApiRoutes.PatientRecords}/{id}");
     }
 
     public async Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id)
@@ -788,6 +798,9 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteGoalAsync(Guid goalId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}");
 
     public async Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/goals/progress", dto);

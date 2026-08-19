@@ -7,6 +7,13 @@ public class DoctorRevenueOverviewDto
     public decimal PlatformFeeDeducted { get; set; }
     public decimal PendingSettlement { get; set; }
     public decimal SettledEarnings { get; set; }
+    public decimal AppointmentRevenue { get; set; }
+    public decimal TreatmentPackageRevenue { get; set; }
+    public decimal CompletedRevenue { get; set; }
+    public decimal ProjectedRevenue { get; set; }
+    public int AppointmentSessionsCount { get; set; }
+    public int PackageSessionsCount { get; set; }
+    public int ProjectedSessionsCount { get; set; }
     public int CompletedSessionsCount { get; set; }
     public double TotalBillableHours { get; set; }
     public decimal AverageRevenuePerSession { get; set; }
@@ -28,8 +35,8 @@ public class DoctorRevenueTransactionDto
     public string ServiceType { get; set; } = string.Empty;
     public string ConsultationMode { get; set; } = string.Empty;
     public decimal GrossAmount { get; set; }
-    public decimal PlatformFeePercentage { get; set; } = 10m;
-    public decimal PlatformFeeAmount { get; set; }
+    public decimal PlatformFeePercentage { get; set; } = 0m;
+    public decimal PlatformFeeAmount { get; set; } = 0m;
     public decimal NetAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string SettlementStatus { get; set; } = string.Empty;
@@ -41,6 +48,9 @@ public class RevenueTimelinePointDto
     public DateTime Date { get; set; }
     public decimal GrossRevenue { get; set; }
     public decimal NetEarnings { get; set; }
+    public decimal CompletedAmount { get; set; }
+    public decimal ProjectedAmount { get; set; }
+    public decimal TotalAmount { get; set; }
     public int SessionsCount { get; set; }
 }
 

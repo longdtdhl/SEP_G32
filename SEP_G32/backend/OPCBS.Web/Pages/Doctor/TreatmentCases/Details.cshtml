@@ -74,9 +74,20 @@
     .cd-empty i { font-size:1.8rem; display:block; margin-bottom:0.5rem; color:#cbd5e1; }
     .cd-empty p { font-size:0.82rem; margin:0; }
 
-    /* ─── Goal Card ─── */
-    .cd-goal { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; margin-bottom:0.75rem; transition:box-shadow 0.12s; }
-    .cd-goal:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    /* ─── Goal Management Clinical Styling ─── */
+    .goal-hero-card { background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.25rem; box-shadow:0 2px 8px rgba(15,23,42,0.03); }
+    .goal-hero-title { font-size:1.15rem; font-weight:800; color:#0f172a; letter-spacing:0.02em; margin-bottom:0.25rem; }
+    .goal-switcher-pills { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .goal-pill-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:9999px; font-size:0.8rem; font-weight:600; border:1px solid #e2e8f0; background:#ffffff; color:#475569; text-decoration:none; transition:all 0.15s ease; }
+    .goal-pill-btn:hover { border-color:#0d9488; color:#0f766e; }
+    .goal-pill-btn.active { background:#f0fdfa; border-color:#99f6e4; color:#0f766e; font-weight:700; box-shadow:0 1px 3px rgba(13,148,136,0.1); }
+    .goal-metric-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem 0.85rem; text-align:center; }
+    .goal-metric-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; color:#64748b; margin-bottom:0.2rem; }
+    .goal-metric-val { font-size:1.15rem; font-weight:800; color:#0f172a; }
+    .goal-card-panel { background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; height:100%; display:flex; flex-direction:column; box-shadow:0 2px 8px rgba(15,23,42,0.03); }
+    .goal-card-header { padding:0.875rem 1.25rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; }
+    .goal-card-title { font-size:0.82rem; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; color:#1e293b; margin:0; display:flex; align-items:center; gap:0.4rem; }
+    .goal-card-body { padding:1rem 1.25rem; flex-grow:1; }
 
     @@media (max-width:991.98px) {
         .cd-strip { flex-direction:column; align-items:stretch; }
@@ -512,11 +523,12 @@
                     <div class="table-responsive">
                         <table class="table cd-table align-middle">
                             <thead><tr>
-                                <th>#</th><th>Title</th><th>Planned Time</th><th>Booking</th><th>Record</th><th>Status</th><th class="text-end">Actions</th>
+                                <th>#</th><th>Title</th><th>Type</th><th>Planned Time</th><th>Booking</th><th>Record</th><th>Status</th><th class="text-end">Actions</th>
                             </tr></thead>
                             <tbody>
                                 @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
                                 {
+                                    var isOff = s.IsOffline;
                                     <tr>
                                         <td class="fw-bold text-muted">@s.SessionNumber</td>
                                         <td>
@@ -524,6 +536,20 @@
                                             @if (!string.IsNullOrEmpty(s.Description))
                                             {
                                                 <div class="text-muted" style="font-size:0.75rem;">@s.Description</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isOff)
+                                            {
+                                                <span class="badge rounded-pill px-2.5 py-1" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:600;">
+                                                    <i class="bi bi-geo-alt-fill me-1"></i>Offline
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge rounded-pill px-2.5 py-1" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:600;">
+                                                    <i class="bi bi-camera-video-fill me-1"></i>Online
+                                                </span>
                                             }
                                         </td>
                                         <td>
@@ -584,253 +610,754 @@
         <!-- ── TAB 3: GOALS & OUTCOMES ── -->
         @if (Model.ActiveTab == "goals")
         {
-            <div class="cd-box">
-                <div class="cd-box-head">
-                    <h6 class="cd-box-title"><i class="bi bi-bullseye me-2"></i>Treatment Goals</h6>
-                    <a href="/Doctor/TreatmentCases/Goals/Create?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:6px; font-size:0.78rem; font-weight:600;">
-                        <i class="bi bi-plus-lg me-1"></i>Add Goal
-                    </a>
+            var activeGoal = (Guid.TryParse(Request.Query["goalId"], out var qGid) ? Model.Goals.FirstOrDefault(g => g.Id == qGid) : null)
+                             ?? Model.Goals.OrderBy(x => x.OrderIndex).FirstOrDefault();
+
+            <!-- Header and Action bar -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <div class="text-muted small mb-1" style="font-size:0.78rem;">
+                        <a href="/Doctor/TreatmentCases" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Treatment Cases</a>
+                        <span class="mx-1 text-slate-300">/</span>
+                        <span class="text-dark fw-semibold">@(c.PatientName ?? "Patient")</span>
+                        <span class="mx-1 text-slate-300">/</span>
+                        <span class="fw-bold" style="color:#0d9488;">Goals</span>
+                    </div>
+                    <h2 class="h5 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-bullseye text-teal" style="color:#0d9488;"></i>Goal Management
+                    </h2>
+                    <div class="text-muted" style="font-size:0.8rem;">Track and manage treatment goals and patient progress across sessions</div>
                 </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm text-white shadow-sm" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 14px;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                        <i class="bi bi-plus-lg me-1"></i>Add Goal
+                    </button>
+                </div>
+            </div>
 
-                @if (!Model.Goals.Any())
-                {
-                    <div class="cd-empty">
-                        <i class="bi bi-bullseye"></i>
-                        <p>No goals created yet. Set therapeutic milestones to track progress.</p>
-                        <a href="/Doctor/TreatmentCases/Goals/Create?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Add First Goal</a>
+            @if (!Model.Goals.Any() || activeGoal == null)
+            {
+                <div class="cd-box text-center py-5">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px; height:64px; background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">
+                        <i class="bi bi-bullseye fs-2"></i>
                     </div>
+                    <h5 class="fw-bold text-dark mb-1">No Treatment Goals Defined</h5>
+                    <p class="text-muted small mb-3" style="max-width:420px; margin:0 auto;">
+                        Set structured therapeutic goals, baseline measurements, and milestones to monitor patient progress over consultation sessions.
+                    </p>
+                    <button type="button" class="btn btn-sm text-white px-4 py-2" style="background:#0d9488; border-radius:8px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                        <i class="bi bi-plus-lg me-1"></i>Create First Goal
+                    </button>
+                </div>
+            }
+            else
+            {
+                var activeGoalColor = activeGoal.ProgressPercent >= 75 ? "#10b981" : activeGoal.ProgressPercent >= 40 ? "#0d9488" : "#d97706";
+                var historyChronological = activeGoal.ProgressHistory.OrderBy(p => p.RecordedAt).ToList();
+                decimal? baselineVal = historyChronological.FirstOrDefault()?.CurrentValue ?? activeGoal.CurrentValue ?? (activeGoal.TargetValue.HasValue ? activeGoal.TargetValue.Value + 5 : 8);
+                decimal? currentVal = activeGoal.CurrentValue ?? historyChronological.LastOrDefault()?.CurrentValue ?? baselineVal;
+                decimal? targetVal = activeGoal.TargetValue ?? 3;
+
+                // Build session progress timeline items
+                var sessionMeasurements = new List<(string SessionLabel, string DateFormatted, string MeasurementText, string ResultText, string BadgeClass, string IconClass, decimal Val, DateTime Date)>();
+                decimal? lastVal = null;
+                int sIdx = 1;
+                foreach (var ph in historyChronological)
+                {
+                    var linkedSess = ph.TreatmentSessionId.HasValue ? Model.Sessions.FirstOrDefault(s => s.Id == ph.TreatmentSessionId) : null;
+                    var sLabel = linkedSess != null ? $"S{linkedSess.SessionNumber}" : $"S{sIdx}";
+                    var val = ph.CurrentValue ?? (decimal)ph.ProgressPercent;
+                    var mText = !string.IsNullOrEmpty(activeGoal.Unit) ? $"{val:0.#} {activeGoal.Unit}" : $"{val:0.#}/10";
+
+                    string resText = "Initial";
+                    string bClass = "bg-secondary-subtle text-secondary";
+                    string iClass = "bi-circle";
+
+                    if (lastVal.HasValue)
+                    {
+                        if (val < lastVal.Value)
+                        {
+                            resText = "↓ Improved";
+                            bClass = "bg-success-subtle text-success border border-success-subtle";
+                            iClass = "bi-arrow-down-right";
+                        }
+                        else if (val == lastVal.Value)
+                        {
+                            resText = "→ Stable";
+                            bClass = "bg-info-subtle text-info-emphasis border border-info-subtle";
+                            iClass = "bi-arrow-right";
+                        }
+                        else
+                        {
+                            resText = "↑ Elevated";
+                            bClass = "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+                            iClass = "bi-arrow-up-right";
+                        }
+                    }
+
+                    sessionMeasurements.Add((sLabel, ph.RecordedAt.ToString("MMM dd"), mText, resText, bClass, iClass, val, ph.RecordedAt));
+                    lastVal = val;
+                    sIdx++;
                 }
-                else
-                {
-                    <!-- Overall Goal Progress -->
-                    var avgGoalProgress = Model.Goals.Any() ? (int)Model.Goals.Average(g => g.ProgressPercent) : 0;
-                    var achievedCount = Model.Goals.Count(g => g.Status == 2);
-                    var draftCount = Model.Goals.Count(g => g.Status == 5);
-                    <div style="padding:0.875rem 1.25rem; border-bottom:1px solid #f1f5f9; background:#fafbfc;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span style="font-size:0.82rem; font-weight:600; color:#1e293b;">Overall Goal Progress</span>
-                            <div class="d-flex gap-3" style="font-size:0.78rem;">
-                                <span style="color:#0d9488; font-weight:700;">@achievedCount/@Model.Goals.Count achieved</span>
-                                @if (draftCount > 0) { <span class="text-muted">@draftCount draft</span> }
-                                <span class="text-muted">Avg @avgGoalProgress%</span>
-                            </div>
-                        </div>
-                        <div style="background:#e2e8f0; border-radius:4px; height:8px; overflow:hidden;">
-                            <div style="height:100%; width:@(avgGoalProgress)%; background:#0d9488; border-radius:4px; transition:width 0.5s;"></div>
-                        </div>
-                    </div>
 
-                    <!-- Goal List -->
-                    <div style="padding:1rem 1.25rem;">
+                if (!sessionMeasurements.Any() && currentVal.HasValue)
+                {
+                    sessionMeasurements.Add(("S1", activeGoal.CreatedAt.ToString("MMM dd"), $"{currentVal.Value:0.#}/10", "Initial", "bg-secondary-subtle text-secondary", "bi-circle", currentVal.Value, activeGoal.CreatedAt));
+                }
+
+                // Reverse for descending list display
+                var sessionMeasurementsDesc = sessionMeasurements.AsEnumerable().Reverse().ToList();
+
+                // Trend status text
+                string trendText = "Patient Improving";
+                string trendBadgeClass = "bg-success-subtle text-success border border-success-subtle";
+                if (sessionMeasurements.Count >= 2)
+                {
+                    var first = sessionMeasurements.First().Val;
+                    var last = sessionMeasurements.Last().Val;
+                    if (last < first) { trendText = "↓ Improving Trend"; trendBadgeClass = "bg-success-subtle text-success border border-success-subtle"; }
+                    else if (last == first) { trendText = "→ Stable Trend"; trendBadgeClass = "bg-info-subtle text-info-emphasis border border-info-subtle"; }
+                    else { trendText = "↑ Attention Needed"; trendBadgeClass = "bg-warning-subtle text-warning-emphasis border border-warning-subtle"; }
+                }
+
+                <!-- Goal Switcher Pills (when multiple goals exist) -->
+                @if (Model.Goals.Count > 1)
+                {
+                    <div class="goal-switcher-pills">
+                        <span class="text-muted small fw-bold me-1" style="font-size:0.75rem;"><i class="bi bi-filter-left me-1"></i>Select Goal:</span>
                         @foreach (var g in Model.Goals.OrderBy(x => x.OrderIndex))
                         {
-                            var gColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
-                            var isOverdue = g.TargetDate.HasValue && g.TargetDate.Value < DateTime.UtcNow && g.Status != 2;
-                            var daysToDeadline = g.TargetDate.HasValue ? (g.TargetDate.Value - DateTime.UtcNow).Days : (int?)null;
-                            var goalExpandId = $"goal-expand-{g.Id.ToString("N").Substring(0,8)}";
-
-                            <div class="cd-goal" style="@(g.Status == 5 ? "opacity:0.7; border-style:dashed;" : "")">
-                                <!-- Goal Header -->
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div style="min-width:0; flex:1;">
-                                        <div class="d-flex gap-2 align-items-center flex-wrap mb-1">
-                                            <span class="@g.PriorityBadgeClass" style="font-size:0.68rem;">@g.PriorityText</span>
-                                            <span class="@g.StatusBadgeClass" style="font-size:0.68rem;">@g.StatusText</span>
-                                            <span class="text-muted" style="font-size:0.72rem;">@g.CategoryText</span>
-                                            @if (g.Details.Any())
-                                            {
-                                                <span class="text-muted" style="font-size:0.68rem;"><i class="bi bi-list-check"></i> @g.Details.Count(d => d.Status == 2)/@g.Details.Count milestones</span>
-                                            }
-                                        </div>
-                                        <h6 class="fw-bold text-dark mb-0" style="font-size:0.92rem;">@g.Title</h6>
-                                    </div>
-                                    <span style="font-size:1.1rem; font-weight:700; color:@gColor;">@(g.ProgressPercent)%</span>
-                                </div>
-
-                                @if (!string.IsNullOrEmpty(g.Description))
-                                {
-                                    <p class="text-muted mb-2" style="font-size:0.8rem;">@g.Description</p>
-                                }
-
-                                <!-- Progress bar + metrics -->
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between" style="font-size:0.75rem; color:#64748b; margin-bottom:3px;">
-                                        <span>Current: <strong class="text-dark">@(g.CurrentValue.HasValue ? $"{g.CurrentValue} {g.Unit}" : "N/A")</strong></span>
-                                        <span>Target: <strong class="text-dark">@(g.TargetValue.HasValue ? $"{g.TargetValue} {g.Unit}" : "N/A")</strong></span>
-                                    </div>
-                                    <div style="background:#e2e8f0; border-radius:3px; height:6px; overflow:hidden;">
-                                        <div style="height:100%; width:@(g.ProgressPercent)%; background:@gColor; border-radius:3px; transition:width 0.5s;"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Due date + expand toggle -->
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="font-size:0.75rem; color:#64748b;">
-                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        @if (g.TargetDate.HasValue)
-                                        {
-                                            if (isOverdue) { <span class="cd-badge danger"><i class="bi bi-exclamation-triangle"></i> Overdue (@g.TargetDate.Value.ToString("MMM dd"))</span> }
-                                            else if (daysToDeadline <= 3) { <span class="cd-badge hold"><i class="bi bi-clock"></i> Due in @daysToDeadline day(s)</span> }
-                                            else { <span><i class="bi bi-calendar3 me-1"></i>Due: @g.TargetDate.Value.ToString("MMM dd, yyyy")</span> }
-                                        }
-                                        @if (!string.IsNullOrEmpty(g.DoctorNotes)) { <span class="text-muted"><i class="bi bi-chat-left-text me-1"></i>Has notes</span> }
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;" type="button" data-bs-toggle="collapse" data-bs-target="#@goalExpandId">
-                                        <i class="bi bi-chevron-expand me-1"></i>Details
-                                    </button>
-                                </div>
-
-                                <!-- ═══ Expandable Detail Panel ═══ -->
-                                <div class="collapse mt-3 pt-3 border-top" id="@goalExpandId">
-
-                                    <!-- Milestones (GoalDetails) -->
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-list-check me-1" style="color:#0d9488;"></i>Milestones</h6>
-                                            <button class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.7rem; padding:2px 8px;" type="button" data-bs-toggle="collapse" data-bs-target="#addMilestone-@g.Id"><i class="bi bi-plus"></i></button>
-                                        </div>
-                                        <div class="collapse mb-2" id="addMilestone-@g.Id">
-                                            <form method="post" asp-page-handler="CreateGoalDetail" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
-                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
-                                                <div class="row g-2 mb-2">
-                                                    <div class="col-md-6"><input name="title" class="form-control form-control-sm" placeholder="Milestone title *" required style="border-radius:5px;" /></div>
-                                                    <div class="col-md-3"><input name="estimatedSessions" type="number" min="1" class="form-control form-control-sm" placeholder="Est. sessions" style="border-radius:5px;" /></div>
-                                                    <div class="col-md-3"><input name="orderIndex" type="number" min="0" class="form-control form-control-sm" placeholder="Order" style="border-radius:5px;" /></div>
-                                                </div>
-                                                <textarea name="description" class="form-control form-control-sm mb-2" rows="1" placeholder="Description (optional)" style="border-radius:5px;"></textarea>
-                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Add Milestone</button>
-                                            </form>
-                                        </div>
-                                        @if (g.Details.Any())
-                                        {
-                                            @foreach (var d in g.Details.OrderBy(x => x.OrderIndex))
-                                            {
-                                                <div class="d-flex align-items-start gap-2 py-2" style="border-bottom:1px solid #f8fafc;">
-                                                    <div style="flex-shrink:0; margin-top:2px;">
-                                                        @if (d.Status == 2) { <i class="bi bi-check-circle-fill" style="color:#10b981;"></i> }
-                                                        else if (d.Status == 1) { <i class="bi bi-arrow-right-circle-fill" style="color:#1d4ed8;"></i> }
-                                                        else { <i class="bi bi-circle" style="color:#cbd5e1;"></i> }
-                                                    </div>
-                                                    <div class="flex-grow-1" style="min-width:0;">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="fw-semibold text-dark" style="font-size:0.82rem;">@d.Title</span>
-                                                            <div class="d-flex align-items-center gap-1">
-                                                                <span class="@d.StatusBadgeClass" style="font-size:0.65rem;">@d.StatusText</span>
-                                                                @if (d.EstimatedSessions.HasValue) { <span class="text-muted" style="font-size:0.68rem;">~@d.EstimatedSessions sess</span> }
-                                                            </div>
-                                                        </div>
-                                                        @if (!string.IsNullOrEmpty(d.Description)) { <div class="text-muted" style="font-size:0.72rem;">@d.Description</div> }
-                                                        @if (d.Sessions.Any()) { <div class="mt-1" style="font-size:0.68rem; color:#0d9488;"><i class="bi bi-link-45deg"></i> Linked to @d.Sessions.Count session(s)</div> }
-                                                        @if (d.Status != 2)
-                                                        {
-                                                            <div class="d-flex gap-1 mt-1">
-                                                                @if (d.Status == 0) { <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><input type="hidden" name="status" value="1" /><button type="submit" class="btn btn-sm btn-outline-primary" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Start</button></form> }
-                                                                @if (d.Status == 1) { <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><input type="hidden" name="status" value="2" /><button type="submit" class="btn btn-sm btn-outline-success" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Complete</button></form> }
-                                                                <form method="post" asp-page-handler="DeleteGoalDetail" class="d-inline" onsubmit="return confirm('Delete this milestone?');"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="detailId" value="@d.Id" /><button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;"><i class="bi bi-trash3"></i></button></form>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            }
-                                        }
-                                        else { <p class="text-muted mb-0" style="font-size:0.75rem;">No milestones defined yet.</p> }
-                                    </div>
-
-                                    <!-- Success Criteria -->
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-check2-square me-1" style="color:#0d9488;"></i>Success Criteria</h6>
-                                            <button class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.7rem; padding:2px 8px;" type="button" data-bs-toggle="collapse" data-bs-target="#addCriteria-@g.Id"><i class="bi bi-plus"></i></button>
-                                        </div>
-                                        <div class="collapse mb-2" id="addCriteria-@g.Id">
-                                            <form method="post" asp-page-handler="CreateSuccessCriteria" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
-                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
-                                                <div class="row g-2 mb-2">
-                                                    <div class="col-md-4"><select name="criteriaType" class="form-select form-select-sm" style="border-radius:5px;"><option value="0">Progress %</option><option value="1">Homework Completion</option><option value="2">Attendance</option><option value="3">Doctor Approval</option><option value="4">Assessment Score</option><option value="99">Custom</option></select></div>
-                                                    <div class="col-md-3"><select name="operatorType" class="form-select form-select-sm" style="border-radius:5px;"><option value="1">&gt;= (at least)</option><option value="0">&gt; (greater)</option><option value="3">&lt;= (at most)</option><option value="4">= (exact)</option></select></div>
-                                                    <div class="col-md-2"><input name="targetValue" type="number" step="any" class="form-control form-control-sm" placeholder="Target" style="border-radius:5px;" /></div>
-                                                    <div class="col-md-3"><input name="description" class="form-control form-control-sm" placeholder="Description" style="border-radius:5px;" /></div>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Add Criteria</button>
-                                            </form>
-                                        </div>
-                                        @if (g.SuccessCriteria.Any())
-                                        {
-                                            @foreach (var sc in g.SuccessCriteria)
-                                            {
-                                                var scPassed = sc.IsPassed;
-                                                var scColor = scPassed ? "#10b981" : "#d97706";
-                                                <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #f8fafc; font-size:0.78rem;">
-                                                    <i class="bi @(scPassed ? "bi-check-circle-fill" : "bi-exclamation-circle")" style="color:@scColor; flex-shrink:0;"></i>
-                                                    <div class="flex-grow-1">
-                                                        <span class="fw-semibold text-dark">@sc.CriteriaTypeText</span>
-                                                        @if (!string.IsNullOrEmpty(sc.Description)) { <span class="text-muted ms-1">- @sc.Description</span> }
-                                                        <div class="text-muted" style="font-size:0.72rem;">
-                                                            Current: <strong>@(sc.CurrentValue?.ToString() ?? "N/A")</strong> @sc.OperatorText Target: <strong>@(sc.TargetValue?.ToString() ?? "N/A")</strong>
-                                                            @if (sc.IsRequired) { <span class="cd-badge danger" style="font-size:0.6rem;">Required</span> }
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex gap-1 flex-shrink-0">
-                                                        <details><summary class="btn btn-sm btn-outline-primary" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;">Evaluate</summary>
-                                                            <form method="post" asp-page-handler="EvaluateSuccessCriteria" class="mt-1 p-2 border rounded-2 bg-light" style="min-width:180px; font-size:0.75rem;">
-                                                                <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="criteriaId" value="@sc.Id" />
-                                                                <input name="currentValue" type="number" step="any" class="form-control form-control-sm mb-1" placeholder="Current value" style="border-radius:4px;" />
-                                                                <button type="submit" class="btn btn-sm w-100" style="background:#0d9488; color:white; border-radius:4px; font-size:0.7rem;">Save</button>
-                                                            </form>
-                                                        </details>
-                                                        <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Remove this criteria?');"><input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="criteriaId" value="@sc.Id" /><button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.65rem; padding:1px 6px; border-radius:4px;"><i class="bi bi-trash3"></i></button></form>
-                                                    </div>
-                                                </div>
-                                            }
-                                        }
-                                        else { <p class="text-muted mb-0" style="font-size:0.75rem;">No success criteria defined.</p> }
-                                    </div>
-
-                                    <!-- Record Progress (inline) -->
-                                    <div class="mb-3">
-                                        <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;"><i class="bi bi-graph-up me-1" style="color:#0d9488;"></i>Record Progress</h6>
-                                        <form method="post" asp-page-handler="RecordGoalProgress" class="p-2 border rounded-2 bg-light" style="font-size:0.78rem;">
-                                            <input type="hidden" name="caseId" value="@c.Id" /><input type="hidden" name="goalId" value="@g.Id" />
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-md-2"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Progress %</label><input type="number" name="progressPercent" class="form-control form-control-sm" min="0" max="100" value="@g.ProgressPercent" required style="border-radius:5px;" /></div>
-                                                <div class="col-md-2"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Value @(!string.IsNullOrEmpty(g.Unit) ? $"({g.Unit})" : "")</label><input type="number" step="any" name="currentValue" class="form-control form-control-sm" value="@g.CurrentValue" style="border-radius:5px;" /></div>
-                                                <div class="col-md-3"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Milestone</label><select name="goalDetailId" class="form-select form-select-sm" style="border-radius:5px;"><option value="">-- None --</option>@foreach (var d in g.Details.Where(x => x.Status != 2).OrderBy(x => x.OrderIndex)) { <option value="@d.Id">@d.Title</option> }</select></div>
-                                                <div class="col-md-5"><label class="form-label fw-semibold mb-0" style="font-size:0.72rem;">Comment</label><input type="text" name="doctorComment" class="form-control form-control-sm" placeholder="Clinical observation..." style="border-radius:5px;" /></div>
-                                            </div>
-                                            <button type="submit" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.72rem;">Save Progress</button>
-                                        </form>
-                                    </div>
-
-                                    <!-- Progress History -->
-                                    @if (g.ProgressHistory.Any())
-                                    {
-                                        <div>
-                                            <h6 style="font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.5rem;"><i class="bi bi-clock-history me-1" style="color:#0d9488;"></i>Progress Log (@g.ProgressHistory.Count)</h6>
-                                            <div class="table-responsive">
-                                                <table class="table cd-table" style="font-size:0.75rem;">
-                                                    <thead><tr><th>Date</th><th>Progress</th><th>Value</th><th>Milestone</th><th>Comment</th></tr></thead>
-                                                    <tbody>
-                                                        @foreach (var ph in g.ProgressHistory.OrderByDescending(p => p.RecordedAt).Take(10))
-                                                        {
-                                                            var phDetail = ph.GoalDetailId.HasValue ? g.Details.FirstOrDefault(d => d.Id == ph.GoalDetailId) : null;
-                                                            <tr>
-                                                                <td class="text-muted">@ph.RecordedAt.ToString("MMM dd, HH:mm")</td>
-                                                                <td><span class="fw-bold" style="color:@gColor;">@(ph.ProgressPercent)%</span></td>
-                                                                <td class="text-muted">@(ph.CurrentValue?.ToString() ?? "—")</td>
-                                                                <td>@(phDetail?.Title ?? "—")</td>
-                                                                <td class="text-muted text-truncate" style="max-width:200px;">@(ph.DoctorComment ?? "—")</td>
-                                                            </tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
+                            var isActive = g.Id == activeGoal.Id;
+                            var pColor = g.ProgressPercent >= 75 ? "#10b981" : g.ProgressPercent >= 40 ? "#0d9488" : "#d97706";
+                            <a href="?id=@c.Id&tab=goals&goalId=@g.Id" class="goal-pill-btn @(isActive ? "active" : "")">
+                                <i class="bi bi-bullseye" style="color:@(isActive ? "#0d9488" : "#64748b");"></i>
+                                <span>@g.Title</span>
+                                <span class="badge rounded-pill" style="font-size:0.68rem; background:@(isActive ? "#0d9488" : "#f1f5f9"); color:@(isActive ? "#ffffff" : "#475569");">@g.ProgressPercent%</span>
+                            </a>
                         }
                     </div>
                 }
-            </div>
+
+                <!-- ══ 1. GOAL HEADER CARD ══ -->
+                <div class="goal-hero-card">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div>
+                            <h3 class="goal-hero-title">@activeGoal.Title.ToUpper()</h3>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="@activeGoal.PriorityBadgeClass" style="font-size:0.72rem; padding:3px 9px;">@activeGoal.PriorityText Priority</span>
+                                <span class="@activeGoal.StatusBadgeClass" style="font-size:0.72rem; padding:3px 9px;">@activeGoal.StatusText</span>
+                                @if (!string.IsNullOrEmpty(activeGoal.CategoryText))
+                                {
+                                    <span class="text-muted" style="font-size:0.75rem;"><i class="bi bi-tag me-1"></i>@activeGoal.CategoryText</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="text-end d-flex flex-column align-items-end" style="min-width:180px;">
+                            <div class="d-flex align-items-baseline justify-content-end gap-2 mb-1">
+                                <span class="text-muted small fw-semibold" style="font-size:0.78rem;">Overall Progress</span>
+                                <span class="fw-bold" style="font-size:1.35rem; color:@activeGoalColor;">@(activeGoal.ProgressPercent)%</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#e2e8f0; width:180px;">
+                                <div class="progress-bar" style="width:@(activeGoal.ProgressPercent)%; background:@activeGoalColor; border-radius:4px; transition:width 0.5s;"></div>
+                            </div>
+                            <div class="mt-2">
+                                <form method="post" asp-page-handler="DeleteGoal" onsubmit="return confirm('Are you sure you want to delete this treatment goal (@activeGoal.Title)? This action will also delete all associated milestones and progress history.');" class="d-inline">
+                                    <input type="hidden" name="caseId" value="@c.Id" />
+                                    <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.72rem; padding:2px 8px;" title="Delete Treatment Goal">
+                                        <i class="bi bi-trash me-1"></i>Delete Goal
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3-Column Metrics: Baseline, Current, Target -->
+                    <div class="row g-2 g-md-3 my-2">
+                        <div class="col-4">
+                            <div class="goal-metric-box">
+                                <div class="goal-metric-label">Baseline</div>
+                                <div class="goal-metric-val">@(baselineVal.HasValue ? $"{baselineVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="goal-metric-box" style="border-color:#ccfbf1; background:#f0fdfa;">
+                                <div class="goal-metric-label" style="color:#0f766e;">Current</div>
+                                <div class="goal-metric-val" style="color:#0f766e;">@(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="goal-metric-box">
+                                <div class="goal-metric-label">Target</div>
+                                <div class="goal-metric-val" style="color:#0d9488;">@(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metadata Footer -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3 pt-2 border-top text-muted" style="font-size:0.78rem;">
+                        <div>
+                            <i class="bi bi-calendar3 me-1" style="color:#0d9488;"></i>Created: <strong>@activeGoal.CreatedAt.ToString("MMM dd, yyyy")</strong>
+                            @if (activeGoal.TargetDate.HasValue)
+                            {
+                                <span class="ms-3"><i class="bi bi-flag me-1"></i>Target Date: <strong>@activeGoal.TargetDate.Value.ToString("MMM dd, yyyy")</strong></span>
+                            }
+                        </div>
+                        <div>
+                            <span>Target: <strong>@(string.IsNullOrEmpty(activeGoal.Unit) ? $"{activeGoal.Title} Score" : activeGoal.Unit) @(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "")</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ 2. MIDDLE SECTION (ROW 1: TREND + SUCCESS CRITERIA) ══ -->
+                <div class="row g-3 mb-3">
+                    <!-- Left: Progress Trend Chart -->
+                    <div class="col-lg-6">
+                        <div class="goal-card-panel">
+                            <div class="goal-card-header">
+                                <h6 class="goal-card-title"><i class="bi bi-graph-up" style="color:#0d9488;"></i>Progress Trend</h6>
+                                <span class="badge @trendBadgeClass" style="font-size:0.7rem;">@trendText</span>
+                            </div>
+                            <div class="goal-card-body d-flex flex-column justify-content-between">
+                                <div style="position:relative; width:100%; height:200px;">
+                                    <canvas id="goalTrendCanvas"></canvas>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-1 text-muted" style="font-size:0.74rem;">
+                                    <span><i class="bi bi-circle-fill me-1" style="color:#0d9488; font-size:0.5rem;"></i>Session Measurements</span>
+                                    <span><i class="bi bi-dash-lg me-1 text-danger"></i>Target Threshold (@(targetVal.HasValue ? $"{targetVal.Value:0.#}" : "N/A"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Success Criteria -->
+                    <div class="col-lg-6">
+                        <div class="goal-card-panel">
+                            <div class="goal-card-header">
+                                <h6 class="goal-card-title"><i class="bi bi-check2-square" style="color:#0d9488;"></i>Success Criteria</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem; padding:2px 8px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#addCriteriaModal">
+                                    <i class="bi bi-plus-lg me-1"></i>Add
+                                </button>
+                            </div>
+                            <div class="goal-card-body p-0">
+                                @if (activeGoal.SuccessCriteria.Any())
+                                {
+                                    <div class="list-group list-group-flush" style="font-size:0.82rem;">
+                                        @foreach (var sc in activeGoal.SuccessCriteria)
+                                        {
+                                            var scPassed = sc.IsPassed;
+                                            <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
+                                                <div class="d-flex align-items-center gap-2.5">
+                                                    <i class="bi @(scPassed ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
+                                                    <div>
+                                                        <div class="fw-semibold text-dark">@(string.IsNullOrEmpty(sc.Description) ? sc.CriteriaTypeText : sc.Description)</div>
+                                                        <small class="text-muted">@(sc.CurrentValue.HasValue ? sc.CurrentValue.Value.ToString("0.#") : "—") @sc.OperatorText @(sc.TargetValue.HasValue ? sc.TargetValue.Value.ToString("0.#") : "—")</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge @(scPassed ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")" style="font-size:0.7rem;">
+                                                        @(scPassed ? "Achieved" : "In Progress")
+                                                    </span>
+                                                    <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Remove this criterion?');">
+                                                        <input type="hidden" name="caseId" value="@c.Id" />
+                                                        <input type="hidden" name="criteriaId" value="@sc.Id" />
+                                                        <button type="submit" class="btn btn-link text-danger p-0 ms-1" style="font-size:0.8rem;" title="Delete"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Synthesized Clinical Criteria Rows -->
+                                    <div class="list-group list-group-flush" style="font-size:0.82rem;">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <i class="bi @(activeGoal.ProgressPercent >= 100 ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">@activeGoal.Title @(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "")</div>
+                                                    <small class="text-muted">@(currentVal.HasValue ? $"{currentVal.Value:0.#}/10" : "N/A")</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge @(activeGoal.ProgressPercent >= 100 ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")" style="font-size:0.7rem;">
+                                                @(activeGoal.ProgressPercent >= 100 ? "Achieved" : "In Progress")
+                                            </span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <i class="bi @(sessionProg >= 80 ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">Attendance ≥ 80%</div>
+                                                    <small class="text-muted">@sessionProg% (@completedSessions/@totalSessions sessions)</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge @(sessionProg >= 80 ? "bg-success-subtle text-success border border-success-subtle" : "bg-info-subtle text-info-emphasis border border-info-subtle")" style="font-size:0.7rem;">
+                                                @(sessionProg >= 80 ? "Achieved" : "In Progress")
+                                            </span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <i class="bi @(totalHomework > 0 && completedHomework >= totalHomework ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">Exercises / Homework Completion</div>
+                                                    <small class="text-muted">@completedHomework/@totalHomework completed</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge @(totalHomework > 0 && completedHomework >= totalHomework ? "bg-success-subtle text-success border border-success-subtle" : "bg-secondary-subtle text-secondary border")" style="font-size:0.7rem;">
+                                                @(totalHomework > 0 && completedHomework >= totalHomework ? "Achieved" : (completedHomework > 0 ? "In Progress" : "Not Started"))
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ 3. BOTTOM SECTION (ROW 2: MILESTONES + SESSION PROGRESS) ══ -->
+                <div class="row g-3 mb-3">
+                    <!-- Left: Milestones -->
+                    <div class="col-lg-6">
+                        <div class="goal-card-panel">
+                            <div class="goal-card-header">
+                                <h6 class="goal-card-title"><i class="bi bi-list-check" style="color:#0d9488;"></i>Milestones</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem; padding:2px 8px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                                    <i class="bi bi-plus-lg me-1"></i>Add
+                                </button>
+                            </div>
+                            <div class="goal-card-body p-0">
+                                @if (activeGoal.Details.Any())
+                                {
+                                    <div class="list-group list-group-flush" style="font-size:0.82rem;">
+                                        @foreach (var d in activeGoal.Details.OrderBy(x => x.OrderIndex))
+                                        {
+                                            <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
+                                                <div class="d-flex align-items-start gap-2.5">
+                                                    <div class="mt-0.5">
+                                                        @if (d.Status == 2)
+                                                        {
+                                                            <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                                                        }
+                                                        else if (d.Status == 1)
+                                                        {
+                                                            <i class="bi bi-arrow-right-circle-fill text-primary fs-6"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-circle text-muted fs-6"></i>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold text-dark @(d.Status == 2 ? "text-decoration-line-through text-muted" : "")">@d.Title</div>
+                                                        @if (!string.IsNullOrEmpty(d.Description))
+                                                        {
+                                                            <div class="text-muted" style="font-size:0.74rem;">@d.Description</div>
+                                                        }
+                                                        <span class="badge @d.StatusBadgeClass" style="font-size:0.65rem; margin-top:2px;">@d.StatusText</span>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    @if (d.Status == 0)
+                                                    {
+                                                        <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline">
+                                                            <input type="hidden" name="caseId" value="@c.Id" />
+                                                            <input type="hidden" name="detailId" value="@d.Id" />
+                                                            <input type="hidden" name="status" value="1" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary py-0.5 px-2" style="font-size:0.68rem; border-radius:5px;">Start</button>
+                                                        </form>
+                                                    }
+                                                    else if (d.Status == 1)
+                                                    {
+                                                        <form method="post" asp-page-handler="UpdateGoalDetail" class="d-inline">
+                                                            <input type="hidden" name="caseId" value="@c.Id" />
+                                                            <input type="hidden" name="detailId" value="@d.Id" />
+                                                            <input type="hidden" name="status" value="2" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-success py-0.5 px-2" style="font-size:0.68rem; border-radius:5px;">Complete</button>
+                                                        </form>
+                                                    }
+                                                    <form method="post" asp-page-handler="DeleteGoalDetail" class="d-inline" onsubmit="return confirm('Delete milestone?');">
+                                                        <input type="hidden" name="caseId" value="@c.Id" />
+                                                        <input type="hidden" name="detailId" value="@d.Id" />
+                                                        <button type="submit" class="btn btn-link text-danger p-0 ms-1" style="font-size:0.8rem;" title="Delete"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-4 text-muted small">
+                                        <i class="bi bi-list-check fs-3 d-block text-slate-300 mb-1"></i>
+                                        No milestones defined yet.
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                                                + Add First Milestone
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Session Progress -->
+                    <div class="col-lg-6">
+                        <div class="goal-card-panel">
+                            <div class="goal-card-header">
+                                <h6 class="goal-card-title"><i class="bi bi-calendar2-check" style="color:#0d9488;"></i>Session Progress</h6>
+                                <button type="button" class="btn btn-sm text-white shadow-sm" style="background:#0d9488; font-size:0.75rem; font-weight:600; padding:3px 10px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#recordProgressModal">
+                                    <i class="bi bi-plus-lg me-1"></i>Record Progress
+                                </button>
+                            </div>
+                            <div class="goal-card-body p-0">
+                                @if (sessionMeasurements.Any())
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table cd-table align-middle" style="font-size:0.78rem;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Session</th>
+                                                    <th>Date</th>
+                                                    <th>Measurement</th>
+                                                    <th>Result</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var sm in sessionMeasurementsDesc)
+                                                {
+                                                    <tr>
+                                                        <td class="fw-bold text-dark">@sm.SessionLabel</td>
+                                                        <td class="text-muted">@sm.DateFormatted</td>
+                                                        <td class="fw-semibold text-dark">@(sm.MeasurementText)</td>
+                                                        <td>
+                                                            <span class="badge @sm.BadgeClass" style="font-size:0.68rem;">
+                                                                <i class="bi @sm.IconClass me-1"></i>@sm.ResultText
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-4 text-muted small">
+                                        <i class="bi bi-graph-up fs-3 d-block text-slate-300 mb-1"></i>
+                                        No session progress recorded yet.
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#recordProgressModal">
+                                                + Record Session Progress
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ 4. GOAL NOTES (FULL WIDTH) ══ -->
+                <div class="goal-card-panel mb-3">
+                    <div class="goal-card-header">
+                        <h6 class="goal-card-title"><i class="bi bi-journal-text" style="color:#0d9488;"></i>Goal Notes</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem; padding:2px 10px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#editGoalNotesModal">
+                            <i class="bi bi-pencil me-1"></i>Edit ✎
+                        </button>
+                    </div>
+                    <div class="goal-card-body">
+                        @if (!string.IsNullOrWhiteSpace(activeGoal.DoctorNotes))
+                        {
+                            <p class="text-dark mb-0" style="font-size:0.86rem; line-height:1.65; white-space:pre-line;">@activeGoal.DoctorNotes</p>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0 fst-italic" style="font-size:0.82rem;">
+                                No clinical notes recorded yet for this goal. Click "Edit ✎" to add observations, treatment plan adjustments, or patient progress reflections.
+                            </p>
+                        }
+                    </div>
+                </div>
+
+                <!-- ══ MODALS FOR GOAL TAB ══ -->
+
+                <!-- 1. Record Goal Progress Modal -->
+                <div class="modal fade" id="recordProgressModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:12px;">
+                            <form method="post" asp-page-handler="RecordGoalProgress">
+                                <input type="hidden" name="caseId" value="@c.Id" />
+                                <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                <input type="hidden" name="progressPercent" id="recordProgressPercent" value="@activeGoal.ProgressPercent" />
+
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
+                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
+                                        <i class="bi bi-graph-up text-teal me-1" style="color:#0d9488;"></i>Record Goal Progress
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" style="padding:1.25rem;">
+                                    <div class="p-2 mb-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:0.8rem;">
+                                        <div class="text-muted">Target Goal:</div>
+                                        <strong class="text-dark">@activeGoal.Title</strong>
+                                        <span class="text-muted ms-1">(Target: @(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "N/A"))</span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Session</label>
+                                        <select name="sessionId" class="form-select form-select-sm" style="border-radius:6px;">
+                                            @if (Model.Sessions.Any())
+                                            {
+                                                @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
+                                                {
+                                                    <option value="@s.Id">Session @s.SessionNumber @(!string.IsNullOrEmpty(s.Title) ? $"- {s.Title}" : "") (@(s.PlannedStartTime?.ToString("MMM dd") ?? "Planned"))</option>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <option value="">-- General Progress Update --</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label fw-bold text-dark mb-0" style="font-size:0.82rem;">Measurement</label>
+                                            <span class="text-muted small" style="font-size:0.74rem;">Calculated Progress: <strong id="calculatedProgressPreview" style="color:#0d9488;">@(activeGoal.ProgressPercent)%</strong></span>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="any" name="currentValue" id="recordCurrentValue" class="form-control" placeholder="e.g. 5" value="@(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "")" required oninput="calculateProgressFromInput()" style="border-radius:6px 0 0 6px;" />
+                                            <span class="input-group-text bg-light text-muted" style="border-radius:0 6px 6px 0; font-size:0.8rem;">@(!string.IsNullOrEmpty(activeGoal.Unit) ? activeGoal.Unit : "/ 10")</span>
+                                        </div>
+                                    </div>
+
+                                    @if (activeGoal.Details.Any(d => d.Status != 2))
+                                    {
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Associated Milestone (Optional)</label>
+                                            <select name="goalDetailId" class="form-select form-select-sm" style="border-radius:6px;">
+                                                <option value="">-- None --</option>
+                                                @foreach (var d in activeGoal.Details.Where(d => d.Status != 2).OrderBy(x => x.OrderIndex))
+                                                {
+                                                    <option value="@d.Id">@d.Title</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
+
+                                    <div class="mb-0">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Clinical Note</label>
+                                        <textarea name="doctorComment" class="form-control" rows="3" placeholder="Optional clinical observation and notes..." style="border-radius:6px; font-size:0.84rem;"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Save Progress</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Add Goal Modal -->
+                <div class="modal fade" id="addGoalModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:12px;">
+                            <form method="post" asp-page-handler="CreateGoal">
+                                <input type="hidden" name="caseId" value="@c.Id" />
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
+                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
+                                        <i class="bi bi-plus-circle text-teal me-1" style="color:#0d9488;"></i>Add Treatment Goal
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" style="padding:1.25rem;">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Goal Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Reduce Anxiety" required style="border-radius:6px;" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Description</label>
+                                        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Clinical objective description..." style="border-radius:6px;"></textarea>
+                                    </div>
+
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Priority</label>
+                                            <select name="priority" class="form-select form-select-sm" style="border-radius:6px;">
+                                                <option value="0">Low</option>
+                                                <option value="1" selected>Medium</option>
+                                                <option value="2">High</option>
+                                                <option value="3">Critical</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Category</label>
+                                            <select name="category" class="form-select form-select-sm" style="border-radius:6px;">
+                                                <option value="0">Symptom Reduction</option>
+                                                <option value="1">Coping Strategy</option>
+                                                <option value="2">Behavioral</option>
+                                                <option value="3">Cognitive</option>
+                                                <option value="4">Social</option>
+                                                <option value="5">Lifestyle</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-4">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Metric</label>
+                                            <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. /10, GAD-7" value="/ 10" style="border-radius:6px;" />
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Baseline</label>
+                                            <input type="number" step="any" name="currentValue" class="form-control form-control-sm" placeholder="e.g. 8" value="8" style="border-radius:6px;" />
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target</label>
+                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3" value="3" style="border-radius:6px;" />
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-0">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Date</label>
+                                        <input type="date" name="targetDate" class="form-control form-control-sm" style="border-radius:6px;" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Create Goal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Edit Goal Notes Modal -->
+                <div class="modal fade" id="editGoalNotesModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:12px;">
+                            <form method="post" asp-page-handler="UpdateGoalNotes">
+                                <input type="hidden" name="caseId" value="@c.Id" />
+                                <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
+                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
+                                        <i class="bi bi-pencil text-teal me-1" style="color:#0d9488;"></i>Edit Goal Notes
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" style="padding:1.25rem;">
+                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Clinical Observations & Strategy</label>
+                                    <textarea name="doctorNotes" class="form-control" rows="5" placeholder="Document patient trajectory, observations, and treatment modifications..." style="border-radius:6px; font-size:0.86rem;">@activeGoal.DoctorNotes</textarea>
+                                </div>
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Save Notes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Add Milestone Modal -->
+                <div class="modal fade" id="addMilestoneModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:12px;">
+                            <form method="post" asp-page-handler="CreateGoalDetail">
+                                <input type="hidden" name="caseId" value="@c.Id" />
+                                <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
+                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
+                                        <i class="bi bi-list-check text-teal me-1" style="color:#0d9488;"></i>Add Milestone
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" style="padding:1.25rem;">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Milestone Title <span class="text-danger">*</span></label>
+                                        <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Practice relaxation techniques" required style="border-radius:6px;" />
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Estimated Sessions</label>
+                                            <input type="number" min="1" name="estimatedSessions" class="form-control form-control-sm" placeholder="e.g. 2" style="border-radius:6px;" />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Order Index</label>
+                                            <input type="number" min="0" name="orderIndex" class="form-control form-control-sm" value="@(activeGoal.Details.Count + 1)" style="border-radius:6px;" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Description (Optional)</label>
+                                        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Specific actionable criteria..." style="border-radius:6px;"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Add Milestone</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Add Success Criteria Modal -->
+                <div class="modal fade" id="addCriteriaModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:12px;">
+                            <form method="post" asp-page-handler="CreateSuccessCriteria">
+                                <input type="hidden" name="caseId" value="@c.Id" />
+                                <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
+                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
+                                        <i class="bi bi-check2-square text-teal me-1" style="color:#0d9488;"></i>Add Success Criteria
+                                    </h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" style="padding:1.25rem;">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Criterion Type</label>
+                                        <select name="criteriaType" class="form-select form-select-sm" style="border-radius:6px;">
+                                            <option value="0">Measurement Score / Value</option>
+                                            <option value="1">Homework Completion</option>
+                                            <option value="2">Attendance Rate (%)</option>
+                                            <option value="3">Doctor Approval</option>
+                                            <option value="4">Assessment Score</option>
+                                            <option value="99">Custom</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Condition</label>
+                                            <select name="operatorType" class="form-select form-select-sm" style="border-radius:6px;">
+                                                <option value="3">&lt;= (at most)</option>
+                                                <option value="1">&gt;= (at least)</option>
+                                                <option value="4">= (exact)</option>
+                                                <option value="0">&gt; (greater)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Value</label>
+                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3" required style="border-radius:6px;" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Description</label>
+                                        <input type="text" name="description" class="form-control form-control-sm" placeholder="e.g. Anxiety score <= 3/10" style="border-radius:6px;" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Add Criteria</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
         }
 
         <!-- ── TAB 4: ACTIVITIES ── -->
@@ -1098,3 +1625,132 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('goalTrendCanvas');
+        if (ctx) {
+            @{
+                var activeGoalForScript = (Guid.TryParse(Request.Query["goalId"], out var sGid) ? Model.Goals.FirstOrDefault(g => g.Id == sGid) : null)
+                                         ?? Model.Goals.OrderBy(x => x.OrderIndex).FirstOrDefault();
+                var historyForScript = activeGoalForScript?.ProgressHistory.OrderBy(p => p.RecordedAt).ToList() ?? new();
+                var sLabels = new List<string>();
+                var sData = new List<decimal>();
+                int sNum = 1;
+                foreach (var ph in historyForScript)
+                {
+                    var linked = ph.TreatmentSessionId.HasValue ? Model.Sessions.FirstOrDefault(s => s.Id == ph.TreatmentSessionId) : null;
+                    sLabels.Add(linked != null ? $"S{linked.SessionNumber}" : $"S{sNum}");
+                    sData.Add(ph.CurrentValue ?? (decimal)ph.ProgressPercent);
+                    sNum++;
+                }
+                if (!sLabels.Any() && activeGoalForScript?.CurrentValue != null)
+                {
+                    sLabels.Add("S1");
+                    sData.Add(activeGoalForScript.CurrentValue.Value);
+                }
+                var targetThreshold = activeGoalForScript?.TargetValue ?? 3;
+            }
+
+            const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(sLabels));
+            const dataPoints = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(sData));
+            const targetVal = @targetThreshold;
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['S1'],
+                    datasets: [
+                        {
+                            label: 'Session Score',
+                            data: dataPoints.length ? dataPoints : [8],
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13, 148, 136, 0.08)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#0d9488',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Target Threshold',
+                            data: (labels.length ? labels : ['S1']).map(() => targetVal),
+                            borderColor: '#ef4444',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.datasetIndex === 0 
+                                        ? `Score: ${context.parsed.y}/10` 
+                                        : `Target: ${context.parsed.y}/10`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 10,
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                stepSize: 2,
+                                font: { size: 11 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    function calculateProgressFromInput() {
+        const valInput = document.getElementById('recordCurrentValue');
+        const progInput = document.getElementById('recordProgressPercent');
+        const progPreview = document.getElementById('calculatedProgressPreview');
+        if (!valInput || !progInput) return;
+
+        const cur = parseFloat(valInput.value);
+        @{
+            var activeGoalJs = (Guid.TryParse(Request.Query["goalId"], out var jsGid) ? Model.Goals.FirstOrDefault(g => g.Id == jsGid) : null)
+                               ?? Model.Goals.OrderBy(x => x.OrderIndex).FirstOrDefault();
+            var bJs = activeGoalJs?.ProgressHistory.OrderBy(p => p.RecordedAt).FirstOrDefault()?.CurrentValue ?? activeGoalJs?.CurrentValue ?? (activeGoalJs?.TargetValue.HasValue == true ? activeGoalJs.TargetValue.Value + 5 : 8);
+            var tJs = activeGoalJs?.TargetValue ?? 3;
+        }
+        const baseline = @bJs;
+        const target = @tJs;
+
+        if (!isNaN(cur)) {
+            let pct = 0;
+            if (baseline !== target) {
+                if (baseline > target) {
+                    pct = ((baseline - cur) / (baseline - target)) * 100;
+                } else {
+                    pct = ((cur - baseline) / (target - baseline)) * 100;
+                }
+            }
+            pct = Math.round(Math.min(100, Math.max(0, pct)));
+            progInput.value = pct;
+            if (progPreview) progPreview.innerText = pct + '%';
+        }
+    }
+</script>
+}

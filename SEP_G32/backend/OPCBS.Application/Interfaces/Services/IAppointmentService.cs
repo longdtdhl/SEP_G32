@@ -1,4 +1,5 @@
 using OPCBS.Application.DTOs.Appointments;
+using OPCBS.Domain.Enums;
 using OPCBS.Shared.Models;
 
 namespace OPCBS.Application.Interfaces.Services;
@@ -26,6 +27,7 @@ public interface IAppointmentService
     Task<ApiResponse> RejectAppointmentAsync(Guid appointmentId, Guid doctorUserId, RejectAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> StartAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> CompleteAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
+    Task<ApiResponse> UpdateConsultationModeAsync(Guid appointmentId, Guid doctorUserId, ConsultationMode mode, CancellationToken ct = default);
     Task<ApiResponse> ConfirmCompletionAsync(Guid appointmentId, Guid patientUserId, CancellationToken ct = default);
     Task<ApiResponse> ConfirmGuestCompletionAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
     Task<ApiResponse> DisputeCompletionAsync(Guid appointmentId, Guid patientUserId, DisputeCompletionDto dto, CancellationToken ct = default);

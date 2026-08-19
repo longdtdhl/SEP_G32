@@ -56,13 +56,72 @@ public class PatientRecordService : IPatientRecordService
     private async Task EnrichPatientRecordDtosAsync(List<PatientRecordDto> dtos, CancellationToken ct)
     {
         if (!dtos.Any()) return;
-        var allPatients = await _patientRepo.GetAllAsync(ct);
-        var usersById = (await _userRepo.GetAllAsync(ct)).ToDictionary(user => user.Id);
+        var allPatients = (await _patientRepo.GetAllAsync(ct)).ToList();
+        var allUsers = (await _userRepo.GetAllAsync(ct)).ToList();
+        var usersById = allUsers.ToDictionary(user => user.Id);
 
         foreach (var dto in dtos)
         {
             if (!dto.PatientId.HasValue)
+            {
+                var matchedUser = allUsers.FirstOrDefault(u =>
+                    (!string.IsNullOrWhiteSpace(dto.GuestEmail) && string.Equals(u.Email, dto.GuestEmail, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(dto.GuestPhone) && string.Equals(u.PhoneNumber, dto.GuestPhone, StringComparison.OrdinalIgnoreCase))
+                );
+
+                if (matchedUser != null)
+                {
+                    var matchedPatient = allPatients.FirstOrDefault(p => p.UserId == matchedUser.Id || p.Id == matchedUser.Id);
+                    if (matchedPatient != null)
+                    {
+                        dto.PatientId = matchedPatient.UserId;
+                    }
+                }
+            }
+
+            if (!dto.PatientId.HasValue)
+            {
+                // Fallback extraction from GeneralNotes for legacy records
+                if (dto.GuestDateOfBirth == null && !string.IsNullOrWhiteSpace(dto.GeneralNotes))
+                {
+                    var dobMatch = System.Text.RegularExpressions.Regex.Match(dto.GeneralNotes, @"Ngày sinh:\s*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})");
+                    if (dobMatch.Success && DateTime.TryParseExact(dobMatch.Groups[1].Value, new[] { "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy" }, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDob))
+                    {
+                        dto.GuestDateOfBirth = parsedDob;
+                    }
+                    else
+                    {
+                        var ageMatch = System.Text.RegularExpressions.Regex.Match(dto.GeneralNotes, @"Tuổi:\s*([0-9]{1,3})");
+                        if (ageMatch.Success && int.TryParse(ageMatch.Groups[1].Value, out var parsedAge) && parsedAge > 0 && parsedAge < 130)
+                        {
+                            dto.GuestDateOfBirth = new DateTime(DateTime.UtcNow.Year - parsedAge, 1, 1);
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.GuestAddress) && !string.IsNullOrWhiteSpace(dto.GeneralNotes))
+                {
+                    var addrMatch = System.Text.RegularExpressions.Regex.Match(dto.GeneralNotes, @"Địa chỉ:\s*([^\|]+)");
+                    if (addrMatch.Success)
+                    {
+                        dto.GuestAddress = addrMatch.Groups[1].Value.Trim();
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.GuestGender) && !string.IsNullOrWhiteSpace(dto.GeneralNotes))
+                {
+                    var genderMatch = System.Text.RegularExpressions.Regex.Match(dto.GeneralNotes, @"Giới tính:\s*([^\|]+)");
+                    if (genderMatch.Success)
+                    {
+                        dto.GuestGender = genderMatch.Groups[1].Value.Trim();
+                    }
+                }
+
+                dto.DateOfBirth ??= dto.GuestDateOfBirth;
+                dto.Gender ??= dto.GuestGender;
+                dto.Address ??= dto.GuestAddress;
                 continue;
+            }
 
             var patient = allPatients.FirstOrDefault(p => p.Id == dto.PatientId.Value || p.UserId == dto.PatientId.Value);
             if (patient != null)
@@ -274,6 +333,26 @@ public class PatientRecordService : IPatientRecordService
         return list[0];
     }
 
+    private static string? FormatGeneralNotesWithGuestDemographics(string? rawNotes, DateTime? dob, string? gender, string? address)
+    {
+        var parts = new List<string>();
+        if (dob.HasValue) parts.Add($"Ngày sinh: {dob.Value:dd/MM/yyyy}");
+        if (!string.IsNullOrWhiteSpace(gender)) parts.Add($"Giới tính: {gender.Trim()}");
+        if (!string.IsNullOrWhiteSpace(address)) parts.Add($"Địa chỉ: {address.Trim()}");
+
+        if (!string.IsNullOrWhiteSpace(rawNotes))
+        {
+            var cleaned = rawNotes;
+            if (dob.HasValue) cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"Ngày sinh:\s*[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4}\s*(\|)?", "").Trim();
+            if (!string.IsNullOrWhiteSpace(gender)) cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"Giới tính:\s*[^\|]+\s*(\|)?", "").Trim();
+            if (!string.IsNullOrWhiteSpace(address)) cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"Địa chỉ:\s*[^\|]+\s*(\|)?", "").Trim();
+            cleaned = cleaned.Trim(' ', '|');
+            if (!string.IsNullOrWhiteSpace(cleaned)) parts.Add(cleaned);
+        }
+
+        return parts.Count > 0 ? string.Join(" | ", parts) : null;
+    }
+
     public async Task<ApiResponse> CreateAsync(Guid doctorUserId, CreatePatientRecordDto dto, CancellationToken ct = default)
     {
         try
@@ -296,6 +375,8 @@ public class PatientRecordService : IPatientRecordService
                 }
             }
 
+            var mergedNotes = FormatGeneralNotesWithGuestDemographics(dto.GeneralNotes, dto.GuestDateOfBirth, dto.GuestGender, dto.GuestAddress);
+
             var entity = new PatientRecord
             {
                 DoctorId = doctorProfile.Id,
@@ -304,10 +385,13 @@ public class PatientRecordService : IPatientRecordService
                 GuestName = dto.GuestName,
                 GuestPhone = dto.GuestPhone,
                 GuestEmail = dto.GuestEmail,
+                GuestDateOfBirth = dto.GuestDateOfBirth,
+                GuestGender = dto.GuestGender,
+                GuestAddress = dto.GuestAddress,
                 PsychologicalHistory = dto.PsychologicalHistory,
                 CurrentSymptoms = dto.CurrentSymptoms,
                 StressFactors = dto.StressFactors,
-                GeneralNotes = dto.GeneralNotes,
+                GeneralNotes = mergedNotes,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -321,6 +405,65 @@ public class PatientRecordService : IPatientRecordService
         }
     }
 
+    public async Task<ApiResponse> CreateBatchAsync(Guid doctorUserId, List<CreatePatientRecordDto> dtos, CancellationToken ct = default)
+    {
+        try
+        {
+            if (dtos == null || dtos.Count == 0)
+            {
+                return ApiResponse.ErrorResponse("No patient records provided for import.");
+            }
+
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doctorProfile = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+            if (doctorProfile == null)
+            {
+                return ApiResponse.ErrorResponse("Doctor profile not found.");
+            }
+
+            var entities = new List<PatientRecord>();
+            foreach (var dto in dtos)
+            {
+                if (string.IsNullOrWhiteSpace(dto.GuestName))
+                    continue;
+
+                var mergedNotes = FormatGeneralNotesWithGuestDemographics(dto.GeneralNotes, dto.GuestDateOfBirth, dto.GuestGender, dto.GuestAddress);
+
+                var entity = new PatientRecord
+                {
+                    DoctorId = doctorProfile.Id,
+                    Doctor = doctorProfile,
+                    PatientId = dto.PatientId,
+                    GuestName = dto.GuestName.Trim(),
+                    GuestPhone = dto.GuestPhone?.Trim(),
+                    GuestEmail = dto.GuestEmail?.Trim(),
+                    GuestDateOfBirth = dto.GuestDateOfBirth,
+                    GuestGender = dto.GuestGender?.Trim(),
+                    GuestAddress = dto.GuestAddress?.Trim(),
+                    PsychologicalHistory = dto.PsychologicalHistory?.Trim(),
+                    CurrentSymptoms = dto.CurrentSymptoms?.Trim(),
+                    StressFactors = dto.StressFactors?.Trim(),
+                    GeneralNotes = mergedNotes?.Trim(),
+                    CreatedAt = DateTime.UtcNow
+                };
+                entities.Add(entity);
+            }
+
+            if (entities.Count == 0)
+            {
+                return ApiResponse.ErrorResponse("No valid patient records found in import list.");
+            }
+
+            await _repo.AddRangeAsync(entities, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return ApiResponse.SuccessResponse($"Successfully imported {entities.Count} patient record(s).");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse.ErrorResponse($"Failed to batch import patient records: {ex.Message}");
+        }
+    }
+
     public async Task<ApiResponse> UpdateAsync(Guid id, UpdatePatientRecordDto dto, CancellationToken ct = default)
     {
         try
@@ -331,13 +474,18 @@ public class PatientRecordService : IPatientRecordService
                 return ApiResponse.ErrorResponse("Patient record not found");
             }
 
+            var mergedNotes = FormatGeneralNotesWithGuestDemographics(dto.GeneralNotes ?? entity.GeneralNotes, dto.GuestDateOfBirth ?? entity.GuestDateOfBirth, dto.GuestGender ?? entity.GuestGender, dto.GuestAddress ?? entity.GuestAddress);
+
             entity.GuestName = dto.GuestName ?? entity.GuestName;
             entity.GuestPhone = dto.GuestPhone ?? entity.GuestPhone;
             entity.GuestEmail = dto.GuestEmail ?? entity.GuestEmail;
+            entity.GuestDateOfBirth = dto.GuestDateOfBirth ?? entity.GuestDateOfBirth;
+            entity.GuestGender = dto.GuestGender ?? entity.GuestGender;
+            entity.GuestAddress = dto.GuestAddress ?? entity.GuestAddress;
             entity.PsychologicalHistory = dto.PsychologicalHistory;
             entity.CurrentSymptoms = dto.CurrentSymptoms;
             entity.StressFactors = dto.StressFactors;
-            entity.GeneralNotes = dto.GeneralNotes;
+            entity.GeneralNotes = mergedNotes;
 
             _repo.Update(entity);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -346,6 +494,38 @@ public class PatientRecordService : IPatientRecordService
         catch (Exception ex)
         {
             return ApiResponse.ErrorResponse($"Failed to update patient record: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResponse> DeleteAsync(Guid doctorUserId, Guid id, CancellationToken ct = default)
+    {
+        try
+        {
+            var doctorProfile = await ResolveDoctorProfileAsync(doctorUserId, ct);
+            if (doctorProfile == null)
+            {
+                return ApiResponse.ErrorResponse("Doctor profile not found.");
+            }
+
+            var entity = await _repo.GetByIdAsync(id, ct);
+            if (entity == null || entity.IsDeleted)
+            {
+                return ApiResponse.ErrorResponse("Patient record not found.");
+            }
+
+            if (entity.DoctorId != doctorProfile.Id)
+            {
+                return ApiResponse.ErrorResponse("You are not authorized to delete this patient record.");
+            }
+
+            entity.IsDeleted = true;
+            _repo.Update(entity);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return ApiResponse.SuccessResponse("Patient record deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse.ErrorResponse($"Failed to delete patient record: {ex.Message}");
         }
     }
 

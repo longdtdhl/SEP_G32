@@ -100,14 +100,15 @@ public class DoctorRevenueService : IDoctorRevenueService
         // Financial Aggregations
         decimal totalGross = 0;
         decimal totalNet = 0;
-        decimal platformFeeTotal = 0;
-        decimal pendingSettlement = 0;
-        decimal settledEarnings = 0;
+        decimal appointmentRevenue = 0;
+        decimal treatmentPackageRevenue = 0;
+        decimal completedRevenue = 0;
+        decimal projectedRevenue = 0;
+        int appointmentSessionsCount = 0;
+        int packageSessionsCount = 0;
+        int projectedSessionsCount = 0;
         int completedSessions = 0;
         double totalBillableHours = 0;
-
-        const decimal platformFeeRate = 0.10m; // 10% platform fee
-        var settlementCutoffDate = now.AddDays(-14); // Sessions completed older than 14 days are settled
 
         var transactions = new List<DoctorRevenueTransactionDto>();
         var serviceTypeMap = new Dictionary<string, (int count, decimal gross)>();
@@ -118,19 +119,41 @@ public class DoctorRevenueService : IDoctorRevenueService
             var pkg = appt.TreatmentPackageId.HasValue && allPackages.TryGetValue(appt.TreatmentPackageId.Value, out var p) ? p : null;
 
             var apptDate = slot != null ? slot.SlotDate.ToDateTime(slot.StartTime) : appt.CreatedAt;
-            decimal slotPrice = slot?.Price ?? (doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m);
+            
+            // Calculate session duration in hours
+            double durationHours = 1.0;
+            if (slot != null && slot.EndTime > slot.StartTime)
+            {
+                var span = (slot.EndTime - slot.StartTime).TotalHours;
+                if (span > 0) durationHours = span;
+            }
+
+            // Price snapshot & immutability rule:
+            // 1. If appointment belongs to a Treatment Package, use snapshotted package session price
+            // 2. If slot has an existing snapshotted Price, preserve it (never overwrite past bookings)
+            // 3. Otherwise, compute Hourly Rate * Duration in Hours
+            decimal slotPrice;
             if (pkg != null && pkg.Price > 0 && pkg.SessionQuantity > 0)
             {
                 slotPrice = Math.Round(pkg.Price / pkg.SessionQuantity, 0);
             }
+            else if (slot?.Price != null && slot.Price.Value > 0)
+            {
+                slotPrice = slot.Price.Value;
+            }
+            else
+            {
+                decimal hourlyRate = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
+                slotPrice = Math.Round(hourlyRate * (decimal)durationHours, 0);
+            }
 
-            var feeAmount = Math.Round(slotPrice * platformFeeRate, 0);
-            var netAmount = slotPrice - feeAmount;
+            var netAmount = slotPrice; // 100% Doctor Receives (Gross == Net)
 
             var mode = slot?.ConsultationMode == ConsultationMode.Offline ? "Offline" : "Online";
-            var serviceType = pkg != null
-                ? $"Treatment Package: {pkg.Name}"
-                : (mode == "Offline" ? "In-Clinic Consultation" : "Online Video Consultation");
+            var isPackage = pkg != null || appt.TreatmentPackageId.HasValue;
+            var serviceType = isPackage
+                ? $"Treatment Package: {(pkg != null ? pkg.Name : "Care Program")}"
+                : (mode == "Offline" ? "In-Person Consultation" : "Online Video Consultation");
 
             // Patient Name resolution
             string patientName = "Guest Patient";
@@ -148,26 +171,29 @@ public class DoctorRevenueService : IDoctorRevenueService
                 patientName = appt.GuestName;
             }
 
-            // Settlement Status Calculation
-            string settlementStatus;
+            string statusStr = appt.Status.ToString();
+            string settlementStatus = "Completed";
+
             if (appt.Status == AppointmentStatus.Completed)
             {
                 completedSessions++;
-                totalBillableHours += 1.0; // Standard 1 hr per session
+                totalBillableHours += durationHours;
                 totalGross += slotPrice;
                 totalNet += netAmount;
-                platformFeeTotal += feeAmount;
+                completedRevenue += slotPrice;
 
-                if (apptDate <= settlementCutoffDate)
+                if (isPackage)
                 {
-                    settlementStatus = "Settled";
-                    settledEarnings += netAmount;
+                    packageSessionsCount++;
+                    treatmentPackageRevenue += slotPrice;
                 }
                 else
                 {
-                    settlementStatus = "Pending Settlement";
-                    pendingSettlement += netAmount;
+                    appointmentSessionsCount++;
+                    appointmentRevenue += slotPrice;
                 }
+
+                settlementStatus = "Completed";
 
                 // Add to serviceTypeMap
                 if (!serviceTypeMap.ContainsKey(serviceType))
@@ -177,12 +203,14 @@ public class DoctorRevenueService : IDoctorRevenueService
             }
             else if (appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Rejected)
             {
-                settlementStatus = "Refunded";
+                settlementStatus = "Cancelled";
             }
             else
             {
-                settlementStatus = "Processing";
-                pendingSettlement += netAmount;
+                // Approved, In Progress, Confirmed, etc.
+                projectedSessionsCount++;
+                projectedRevenue += slotPrice;
+                settlementStatus = "Confirmed";
             }
 
             transactions.Add(new DoctorRevenueTransactionDto
@@ -195,18 +223,17 @@ public class DoctorRevenueService : IDoctorRevenueService
                 ServiceType = serviceType,
                 ConsultationMode = mode,
                 GrossAmount = slotPrice,
-                PlatformFeePercentage = 10m,
-                PlatformFeeAmount = feeAmount,
+                PlatformFeePercentage = 0m,
+                PlatformFeeAmount = 0m,
                 NetAmount = netAmount,
-                Status = appt.Status.ToString(),
+                Status = statusStr,
                 SettlementStatus = settlementStatus
             });
         }
 
-        // Timeline Points (Daily aggregation)
+        // Timeline Points (Daily / Multi-day aggregation)
         var timeline = new List<RevenueTimelinePointDto>();
         var dayGroups = transactions
-            .Where(t => t.Status == AppointmentStatus.Completed.ToString())
             .GroupBy(t => t.AppointmentDate.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -219,13 +246,19 @@ public class DoctorRevenueService : IDoctorRevenueService
 
             if (dayGroups.TryGetValue(curDate, out var dayTxList))
             {
+                var compDay = dayTxList.Where(x => x.Status == AppointmentStatus.Completed.ToString()).Sum(x => x.GrossAmount);
+                var projDay = dayTxList.Where(x => x.Status != AppointmentStatus.Completed.ToString() && x.Status != "Cancelled" && x.Status != "Rejected").Sum(x => x.GrossAmount);
+
                 timeline.Add(new RevenueTimelinePointDto
                 {
                     Date = curDate,
                     DateLabel = curDate.ToString("dd/MM", CultureInfo.InvariantCulture),
-                    GrossRevenue = dayTxList.Sum(x => x.GrossAmount),
-                    NetEarnings = dayTxList.Sum(x => x.NetAmount),
-                    SessionsCount = dayTxList.Count
+                    GrossRevenue = compDay,
+                    NetEarnings = compDay,
+                    CompletedAmount = compDay,
+                    ProjectedAmount = projDay,
+                    TotalAmount = compDay + projDay,
+                    SessionsCount = dayTxList.Count(x => x.Status == AppointmentStatus.Completed.ToString())
                 });
             }
             else
@@ -236,6 +269,9 @@ public class DoctorRevenueService : IDoctorRevenueService
                     DateLabel = curDate.ToString("dd/MM", CultureInfo.InvariantCulture),
                     GrossRevenue = 0,
                     NetEarnings = 0,
+                    CompletedAmount = 0,
+                    ProjectedAmount = 0,
+                    TotalAmount = 0,
                     SessionsCount = 0
                 });
             }
@@ -257,7 +293,7 @@ public class DoctorRevenueService : IDoctorRevenueService
                 {
                     SourceName = "Online Video Consultations",
                     GrossAmount = onlineGross,
-                    NetAmount = Math.Round(onlineGross * (1 - platformFeeRate), 0),
+                    NetAmount = onlineGross,
                     SessionCount = count,
                     Percentage = Math.Round((double)(onlineGross / totalGross) * 100, 1)
                 });
@@ -267,9 +303,9 @@ public class DoctorRevenueService : IDoctorRevenueService
                 var count = completedTxs.Count(t => t.ConsultationMode == "Offline" && !t.ServiceType.StartsWith("Treatment Package"));
                 sourceBreakdown.Add(new RevenueSourceBreakdownDto
                 {
-                    SourceName = "In-Clinic Consultations",
+                    SourceName = "In-Person Consultations",
                     GrossAmount = offlineGross,
-                    NetAmount = Math.Round(offlineGross * (1 - platformFeeRate), 0),
+                    NetAmount = offlineGross,
                     SessionCount = count,
                     Percentage = Math.Round((double)(offlineGross / totalGross) * 100, 1)
                 });
@@ -279,9 +315,9 @@ public class DoctorRevenueService : IDoctorRevenueService
                 var count = completedTxs.Count(t => t.ServiceType.StartsWith("Treatment Package"));
                 sourceBreakdown.Add(new RevenueSourceBreakdownDto
                 {
-                    SourceName = "Treatment Care Programs",
+                    SourceName = "Treatment Package Sessions",
                     GrossAmount = pkgGross,
-                    NetAmount = Math.Round(pkgGross * (1 - platformFeeRate), 0),
+                    NetAmount = pkgGross,
                     SessionCount = count,
                     Percentage = Math.Round((double)(pkgGross / totalGross) * 100, 1)
                 });
@@ -298,37 +334,30 @@ public class DoctorRevenueService : IDoctorRevenueService
             PercentageOfTotal = totalGross > 0 ? Math.Round((double)(kvp.Value.gross / totalGross) * 100, 1) : 0
         }).OrderByDescending(s => s.TotalRevenue).Take(5).ToList();
 
-        // Payout Info
-        var nextPayout = now.Day < 15
-            ? new DateTime(now.Year, now.Month, 15, 0, 0, 0, DateTimeKind.Utc)
-            : new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month), 0, 0, 0, DateTimeKind.Utc);
-
         var avgPerSession = completedSessions > 0 ? Math.Round(totalGross / completedSessions, 0) : (doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m);
 
         var overview = new DoctorRevenueOverviewDto
         {
             TotalGrossRevenue = totalGross,
             TotalNetEarnings = totalNet,
-            PlatformFeeDeducted = platformFeeTotal,
-            PendingSettlement = pendingSettlement,
-            SettledEarnings = settledEarnings,
+            PlatformFeeDeducted = 0m,
+            PendingSettlement = 0m,
+            SettledEarnings = totalNet,
+            AppointmentRevenue = appointmentRevenue,
+            TreatmentPackageRevenue = treatmentPackageRevenue,
+            CompletedRevenue = completedRevenue,
+            ProjectedRevenue = projectedRevenue,
+            AppointmentSessionsCount = appointmentSessionsCount,
+            PackageSessionsCount = packageSessionsCount,
+            ProjectedSessionsCount = projectedSessionsCount,
             CompletedSessionsCount = completedSessions,
             TotalBillableHours = totalBillableHours,
             AverageRevenuePerSession = avgPerSession,
-            MonthlyGrowthRate = 12.5, // 12.5% MoM growth benchmark
+            MonthlyGrowthRate = 14.5,
             Timeline = timeline,
             SourceBreakdown = sourceBreakdown,
             TopServices = topServices,
-            RecentTransactions = transactions.Take(50).ToList(),
-            PayoutInfo = new DoctorPayoutInfoDto
-            {
-                BankName = "Vietcombank (Joint Stock Commercial Bank for Foreign Trade)",
-                BankAccountNumber = "**** **** 8829",
-                BankAccountHolder = doctorUser?.FullName?.ToUpperInvariant() ?? "DR. CLINICAL PRACTITIONER",
-                NextPayoutDate = nextPayout,
-                PayoutCycle = "Bi-weekly (15th & 30th of each month)",
-                MinimumPayoutThreshold = 500000m
-            }
+            RecentTransactions = transactions.Take(100).ToList()
         };
 
         return ApiResponse<DoctorRevenueOverviewDto>.SuccessResponse(overview);

@@ -1,3 +1,4 @@
+using OPCBS.Domain.Enums;
 using OPCBS.Web.Constants;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Helpers;
@@ -66,6 +67,9 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
 
     public async Task<(bool Success, string? Error)> CompleteAsync(Guid id)
         => await PutAsync($"{ApiRoutes.Appointments}/complete/{id}");
+
+    public async Task<(bool Success, string? Error)> UpdateConsultationModeAsync(Guid id, ConsultationMode mode)
+        => await PutAsync($"{ApiRoutes.Appointments}/{id}/consultation-mode", new UpdateConsultationModeDto { ConsultationMode = mode });
 
     public async Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
     {

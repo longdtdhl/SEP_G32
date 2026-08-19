@@ -299,6 +299,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Session</th>
+                                    <th>Type</th>
                                     <th>Date & Time</th>
                                     <th>Summary</th>
                                     <th>Status</th>
@@ -308,6 +309,7 @@
                             <tbody>
                                 @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
                                 {
+                                    var isOff = s.IsOffline;
                                     <tr>
                                         <td class="fw-bold text-muted">@s.SessionNumber</td>
                                         <td>
@@ -315,6 +317,20 @@
                                             @if (!string.IsNullOrEmpty(s.BookingCode))
                                             {
                                                 <br /><small class="text-muted"><i class="bi bi-ticket-perforated me-1"></i>@s.BookingCode</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isOff)
+                                            {
+                                                <span class="badge rounded-pill px-2.5 py-1" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:600;">
+                                                    <i class="bi bi-geo-alt-fill me-1"></i>Offline
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge rounded-pill px-2.5 py-1" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:600;">
+                                                    <i class="bi bi-camera-video-fill me-1"></i>Online
+                                                </span>
                                             }
                                         </td>
                                         <td class="small">

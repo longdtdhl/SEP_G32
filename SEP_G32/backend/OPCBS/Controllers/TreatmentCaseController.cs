@@ -208,6 +208,15 @@ public class TreatmentCaseController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>DELETE /api/v1/treatment-cases/goals/{id} - Delete goal (Doctor only)</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpDelete("goals/{id:guid}")]
+    public async Task<IActionResult> DeleteGoal(Guid id)
+    {
+        var result = await _caseService.DeleteGoalAsync(id, GetCurrentUserId());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>GET /api/v1/treatment-cases/{caseId}/goals - Get all goals for a case</summary>
     [HttpGet("{caseId:guid}/goals")]
     public async Task<IActionResult> GetGoals(Guid caseId)

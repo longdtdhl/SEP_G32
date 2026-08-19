@@ -20,6 +20,8 @@ public class DetailsModel : PageModel
     private readonly ITreatmentCaseApiService _caseApi;
     private readonly IAppointmentApiService _appointmentApi;
     private readonly IPsychometricApiService _psychoApi;
+    private readonly ITherapyApiService _therapyApi;
+    private readonly IDoctorApiService? _doctorService;
 
     public DetailsModel(
         IPatientRecordApiService patientService,
@@ -27,7 +29,9 @@ public class DetailsModel : PageModel
         ITreatmentPackageApiService pkgService,
         ITreatmentCaseApiService caseApi,
         IAppointmentApiService appointmentApi,
-        IPsychometricApiService psychoApi)
+        IPsychometricApiService psychoApi,
+        ITherapyApiService therapyApi,
+        IDoctorApiService? doctorService = null)
     {
         _patientService = patientService;
         _noteService = noteService;
@@ -35,6 +39,8 @@ public class DetailsModel : PageModel
         _caseApi = caseApi;
         _appointmentApi = appointmentApi;
         _psychoApi = psychoApi;
+        _therapyApi = therapyApi;
+        _doctorService = doctorService;
     }
 
     public PatientRecordDto PatientRecord { get; set; } = default!;
@@ -106,9 +112,11 @@ public class DetailsModel : PageModel
         PatientRecord = recordResult.Data;
         var resolvedRecordId = PatientRecord.Id;
 
-        if (PatientRecord.PatientId.HasValue)
+        var patientGuid = PatientRecord.PatientId;
+
+        if (patientGuid.HasValue || targetId.HasValue)
         {
-            var patientGuid = PatientRecord.PatientId.Value;
+            var targetPatientId = patientGuid ?? targetId!.Value;
 
             // 1. Fetch Appointments for this patient
             try
@@ -117,7 +125,9 @@ public class DetailsModel : PageModel
                 if (allAppts != null)
                 {
                     PatientAppointments = allAppts
-                        .Where(a => a.PatientId == patientGuid || a.PatientId == targetId)
+                        .Where(a => (patientGuid.HasValue && a.PatientId == patientGuid.Value) ||
+                                    a.PatientId == targetId ||
+                                    (!string.IsNullOrWhiteSpace(PatientRecord.ResolvedDisplayName) && string.Equals(a.PatientName, PatientRecord.ResolvedDisplayName, StringComparison.OrdinalIgnoreCase)))
                         .OrderByDescending(a => a.StartAt)
                         .ToList();
 
@@ -137,7 +147,13 @@ public class DetailsModel : PageModel
                 var (pkgs, _, _) = await _pkgService.GetAllAsync(1, 200);
                 if (pkgs != null)
                 {
-                    var patientPackages = pkgs.Where(p => p.PatientId == patientGuid).ToList();
+                    var patientPackages = pkgs.Where(p =>
+                        (patientGuid.HasValue && p.PatientId == patientGuid.Value) ||
+                        p.PatientId == targetId ||
+                        p.PatientId == resolvedRecordId ||
+                        (!string.IsNullOrWhiteSpace(PatientRecord.ResolvedDisplayName) && string.Equals(p.PatientName, PatientRecord.ResolvedDisplayName, StringComparison.OrdinalIgnoreCase))
+                    ).ToList();
+
                     TreatmentPackages = patientPackages
                         .Where(p => p.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending")
                         .ToList();
@@ -152,14 +168,16 @@ public class DetailsModel : PageModel
             }
             catch { }
 
-            // 3. Fetch Treatment Cases (strictly by PatientId Guid or PatientRecord.UserId)
+            // 3. Fetch Treatment Cases
             try
             {
                 var (allCases, _) = await _caseApi.GetMyDoctorCasesAsync();
                 if (allCases != null)
                 {
                     PatientCases = allCases
-                        .Where(c => c.PatientId == patientGuid)
+                        .Where(c => (patientGuid.HasValue && (c.PatientId == patientGuid.Value || c.PatientId == targetId)) ||
+                                    c.PatientId == resolvedRecordId ||
+                                    (!string.IsNullOrWhiteSpace(PatientRecord.ResolvedDisplayName) && string.Equals(c.PatientName, PatientRecord.ResolvedDisplayName, StringComparison.OrdinalIgnoreCase)))
                         .ToList();
 
                     var allGoals = new List<TreatmentGoalWebDto>();
@@ -168,28 +186,31 @@ public class DetailsModel : PageModel
                     var allFiles = new List<TreatmentCaseFileWebDto>();
                     var allSubmissions = new List<PsychometricSubmissionDto>();
 
-                    var caseData = await Task.WhenAll(PatientCases.Select(async tc =>
+                    if (PatientCases.Any())
                     {
-                        var riskTask = _caseApi.GetCaseRiskAsync(tc.Id);
-                        var goalsTask = _caseApi.GetGoalsAsync(tc.Id);
-                        var moodTask = _caseApi.GetMoodEntriesAsync(tc.Id);
-                        var homeworkTask = _caseApi.GetHomeworkAsync(tc.Id);
-                        var filesTask = _caseApi.GetPatientFilesAsync(tc.Id);
-                        var submissionsTask = _psychoApi.GetSubmissionsByCaseAsync(tc.Id);
+                        var caseData = await Task.WhenAll(PatientCases.Select(async tc =>
+                        {
+                            var riskTask = _caseApi.GetCaseRiskAsync(tc.Id);
+                            var goalsTask = _caseApi.GetGoalsAsync(tc.Id);
+                            var moodTask = _caseApi.GetMoodEntriesAsync(tc.Id);
+                            var homeworkTask = _caseApi.GetHomeworkAsync(tc.Id);
+                            var filesTask = _caseApi.GetPatientFilesAsync(tc.Id);
+                            var submissionsTask = _psychoApi.GetSubmissionsByCaseAsync(tc.Id);
 
-                        await Task.WhenAll(riskTask, goalsTask, moodTask, homeworkTask, filesTask, submissionsTask);
-                        return (CaseId: tc.Id, Risk: await riskTask, Goals: await goalsTask, Mood: await moodTask,
-                            Homework: await homeworkTask, Files: await filesTask, Submissions: await submissionsTask);
-                    }));
+                            await Task.WhenAll(riskTask, goalsTask, moodTask, homeworkTask, filesTask, submissionsTask);
+                            return (CaseId: tc.Id, Risk: await riskTask, Goals: await goalsTask, Mood: await moodTask,
+                                Homework: await homeworkTask, Files: await filesTask, Submissions: await submissionsTask);
+                        }));
 
-                    foreach (var data in caseData)
-                    {
-                        if (data.Risk.Data != null) CaseRisks[data.CaseId] = data.Risk.Data;
-                        allGoals.AddRange(data.Goals.Data);
-                        allMood.AddRange(data.Mood.Data);
-                        allHomework.AddRange(data.Homework.Data);
-                        allFiles.AddRange(data.Files.Data);
-                        allSubmissions.AddRange(data.Submissions.Data);
+                        foreach (var data in caseData)
+                        {
+                            if (data.Risk.Data != null) CaseRisks[data.CaseId] = data.Risk.Data;
+                            allGoals.AddRange(data.Goals.Data);
+                            allMood.AddRange(data.Mood.Data);
+                            allHomework.AddRange(data.Homework.Data);
+                            allFiles.AddRange(data.Files.Data);
+                            allSubmissions.AddRange(data.Submissions.Data);
+                        }
                     }
 
                     ActiveGoals = allGoals
@@ -217,6 +238,48 @@ public class DetailsModel : PageModel
                 }
             }
             catch { }
+
+            // Standalone Psychometric Submissions & Mood Journals fallback
+            if (!PsychoSubmissions.Any() && patientGuid.HasValue)
+            {
+                try
+                {
+                    var (allSubs, _) = await _psychoApi.GetAllSubmissionsAsync();
+                    if (allSubs != null && allSubs.Any())
+                    {
+                        PsychoSubmissions = allSubs
+                            .Where(s => s.PatientId == patientGuid.Value || s.PatientId == targetId ||
+                                        (!string.IsNullOrWhiteSpace(PatientRecord.ResolvedDisplayName) && string.Equals(s.PatientName, PatientRecord.ResolvedDisplayName, StringComparison.OrdinalIgnoreCase)))
+                            .OrderByDescending(s => s.SubmittedAt)
+                            .ToList();
+                    }
+                }
+                catch { }
+            }
+
+            if (!RecentMoodEntries.Any() && patientGuid.HasValue)
+            {
+                try
+                {
+                    var (journals, _) = await _therapyApi.GetPatientSharedJournalsAsync(patientGuid.Value);
+                    if (journals != null && journals.Any())
+                    {
+                        RecentMoodEntries = journals.Select(j => new MoodEntryWebDto
+                        {
+                            Id = j.Id,
+                            PatientId = j.PatientId,
+                            MoodScore = Math.Clamp(j.MoodScale > 0 ? j.MoodScale * 2 : 6, 1, 10),
+                            StressScore = j.StressScale > 0 ? j.StressScale * 2 : null,
+                            Note = !string.IsNullOrWhiteSpace(j.Title) ? $"{j.Title}: {j.Content}" : j.Content,
+                            RecordedAt = j.CreatedAt
+                        })
+                        .OrderByDescending(m => m.RecordedAt)
+                        .Take(30)
+                        .ToList();
+                    }
+                }
+                catch { }
+            }
         }
 
         // Fetch Consultation Notes with multi-tiered resolution
@@ -324,5 +387,59 @@ public class DetailsModel : PageModel
         }
 
         return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnGetExportPdfAsync(Guid id)
+    {
+        var pageResult = await OnGetAsync(id, "clinical");
+        if (PatientRecord == null)
+        {
+            TempData["ErrorMessage"] = "Cannot generate PDF: Patient record not found.";
+            return RedirectToPage("./Index");
+        }
+
+        DoctorDto? doctorProfile = null;
+        if (_doctorService != null)
+        {
+            try
+            {
+                var (doc, _) = await _doctorService.GetMyProfileAsync();
+                doctorProfile = doc;
+            }
+            catch { }
+        }
+
+        try
+        {
+            var pdfBytes = OPCBS.Web.Helpers.PatientClinicalPdfGenerator.GeneratePatientClinicalReport(
+                PatientRecord,
+                doctorProfile,
+                ConsultationNotes,
+                PatientCases,
+                ActiveGoals);
+
+            var safeName = string.Join("_", (PatientRecord.ResolvedDisplayName ?? "Patient").Split(System.IO.Path.GetInvalidFileNameChars()));
+            var fileName = $"Clinical_Record_{safeName}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Failed to generate PDF: {ex.Message}";
+            return RedirectToPage(new { id });
+        }
+    }
+
+    public async Task<IActionResult> OnPostDeleteGuestPatientAsync(Guid id)
+    {
+        var (success, error) = await _patientService.DeleteAsync(id);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to delete patient record.";
+            return RedirectToPage(new { id });
+        }
+
+        TempData["SuccessMessage"] = "Guest patient record deleted successfully.";
+        return RedirectToPage("./Index", new { tab = "guest" });
     }
 }

@@ -1,3 +1,5 @@
+using OPCBS.Domain.Enums;
+
 namespace OPCBS.Application.DTOs.TreatmentCase;
 
 // ==================== TreatmentCase DTOs ====================
@@ -144,6 +146,8 @@ public class GenerateScheduleDto
     public int? TotalWeeks { get; set; }
     /// <summary>Sessions per week</summary>
     public int SessionsPerWeek { get; set; } = 1;
+    /// <summary>Consultation mode for generated sessions (Online / Offline)</summary>
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
     /// <summary>If true, clears future uncompleted sessions before generating</summary>
     public bool ClearExistingFutureSessions { get; set; } = false;
 }
@@ -161,6 +165,9 @@ public class TreatmentSessionDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public string? ConsultationMode { get; set; }
+    public bool IsOnline => string.Equals(ConsultationMode, "Online", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(ConsultationMode);
+    public bool IsOffline => string.Equals(ConsultationMode, "Offline", StringComparison.OrdinalIgnoreCase) || string.Equals(ConsultationMode, "In-Person", StringComparison.OrdinalIgnoreCase);
 
     public string? SessionSummary { get; set; }
     public string? DoctorClinicalAssessment { get; set; }
@@ -205,6 +212,7 @@ public class CreateSessionDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
 }
 
 /// <summary>DTO to update a session</summary>

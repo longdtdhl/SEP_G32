@@ -249,6 +249,17 @@ public class AppointmentsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>PUT /api/v1/appointments/{id}/consultation-mode - Doctor updates consultation mode</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("{appointmentId:guid}/consultation-mode")]
+    public async Task<IActionResult> UpdateConsultationMode(Guid appointmentId, [FromBody] UpdateConsultationModeDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.UpdateConsultationModeAsync(appointmentId, userId.Value, dto.ConsultationMode);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>PUT /api/v1/appointments/approve/{id} - Doctor approves appointment</summary>
     [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPut("approve/{appointmentId:guid}")]

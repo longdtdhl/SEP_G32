@@ -103,47 +103,236 @@
     .pd-empty { text-align: center; padding: 2rem; color: #94a3b8; }
     .pd-empty i { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1; }
     .pd-empty p { font-size: 0.82rem; margin: 0; }
+
+    /* ─── Header Action Icon Toolbar ─── */
+    .pd-actions-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .pd-btn-icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 10px !important;
+        border: 1.5px solid !important;
+        font-size: 1.15rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-decoration: none !important;
+        padding: 0 !important;
+        outline: none !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+        position: relative;
+    }
+    .pd-btn-icon:hover {
+        transform: translateY(-2px);
+    }
+    .pd-btn-icon-msg {
+        background: #f0fdfa !important;
+        color: #0d9488 !important;
+        border-color: #99f6e4 !important;
+    }
+    .pd-btn-icon-msg:hover {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+        border-color: #0d9488 !important;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35) !important;
+    }
+    .pd-btn-icon-account {
+        background: #fffbeb !important;
+        color: #d97706 !important;
+        border-color: #fde68a !important;
+    }
+    .pd-btn-icon-account:hover:not(:disabled) {
+        background: #d97706 !important;
+        color: #ffffff !important;
+        border-color: #d97706 !important;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35) !important;
+    }
+    .pd-btn-icon-account:disabled {
+        opacity: 0.45 !important;
+        cursor: not-allowed !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        color: #94a3b8 !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    .pd-btn-icon-pdf {
+        background: #fff1f2 !important;
+        color: #e11d48 !important;
+        border-color: #fecdd3 !important;
+    }
+    .pd-btn-icon-pdf:hover {
+        background: #e11d48 !important;
+        color: #ffffff !important;
+        border-color: #e11d48 !important;
+        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35) !important;
+    }
+    .pd-btn-icon-edit {
+        background: #f0f9ff !important;
+        color: #0284c7 !important;
+        border-color: #bae6fd !important;
+    }
+    .pd-btn-icon-edit:hover {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35) !important;
+    }
+    .pd-btn-icon-del {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
+        border-color: #fecaca !important;
+    }
+    .pd-btn-icon-del:hover {
+        background: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #dc2626 !important;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
+    }
+    .pd-btn-icon-back {
+        background: #ffffff !important;
+        color: #475569 !important;
+        border-color: #cbd5e1 !important;
+    }
+    .pd-btn-icon-back:hover {
+        background: #334155 !important;
+        color: #ffffff !important;
+        border-color: #334155 !important;
+        box-shadow: 0 4px 12px rgba(51, 65, 85, 0.3) !important;
+    }
+    .pd-action-sep {
+        width: 1px;
+        height: 24px;
+        background: #cbd5e1;
+        margin: 0 2px;
+    }
+
+    /* ─── Compact Colorful Table & Card Action Buttons ─── */
+    .pd-table-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        border: 1px solid transparent !important;
+        font-size: 0.95rem !important;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-decoration: none !important;
+        padding: 0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        cursor: pointer !important;
+    }
+    .pd-table-btn:hover {
+        transform: translateY(-2px);
+    }
+    .pd-table-btn-teal {
+        background: #f0fdfa !important;
+        color: #0d9488 !important;
+        border-color: #ccfbf1 !important;
+    }
+    .pd-table-btn-teal:hover {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+        border-color: #0d9488 !important;
+        box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3) !important;
+    }
+    .pd-table-btn-blue {
+        background: #eff6ff !important;
+        color: #2563eb !important;
+        border-color: #bfdbfe !important;
+    }
+    .pd-table-btn-blue:hover {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3) !important;
+    }
+    .pd-table-btn-amber {
+        background: #fffbeb !important;
+        color: #d97706 !important;
+        border-color: #fde68a !important;
+    }
+    .pd-table-btn-amber:hover {
+        background: #d97706 !important;
+        color: #ffffff !important;
+        border-color: #d97706 !important;
+        box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3) !important;
+    }
+    .pd-table-btn-rose {
+        background: #fff1f2 !important;
+        color: #e11d48 !important;
+        border-color: #fecdd3 !important;
+    }
+    .pd-table-btn-rose:hover {
+        background: #e11d48 !important;
+        color: #ffffff !important;
+        border-color: #e11d48 !important;
+        box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3) !important;
+    }
 </style>
 
 <!-- ══ Page Title ══ -->
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
         <h1 style="font-size:1.3rem; font-weight:800; color:#0f172a; margin:0;">
             <i class="bi bi-person-badge-fill me-2" style="color:#0d9488;"></i>Patient Medical Profile
         </h1>
         <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">Comprehensive clinical record, demographics, consultation history & cases</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="pd-actions-wrap">
         @if (Model.PatientRecord?.PatientId.HasValue == true)
         {
-            <a href="/Doctor/Messages/Index?patientId=@Model.PatientRecord.PatientId" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:7px; font-size:0.8rem; font-weight:600;">
-                <i class="bi bi-chat-dots me-1"></i>Message
+            <a href="/Doctor/Messages/Index?patientId=@Model.PatientRecord.PatientId" class="pd-btn-icon pd-btn-icon-msg" title="Direct Messaging">
+                <i class="bi bi-chat-dots-fill"></i>
             </a>
+            <div class="pd-action-sep"></div>
         }
         else if (Model.PatientRecord?.IsGuest == true)
         {
             var canInviteGuest = !string.IsNullOrWhiteSpace(Model.PatientRecord.ResolvedDisplayEmail)
                 && Model.PatientRecord.ResolvedDisplayEmail.Contains("@")
                 && !string.IsNullOrWhiteSpace(Model.PatientRecord.ResolvedDisplayPhone);
-            <form method="post" asp-page-handler="CreateGuestAccount" asp-route-id="@Model.PatientRecord.Id" class="d-inline"
-                  onsubmit="return confirm('Create a patient account and send a set-password link to this guest email?');">
+            <form method="post" asp-page-handler="CreateGuestAccount" asp-route-id="@Model.PatientRecord.Id" class="d-inline m-0"
+                  onsubmit="return confirm('Create a patient account and send invitation email to @Model.PatientRecord.ResolvedDisplayEmail?');">
                 <button type="submit"
-                        class="btn btn-sm"
-                        style="background:#0d9488; color:white; border-radius:7px; font-size:0.8rem; font-weight:600;"
+                        class="pd-btn-icon pd-btn-icon-account"
                         disabled="@(!canInviteGuest)"
-                        title="@(canInviteGuest ? "Create account and send invitation email" : "Guest email and phone are required before creating an account")">
-                    <i class="bi bi-person-plus me-1"></i>Create Patient Account
+                        title="@(canInviteGuest ? "Create Account & Send Invite" : "Email & Phone required before creating account")">
+                    <i class="bi bi-person-plus-fill"></i>
+                </button>
+            </form>
+            <div class="pd-action-sep"></div>
+        }
+
+        <a asp-page-handler="ExportPdf" asp-route-id="@Model.PatientRecord?.Id" class="pd-btn-icon pd-btn-icon-pdf" title="Export Clinical PDF">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+        </a>
+
+        <a asp-page="./Edit" asp-route-id="@Model.PatientRecord?.Id" class="pd-btn-icon pd-btn-icon-edit" title="Edit Patient Details">
+            <i class="bi bi-pencil-square"></i>
+        </a>
+
+        @if (Model.PatientRecord?.IsGuest == true)
+        {
+            <div class="pd-action-sep"></div>
+            <form method="post" asp-page-handler="DeleteGuestPatient" asp-route-id="@Model.PatientRecord.Id" class="d-inline m-0"
+                  onsubmit="return confirm('Are you sure you want to delete this guest patient record (@Model.PatientRecord.ResolvedDisplayName)? This action cannot be undone.');">
+                <button type="submit" class="pd-btn-icon pd-btn-icon-del" title="Delete Guest Patient">
+                    <i class="bi bi-trash3-fill"></i>
                 </button>
             </form>
         }
-        <a href="/Doctor/Schedules/Index" class="btn btn-sm btn-outline-primary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
-            <i class="bi bi-calendar-plus me-1"></i>Create Appointment
-        </a>
-        <a asp-page="./Edit" asp-route-id="@Model.PatientRecord?.Id" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
-            <i class="bi bi-pencil-square me-1"></i>Edit
-        </a>
-        <a asp-page="./Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
-            <i class="bi bi-arrow-left me-1"></i>Back
+
+        <div class="pd-action-sep"></div>
+        <a asp-page="./Index" class="pd-btn-icon pd-btn-icon-back" title="Back to Patient List">
+            <i class="bi bi-arrow-left"></i>
         </a>
     </div>
 </div>
@@ -281,21 +470,24 @@ else
                 <i class="bi bi-journal-medical me-1"></i>Clinical & Consultations (@Model.ConsultationNotes.Count)
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(Model.ActiveTab == "cases" ? "active" : "")" id="tab-cases" data-bs-toggle="tab" data-bs-target="#pane-cases" type="button" role="tab">
-                <i class="bi bi-folder2-open me-1"></i>Treatment Cases (@Model.PatientCases.Count)
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(Model.ActiveTab == "files" ? "active" : "")" id="tab-files" data-bs-toggle="tab" data-bs-target="#pane-files" type="button" role="tab">
-                <i class="bi bi-paperclip me-1"></i>Patient Files (@Model.PatientFiles.Count)
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(Model.ActiveTab == "mood" ? "active" : "")" id="tab-mood" data-bs-toggle="tab" data-bs-target="#pane-mood" type="button" role="tab">
-                <i class="bi bi-emoji-smile me-1"></i>Mood & Assessments (@Model.PsychoSubmissions.Count)
-            </button>
-        </li>
+        @if (Model.PatientRecord?.IsGuest != true && Model.PatientRecord?.PatientId.HasValue == true)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(Model.ActiveTab == "cases" ? "active" : "")" id="tab-cases" data-bs-toggle="tab" data-bs-target="#pane-cases" type="button" role="tab">
+                    <i class="bi bi-folder2-open me-1"></i>Treatment Cases (@Model.PatientCases.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(Model.ActiveTab == "files" ? "active" : "")" id="tab-files" data-bs-toggle="tab" data-bs-target="#pane-files" type="button" role="tab">
+                    <i class="bi bi-paperclip me-1"></i>Patient Files (@Model.PatientFiles.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(Model.ActiveTab == "mood" ? "active" : "")" id="tab-mood" data-bs-toggle="tab" data-bs-target="#pane-mood" type="button" role="tab">
+                    <i class="bi bi-emoji-smile me-1"></i>Mood & Assessments (@(Model.RecentMoodEntries.Count + Model.PsychoSubmissions.Count))
+                </button>
+            </li>
+        }
     </ul>
 
     <!-- ══ Tab Contents ══ -->
@@ -313,35 +505,35 @@ else
                         <div class="pd-card-body">
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Full Name</div>
-                                <div class="pd-info-val fw-bold">@Model.PatientRecord.ResolvedDisplayName</div>
+                                <div class="pd-info-val fw-bold">@(Model.PatientRecord?.ResolvedDisplayName ?? "N/A")</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Phone</div>
-                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayPhone) ? "N/A" : Model.PatientRecord.ResolvedDisplayPhone)</div>
+                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedDisplayPhone) ? "N/A" : Model.PatientRecord.ResolvedDisplayPhone)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Email</div>
-                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord.ResolvedDisplayEmail) ? "N/A" : Model.PatientRecord.ResolvedDisplayEmail)</div>
+                                <div class="pd-info-val">@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedDisplayEmail) ? "N/A" : Model.PatientRecord.ResolvedDisplayEmail)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Date of Birth</div>
-                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedDateOfBirth?.ToString("MMM dd, yyyy") ?? "Not recorded")</div>
+                                <div class="pd-info-val">@(Model.PatientRecord?.ResolvedDateOfBirth?.ToString("MMM dd, yyyy") ?? "Not recorded")</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Gender</div>
-                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedGender ?? "Not recorded")</div>
+                                <div class="pd-info-val">@(Model.PatientRecord?.ResolvedGender ?? "Not recorded")</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Address</div>
-                                <div class="pd-info-val">@(Model.PatientRecord.ResolvedAddress ?? "Not recorded")</div>
+                                <div class="pd-info-val">@(Model.PatientRecord?.ResolvedAddress ?? "Not recorded")</div>
                             </div>
-                            @if (!string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactName) || !string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactPhone))
+                            @if (!string.IsNullOrWhiteSpace(Model.PatientRecord?.EmergencyContactName) || !string.IsNullOrWhiteSpace(Model.PatientRecord?.EmergencyContactPhone))
                             {
                                 <div class="pd-info-row">
                                     <div class="pd-info-lbl">Emergency Contact</div>
                                     <div class="pd-info-val">
-                                        @(Model.PatientRecord.EmergencyContactName ?? "Not recorded")
-                                        @if (!string.IsNullOrWhiteSpace(Model.PatientRecord.EmergencyContactPhone))
+                                        @(Model.PatientRecord?.EmergencyContactName ?? "Not recorded")
+                                        @if (!string.IsNullOrWhiteSpace(Model.PatientRecord?.EmergencyContactPhone))
                                         {
                                             <span class="text-muted">&middot; @Model.PatientRecord.EmergencyContactPhone</span>
                                         }
@@ -359,19 +551,19 @@ else
                         <div class="pd-card-body">
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Psychological History</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Current Symptoms</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Stress Factors</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Doctor General Notes</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
                             </div>
                         </div>
                     </div>
@@ -379,189 +571,235 @@ else
 
                 <!-- Right Column (Treatment Cases Summary & Recent Consultations) -->
                 <div class="col-lg-7">
-                    <!-- Active Treatment Cases Summary -->
-                    @{ var activeCases = Model.PatientCases.Where(tc => tc.Status == 0).ToList(); }
-                    <div class="pd-card">
-                        <div class="pd-card-head">
-                            <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Active Treatment Cases</h6>
-                            <span class="text-muted" style="font-size:0.75rem;">@activeCases.Count Active Case(s)</span>
-                        </div>
-                        <div class="pd-card-body" style="padding:0;">
-                            @if (activeCases.Any())
-                            {
-                                @foreach (var tc in activeCases)
+                    @if (Model.PatientRecord?.IsGuest != true && Model.PatientRecord?.PatientId.HasValue == true)
+                    {
+                        <!-- Active Treatment Cases Summary -->
+                        var activeCases = Model.PatientCases.Where(tc => tc.Status == 0).ToList();
+                        <div class="pd-card">
+                            <div class="pd-card-head">
+                                <h6 class="pd-card-title"><i class="bi bi-folder2-open me-2" style="color:#0d9488;"></i>Active Treatment Cases</h6>
+                                <span class="text-muted" style="font-size:0.75rem;">@activeCases.Count Active Case(s)</span>
+                            </div>
+                            <div class="pd-card-body" style="padding:0;">
+                                @if (activeCases.Any())
                                 {
-                                    var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
-                                    var activeGoal = Model.ActiveGoals.FirstOrDefault(g => g.TreatmentCaseId == tc.Id);
-                                    var risk = Model.CaseRisks.GetValueOrDefault(tc.Id);
+                                    @foreach (var tc in activeCases)
+                                    {
+                                        var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
+                                        var activeGoal = Model.ActiveGoals.FirstOrDefault(g => g.TreatmentCaseId == tc.Id);
+                                        var risk = Model.CaseRisks.GetValueOrDefault(tc.Id);
 
-                                    <div class="p-3 border-bottom" style="transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
-                                        <div class="d-flex justify-content-between align-items-start mb-1">
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2 mb-1">
-                                                    <span class="pd-badge active">Active</span>
-                                                    @if (risk != null)
-                                                    {
-                                                        <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
-                                                            @if (risk.Level == "High" || risk.Level == "Critical") { <i class="bi bi-exclamation-triangle-fill me-1"></i> }
-                                                            Risk: @risk.Level
-                                                        </span>
-                                                    }
-                                                </div>
-                                                <h6 class="fw-bold text-dark mb-0" style="font-size:0.92rem;">@tc.CaseName</h6>
-                                                <span class="text-muted" style="font-size:0.75rem;">Package: @(tc.PackageNameSnapshot ?? tc.PackageName ?? "—")</span>
-                                            </div>
-                                            <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.75rem; padding:4px 12px;">
-                                                <i class="bi bi-eye me-1"></i>View Case
-                                            </a>
-                                        </div>
-
-                                        <!-- Progress Bar -->
-                                        <div class="mt-2 mb-2">
-                                            <div class="d-flex justify-content-between text-muted mb-1" style="font-size:0.72rem;">
-                                                <span>Sessions: <strong>@tc.CompletedSessions/@tc.TotalSessions</strong></span>
-                                                <span style="color:@pColor; font-weight:700;">@tc.OverallProgressPercent%</span>
-                                            </div>
-                                            <div class="pd-progress-track">
-                                                <div class="pd-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Current Goal & Next Session -->
-                                        <div class="d-flex justify-content-between align-items-center pt-1" style="font-size:0.75rem; color:#64748b;">
-                                            <div>
-                                                <i class="bi bi-flag me-1 text-warning"></i>Current Goal:
-                                                <strong class="text-dark">@(activeGoal != null ? activeGoal.Title : "No active goal")</strong>
-                                            </div>
-                                            @if (Model.NextAppointment != null)
-                                            {
+                                        <div class="p-3 border-bottom" style="transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
                                                 <div>
-                                                    <i class="bi bi-calendar-event me-1 text-primary"></i>Next:
-                                                    <strong class="text-dark">@Model.NextAppointment.StartAt.ToString("MMM dd, HH:mm")</strong>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="pd-badge active">Active</span>
+                                                        @if (risk != null)
+                                                        {
+                                                            <span class="@risk.LevelBadgeClass" style="font-size:0.68rem;">
+                                                                @if (risk.Level == "High" || risk.Level == "Critical") { <i class="bi bi-exclamation-triangle-fill me-1"></i> }
+                                                                Risk: @risk.Level
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    <h6 class="fw-bold text-dark mb-0" style="font-size:0.92rem;">@tc.CaseName</h6>
+                                                    <span class="text-muted" style="font-size:0.75rem;">Package: @(tc.PackageNameSnapshot ?? tc.PackageName ?? "—")</span>
+                                                </div>
+                                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="pd-table-btn pd-table-btn-blue" title="View Treatment Case Details">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
+                                            </div>
+
+                                            <!-- Progress Bar -->
+                                            <div class="mt-2 mb-2">
+                                                <div class="d-flex justify-content-between text-muted mb-1" style="font-size:0.72rem;">
+                                                    <span>Sessions: <strong>@tc.CompletedSessions/@tc.TotalSessions</strong></span>
+                                                    <span style="color:@pColor; font-weight:700;">@tc.OverallProgressPercent%</span>
+                                                </div>
+                                                <div class="pd-progress-track">
+                                                    <div class="pd-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Current Goal & Next Session -->
+                                            <div class="d-flex justify-content-between align-items-center pt-1" style="font-size:0.75rem; color:#64748b;">
+                                                <div>
+                                                    <i class="bi bi-flag me-1 text-warning"></i>Current Goal:
+                                                    <strong class="text-dark">@(activeGoal != null ? activeGoal.Title : "No active goal")</strong>
+                                                </div>
+                                                @if (Model.NextAppointment != null)
+                                                {
+                                                    <div>
+                                                        <i class="bi bi-calendar-event me-1 text-primary"></i>Next:
+                                                        <strong class="text-dark">@Model.NextAppointment.StartAt.ToString("MMM dd, HH:mm")</strong>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="pd-empty" style="padding:2rem;">
+                                        <i class="bi bi-folder-x"></i>
+                                        <p>No active treatment cases for this patient</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Treatment Package Actions -->
+                    @if (Model.PatientRecord?.IsGuest == true || Model.PatientRecord?.PatientId.HasValue != true)
+                    {
+                        <div class="pd-card">
+                            <div class="pd-card-head">
+                                <h6 class="pd-card-title"><i class="bi bi-box-seam me-2" style="color:#0d9488;"></i>Treatment Packages</h6>
+                                <span class="badge bg-warning bg-opacity-10 text-warning px-2.5 py-1" style="font-size:0.72rem; font-weight:600;">Account Required</span>
+                            </div>
+                            <div class="pd-card-body">
+                                <div class="p-3 rounded-3 border" style="background:#fefce8; border-color:#fef08a !important;">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#fef08a; color:#854d0e; font-size:1.1rem;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-1" style="font-size:0.88rem;">Registered Patient Account Required</h6>
+                                            <p class="text-muted mb-2" style="font-size:0.8rem; line-height:1.45;">
+                                                Treatment packages and structured treatment cases can only be assigned to registered patient accounts. Guest patients must create an account first.
+                                            </p>
+                                            @if (!string.IsNullOrWhiteSpace(Model.PatientRecord?.ResolvedDisplayEmail) && Model.PatientRecord.ResolvedDisplayEmail.Contains("@") && !string.IsNullOrWhiteSpace(Model.PatientRecord?.ResolvedDisplayPhone))
+                                            {
+                                                <form method="post" asp-page-handler="CreateGuestAccount" asp-route-id="@Model.PatientRecord?.Id" class="d-inline"
+                                                      onsubmit="return confirm('Create a patient account and send invitation email to @Model.PatientRecord?.ResolvedDisplayEmail?');">
+                                                    <button type="submit" class="btn btn-sm text-white px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="background:#0d9488; border-radius:8px; font-size:0.8rem;">
+                                                        <i class="bi bi-person-plus-fill"></i>
+                                                        <span>Create Patient Account</span>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-muted small" style="font-size:0.75rem;">
+                                                    <i class="bi bi-info-circle me-1"></i>Please update the guest patient's email and phone number in <a asp-page="./Edit" asp-route-id="@Model.PatientRecord?.Id" class="text-primary fw-semibold">Edit Details</a> to send an account invitation.
                                                 </div>
                                             }
                                         </div>
                                     </div>
-                                }
-                            }
-                            else
-                            {
-                                <div class="pd-empty" style="padding:2rem;">
-                                    <i class="bi bi-folder-x"></i>
-                                    <p>No active treatment cases for this patient</p>
                                 </div>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- Treatment Package Actions -->
-                    @{ var hasOpenPackage = Model.TreatmentPackages.Any(p => p.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending"); }
-                    <div class="pd-card">
-                        <div class="pd-card-head">
-                            <h6 class="pd-card-title"><i class="bi bi-box-seam me-2" style="color:#0d9488;"></i>Treatment Packages</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                @if (Model.PackageHistory.Any())
-                                {
-                                    <a asp-page="/Doctor/TreatmentPackages/Index" asp-route-viewMode="history" asp-route-searchTerm="@Model.PatientRecord.ResolvedDisplayName" class="btn btn-sm btn-outline-secondary py-1 px-2" style="border-radius:6px; font-size:.72rem;">
-                                        <i class="bi bi-clock-history me-1"></i>History (@Model.PackageHistory.Count)
-                                    </a>
-                                }
-                                <span class="text-muted" style="font-size:0.75rem;">@Model.TreatmentPackages.Count active</span>
                             </div>
                         </div>
-                        <div class="pd-card-body">
-                            @if (Model.TreatmentPackages.Any())
-                            {
-                                <div class="d-flex flex-column gap-2 mb-3">
-                                    @foreach (var package in Model.TreatmentPackages.Take(3))
+                    }
+                    else
+                    {
+                        var hasOpenPackage = Model.TreatmentPackages.Any(p => p.Status is "Assigned" or "Accepted" or "Active" or "CancellationPending");
+                        <div class="pd-card">
+                            <div class="pd-card-head">
+                                <h6 class="pd-card-title"><i class="bi bi-box-seam me-2" style="color:#0d9488;"></i>Treatment Packages</h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (Model.PackageHistory.Any())
                                     {
-                                        var badgeBg = package.Status switch
-                                        {
-                                            "Active" => "#dcfce7",
-                                            "Accepted" => "#e0f2fe",
-                                            "Assigned" => "#fef3c7",
-                                            "CancellationPending" => "#ffedd5",
-                                            "Completed" => "#f1f5f9",
-                                            _ => "#fee2e2"
-                                        };
-                                        var badgeColor = package.Status switch
-                                        {
-                                            "Active" => "#166534",
-                                            "Accepted" => "#0369a1",
-                                            "Assigned" => "#92400e",
-                                            "CancellationPending" => "#9a3412",
-                                            "Completed" => "#475569",
-                                            _ => "#991b1b"
-                                        };
-
-                                        <div class="p-2.5 rounded-3 border bg-white d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-color:#e2e8f0 !important; padding:0.65rem 0.85rem;">
-                                            <div class="d-flex align-items-center gap-2.5">
-                                                <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f0fdfa; color:#0d9488; font-size:1.05rem;">
-                                                    <i class="bi bi-box-seam"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="fw-bold text-dark" style="font-size:0.875rem;">@package.Name</span>
-                                                        <span class="badge rounded-pill px-2 py-0.5" style="background:@badgeBg; color:@badgeColor; font-size:0.68rem; font-weight:600;">@package.Status</span>
-                                                    </div>
-                                                    <div class="text-muted" style="font-size:0.75rem;">
-                                                        <i class="bi bi-layers me-1"></i>@package.SessionQuantity Sessions &middot; @(package.Price.ToString("N0")) VND
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@package.Id" class="btn btn-sm btn-outline-secondary px-2.5 py-1" style="border-radius:6px; font-size:0.75rem; font-weight:500;">
-                                                <i class="bi bi-eye me-1"></i>View
-                                            </a>
-                                        </div>
+                                        <a asp-page="/Doctor/TreatmentPackages/Index" asp-route-viewMode="history" asp-route-searchTerm="@Model.PatientRecord.ResolvedDisplayName" class="btn btn-sm btn-outline-secondary py-1 px-2" style="border-radius:6px; font-size:.72rem;">
+                                            <i class="bi bi-clock-history me-1"></i>History (@Model.PackageHistory.Count)
+                                        </a>
                                     }
+                                    <span class="text-muted" style="font-size:0.75rem;">@Model.TreatmentPackages.Count active</span>
                                 </div>
-                            }
-
-                            @if (!hasOpenPackage)
-                            {
-                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px dashed #cbd5e1;">
-                                    <div class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size:0.8rem;">
-                                        <i class="bi bi-plus-circle text-teal" style="color:#0d9488;"></i>
-                                        <span>Assign or Create New Package</span>
-                                    </div>
-
-                                    <div class="d-flex flex-column gap-2">
-                                        @if (Model.TemplatePackages.Any())
+                            </div>
+                            <div class="pd-card-body">
+                                @if (Model.TreatmentPackages.Any())
+                                {
+                                    <div class="d-flex flex-column gap-2 mb-3">
+                                        @foreach (var package in Model.TreatmentPackages.Take(3))
                                         {
-                                            <form method="post" asp-page-handler="AssignTemplate" asp-route-id="@Model.PatientRecord.Id" class="d-flex gap-2 align-items-center flex-wrap">
-                                                <div class="flex-grow-1" style="min-width:200px;">
-                                                    <select asp-for="AssignTemplateId" class="form-select form-select-sm" style="border-radius:6px; font-size:0.78rem;">
-                                                        <option value="">Choose a template package...</option>
-                                                        @foreach (var template in Model.TemplatePackages)
-                                                        {
-                                                            <option value="@template.Id">@template.Name (@template.SessionQuantity sessions)</option>
-                                                        }
-                                                    </select>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-outline-primary px-3 py-1.5" style="border-radius:6px; font-size:0.78rem; font-weight:600; white-space:nowrap;">
-                                                    <i class="bi bi-box-arrow-in-right me-1"></i>Assign Template
-                                                </button>
-                                            </form>
-                                        }
+                                            var badgeBg = package.Status switch
+                                            {
+                                                "Active" => "#dcfce7",
+                                                "Accepted" => "#e0f2fe",
+                                                "Assigned" => "#fef3c7",
+                                                "CancellationPending" => "#ffedd5",
+                                                "Completed" => "#f1f5f9",
+                                                _ => "#fee2e2"
+                                            };
+                                            var badgeColor = package.Status switch
+                                            {
+                                                "Active" => "#166534",
+                                                "Accepted" => "#0369a1",
+                                                "Assigned" => "#92400e",
+                                                "CancellationPending" => "#9a3412",
+                                                "Completed" => "#475569",
+                                                _ => "#991b1b"
+                                            };
 
-                                        <div class="d-flex align-items-center gap-2 @(Model.TemplatePackages.Any() ? "pt-2 border-top" : "")">
-                                            <span class="text-muted small" style="font-size:0.75rem;">Or create customized:</span>
-                                            <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.Id" class="btn btn-sm" style="background:#0d9488; color:#fff; border-radius:6px; font-size:0.78rem; font-weight:600;">
-                                                <i class="bi bi-plus-lg me-1"></i>Create Custom Package
-                                            </a>
+                                            <div class="p-2.5 rounded-3 border bg-white d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-color:#e2e8f0 !important; padding:0.65rem 0.85rem;">
+                                                <div class="d-flex align-items-center gap-2.5">
+                                                    <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f0fdfa; color:#0d9488; font-size:1.05rem;">
+                                                        <i class="bi bi-box-seam"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="fw-bold text-dark" style="font-size:0.875rem;">@package.Name</span>
+                                                            <span class="badge rounded-pill px-2 py-0.5" style="background:@badgeBg; color:@badgeColor; font-size:0.68rem; font-weight:600;">@package.Status</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size:0.75rem;">
+                                                            <i class="bi bi-layers me-1"></i>@package.SessionQuantity Sessions &middot; @(package.Price.ToString("N0")) VND
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@package.Id" class="pd-table-btn pd-table-btn-teal" title="View Package Details">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (!hasOpenPackage)
+                                {
+                                    <div class="p-3 rounded-3" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+                                        <div class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size:0.8rem;">
+                                            <i class="bi bi-plus-circle text-teal" style="color:#0d9488;"></i>
+                                            <span>Assign or Create New Package</span>
+                                        </div>
+
+                                        <div class="d-flex flex-column gap-2">
+                                            @if (Model.TemplatePackages.Any())
+                                            {
+                                                <form method="post" asp-page-handler="AssignTemplate" asp-route-id="@Model.PatientRecord.Id" class="d-flex gap-2 align-items-center flex-wrap">
+                                                    <div class="flex-grow-1" style="min-width:200px;">
+                                                        <select asp-for="AssignTemplateId" class="form-select form-select-sm" style="border-radius:6px; font-size:0.78rem;">
+                                                            <option value="">Choose a template package...</option>
+                                                            @foreach (var template in Model.TemplatePackages)
+                                                            {
+                                                                <option value="@template.Id">@template.Name (@template.SessionQuantity sessions)</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary px-3 py-1.5" style="border-radius:6px; font-size:0.78rem; font-weight:600; white-space:nowrap;">
+                                                        <i class="bi bi-box-arrow-in-right me-1"></i>Assign Template
+                                                    </button>
+                                                </form>
+                                            }
+
+                                            <div class="d-flex align-items-center gap-2 @(Model.TemplatePackages.Any() ? "pt-2 border-top" : "")">
+                                                <span class="text-muted small" style="font-size:0.75rem;">Or create customized:</span>
+                                                <a asp-page="/Doctor/TreatmentPackages/Create" asp-route-patientId="@Model.PatientRecord.PatientId" class="btn btn-sm" style="background:#0d9488; color:#fff; border-radius:6px; font-size:0.78rem; font-weight:600;">
+                                                    <i class="bi bi-plus-lg me-1"></i>Create Custom Package
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="p-2.5 rounded-2 d-flex align-items-center gap-2" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.78rem; color:#0f766e; padding:0.65rem 0.85rem;">
-                                    <i class="bi bi-info-circle-fill flex-shrink-0" style="color:#0d9488;"></i>
-                                    <span>An active package is currently assigned. Complete or conclude it before assigning a new one.</span>
-                                </div>
-                            }
+                                }
+                                else
+                                {
+                                    <div class="p-2.5 rounded-2 d-flex align-items-center gap-2" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.78rem; color:#0f766e; padding:0.65rem 0.85rem;">
+                                        <i class="bi bi-info-circle-fill flex-shrink-0" style="color:#0d9488;"></i>
+                                        <span>An active package is currently assigned. Complete or conclude it before assigning a new one.</span>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <!-- Recent Consultation Records Preview -->
                     <div class="pd-card">
@@ -582,9 +820,11 @@ else
                                             {
                                                 <p class="text-muted mb-1 text-truncate" style="max-width:380px;">@note.ConsultationSummary</p>
                                             }
-                                            <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
+                                            <div class="d-flex justify-content-between align-items-center text-muted" style="font-size:0.7rem;">
                                                 <span><i class="bi bi-person me-1"></i>Dr. @note.DoctorName</span>
-                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="text-primary text-decoration-none">Details →</a>
+                                                <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="pd-table-btn pd-table-btn-teal" style="width:28px; height:28px; font-size:0.8rem;" title="View Consultation Details">
+                                                    <i class="bi bi-arrow-right"></i>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -636,19 +876,19 @@ else
                         <div class="pd-card-body">
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Psychological History</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.PsychologicalHistory) ? "None recorded" : Model.PatientRecord.PsychologicalHistory)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Current Symptoms</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.CurrentSymptoms) ? "None recorded" : Model.PatientRecord.CurrentSymptoms)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">Stress Factors</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
                             </div>
                             <div class="pd-info-row">
                                 <div class="pd-info-lbl">General Notes</div>
-                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
+                                <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.GeneralNotes) ? "None recorded" : Model.PatientRecord.GeneralNotes)</div>
                             </div>
                         </div>
                     </div>
@@ -672,7 +912,9 @@ else
                                                     @(string.IsNullOrEmpty(note.Diagnosis) ? "No Diagnosis Specified" : note.Diagnosis)
                                                 </h6>
                                                 <div class="d-flex gap-1">
-                                                    <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem; border-radius:5px; padding:2px 8px;">Details</a>
+                                                    <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@note.Id" class="pd-table-btn pd-table-btn-teal" title="View Consultation Note">
+                                                        <i class="bi bi-eye-fill"></i>
+                                                    </a>
                                                 </div>
                                             </div>
                                             <p class="mb-1" style="font-size:0.82rem; color:#475569;">
@@ -708,8 +950,11 @@ else
             </div>
         </div>
 
-        <!-- ── TAB 3: TREATMENT CASES & GOALS ── -->
-        <div class="tab-pane fade @(Model.ActiveTab == "cases" ? "show active" : "")" id="pane-cases" role="tabpanel">
+        <!-- ── REGISTERED PATIENT TABS (CASES, FILES, MOOD) ── -->
+        @if (Model.PatientRecord?.IsGuest != true && Model.PatientRecord?.PatientId.HasValue == true)
+        {
+            <!-- ── TAB 3: TREATMENT CASES & GOALS ── -->
+            <div class="tab-pane fade @(Model.ActiveTab == "cases" ? "show active" : "")" id="pane-cases" role="tabpanel">
             @if (Model.PatientCases.Any())
             {
                 <div class="pd-card mb-3">
@@ -769,8 +1014,8 @@ else
                                             <td><span class="pd-badge @tcBadge">@tcLabel</span></td>
                                             <td class="text-muted" style="font-size:0.8rem;">@tc.StartDate.ToString("MMM dd, yyyy")</td>
                                             <td class="text-end" style="padding-right:1.25rem;">
-                                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:5px; font-size:0.75rem; padding:3px 10px;">
-                                                    <i class="bi bi-eye me-1"></i>View Case
+                                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="pd-table-btn pd-table-btn-blue" title="View Treatment Case Details">
+                                                    <i class="bi bi-eye-fill"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -829,8 +1074,8 @@ else
                                             <td class="text-muted" style="font-size:0.8rem;">@(g.TargetDate?.ToString("MMM dd, yyyy") ?? "—")</td>
                                             <td><span class="@g.StatusBadgeClass" style="font-size:0.68rem;">@g.StatusText</span></td>
                                             <td class="text-end" style="padding-right:1.25rem;">
-                                                <a href="/Doctor/TreatmentCases/Details?id=@g.TreatmentCaseId&tab=goals" class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:2px 8px;">
-                                                    <i class="bi bi-arrow-right me-1"></i>View
+                                                <a href="/Doctor/TreatmentCases/Details?id=@g.TreatmentCaseId&tab=goals" class="pd-table-btn pd-table-btn-amber" title="View Goal & Milestones">
+                                                    <i class="bi bi-flag-fill"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -879,8 +1124,8 @@ else
                                             <td class="text-end" style="padding-right:1.25rem;">
                                                 @if (!string.IsNullOrEmpty(hw.PatientSubmissionUrl))
                                                 {
-                                                    <a href="@hw.PatientSubmissionUrl" target="_blank" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:5px; font-size:0.75rem; padding:3px 10px;">
-                                                        <i class="bi bi-box-arrow-up-right me-1"></i>Open File
+                                                    <a href="@hw.PatientSubmissionUrl" target="_blank" class="pd-table-btn pd-table-btn-teal" title="Open File in New Tab">
+                                                        <i class="bi bi-box-arrow-up-right"></i>
                                                     </a>
                                                 }
                                                 else
@@ -1013,5 +1258,6 @@ else
                 </div>
             </div>
         </div>
+        }
     </div>
 }

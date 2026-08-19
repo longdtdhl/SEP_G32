@@ -283,6 +283,54 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id = caseId, tab = "goals" });
     }
 
+    // POST: Create Goal from Tab Modal
+    public async Task<IActionResult> OnPostCreateGoalAsync(
+        Guid caseId, string title, string? description, int category, int priority,
+        decimal? currentValue, decimal? targetValue, string? unit, DateTime? targetDate)
+    {
+        var dto = new CreateGoalWebDto
+        {
+            TreatmentCaseId = caseId,
+            Title = title,
+            Description = description,
+            Category = category,
+            Priority = priority,
+            CurrentValue = currentValue,
+            TargetValue = targetValue,
+            Unit = unit,
+            TargetDate = targetDate
+        };
+        var (success, error) = await _api.CreateGoalAsync(dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal created successfully." : (error ?? "Failed to create goal.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Update Goal Notes
+    public async Task<IActionResult> OnPostUpdateGoalNotesAsync(Guid caseId, Guid goalId, string? doctorNotes)
+    {
+        var dto = new UpdateGoalWebDto { DoctorNotes = doctorNotes };
+        var (success, error) = await _api.UpdateGoalAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Clinical notes updated." : (error ?? "Failed to update notes.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Update Goal Status
+    public async Task<IActionResult> OnPostUpdateGoalStatusAsync(Guid caseId, Guid goalId, int status)
+    {
+        var dto = new UpdateGoalWebDto { Status = status };
+        var (success, error) = await _api.UpdateGoalAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal status updated." : (error ?? "Failed to update status.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Delete Goal
+    public async Task<IActionResult> OnPostDeleteGoalAsync(Guid caseId, Guid goalId)
+    {
+        var (success, error) = await _api.DeleteGoalAsync(goalId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal deleted successfully." : (error ?? "Failed to delete goal.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
     // POST: Close Case
     public async Task<IActionResult> OnPostCloseCaseAsync(Guid caseId, string? closureNote, int closeStatus)
     {

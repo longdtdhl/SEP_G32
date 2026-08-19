@@ -14,6 +14,9 @@
     .session-summary-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; }
     .session-summary-card .summary-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.4rem .65rem; border-radius:999px; background:#eef6f4; color:#0f766e; font-size:.82rem; font-weight:700; }
     .session-form-card { border: 1px solid #dbe7e4; border-radius: 16px; background:#fff; }
+    .mode-card { border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc; cursor: pointer; transition: all 0.2s; user-select: none; }
+    .mode-card:hover { border-color: #cbd5e1; background: #f1f5f9; }
+    .mode-card:has(input:checked) { border-color: #0d9488 !important; background: #f0fdfa !important; box-shadow: 0 3px 10px rgba(13, 148, 136, 0.12); }
 </style>
 <div class="container-fluid py-3 tc-create-page">
     <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=sessions" class="text-decoration-none text-muted fs-7 d-inline-block mb-2">
@@ -101,6 +104,40 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Description & Agenda</label>
                         <textarea name="description" class="form-control" rows="5" placeholder="Outline key topics, assessments, or interventions planned for this session..." disabled="@packageExhausted"></textarea>
+                    </div>
+
+                    <!-- Consultation Mode (Online / Offline) -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark mb-2 d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-broadcast me-1" style="color:#0d9488;"></i> Session Consultation Type <span class="text-danger">*</span></span>
+                            <span class="text-muted fw-normal small">Select whether this session is online or in-person</span>
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="mode-card p-3 d-flex align-items-center gap-3 w-100 h-100" for="modeOnline">
+                                    <input class="form-check-input mt-0" type="radio" name="consultationMode" id="modeOnline" value="Online" checked disabled="@packageExhausted" />
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold fs-7 text-dark d-flex align-items-center gap-2">
+                                            <i class="bi bi-camera-video-fill text-primary" style="font-size:1.15rem;"></i> Online Consultation
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.75rem; margin-top:2px;">Video call & telehealth session</div>
+                                    </div>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size:0.7rem;">Online</span>
+                                </label>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="mode-card p-3 d-flex align-items-center gap-3 w-100 h-100" for="modeOffline">
+                                    <input class="form-check-input mt-0" type="radio" name="consultationMode" id="modeOffline" value="Offline" disabled="@packageExhausted" />
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold fs-7 text-dark d-flex align-items-center gap-2">
+                                            <i class="bi bi-geo-alt-fill text-success" style="font-size:1.15rem;"></i> In-Person (Offline)
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.75rem; margin-top:2px;">Direct face-to-face clinic visit</div>
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:0.7rem;">Offline</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-4 p-3 rounded-4 bg-light border">

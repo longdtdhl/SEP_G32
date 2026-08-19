@@ -56,6 +56,8 @@ public class AppointmentDto
     public string? PatientEmail { get; set; }
     public string? ConsultationMode { get; set; }
     public ConsultationMode ConsultationModeEnum { get; set; } = OPCBS.Domain.Enums.ConsultationMode.Online;
+    public bool IsOnline => ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online || string.Equals(ConsultationMode, "Online", StringComparison.OrdinalIgnoreCase) || (ConsultationMode != null && ConsultationMode.Contains("Online", StringComparison.OrdinalIgnoreCase));
+    public bool IsOffline => ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Offline || string.Equals(ConsultationMode, "Offline", StringComparison.OrdinalIgnoreCase) || (ConsultationMode != null && (ConsultationMode.Contains("In-Person", StringComparison.OrdinalIgnoreCase) || ConsultationMode.Contains("Offline", StringComparison.OrdinalIgnoreCase)));
     public string? DoctorAddress { get; set; }
     public string? PatientAddress { get; set; }
     public List<CustomClinicalFieldDto>? CustomFields { get; set; }
@@ -358,4 +360,9 @@ public class AppointmentClinicalContextDto
     public RecentAssessmentResultDto? CurrentAssessment { get; set; }
     public List<RecentAssessmentResultDto> RecentAssessments { get; set; } = new();
     public AppointmentTreatmentCaseContextDto? TreatmentCaseContext { get; set; }
+}
+
+public class UpdateConsultationModeDto
+{
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
 }

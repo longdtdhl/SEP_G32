@@ -629,6 +629,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                         SlotDate = slotDate,
                         StartTime = startTime,
                         EndTime = endTime,
+                        ConsultationMode = dto.ConsultationMode,
                         Status = AppointmentSlotStatus.Booked,
                         CurrentBookings = 1,
                         MaxPatients = 1,
@@ -725,6 +726,23 @@ public class TreatmentCaseService : ITreatmentCaseService
                     : "";
                 return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(
                     $"Insufficient available schedule slots for the requested recurrence. Only {createdSessions.Count} of {sessionsToSchedule} required sessions could be scheduled (missing {missingCount} session(s)).{skipSummary}");
+            }
+
+            var allCaseSessions = (await _sessionRepo.GetAllAsync(ct))
+                .Where(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted && s.Status != TreatmentSessionStatus.Cancelled)
+                .ToList();
+            var activeSessionCount = allCaseSessions.Count;
+            treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - activeSessionCount);
+            _caseRepo.Update(treatmentCase);
+
+            if (_packageRepo != null && treatmentCase.TreatmentPackageId != Guid.Empty)
+            {
+                var pkg = await _packageRepo.GetByIdAsync(treatmentCase.TreatmentPackageId, ct);
+                if (pkg != null)
+                {
+                    pkg.RemainingSessions = Math.Max(0, pkg.SessionQuantity - activeSessionCount);
+                    _packageRepo.Update(pkg);
+                }
             }
 
             await _uow.SaveChangesAsync(ct);
@@ -839,6 +857,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                             SlotDate = slotDate,
                             StartTime = slotStart,
                             EndTime = slotEnd,
+                            ConsultationMode = dto.ConsultationMode,
                             MaxPatients = 1,
                             CurrentBookings = 1,
                             Status = AppointmentSlotStatus.Booked,
@@ -910,6 +929,24 @@ public class TreatmentCaseService : ITreatmentCaseService
                 await _uow.SaveChangesAsync(ct);
             }
 
+            var allActiveSessions = (await _sessionRepo.GetAllAsync(ct))
+                .Where(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted && s.Status != TreatmentSessionStatus.Cancelled)
+                .ToList();
+            var totalActiveSessions = allActiveSessions.Count;
+            treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - totalActiveSessions);
+            _caseRepo.Update(treatmentCase);
+
+            if (_packageRepo != null && treatmentCase.TreatmentPackageId != Guid.Empty)
+            {
+                var pkg = await _packageRepo.GetByIdAsync(treatmentCase.TreatmentPackageId, ct);
+                if (pkg != null)
+                {
+                    pkg.RemainingSessions = Math.Max(0, pkg.SessionQuantity - totalActiveSessions);
+                    _packageRepo.Update(pkg);
+                }
+            }
+
+            await _uow.SaveChangesAsync(ct);
             await _uow.CommitTransactionAsync(ct);
             return ApiResponse<TreatmentSessionDto>.SuccessResponse(MapToSessionDto(session), "Session created successfully.");
         }
@@ -1000,6 +1037,25 @@ public class TreatmentCaseService : ITreatmentCaseService
             session.Status = TreatmentSessionStatus.Cancelled;
             session.UpdatedAt = DateTime.UtcNow;
             _sessionRepo.Update(session);
+
+            var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
+            if (treatmentCase != null)
+            {
+                var remainingActive = (await _sessionRepo.GetAllAsync(ct))
+                    .Count(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted && s.Id != session.Id && s.Status != TreatmentSessionStatus.Cancelled);
+                treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - remainingActive);
+                _caseRepo.Update(treatmentCase);
+
+                if (_packageRepo != null && treatmentCase.TreatmentPackageId != Guid.Empty)
+                {
+                    var pkg = await _packageRepo.GetByIdAsync(treatmentCase.TreatmentPackageId, ct);
+                    if (pkg != null)
+                    {
+                        pkg.RemainingSessions = Math.Max(0, pkg.SessionQuantity - remainingActive);
+                        _packageRepo.Update(pkg);
+                    }
+                }
+            }
 
             await _uow.SaveChangesAsync(ct);
             await _uow.CommitTransactionAsync(ct);
@@ -1230,12 +1286,14 @@ public class TreatmentCaseService : ITreatmentCaseService
                         dto.PlannedStartTime = start;
                         dto.PlannedEndTime = end;
                         dto.AppointmentDate = start;
+                        dto.ConsultationMode = slot.ConsultationMode.ToString();
                     }
                     else
                     {
                         dto.AppointmentDate = appt.AppointmentDate ?? s.PlannedStartTime;
                         dto.PlannedStartTime ??= appt.AppointmentDate;
                         dto.PlannedEndTime ??= appt.AppointmentDate?.AddMinutes(60);
+                        dto.ConsultationMode = appt.Notes?.Contains("Offline", StringComparison.OrdinalIgnoreCase) == true ? "Offline" : "Online";
                     }
                 }
             }
@@ -1377,6 +1435,47 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<TreatmentGoalDto>.SuccessResponse(await BuildGoalDtoAsync(goal, ct), "Goal updated successfully.");
+    }
+
+    public async Task<ApiResponse> DeleteGoalAsync(Guid goalId, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        var goal = await _goalRepo.GetByIdAsync(goalId, ct);
+        if (goal == null || goal.IsDeleted)
+            return ApiResponse.ErrorResponse("Goal not found.");
+        if (!await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
+            return ApiResponse.ErrorResponse("Access denied.");
+
+        goal.IsDeleted = true;
+        goal.UpdatedAt = DateTime.UtcNow;
+        _goalRepo.Update(goal);
+
+        var allDetails = (await _goalDetailRepo.GetAllAsync(ct)).Where(d => d.GoalId == goalId && !d.IsDeleted).ToList();
+        foreach (var d in allDetails)
+        {
+            d.IsDeleted = true;
+            d.UpdatedAt = DateTime.UtcNow;
+            _goalDetailRepo.Update(d);
+            foreach (var link in (await _sessionGoalRepo.GetAllAsync(ct)).Where(x => x.GoalDetailId == d.Id && !x.IsDeleted))
+                _sessionGoalRepo.Delete(link);
+        }
+
+        var allCriteria = (await _successCriteriaRepo.GetAllAsync(ct)).Where(c => c.GoalId == goalId && !c.IsDeleted).ToList();
+        foreach (var c in allCriteria)
+        {
+            c.IsDeleted = true;
+            c.UpdatedAt = DateTime.UtcNow;
+            _successCriteriaRepo.Update(c);
+        }
+
+        var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
+        if (treatmentCase != null)
+        {
+            await RecalculateProgressAsync(treatmentCase, ct);
+            _caseRepo.Update(treatmentCase);
+        }
+
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Goal deleted successfully.");
     }
 
     public async Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
@@ -2751,7 +2850,10 @@ public class TreatmentCaseService : ITreatmentCaseService
             CreatedAt = s.CreatedAt,
             UpdatedAt = s.UpdatedAt,
             AppointmentDate = s.Appointment?.AppointmentDate ?? s.PlannedStartTime,
-            BookingCode = s.Appointment?.BookingCode
+            BookingCode = s.Appointment?.BookingCode,
+            ConsultationMode = s.Appointment?.AppointmentSlot != null
+                ? s.Appointment.AppointmentSlot.ConsultationMode.ToString()
+                : (s.Appointment?.Notes?.Contains("Offline", StringComparison.OrdinalIgnoreCase) == true ? "Offline" : "Online")
         };
     }
 

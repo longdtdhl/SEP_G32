@@ -308,4 +308,73 @@ public class PatientRecordServiceTests
 
         Assert.Empty(result);
     }
+
+    [Fact]
+    public async Task CreateBatchAsync_ValidInput_AddsMultipleRecords()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var doc = new DoctorProfile { Id = doctorProfileId, UserId = doctorUserId, User = new User { Email = "d@test.com", PasswordHash = "h", FullName = "D", PhoneNumber = "1", Role = new Role { Name = "Doctor" } } };
+        _mockDoctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doc });
+
+        var dtos = new List<CreatePatientRecordDto>
+        {
+            new() { GuestName = "Patient 1", GuestPhone = "0901234567", GuestEmail = "p1@example.com", GeneralNotes = "Note 1" },
+            new() { GuestName = "Patient 2", GuestPhone = "0912345678", GuestEmail = "p2@example.com", GeneralNotes = "Note 2" }
+        };
+
+        var result = await _service.CreateBatchAsync(doctorUserId, dtos, CancellationToken.None);
+
+        Assert.True(result.Success);
+        _mockRepo.Verify(r => r.AddRangeAsync(It.Is<IEnumerable<PatientRecord>>(list => list.Count() == 2), It.IsAny<CancellationToken>()), Times.Once);
+        _mockUow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateBatchAsync_EmptyList_ReturnsError()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var result = await _service.CreateBatchAsync(doctorUserId, new List<CreatePatientRecordDto>(), CancellationToken.None);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ValidDoctorAndRecord_MarksAsDeleted()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var doc = new DoctorProfile { Id = doctorProfileId, UserId = doctorUserId, User = new User { Email = "d@test.com", PasswordHash = "h", FullName = "D", PhoneNumber = "1", Role = new Role { Name = "Doctor" } } };
+        _mockDoctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doc });
+
+        var recordId = Guid.NewGuid();
+        var record = new PatientRecord { Id = recordId, DoctorId = doctorProfileId, Doctor = doc, GuestName = "Guest Test", IsDeleted = false };
+        _mockRepo.Setup(r => r.GetByIdAsync(recordId, It.IsAny<CancellationToken>())).ReturnsAsync(record);
+
+        var result = await _service.DeleteAsync(doctorUserId, recordId, CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(record.IsDeleted);
+        _mockRepo.Verify(r => r.Update(record), Times.Once);
+        _mockUow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UnauthorizedDoctor_ReturnsError()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var doc = new DoctorProfile { Id = doctorProfileId, UserId = doctorUserId, User = new User { Email = "d@test.com", PasswordHash = "h", FullName = "D", PhoneNumber = "1", Role = new Role { Name = "Doctor" } } };
+        _mockDoctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doc });
+
+        var recordId = Guid.NewGuid();
+        var otherDoctorId = Guid.NewGuid();
+        var record = new PatientRecord { Id = recordId, DoctorId = otherDoctorId, Doctor = doc, GuestName = "Other Doctor Guest", IsDeleted = false };
+        _mockRepo.Setup(r => r.GetByIdAsync(recordId, It.IsAny<CancellationToken>())).ReturnsAsync(record);
+
+        var result = await _service.DeleteAsync(doctorUserId, recordId, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.False(record.IsDeleted);
+    }
 }

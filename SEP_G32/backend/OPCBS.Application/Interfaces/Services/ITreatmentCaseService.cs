@@ -66,6 +66,9 @@ public interface ITreatmentCaseService
     /// <summary>Update goal info, status, or overall progress</summary>
     Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
 
+    /// <summary>Delete a treatment goal</summary>
+    Task<ApiResponse> DeleteGoalAsync(Guid goalId, Guid? doctorUserId = null, CancellationToken ct = default);
+
     /// <summary>Get all goals for a Treatment Case</summary>
     Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);
 

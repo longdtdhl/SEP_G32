@@ -577,13 +577,62 @@ public class AppointmentService : IAppointmentService
             }
         }
 
+        // T0: Ensure package has not already reached max configured/scheduled sessions
+        if (treatmentPackage != null)
+        {
+            var activeApptsCount = allAppts.Count(a =>
+                a.TreatmentPackageId == treatmentPackage.Id &&
+                !a.IsDeleted &&
+                a.Status != AppointmentStatus.Cancelled &&
+                a.Status != AppointmentStatus.Rejected);
+
+            int activeSessionsCount = 0;
+            if (_treatmentCaseRepo != null && _sessionRepo != null)
+            {
+                var allCases = await _treatmentCaseRepo.GetAllAsync(ct);
+                var linkedCaseForCheck = allCases.FirstOrDefault(c =>
+                    c.TreatmentPackageId == treatmentPackage.Id &&
+                    !c.IsDeleted &&
+                    c.Status == TreatmentCaseStatus.Active);
+
+                if (linkedCaseForCheck != null)
+                {
+                    var allSessions = await _sessionRepo.GetAllAsync(ct);
+                    activeSessionsCount = allSessions.Count(s =>
+                        s.TreatmentCaseId == linkedCaseForCheck.Id &&
+                        !s.IsDeleted &&
+                        s.Status != TreatmentSessionStatus.Cancelled);
+                }
+            }
+
+            var totalConfiguredSessions = Math.Max(activeApptsCount, activeSessionsCount);
+            if (totalConfiguredSessions >= treatmentPackage.SessionQuantity)
+            {
+                return ApiResponse<AppointmentDto>.ErrorResponse(
+                    $"Gói điều trị này đã được lên lịch đủ {totalConfiguredSessions}/{treatmentPackage.SessionQuantity} buổi. Không thể đặt thêm lịch hẹn mới cho gói này.");
+            }
+        }
+
         await _uow.BeginTransactionAsync(ct);
         try
         {
             if (treatmentPackage != null)
             {
-                treatmentPackage.RemainingSessions--;
+                treatmentPackage.RemainingSessions = Math.Max(0, treatmentPackage.RemainingSessions - 1);
                 _packageRepo.Update(treatmentPackage);
+            }
+
+            // T1: Snapshot slot price at booking time (hourly rate * duration)
+            if (slot.Price == null || slot.Price.Value <= 0)
+            {
+                double durationHours = 1.0;
+                if (slot.EndTime > slot.StartTime)
+                {
+                    var span = (slot.EndTime - slot.StartTime).TotalHours;
+                    if (span > 0) durationHours = span;
+                }
+                decimal hourlyFee = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
+                slot.Price = Math.Round(hourlyFee * (decimal)durationHours, 0);
             }
 
             slot.CurrentBookings++;
@@ -1056,10 +1105,6 @@ public class AppointmentService : IAppointmentService
             {
                 myAppts = myAppts.Where(a => AppointmentStatusHelper.IsHistory(a.Status)).ToList();
             }
-        }
-        else if (string.IsNullOrEmpty(status))
-        {
-            myAppts = myAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
         }
 
         if (!string.IsNullOrEmpty(status))
@@ -1982,10 +2027,6 @@ public class AppointmentService : IAppointmentService
                 doctorAppts = doctorAppts.Where(a => AppointmentStatusHelper.IsHistory(a.Status)).ToList();
             }
         }
-        else if (string.IsNullOrEmpty(status))
-        {
-            doctorAppts = doctorAppts.Where(a => AppointmentStatusHelper.IsActive(a.Status)).ToList();
-        }
 
         // 1. Status Filter
         if (!string.IsNullOrEmpty(status))
@@ -2495,6 +2536,38 @@ public class AppointmentService : IAppointmentService
 
         return ApiResponse.SuccessResponse("Completion request sent to the patient.");
         */
+    }
+
+    public async Task<ApiResponse> UpdateConsultationModeAsync(Guid appointmentId, Guid doctorUserId, ConsultationMode mode, CancellationToken ct = default)
+    {
+        var appointment = await _apptRepo.GetByIdAsync(appointmentId, ct);
+        if (appointment == null)
+            return ApiResponse.ErrorResponse("Appointment not found");
+
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId);
+        if (doctor == null || appointment.DoctorId != doctor.Id)
+            return ApiResponse.ErrorResponse("Not authorized to change this appointment's consultation mode");
+
+        if (appointment.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.Rejected)
+            return ApiResponse.ErrorResponse("Cannot change consultation mode for completed or cancelled appointments");
+
+        appointment.ConsultationMode = mode;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        _apptRepo.Update(appointment);
+
+        var slot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (slot != null)
+        {
+            slot.ConsultationMode = mode;
+            slot.UpdatedAt = DateTime.UtcNow;
+            _slotRepo.Update(slot);
+        }
+
+        await _uow.SaveChangesAsync(ct);
+
+        var modeName = mode == ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)";
+        return ApiResponse.SuccessResponse($"Consultation mode updated to {modeName} successfully.");
     }
 
     public async Task<ApiResponse> ConfirmCompletionAsync(Guid appointmentId, Guid patientUserId, CancellationToken ct = default)

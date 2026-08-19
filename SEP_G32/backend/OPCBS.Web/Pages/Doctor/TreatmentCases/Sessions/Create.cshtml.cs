@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 
@@ -18,6 +19,7 @@ public class CreateModel : PageModel
 
     [BindProperty(SupportsGet = true)] public Guid CaseId { get; set; }
     [BindProperty(SupportsGet = true)] public string? Date { get; set; }
+    [BindProperty] public string ConsultationModeInput { get; set; } = "Online";
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public TreatmentCaseWebDto? TreatmentCase { get; set; }
     public string? ErrorMessage { get; set; }
@@ -58,7 +60,8 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostCreateAsync(
         Guid caseId, string? title, string? description,
-        string? sessionDate, string? startTime, string? endTime)
+        string? sessionDate, string? startTime, string? endTime,
+        string? consultationMode)
     {
         CaseId = caseId;
         await OnGetAsync();
@@ -99,13 +102,21 @@ public class CreateModel : PageModel
             return Page();
         }
 
+        var mode = ConsultationMode.Online;
+        if (!string.IsNullOrWhiteSpace(consultationMode) &&
+            Enum.TryParse<ConsultationMode>(consultationMode, true, out var parsedMode))
+        {
+            mode = parsedMode;
+        }
+
         var dto = new CreateSessionWebDto
         {
             TreatmentCaseId = caseId,
             Title = title,
             Description = description,
             PlannedStartTime = plannedStartTime,
-            PlannedEndTime = plannedEndTime
+            PlannedEndTime = plannedEndTime,
+            ConsultationMode = mode
         };
 
         var (success, error) = await _api.CreateSessionAsync(dto);

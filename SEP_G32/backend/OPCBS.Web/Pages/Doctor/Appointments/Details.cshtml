@@ -386,16 +386,52 @@
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <div class="p-3 rounded-3 border d-flex align-items-center h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
-                                <div class="info-row-icon me-3" style="background: #f1f5f9; color: #0f766e; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi @(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "bi-camera-video-fill" : "bi-geo-alt-fill") fs-5"></i></div>
-                                <div>
-                                    <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Consultation Mode</div>
-                                    <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">
-                                        <span class="badge rounded-pill px-2.5 py-1 fw-semibold" style="@(apt.ConsultationMode?.Contains("Online") == true || apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;" : "background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;")">
-                                            @(apt.ConsultationMode ?? (apt.ConsultationModeEnum == OPCBS.Domain.Enums.ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)"))
-                                        </span>
+                            <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between h-100" style="background-color: #f8fafc !important; border-color: #e5e7eb !important;">
+                                <div class="d-flex align-items-center">
+                                    <div class="info-row-icon me-3" style="background: #f1f5f9; color: @(apt.IsOnline ? "#0284c7" : "#16a34a"); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi @(apt.IsOnline ? "bi-camera-video-fill" : "bi-geo-alt-fill") fs-5"></i></div>
+                                    <div>
+                                        <div class="text-uppercase fw-semibold small" style="font-size: 0.78rem; color: #64748b; letter-spacing: 0.03em;">Consultation Mode</div>
+                                        <div class="fw-semibold text-dark fs-6" style="color: #1e293b !important;">
+                                            <span class="badge rounded-pill px-2.5 py-1 fw-semibold" style="@(apt.IsOnline ? "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;" : "background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;")">
+                                                <i class="bi @(apt.IsOnline ? "bi-camera-video-fill me-1" : "bi-geo-alt-fill me-1")"></i>
+                                                @(apt.IsOnline ? "Online Consultation" : "In-Person (Offline)")
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
+                                @if (apt.Status != 4 && apt.Status != 5 && apt.Status != 2)
+                                {
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-white border dropdown-toggle d-flex align-items-center gap-1.5 px-2.5 py-1 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem; border-radius: 8px; font-weight: 600; background:#fff;">
+                                            <i class="bi bi-arrow-left-right text-primary"></i> Switch
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm p-1.5 border-0" style="min-width: 210px; border-radius: 10px;">
+                                            <li>
+                                                <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="0" onsubmit="return confirm('Switch consultation mode to Online Consultation?');">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 px-2.5 rounded-2 @(apt.IsOnline ? "active bg-primary text-white" : "text-dark")" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-camera-video-fill @(apt.IsOnline ? "text-white" : "text-primary")"></i>
+                                                        <div>
+                                                            <div class="fw-bold">Online Consultation</div>
+                                                            <small class="@(apt.IsOnline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">Video Call / Telehealth</small>
+                                                        </div>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="1" onsubmit="return confirm('Switch consultation mode to In-Person (Offline)?');">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 px-2.5 rounded-2 @(apt.IsOffline ? "active bg-success text-white" : "text-dark")" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-geo-alt-fill @(apt.IsOffline ? "text-white" : "text-success")"></i>
+                                                        <div>
+                                                            <div class="fw-bold">In-Person (Offline)</div>
+                                                            <small class="@(apt.IsOffline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">At Clinic / Office</small>
+                                                        </div>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                }
                             </div>
                         </div>
                         @if (!string.IsNullOrEmpty(apt.PatientAddress) || !string.IsNullOrEmpty(Model.PatientRecord?.Address))

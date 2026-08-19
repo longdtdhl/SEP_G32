@@ -1,3 +1,5 @@
+using OPCBS.Domain.Enums;
+
 namespace OPCBS.Web.DTOs;
 
 // ==================== Treatment Case Web DTOs ====================
@@ -126,6 +128,7 @@ public class GenerateScheduleWebDto
     public DateTime? StartDate { get; set; }
     public int? TotalWeeks { get; set; }
     public int SessionsPerWeek { get; set; } = 1;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
     public bool ClearExistingFutureSessions { get; set; } = false;
 }
 
@@ -139,6 +142,9 @@ public class TreatmentSessionWebDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public string? ConsultationMode { get; set; }
+    public bool IsOnline => string.Equals(ConsultationMode, "Online", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(ConsultationMode);
+    public bool IsOffline => string.Equals(ConsultationMode, "Offline", StringComparison.OrdinalIgnoreCase) || string.Equals(ConsultationMode, "In-Person", StringComparison.OrdinalIgnoreCase);
     public string? SessionSummary { get; set; }
     public string? DoctorClinicalAssessment { get; set; }
     public string? PatientFriendlySummary { get; set; }
@@ -190,6 +196,7 @@ public class CreateSessionWebDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
 }
 
 public class UpdateSessionWebDto

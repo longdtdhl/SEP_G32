@@ -50,44 +50,91 @@
                 <div class="card-body p-4">
                     <div class="form-section-title justify-content-between">
                         <div><i class="bi bi-person-badge"></i>Personal Information</div>
-                        <span class="badge bg-light text-secondary border ms-auto small" style="font-size:0.7rem;"><i class="bi bi-lock-fill me-1"></i>Read-Only</span>
+                        @if (Model.PatientRecord?.IsGuest == true)
+                        {
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning ms-auto small" style="font-size:0.7rem;"><i class="bi bi-person me-1"></i>Guest Record</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-secondary border ms-auto small" style="font-size:0.7rem;"><i class="bi bi-lock-fill me-1"></i>Read-Only</span>
+                        }
                     </div>
 
-                    <div class="alert alert-light border small text-muted mb-3" style="border-radius:10px;">
-                        <i class="bi bi-info-circle me-1 text-primary"></i>Personal information is managed by patient or administrator and cannot be modified by doctor.
-                    </div>
+                    @if (Model.PatientRecord?.IsGuest == true)
+                    {
+                        <div class="alert alert-light border small text-muted mb-3" style="border-radius:10px;">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>Guest patient contact details can be modified directly before account creation.
+                        </div>
 
-                    <input type="hidden" asp-for="Input.GuestName" />
-                    <input type="hidden" asp-for="Input.GuestPhone" />
-                    <input type="hidden" asp-for="Input.GuestEmail" />
-                    <input type="hidden" asp-for="Input.GuestDateOfBirth" />
-                    <input type="hidden" asp-for="Input.GuestGender" />
-                    <input type="hidden" asp-for="Input.GuestAddress" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Full Name <span class="text-danger">*</span></label>
+                            <input asp-for="Input.GuestName" class="form-control" placeholder="Patient full name" required />
+                            <span asp-validation-for="Input.GuestName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Phone Number</label>
+                            <input asp-for="Input.GuestPhone" class="form-control" placeholder="Phone number" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Email Address</label>
+                            <input asp-for="Input.GuestEmail" type="email" class="form-control" placeholder="email@example.com" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Date of Birth</label>
+                            <input asp-for="Input.GuestDateOfBirth" type="date" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Gender</label>
+                            <select asp-for="Input.GuestGender" class="form-select">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Address</label>
+                            <input asp-for="Input.GuestAddress" class="form-control" placeholder="Address" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border small text-muted mb-3" style="border-radius:10px;">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>Personal information is managed by the patient and cannot be modified by doctor.
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Patient Name</label>
-                        <input type="text" value="@Model.Input.GuestName" class="form-control bg-light text-dark fw-semibold" readonly disabled />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Phone Number</label>
-                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestPhone) ? "N/A" : Model.Input.GuestPhone)" class="form-control bg-light text-dark" readonly disabled />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Email</label>
-                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestEmail) ? "N/A" : Model.Input.GuestEmail)" class="form-control bg-light text-dark" readonly disabled />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Date of Birth</label>
-                        <input type="text" value="@(Model.Input.GuestDateOfBirth.HasValue ? Model.Input.GuestDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")" class="form-control bg-light text-dark" readonly disabled />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Gender</label>
-                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestGender) ? "N/A" : Model.Input.GuestGender)" class="form-control bg-light text-dark" readonly disabled />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-muted small">Address</label>
-                        <input type="text" value="@(string.IsNullOrEmpty(Model.Input.GuestAddress) ? "N/A" : Model.Input.GuestAddress)" class="form-control bg-light text-dark" readonly disabled />
-                    </div>
+                        <input type="hidden" asp-for="Input.GuestName" />
+                        <input type="hidden" asp-for="Input.GuestPhone" />
+                        <input type="hidden" asp-for="Input.GuestEmail" />
+                        <input type="hidden" asp-for="Input.GuestDateOfBirth" />
+                        <input type="hidden" asp-for="Input.GuestGender" />
+                        <input type="hidden" asp-for="Input.GuestAddress" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Patient Name</label>
+                            <input type="text" value="@(Model.PatientRecord?.ResolvedDisplayName ?? "N/A")" class="form-control bg-light text-dark fw-semibold" readonly disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Phone Number</label>
+                            <input type="text" value="@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedDisplayPhone) ? "N/A" : Model.PatientRecord.ResolvedDisplayPhone)" class="form-control bg-light text-dark" readonly disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Email</label>
+                            <input type="text" value="@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedDisplayEmail) ? "N/A" : Model.PatientRecord.ResolvedDisplayEmail)" class="form-control bg-light text-dark" readonly disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Date of Birth</label>
+                            <input type="text" value="@(Model.PatientRecord?.ResolvedDateOfBirth.HasValue == true ? Model.PatientRecord.ResolvedDateOfBirth.Value.ToString("MM/dd/yyyy") : "N/A")" class="form-control bg-light text-dark" readonly disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Gender</label>
+                            <input type="text" value="@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedGender) ? "N/A" : Model.PatientRecord.ResolvedGender)" class="form-control bg-light text-dark" readonly disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">Address</label>
+                            <input type="text" value="@(string.IsNullOrEmpty(Model.PatientRecord?.ResolvedAddress) ? "N/A" : Model.PatientRecord.ResolvedAddress)" class="form-control bg-light text-dark" readonly disabled />
+                        </div>
+                    }
                 </div>
             </div>
         </div>

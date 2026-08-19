@@ -59,43 +59,84 @@
         border: 1px solid var(--doc-teal-border);
     }
 
-    /* ─── Dashboard Header ─── */
+    /* ─── Modern Doctor Welcome Header Card ─── */
     .doc-header-card {
-        background: #ffffff;
-        border: 1px solid var(--doc-border);
-        border-radius: var(--doc-radius);
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1.25rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 55%, #e6fffa 100%);
+        border: 1px solid #ccfbf1;
+        border-radius: 16px;
+        padding: 1.35rem 1.75rem;
+        margin-bottom: 1.35rem;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 1.25rem;
+        box-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.08);
+        position: relative;
+        overflow: hidden;
     }
-    .doc-period-tabs {
+    .doc-header-card::before {
+        content: '';
+        position: absolute;
+        right: -30px;
+        top: -30px;
+        width: 160px;
+        height: 160px;
+        background: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .doc-avatar-beacon {
+        position: relative;
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+        flex-shrink: 0;
+    }
+    .doc-status-dot {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 13px;
+        height: 13px;
+        background: #10b981;
+        border-radius: 50%;
+        border: 2.5px solid #ffffff;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+    }
+    .doc-badge-pill {
         display: inline-flex;
-        background: #f1f5f9;
-        padding: 3px;
-        border-radius: 8px;
-        gap: 2px;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 9px;
+        background: #ccfbf1;
+        color: #0f766e;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
     }
-    .doc-period-tab {
-        border: none;
-        background: transparent;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #64748b;
-        padding: 4px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.15s;
-        text-decoration: none;
-    }
-    .doc-period-tab:hover { color: #0f172a; }
-    .doc-period-tab.active {
+    .doc-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
         background: #ffffff;
-        color: var(--doc-teal-dark);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #475569;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
     /* ─── KPI Grid (Compact 6-Card Responsive Grid) ─── */
@@ -175,7 +216,7 @@
         background: #ffffff;
         border: 1px solid var(--doc-border);
         border-radius: var(--doc-radius);
-        margin-bottom: 1.25rem;
+        margin-bottom: 0;
         overflow: hidden;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
@@ -302,35 +343,6 @@
     }
 </style>
 
-<!-- ══ 1. TOP HORIZONTAL SUB-NAVIGATION ══ -->
-<div class="doc-nav-bar">
-    <div class="doc-nav-links">
-        <a asp-page="/Doctor/Dashboard" class="doc-nav-link active">
-            <i class="bi bi-grid-1x2-fill"></i>Dashboard
-        </a>
-        <a asp-page="/Doctor/Schedules/Index" class="doc-nav-link">
-            <i class="bi bi-calendar3"></i>Schedule
-        </a>
-        <a asp-page="/Doctor/Appointments/Index" class="doc-nav-link">
-            <i class="bi bi-calendar-check"></i>Appointments
-        </a>
-        <a asp-page="/Doctor/Patients/Index" class="doc-nav-link">
-            <i class="bi bi-people"></i>Patients
-        </a>
-        <a asp-page="/Doctor/TreatmentCases/Index" class="doc-nav-link">
-            <i class="bi bi-heart-pulse"></i>Treatment Cases
-        </a>
-        <a asp-page="/Doctor/Revenue/Index" class="doc-nav-link">
-            <i class="bi bi-wallet2"></i>Earnings & Revenue
-        </a>
-    </div>
-    <div class="d-none d-md-flex align-items-center gap-2">
-        <a asp-page="/Doctor/Profile" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.8rem;">
-            <i class="bi bi-person-badge me-1"></i>Doctor Profile
-        </a>
-    </div>
-</div>
-
 @if (Model.Error != null)
 {
     <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">@Model.Error</div>
@@ -383,32 +395,68 @@
 
 @if (Model.IsVerified)
 {
-    <!-- ══ 2. DASHBOARD HEADER ══ -->
+    <!-- ══ 1. DASHBOARD HEADER ══ -->
     <div class="doc-header-card">
-        <div>
-            <h1 style="font-size:1.45rem; font-weight:800; color:#0f172a; margin:0; letter-spacing:-0.01em;">
-                @Model.Greeting, @Model.DoctorName
-            </h1>
-            <p style="margin:3px 0 0; font-size:0.84rem; color:#64748b;">
-                Here is your practice overview for today.
-            </p>
+        <div class="d-flex align-items-center gap-3">
+            <div class="doc-avatar-beacon" style="overflow:hidden; padding:0;">
+                @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                {
+                    <img src="@Model.AvatarUrl" alt="@Model.DoctorName" style="width:100%; height:100%; object-fit:cover; border-radius:14px;" />
+                }
+                else
+                {
+                    <i class="bi bi-person-badge-fill"></i>
+                }
+                <span class="doc-status-dot" title="Doctor Portal Online"></span>
+            </div>
+            <div>
+                <div class="doc-badge-pill">
+                    <i class="bi bi-award-fill"></i>@(string.IsNullOrWhiteSpace(Model.ProfessionalTitle) ? "Psychological Specialist" : Model.ProfessionalTitle)
+                </div>
+                <h1 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0; letter-spacing:-0.02em;">
+                    @{
+                        var formattedDocName = Model.DoctorName;
+                        if (!string.IsNullOrWhiteSpace(formattedDocName) &&
+                            !formattedDocName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("BS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("ThS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("PGS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("GS.", StringComparison.OrdinalIgnoreCase))
+                        {
+                            formattedDocName = $"Dr. {formattedDocName}";
+                        }
+                    }
+                    @Model.Greeting, @formattedDocName
+                </h1>
+                <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                    <span class="text-muted" style="font-size:0.8rem;">
+                        <i class="bi bi-calendar3 me-1" style="color:#0d9488;"></i>@DateTime.Today.ToString("dddd, MMMM dd, yyyy")
+                    </span>
+                    <span class="text-muted" style="font-size:0.75rem;">&bull;</span>
+                    <div class="doc-stat-chip">
+                        <i class="bi bi-camera-video-fill text-primary"></i>
+                        <span><strong>@Model.TodaySessionsCount</strong> Today's Sessions</span>
+                    </div>
+                    @if (Model.InProgressAppointmentsCount > 0)
+                    {
+                        <div class="doc-stat-chip" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">
+                            <span class="spinner-grow spinner-grow-sm text-primary" style="width:7px; height:7px;" role="status"></span>
+                            <span><strong>@Model.InProgressAppointmentsCount</strong> In Progress</span>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
-            <div class="doc-period-tabs">
-                <a asp-page="/Doctor/Dashboard" asp-route-period="today" class="doc-period-tab @(Model.Period == "today" ? "active" : "")">Today</a>
-                <a asp-page="/Doctor/Dashboard" asp-route-period="week" class="doc-period-tab @(Model.Period == "week" ? "active" : "")">This Week</a>
-                <a asp-page="/Doctor/Dashboard" asp-route-period="month" class="doc-period-tab @(Model.Period == "month" ? "active" : "")">This Month</a>
-            </div>
-
-            <div class="d-flex gap-2">
-                <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.8rem; font-weight:600;">
-                    View Schedule
-                </a>
-                <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:8px; font-size:0.8rem; font-weight:600;">
-                    <i class="bi bi-plus-lg me-1"></i>Schedule Appointment
-                </a>
-            </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border:1.5px solid #99f6e4; color:#0f766e; border-radius:10px; font-size:0.83rem; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                <i class="bi bi-calendar-week" style="color:#0d9488;"></i>
+                <span>View Schedule</span>
+            </a>
+            <a asp-page="/Doctor/Patients/Index" class="btn btn-sm text-white px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:none; border-radius:10px; font-size:0.83rem; box-shadow:0 4px 14px rgba(13,148,136,0.35); transition:all 0.15s;">
+                <i class="bi bi-people-fill"></i>
+                <span>Patient List</span>
+            </a>
         </div>
     </div>
 
@@ -533,7 +581,7 @@
     </div>
 
     <!-- ══ ROW 3: TODAY'S SESSIONS (COL-8) + ACTION CENTER (COL-4) ══ -->
-    <div class="row g-3">
+    <div class="row g-4 mb-4">
         <!-- Today's Sessions -->
         <div class="col-lg-8">
             <div class="doc-card h-100">
@@ -633,6 +681,17 @@
                 </div>
                 <div class="doc-card-body">
                     <div class="d-flex flex-column gap-2">
+                        @if (Model.InProgressAppointmentsCount > 0)
+                        {
+                            <a asp-page="/Doctor/Appointments/Index" asp-route-status="3" class="action-task-item" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-play-circle-fill text-primary"></i>
+                                    <span><strong>@Model.InProgressAppointmentsCount</strong> consultation(s) currently in progress</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
                         @if (Model.PendingApprovalsCount > 0)
                         {
                             <a asp-page="/Doctor/Appointments/Index" asp-route-status="0" class="action-task-item">
@@ -671,13 +730,13 @@
                             <a asp-page="/Doctor/Appointments/Index" class="action-task-item" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-calendar2-check text-success"></i>
-                                    <span><strong>@Model.TodayFollowUpsCount</strong> patient consultations scheduled for today</span>
+                                    <span><strong>@Model.TodayFollowUpsCount</strong> approved consultations scheduled for today</span>
                                 </div>
                                 <i class="bi bi-arrow-right text-muted"></i>
                             </a>
                         }
 
-                        @if (Model.PendingApprovalsCount == 0 && Model.PendingNotesCount == 0 && Model.NearDeadlineCasesCount == 0 && Model.TodayFollowUpsCount == 0)
+                        @if (Model.InProgressAppointmentsCount == 0 && Model.PendingApprovalsCount == 0 && Model.PendingNotesCount == 0 && Model.NearDeadlineCasesCount == 0 && Model.TodayFollowUpsCount == 0)
                         {
                             <div class="text-center py-4 text-muted">
                                 <i class="bi bi-check2-circle text-success fs-1 d-block mb-2"></i>
@@ -692,7 +751,7 @@
     </div>
 
     <!-- ══ ROW 4: PATIENT GROWTH (COL-4) + RETENTION & RE-EXAMINATION (COL-4) + APPOINTMENT ANALYTICS (COL-4) ══ -->
-    <div class="row g-3">
+    <div class="row g-4 mb-4">
         <!-- 1. Patient Growth -->
         <div class="col-lg-4">
             <div class="doc-card h-100">
@@ -908,7 +967,7 @@
     </div>
 
     <!-- ══ ROW 5: REVENUE OVERVIEW (FULL WIDTH - COL-12) ══ -->
-    <div class="doc-card">
+    <div class="doc-card mb-4">
         <div class="doc-card-header flex-wrap gap-2">
             <div>
                 <h5 class="doc-card-title mb-0">
@@ -953,101 +1012,10 @@
                     </a>
                 </div>
 
-                <!-- Interactive Revenue Trend Chart -->
+                <!-- Interactive Revenue Trend Chart (Chart.js) -->
                 <div class="col-lg-9">
-                    <div class="chart-container" style="height:190px;">
-                        <!-- Tooltip Container -->
-                        <div id="chartTooltip" class="chart-tooltip"></div>
-
-                        <!-- Month SVG Chart -->
-                        <div id="chartViewMonth" style="width:100%; height:100%;">
-                            <svg viewBox="0 0 600 160" style="width:100%; height:100%; overflow:visible;">
-                                <!-- Grid Lines -->
-                                <line x1="0" y1="40" x2="600" y2="40" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="90" x2="600" y2="90" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="140" x2="600" y2="140" stroke="#f1f5f9" stroke-width="1"/>
-
-                                <!-- Bars for Days -->
-                                @for (int i = 0; i < Model.RevenueMonthValues.Count; i++)
-                                {
-                                    var x = 10 + (i * 18.5);
-                                    var val = Model.RevenueMonthValues[i];
-                                    var h = Math.Min(120, (int)(val / 12000m));
-                                    var y = 140 - h;
-                                    var dayLabel = $"Day {i+1}";
-                                    var count = Model.RevenueMonthApptCounts[i];
-
-                                    <rect x="@x" y="@y" width="11" height="@h" rx="3" fill="#0d9488" style="cursor:pointer; opacity:0.85; transition:all 0.15s;"
-                                          onmouseover="showChartTooltip(evt, '@dayLabel', '@val.ToString("N0") VND', @count)"
-                                          onmouseout="hideChartTooltip()" />
-                                }
-                            </svg>
-                            <div class="d-flex justify-content-between text-muted small mt-1" style="font-size:0.72rem;">
-                                <span>Day 1</span>
-                                <span>Day 8</span>
-                                <span>Day 15</span>
-                                <span>Day 22</span>
-                                <span>Day 31</span>
-                            </div>
-                        </div>
-
-                        <!-- Quarter SVG Chart -->
-                        <div id="chartViewQuarter" style="width:100%; height:100%; display:none;">
-                            <svg viewBox="0 0 600 160" style="width:100%; height:100%; overflow:visible;">
-                                <line x1="0" y1="40" x2="600" y2="40" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="90" x2="600" y2="90" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="140" x2="600" y2="140" stroke="#f1f5f9" stroke-width="1"/>
-
-                                @for (int i = 0; i < Model.RevenueQuarterValues.Count; i++)
-                                {
-                                    var x = 70 + (i * 180);
-                                    var val = Model.RevenueQuarterValues[i];
-                                    var h = (int)(val / 150000m);
-                                    var y = 140 - h;
-                                    var qLabel = Model.RevenueQuarterMonths[i];
-                                    var count = Model.RevenueQuarterApptCounts[i];
-
-                                    <rect x="@x" y="@y" width="70" height="@h" rx="6" fill="#0d9488" style="cursor:pointer; opacity:0.9;"
-                                          onmouseover="showChartTooltip(evt, '@qLabel', '@val.ToString("N0") VND', @count)"
-                                          onmouseout="hideChartTooltip()" />
-                                }
-                            </svg>
-                            <div class="d-flex justify-content-around text-muted small mt-1" style="font-size:0.75rem;">
-                                @foreach (var qm in Model.RevenueQuarterMonths)
-                                {
-                                    <span>@qm</span>
-                                }
-                            </div>
-                        </div>
-
-                        <!-- Year SVG Chart -->
-                        <div id="chartViewYear" style="width:100%; height:100%; display:none;">
-                            <svg viewBox="0 0 600 160" style="width:100%; height:100%; overflow:visible;">
-                                <line x1="0" y1="40" x2="600" y2="40" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="90" x2="600" y2="90" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
-                                <line x1="0" y1="140" x2="600" y2="140" stroke="#f1f5f9" stroke-width="1"/>
-
-                                @for (int i = 0; i < Model.RevenueYearValues.Count; i++)
-                                {
-                                    var x = 15 + (i * 48);
-                                    var val = Model.RevenueYearValues[i];
-                                    var h = (int)(val / 150000m);
-                                    var y = 140 - h;
-                                    var ym = Model.RevenueYearMonths[i];
-                                    var count = Model.RevenueYearApptCounts[i];
-
-                                    <rect x="@x" y="@y" width="24" height="@h" rx="4" fill="#0d9488" style="cursor:pointer; opacity:0.85;"
-                                          onmouseover="showChartTooltip(evt, '@ym', '@val.ToString("N0") VND', @count)"
-                                          onmouseout="hideChartTooltip()" />
-                                }
-                            </svg>
-                            <div class="d-flex justify-content-between text-muted small mt-1" style="font-size:0.72rem;">
-                                @foreach (var ym in Model.RevenueYearMonths)
-                                {
-                                    <span>@ym</span>
-                                }
-                            </div>
-                        </div>
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="revenueDashboardChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -1055,7 +1023,7 @@
     </div>
 
     <!-- ══ ROW 6: PATIENT OUTCOMES (COL-6) + TREATMENT SUMMARY (COL-6) ══ -->
-    <div class="row g-3">
+    <div class="row g-4 mb-4">
         <!-- Patient Improvement / Clinical Outcomes -->
         <div class="col-lg-6">
             <div class="doc-card h-100">
@@ -1167,7 +1135,7 @@
     </div>
 
     <!-- ══ ROW 7: UPCOMING APPOINTMENTS (COL-7) + RECENT & SUBSCRIPTION (COL-5) ══ -->
-    <div class="row g-3">
+    <div class="row g-4 mb-4">
         <!-- Upcoming Appointments -->
         <div class="col-lg-7">
             <div class="doc-card h-100">
@@ -1327,39 +1295,134 @@
 }
 
 @section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function switchRevenuePeriod(period) {
-        document.querySelectorAll('.rev-pill').forEach(el => el.classList.remove('active'));
-        document.getElementById('chartViewMonth').style.display = 'none';
-        document.getElementById('chartViewQuarter').style.display = 'none';
-        document.getElementById('chartViewYear').style.display = 'none';
+    // Revenue Data from Model
+    const revData = {
+        month: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthDays)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthApptCounts)),
+            kpiDisplay: '@Model.RevenueThisMonth.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        },
+        quarter: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterMonths)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterApptCounts)),
+            kpiDisplay: '@Model.RevenueCurrentQuarter.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        },
+        year: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearMonths)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearApptCounts)),
+            kpiDisplay: '@Model.RevenueCurrentYear.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        }
+    };
 
-        if (period === 'month') {
-            document.getElementById('revBtnMonth').classList.add('active');
-            document.getElementById('chartViewMonth').style.display = 'block';
-            document.getElementById('revMainDisplay').innerHTML = '@Model.RevenueThisMonth.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>';
-        } else if (period === 'quarter') {
-            document.getElementById('revBtnQuarter').classList.add('active');
-            document.getElementById('chartViewQuarter').style.display = 'block';
-            document.getElementById('revMainDisplay').innerHTML = '@Model.RevenueCurrentQuarter.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>';
-        } else if (period === 'year') {
-            document.getElementById('revBtnYear').classList.add('active');
-            document.getElementById('chartViewYear').style.display = 'block';
-            document.getElementById('revMainDisplay').innerHTML = '@Model.RevenueCurrentYear.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>';
+    let revChartInstance = null;
+    let currentRevPeriod = 'month';
+
+    function initRevenueChart() {
+        const canvas = document.getElementById('revenueDashboardChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(13, 148, 136, 0.28)');
+        gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+
+        revChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: revData.month.labels,
+                datasets: [{
+                    label: 'Net Earnings (VND)',
+                    data: revData.month.values,
+                    borderColor: '#0d9488',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: revData.month.labels.length > 20 ? 0 : 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 10,
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const val = Number(context.raw || 0).toLocaleString();
+                                const count = revData[currentRevPeriod].counts[context.dataIndex] || 0;
+                                return [`Net Earnings: ${val} VND`, `Appointments: ${count}`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#94a3b8',
+                            maxTicksLimit: 12
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function switchRevenuePeriod(period) {
+        currentRevPeriod = period;
+        document.querySelectorAll('.rev-pill').forEach(el => el.classList.remove('active'));
+
+        const btn = document.getElementById('revBtn' + period.charAt(0).toUpperCase() + period.slice(1));
+        if (btn) btn.classList.add('active');
+
+        const kpiDisplay = document.getElementById('revMainDisplay');
+        if (kpiDisplay && revData[period]) {
+            kpiDisplay.innerHTML = revData[period].kpiDisplay;
+        }
+
+        if (revChartInstance && revData[period]) {
+            revChartInstance.data.labels = revData[period].labels;
+            revChartInstance.data.datasets[0].data = revData[period].values;
+            revChartInstance.data.datasets[0].pointRadius = revData[period].labels.length > 20 ? 0 : 4;
+            revChartInstance.update();
         }
     }
 
-    function showChartTooltip(evt, label, amount, count) {
-        const tooltip = document.getElementById('chartTooltip');
-        tooltip.innerHTML = `<strong>${label}</strong><br/>Revenue: ${amount}<br/>Appointments: ${count}`;
-        tooltip.style.display = 'block';
-        tooltip.style.left = (evt.offsetX || evt.layerX) + 'px';
-        tooltip.style.top = ((evt.offsetY || evt.layerY) - 50) + 'px';
-    }
-
-    function hideChartTooltip() {
-        const tooltip = document.getElementById('chartTooltip');
-        tooltip.style.display = 'none';
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        initRevenueChart();
+    });
 </script>
 }

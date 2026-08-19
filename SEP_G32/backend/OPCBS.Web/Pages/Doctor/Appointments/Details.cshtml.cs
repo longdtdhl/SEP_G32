@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Domain.Constants;
+using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 using System;
@@ -129,6 +130,14 @@ public class DetailsModel : PageModel
         }
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostUpdateConsultationModeAsync(Guid id, ConsultationMode mode)
+    {
+        var (success, error) = await _api.UpdateConsultationModeAsync(id, mode);
+        if (!success) TempData["Error"] = error ?? "Failed to update consultation mode.";
+        else TempData["Success"] = $"Consultation mode updated to {(mode == ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)")} successfully!";
+        return RedirectToPage(new { id });
     }
 
     public async Task<IActionResult> OnPostConfirmAsync(Guid id)

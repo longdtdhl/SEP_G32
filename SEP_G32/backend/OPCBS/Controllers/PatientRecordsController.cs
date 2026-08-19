@@ -128,6 +128,16 @@ public class PatientRecordsController : ControllerBase
     }
 
     [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("batch")]
+    public async Task<IActionResult> CreateBatch([FromBody] List<CreatePatientRecordDto> dtos)
+    {
+        var doctorId = GetUserId();
+        if (doctorId == null) return Unauthorized();
+        var result = await _service.CreateBatchAsync(doctorId.Value, dtos);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = RoleConstants.Doctor)]
     [HttpPost("{id}/create-account")]
     public async Task<IActionResult> CreateGuestAccount(Guid id)
     {
@@ -163,6 +173,17 @@ public class PatientRecordsController : ControllerBase
         }
 
         var result = await _service.UpdateAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var doctorId = GetUserId();
+        if (doctorId == null) return Unauthorized();
+
+        var result = await _service.DeleteAsync(doctorId.Value, id);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 }

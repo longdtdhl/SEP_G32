@@ -280,7 +280,12 @@ public class PatientRecordDto
     public string? DisplayEmail { get; set; }
     public bool IsGuest => PatientId == null;
 
-    // Enriched from PatientProfile for registered patients. Guest records intentionally remain null.
+    // Guest demographic fields
+    public DateTime? GuestDateOfBirth { get; set; }
+    public string? GuestGender { get; set; }
+    public string? GuestAddress { get; set; }
+
+    // Enriched from PatientProfile for registered patients.
     public DateTime? DateOfBirth { get; set; }
     public string? Gender { get; set; }
     public string? Address { get; set; }
@@ -296,6 +301,9 @@ public class CreatePatientRecordDto
     public string? GuestName { get; set; }
     public string? GuestPhone { get; set; }
     public string? GuestEmail { get; set; }
+    public DateTime? GuestDateOfBirth { get; set; }
+    public string? GuestGender { get; set; }
+    public string? GuestAddress { get; set; }
     public string? PsychologicalHistory { get; set; }
     public string? CurrentSymptoms { get; set; }
     public string? StressFactors { get; set; }
@@ -420,3 +428,9 @@ public class AppointmentClinicalContextDto
     public List<RecentAssessmentResultDto> RecentAssessments { get; set; } = new();
     public AppointmentTreatmentCaseContextDto? TreatmentCaseContext { get; set; }
 }
+
+public class UpdateConsultationModeDto
+{
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
+}
+

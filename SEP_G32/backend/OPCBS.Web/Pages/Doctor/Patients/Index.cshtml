@@ -183,6 +183,33 @@
         color: #b45309;
     }
 
+    .btn-guest-delete {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fee2e2;
+        padding: 0;
+        margin-left: 8px;
+        font-size: 0.72rem;
+        cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        vertical-align: middle;
+        flex-shrink: 0;
+    }
+
+    .btn-guest-delete:hover {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+        transform: scale(1.12);
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+    }
+
     .badge-notes {
         background: #e0f2fe;
         color: #0369a1;
@@ -197,8 +224,67 @@
 
     .action-btn-group {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         justify-content: flex-end;
+        align-items: center;
+    }
+
+    .btn-action-icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        border: 1px solid transparent !important;
+        font-size: 0.95rem !important;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-decoration: none !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        cursor: pointer !important;
+    }
+
+    .btn-action-icon:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-action-view {
+        background: #f0fdfa !important;
+        color: #0d9488 !important;
+        border-color: #ccfbf1 !important;
+    }
+
+    .btn-action-view:hover {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+        border-color: #0d9488 !important;
+        box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3) !important;
+    }
+
+    .btn-action-edit {
+        background: #f0f9ff !important;
+        color: #0284c7 !important;
+        border-color: #bae6fd !important;
+    }
+
+    .btn-action-edit:hover {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3) !important;
+    }
+
+    .btn-action-pdf {
+        background: #fff1f2 !important;
+        color: #e11d48 !important;
+        border-color: #fecdd3 !important;
+    }
+
+    .btn-action-pdf:hover {
+        background: #e11d48 !important;
+        color: #ffffff !important;
+        border-color: #e11d48 !important;
+        box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3) !important;
     }
 
     .empty-state {
@@ -227,21 +313,98 @@
             display: none;
         }
     }
+
+    /* ─── Header Actions ─── */
+    .pi-actions-wrap {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .pi-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 18px !important;
+        border-radius: 10px !important;
+        font-size: 0.86rem !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease-in-out !important;
+        border: 1px solid transparent !important;
+        cursor: pointer !important;
+        line-height: 1.35 !important;
+        white-space: nowrap !important;
+    }
+    .pi-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .pi-btn-excel {
+        background: #f0fdf4 !important;
+        border: 1.5px solid #86efac !important;
+        color: #15803d !important;
+    }
+    .pi-btn-excel:hover {
+        background: #dcfce7 !important;
+        border-color: #4ade80 !important;
+        color: #166534 !important;
+        box-shadow: 0 4px 12px rgba(22, 101, 52, 0.15) !important;
+    }
+    .pi-btn-excel i {
+        color: #16a34a;
+        font-size: 1.05rem;
+    }
+    .pi-btn-primary {
+        background: #0d9488 !important;
+        border: 1.5px solid #0d9488 !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
+    }
+    .pi-btn-primary:hover {
+        background: #0f766e !important;
+        border-color: #0f766e !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.38) !important;
+    }
+    .pi-btn-primary i {
+        font-size: 0.95rem;
+    }
 </style>
 
-<div class="mb-page-header d-flex justify-content-between align-items-center mb-4">
+<div class="mb-page-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-person-lines-fill me-2" style="color:var(--mb-primary);"></i>Patient Records
+            <i class="bi bi-person-lines-fill me-2" style="color:#0d9488;"></i>Patient Records
         </h1>
         <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Manage patient profiles and consultation history</p>
     </div>
-    <div>
-        <a asp-page="./Create" class="btn btn-primary px-3 py-2 fw-semibold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary);">
-            <i class="bi bi-person-plus me-1"></i>Add Patient
+    <div class="pi-actions-wrap">
+        <button type="button" class="pi-btn pi-btn-excel" data-bs-toggle="modal" data-bs-target="#importPatientsModal" title="Import patient list from Excel or CSV file">
+            <i class="bi bi-file-earmark-excel-fill"></i>
+            <span>Import Excel</span>
+        </button>
+        <a asp-page="./Create" class="pi-btn pi-btn-primary" title="Create a new patient record">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Add Patient</span>
         </a>
     </div>
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" style="border-radius:10px; border:none; font-size:0.88rem;">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" style="border-radius:10px; border:none; font-size:0.88rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 <div class="patient-container">
     <div class="patient-header-bar">
@@ -313,9 +476,11 @@
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="patient-avatar" style="background:@bgColor; color:@txColor;">@initial</div>
                                     <div>
-                                        <a asp-page="./Details" asp-route-id="@patient.Id" class="patient-name">
-                                            @patient.ResolvedDisplayName
-                                        </a>
+                                        <div class="d-flex align-items-center">
+                                            <a asp-page="./Details" asp-route-id="@patient.Id" class="patient-name">
+                                                @patient.ResolvedDisplayName
+                                            </a>
+                                        </div>
                                         <div class="patient-subtext">ID: @patient.Id.ToString().Substring(0, 8)...</div>
                                     </div>
                                 </div>
@@ -361,8 +526,8 @@
                             </td>
                             <td>
                                 <div class="action-btn-group">
-                                    <a asp-page="./Details" asp-route-id="@patient.Id" class="btn btn-sm btn-outline-primary fw-semibold" style="border-radius:8px; font-size:0.8rem;">
-                                        <i class="bi bi-eye me-1"></i>Profile &amp; Notes
+                                    <a asp-page="./Details" asp-route-id="@patient.Id" class="btn-action-icon btn-action-view" title="View Patient Profile & Records">
+                                        <i class="bi bi-eye-fill"></i>
                                     </a>
                                 </div>
                             </td>
@@ -372,4 +537,109 @@
             </table>
         </div>
     }
+</div>
+
+<!-- ══ Import Patients Modal ══ -->
+<div class="modal fade" id="importPatientsModal" tabindex="-1" aria-labelledby="importPatientsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 680px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.12); overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-0" style="padding: 1.5rem 1.75rem 0.75rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; font-size: 1.4rem;">
+                        <i class="bi bi-file-earmark-excel-fill"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="importPatientsModalLabel" style="font-size: 1.2rem;">
+                            Import Patients (Excel / CSV)
+                        </h5>
+                        <p class="text-muted small mb-0 mt-0.5">Quickly import patient records as Guest profiles under your clinic management.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body" style="padding: 1.25rem 1.75rem 1.75rem;">
+                <!-- Download Template Banner Card -->
+                <div class="p-3 mb-3.5 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: #f0fdfa; border: 1.5px solid #99f6e4;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background: #ccfbf1; color: #0f766e; font-size: 1.15rem;">
+                            <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size: 0.88rem;">Excel Template File (.xlsx)</div>
+                            <div class="text-muted" style="font-size: 0.76rem;">Pre-formatted headers and sample rows ready for use</div>
+                        </div>
+                    </div>
+                    <a asp-page-handler="DownloadTemplate" class="btn text-white px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background: #0d9488; border-radius: 9px; font-size: 0.82rem; text-decoration: none; box-shadow: 0 2px 6px rgba(13,148,136,0.2);">
+                        <i class="bi bi-download"></i>
+                        <span>Download Template</span>
+                    </a>
+                </div>
+
+                <!-- Column Reference Guide -->
+                <div class="mb-3.5 p-3 rounded-3 bg-light border" style="font-size: 0.8rem; color: #334155;">
+                    <div class="fw-bold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.82rem;">
+                        <i class="bi bi-table text-teal" style="color: #0d9488;"></i>
+                        <span>Supported Excel Columns &amp; Validation Rules:</span>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border mb-1.5">
+                                <span><i class="bi bi-person me-1.5 text-muted"></i><strong>Họ và tên</strong> (Full Name)</span>
+                                <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700; font-size: 0.68rem;">Required</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border mb-1.5">
+                                <span><i class="bi bi-envelope me-1.5 text-muted"></i><strong>Email</strong></span>
+                                <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700; font-size: 0.68rem;">Required</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border">
+                                <span><i class="bi bi-telephone me-1.5 text-muted"></i><strong>Số điện thoại</strong> (Phone)</span>
+                                <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700; font-size: 0.68rem;">Required</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border mb-1.5">
+                                <span><i class="bi bi-chat-text me-1.5 text-muted"></i><strong>Số Zalo</strong></span>
+                                <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.68rem;">Optional</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border mb-1.5">
+                                <span><i class="bi bi-calendar-date me-1.5 text-muted"></i><strong>Ngày sinh / Tuổi</strong></span>
+                                <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.68rem;">Optional</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border">
+                                <span><i class="bi bi-geo-alt me-1.5 text-muted"></i><strong>Địa chỉ / Ghi chú</strong></span>
+                                <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.68rem;">Optional</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Form -->
+                <form method="post" asp-page-handler="ImportExcel" enctype="multipart/form-data" id="importPatientForm">
+                    <div class="mb-4">
+                        <label for="excelFileInput" class="form-label fw-bold text-dark small mb-1.5">
+                            <i class="bi bi-cloud-arrow-up me-1 text-teal" style="color: #0d9488;"></i>Select Spreadsheet File (.xlsx, .xls, .csv)
+                        </label>
+                        <input type="file" name="excelFile" id="excelFileInput" class="form-control" accept=".xlsx,.xls,.csv" required style="border-radius: 9px; padding: 0.55rem 0.85rem; font-size: 0.85rem; border-color: #cbd5e1;" />
+                        <div class="form-text small text-muted mt-1">Maximum file size: 10MB. Make sure headers match the template format.</div>
+                    </div>
+
+                    <!-- Footer Action Buttons -->
+                    <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
+                        <button type="button" class="btn btn-light px-4 py-2 fw-semibold text-secondary" data-bs-dismiss="modal" style="border-radius: 9px; font-size: 0.85rem; border: 1px solid #e2e8f0;">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="border-radius: 9px; font-size: 0.85rem; background: #059669; border-color: #059669; box-shadow: 0 2px 8px rgba(5,150,105,0.25);" id="btnSubmitImport">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                            <span>Import Patients</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
