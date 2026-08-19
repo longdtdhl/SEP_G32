@@ -1350,7 +1350,8 @@ public class BusinessServicesTests
         var docUser = new User { Id = doctorUserId, Email = "doc@test.com", FullName = "Dr Tester", PhoneNumber = "123", PasswordHash = "x", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
         var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = docUser };
 
-        var testDate = new DateOnly(2026, 8, 14);
+        var futureDate = DateTime.UtcNow.AddDays(1);
+        var testDate = DateOnly.FromDateTime(futureDate);
         var slotId = Guid.NewGuid();
         var slot = new AppointmentSlot
         {
@@ -1372,7 +1373,7 @@ public class BusinessServicesTests
             PatientId = Guid.NewGuid(),
             AppointmentSlotId = slotId,
             AppointmentSlot = slot,
-            AppointmentDate = new DateTime(2026, 8, 14, 9, 0, 0),
+            AppointmentDate = futureDate.Date.AddHours(9),
             Status = AppointmentStatus.Cancelled
         };
 
@@ -1385,8 +1386,8 @@ public class BusinessServicesTests
 
         var service = new ScheduleService(scheduleRepo.Object, slotRepo.Object, doctorRepo.Object, userRepo.Object, dayOffRepo.Object, apptRepo.Object, uow.Object, mapper.Object, patientRepo: patientRepo.Object);
 
-        var start = new DateTime(2026, 8, 14, 0, 0, 0);
-        var end = new DateTime(2026, 8, 15, 0, 0, 0);
+        var start = futureDate.Date;
+        var end = futureDate.Date.AddDays(1);
         var result = await service.GetCalendarEventsAsync(doctorUserId, start, end, default);
 
         Assert.True(result.Success);

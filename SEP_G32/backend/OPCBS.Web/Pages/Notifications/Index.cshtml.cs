@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OPCBS.Web.DTOs;
+using OPCBS.Web.Helpers;
 using OPCBS.Web.Services;
 
 namespace OPCBS.Web.Pages.Notifications;
@@ -9,7 +10,13 @@ namespace OPCBS.Web.Pages.Notifications;
 public class IndexModel : PageModel
 {
     private readonly INotificationApiService _api;
-    public IndexModel(INotificationApiService api) => _api = api;
+    private readonly JwtCookieService _jwt;
+
+    public IndexModel(INotificationApiService api, JwtCookieService jwt)
+    {
+        _api = api;
+        _jwt = jwt;
+    }
 
     public List<NotificationDto> Notifications { get; set; } = new();
     public PaginationDto? Pagination { get; set; }
@@ -23,7 +30,9 @@ public class IndexModel : PageModel
         ViewData["UseDashboardLayout"] = true;
         ViewData["Title"] = "Notifications";
 
+        var role = _jwt.GetRole();
         var (data, pagination, _) = await _api.GetNotificationsAsync(CurrentPage, 15);
+        data.EnrichActionUrls(role);
         Notifications = data;
         Pagination = pagination;
 
@@ -53,7 +62,9 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetRecentAsync()
     {
+        var role = _jwt.GetRole();
         var (data, _, _) = await _api.GetNotificationsAsync(1, 5);
+        data.EnrichActionUrls(role);
         return new JsonResult(new { success = true, data });
     }
 

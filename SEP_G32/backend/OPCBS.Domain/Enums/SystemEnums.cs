@@ -48,7 +48,13 @@ public enum AppointmentStatus
     NoShow = 8,
 
     /// <summary>Guest booking is waiting for email confirmation before doctor review</summary>
-    AwaitingGuestConfirmation = 9
+    AwaitingGuestConfirmation = 9,
+
+    /// <summary>Doctor requested completion confirmation from a guest by email.</summary>
+    AwaitingGuestCompletionConfirmation = 10,
+
+    /// <summary>The patient or guest disputed the requested completion and Support review is required.</summary>
+    CompletionDisputed = 11
 }
 
 /// <summary>Patient response to a doctor's appointment-completion request.</summary>
@@ -57,7 +63,9 @@ public enum AppointmentCompletionConfirmationStatus
     Pending = 0,
     Confirmed = 1,
     ExpiredAndAccountLocked = 2,
-    Cancelled = 3
+    Cancelled = 3,
+    Disputed = 4,
+    EscalatedForSupportReview = 5
 }
 
 /// <summary>Origin of a violation report.</summary>

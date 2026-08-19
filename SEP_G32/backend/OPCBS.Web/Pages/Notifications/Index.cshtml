@@ -61,16 +61,7 @@
                     "ConsultationNote" => "📋",
                     _ => "🔔"
                 };
-                var redirectUrl = notif.RelatedEntityType switch
-                {
-                    "Appointment" => "/Patient/Appointments/Index",
-                    "AppointmentReminder" => "/Patient/Appointments/Index",
-                    "ConsultationNote" => "/Patient/ConsultationRecords/Index",
-                    "TreatmentPackage" => "/Patient/TreatmentPackages/Index",
-                    "BlogPost" => $"/Blog/Details?id={notif.RelatedEntityId}",
-                    "FavoriteDoctor" => $"/Doctors/Details?id={notif.RelatedEntityId}",
-                    _ => "#"
-                };
+                var redirectUrl = !string.IsNullOrEmpty(notif.ActionUrl) ? notif.ActionUrl : "#";
 
                 <div class="list-group-item border-0 d-flex align-items-start gap-3 py-3" style="@bgClass border-bottom: 1px solid #f0f0f0 !important;">
                     <div style="font-size: 1.6rem; min-width: 36px; text-align: center;">@icon</div>
@@ -78,7 +69,14 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-1 fw-bold" style="font-size: 0.9rem;">
-                                    @notif.Title
+                                    @if (redirectUrl != "#")
+                                    {
+                                        <a href="@redirectUrl" class="text-dark text-decoration-none hover-primary">@notif.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @notif.Title
+                                    }
                                     @if (isUnread)
                                     {
                                         <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.6rem;">New</span>
@@ -100,8 +98,8 @@
                             <div class="d-flex gap-1 ms-2">
                                 @if (redirectUrl != "#")
                                 {
-                                    <a href="@redirectUrl" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 2px 8px;">
-                                        <i class="bi bi-eye"></i>
+                                    <a href="@redirectUrl" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 2px 8px;" title="View Details">
+                                        <i class="bi bi-arrow-right-circle"></i>
                                     </a>
                                 }
                                 @if (isUnread)

@@ -287,6 +287,32 @@ public class ViolationReportService : IViolationReportService
         return ApiResponse.SuccessResponse("Repeated no-show report created for Customer Support.");
     }
 
+    public async Task<ApiResponse> CreateSystemCompletionDisputeReportAsync(Guid? reporterUserId, Guid doctorUserId, Guid appointmentId, Guid? treatmentCaseId, string reason, CancellationToken ct = default)
+    {
+        var reports = await _reportRepo.GetAllAsync(ct);
+        if (reports.Any(r => !r.IsDeleted && r.RelatedAppointmentId == appointmentId &&
+                             r.ReasonCategory == ViolationReason.AppointmentCompletionDispute &&
+                             r.Status is not ViolationReportStatus.Dismissed and not ViolationReportStatus.Resolved))
+            return ApiResponse.SuccessResponse("Completion dispute report already exists.");
+
+        var report = new ViolationReport
+        {
+            ReporterUserId = reporterUserId,
+            ReportedUserId = doctorUserId,
+            Source = ViolationReportSource.System,
+            ReasonCategory = ViolationReason.AppointmentCompletionDispute,
+            ReasonDetail = reason,
+            RelatedAppointmentId = appointmentId,
+            RelatedTreatmentCaseId = treatmentCaseId,
+            CreatedBy = reporterUserId
+        };
+        await _reportRepo.AddAsync(report, ct);
+        await _uow.SaveChangesAsync(ct);
+        await NotifyRoleAsync(RoleConstants.CustomerSupport, "Appointment completion dispute",
+            "A patient or guest disputed an appointment completion request and requires review.", report.Id, ct);
+        return ApiResponse.SuccessResponse("Completion dispute report created for Customer Support.");
+    }
+
     private async Task<ViolationReport?> GetOpenReportAsync(Guid reportId, CancellationToken ct)
     {
         var report = await _reportRepo.GetByIdAsync(reportId, ct);

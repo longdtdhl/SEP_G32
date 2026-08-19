@@ -40,6 +40,9 @@ public class AppointmentsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto? dto)
     {
+        if (User.Identity?.IsAuthenticated == true && !User.IsInRole(RoleConstants.Patient))
+            return Forbid();
+
         if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Appointment payload is required."));
         var validation = await _createValidator.ValidateAsync(dto);
         if (!validation.IsValid)
@@ -115,6 +118,28 @@ public class AppointmentsController : ControllerBase
     {
         if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Confirmation token is required."));
         var result = await _apptService.ConfirmGuestAppointmentAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/guest/cancel - Cancel a guest booking with a single-use email token.</summary>
+    [AllowAnonymous]
+    [HttpPost("guest/cancel")]
+    public async Task<IActionResult> CancelGuestAppointment([FromBody] GuestAppointmentActionDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Token))
+            return BadRequest(ApiResponse.ErrorResponse("A valid cancellation link is required."));
+        var result = await _apptService.CancelGuestAppointmentAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/guest/request-cancellation-link - Email a new cancellation link to a guest.</summary>
+    [AllowAnonymous]
+    [HttpPost("guest/request-cancellation-link")]
+    public async Task<IActionResult> RequestGuestCancellationLink([FromBody] RequestGuestCancellationLinkDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
+            return BadRequest(ApiResponse.ErrorResponse("Booking code and email are required."));
+        var result = await _apptService.RequestGuestCancellationLinkAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -254,6 +279,39 @@ public class AppointmentsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _apptService.ConfirmCompletionAsync(appointmentId, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/dispute-completion - Patient disputes a completion request.</summary>
+    [Authorize(Roles = RoleConstants.Patient)]
+    [HttpPut("{appointmentId:guid}/dispute-completion")]
+    public async Task<IActionResult> DisputeCompletion(Guid appointmentId, [FromBody] DisputeCompletionDto? dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.DisputeCompletionAsync(appointmentId, userId.Value, dto ?? new DisputeCompletionDto());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/guest/confirm-completion - Guest confirms completion from an email link.</summary>
+    [AllowAnonymous]
+    [HttpPost("guest/confirm-completion")]
+    public async Task<IActionResult> ConfirmGuestCompletion([FromBody] GuestAppointmentActionDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Token))
+            return BadRequest(ApiResponse.ErrorResponse("A valid confirmation link is required."));
+        var result = await _apptService.ConfirmGuestCompletionAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/appointments/guest/dispute-completion - Guest disputes completion from an email link.</summary>
+    [AllowAnonymous]
+    [HttpPost("guest/dispute-completion")]
+    public async Task<IActionResult> DisputeGuestCompletion([FromBody] GuestAppointmentActionDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Token))
+            return BadRequest(ApiResponse.ErrorResponse("A valid dispute link is required."));
+        var result = await _apptService.DisputeGuestCompletionAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

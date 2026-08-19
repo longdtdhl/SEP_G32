@@ -40,14 +40,17 @@
             }
             if (notifEmpty) notifEmpty.classList.add('d-none');
             let html = '';
+            const bellContainer = document.getElementById('notification-bell-container');
+            const userRole = (bellContainer ? bellContainer.getAttribute('data-user-role') : '') || '';
+
             notifs.forEach(n => {
                 const isUnread = !n.isRead;
                 const timeAgo = getTimeAgo(n.createdAt);
                 const icon = getNotifIcon(n.type);
-                const url = getNotifUrl(n.relatedEntityType, n.relatedEntityId);
-                html += `<a href="${url}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom" 
+                const url = n.actionUrl || getNotifUrl(n.relatedEntityType, n.relatedEntityId, userRole);
+                html += `<a href="${url}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom notif-item-link" 
                             style="background:${isUnread ? '#f0f7ff' : '#fff'};transition:background 0.2s;" 
-                            data-notif-id="${n.id}"
+                            data-notif-id="${n.id}" data-unread="${isUnread}"
                             onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='${isUnread ? '#f0f7ff' : '#fff'}'">
                     <div style="font-size:1.3rem;min-width:28px;text-align:center;">${icon}</div>
                     <div style="flex:1;min-width:0;">
@@ -59,23 +62,130 @@
                 </a>`;
             });
             notifList.innerHTML = html;
+
+            // Bind click to mark as read immediately
+            notifList.querySelectorAll('.notif-item-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    const notifId = this.getAttribute('data-notif-id');
+                    const isUnread = this.getAttribute('data-unread') === 'true';
+                    if (notifId && isUnread) {
+                        try {
+                            fetch(`/Notifications?handler=MarkRead&id=${encodeURIComponent(notifId)}`, { method: 'POST' });
+                        } catch (e) { /* silent */ }
+                    }
+                });
+            });
         } catch(e) { /* silent */ }
     }
 
     function getNotifIcon(type) {
-        const icons = { 'Appointment': '📅', 'Verification': '✅', 'Subscription': '💳', 'Package': '📦', 'System': '🔔', 'Reminder': '⏰', 'ConsultationNote': '📋' };
+        const icons = { 'Appointment': '📅', 'Verification': '✅', 'Subscription': '💳', 'Package': '📦', 'System': '🔔', 'Reminder': '⏰', 'ConsultationNote': '📋', 'Message': '💬' };
         return icons[type] || '🔔';
     }
 
-    function getNotifUrl(entityType, entityId) {
-        if (!entityType || !entityId) return '/Notifications';
-        const routes = {
-            'Appointment': '/Patient/Appointments/Index',
-            'AppointmentReminder': '/Patient/Appointments/Index',
-            'ConsultationNote': '/Patient/ConsultationRecords/Index',
-            'TreatmentPackage': '/Patient/TreatmentPackages/Index'
-        };
-        return routes[entityType] || '/Notifications';
+    function getNotifUrl(entityType, entityId, userRole) {
+        const role = (userRole || '').toLowerCase();
+        const type = entityType || '';
+        const id = entityId || '';
+
+        // Doctor
+        if (role === 'doctor') {
+            if (type === 'Appointment' || type === 'AppointmentReminder' || type === 'AppointmentCompletionConfirmation') {
+                return id ? `/Doctor/Appointments/Details/${id}` : '/Doctor/Appointments/Index';
+            }
+            if (type === 'ConsultationNote' || type === 'FollowUpReminder') {
+                return id ? `/Doctor/ConsultationNotes/Details/${id}` : '/Doctor/ConsultationNotes/Index';
+            }
+            if (type === 'TreatmentPackage') {
+                return id ? `/Doctor/TreatmentPackages/Details/${id}` : '/Doctor/TreatmentPackages/Index';
+            }
+            if (type === 'TreatmentCase') {
+                return id ? `/Doctor/TreatmentCases/Details/${id}` : '/Doctor/TreatmentCases/Index';
+            }
+            if (type === 'Conversation' || type === 'Message') {
+                return id ? `/Doctor/Messages/Index?conversationId=${id}` : '/Doctor/Messages/Index';
+            }
+            if (type === 'Verification' || type === 'DoctorVerification') {
+                return '/Doctor/VerificationStatus';
+            }
+            if (type === 'Subscription' || type === 'DoctorSubscription') {
+                return '/Doctor/Subscriptions/Status';
+            }
+            if (type === 'BlogPost') {
+                return id ? `/Blog/Details/${id}` : '/Doctor/Blogs/Index';
+            }
+            return '/Doctor/Dashboard';
+        }
+
+        // Patient
+        if (role === 'patient') {
+            if (type === 'Appointment' || type === 'AppointmentReminder') {
+                return id ? `/Patient/Appointments/Details/${id}` : '/Patient/Appointments/Index';
+            }
+            if (type === 'AppointmentCompletionConfirmation') {
+                return id ? `/Patient/Appointments/Details/${id}` : '/Patient/ConsultationRecords/Index';
+            }
+            if (type === 'ConsultationNote' || type === 'FollowUpReminder') {
+                return '/Patient/ConsultationRecords/Index';
+            }
+            if (type === 'TreatmentPackage') {
+                return id ? `/Patient/TreatmentPackages/Details/${id}` : '/Patient/TreatmentPackages/Index';
+            }
+            if (type === 'TreatmentCase') {
+                return id ? `/Patient/TreatmentCases/Details/${id}` : '/Patient/TreatmentCases/Index';
+            }
+            if (type === 'Conversation' || type === 'Message') {
+                return id ? `/Patient/Messages/Index?conversationId=${id}` : '/Patient/Messages/Index';
+            }
+            if (type === 'BlogPost') {
+                return id ? `/Blog/Details/${id}` : '/Blog/Index';
+            }
+            if (type === 'FavoriteDoctor' || type === 'Doctor') {
+                return id ? `/Doctors/Details/${id}` : '/Patient/Favorites/Index';
+            }
+            return '/Patient/Dashboard';
+        }
+
+        // BusinessManager
+        if (role === 'businessmanager' || role === 'manager') {
+            if (type === 'Subscription' || type === 'DoctorSubscription') {
+                return '/BusinessManager/Subscriptions/Index';
+            }
+            if (type === 'ServicePackage' || type === 'Package') {
+                return '/BusinessManager/ServicePackages/Index';
+            }
+            if (type === 'PsychometricTest') {
+                return '/BusinessManager/Psychometrics/Index';
+            }
+            return '/BusinessManager/Dashboard';
+        }
+
+        // CustomerSupport
+        if (role === 'customersupport' || role === 'support') {
+            if (type === 'Verification' || type === 'DoctorVerification') {
+                return '/CustomerSupport/Verifications/Index';
+            }
+            if (type === 'ViolationReport') {
+                return '/CustomerSupport/Reports/Index';
+            }
+            return '/CustomerSupport/Dashboard';
+        }
+
+        // Admin
+        if (role === 'admin' || role === 'systemadmin') {
+            if (type === 'Verification' || type === 'DoctorVerification') {
+                return '/Admin/Verifications/Index';
+            }
+            if (type === 'ViolationReport') {
+                return '/Admin/Reports/Index';
+            }
+            return '/Admin/Dashboard';
+        }
+
+        // Default
+        if (type === 'BlogPost' && id) return `/Blog/Details/${id}`;
+        if ((type === 'Doctor' || type === 'FavoriteDoctor') && id) return `/Doctors/Details/${id}`;
+        return '/Notifications';
     }
 
     function getTimeAgo(dateStr) {

@@ -16,4 +16,5 @@ public interface IViolationReportService
     Task<ApiResponse<ViolationReportDto>> DisableAccountAsync(Guid reportId, Guid adminUserId, ReviewViolationReportDto dto, CancellationToken ct = default);
     Task<ApiResponse<ViolationReportDto>> DismissAsync(Guid reportId, Guid adminUserId, ReviewViolationReportDto dto, CancellationToken ct = default);
     Task<ApiResponse> CreateSystemNoShowReportAsync(Guid patientUserId, Guid doctorUserId, Guid appointmentId, Guid? treatmentCaseId, CancellationToken ct = default);
+    Task<ApiResponse> CreateSystemCompletionDisputeReportAsync(Guid? reporterUserId, Guid doctorUserId, Guid appointmentId, Guid? treatmentCaseId, string reason, CancellationToken ct = default);
 }

@@ -14,6 +14,8 @@ public interface IAppointmentService
     Task<ApiResponse<AppointmentDto>> TrackAppointmentAsync(TrackAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> ResendConfirmationEmailAsync(ResendConfirmationDto dto, CancellationToken ct = default);
     Task<ApiResponse> ConfirmGuestAppointmentAsync(ConfirmGuestAppointmentDto dto, CancellationToken ct = default);
+    Task<ApiResponse> CancelGuestAppointmentAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> RequestGuestCancellationLinkAsync(RequestGuestCancellationLinkDto dto, CancellationToken ct = default);
     Task<ApiResponse> CancelAppointmentAsync(Guid appointmentId, Guid userId, CancelAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> RescheduleAppointmentAsync(Guid appointmentId, Guid userId, RescheduleAppointmentDto dto, CancellationToken ct = default);
     Task<ApiResponse> RequestRescheduleAsync(Guid appointmentId, Guid patientUserId, RescheduleAppointmentDto dto, CancellationToken ct = default);
@@ -25,6 +27,9 @@ public interface IAppointmentService
     Task<ApiResponse> StartAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> CompleteAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default);
     Task<ApiResponse> ConfirmCompletionAsync(Guid appointmentId, Guid patientUserId, CancellationToken ct = default);
+    Task<ApiResponse> ConfirmGuestCompletionAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DisputeCompletionAsync(Guid appointmentId, Guid patientUserId, DisputeCompletionDto dto, CancellationToken ct = default);
+    Task<ApiResponse> DisputeGuestCompletionAsync(GuestAppointmentActionDto dto, CancellationToken ct = default);
     Task<ApiResponse> MarkPatientNoShowAsync(Guid appointmentId, Guid doctorUserId, string? reason = null, CancellationToken ct = default);
     Task<ApiResponse<int>> GetVisitCountAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default);
     Task<ApiResponse<bool>> IsReturningPatientAsync(Guid patientUserId, Guid doctorProfileId, CancellationToken ct = default);

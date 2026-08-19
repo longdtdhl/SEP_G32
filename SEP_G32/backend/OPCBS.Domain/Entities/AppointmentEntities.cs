@@ -89,8 +89,11 @@ public class AppointmentSlot : BaseEntity
     /// <summary>Navigation property to DoctorProfile</summary>
     public virtual required DoctorProfile DoctorProfile { get; set; }
 
-    /// <summary>Navigation property: appointment using this slot (if any)</summary>
-    public virtual Appointment? Appointment { get; set; }
+    /// <summary>Bookings made against this slot, including cancelled booking history.</summary>
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
+    /// <summary>Optimistic concurrency token used to prevent overbooking.</summary>
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
 
 /// <summary>
@@ -130,6 +133,9 @@ public class Appointment : BaseEntity
 
     /// <summary>Timestamp when the guest confirmed their email booking.</summary>
     public DateTime? GuestConfirmedAt { get; set; }
+
+    /// <summary>Hash of the single-use link that lets a guest cancel their own booking.</summary>
+    public string? GuestActionTokenHash { get; set; }
 
     /// <summary>Optional appointment notes/reason</summary>
     public string? Notes { get; set; }
@@ -228,6 +234,12 @@ public class AppointmentHistory : ImmutableEntity
 
     /// <summary>Reason for status change (optional)</summary>
     public string? Reason { get; set; }
+
+    /// <summary>User who performed the transition. Null is reserved for system jobs or anonymous guest links.</summary>
+    public Guid? ChangedByUserId { get; set; }
+
+    /// <summary>Human-readable actor classification, for example Doctor, Patient, Guest, or System.</summary>
+    public string? ChangedByRole { get; set; }
 
     /// <summary>Navigation property to Appointment</summary>
     public virtual required Appointment Appointment { get; set; }

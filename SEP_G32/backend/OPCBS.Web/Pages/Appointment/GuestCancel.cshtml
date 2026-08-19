@@ -1,0 +1,35 @@
+@page
+@model OPCBS.Web.Pages.Appointment.GuestCancelModel
+@{
+    ViewData["Title"] = "Cancel Appointment";
+}
+
+<section class="py-5">
+    <div class="container" style="max-width: 620px;">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <h1 class="h3 fw-bold mb-2">Cancel appointment</h1>
+                <p class="text-muted mb-4">This action releases your appointment time and cannot be undone.</p>
+                @if (Model.SuccessMessage != null)
+                {
+                    <div class="alert alert-success">@Model.SuccessMessage</div>
+                    <a asp-page="/Appointment/Track" class="btn btn-outline-success">Track another appointment</a>
+                }
+                else
+                {
+                    @if (Model.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger">@Model.ErrorMessage</div>
+                    }
+                    <form method="post">
+                        <input asp-for="Token" type="hidden" />
+                        <label asp-for="Reason" class="form-label fw-semibold">Reason (optional)</label>
+                        <textarea asp-for="Reason" class="form-control mb-4" rows="4" maxlength="1000" placeholder="Tell us why you need to cancel."></textarea>
+                        <button type="submit" class="btn btn-danger">Cancel appointment</button>
+                        <a asp-page="/Appointment/Track" class="btn btn-light ms-2">Keep appointment</a>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</section>

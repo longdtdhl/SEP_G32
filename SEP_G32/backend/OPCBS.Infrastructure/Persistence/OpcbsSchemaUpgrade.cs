@@ -21,6 +21,39 @@ public static class OpcbsSchemaUpgrade
                 ALTER TABLE [Appointments] ADD [GuestConfirmationSendCount] int NOT NULL CONSTRAINT [DF_Appointments_GuestConfirmationSendCount] DEFAULT 0;
             IF COL_LENGTH(N'Appointments', N'GuestConfirmedAt') IS NULL
                 ALTER TABLE [Appointments] ADD [GuestConfirmedAt] datetime2 NULL;
+            IF COL_LENGTH(N'Appointments', N'GuestActionTokenHash') IS NULL
+                ALTER TABLE [Appointments] ADD [GuestActionTokenHash] nvarchar(64) NULL;
+
+            -- A slot keeps booking history, so AppointmentSlotId must not remain unique.
+            DECLARE @slotAppointmentIndex sysname;
+            DECLARE @isUniqueConstraint bit;
+            DECLARE @dropSql nvarchar(500);
+            SELECT TOP (1) @slotAppointmentIndex = i.[name], @isUniqueConstraint = i.[is_unique_constraint]
+            FROM sys.indexes i
+            INNER JOIN sys.index_columns ic ON ic.[object_id] = i.[object_id] AND ic.[index_id] = i.[index_id]
+            INNER JOIN sys.columns c ON c.[object_id] = ic.[object_id] AND c.[column_id] = ic.[column_id]
+            WHERE i.[object_id] = OBJECT_ID(N'[Appointments]')
+              AND i.[is_unique] = 1
+              AND i.[is_primary_key] = 0
+              AND c.[name] = N'AppointmentSlotId';
+            IF @slotAppointmentIndex IS NOT NULL
+            BEGIN
+                IF @isUniqueConstraint = 1
+                    SET @dropSql = N'ALTER TABLE [Appointments] DROP CONSTRAINT ' + QUOTENAME(@slotAppointmentIndex) + N';';
+                ELSE
+                    SET @dropSql = N'DROP INDEX ' + QUOTENAME(@slotAppointmentIndex) + N' ON [Appointments];';
+                EXEC sp_executesql @dropSql;
+            END
+
+            IF COL_LENGTH(N'AppointmentSlots', N'RowVersion') IS NULL
+                ALTER TABLE [AppointmentSlots] ADD [RowVersion] rowversion NOT NULL;
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'AppointmentHistories', N'ChangedByUserId') IS NULL
+                ALTER TABLE [AppointmentHistories] ADD [ChangedByUserId] uniqueidentifier NULL;
+            IF COL_LENGTH(N'AppointmentHistories', N'ChangedByRole') IS NULL
+                ALTER TABLE [AppointmentHistories] ADD [ChangedByRole] nvarchar(32) NULL;
             """, ct);
 
         await context.Database.ExecuteSqlRawAsync("""
@@ -56,6 +89,20 @@ public static class OpcbsSchemaUpgrade
                 );
                 CREATE UNIQUE INDEX [IX_AppointmentCompletionConfirmations_AppointmentId] ON [AppointmentCompletionConfirmations]([AppointmentId]);
                 CREATE INDEX [IX_AppointmentCompletionConfirmations_Status_ReminderDueAt] ON [AppointmentCompletionConfirmations]([Status], [ReminderDueAt]);
+            END
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[AppointmentCompletionConfirmations]', N'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH(N'AppointmentCompletionConfirmations', N'GuestEmail') IS NULL
+                    ALTER TABLE [AppointmentCompletionConfirmations] ADD [GuestEmail] nvarchar(255) NULL;
+                IF COL_LENGTH(N'AppointmentCompletionConfirmations', N'GuestTokenHash') IS NULL
+                    ALTER TABLE [AppointmentCompletionConfirmations] ADD [GuestTokenHash] nvarchar(64) NULL;
+                IF COL_LENGTH(N'AppointmentCompletionConfirmations', N'DisputedAt') IS NULL
+                    ALTER TABLE [AppointmentCompletionConfirmations] ADD [DisputedAt] datetime2 NULL;
+                IF COL_LENGTH(N'AppointmentCompletionConfirmations', N'DisputeReason') IS NULL
+                    ALTER TABLE [AppointmentCompletionConfirmations] ADD [DisputeReason] nvarchar(2000) NULL;
             END
             """, ct);
 

@@ -19,6 +19,10 @@ public class AppointmentCompletionConfirmation : BaseEntity
     public DateTime? ConfirmedAt { get; set; }
     public DateTime? LockedAt { get; set; }
     public string? DoctorNote { get; set; }
+    public string? GuestEmail { get; set; }
+    public string? GuestTokenHash { get; set; }
+    public DateTime? DisputedAt { get; set; }
+    public string? DisputeReason { get; set; }
 }
 
 /// <summary>

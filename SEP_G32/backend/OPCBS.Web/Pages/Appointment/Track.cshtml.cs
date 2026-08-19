@@ -22,18 +22,9 @@ public class TrackModel : PageModel
         _service = service;
     }
 
-    public async Task<IActionResult> OnGetAsync([FromQuery] string? code = null, [FromQuery] string? email = null)
-    {
-        if (!string.IsNullOrWhiteSpace(code)) Input.BookingCode = code.Trim();
-        if (!string.IsNullOrWhiteSpace(email)) Input.Email = email.Trim();
-
-        if (!string.IsNullOrWhiteSpace(Input.BookingCode) && !string.IsNullOrWhiteSpace(Input.Email))
-        {
-            return await OnPostAsync();
-        }
-
-        return Page();
-    }
+    // Booking codes and email addresses are intentionally accepted only through the form.
+    // Keeping them out of query strings prevents accidental disclosure in browser history and logs.
+    public IActionResult OnGet() => Page();
 
     public async Task<IActionResult> OnPostAsync()
     {
@@ -95,6 +86,30 @@ public class TrackModel : PageModel
             ErrorMessage = error ?? "Gửi lại email không thành công. Vui lòng thử lại sau.";
         }
 
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRequestCancellationAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        HasSearched = true;
+        var (data, _) = await _service.TrackAsync(Input);
+        AppointmentResult = data;
+
+        if (string.IsNullOrWhiteSpace(Input.BookingCode) || string.IsNullOrWhiteSpace(Input.Email))
+        {
+            ErrorMessage = "Booking code and email are required.";
+            return Page();
+        }
+
+        var (success, message, error) = await _service.RequestGuestCancellationLinkAsync(new RequestGuestCancellationLinkDto
+        {
+            BookingCode = Input.BookingCode.Trim(),
+            Email = Input.Email.Trim()
+        });
+        SuccessMessage = success ? message : null;
+        ErrorMessage = success ? null : error ?? "The cancellation link could not be sent.";
         return Page();
     }
 }

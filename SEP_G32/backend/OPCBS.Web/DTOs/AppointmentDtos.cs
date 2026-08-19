@@ -26,7 +26,8 @@ public class CalendarEventDto
 }
 
 // AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled,
-// 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow, 9=AwaitingGuestConfirmation.
+// 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow, 9=AwaitingGuestConfirmation,
+// 10=AwaitingGuestCompletionConfirmation, 11=CompletionDisputed.
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -188,6 +189,18 @@ public class ResendConfirmationRequestDto
 public class ConfirmGuestAppointmentDto
 {
     public string? Token { get; set; }
+}
+
+public class GuestAppointmentActionDto
+{
+    public string? Token { get; set; }
+    public string? Reason { get; set; }
+}
+
+public class RequestGuestCancellationLinkDto
+{
+    public string? BookingCode { get; set; }
+    public string? Email { get; set; }
 }
 
 public class AppointmentFilterDto

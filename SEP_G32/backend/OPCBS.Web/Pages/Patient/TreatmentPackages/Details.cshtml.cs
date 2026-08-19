@@ -22,9 +22,12 @@ public class DetailsModel : PageModel
     public bool IsCancellationRequester => Package?.CancellationRequestedByUserId.HasValue == true &&
         Guid.TryParse(_jwtCookieService.GetUserId(), out var userId) && Package.CancellationRequestedByUserId == userId;
 
-    public async Task<IActionResult> OnGetAsync(Guid id)
+    public async Task<IActionResult> OnGetAsync(Guid? id)
     {
-        var (data, error) = await _service.GetByIdAsync(id);
+        if (!id.HasValue || id.Value == Guid.Empty)
+            return RedirectToPage("Index");
+
+        var (data, error) = await _service.GetByIdAsync(id.Value);
         Package = data;
         Error = error;
         return Page();

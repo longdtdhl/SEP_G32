@@ -71,8 +71,8 @@ public class AppointmentReminderService : BackgroundService
             a.Status == AppointmentStatus.Approved &&
             !a.IsDeleted &&
             slotDict.TryGetValue(a.AppointmentSlotId, out var slot) &&
-            slot.SlotDate.ToDateTime(slot.StartTime) >= reminderWindowStart &&
-            slot.SlotDate.ToDateTime(slot.StartTime) <= reminderWindowEnd
+            GetSlotStartUtc(slot) >= reminderWindowStart &&
+            GetSlotStartUtc(slot) <= reminderWindowEnd
         ).ToList();
 
         if (!upcomingAppts.Any()) return;
@@ -260,8 +260,8 @@ public class AppointmentReminderService : BackgroundService
     }
 
     /// <summary>
-    /// Reminds a patient one day after a doctor requests completion confirmation.
-    /// Unresolved requests lock the patient account after seven days, as approved by policy.
+    /// Reminds the recipient one day after a completion request. Unresolved requests are
+    /// escalated for Support review; they never lock an account automatically.
     /// </summary>
     private async Task CheckPendingCompletionConfirmationsAsync(CancellationToken ct)
     {
@@ -283,18 +283,23 @@ public class AppointmentReminderService : BackgroundService
         var users = await userRepo.GetAllAsync(ct);
         foreach (var confirmation in confirmations)
         {
-            var patient = users.FirstOrDefault(u => u.Id == confirmation.PatientUserId && !u.IsDeleted);
-            if (patient == null) continue;
+            var isGuest = !string.IsNullOrWhiteSpace(confirmation.GuestEmail);
+            var patient = isGuest ? null : users.FirstOrDefault(u => u.Id == confirmation.PatientUserId && !u.IsDeleted);
+            if (!isGuest && patient == null) continue;
+            var recipientEmail = isGuest ? confirmation.GuestEmail : patient!.Email;
 
             if (!confirmation.ReminderSentAt.HasValue && now >= confirmation.ReminderDueAt && now < confirmation.EscalationDueAt)
             {
                 try
                 {
-                    await notificationService.CreateNotificationAsync(patient.Id, "Completion confirmation reminder",
-                        "Customer Support is waiting for you to confirm your consultation note. Please review it today to avoid policy action.",
-                        NotificationType.Reminder, confirmation.AppointmentId, "AppointmentCompletionConfirmation", ct);
-                    if (!string.IsNullOrWhiteSpace(patient.Email))
-                        await emailService.SendEmailAsync(patient.Email, "OPCBS - Confirmation reminder", "<p>Please confirm your consultation note. Customer Support will review an unresolved request after seven days.</p>", ct);
+                    if (patient != null)
+                    {
+                        await notificationService.CreateNotificationAsync(patient.Id, "Completion confirmation reminder",
+                            "Please confirm or dispute the completion request. Unresolved requests are sent to Customer Support for review.",
+                            NotificationType.Reminder, confirmation.AppointmentId, "AppointmentCompletionConfirmation", ct);
+                    }
+                    if (!string.IsNullOrWhiteSpace(recipientEmail))
+                        await emailService.SendEmailAsync(recipientEmail, "OPCBS - Completion confirmation reminder", "<p>Please confirm or dispute the completion request. Unresolved requests are sent to Customer Support for review.</p>", ct);
                     confirmation.ReminderSentAt = now;
                     confirmation.UpdatedAt = now;
                     confirmationRepo.Update(confirmation);
@@ -309,35 +314,34 @@ public class AppointmentReminderService : BackgroundService
             if (now < confirmation.EscalationDueAt) continue;
 
             var appointment = await appointmentRepo.GetByIdAsync(confirmation.AppointmentId, ct);
-            confirmation.Status = AppointmentCompletionConfirmationStatus.ExpiredAndAccountLocked;
-            confirmation.LockedAt = now;
+            confirmation.Status = AppointmentCompletionConfirmationStatus.EscalatedForSupportReview;
             confirmation.UpdatedAt = now;
-            patient.Status = UserStatus.Locked;
-            userRepo.Update(patient);
             confirmationRepo.Update(confirmation);
-            if (appointment != null && appointment.Status == AppointmentStatus.AwaitingPatientConfirmation)
+            if (appointment != null && appointment.Status is AppointmentStatus.AwaitingPatientConfirmation or AppointmentStatus.AwaitingGuestCompletionConfirmation)
             {
                 var previousStatus = appointment.Status;
-                appointment.Status = AppointmentStatus.NoShow;
+                appointment.Status = AppointmentStatus.CompletionDisputed;
                 appointment.UpdatedAt = now;
                 appointmentRepo.Update(appointment);
                 await historyRepo.AddAsync(new Domain.Entities.AppointmentHistory
                 {
                     AppointmentId = appointment.Id,
                     PreviousStatus = previousStatus,
-                    NewStatus = AppointmentStatus.NoShow,
-                    Reason = "Patient did not confirm completion request within seven days.",
+                    NewStatus = AppointmentStatus.CompletionDisputed,
+                    Reason = "Completion request was not resolved within seven days and requires Support review.",
+                    ChangedByRole = "System",
                     Appointment = appointment
                 }, ct);
             }
             await uow.SaveChangesAsync(ct);
             try
             {
-                await notificationService.CreateNotificationAsync(patient.Id, "Account locked for policy review",
-                    "Your account was locked because a consultation completion request was not confirmed within seven days. Contact Customer Support by email to request reactivation.",
-                    NotificationType.System, confirmation.AppointmentId, "AppointmentCompletionConfirmation", ct);
-                if (!string.IsNullOrWhiteSpace(patient.Email))
-                    await emailService.SendEmailAsync(patient.Email, "OPCBS - Account locked", "<p>Your account was locked after a consultation completion confirmation remained unresolved for seven days. Contact Customer Support by email to request reactivation.</p>", ct);
+                if (patient != null)
+                    await notificationService.CreateNotificationAsync(patient.Id, "Completion request escalated",
+                        "Your completion request is now awaiting Customer Support review. Your account remains active.",
+                        NotificationType.System, confirmation.AppointmentId, "AppointmentCompletionConfirmation", ct);
+                if (!string.IsNullOrWhiteSpace(recipientEmail))
+                    await emailService.SendEmailAsync(recipientEmail, "OPCBS - Completion request escalated", "<p>Your completion request is now awaiting Customer Support review. No account action has been taken.</p>", ct);
             }
             catch (Exception ex)
             {
@@ -370,7 +374,7 @@ public class AppointmentReminderService : BackgroundService
         {
             var slot = await slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
             if (slot == null) continue;
-            var appointmentStart = slot.SlotDate.ToDateTime(slot.StartTime);
+            var appointmentStart = GetSlotStartUtc(slot);
             if (appointmentStart <= now.AddDays(1))
             {
                 var previousStatus = appointment.Status;
@@ -389,6 +393,7 @@ public class AppointmentReminderService : BackgroundService
                     PreviousStatus = previousStatus,
                     NewStatus = AppointmentStatus.Cancelled,
                     Reason = appointment.CancellationReason,
+                    ChangedByRole = "System",
                     Appointment = appointment
                 }, ct);
                 await uow.SaveChangesAsync(ct);
@@ -411,7 +416,8 @@ public class AppointmentReminderService : BackgroundService
             await uow.SaveChangesAsync(ct);
             var doctor = doctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
             var doctorName = doctor == null ? "your doctor" : users.FirstOrDefault(u => u.Id == doctor.UserId)?.FullName ?? "your doctor";
-            var confirmUrl = $"http://localhost:5044/Appointment/GuestConfirm?token={Uri.EscapeDataString(token)}";
+            var publicWebUrl = Environment.GetEnvironmentVariable("OPCBS_PUBLIC_WEB_URL")?.Trim().TrimEnd('/');
+            var confirmUrl = $"{(string.IsNullOrWhiteSpace(publicWebUrl) ? "http://localhost:5044" : publicWebUrl)}/Appointment/GuestConfirm?token={Uri.EscapeDataString(token)}";
             try
             {
                 await emailService.SendEmailAsync(appointment.GuestEmail!, "OPCBS - Reminder to confirm your appointment",
@@ -419,5 +425,23 @@ public class AppointmentReminderService : BackgroundService
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Could not send guest confirmation reminder for {AppointmentId}", appointment.Id); }
         }
+    }
+
+    private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
+
+    private static TimeZoneInfo ResolveVietnamTimeZone()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); }
+        catch (TimeZoneNotFoundException)
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
+            catch (TimeZoneNotFoundException) { return TimeZoneInfo.Utc; }
+        }
+    }
+
+    private static DateTime GetSlotStartUtc(Domain.Entities.AppointmentSlot slot)
+    {
+        var local = slot.SlotDate.ToDateTime(slot.StartTime, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(local, VietnamTimeZone);
     }
 }

@@ -104,6 +104,25 @@ public class ConfirmGuestAppointmentDto
     public required string Token { get; set; }
 }
 
+/// <summary>Anonymous guest action using a single-use email link.</summary>
+public class GuestAppointmentActionDto
+{
+    public required string Token { get; set; }
+    public string? Reason { get; set; }
+}
+
+/// <summary>Requests a new single-use cancellation link without exposing appointment data.</summary>
+public class RequestGuestCancellationLinkDto
+{
+    public required string BookingCode { get; set; }
+    public required string Email { get; set; }
+}
+
+public class DisputeCompletionDto
+{
+    public string? Reason { get; set; }
+}
+
 /// <summary>
 /// Resend confirmation request DTO
 /// </summary>

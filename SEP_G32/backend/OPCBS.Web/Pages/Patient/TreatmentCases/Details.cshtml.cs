@@ -29,11 +29,15 @@ public class DetailsModel : PageModel
     public string ActiveTab { get; set; } = "overview";
     public string ActivitySubTab { get; set; } = "homework";
 
-    public async Task<IActionResult> OnGetAsync(Guid id, string? tab = "overview", string? activityTab = "homework")
+    public async Task<IActionResult> OnGetAsync(Guid? id, string? tab = "overview", string? activityTab = "homework")
     {
+        if (!id.HasValue || id.Value == Guid.Empty)
+            return RedirectToPage("Index");
+
         ActiveTab = tab ?? "overview";
         ActivitySubTab = activityTab ?? "homework";
-        var (caseData, error) = await _api.GetByIdAsync(id);
+        var caseId = id.Value;
+        var (caseData, error) = await _api.GetByIdAsync(caseId);
         if (error != null || caseData == null)
         {
             ErrorMessage = error ?? "Treatment case not found.";
@@ -42,12 +46,12 @@ public class DetailsModel : PageModel
 
         Case = caseData;
 
-        var sessionsTask = _api.GetSessionsAsync(id);
-        var goalsTask = _api.GetGoalsAsync(id);
-        var homeworkTask = _api.GetHomeworkAsync(id);
-        var moodTask = _api.GetMoodEntriesAsync(id);
-        var progressTask = _api.GetProgressAsync(id);
-        var timelineTask = _api.GetTimelineAsync(id);
+        var sessionsTask = _api.GetSessionsAsync(caseId);
+        var goalsTask = _api.GetGoalsAsync(caseId);
+        var homeworkTask = _api.GetHomeworkAsync(caseId);
+        var moodTask = _api.GetMoodEntriesAsync(caseId);
+        var progressTask = _api.GetProgressAsync(caseId);
+        var timelineTask = _api.GetTimelineAsync(caseId);
 
         await Task.WhenAll(sessionsTask, goalsTask, homeworkTask, moodTask, progressTask, timelineTask);
 
@@ -61,7 +65,7 @@ public class DetailsModel : PageModel
         // Load psychometric assessments
         try
         {
-            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(id);
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(caseId);
             if (caseSubs != null && caseSubs.Any())
             {
                 RecentAssessments = caseSubs.Take(5).ToList();

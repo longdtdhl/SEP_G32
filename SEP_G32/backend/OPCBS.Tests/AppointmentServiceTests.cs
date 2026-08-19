@@ -751,7 +751,8 @@ public class AppointmentServiceTests
         _uow.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB Error"));
         var dto = new CreateAppointmentDto { DoctorId = _doctorProfileId, AppointmentSlotId = _slotId };
         
-        await Assert.ThrowsAsync<Exception>(() => _sut.CreateAppointmentAsync(dto, _patientUserId));
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+        Assert.False(result.Success);
         _uow.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -854,6 +855,7 @@ public class AppointmentServiceTests
     [Fact]
     public async Task CancelAppointment_GuestBookingSuccess()
     {
+        SetupDefaultMocks();
         var appointment = CreateAppointment(AppointmentStatus.Approved);
         appointment.PatientId = null;
         appointment.GuestEmail = "guest@test.com";
@@ -862,7 +864,7 @@ public class AppointmentServiceTests
         _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(slot);
 
         var dto = new CancelAppointmentDto { Reason = "Change of plans" };
-        var result = await _sut.CancelAppointmentAsync(_appointmentId, Guid.Empty, dto); // guest cancels
+        var result = await _sut.CancelAppointmentAsync(_appointmentId, _doctorUserId, dto); // doctor cancels guest appointment
 
         Assert.True(result.Success);
         Assert.Equal(AppointmentStatus.Cancelled, appointment.Status);
@@ -911,14 +913,17 @@ public class AppointmentServiceTests
         var appointment = CreateAppointment(AppointmentStatus.Approved);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
-        // Near slot (within 24 hours)
+        // Near slot (within 24 hours in Vietnam timezone)
+        var vnTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTz);
+        var nearVn = vnNow.AddHours(3);
         var nearSlot = new AppointmentSlot
         {
             Id = _slotId,
             DoctorProfileId = _doctorProfileId,
-            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            StartTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
-            EndTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
+            SlotDate = DateOnly.FromDateTime(nearVn),
+            StartTime = TimeOnly.FromDateTime(nearVn),
+            EndTime = TimeOnly.FromDateTime(nearVn.AddHours(1)),
             Status = AppointmentSlotStatus.Booked,
             DoctorProfile = CreateDoctor()
         };

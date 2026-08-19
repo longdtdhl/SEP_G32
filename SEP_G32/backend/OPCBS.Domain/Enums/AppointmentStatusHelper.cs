@@ -11,7 +11,9 @@ public static class AppointmentStatusHelper
         AppointmentStatus.InProgress,
         AppointmentStatus.RescheduleRequested,
         AppointmentStatus.AwaitingPatientConfirmation,
-        AppointmentStatus.AwaitingGuestConfirmation
+        AppointmentStatus.AwaitingGuestConfirmation,
+        AppointmentStatus.AwaitingGuestCompletionConfirmation,
+        AppointmentStatus.CompletionDisputed
     };
 
     public static readonly AppointmentStatus[] HistoryStatuses = new[]

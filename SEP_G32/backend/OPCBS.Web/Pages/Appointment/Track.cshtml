@@ -118,6 +118,18 @@
                                 <i class="bi bi-envelope-check me-1"></i>Chờ Xác Nhận Email
                             </span>
                         }
+                        else if (apt.Status == 10)
+                        {
+                            <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-hourglass-split me-1"></i>Awaiting completion confirmation
+                            </span>
+                        }
+                        else if (apt.Status == 11)
+                        {
+                            <span class="badge bg-danger px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-shield-exclamation me-1"></i>Under Customer Support review
+                            </span>
+                        }
                         else if (apt.Status == 1)
                         {
                             <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill fw-semibold shadow-sm">
@@ -265,6 +277,18 @@
                                 <span id="resendText">Gửi lại email xác nhận</span>
                             </button>
                         </form>
+
+                        @if (apt.Status == 0 || apt.Status == 1 || apt.Status == 9)
+                        {
+                            <form method="post" asp-page-handler="RequestCancellation">
+                                <input type="hidden" name="Input.BookingCode" value="@apt.BookingCode" />
+                                <input type="hidden" name="Input.Email" value="@Model.Input.Email" />
+                                <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2" style="border-radius:8px;">
+                                    <i class="bi bi-x-circle"></i>
+                                    <span>Request cancellation link</span>
+                                </button>
+                            </form>
+                        }
 
                         <div class="d-flex align-items-center gap-2">
                             <a asp-page="/Doctors/Index" class="btn btn-light border text-secondary" style="border-radius:8px;">

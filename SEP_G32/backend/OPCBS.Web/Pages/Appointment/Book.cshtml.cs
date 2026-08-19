@@ -23,6 +23,7 @@ public class BookModel : PageModel
     public AvailableSlotsDto? AvailableSlots { get; set; }
     public DoctorDto? Doctor { get; set; }
     public bool IsGuest => !User.Identity?.IsAuthenticated ?? true;
+    public bool CanUsePublicBooking => IsGuest || User.IsInRole("Patient");
     public string? Error { get; set; }
     public TreatmentPackageDto? TreatmentPackage { get; set; }
     public bool HasPackageButNotBookingVia { get; set; }
@@ -51,6 +52,11 @@ public class BookModel : PageModel
 
     public async Task OnGetAsync()
     {
+        if (!CanUsePublicBooking)
+        {
+            Error = "Public booking is available to patients and guests only. Doctors should schedule treatment appointments from Schedule Management.";
+            return;
+        }
         // Patient fills in their own information — no auto-fill
 
         // Calculate week
@@ -199,6 +205,11 @@ public class BookModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!CanUsePublicBooking)
+        {
+            Error = "Public booking is available to patients and guests only.";
+            return Page();
+        }
         if (Input.DoctorId == Guid.Empty) { Error = "Please select a doctor."; await OnGetAsync(); return Page(); }
         if (Input.AppointmentSlotId == Guid.Empty) { Error = "Please select a time slot."; await OnGetAsync(); return Page(); }
 

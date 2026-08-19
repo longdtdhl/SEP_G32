@@ -92,6 +92,21 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
         return await PostAsync($"{ApiRoutes.Appointments}/guest/confirm", new ConfirmGuestAppointmentDto { Token = token.Trim() });
     }
 
+    public async Task<(bool Success, string? Error)> CancelGuestAppointmentAsync(string token, string? reason = null)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/cancel", new GuestAppointmentActionDto { Token = token.Trim(), Reason = reason });
+
+    public async Task<(bool Success, string? Error)> ConfirmGuestCompletionAsync(string token)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/confirm-completion", new GuestAppointmentActionDto { Token = token.Trim() });
+
+    public async Task<(bool Success, string? Error)> DisputeGuestCompletionAsync(string token, string? reason = null)
+        => await PostAsync($"{ApiRoutes.Appointments}/guest/dispute-completion", new GuestAppointmentActionDto { Token = token.Trim(), Reason = reason });
+
+    public async Task<(bool Success, string? Message, string? Error)> RequestGuestCancellationLinkAsync(RequestGuestCancellationLinkDto dto)
+    {
+        var (result, error) = await PostAsync<dynamic>($"{ApiRoutes.Appointments}/guest/request-cancellation-link", dto);
+        return error == null ? (true, "If eligible, a cancellation link was sent to the registered email.", null) : (false, null, error);
+    }
+
     public async Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null)
     {
         var url = $"{ApiRoutes.Doctors}/{doctorId}/schedule";

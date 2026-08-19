@@ -349,10 +349,7 @@ public class OpcbsDbContext : DbContext
                 .WithMany(d => d.AppointmentSlots)
                 .HasForeignKey(e => e.DoctorProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.Appointment)
-                .WithOne()
-                .HasForeignKey<Appointment>(a => a.AppointmentSlotId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasIndex(e => new { e.DoctorProfileId, e.SlotDate, e.StartTime })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
@@ -373,6 +370,8 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(20);
             entity.Property(e => e.GuestConfirmationTokenHash)
                 .HasMaxLength(64);
+            entity.Property(e => e.GuestActionTokenHash)
+                .HasMaxLength(64);
             entity.Property(e => e.Notes)
                 .HasMaxLength(2000);
             entity.Property(e => e.RejectionReason)
@@ -381,8 +380,8 @@ public class OpcbsDbContext : DbContext
                 .HasMaxLength(1000);
             entity.HasIndex(e => e.BookingCode).IsUnique();
             entity.HasOne(e => e.AppointmentSlot)
-                .WithOne(s => s.Appointment)
-                .HasForeignKey<Appointment>(e => e.AppointmentSlotId)
+                .WithMany(s => s.Appointments)
+                .HasForeignKey(e => e.AppointmentSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Doctor)
                 .WithMany(d => d.Appointments)
@@ -416,6 +415,8 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Reason)
                 .HasMaxLength(500);
+            entity.Property(e => e.ChangedByRole)
+                .HasMaxLength(32);
         });
 
         modelBuilder.Entity<AppointmentCompletionConfirmation>(entity =>
@@ -424,6 +425,9 @@ public class OpcbsDbContext : DbContext
             entity.HasIndex(e => e.AppointmentId).IsUnique();
             entity.HasIndex(e => new { e.Status, e.ReminderDueAt });
             entity.Property(e => e.DoctorNote).HasMaxLength(2000);
+            entity.Property(e => e.GuestEmail).HasMaxLength(255);
+            entity.Property(e => e.GuestTokenHash).HasMaxLength(64);
+            entity.Property(e => e.DisputeReason).HasMaxLength(2000);
         });
 
         // ConsultationNote

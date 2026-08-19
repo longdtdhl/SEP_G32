@@ -19,6 +19,10 @@ public interface IAppointmentApiService
     Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto);
     Task<(bool Success, string? Message, string? Error)> ResendConfirmationAsync(ResendConfirmationRequestDto dto);
     Task<(bool Success, string? Error)> ConfirmGuestAppointmentAsync(string token);
+    Task<(bool Success, string? Error)> CancelGuestAppointmentAsync(string token, string? reason = null);
+    Task<(bool Success, string? Error)> ConfirmGuestCompletionAsync(string token);
+    Task<(bool Success, string? Error)> DisputeGuestCompletionAsync(string token, string? reason = null);
+    Task<(bool Success, string? Message, string? Error)> RequestGuestCancellationLinkAsync(RequestGuestCancellationLinkDto dto);
     Task<(AvailableSlotsDto? Data, string? Error)> GetAvailableSlotsAsync(Guid doctorId, string? date = null);
     Task<(int Count, string? Error)> GetVisitCountAsync(Guid doctorId);
     Task<(bool IsReturning, string? Error)> IsReturningAsync(Guid doctorId);
