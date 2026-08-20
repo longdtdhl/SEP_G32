@@ -144,10 +144,10 @@ public class PsychometricService : IPsychometricService
             Title = dto.Title.Trim(),
             Description = dto.Description?.Trim(),
             TestType = dto.TestType.Trim().ToUpper(),
-            Category = dto.Category?.Trim(),
+            Category = !string.IsNullOrWhiteSpace(dto.Category) ? dto.Category.Trim() : "General Wellbeing",
             Purpose = dto.Purpose?.Trim(),
             DoctorId = dto.DoctorId,
-            ScoreRangesJson = dto.ScoreRangesJson
+            ScoreRangesJson = dto.ScoreRangesJson ?? "[]"
         };
 
         await _uow.BeginTransactionAsync(ct);
@@ -167,7 +167,7 @@ public class PsychometricService : IPsychometricService
                     TestId = test.Id,
                     QuestionText = q.QuestionText.Trim(),
                     QuestionNumber = q.QuestionNumber > 0 ? q.QuestionNumber : qNum++,
-                    Category = string.IsNullOrWhiteSpace(q.Category) ? null : q.Category.Trim(),
+                    Category = string.IsNullOrWhiteSpace(q.Category) ? test.Category : q.Category.Trim(),
                     QuestionType = !string.IsNullOrWhiteSpace(q.QuestionType) ? q.QuestionType : "Rating1To5",
                     OptionsJson = q.OptionsJson,
                     Test = test
@@ -178,10 +178,10 @@ public class PsychometricService : IPsychometricService
             await _uow.SaveChangesAsync(ct);
             await _uow.CommitTransactionAsync(ct);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await _uow.RollbackTransactionAsync(ct);
-            throw;
+            return ApiResponse<PsychometricTestDto>.ErrorResponse($"Failed to create assessment: {ex.Message}");
         }
 
         var resultDto = new PsychometricTestDto
@@ -204,7 +204,18 @@ public class PsychometricService : IPsychometricService
     public async Task<ApiResponse<PsychometricTestDto>> CreateCustomTestAsync(CreatePsychometricTestDto dto, Guid doctorUserId, CancellationToken ct = default)
     {
         dto.DoctorId = doctorUserId;
-        dto.TestType = "CUSTOM";
+        if (string.IsNullOrWhiteSpace(dto.TestType) || dto.TestType == "CUSTOM")
+        {
+            dto.TestType = "CUSTOM_" + Guid.NewGuid().ToString("N")[..8].ToUpper();
+        }
+        if (string.IsNullOrWhiteSpace(dto.Category))
+        {
+            dto.Category = "General Wellbeing";
+        }
+        if (string.IsNullOrWhiteSpace(dto.ScoreRangesJson))
+        {
+            dto.ScoreRangesJson = "[]";
+        }
         return await CreateTestAsync(dto, ct);
     }
 

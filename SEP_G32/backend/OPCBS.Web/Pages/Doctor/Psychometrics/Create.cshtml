@@ -210,12 +210,12 @@
                     </button>
                 </div>
                 <div class="mb-2.5">
-                    <input type="text" name="Questions[${index}].Text" class="form-control" value="${text}" placeholder="Enter question text (e.g. How often do you feel anxious during the day?)" style="border-radius:8px; font-size:0.86rem;" required />
+                    <input type="text" name="Questions[${container.children.length}].Text" class="form-control q-input-text" value="${text}" placeholder="Enter question text (e.g. How often do you feel anxious during the day?)" style="border-radius:8px; font-size:0.86rem;" required />
                 </div>
                 <div class="row g-2 align-items-center">
                     <div class="col-12 col-md-5">
                         <label class="form-label text-muted small mb-1" style="font-size:0.75rem;">Answer Format</label>
-                        <select name="Questions[${index}].Type" class="form-select form-select-sm" onchange="updateQuestionPreview(${index})" id="qType_${index}" style="border-radius:8px; font-size:0.82rem;">
+                        <select name="Questions[${container.children.length}].Type" class="form-select form-select-sm q-input-type" onchange="updateQuestionPreview(${index})" id="qType_${index}" style="border-radius:8px; font-size:0.82rem;">
                             <option value="Rating1To5" ${type === 'Rating1To5' ? 'selected' : ''}>1–5 Rating Scale</option>
                             <option value="MultipleChoice" ${type === 'MultipleChoice' ? 'selected' : ''}>Multiple Choice (4 Options)</option>
                             <option value="YesNo" ${type === 'YesNo' ? 'selected' : ''}>Yes / No</option>
@@ -230,21 +230,28 @@
 
             container.appendChild(card);
             updateQuestionPreview(index);
-            reindexQuestionBadges();
+            reindexQuestions();
         }
 
         function removeQuestionCard(index) {
             const card = document.getElementById(`qCard_${index}`);
             if (card) {
                 card.remove();
-                reindexQuestionBadges();
+                reindexQuestions();
             }
         }
 
-        function reindexQuestionBadges() {
-            const badges = document.querySelectorAll('.q-num-badge');
-            badges.forEach((b, idx) => {
-                b.textContent = `Question ${idx + 1}`;
+        function reindexQuestions() {
+            const cards = document.querySelectorAll('#questionsList .question-card');
+            cards.forEach((c, idx) => {
+                const badge = c.querySelector('.q-num-badge');
+                if (badge) badge.textContent = `Question ${idx + 1}`;
+
+                const textInput = c.querySelector('.q-input-text');
+                if (textInput) textInput.name = `Questions[${idx}].Text`;
+
+                const typeSelect = c.querySelector('.q-input-type');
+                if (typeSelect) typeSelect.name = `Questions[${idx}].Type`;
             });
         }
 

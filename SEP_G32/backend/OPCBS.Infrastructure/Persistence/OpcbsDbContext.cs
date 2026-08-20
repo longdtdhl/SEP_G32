@@ -808,7 +808,7 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.TestType).IsRequired().HasMaxLength(50);
-            entity.HasIndex(e => e.TestType).IsUnique();
+            entity.HasIndex(e => e.TestType);
         });
 
         // PsychometricQuestion

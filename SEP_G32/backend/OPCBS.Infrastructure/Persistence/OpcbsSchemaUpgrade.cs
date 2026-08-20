@@ -110,6 +110,12 @@ public static class OpcbsSchemaUpgrade
                 ALTER TABLE [PsychometricSubmissions] ADD [DueDate] datetime2 NULL;
             IF COL_LENGTH(N'PsychometricSubmissions', N'Status') IS NULL
                 ALTER TABLE [PsychometricSubmissions] ADD [Status] nvarchar(50) NOT NULL CONSTRAINT [DF_PsychometricSubmissions_Status] DEFAULT 'Completed';
+
+            IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_PsychometricTests_TestType' AND is_unique = 1 AND object_id = OBJECT_ID('PsychometricTests'))
+            BEGIN
+                DROP INDEX [IX_PsychometricTests_TestType] ON [PsychometricTests];
+                CREATE INDEX [IX_PsychometricTests_TestType] ON [PsychometricTests]([TestType]);
+            END
             """, ct);
 
         await context.Database.ExecuteSqlRawAsync("""
