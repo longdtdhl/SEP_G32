@@ -153,24 +153,81 @@
                                 }
                                 else
                                 {
+                                    var initial = !string.IsNullOrEmpty(Model.Doctor.FullName) ? Model.Doctor.FullName.Substring(0, 1).ToUpper() : "D";
                                     <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background:var(--mb-primary-light);color:var(--mb-primary);font-weight:700;font-size:1.2rem;">
-                                        @Model.Doctor.FullName?.Substring(0, 1)
+                                        @initial
                                     </div>
                                 }
-                                <div class="online-dot"></div>
+                                <div class="online-dot" title="Active Specialist"></div>
                             </div>
-                            <div>
-                                <h6 class="mb-0">@Model.Doctor.FullName</h6>
-                                <small class="text-muted">@(Model.Doctor.Specialization ?? "Therapist")</small>
-                                @if (Model.Doctor.Specializations?.Any() == true)
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center gap-1">
+                                    <h6 class="mb-0 text-truncate" style="font-weight:750; color:#0f172a;">@Model.Doctor.FullName</h6>
+                                    <i class="bi bi-patch-check-fill text-primary" style="font-size:0.9rem;" title="Verified Specialist"></i>
+                                </div>
+                                <small class="text-muted d-block text-truncate">@(Model.Doctor.Specialization ?? "Clinical Specialist")</small>
+                                @if (Model.Doctor.Rating > 0)
                                 {
-                                    <div class="mt-1"><small style="color:var(--mb-primary);">Specialization: @string.Join(", ", Model.Doctor.Specializations)</small></div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <i class="bi bi-star-fill text-warning" style="font-size:0.75rem;"></i>
+                                        <span class="small fw-bold text-dark" style="font-size:0.8rem;">@Model.Doctor.Rating.ToString("F1")</span>
+                                        <span class="text-muted" style="font-size:0.75rem;">(@Model.Doctor.ReviewCount reviews)</span>
+                                    </div>
                                 }
                             </div>
                         </div>
 
+                        <!-- Doctor Contact Information -->
+                        <div class="border-top pt-2.5 mt-2" style="border-color: rgba(226, 232, 240, 0.8) !important;">
+                            <div class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.68rem; letter-spacing:0.05em;">Contact Information</div>
+                            
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.PhoneNumber))
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-telephone-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <a href="tel:@Model.Doctor.PhoneNumber" class="text-decoration-none fw-medium text-dark text-truncate" title="Call Specialist">
+                                        @Model.Doctor.PhoneNumber
+                                    </a>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.Email))
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-envelope-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <a href="mailto:@Model.Doctor.Email" class="text-decoration-none fw-medium text-dark text-truncate" title="Email Specialist">
+                                        @Model.Doctor.Email
+                                    </a>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.Address))
+                            {
+                                <div class="d-flex align-items-start gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-geo-alt-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <span class="text-muted" style="line-height:1.35;" title="Clinic Address">
+                                        @Model.Doctor.Address
+                                    </span>
+                                </div>
+                            }
+
+                            @if (Model.Doctor.ConsultationFee > 0)
+                            {
+                                <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top" style="border-color: rgba(226, 232, 240, 0.6) !important; font-size:0.825rem;">
+                                    <span class="text-muted">Consultation Fee</span>
+                                    <span class="fw-bold" style="color:#0d9488;">@Model.Doctor.ConsultationFee.ToString("N0") VND</span>
+                                </div>
+                            }
+                        </div>
+
                         <!-- Selected slot info (updated by JS) -->
-                        <div id="selectedSlotInfo" class="border-top pt-3 mt-2" style="display:none;">
+                        <div id="selectedSlotInfo" class="border-top pt-3 mt-2" style="display:none; border-color: rgba(226, 232, 240, 0.8) !important;">
                             <div class="d-flex align-items-center gap-2 mb-2 text-muted">
                                 <i class="bi bi-calendar-event" style="color:var(--mb-primary);"></i>
                                 <span id="selectedDate" class="small fw-medium">—</span>
@@ -179,7 +236,13 @@
                                 <i class="bi bi-clock" style="color:var(--mb-primary);"></i>
                                 <span id="selectedTime" class="small fw-medium">—</span>
                             </div>
-                            <span class="badge bg-success">Slot Selected</span>
+                            <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Slot Selected</span>
+                        </div>
+
+                        <div class="mt-3 pt-2 text-center border-top" style="border-color: rgba(226, 232, 240, 0.6) !important;">
+                            <a asp-page="/Doctors/Details" asp-route-id="@Model.Doctor.Id" target="_blank" class="small text-decoration-none fw-semibold" style="color:#0d9488; font-size:0.8rem;">
+                                View Full Profile <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.75rem;"></i>
+                            </a>
                         </div>
                     </div>
                 }

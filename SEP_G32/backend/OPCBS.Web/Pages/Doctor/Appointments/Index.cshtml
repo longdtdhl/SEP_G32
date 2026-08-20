@@ -102,6 +102,25 @@
         font-size: 0.68rem;
     }
 
+    .appt-absent-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-weight: 700;
+        font-size: 0.68rem;
+        border: 1px solid transparent;
+    }
+    .appt-absent-chip,
+    .appt-absent-chip.low,
+    .appt-absent-chip.medium,
+    .appt-absent-chip.high {
+        background: #fff1f2;
+        color: #be123c;
+        border-color: #fecdd3;
+    }
+
     .time-badge {
         background: #f0fdf4;
         color: #166534;
@@ -285,9 +304,10 @@
 @if (Model.Appointments.Any())
 {
     var grouped = Model.Appointments
-        .OrderByDescending(a => a.AppointmentDate)
+        .OrderBy(a => a.StartAt == DateTimeOffset.MinValue ? DateTimeOffset.MaxValue : a.StartAt)
         .ThenBy(a => a.StartTime)
-        .GroupBy(a => a.AppointmentDate ?? "Unknown");
+        .GroupBy(a => a.AppointmentDate ?? "Unknown")
+        .OrderBy(g => DateTime.TryParse(g.Key, out var groupDate) ? groupDate : DateTime.MaxValue);
 
     @foreach (var group in grouped)
     {
@@ -306,6 +326,7 @@
             <div class="d-flex flex-column gap-0">
                 @foreach (var apt in group)
                 {
+                    var attendanceStats = Model.GetAttendanceStats(apt);
                     var statusClass = apt.Status switch
                     {
                         0 => "status-pending",
@@ -378,6 +399,15 @@
                                         @if (apt.Status == 6 && !string.IsNullOrEmpty(apt.ProposedSlotDate))
                                         {
                                             <div class="mt-1"><span class="badge bg-warning bg-opacity-10 text-dark border border-warning-subtle small" style="font-size:0.7rem;"><i class="bi bi-arrow-repeat me-1"></i>New slot: @apt.ProposedSlotDate @apt.ProposedSlotStartTime</span></div>
+                                        }
+                                        @if (attendanceStats != null && attendanceStats.AbsentRate > 0)
+                                        {
+                                            <div class="mt-1">
+                                                <span class="appt-absent-chip @attendanceStats.RiskClass" title="@attendanceStats.AbsentCount absent / @attendanceStats.TotalTracked completed or absent appointments">
+                                                    <i class="bi bi-person-x"></i>
+                                                    Absent @attendanceStats.AbsentRate%
+                                                </span>
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -483,7 +513,15 @@ else
 <!-- Pagination -->
 @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
 {
-    <nav class="mt-4">
+    var startPage = Math.Max(1, Model.CurrentPage - 2);
+    var endPage = Math.Min(Model.Pagination.TotalPages, Model.CurrentPage + 2);
+    var firstItem = ((Model.Pagination.Page - 1) * Model.Pagination.PageSize) + 1;
+    var lastItem = Math.Min(Model.Pagination.Page * Model.Pagination.PageSize, Model.Pagination.TotalItems);
+
+    <nav class="mt-4" aria-label="Appointment pagination">
+        <div class="text-center text-muted small mb-2">
+            Showing @firstItem-@lastItem of @Model.Pagination.TotalItems appointments
+        </div>
         <ul class="pagination justify-content-center gap-1">
             <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
                 <a class="page-link" asp-page="Index" asp-route-page="@(Model.CurrentPage - 1)"
@@ -493,13 +531,39 @@ else
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
-            @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
+            @if (startPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-page="Index" asp-route-page="1"
+                       asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+                       asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
+                       style="border-radius:8px;">1</a>
+                </li>
+                @if (startPage > 2)
+                {
+                    <li class="page-item disabled"><span class="page-link" style="border-radius:8px;">...</span></li>
+                }
+            }
+            @for (int i = startPage; i <= endPage; i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                     <a class="page-link" asp-page="Index" asp-route-page="@i"
                        asp-route-status="@Model.Status" asp-route-search="@Model.Search"
                        asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
                        style="border-radius:8px;">@i</a>
+                </li>
+            }
+            @if (endPage < Model.Pagination.TotalPages)
+            {
+                @if (endPage < Model.Pagination.TotalPages - 1)
+                {
+                    <li class="page-item disabled"><span class="page-link" style="border-radius:8px;">...</span></li>
+                }
+                <li class="page-item">
+                    <a class="page-link" asp-page="Index" asp-route-page="@Model.Pagination.TotalPages"
+                       asp-route-status="@Model.Status" asp-route-search="@Model.Search"
+                       asp-route-dateFrom="@Model.DateFrom" asp-route-dateTo="@Model.DateTo"
+                       style="border-radius:8px;">@Model.Pagination.TotalPages</a>
                 </li>
             }
             <li class="page-item @(Model.CurrentPage >= Model.Pagination.TotalPages ? "disabled" : "")">

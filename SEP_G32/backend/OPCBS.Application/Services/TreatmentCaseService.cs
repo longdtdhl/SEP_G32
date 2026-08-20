@@ -1051,9 +1051,11 @@ public class TreatmentCaseService : ITreatmentCaseService
             var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
             if (treatmentCase != null)
             {
-                var remainingActive = (await _sessionRepo.GetAllAsync(ct))
-                    .Count(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted && s.Id != session.Id && s.Status != TreatmentSessionStatus.Cancelled);
-                treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - remainingActive);
+                var caseSessions = (await _sessionRepo.GetAllAsync(ct))
+                    .Where(s => s.TreatmentCaseId == treatmentCase.Id)
+                    .ToList();
+                ApplySessionCounters(treatmentCase, caseSessions);
+                await RecalculateProgressAsync(treatmentCase, ct);
                 _caseRepo.Update(treatmentCase);
 
                 if (_packageRepo != null && treatmentCase.TreatmentPackageId != Guid.Empty)
@@ -1061,7 +1063,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                     var pkg = await _packageRepo.GetByIdAsync(treatmentCase.TreatmentPackageId, ct);
                     if (pkg != null)
                     {
-                        pkg.RemainingSessions = Math.Max(0, pkg.SessionQuantity - remainingActive);
+                        pkg.RemainingSessions = Math.Max(0, pkg.SessionQuantity - GetBookedSessionCount(caseSessions));
                         _packageRepo.Update(pkg);
                     }
                 }
@@ -1169,9 +1171,8 @@ public class TreatmentCaseService : ITreatmentCaseService
         {
             // Count-based recalculation prevents double-counting on repeated calls
             var allSessions = await _sessionRepo.GetAllAsync(ct);
-            var caseSessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted).ToList();
-            treatmentCase.CompletedSessions = caseSessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
-            treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - treatmentCase.CompletedSessions);
+            var caseSessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id).ToList();
+            ApplySessionCounters(treatmentCase, caseSessions);
 
             await RecalculateProgressAsync(treatmentCase, ct);
             treatmentCase.UpdatedAt = DateTime.UtcNow;
@@ -2036,11 +2037,10 @@ public class TreatmentCaseService : ITreatmentCaseService
             return ApiResponse.ErrorResponse("Treatment case not found.");
 
         var sessions = (await _sessionRepo.GetAllAsync(ct))
-            .Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted)
+            .Where(s => s.TreatmentCaseId == caseId)
             .ToList();
 
-        treatmentCase.CompletedSessions = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
-        treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - treatmentCase.CompletedSessions);
+        ApplySessionCounters(treatmentCase, sessions);
         await RecalculateProgressAsync(treatmentCase, ct);
 
         _caseRepo.Update(treatmentCase);
@@ -2058,7 +2058,8 @@ public class TreatmentCaseService : ITreatmentCaseService
             return ApiResponse<TreatmentProgressDto>.ErrorResponse("Access denied. You do not have permission to view progress for this treatment case.");
 
         var allSessions = await _sessionRepo.GetAllAsync(ct);
-        var sessions = allSessions.Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted).ToList();
+        var caseSessions = allSessions.Where(s => s.TreatmentCaseId == caseId).ToList();
+        var sessions = caseSessions.Where(s => !s.IsDeleted).ToList();
         var completedSessions = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
 
         var allGoals = await _goalRepo.GetAllAsync(ct);
@@ -2532,7 +2533,8 @@ public class TreatmentCaseService : ITreatmentCaseService
     private async Task RecalculateProgressAsync(TreatmentCase treatmentCase, CancellationToken ct)
     {
         var allSessions = await _sessionRepo.GetAllAsync(ct);
-        var sessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id && !s.IsDeleted).ToList();
+        var caseSessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id).ToList();
+        var sessions = caseSessions.Where(s => !s.IsDeleted).ToList();
         var sessionPercent = treatmentCase.TotalSessions > 0
             ? (sessions.Count(s => s.Status == TreatmentSessionStatus.Completed) * 100 / treatmentCase.TotalSessions)
             : 0;
@@ -2571,6 +2573,18 @@ public class TreatmentCaseService : ITreatmentCaseService
         treatmentCase.UpdatedAt = DateTime.UtcNow;
     }
 
+    private static int GetBookedSessionCount(IEnumerable<TreatmentSession> caseSessions)
+    {
+        return caseSessions.Count(s => !s.IsDeleted && s.Status != TreatmentSessionStatus.Cancelled);
+    }
+
+    private static void ApplySessionCounters(TreatmentCase treatmentCase, IEnumerable<TreatmentSession> caseSessions)
+    {
+        var sessions = caseSessions.ToList();
+        treatmentCase.CompletedSessions = sessions.Count(s => !s.IsDeleted && s.Status == TreatmentSessionStatus.Completed);
+        treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - GetBookedSessionCount(sessions));
+    }
+
     private async Task<string?> GetUserNameAsync(Guid userId, CancellationToken ct)
     {
         var user = await _userRepo.GetByIdAsync(userId, ct);
@@ -2601,6 +2615,11 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     private async Task<TreatmentCaseDto> MapToCaseDtoAsync(TreatmentCase entity, CancellationToken ct)
     {
+        var allSessions = await _sessionRepo.GetAllAsync(ct);
+        var caseSessions = allSessions.Where(s => s.TreatmentCaseId == entity.Id).ToList();
+        var completedSessions = caseSessions.Count(s => !s.IsDeleted && s.Status == TreatmentSessionStatus.Completed);
+        var remainingSessions = Math.Max(0, entity.TotalSessions - GetBookedSessionCount(caseSessions));
+
         var allGoals = await _goalRepo.GetAllAsync(ct);
         var goals = allGoals.Where(g => g.TreatmentCaseId == entity.Id && !g.IsDeleted).ToList();
 
@@ -2628,8 +2647,8 @@ public class TreatmentCaseService : ITreatmentCaseService
             PatientGuidanceSnapshot = entity.PatientGuidanceSnapshot,
 
             TotalSessions = entity.TotalSessions,
-            CompletedSessions = entity.CompletedSessions,
-            RemainingSessions = entity.RemainingSessions,
+            CompletedSessions = completedSessions,
+            RemainingSessions = remainingSessions,
             StartDate = entity.StartDate,
             ExpectedEndDate = entity.ExpectedEndDate,
             ActualEndDate = entity.ActualEndDate,

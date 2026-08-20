@@ -21,10 +21,24 @@ public class IndexModel : PageModel
         _doctorService = doctorService;
     }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(
+        [FromQuery] string? search,
+        [FromQuery] Guid? specializationId,
+        [FromQuery] DateOnly? availableDate,
+        [FromQuery] string? timeFrame,
+        [FromQuery] bool? availableOnly,
+        [FromQuery] int page = 1)
     {
         try
         {
+            if (!string.IsNullOrWhiteSpace(search)) Filter.Search = search;
+            if (specializationId.HasValue) Filter.SpecializationId = specializationId;
+            if (availableDate.HasValue) Filter.AvailableDate = availableDate;
+            if (!string.IsNullOrWhiteSpace(timeFrame)) Filter.TimeFrame = timeFrame;
+            if (availableOnly.HasValue) Filter.AvailableOnly = availableOnly;
+            if (page > 0) Filter.Page = page;
+            if (Filter.PageSize <= 0) Filter.PageSize = 8;
+
             var (data, pagination, _) = await _doctorService.GetAllAsync(Filter);
             Doctors = data;
             Pagination = pagination;

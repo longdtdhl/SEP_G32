@@ -2,14 +2,14 @@
 @model OPCBS.Web.Pages.Doctors.DetailsModel
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
-    ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.FullName} - Doctor Profile" : "Doctor Details";
+    ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.FullName} - Specialist Profile" : "Specialist Details";
     var isPatient = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Patient", StringComparison.OrdinalIgnoreCase);
     var isDoctorRole = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Doctor", StringComparison.OrdinalIgnoreCase);
 }
 
 @if (Model.Doctor == null)
 {
-    <partial name="_ErrorState" view-data='@(new ViewDataDictionary(ViewData) { { "ErrorMessage", "Doctor not found." } })' />
+    <partial name="_ErrorState" view-data='@(new ViewDataDictionary(ViewData) { { "ErrorMessage", "Doctor profile not found." } })' />
     return;
 }
 
@@ -20,8 +20,8 @@
     var rawInitials = string.Join("", (Model.Doctor.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
     var initials = string.IsNullOrWhiteSpace(rawInitials) ? "DR" : rawInitials.ToUpperInvariant();
     var bioText = Model.Doctor.Bio?.Trim() ?? string.Empty;
-    var hasLongBio = bioText.Length > 320;
-    var shortBio = hasLongBio ? bioText.Substring(0, 300) + "..." : bioText;
+    var hasLongBio = bioText.Length > 360;
+    var shortBio = hasLongBio ? bioText.Substring(0, 340) + "..." : bioText;
     var contactPhone = Model.Doctor.PhoneNumber?.Trim();
     var contactEmail = Model.Doctor.Email?.Trim();
     var zaloPhone = string.IsNullOrWhiteSpace(contactPhone)
@@ -34,109 +34,95 @@
 }
 
 <style>
-    /* ── Doctor Profile Modern Styling ── */
-    :root {
-        --mb-primary: #0f766e;
-        --mb-primary-hover: #115e59;
-        --mb-primary-light: #f0fdfa;
-        --mb-primary-border: #bfe3df;
-    }
-
-    .dr-profile-wrapper {
-        max-width: 1140px;
+    .dr-profile-container {
+        max-width: 1220px;
         margin: 0 auto;
+        padding: 0.5rem 0.75rem 4rem;
     }
 
-    .dr-breadcrumb {
+    .dr-nav-back {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         color: #64748b;
-        font-size: 0.85rem;
-        font-weight: 500;
+        font-size: 0.86rem;
+        font-weight: 600;
         text-decoration: none;
         margin-bottom: 1.25rem;
-        transition: color 0.15s ease;
+        transition: color 0.18s ease;
     }
-    .dr-breadcrumb:hover {
+    .dr-nav-back:hover {
         color: var(--mb-primary);
     }
 
-    /* ── Hero Profile Header ── */
-    .dr-hero-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.75rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-        position: relative;
-        overflow: hidden;
-    }
-    .dr-hero-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 4px;
-        background: var(--mb-primary);
+    /* ═══════════════════════════════════════════════════
+       1. FULL-WIDTH PREMIUM DOCTOR HERO
+       ═══════════════════════════════════════════════════ */
+    .dr-hero-panel {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 2.25rem;
+        margin-bottom: 1.75rem;
+        box-shadow: 0 10px 36px rgba(15, 118, 110, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
-    .dr-hero-flex {
-        display: grid;
-        grid-template-columns: 104px minmax(0, 1fr);
-        gap: 1.5rem;
-        align-items: flex-start;
+    .dr-hero-layout {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
     }
 
-    .dr-avatar-box {
+    .dr-hero-avatar-wrap {
         position: relative;
         flex-shrink: 0;
     }
-    .dr-avatar-img {
-        width: 104px;
-        height: 104px;
-        border-radius: 8px;
+    .dr-hero-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
         object-fit: cover;
-        border: 3px solid #f1f5f9;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        border: 3.5px solid #ffffff;
+        box-shadow: 0 8px 24px rgba(13, 148, 136, 0.18);
     }
-    .dr-avatar-initials {
-        width: 104px;
-        height: 104px;
-        border-radius: 8px;
-        background: var(--mb-primary-light);
+    .dr-hero-initials {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1fae5 100%);
         color: var(--mb-primary);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
-        font-weight: 700;
-        border: 3px solid #f1f5f9;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        font-size: 2.4rem;
+        font-weight: 800;
+        border: 3.5px solid #ffffff;
+        box-shadow: 0 8px 24px rgba(13, 148, 136, 0.18);
     }
-    .dr-avatar-verified {
+    .dr-hero-badge-verified {
         position: absolute;
-        bottom: 2px;
-        right: 2px;
-        width: 26px;
-        height: 26px;
-        background: #10b981;
+        bottom: 4px;
+        right: 4px;
+        width: 32px;
+        height: 32px;
+        background: #00ba7c;
         color: #ffffff;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
-        border: 2px solid #ffffff;
+        font-size: 0.95rem;
+        border: 3px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
-    .dr-hero-info {
+    .dr-hero-main {
         flex: 1;
         min-width: 0;
     }
-    .dr-hero-title-row {
+    .dr-hero-header-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -145,485 +131,425 @@
         margin-bottom: 0.35rem;
     }
     .dr-hero-name {
-        font-size: 1.5rem;
-        font-weight: 750;
+        font-size: 1.85rem;
+        font-weight: 850;
         color: #0f172a;
         margin: 0;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
     }
-    .dr-hero-spec {
-        font-size: 0.95rem;
-        font-weight: 600;
+    .dr-hero-title {
+        font-size: 1rem;
+        font-weight: 650;
         color: var(--mb-primary);
         margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .dr-badge-chip {
+    .dr-spec-pill {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        padding: 4px 12px;
+        background: rgba(13, 148, 136, 0.08);
+        border: 1px solid rgba(13, 148, 136, 0.2);
+        border-radius: 16px;
         font-size: 0.78rem;
-        font-weight: 500;
-        color: #475569;
+        font-weight: 650;
+        color: #0f766e;
     }
 
+    /* Hero Key Stats Bar */
     .dr-hero-stats {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.65rem;
-        margin-top: 0.75rem;
+        align-items: center;
+        gap: 0.85rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.7);
     }
-    .dr-hero-stat-item {
+    .dr-hero-stat-pill {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        background: #f8fafc;
+        gap: 7px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.85);
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.84rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
         color: #475569;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
-    .dr-hero-stat-item strong {
+    .dr-hero-stat-pill strong {
         color: #0f172a;
-        font-weight: 600;
+        font-weight: 750;
     }
 
-    .dr-btn-fav {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        color: #64748b;
+    .dr-btn-heart {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        color: #94a3b8;
         width: 40px;
         height: 40px;
-        border-radius: 8px;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 1.1rem;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     }
-    .dr-btn-fav:hover {
+    .dr-btn-heart:hover {
         background: #fff1f2;
         border-color: #fecdd3;
-        color: #e11d48;
-        transform: scale(1.05);
+        color: #ef4444;
+        transform: scale(1.06);
     }
-    .dr-btn-fav.active {
+    .dr-btn-heart.active {
         background: #fff1f2;
         border-color: #fecdd3;
-        color: #e11d48;
+        color: #ef4444;
     }
 
-    /* ── Content Cards ── */
-    .dr-section-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    /* ═══════════════════════════════════════════════════
+       2. UNIFIED MAIN CLINICAL SHEET (LEFT ~70%)
+       ═══════════════════════════════════════════════════ */
+    .dr-sheet {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 2.25rem;
+        box-shadow: 0 8px 30px rgba(15, 118, 110, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
     }
-    .dr-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
+
+    .dr-sheet-section {
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.75);
     }
-    .dr-section-title {
-        font-size: 1.05rem;
-        font-weight: 700;
+    .dr-sheet-section:last-child {
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border-bottom: none;
+    }
+
+    .dr-heading {
+        font-size: 1.18rem;
+        font-weight: 800;
         color: #0f172a;
-        margin: 0;
+        margin: 0 0 1.15rem;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        letter-spacing: -0.01em;
     }
-    .dr-section-title i {
+    .dr-heading i {
         color: var(--mb-primary);
-        font-size: 1.15rem;
+        font-size: 1.25rem;
     }
-    .dr-body-text {
-        font-size: 0.92rem;
+
+    .dr-paragraph {
+        font-size: 0.96rem;
         color: #334155;
-        line-height: 1.7;
+        line-height: 1.75;
         margin: 0;
     }
-    .dr-bio-toggle {
+
+    .dr-bio-readmore-btn {
         background: none;
         border: none;
         padding: 0;
         color: var(--mb-primary);
-        font-weight: 600;
-        font-size: 0.85rem;
+        font-weight: 700;
+        font-size: 0.86rem;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        margin-top: 0.5rem;
+        margin-top: 0.6rem;
     }
-    .dr-bio-toggle:hover {
+    .dr-bio-readmore-btn:hover {
         text-decoration: underline;
     }
 
-    /* ── Care Approach Quote ── */
-    .dr-care-quote {
-        background: var(--mb-primary-light);
+    /* Treatment Approach Box */
+    .dr-approach-quote {
+        background: #f0fdf9;
         border-left: 4px solid var(--mb-primary);
-        border-radius: 0 10px 10px 0;
-        padding: 1rem 1.25rem;
-        font-size: 0.92rem;
-        color: #1e3a2e;
-        line-height: 1.6;
-        font-style: italic;
+        border-radius: 0 12px 12px 0;
+        padding: 1.25rem 1.5rem;
+        font-size: 0.95rem;
+        color: #115e59;
+        line-height: 1.7;
     }
 
-    /* ── Info Grid ── */
-    .dr-info-grid {
+    /* Credentials Grid */
+    .dr-cred-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.85rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
     }
-    .dr-info-cell {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.85rem 1rem;
-    }
-    .dr-info-lbl {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #64748b;
-        margin-bottom: 2px;
-    }
-    .dr-info-val {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    /* ── Treatment Packages ── */
-    .dr-pkg-card {
-        background: #ffffff;
+    .dr-cred-cell {
+        background: rgba(255, 255, 255, 0.85);
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 1.1rem 1.25rem;
-        transition: all 0.2s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        padding: 1rem 1.25rem;
     }
-    .dr-pkg-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
-    }
-    .dr-pkg-title {
-        font-size: 0.96rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 4px;
-    }
-    .dr-pkg-desc {
-        font-size: 0.82rem;
-        color: #64748b;
-        margin-bottom: 0.75rem;
-        line-height: 1.5;
-    }
-    .dr-pkg-meta {
-        font-size: 0.8rem;
-        color: #475569;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 0.75rem;
-    }
-    .dr-pkg-price {
-        font-size: 1.05rem;
+    .dr-cred-lbl {
+        font-size: 0.74rem;
         font-weight: 750;
-        color: var(--mb-primary);
-    }
-
-    /* ── Reviews ── */
-    .dr-rating-summary {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 4px;
         display: flex;
         align-items: center;
-        gap: 1.5rem;
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.25rem;
-        border-bottom: 1px solid #f1f5f9;
+        gap: 6px;
     }
-    .dr-rating-score {
-        font-size: 2.5rem;
-        font-weight: 800;
+    .dr-cred-lbl i {
+        color: var(--mb-primary);
+        font-size: 0.85rem;
+    }
+    .dr-cred-val {
+        font-size: 0.94rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    /* Reviews Summary */
+    .dr-rating-hero-box {
+        display: flex;
+        align-items: center;
+        gap: 1.75rem;
+        padding: 1.25rem 1.5rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+    }
+    .dr-rating-number {
+        font-size: 2.85rem;
+        font-weight: 850;
         color: #0f172a;
         line-height: 1;
     }
     .star-gold { color: #f59e0b; }
-    .star-muted { color: #e2e8f0; }
-    .dr-review-item {
-        padding: 1rem 0;
+    .star-muted { color: #cbd5e1; }
+
+    .dr-review-card {
+        padding: 1.15rem 0;
         border-bottom: 1px solid #f1f5f9;
     }
-    .dr-review-item:last-child {
+    .dr-review-card:last-child {
         border-bottom: none;
         padding-bottom: 0;
     }
-    .dr-reviewer-avatar {
-        width: 36px;
-        height: 36px;
+    .dr-reviewer-initials {
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
-        background: #e2e8f0;
-        color: #334155;
-        font-size: 0.8rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    /* ── Sticky Booking Sidebar ── */
-    .dr-sticky-sidebar {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-        position: sticky;
-        top: 84px;
-    }
-    .dr-fee-card {
-        background: var(--mb-primary-light);
-        border: 1px solid var(--mb-primary-border);
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-        margin-bottom: 1.25rem;
-    }
-    .dr-fee-title {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        background: #f1f5f9;
         color: var(--mb-primary);
-        margin-bottom: 2px;
-    }
-    .dr-fee-number {
-        font-size: 1.45rem;
-        font-weight: 800;
-        color: #1e3a2e;
-    }
-    .dr-fee-sub {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-top: 2px;
-    }
-
-    .dr-feature-list {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 1.25rem;
-    }
-    .dr-feature-list li {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        font-size: 0.84rem;
-        color: #475569;
-        margin-bottom: 0.65rem;
-    }
-    .dr-feature-list li:last-child {
-        margin-bottom: 0;
-    }
-    .dr-feature-list i {
-        color: var(--mb-primary);
-        font-size: 1rem;
-        margin-top: 2px;
-        flex-shrink: 0;
-    }
-    .dr-feature-list strong {
-        font-size: 0.8rem;
-        color: #0f172a;
-        display: block;
-    }
-
-    .dr-contact-panel {
-        border-top: 1px solid #e2e8f0;
-        margin: 1.25rem 0;
-        padding-top: 1.1rem;
-    }
-    .dr-contact-title {
-        color: #0f172a;
-        font-size: 0.88rem;
-        font-weight: 700;
-        margin-bottom: 0.65rem;
-    }
-    .dr-contact-list {
-        display: grid;
-        gap: 0.55rem;
-    }
-    .dr-contact-link {
-        align-items: center;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        color: #334155;
-        display: grid;
         font-size: 0.82rem;
-        gap: 0.7rem;
-        grid-template-columns: 32px minmax(0, 1fr) auto;
-        min-height: 48px;
-        padding: 0.45rem 0.65rem;
-        text-decoration: none;
-        transition: border-color 0.2s ease, background-color 0.2s ease;
-    }
-    .dr-contact-link:hover {
-        background: var(--mb-primary-light);
-        border-color: var(--mb-primary-border);
-        color: var(--mb-primary-hover);
-    }
-    .dr-contact-icon {
-        align-items: center;
-        background: #ffffff;
-        border: 1px solid #dbe4ea;
-        border-radius: 7px;
-        color: var(--mb-primary);
+        font-weight: 750;
         display: flex;
-        height: 32px;
+        align-items: center;
         justify-content: center;
-        width: 32px;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
     }
-    .dr-contact-label {
-        color: #64748b;
-        display: block;
-        font-size: 0.68rem;
-        font-weight: 700;
-        line-height: 1.2;
+
+    /* ═══════════════════════════════════════════════════
+       3. STICKY BOOKING & PRACTICE PANEL (RIGHT ~30%)
+       ═══════════════════════════════════════════════════ */
+    .dr-booking-sidebar {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 1.75rem;
+        position: sticky;
+        top: 88px;
+        box-shadow: 0 10px 36px rgba(15, 118, 110, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .dr-fee-banner {
+        background: linear-gradient(135deg, #f0fdf9 0%, #ecfdf5 100%);
+        border: 1px solid #ccfbf1;
+        border-radius: 14px;
+        padding: 1.25rem 1rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .dr-fee-caption {
+        font-size: 0.74rem;
+        font-weight: 750;
         text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #0f766e;
+        margin-bottom: 3px;
     }
-    .dr-contact-value {
+    .dr-fee-price {
+        font-size: 1.65rem;
+        font-weight: 850;
         color: #0f172a;
-        display: block;
-        font-weight: 600;
-        overflow-wrap: anywhere;
+        line-height: 1.2;
     }
-    .dr-contact-arrow {
-        color: #94a3b8;
-    }
-
-    .dr-btn-primary-cta {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        min-height: 46px;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        font-weight: 650;
-        background: var(--mb-primary);
-        border: 1px solid var(--mb-primary);
-        color: #ffffff;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(78, 139, 112, 0.25);
-    }
-    .dr-btn-primary-cta:hover {
-        background: var(--mb-primary-hover);
-        border-color: var(--mb-primary-hover);
-        color: #ffffff;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(78, 139, 112, 0.35);
+    .dr-fee-note {
+        font-size: 0.76rem;
+        color: #64748b;
+        margin-top: 4px;
     }
 
-    .dr-btn-secondary-cta {
+    /* Contact Links */
+    .dr-contact-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        margin-bottom: 1.5rem;
+    }
+    .dr-contact-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        min-height: 42px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
+        gap: 0.85rem;
+        padding: 0.7rem 0.95rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
         color: #334155;
         text-decoration: none;
-        transition: all 0.15s ease;
+        font-size: 0.86rem;
+        transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    .dr-btn-secondary-cta:hover {
-        background: #f8fafc;
-        border-color: #94a3b8;
+    .dr-contact-row:hover {
+        background: #ffffff;
+        border-color: #99f6e4;
+        color: var(--mb-primary);
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.08);
+    }
+    .dr-contact-icon-box {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: #f0fdf9;
+        border: 1px solid #ccfbf1;
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+    .dr-contact-lbl {
+        font-size: 0.7rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        color: #64748b;
+        display: block;
+        line-height: 1.2;
+    }
+    .dr-contact-text {
+        font-weight: 650;
         color: #0f172a;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Single Primary Book Appointment Button */
+    .dr-cta-book-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 50px;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 750;
+        background: var(--mb-primary);
+        border: none;
+        color: #ffffff;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+    }
+    .dr-cta-book-btn:hover {
+        background: var(--mb-primary-hover);
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(13, 148, 136, 0.4);
+    }
+    .dr-cta-book-btn:active {
+        transform: scale(0.98);
     }
 
     @@media (max-width: 991.98px) {
-        .dr-sticky-sidebar { position: static; top: auto; margin-top: 1rem; }
+        .dr-booking-sidebar { position: static; top: auto; margin-top: 1.75rem; }
     }
-
     @@media (max-width: 575.98px) {
-        .dr-hero-card { padding: 1.125rem; }
-        .dr-hero-flex { grid-template-columns: 72px minmax(0, 1fr); gap: 1rem; }
-        .dr-avatar-img, .dr-avatar-initials { width: 72px; height: 72px; }
-        .dr-avatar-initials { font-size: 1.45rem; }
-        .dr-hero-name { font-size: 1.25rem; }
-        .dr-hero-stat-item { padding: 5px 8px; }
-        .dr-section-card { padding: 1.125rem; }
+        .dr-hero-panel { padding: 1.5rem; }
+        .dr-hero-layout { flex-direction: column; align-items: center; text-align: center; gap: 1.25rem; }
+        .dr-hero-header-row { justify-content: center; }
+        .dr-hero-stats { justify-content: center; }
+        .dr-sheet { padding: 1.5rem; }
     }
 </style>
 
-<div class="dr-profile-wrapper">
+<div class="dr-profile-container">
     <!-- Breadcrumb Navigation -->
     <nav aria-label="Breadcrumb">
-        <a asp-page="/Doctors/Index" class="dr-breadcrumb">
+        <a asp-page="/Doctors/Index" class="dr-nav-back">
             <i class="bi bi-arrow-left"></i><span>Back to Specialists</span>
         </a>
     </nav>
 
-    <!-- ── 1. Hero Header Card ── -->
-    <header class="dr-hero-card">
-        <div class="dr-hero-flex">
-            <!-- Avatar -->
-            <div class="dr-avatar-box">
+    <!-- ═══════════════════════════════════════════════════
+       1. FULL-WIDTH PREMIUM DOCTOR HERO PANEL
+       ═══════════════════════════════════════════════════ -->
+    <header class="dr-hero-panel mb-fade-up">
+        <div class="dr-hero-layout">
+            <!-- Doctor Avatar & Verified Badge -->
+            <div class="dr-hero-avatar-wrap">
                 @if (!string.IsNullOrWhiteSpace(Model.Doctor.AvatarUrl))
                 {
-                    <img src="@Model.Doctor.AvatarUrl" alt="@Model.Doctor.FullName" class="dr-avatar-img" />
+                    <img src="@Model.Doctor.AvatarUrl" alt="@Model.Doctor.FullName" class="dr-hero-avatar" />
                 }
                 else
                 {
-                    <div class="dr-avatar-initials" aria-hidden="true">@initials</div>
+                    <div class="dr-hero-initials" aria-hidden="true">@initials</div>
                 }
                 @if (Model.Doctor.IsVerified)
                 {
-                    <div class="dr-avatar-verified" title="Verified Specialist">
+                    <div class="dr-hero-badge-verified" title="Verified Specialist">
                         <i class="bi bi-patch-check-fill"></i>
                     </div>
                 }
             </div>
 
-            <!-- Profile Overview -->
-            <div class="dr-hero-info">
-                <div class="dr-hero-title-row">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Profile Main Identity -->
+            <div class="dr-hero-main">
+                <div class="dr-hero-header-row">
+                    <div class="d-flex align-items-center gap-2.5 flex-wrap">
                         <h1 class="dr-hero-name">@Model.Doctor.FullName</h1>
                         @if (Model.Doctor.IsVerified)
                         {
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2.5 py-1" style="font-size:0.72rem; border-radius:6px;">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2.5 py-1" style="font-size:0.74rem; border-radius:8px; font-weight:650;">
                                 <i class="bi bi-patch-check-fill me-1"></i>Verified Specialist
                             </span>
                         }
                     </div>
                     @if (isPatient)
                     {
-                        <button type="button" class="dr-btn-fav" id="favProfileBtn"
+                        <button type="button" class="dr-btn-heart" id="favProfileBtn"
                                 data-doctor-id="@Model.Doctor.Id" onclick="toggleFavProfile(this)"
                                 aria-label="Save specialist to favorites" title="Save specialist to favorites">
                             <i class="bi bi-heart"></i>
@@ -631,35 +557,38 @@
                     }
                 </div>
 
-                <div class="dr-hero-spec">
-                    <i class="bi bi-award me-1"></i>@(Model.Doctor.Specialization ?? "Licensed Professional Specialist")
+                <!-- Professional Title -->
+                <div class="dr-hero-title">
+                    <i class="bi bi-award"></i>
+                    <span>@(Model.Doctor.Specialization ?? "Licensed Clinical Specialist")</span>
                 </div>
 
+                <!-- Specialization Chips -->
                 @if (Model.Doctor.Specializations != null && Model.Doctor.Specializations.Any())
                 {
                     <div class="d-flex flex-wrap gap-1.5 mb-2">
                         @foreach (var spec in Model.Doctor.Specializations)
                         {
-                            <span class="dr-badge-chip">@spec</span>
+                            <span class="dr-spec-pill">@spec</span>
                         }
                     </div>
                 }
 
-                <!-- Stats Badges -->
+                <!-- Horizontal Key Stats Row -->
                 <div class="dr-hero-stats">
-                    <div class="dr-hero-stat-item" title="@avgRating.ToString("0.0") out of 5 stars">
+                    <div class="dr-hero-stat-pill" title="@avgRating.ToString("0.0") out of 5 stars">
                         <i class="bi bi-star-fill star-gold"></i>
                         <span><strong>@avgRating.ToString("0.0")</strong> (@Model.Doctor.ReviewCount reviews)</span>
                     </div>
-                    <div class="dr-hero-stat-item">
-                        <i class="bi bi-briefcase" style="color:var(--mb-primary);"></i>
+                    <div class="dr-hero-stat-pill">
+                        <i class="bi bi-briefcase text-primary"></i>
                         <span><strong>@(Model.Doctor.ExperienceYears)+</strong> Years Experience</span>
                     </div>
                     @if (Model.Doctor.ConsultationFee > 0)
                     {
-                        <div class="dr-hero-stat-item">
-                            <i class="bi bi-tag" style="color:var(--mb-primary);"></i>
-                            <span>From <strong>@Model.Doctor.ConsultationFee.ToString("N0") VND</strong> / session</span>
+                        <div class="dr-hero-stat-pill">
+                            <i class="bi bi-tag text-primary"></i>
+                            <span>From <strong style="color:var(--mb-primary);">@Model.Doctor.ConsultationFee.ToString("N0") VND</strong> / hour</span>
                         </div>
                     }
                 </div>
@@ -667,89 +596,84 @@
         </div>
     </header>
 
-    <!-- ── 2. Main Content Grid (8 cols / 4 cols) ── -->
+    <!-- ═══════════════════════════════════════════════════
+       2. 2-COLUMN MAIN CONTENT LAYOUT (70% / 30%)
+       ═══════════════════════════════════════════════════ -->
     <div class="row g-4">
-        <!-- ═══ LEFT MAIN COLUMN ═══ -->
+        <!-- ═══ LEFT: Unified Clinical Profile Sheet (~70%) ═══ -->
         <div class="col-lg-8">
-
-            <!-- About Section -->
-            <section class="dr-section-card" aria-labelledby="h-about">
-                <div class="dr-section-header">
-                    <h2 id="h-about" class="dr-section-title"><i class="bi bi-person-lines-fill"></i> About the Specialist</h2>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(bioText))
-                {
-                    @if (hasLongBio)
+            <main class="dr-sheet mb-fade-up">
+                <!-- 1. About the Specialist -->
+                <section class="dr-sheet-section" aria-labelledby="h-about">
+                    <h2 id="h-about" class="dr-heading"><i class="bi bi-person-lines-fill"></i> About the Specialist</h2>
+                    @if (!string.IsNullOrWhiteSpace(bioText))
                     {
-                        <div id="drShortBio" class="dr-body-text">@shortBio</div>
-                        <div id="drFullBio" class="dr-body-text d-none" style="white-space:pre-line;">@bioText</div>
-                        <button type="button" id="drBioToggleBtn" class="dr-bio-toggle" onclick="toggleBio()" aria-expanded="false">
-                            <span>Read more</span> <i class="bi bi-chevron-down ms-1"></i>
-                        </button>
+                        @if (hasLongBio)
+                        {
+                            <div id="drShortBio" class="dr-paragraph">@shortBio</div>
+                            <div id="drFullBio" class="dr-paragraph d-none" style="white-space:pre-line;">@bioText</div>
+                            <button type="button" id="drBioToggleBtn" class="dr-bio-readmore-btn" onclick="toggleBio()" aria-expanded="false">
+                                <span>Read full biography</span> <i class="bi bi-chevron-down ms-1"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <p class="dr-paragraph" style="white-space:pre-line;">@bioText</p>
+                        }
                     }
                     else
                     {
-                        <p class="dr-body-text" style="white-space:pre-line;">@bioText</p>
+                        <p class="text-muted fst-italic mb-0 small">No biography has been added yet.</p>
                     }
-                }
-                else
-                {
-                    <p class="text-muted fst-italic mb-0 small">No biography has been added yet.</p>
-                }
-            </section>
-
-            <!-- Care & Treatment Approach -->
-            @if (!string.IsNullOrWhiteSpace(Model.Doctor.CareApproach))
-            {
-                <section class="dr-section-card" aria-labelledby="h-approach">
-                    <div class="dr-section-header">
-                        <h2 id="h-approach" class="dr-section-title"><i class="bi bi-heart-pulse"></i> Treatment & Care Approach</h2>
-                    </div>
-                    <div class="dr-care-quote" style="white-space:pre-line;">
-                        "@Model.Doctor.CareApproach"
-                    </div>
                 </section>
-            }
 
-            <!-- Professional Background & Credentials -->
-            @{
-                var hasEducation = !string.IsNullOrWhiteSpace(Model.Doctor.Education);
-                var hasCareer = !string.IsNullOrWhiteSpace(Model.Doctor.CareerBackground);
-                var hasLanguages = !string.IsNullOrWhiteSpace(Model.Doctor.Languages);
-                var hasConsultationTypes = !string.IsNullOrWhiteSpace(Model.Doctor.ConsultationTypes);
-                var hasLicense = !string.IsNullOrWhiteSpace(Model.Doctor.LicenseNumber);
-                var hasGender = !string.IsNullOrWhiteSpace(Model.Doctor.Gender);
-                var hasLicenseExpiry = Model.Doctor.LicenseExpiryDate.HasValue;
-                var hasAnyBackground = hasEducation || hasCareer || hasLicense || hasLicenseExpiry || Model.Doctor.ExperienceYears > 0;
-                var hasPracticeDetails = hasGender || hasLanguages || hasConsultationTypes;
-            }
-            @if (hasAnyBackground)
-            {
-                <section class="dr-section-card" aria-labelledby="h-bg">
-                    <div class="dr-section-header">
-                        <h2 id="h-bg" class="dr-section-title"><i class="bi bi-mortarboard"></i> Professional Credentials</h2>
-                    </div>
-                    <div class="dr-info-grid">
-                        <div class="dr-info-cell">
-                            <div class="dr-info-lbl">Clinical Practice</div>
-                            <div class="dr-info-val">@(Model.Doctor.ExperienceYears)+ years experience</div>
+                <!-- 2. Treatment & Care Approach -->
+                <section class="dr-sheet-section" aria-labelledby="h-approach">
+                    <h2 id="h-approach" class="dr-heading"><i class="bi bi-heart-pulse"></i> Treatment & Care Approach</h2>
+                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.CareApproach))
+                    {
+                        <div class="dr-approach-quote" style="white-space:pre-line;">
+                            @Model.Doctor.CareApproach
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dr-approach-quote" style="background:#f8fafc; border-left-color:#cbd5e1; color:#64748b; font-style:italic;">
+                            Treatment approach has not been added yet.
+                        </div>
+                    }
+                </section>
+
+                <!-- 3. Professional Credentials & Background -->
+                @{
+                    var hasEducation = !string.IsNullOrWhiteSpace(Model.Doctor.Education);
+                    var hasCareer = !string.IsNullOrWhiteSpace(Model.Doctor.CareerBackground);
+                    var hasLicense = !string.IsNullOrWhiteSpace(Model.Doctor.LicenseNumber);
+                    var hasLicenseExpiry = Model.Doctor.LicenseExpiryDate.HasValue;
+                }
+                <section class="dr-sheet-section" aria-labelledby="h-credentials">
+                    <h2 id="h-credentials" class="dr-heading"><i class="bi bi-mortarboard"></i> Credentials & Background</h2>
+                    <div class="dr-cred-grid">
+                        <div class="dr-cred-cell">
+                            <div class="dr-cred-lbl"><i class="bi bi-briefcase"></i> Clinical Practice</div>
+                            <div class="dr-cred-val">@(Model.Doctor.ExperienceYears)+ years active practice</div>
                         </div>
                         @if (hasEducation)
                         {
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">Education & Degrees</div>
-                                <div class="dr-info-val">@Model.Doctor.Education</div>
+                            <div class="dr-cred-cell">
+                                <div class="dr-cred-lbl"><i class="bi bi-mortarboard"></i> Education & Degrees</div>
+                                <div class="dr-cred-val">@Model.Doctor.Education</div>
                             </div>
                         }
                         @if (hasLicense)
                         {
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">Practitioner License</div>
-                                <div class="dr-info-val d-flex align-items-center gap-2">
+                            <div class="dr-cred-cell">
+                                <div class="dr-cred-lbl"><i class="bi bi-shield-check"></i> Practitioner License</div>
+                                <div class="dr-cred-val d-flex align-items-center gap-2">
                                     <span>@Model.Doctor.LicenseNumber</span>
                                     @if (Model.Doctor.IsVerified)
                                     {
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-1.5 py-0.5" style="font-size:0.68rem;">Verified</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-1.5 py-0.5" style="font-size:0.68rem; font-weight:650;">Verified</span>
                                     }
                                 </div>
                             </div>
@@ -757,9 +681,9 @@
                         @if (hasLicenseExpiry)
                         {
                             var isLicenseExpired = Model.Doctor.LicenseExpiryDate!.Value.Date < DateTime.UtcNow.Date;
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">License Valid Until</div>
-                                <div class="dr-info-val d-flex align-items-center gap-2 flex-wrap">
+                            <div class="dr-cred-cell">
+                                <div class="dr-cred-lbl"><i class="bi bi-calendar-check"></i> License Valid Until</div>
+                                <div class="dr-cred-val d-flex align-items-center gap-2 flex-wrap">
                                     <span>@Model.Doctor.LicenseExpiryDate.Value.ToString("MMM dd, yyyy")</span>
                                     <span class="badge @(isLicenseExpired ? "bg-danger" : "bg-success") bg-opacity-10 @(isLicenseExpired ? "text-danger" : "text-success") border px-1.5 py-0.5" style="font-size:0.68rem;">
                                         @(isLicenseExpired ? "Expired" : "Valid")
@@ -771,259 +695,251 @@
                     @if (hasCareer)
                     {
                         <div class="mt-3 pt-3 border-top">
-                            <div class="dr-info-lbl mb-1">Career Background</div>
-                            <div class="dr-body-text" style="white-space:pre-line;">@Model.Doctor.CareerBackground</div>
+                            <div class="dr-cred-lbl mb-1.5"><i class="bi bi-clock-history"></i> Career Background</div>
+                            <div class="dr-paragraph" style="white-space:pre-line;">@Model.Doctor.CareerBackground</div>
                         </div>
                     }
                 </section>
-            }
 
-            @if (hasPracticeDetails)
-            {
-                <section class="dr-section-card" aria-labelledby="h-practice-details">
-                    <div class="dr-section-header">
-                        <h2 id="h-practice-details" class="dr-section-title"><i class="bi bi-sliders2-vertical"></i> Practice Details</h2>
-                    </div>
-                    <div class="dr-info-grid">
-                        @if (hasGender)
-                        {
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">Gender</div>
-                                <div class="dr-info-val">@Model.Doctor.Gender</div>
-                            </div>
-                        }
-                        @if (hasLanguages)
-                        {
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">Languages</div>
-                                <div class="dr-info-val">@Model.Doctor.Languages</div>
-                            </div>
-                        }
-                        @if (hasConsultationTypes)
-                        {
-                            <div class="dr-info-cell">
-                                <div class="dr-info-lbl">Consultation Formats</div>
-                                <div class="dr-info-val">@Model.Doctor.ConsultationTypes</div>
-                            </div>
-                        }
-                    </div>
-                </section>
-            }
-
-            <!-- Treatment Packages -->
-            @if (Model.TreatmentPackages.Any())
-            {
-                <section class="dr-section-card" aria-labelledby="h-packages">
-                    <div class="dr-section-header">
-                        <h2 id="h-packages" class="dr-section-title"><i class="bi bi-box-seam"></i> Treatment Packages</h2>
-                        @if (isPatient)
-                        {
-                            <a asp-page="/Patient/TreatmentPackages/Index" class="small text-decoration-none fw-semibold" style="color:var(--mb-primary);">
-                                View All Packages <i class="bi bi-arrow-right"></i>
-                            </a>
-                        }
-                    </div>
-                    <div class="row g-3">
-                        @foreach (var pkg in Model.TreatmentPackages)
-                        {
-                            <div class="col-md-6">
-                                <div class="dr-pkg-card">
-                                    <div>
-                                        <div class="dr-pkg-title">@pkg.Name</div>
-                                        @if (!string.IsNullOrWhiteSpace(pkg.Description))
-                                        {
-                                            <div class="dr-pkg-desc">@pkg.Description</div>
-                                        }
-                                        <div class="dr-pkg-meta">
-                                            <span><i class="bi bi-calendar-check me-1 text-secondary"></i>@pkg.SessionQuantity Sessions</span>
-                                            <span><i class="bi bi-clock-history me-1 text-secondary"></i>@pkg.ValidityDays Days</span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
-                                        <span class="dr-pkg-price">@pkg.Price.ToString("N0") VND</span>
-                                        @if (isPatient)
-                                        {
-                                            <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-secondary py-1 px-2.5" style="border-radius:6px; font-size:0.8rem; font-weight:600;">
-                                                View Package
-                                            </a>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </section>
-            }
-
-            <!-- Patient Reviews & Ratings -->
-            <section class="dr-section-card" aria-labelledby="h-reviews">
-                <div class="dr-section-header">
-                    <h2 id="h-reviews" class="dr-section-title"><i class="bi bi-star-fill star-gold"></i> Patient Reviews</h2>
-                    @if (Model.Reviews.Any())
-                    {
-                        <a asp-page="/Doctors/Ratings" asp-route-id="@Model.Doctor.Id" class="small text-decoration-none fw-semibold" style="color:var(--mb-primary);">
-                            All @Model.Doctor.ReviewCount Reviews <i class="bi bi-arrow-right"></i>
-                        </a>
-                    }
-                </div>
-
-                <!-- Rating Score Summary -->
-                <div class="dr-rating-summary">
-                    <div class="text-center" style="min-width:110px;">
-                        <div class="dr-rating-score">@avgRating.ToString("0.0")</div>
-                        <div class="small text-muted mt-1">out of 5.0</div>
-                    </div>
-                    <div class="border-start ps-4">
-                        <div class="d-flex gap-1 mb-1">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                if (i <= fullStars) { <i class="bi bi-star-fill star-gold fs-5"></i> }
-                                else if (i == fullStars + 1 && hasHalf) { <i class="bi bi-star-half star-gold fs-5"></i> }
-                                else { <i class="bi bi-star star-muted fs-5"></i> }
-                            }
-                        </div>
-                        <div class="small text-muted">Based on @Model.Doctor.ReviewCount verified patient reviews</div>
-                    </div>
-                </div>
-
-                @if (Model.Reviews.Any())
-                {
-                    <div class="d-flex flex-column">
-                        @foreach (var review in Model.Reviews.Take(5))
-                        {
-                            var rInitials = string.Join("", (review.PatientName ?? "PT").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpperInvariant();
-                            <article class="dr-review-item">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div class="d-flex align-items-center gap-2.5">
-                                        <div class="dr-reviewer-avatar" aria-hidden="true">@rInitials</div>
-                                        <div>
-                                            <div class="fw-semibold text-dark" style="font-size:0.88rem;">@review.PatientName</div>
-                                            <div class="text-muted" style="font-size:0.75rem;">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-0.5">
-                                        @for (int i = 1; i <= 5; i++)
-                                        {
-                                            <i class="bi @(i <= review.Rating ? "bi-star-fill star-gold" : "bi-star star-muted")" style="font-size:0.8rem;"></i>
-                                        }
-                                    </div>
-                                </div>
-                                @if (!string.IsNullOrWhiteSpace(review.Comment))
-                                {
-                                    <p class="text-dark small mb-0 ps-md-4" style="line-height:1.6; font-style:italic;">"@review.Comment"</p>
-                                }
-                            </article>
-                        }
-                    </div>
-                    @if (Model.Doctor.ReviewCount > 5)
-                    {
-                        <div class="text-center mt-3 pt-3 border-top">
-                            <a asp-page="/Doctors/Ratings" asp-route-id="@Model.Doctor.Id" class="btn btn-sm btn-outline-secondary px-3 py-1.5" style="border-radius:8px; font-weight:600;">
-                                Read all @Model.Doctor.ReviewCount reviews
-                            </a>
-                        </div>
-                    }
+                <!-- 4. Practice Details -->
+                @{
+                    var hasLanguages = !string.IsNullOrWhiteSpace(Model.Doctor.Languages);
+                    var hasConsultationTypes = !string.IsNullOrWhiteSpace(Model.Doctor.ConsultationTypes);
+                    var hasClinicAddress = !string.IsNullOrWhiteSpace(Model.Doctor.Address);
+                    var hasAnyPractice = hasLanguages || hasConsultationTypes || hasClinicAddress;
                 }
-                else
+                @if (hasAnyPractice)
                 {
-                    <div class="text-center py-4">
-                        <i class="bi bi-chat-square-heart text-muted display-6 d-block mb-2"></i>
-                        <div class="fw-semibold text-dark mb-1">No reviews yet</div>
-                        <p class="text-muted small mb-0">Be the first patient to share your consultation experience.</p>
-                    </div>
-                }
-            </section>
-        </div>
-
-        <!-- ═══ RIGHT: Sticky Booking Card (Single Clear Action) ═══ -->
-        <aside class="col-lg-4" aria-label="Booking Sidebar">
-            <div class="dr-sticky-sidebar">
-                <!-- Fee Box -->
-                <div class="dr-fee-card">
-                    <div class="dr-fee-title">Standard Consultation Fee</div>
-                    <div class="dr-fee-number">
-                        @(Model.Doctor.ConsultationFee > 0 ? Model.Doctor.ConsultationFee.ToString("N0") + " VND" : "Contact for fee")
-                    </div>
-                    <div class="dr-fee-sub">per 50-minute professional session</div>
-                </div>
-
-                <!-- Features Highlights -->
-                <ul class="dr-feature-list">
-                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.ConsultationTypes))
-                    {
-                        <li>
-                            <i class="bi bi-camera-video"></i>
-                            <div><strong>Formats</strong><span>@Model.Doctor.ConsultationTypes</span></div>
-                        </li>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.Languages))
-                    {
-                        <li>
-                            <i class="bi bi-translate"></i>
-                            <div><strong>Languages</strong><span>@Model.Doctor.Languages</span></div>
-                        </li>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.Address))
-                    {
-                        <li>
-                            <i class="bi bi-geo-alt"></i>
-                            <div><strong>Clinic Location</strong><span>@Model.Doctor.Address</span></div>
-                        </li>
-                    }
-                </ul>
-
-                @if (!string.IsNullOrWhiteSpace(contactPhone) || !string.IsNullOrWhiteSpace(contactEmail))
-                {
-                    <section class="dr-contact-panel" aria-labelledby="doctorContactTitle">
-                        <h2 id="doctorContactTitle" class="dr-contact-title">Contact Information</h2>
-                        <div class="dr-contact-list">
-                            @if (!string.IsNullOrWhiteSpace(contactPhone))
+                    <section class="dr-sheet-section" aria-labelledby="h-practice">
+                        <h2 id="h-practice" class="dr-heading"><i class="bi bi-sliders2-vertical"></i> Practice Details</h2>
+                        <div class="dr-cred-grid">
+                            @if (hasLanguages)
                             {
-                                <a class="dr-contact-link" href="tel:@contactPhone" aria-label="Call @Model.Doctor.FullName at @contactPhone">
-                                    <span class="dr-contact-icon"><i class="bi bi-telephone"></i></span>
-                                    <span>
-                                        <span class="dr-contact-label">Phone</span>
-                                        <span class="dr-contact-value">@contactPhone</span>
-                                    </span>
-                                    <i class="bi bi-chevron-right dr-contact-arrow" aria-hidden="true"></i>
-                                </a>
+                                <div class="dr-cred-cell">
+                                    <div class="dr-cred-lbl"><i class="bi bi-translate"></i> Languages Spoken</div>
+                                    <div class="dr-cred-val">@Model.Doctor.Languages</div>
+                                </div>
                             }
-                            @if (!string.IsNullOrWhiteSpace(contactEmail))
+                            @if (hasConsultationTypes)
                             {
-                                <a class="dr-contact-link" href="mailto:@contactEmail" aria-label="Email @Model.Doctor.FullName at @contactEmail">
-                                    <span class="dr-contact-icon"><i class="bi bi-envelope"></i></span>
-                                    <span>
-                                        <span class="dr-contact-label">Email</span>
-                                        <span class="dr-contact-value">@contactEmail</span>
-                                    </span>
-                                    <i class="bi bi-chevron-right dr-contact-arrow" aria-hidden="true"></i>
-                                </a>
+                                <div class="dr-cred-cell">
+                                    <div class="dr-cred-lbl"><i class="bi bi-camera-video"></i> Consultation Formats</div>
+                                    <div class="dr-cred-val">@Model.Doctor.ConsultationTypes</div>
+                                </div>
                             }
-                            @if (!string.IsNullOrWhiteSpace(zaloPhone))
+                            @if (hasClinicAddress)
                             {
-                                <a class="dr-contact-link" href="https://zalo.me/@zaloPhone" target="_blank" rel="noopener noreferrer" aria-label="Contact @Model.Doctor.FullName on Zalo">
-                                    <span class="dr-contact-icon"><i class="bi bi-chat-dots"></i></span>
-                                    <span>
-                                        <span class="dr-contact-label">Zalo</span>
-                                        <span class="dr-contact-value">Chat on Zalo</span>
-                                    </span>
-                                    <i class="bi bi-box-arrow-up-right dr-contact-arrow" aria-hidden="true"></i>
-                                </a>
+                                <div class="dr-cred-cell">
+                                    <div class="dr-cred-lbl"><i class="bi bi-geo-alt"></i> Clinic Location</div>
+                                    <div class="dr-cred-val">@Model.Doctor.Address</div>
+                                </div>
                             }
                         </div>
                     </section>
                 }
 
-                <!-- Primary CTA Action (ONLY ONE BOOK APPOINTMENT BUTTON) -->
-                <div class="d-grid gap-2">
-                    @if (!isDoctorRole)
+                <!-- 5. Treatment Packages (if available) -->
+                @if (Model.TreatmentPackages.Any())
+                {
+                    <section class="dr-sheet-section" aria-labelledby="h-packages">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 id="h-packages" class="dr-heading mb-0"><i class="bi bi-box-seam"></i> Treatment Packages</h2>
+                            @if (isPatient)
+                            {
+                                <a asp-page="/Patient/TreatmentPackages/Index" class="small text-decoration-none fw-semibold" style="color:var(--mb-primary);">
+                                    View All Packages <i class="bi bi-arrow-right"></i>
+                                </a>
+                            }
+                        </div>
+                        <div class="row g-3">
+                            @foreach (var pkg in Model.TreatmentPackages)
+                            {
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-3 border bg-white h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="fw-bold text-dark mb-1">@pkg.Name</div>
+                                            @if (!string.IsNullOrWhiteSpace(pkg.Description))
+                                            {
+                                                <div class="small text-muted mb-2">@pkg.Description</div>
+                                            }
+                                            <div class="d-flex gap-3 small text-muted mb-3">
+                                                <span><i class="bi bi-calendar-check me-1 text-primary"></i>@pkg.SessionQuantity Sessions</span>
+                                                <span><i class="bi bi-clock-history me-1 text-primary"></i>@pkg.ValidityDays Days</span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center pt-2.5 border-top mt-auto">
+                                            <span class="fw-bold" style="color:var(--mb-primary);">@pkg.Price.ToString("N0") VND</span>
+                                            @if (isPatient)
+                                            {
+                                                <a asp-page="/Patient/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-secondary py-1 px-2.5" style="border-radius:8px; font-size:0.8rem; font-weight:600;">
+                                                    View Package
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                <!-- 6. Patient Reviews & Ratings -->
+                <section class="dr-sheet-section" aria-labelledby="h-reviews">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 id="h-reviews" class="dr-heading mb-0"><i class="bi bi-star-fill star-gold"></i> Patient Reviews</h2>
+                        @if (Model.Reviews.Any())
+                        {
+                            <a asp-page="/Doctors/Ratings" asp-route-id="@Model.Doctor.Id" class="small text-decoration-none fw-semibold" style="color:var(--mb-primary);">
+                                All @Model.Doctor.ReviewCount Reviews <i class="bi bi-arrow-right"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <!-- Strong Rating Score Summary -->
+                    <div class="dr-rating-hero-box">
+                        <div class="text-center" style="min-width:100px;">
+                            <div class="dr-rating-number">@avgRating.ToString("0.0")</div>
+                            <div class="small text-muted mt-1 fw-bold">out of 5.0</div>
+                        </div>
+                        <div class="border-start ps-3.5">
+                            <div class="d-flex gap-1 mb-1">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= fullStars) { <i class="bi bi-star-fill star-gold fs-5"></i> }
+                                    else if (i == fullStars + 1 && hasHalf) { <i class="bi bi-star-half star-gold fs-5"></i> }
+                                    else { <i class="bi bi-star star-muted fs-5"></i> }
+                                }
+                            </div>
+                            <div class="small text-muted">Based on <strong>@Model.Doctor.ReviewCount</strong> verified patient consultations</div>
+                        </div>
+                    </div>
+
+                    @if (Model.Reviews.Any())
                     {
-                        <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.Doctor.Id" class="dr-btn-primary-cta">
-                            <i class="bi bi-calendar-check"></i> Book Appointment
+                        <div class="d-flex flex-column">
+                            @foreach (var review in Model.Reviews.Take(3))
+                            {
+                                var rInitials = string.Join("", (review.PatientName ?? "PT").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpperInvariant();
+                                <article class="dr-review-card">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="dr-reviewer-initials" aria-hidden="true">@rInitials</div>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:0.9rem;">@review.PatientName</div>
+                                                <div class="text-muted" style="font-size:0.75rem;">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-0.5">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="bi @(i <= review.Rating ? "bi-star-fill star-gold" : "bi-star star-muted")" style="font-size:0.82rem;"></i>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                    {
+                                        <p class="text-dark small mb-0 ps-md-4" style="line-height:1.65; font-style:italic;">"@review.Comment"</p>
+                                    }
+                                </article>
+                            }
+                        </div>
+                        @if (Model.Doctor.ReviewCount > 3)
+                        {
+                            <div class="text-center mt-3 pt-3 border-top">
+                                <a asp-page="/Doctors/Ratings" asp-route-id="@Model.Doctor.Id" class="btn btn-sm btn-outline-secondary px-3.5 py-1.5" style="border-radius:10px; font-weight:650;">
+                                    Read all @Model.Doctor.ReviewCount reviews
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-chat-square-heart text-muted display-6 d-block mb-2 opacity-50"></i>
+                            <div class="fw-bold text-dark mb-1">No reviews yet</div>
+                            <p class="text-muted small mb-0">Be the first patient to share your consultation experience.</p>
+                        </div>
+                    }
+                </section>
+            </main>
+        </div>
+
+        <!-- ═══ RIGHT: Sticky Booking & Practice Sidebar (~30%) ═══ -->
+        <aside class="col-lg-4" aria-label="Booking and Contact Information">
+            <div class="dr-booking-sidebar mb-fade-up">
+                <!-- Fee Box -->
+                <div class="dr-fee-banner">
+                    <div class="dr-fee-caption">Standard Consultation Fee</div>
+                    <div class="dr-fee-price">
+                        @(Model.Doctor.ConsultationFee > 0 ? Model.Doctor.ConsultationFee.ToString("N0") + " VND" : "Contact for fee")
+                    </div>
+                    <div class="dr-fee-note">per hour (60 minutes)</div>
+                </div>
+
+                <!-- Contact & Clinic Details -->
+                <div class="dr-contact-group">
+                    @if (!string.IsNullOrWhiteSpace(contactPhone))
+                    {
+                        <a class="dr-contact-row" href="tel:@contactPhone" aria-label="Call @Model.Doctor.FullName">
+                            <span class="dr-contact-icon-box"><i class="bi bi-telephone"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="dr-contact-lbl">Phone</span>
+                                <span class="dr-contact-text">@contactPhone</span>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted small"></i>
                         </a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(contactEmail))
+                    {
+                        <a class="dr-contact-row" href="mailto:@contactEmail" aria-label="Email @Model.Doctor.FullName">
+                            <span class="dr-contact-icon-box"><i class="bi bi-envelope"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="dr-contact-lbl">Email</span>
+                                <span class="dr-contact-text">@contactEmail</span>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted small"></i>
+                        </a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(zaloPhone))
+                    {
+                        <a class="dr-contact-row" href="https://zalo.me/@zaloPhone" target="_blank" rel="noopener noreferrer" aria-label="Chat with @Model.Doctor.FullName on Zalo">
+                            <span class="dr-contact-icon-box"><i class="bi bi-chat-dots"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="dr-contact-lbl">Zalo</span>
+                                <span class="dr-contact-text">Chat on Zalo</span>
+                            </div>
+                            <i class="bi bi-box-arrow-up-right text-muted small"></i>
+                        </a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.Address))
+                    {
+                        <div class="dr-contact-row">
+                            <span class="dr-contact-icon-box"><i class="bi bi-geo-alt"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="dr-contact-lbl">Clinic Location</span>
+                                <span class="dr-contact-text" title="@Model.Doctor.Address">@Model.Doctor.Address</span>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Doctor.ConsultationTypes))
+                    {
+                        <div class="dr-contact-row">
+                            <span class="dr-contact-icon-box"><i class="bi bi-camera-video"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="dr-contact-lbl">Formats</span>
+                                <span class="dr-contact-text">@Model.Doctor.ConsultationTypes</span>
+                            </div>
+                        </div>
                     }
                 </div>
 
+                <!-- Single Primary CTA: Book Appointment Button (Hidden for Doctors) -->
+                @if (!isDoctorRole)
+                {
+                    <a asp-page="/Appointment/Book" asp-route-doctorId="@Model.Doctor.Id" class="dr-cta-book-btn mb-soft-press">
+                        <i class="bi bi-calendar-check"></i> Book Appointment
+                    </a>
+                }
             </div>
         </aside>
     </div>
@@ -1042,7 +958,7 @@
             fullEl.classList.add('d-none');
             shortEl.classList.remove('d-none');
             btn.setAttribute('aria-expanded', 'false');
-            btn.innerHTML = '<span>Read more</span> <i class="bi bi-chevron-down ms-1"></i>';
+            btn.innerHTML = '<span>Read full biography</span> <i class="bi bi-chevron-down ms-1"></i>';
         } else {
             shortEl.classList.add('d-none');
             fullEl.classList.remove('d-none');

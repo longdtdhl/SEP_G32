@@ -45,11 +45,14 @@ public class DoctorsController : ControllerBase
         [FromQuery] decimal? rating,
         [FromQuery] decimal? maxFee,
         [FromQuery] string? gender,
+        [FromQuery] DateOnly? availableDate,
+        [FromQuery] string? timeFrame,
+        [FromQuery] bool? availableOnly,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
         var effectiveMinRating = minRating ?? (rating.HasValue ? (double?)rating.Value : null);
-        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, effectiveMinRating, maxFee, gender, page, pageSize);
+        var result = await _doctorService.GetDoctorsAsync(keyword, specializationId, effectiveMinRating, maxFee, gender, availableDate, timeFrame, availableOnly, page, pageSize);
         return Ok(result);
     }
 

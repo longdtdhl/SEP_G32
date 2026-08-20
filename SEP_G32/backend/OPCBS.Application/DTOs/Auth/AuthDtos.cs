@@ -150,6 +150,8 @@ public class DoctorProfileDto
     public DateTime? LicenseExpiryDate { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
+    public int AvailableSlotCount { get; set; }
+    public string? NextAvailableSlot { get; set; }
 }
 
 /// <summary>

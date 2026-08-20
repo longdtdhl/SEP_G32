@@ -2,156 +2,511 @@
 @model OPCBS.Web.Pages.Doctors.IndexModel
 @inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
-    ViewData["Title"] = "Search specialist";
+    ViewData["Title"] = "Find a Therapist";
     var isPatient = JwtService.IsLoggedIn && string.Equals(JwtService.GetRole(), "Patient", StringComparison.OrdinalIgnoreCase);
+    var todayStr = DateTime.Today.ToString("yyyy-MM-dd");
+    var tomorrowStr = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    var selectedDateStr = Model.Filter.AvailableDate?.ToString("yyyy-MM-dd") ?? "";
+    
+    var hasScheduleFilters = Model.Filter.AvailableDate.HasValue
+        || !string.IsNullOrWhiteSpace(Model.Filter.TimeFrame)
+        || (Model.Filter.AvailableOnly == true);
+
+    var hasActiveFilters = !string.IsNullOrWhiteSpace(Model.Filter.Search)
+        || (Model.Filter.SpecializationId.HasValue && Model.Filter.SpecializationId.Value != Guid.Empty)
+        || hasScheduleFilters;
 }
 
 <style>
-    .search-section {
-        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2.5rem;
-        border: 1px solid rgba(16,185,129,0.12);
-        box-shadow: 0 4px 20px rgba(16,185,129,0.04);
+    /* ─── Header ─── */
+    .dr-header {
+        margin-bottom: 1.5rem;
     }
-    
+    .dr-header-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(13, 148, 136, 0.12), rgba(16, 185, 129, 0.08));
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        border: 1px solid rgba(13, 148, 136, 0.18);
+        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.08);
+        flex-shrink: 0;
+    }
+    .dr-header-title {
+        font-size: 1.4rem;
+        font-weight: 750;
+        margin: 0;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+    }
+    .dr-header-sub {
+        margin: 3px 0 0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    /* ─── Translucent Filter Card ─── */
+    .filter-card {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 16px;
+        padding: 1.15rem 1.25rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 20px rgba(15, 118, 110, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .filter-control {
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.88rem;
+        color: #1e293b;
+        background-color: rgba(255, 255, 255, 0.9);
+        transition: all 0.18s ease;
+    }
+    .filter-control:focus {
+        border-color: var(--mb-primary);
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+        outline: none;
+    }
+
+    /* Icon-only Schedule Button */
+    .filter-btn-schedule {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--mb-primary);
+        font-size: 1.15rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.18s ease;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .filter-btn-schedule:hover {
+        background: #f0fdf9;
+        border-color: var(--mb-primary);
+        color: var(--mb-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
+    }
+    .filter-btn-schedule.active {
+        background: #e6f7f2;
+        border-color: var(--mb-primary);
+        color: var(--mb-primary);
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+    .filter-btn-schedule .schedule-dot {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 7px;
+        height: 7px;
+        background-color: var(--mb-primary);
+        border-radius: 50%;
+        border: 1.5px solid white;
+    }
+
+    /* ─── Expandable Schedule Drawer ─── */
+    .schedule-drawer {
+        background: rgba(248, 250, 252, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 12px;
+        padding: 1.15rem;
+        margin-top: 1rem;
+        display: none;
+        animation: drFadeIn 0.2s ease-out;
+    }
+    .schedule-drawer.show {
+        display: block;
+    }
+    @@keyframes drFadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .drawer-label {
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .drawer-label i {
+        color: var(--mb-primary);
+    }
+
+    /* ─── Custom Open Slots Toggle ─── */
+    .open-slots-toggle {
+        display: inline-flex;
+        align-items: center;
+        height: 42px;
+    }
+    .toggle-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #334155;
+        user-select: none;
+        margin-bottom: 0;
+    }
+    .toggle-track {
+        width: 36px;
+        height: 20px;
+        background-color: #cbd5e1;
+        border-radius: 9999px;
+        position: relative;
+        transition: background-color 0.2s ease;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .toggle-thumb {
+        width: 16px;
+        height: 16px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+    .toggle-input:checked + .toggle-label .toggle-track {
+        background-color: var(--mb-primary);
+    }
+    .toggle-input:checked + .toggle-label .toggle-thumb {
+        transform: translateX(16px);
+    }
+    .toggle-input:focus-visible + .toggle-label .toggle-track {
+        outline: 2px solid var(--mb-primary);
+        outline-offset: 2px;
+    }
+
+    /* ─── Segmented Quick Date Chips ─── */
+    .segmented-date-group {
+        display: inline-flex;
+        align-items: center;
+        background: #e2e8f0;
+        padding: 3px;
+        border-radius: 9px;
+        gap: 2px;
+    }
+    .segmented-chip {
+        border: none;
+        background: transparent;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 7px;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.16s ease;
+        white-space: nowrap;
+    }
+    .segmented-chip:hover:not(.active) {
+        color: var(--mb-primary);
+        background: rgba(255, 255, 255, 0.6);
+    }
+    .segmented-chip.active {
+        background: #ffffff;
+        color: var(--mb-primary);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ─── Soft Translucent Doctor Card ─── */
     .doctor-card-modern {
-        background: white;
-        border-radius: 18px;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        transition: all 0.3s ease;
-        padding: 1.75rem 1.25rem;
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 4px 18px rgba(15, 118, 110, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    border-color 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    background-color 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+        padding: 1.6rem 1.25rem 1.25rem;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
         height: 100%;
         text-decoration: none;
+        position: relative;
     }
     .doctor-card-modern:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-        border-color: rgba(78,139,112,0.25);
+        background: rgba(255, 255, 255, 0.96);
+        transform: translateY(-4px);
+        box-shadow: 0 14px 32px -4px rgba(13, 148, 136, 0.14), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+        border-color: rgba(62, 142, 126, 0.4);
     }
-    
+
     .avatar-wrapper {
         position: relative;
-        margin-bottom: 1.25rem;
+        margin-bottom: 0.95rem;
     }
     .avatar-img-modern {
-        width: 100px;
-        height: 100px;
+        width: 86px;
+        height: 86px;
         border-radius: 50%;
         object-fit: cover;
-        border: 3px solid #f1f5f9;
-        transition: border-color 0.3s;
+        border: 3px solid #ffffff;
+        box-shadow: 0 3px 10px rgba(13, 148, 136, 0.12);
+        transition: border-color 0.2s;
     }
     .doctor-card-modern:hover .avatar-img-modern {
         border-color: var(--mb-primary);
     }
-    
+
     .doctor-avatar-initials {
-        width: 100px;
-        height: 100px;
+        width: 86px;
+        height: 86px;
         border-radius: 50%;
-        background: var(--mb-primary-light);
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1fae5 100%);
         color: var(--mb-primary);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
-        font-weight: 700;
-        border: 3px solid #f1f5f9;
+        font-size: 1.65rem;
+        font-weight: 750;
+        border: 3px solid #ffffff;
+        box-shadow: 0 3px 10px rgba(13, 148, 136, 0.12);
     }
-    
+
     .doctor-name-modern {
-        font-size: 1.05rem;
-        font-weight: 700;
+        font-size: 1.04rem;
+        font-weight: 750;
         color: #0f172a;
         margin-bottom: 4px;
+        line-height: 1.35;
+        letter-spacing: -0.01em;
     }
     .doctor-spec-modern {
-        font-size: 0.82rem;
+        font-size: 0.76rem;
         font-weight: 600;
-        color: var(--mb-primary);
-        background: rgba(78,139,112,0.1);
+        color: #0f766e;
+        background: rgba(13, 148, 136, 0.07);
+        border: 1px solid rgba(13, 148, 136, 0.15);
         padding: 3px 10px;
         border-radius: 20px;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
+        display: inline-block;
     }
-    
+
     .star-filled { color: #f59e0b; }
     .star-empty { color: #cbd5e1; }
 
     .fav-heart-btn {
-        position: absolute; top: 8px; right: 8px; z-index: 10;
-        background: rgba(255,255,255,0.9); border: none; border-radius: 50%;
-        width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        font-size: 1rem; color: #cbd5e1;
+        position: absolute; top: 10px; right: 10px; z-index: 10;
+        background: rgba(255,255,255,0.92); border: 1px solid #e2e8f0; border-radius: 50%;
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        font-size: 0.95rem; color: #94a3b8;
     }
-    .fav-heart-btn:hover { transform: scale(1.15); background: #fff; }
-    .fav-heart-btn.active { color: #ef4444; }
-    .fav-heart-btn.active:hover { color: #dc2626; }
+    .fav-heart-btn:hover { transform: scale(1.1); background: #fff; color: #ef4444; }
+    .fav-heart-btn.active { color: #ef4444; border-color: #fecdd3; background: #fff1f2; }
 
     .doctor-bio-snippet {
-        font-size: 0.78rem;
+        font-size: 0.77rem;
         color: #64748b;
-        line-height: 1.5;
+        line-height: 1.45;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin: 6px 0 10px;
+        margin: 4px 0 10px;
         text-align: center;
         padding: 0 0.25rem;
-        min-height: 2.34em;
+        min-height: 2.25em;
+    }
+
+    /* Slot availability badge */
+    .slot-pill-active {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        font-size: 0.73rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .slot-pill-muted {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.73rem;
+        font-weight: 500;
+        margin-bottom: 8px;
     }
 </style>
 
-<div class="mb-page-header mb-4">
-    <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-        <i class="bi bi-search-heart me-2" style="color:var(--mb-primary);"></i>Search Specialist Therapy
-    </h1>
-    <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Select a doctor and psychological specialist that matches your needs</p>
+<!-- ─── 1. Page Header ─── -->
+<div class="dr-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="dr-header-icon-box">
+            <i class="bi bi-person-heart"></i>
+        </div>
+        <div>
+            <h1 class="dr-header-title">Find a Therapist</h1>
+            <p class="dr-header-sub">Search certified specialists by concern, specialization, and consultation schedule.</p>
+        </div>
+    </div>
+    @if (isPatient)
+    {
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary btn-sm" style="border-radius:9px; font-weight:600; height:38px; display:inline-flex; align-items:center;">
+            <i class="bi bi-calendar2-check me-1.5 text-primary"></i>My Appointments
+        </a>
+    }
 </div>
 
-<!-- Search & Filter Block -->
-<div class="search-section shadow-sm">
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <form method="get" class="mb-search-bar" style="position: relative; display: flex; align-items: center;">
-                <i class="bi bi-search" style="position: absolute; left: 16px; color: #94a3b8; font-size: 1rem;"></i>
-                <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control"
-                       placeholder="Search by doctor name or specialization..." 
-                       style="padding-left: 44px; border-radius: 12px; height: 46px; border: 1px solid #cbd5e1;" />
-                <input type="hidden" name="Filter.SpecializationId" value="@Model.Filter.SpecializationId" />
-            </form>
-        </div>
-        <div class="col-lg-4">
-            <form method="get">
-                <input type="hidden" name="Filter.Search" value="@Model.Filter.Search" />
-                <select name="Filter.SpecializationId" class="form-select" 
-                        style="height:46px; border-radius:12px; border: 1px solid #cbd5e1;"
-                        onchange="this.form.submit()">
+<!-- ─── 2. Filter Panel ─── -->
+<div class="filter-card mb-fade-up">
+    <form method="get" id="doctorFilterForm">
+        <!-- Main Search Bar Row -->
+        <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
+            <!-- Search Keyword -->
+            <div class="flex-grow-1" style="min-width: 240px;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <i class="bi bi-search" style="position: absolute; left: 14px; color: #94a3b8; font-size: 0.9rem;"></i>
+                    <input type="text" id="filterSearchInput" name="Search" value="@Model.Filter.Search" class="form-control filter-control"
+                           placeholder="Search by doctor name, title, specialization..." 
+                           style="padding-left: 38px;" aria-label="Search by doctor name, title, specialization" />
+                </div>
+            </div>
+
+            <!-- Specialization Dropdown -->
+            <div style="min-width: 180px; width: 250px;">
+                <select id="filterSpecSelect" name="SpecializationId" class="form-select filter-control" aria-label="Filter by specialization">
                     <option value="">All Specializations</option>
                     @foreach (var s in Model.Specializations)
                     {
-                        <option value="@s.Id" selected="@(Model.Filter.SpecializationId == s.Id)">@s.Name</option>
+                        <option value="@s.Id" selected="@(Model.Filter.SpecializationId == s.Id ? "selected" : null)">@s.Name</option>
                     }
                 </select>
-            </form>
+            </div>
+
+            <!-- Icon-only Schedule Filter Toggle Button -->
+            <div>
+                <button type="button" class="filter-btn-schedule @(hasScheduleFilters ? "active" : "")" id="toggleScheduleBtn" onclick="toggleScheduleDrawer()" title="Schedule & consultation time filters" aria-label="Toggle schedule filters">
+                    <i class="bi bi-calendar2-range"></i>
+                    @if (hasScheduleFilters)
+                    {
+                        <span class="schedule-dot"></span>
+                    }
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" style="height: 42px; border-radius: 10px; font-weight: 600; font-size: 0.88rem; padding: 0 1.25rem;">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                @if (hasActiveFilters)
+                {
+                    <a asp-page="/Doctors/Index" class="btn btn-outline-secondary" style="height: 42px; width: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;" title="Reset all filters" aria-label="Reset all filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                }
+            </div>
         </div>
-    </div>
+
+        <!-- Collapsible Schedule & Slots Drawer -->
+        <div class="schedule-drawer @(hasScheduleFilters ? "show" : "")" id="scheduleFilterDrawer">
+            <div class="row g-3 align-items-end">
+                <!-- Consultation Date -->
+                <div class="col-md-4 col-lg-3">
+                    <label for="filterDateInput" class="drawer-label"><i class="bi bi-calendar-event"></i> Consultation Date</label>
+                    <input type="date" id="filterDateInput" name="AvailableDate" value="@selectedDateStr" min="@todayStr" class="form-control filter-control" />
+                </div>
+
+                <!-- Time Frame -->
+                <div class="col-md-4 col-lg-3">
+                    <label for="filterTimeFrameSelect" class="drawer-label"><i class="bi bi-clock-history"></i> Time Frame</label>
+                    <select id="filterTimeFrameSelect" name="TimeFrame" class="form-select filter-control">
+                        <option value="" selected="@(string.IsNullOrEmpty(Model.Filter.TimeFrame) ? "selected" : null)">All Hours</option>
+                        <option value="morning" selected="@(string.Equals(Model.Filter.TimeFrame, "morning", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">
+                            Morning (07:00 - 12:00)
+                        </option>
+                        <option value="afternoon" selected="@(string.Equals(Model.Filter.TimeFrame, "afternoon", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">
+                            Afternoon (12:00 - 18:00)
+                        </option>
+                        <option value="evening" selected="@(string.Equals(Model.Filter.TimeFrame, "evening", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">
+                            Evening (18:00 - 22:00)
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Open Slots Only Toggle -->
+                <div class="col-md-4 col-lg-3 d-flex align-items-center">
+                    <div class="open-slots-toggle">
+                        <input type="checkbox" name="AvailableOnly" value="true" id="availOnlyToggle" class="toggle-input"
+                               checked="@(Model.Filter.AvailableOnly == true ? "checked" : null)" />
+                        <label for="availOnlyToggle" class="toggle-label">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                            <span>Open slots only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Quick Date Segmented Chips -->
+                <div class="col-lg-3">
+                    <label class="drawer-label"><i class="bi bi-lightning-charge"></i> Quick Selection</label>
+                    <div class="segmented-date-group w-100 justify-content-between" role="group" aria-label="Quick date selection">
+                        <button type="button" class="segmented-chip flex-fill text-center @(string.IsNullOrEmpty(selectedDateStr) ? "active" : "")" onclick="setQuickDate('')">
+                            Any
+                        </button>
+                        <button type="button" class="segmented-chip flex-fill text-center @(selectedDateStr == todayStr ? "active" : "")" onclick="setQuickDate('@todayStr')">
+                            Today
+                        </button>
+                        <button type="button" class="segmented-chip flex-fill text-center @(selectedDateStr == tomorrowStr ? "active" : "")" onclick="setQuickDate('@tomorrowStr')">
+                            Tomorrow
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
-<!-- Doctor Grid -->
+<!-- ─── 3. Doctor Cards Grid ─── -->
 @if (Model.Doctors.Any())
 {
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 mb-stagger">
         @foreach (var doc in Model.Doctors)
         {
             var initials = string.Join("", (doc.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0]));
@@ -159,7 +514,7 @@
             <div class="col-sm-6 col-lg-4 col-xl-3" style="position:relative;">
                 @if (isPatient)
                 {
-                    <button class="fav-heart-btn" data-doctor-id="@doc.Id" onclick="toggleFavorite(event, this)" title="Add to Favorites">
+                    <button class="fav-heart-btn" data-doctor-id="@doc.Id" onclick="toggleFavorite(event, this)" title="Add to Favorites" aria-label="Add @doc.FullName to Favorites">
                         <i class="bi bi-heart"></i>
                     </button>
                 }
@@ -172,14 +527,15 @@
                         }
                         else
                         {
-                            <div class="doctor-avatar-initials">
+                            <div class="doctor-avatar-initials" aria-hidden="true">
                                 @initials
                             </div>
                         }
                         @if (doc.IsVerified)
                         {
                             <div class="mb-verified-badge" 
-                                 style="position: absolute; bottom: 2px; right: 2px; width: 24px; height: 24px; background: #00ba7c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 2px solid white;">
+                                 style="position: absolute; bottom: 2px; right: 2px; width: 22px; height: 22px; background: #00ba7c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; border: 2px solid white;"
+                                 title="Verified Specialist">
                                 <i class="bi bi-patch-check-fill"></i>
                             </div>
                         }
@@ -191,16 +547,36 @@
                         <span class="doctor-spec-modern">@(doc.Specialization ?? "Therapist")</span>
                     </div>
 
+                    <!-- Slot Availability Indicator -->
+                    @if (doc.AvailableSlotCount > 0)
+                    {
+                        <div class="slot-pill-active" title="@doc.AvailableSlotCount open consultation slots">
+                            <i class="bi bi-calendar2-check-fill text-success"></i>
+                            <span>@(doc.AvailableSlotCount) slots</span>
+                            @if (!string.IsNullOrEmpty(doc.NextAvailableSlot))
+                            {
+                                <span class="text-muted fw-normal">· @doc.NextAvailableSlot</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="slot-pill-muted" title="Doctor profile viewable, check schedule on profile">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>View availability</span>
+                        </div>
+                    }
+
                     @if (doc.Specializations != null && doc.Specializations.Any())
                     {
-                        <div class="d-flex flex-wrap gap-1 justify-content-center mb-2" style="max-height: 48px; overflow: hidden;">
+                        <div class="d-flex flex-wrap gap-1 justify-content-center mb-2" style="max-height: 44px; overflow: hidden;">
                             @foreach (var s in doc.Specializations.Take(2))
                             {
-                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">@s</span>
+                                <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">@s</span>
                             }
                             @if (doc.Specializations.Count > 2)
                             {
-                                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">+@(doc.Specializations.Count - 2)</span>
+                                <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.65rem; border-radius: 6px; font-weight: 500;">+@(doc.Specializations.Count - 2)</span>
                             }
                         </div>
                     }
@@ -212,7 +588,7 @@
                     }
                     else
                     {
-                        <div class="doctor-bio-snippet" style="color:#cbd5e1;font-style:italic;">Professional therapist dedicated to your well-being</div>
+                        <div class="doctor-bio-snippet" style="color:#94a3b8;font-style:italic;">Professional therapist dedicated to your well-being</div>
                     }
 
                     <!-- Rating -->
@@ -226,26 +602,26 @@
                         {
                             if (i <= stars)
                             {
-                                <i class="bi bi-star-fill star-filled" style="font-size:0.85rem;"></i>
+                                <i class="bi bi-star-fill star-filled" style="font-size:0.82rem;"></i>
                             }
                             else if (i == stars + 1 && half)
                             {
-                                <i class="bi bi-star-half star-filled" style="font-size:0.85rem;"></i>
+                                <i class="bi bi-star-half star-filled" style="font-size:0.82rem;"></i>
                             }
                             else
                             {
-                                <i class="bi bi-star star-empty" style="font-size:0.85rem;"></i>
+                                <i class="bi bi-star star-empty" style="font-size:0.82rem;"></i>
                             }
                         }
                         @if (doc.ReviewCount > 0)
                         {
-                            <span style="font-size:0.75rem; color:#64748b; margin-left:4px;">(@doc.ReviewCount reviews)</span>
+                            <span style="font-size:0.75rem; color:#64748b; margin-left:3px;">(@doc.ReviewCount)</span>
                         }
                     </div>
 
                     <!-- Experience & Fee Meta -->
-                    <div class="mt-auto d-flex justify-content-between w-100 border-top pt-3" style="font-size:0.8rem; color:#64748b;">
-                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears years experience</span>
+                    <div class="mt-auto d-flex justify-content-between w-100 border-top pt-2.5" style="font-size:0.78rem; color:#64748b;">
+                        <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears yrs exp</span>
                         @if (doc.ConsultationFee > 0)
                         {
                             <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
@@ -263,14 +639,38 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px;">
+    <div class="card border-0 shadow-sm py-5 text-center mb-fade-up" style="border-radius: 16px;">
         <div class="card-body">
-            <i class="bi bi-search text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
-            <h5 class="fw-bold">No Doctors Found</h5>
-            <p class="text-muted small mb-0">Try changing your search keywords or selected specialization.</p>
+            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 2.75rem; opacity: 0.4;"></i>
+            <h5 class="fw-bold text-dark">No Therapists Found</h5>
+            <p class="text-muted small mb-3">No specialists match your selected date, time frame, or keyword filters.</p>
+            <a asp-page="/Doctors/Index" class="btn btn-outline-primary btn-sm" style="border-radius:9px; font-weight:600; padding: 6px 16px;">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear All Filters
+            </a>
         </div>
     </div>
 }
+
+<script>
+function toggleScheduleDrawer() {
+    var drawer = document.getElementById('scheduleFilterDrawer');
+    var btn = document.getElementById('toggleScheduleBtn');
+    if (drawer) {
+        var isShown = drawer.classList.toggle('show');
+        if (btn && !btn.classList.contains('active')) {
+            btn.classList.toggle('active', isShown);
+        }
+    }
+}
+
+function setQuickDate(dateVal) {
+    var dateInput = document.getElementById('filterDateInput');
+    if (dateInput) {
+        dateInput.value = dateVal;
+        document.getElementById('doctorFilterForm').submit();
+    }
+}
+</script>
 
 @if (isPatient)
 {

@@ -62,6 +62,10 @@ public class DetailsModel : PageModel
     public List<AppointmentListItemDto> PatientAppointments { get; set; } = new();
     public AppointmentListItemDto? NextAppointment { get; set; }
     public int NoShowCount { get; set; }
+    public int CompletedAppointmentCount { get; set; }
+    public int AttendanceTrackedCount => CompletedAppointmentCount + NoShowCount;
+    public int AbsentRatePercent => AttendanceTrackedCount == 0 ? 0 : (int)Math.Round((double)NoShowCount / AttendanceTrackedCount * 100);
+    public string AbsentRiskLevel => AbsentRatePercent >= 30 ? "High" : AbsentRatePercent >= 15 ? "Medium" : "Low";
 
     public string? Error { get; set; }
     public bool IsLoading { get; set; }
@@ -132,6 +136,7 @@ public class DetailsModel : PageModel
                         .ToList();
 
                     NoShowCount = PatientAppointments.Count(a => a.Status == 8);
+                    CompletedAppointmentCount = PatientAppointments.Count(a => a.Status == 4);
 
                     NextAppointment = PatientAppointments
                         .Where(a => (a.Status == 0 || a.Status == 1 || a.Status == 3) && a.StartAt >= DateTimeOffset.UtcNow)

@@ -58,22 +58,41 @@
 
     /* Filter Dropdown Menu */
     .filter-menu-dropdown {
-        min-width: 230px;
-        padding: 0.75rem 1rem;
+        min-width: 300px;
+        padding: 0.8rem;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
+    .filter-section-title {
+        margin: 0.35rem 0 0.45rem;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.4rem;
+    }
     .filter-check-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-        font-size: 0.84rem;
-        font-weight: 500;
+        gap: 7px;
+        min-height: 34px;
+        padding: 0.35rem 0.45rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        background: #f8fafc;
+        font-size: 0.78rem;
+        font-weight: 700;
         color: #334155;
         cursor: pointer;
     }
+    .filter-check-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .filter-check-item .form-check-input { width: 0.9rem; height: 0.9rem; margin: 0; }
     .filter-color-dot {
         width: 10px;
         height: 10px;
@@ -162,6 +181,12 @@
         color: #7f1d1d !important;
         --fc-event-text-color: #7f1d1d !important;
         border-left: 4px solid #dc2626 !important;
+    }
+    .fc-event-absent {
+        background-color: #fff1f2 !important;
+        color: #9f1239 !important;
+        --fc-event-text-color: #9f1239 !important;
+        border-left: 4px solid #e11d48 !important;
     }
     .fc-event-expired {
         background-color: #f1f5f9 !important;
@@ -429,22 +454,53 @@
                 <i class="bi bi-funnel me-1"></i>Filter Events <span id="filterActiveBadge" class="badge rounded-pill bg-teal text-white ms-1" style="background:#0f766e; font-size:0.72rem;">All</span>
             </button>
             <div class="dropdown-menu dropdown-menu-end filter-menu-dropdown" aria-labelledby="eventFilterDropdownBtn">
-                <div class="fw-bold text-dark small mb-2 border-bottom pb-1">Show Event Types</div>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAppts" value="Appointment" checked>
-                    <div class="filter-color-dot" style="background:#2563eb;"></div>
-                    <span>Appointments</span>
-                </label>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAvailable" value="Availability" checked>
-                    <div class="filter-color-dot" style="background:#0d9488;"></div>
-                    <span>Available Slots</span>
-                </label>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterBlocked" value="Blocked" checked>
-                    <div class="filter-color-dot" style="background:#dc2626;"></div>
-                    <span>Blocked Slots</span>
-                </label>
+                <div class="fw-bold text-dark small mb-2 border-bottom pb-2">Filter Schedule</div>
+                <div class="filter-section-title">Appointments</div>
+                <div class="filter-grid">
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAccepted" value="Accepted" checked>
+                        <div class="filter-color-dot" style="background:#2563eb;"></div>
+                        <span>Accepted</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterPending" value="Pending" checked>
+                        <div class="filter-color-dot" style="background:#d97706;"></div>
+                        <span>Pending</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterInProgress" value="InProgress" checked>
+                        <div class="filter-color-dot" style="background:#6366f1;"></div>
+                        <span>In Progress</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterCompleted" value="Completed" checked>
+                        <div class="filter-color-dot" style="background:#64748b;"></div>
+                        <span>Completed</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAbsent" value="Absent" checked>
+                        <div class="filter-color-dot" style="background:#e11d48;"></div>
+                        <span>Absent</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterExpired" value="Expired" checked>
+                        <div class="filter-color-dot" style="background:#94a3b8;"></div>
+                        <span>Expired</span>
+                    </label>
+                </div>
+                <div class="filter-section-title">Slots</div>
+                <div class="filter-grid">
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAvailable" value="Availability" checked>
+                        <div class="filter-color-dot" style="background:#0d9488;"></div>
+                        <span>Available</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterBlocked" value="Blocked" checked>
+                        <div class="filter-color-dot" style="background:#dc2626;"></div>
+                        <span>Blocked</span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -455,8 +511,8 @@
             <!-- Empty State Message (hidden by default) -->
             <div id="calendarEmptyState" class="calendar-empty-state d-none">
                 <i class="bi bi-calendar-x display-6 text-muted mb-2"></i>
-                <h6 class="fw-bold text-dark">No events scheduled</h6>
-                <p class="text-muted small mb-3">There are no appointments, available slots, or blocked slots in this view.</p>
+                <h6 class="fw-bold text-dark">No schedule items match this view</h6>
+                <p class="text-muted small mb-3">Try changing the date range or enabling more status filters.</p>
                 <button type="button" class="btn btn-sm btn-primary" onclick="openCreateDrawer('slot')" style="background:#0f766e; border-color:#0f766e; border-radius:8px;">
                     <i class="bi bi-plus-lg me-1"></i>Add Availability
                 </button>
@@ -475,11 +531,13 @@
         <div class="legend-dots">
             <span class="fw-semibold text-dark small"><i class="bi bi-palette me-1"></i>Legend:</span>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ccfbf1; border:1px solid #0d9488;"></div>Available Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>Confirmed Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>Accepted Appt</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fef3c7; border:1px solid #d97706;"></div>Pending Appt</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ede9fe; border:1px solid #6366f1;"></div>In Progress</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fee2e2; border:1px solid #dc2626;"></div>Blocked Slot</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #64748b;"></div>Completed Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fff1f2; border:1px solid #e11d48;"></div>Absent / Cancelled</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #94a3b8;"></div>Expired Slot</div>
         </div>
         <div class="text-muted small"><i class="bi bi-cursor-fill me-1"></i>Click any event or empty future time slot to view details, notes, or schedule.</div>
     </div>
@@ -1194,18 +1252,18 @@
 
             var badge = document.getElementById('drawerApptBadge');
             var rawStatus = props.status || props.Status || 'Approved';
-            var statusStr = String(rawStatus).replace('InProgress', 'In Progress');
+            var statusStr = getDisplayScheduleStatus(rawStatus, props);
+            var normalizedStatus = getEffectiveScheduleStatus(props);
             if (badge) {
                 badge.textContent = statusStr;
 
-                var sLow = statusStr.toLowerCase();
-                if (sLow.includes('pending')) {
+                if (normalizedStatus === 'pending') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-warning text-dark';
-                } else if (sLow.includes('inprogress') || sLow.includes('in progress')) {
+                } else if (normalizedStatus === 'in progress') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary text-white';
-                } else if (sLow.includes('completed')) {
-                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success text-white';
-                } else if (sLow.includes('cancelled')) {
+                } else if (normalizedStatus === 'completed') {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary text-white';
+                } else if (normalizedStatus === 'absent') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger text-white';
                 } else {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-info text-white';
@@ -1292,10 +1350,9 @@
                 }
             }
 
-            var sLow = statusStr.toLowerCase();
             var btnChat = document.getElementById('drawerBtnChat');
             if (btnChat) {
-                if (patientId && (sLow.includes('approved') || sLow.includes('inprogress') || sLow.includes('in progress') || sLow.includes('completed'))) {
+                if (patientId && (normalizedStatus === 'accepted' || normalizedStatus === 'in progress' || normalizedStatus === 'completed')) {
                     btnChat.href = '/Doctor/Messages/Index?patientId=' + encodeURIComponent(patientId);
                     btnChat.classList.remove('d-none');
                 } else {
@@ -1306,7 +1363,7 @@
             var cancelContainer = document.getElementById('drawerCancelApptContainer');
             var cancelApptIdEl = document.getElementById('drawerCancelApptId');
             if (cancelContainer && cancelApptIdEl) {
-                if (apptId && (sLow.includes('pending') || sLow.includes('approved') || sLow.includes('confirmed'))) {
+                if (apptId && (normalizedStatus === 'pending' || normalizedStatus === 'accepted')) {
                     cancelApptIdEl.value = apptId;
                     cancelContainer.classList.remove('d-none');
                 } else {
@@ -1345,14 +1402,16 @@
             var dateEl = document.getElementById('drawerSlotDate');
             if (dateEl) dateEl.textContent = timeInfo.dateStr;
 
-            var statusStr = props.status || props.Status || 'Available';
-            var sLow = statusStr.toLowerCase();
+            var rawSlotStatus = props.status || props.Status || 'Available';
+            var statusStr = getDisplayScheduleStatus(rawSlotStatus, props);
+            var sLow = getEffectiveScheduleStatus(props);
             var badge = document.getElementById('drawerSlotStatusBadge');
             if (badge) {
                 badge.textContent = statusStr;
-                if (sLow.includes('available')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success bg-opacity-10 text-success border border-success-subtle';
-                else if (sLow.includes('blocked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger bg-opacity-10 text-danger border border-danger-subtle';
-                else if (sLow.includes('booked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary bg-opacity-10 text-primary border border-primary-subtle';
+                if (sLow === 'available') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success bg-opacity-10 text-success border border-success-subtle';
+                else if (sLow === 'blocked') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger bg-opacity-10 text-danger border border-danger-subtle';
+                else if (sLow === 'accepted') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary bg-opacity-10 text-primary border border-primary-subtle';
+                else if (sLow === 'expired') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle';
                 else badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle';
             }
 
@@ -1578,38 +1637,103 @@
             if (infoCard) infoCard.classList.remove('d-none');
         }
 
+        function normalizeScheduleStatus(rawStatus) {
+            var status = String(rawStatus || '').replace(/([a-z])([A-Z])/g, '$1 $2').trim().toLowerCase();
+            if (!status) return '';
+            if (status === 'approved' || status === 'confirmed' || status === 'booked') return 'accepted';
+            if (status === 'no show' || status === 'noshow') return 'absent';
+            if (status === 'inprogress') return 'in progress';
+            if (status.includes('awaiting') || status.includes('reschedule') || status === 'pending') return 'pending';
+            if (status.includes('cancelled') || status.includes('canceled') || status === 'rejected') return 'absent';
+            return status;
+        }
+
+        function isCalendarEventEnded(eventData) {
+            var endVal = eventData && (eventData.end || eventData.End);
+            if (!endVal) return false;
+            var endDate = new Date(endVal);
+            return !isNaN(endDate.getTime()) && endDate <= new Date();
+        }
+
+        function getEffectiveScheduleStatus(eventData) {
+            var status = normalizeScheduleStatus(eventData && (eventData.status || eventData.Status));
+            if (status === 'pending' && isCalendarEventEnded(eventData)) return 'expired';
+            return status;
+        }
+
+        function getDisplayScheduleStatus(rawStatus, eventData) {
+            if (eventData && getEffectiveScheduleStatus(eventData) === 'expired') return 'Expired';
+            var normalized = normalizeScheduleStatus(rawStatus);
+            switch (normalized) {
+                case 'accepted': return 'Accepted';
+                case 'pending': return 'Pending';
+                case 'in progress': return 'In Progress';
+                case 'completed': return 'Completed';
+                case 'absent': return 'Absent';
+                case 'blocked': return 'Blocked';
+                case 'expired': return 'Expired';
+                case 'available': return 'Available';
+                default:
+                    return String(rawStatus || '').replace('InProgress', 'In Progress') || 'Scheduled';
+            }
+        }
+
+        function getScheduleFilterGroup(eventData) {
+            var type = String(eventData.eventType || eventData.EventType || '').toLowerCase();
+            var status = getEffectiveScheduleStatus(eventData);
+            var hasAppointment = Boolean(eventData.appointmentId || eventData.AppointmentId);
+
+            if (type === 'blocked' || status === 'blocked') return 'blocked';
+            if (type === 'availability' || type === 'available') {
+                if (status === 'expired') return 'expired';
+                return 'available';
+            }
+            if (hasAppointment || type === 'appointment' || type === 'booked') {
+                if (status === 'completed') return 'completed';
+                if (status === 'absent') return 'absent';
+                if (status === 'in progress') return 'inprogress';
+                if (status === 'pending') return 'pending';
+                return 'accepted';
+            }
+            if (status === 'expired') return 'expired';
+            return 'available';
+        }
+
         // ── FullCalendar Events Formatting with Multi-Filter ──
         function getFilteredCalendarEvents() {
-            var chkAppts = document.getElementById('chkFilterAppts');
+            var chkAccepted = document.getElementById('chkFilterAccepted');
+            var chkPending = document.getElementById('chkFilterPending');
+            var chkInProgress = document.getElementById('chkFilterInProgress');
+            var chkCompleted = document.getElementById('chkFilterCompleted');
+            var chkAbsent = document.getElementById('chkFilterAbsent');
             var chkAvailable = document.getElementById('chkFilterAvailable');
             var chkBlocked = document.getElementById('chkFilterBlocked');
+            var chkExpired = document.getElementById('chkFilterExpired');
 
-            var showAppts = chkAppts ? chkAppts.checked : true;
-            var showAvailable = chkAvailable ? chkAvailable.checked : true;
-            var showBlocked = chkBlocked ? chkBlocked.checked : true;
+            var filterState = {
+                accepted: chkAccepted ? chkAccepted.checked : true,
+                pending: chkPending ? chkPending.checked : true,
+                inprogress: chkInProgress ? chkInProgress.checked : true,
+                completed: chkCompleted ? chkCompleted.checked : true,
+                absent: chkAbsent ? chkAbsent.checked : true,
+                available: chkAvailable ? chkAvailable.checked : true,
+                blocked: chkBlocked ? chkBlocked.checked : true,
+                expired: chkExpired ? chkExpired.checked : true
+            };
 
-            var activeCount = (showAppts?1:0) + (showAvailable?1:0) + (showBlocked?1:0);
+            var filterKeys = Object.keys(filterState);
+            var activeCount = filterKeys.filter(function(key) { return filterState[key]; }).length;
             var badgeEl = document.getElementById('filterActiveBadge');
             if (badgeEl) {
-                badgeEl.textContent = activeCount === 3 ? 'All' : activeCount + ' active';
+                badgeEl.textContent = activeCount === filterKeys.length ? 'All' : activeCount + ' active';
             }
 
             var eventsList = [];
 
-            // Process appointments and availability/blocked slots case-insensitively
+            // Process appointments and availability/blocked slots by normalized business status.
             rawEvents.forEach(function(e) {
-                var type = (e.eventType || e.EventType || '').toLowerCase();
-                var status = (e.status || e.Status || '').toLowerCase();
-
-                if (type === 'appointment' || (e.appointmentId && type !== 'availability' && type !== 'available' && type !== 'blocked')) {
-                    if (showAppts) eventsList.push(e);
-                } else if (type === 'blocked' || status === 'blocked') {
-                    if (showBlocked) eventsList.push(e);
-                } else if (type === 'availability' || type === 'available' || status === 'available') {
-                    if (showAvailable) eventsList.push(e);
-                } else {
-                    if (showAvailable) eventsList.push(e);
-                }
+                var group = getScheduleFilterGroup(e);
+                if (filterState[group]) eventsList.push(e);
             });
 
             // Deduplicate appointments referencing same slots
@@ -1796,18 +1920,15 @@
                     nowIndicator: true,
                     eventClassNames: function(arg) {
                         var props = arg.event.extendedProps || {};
-                        var type = (props.eventType || props.EventType || '').toLowerCase();
-                        var status = (props.status || props.Status || '').toLowerCase();
+                        var group = getScheduleFilterGroup(props);
 
-                        if (status.includes('cancelled')) return ['fc-event-cancelled'];
-                        if (status.includes('expired')) return ['fc-event-expired'];
-                        if (status.includes('completed')) return ['fc-event-completed'];
-                        if (status.includes('inprogress') || status.includes('in progress')) return ['fc-event-inprogress'];
-                        if (status.includes('pending') || status.includes('reschedule')) return ['fc-event-pending'];
-                        if (type === 'blocked' || status.includes('blocked')) return ['fc-event-blocked'];
-                        if (type === 'appointment' || type === 'booked' || status.includes('booked') || status.includes('approved') || status.includes('confirmed') || props.appointmentId) {
-                            return ['fc-event-approved'];
-                        }
+                        if (group === 'absent') return ['fc-event-absent'];
+                        if (group === 'expired') return ['fc-event-expired'];
+                        if (group === 'completed') return ['fc-event-completed'];
+                        if (group === 'inprogress') return ['fc-event-inprogress'];
+                        if (group === 'pending') return ['fc-event-pending'];
+                        if (group === 'blocked') return ['fc-event-blocked'];
+                        if (group === 'accepted') return ['fc-event-approved'];
                         return ['fc-event-available'];
                     },
                     eventContent: function(arg) {
@@ -1815,10 +1936,8 @@
                         var props = event.extendedProps || {};
                         var viewType = arg.view.type;
                         
-                        // Status mapping
                         var rawStatus = props.status || props.Status || '';
-                        var displayStatus = String(rawStatus).replace('InProgress', 'In Progress');
-                        if (displayStatus.toLowerCase() === 'approved') displayStatus = 'Confirmed';
+                        var displayStatus = getDisplayScheduleStatus(rawStatus, props);
 
                         var desc = String(props.description || props.Description || '').trim();
                         var hasNote = Boolean(props.hasNote || props.HasNote || props.hasNotes || props.HasNotes || desc.length > 0);
@@ -1866,7 +1985,11 @@
                             if (pName) {
                                 titleEl.textContent = pName;
                             } else if (type === 'availability' || type === 'available') {
-                                titleEl.textContent = 'Available (' + curBookings + '/' + maxPat + ')';
+                                if (getEffectiveScheduleStatus(props) === 'expired') {
+                                    titleEl.textContent = 'Expired slot';
+                                } else {
+                                    titleEl.textContent = 'Available';
+                                }
                             } else if (type === 'blocked' || displayStatus.toLowerCase() === 'blocked') {
                                 titleEl.textContent = 'Blocked Slot';
                             } else {
@@ -1891,6 +2014,8 @@
                                 subHtml += '<span>Package' + (sessNum ? ' · Session #' + sessNum : '') + ' · ' + displayStatus + '</span>';
                             } else if (hasNote || hasPackage) {
                                 subHtml += '<span>· ' + displayStatus + '</span>';
+                            } else if (type === 'availability' || type === 'available') {
+                                subHtml += '<span>' + curBookings + ' of ' + maxPat + ' booked · ' + displayStatus + '</span>';
                             } else {
                                 subHtml += '<span>' + displayStatus + '</span>';
                             }

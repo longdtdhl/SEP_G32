@@ -22,13 +22,17 @@
 <nav class="navbar navbar-expand-lg mb-navbar">
     <div class="container">
         <!-- Brand -->
-        <a class="navbar-brand d-flex align-items-center" asp-page="/Index">
-            <img src="~/images/logo-cropped.png" alt="MindBridge Logo" style="max-height: 48px; width: auto;" />
+        <a class="navbar-brand" asp-page="/Index">
+            <img src="~/images/logo-cropped.png" alt="MindBridge Logo" style="max-height: 38px; width: auto;" />
         </a>
 
         <!-- Mobile Toggle -->
         <div class="d-flex align-items-center gap-2 d-lg-none">
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+            @if (isLoggedIn)
+            {
+                <partial name="_NotificationBell" />
+            }
+            <button class="navbar-toggler border-0 shadow-none p-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
                     aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -36,62 +40,72 @@
 
         <!-- Nav Links -->
         <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
                 <li class="nav-item">
                     <a class="nav-link @(currentPath == "/" ? "active" : "")" asp-page="/Index">
-                        <i class="bi bi-house-door me-1"></i>Home
+                        Home
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/doctors") ? "active" : "")"
                        asp-page="/Doctors/Index">
-                        <i class="bi bi-person-badge me-1"></i>Find a Therapist
+                        Find a Therapist
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/blog") ? "active" : "")"
                        asp-page="/Blog/Index">
-                        <i class="bi bi-journal-text me-1"></i>Resources
+                        Resources
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(currentPath.StartsWith("/appointment/track") ? "active" : "")"
                        asp-page="/Appointment/Track">
-                        <i class="bi bi-geo-alt me-1"></i>Track Appointment
+                        Track Appointment
                     </a>
                 </li>
             </ul>
 
-            <ul class="navbar-nav align-items-lg-center gap-2">
+            <div class="d-flex align-items-center gap-3 mb-navbar-actions">
                 @if (isLoggedIn)
                 {
-                    <!-- Notification Bell -->
-                    <partial name="_NotificationBell" />
+                    <!-- Notification Bell (desktop) -->
+                    <div class="d-none d-lg-flex align-items-center">
+                        <ul class="navbar-nav">
+                            <partial name="_NotificationBell" />
+                        </ul>
+                    </div>
 
-                    <!-- Go to Dashboard + simple dropdown -->
-                    <li class="nav-item">
-                        <a class="btn btn-get-started btn-sm" href="@dashboardUrl">
-                            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+                    @if (!isPatient)
+                    {
+                        <!-- Dashboard Button (Doctor / CS / Manager / Admin) -->
+                        <a class="btn mb-btn-action" href="@dashboardUrl">
+                            Dashboard
                         </a>
-                    </li>
+                    }
+                    else
+                    {
+                        <!-- Patient Portal Quick Access -->
+                        <a class="btn mb-btn-action" href="/Patient/Appointments/Index">
+                            My Appointments
+                        </a>
+                    }
 
-                    <!-- User Dropdown (simplified) -->
-                    <partial name="_UserDropdown" />
+                    <!-- User Dropdown -->
+                    <ul class="navbar-nav">
+                        <partial name="_UserDropdown" />
+                    </ul>
                 }
                 else
                 {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-page="/Account/Login">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Log in
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-get-started" asp-page="/Account/Register">
-                            <i class="bi bi-person-plus me-1"></i>Get Started
-                        </a>
-                    </li>
+                    <a class="mb-nav-login" asp-page="/Account/Login">
+                        Log in
+                    </a>
+                    <a class="btn mb-btn-action" asp-page="/Account/Register">
+                        Get Started
+                    </a>
                 }
-            </ul>
+            </div>
         </div>
     </div>
 </nav>

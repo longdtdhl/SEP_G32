@@ -88,6 +88,13 @@
     .pd-badge.completed { background: #dbeafe; color: #1e40af; }
     .pd-badge.terminated { background: #fee2e2; color: #991b1b; }
     .pd-badge.cancelled { background: #f1f5f9; color: #64748b; }
+    .pd-badge.absent-low,
+    .pd-badge.absent-medium,
+    .pd-badge.absent-high {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+    }
 
     /* ─── Progress bar ─── */
     .pd-progress-track { background: #e2e8f0; border-radius: 3px; height: 6px; overflow: hidden; }
@@ -388,6 +395,20 @@ else
             </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            @{
+                var absentRiskClass = Model.AbsentRiskLevel switch
+                {
+                    "High" => "absent-high",
+                    "Medium" => "absent-medium",
+                    _ => "absent-low"
+                };
+            }
+            @if (Model.AbsentRatePercent > 0)
+            {
+                <span class="pd-badge @absentRiskClass" style="font-size:0.75rem; padding:6px 12px;" title="@Model.NoShowCount absent / @Model.AttendanceTrackedCount completed or absent appointments">
+                    <i class="bi bi-person-x-fill me-1"></i> Absent @Model.AbsentRatePercent%
+                </span>
+            }
             @if (Model.PatientCases.Any(c => c.Status == 0 || c.Status == 1))
             {
                 <span class="pd-badge active" style="font-size:0.75rem; padding:6px 12px;">
@@ -424,7 +445,7 @@ else
                 @if (hasNoShows)
                 {
                     <span class="badge bg-danger d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding:5px 10px;">
-                        <i class="bi bi-person-x-fill"></i> @Model.NoShowCount No-Show Appointment(s)
+                        <i class="bi bi-person-x-fill"></i> @Model.NoShowCount Absent Appointment(s) · @Model.AbsentRatePercent%
                     </span>
                 }
                 @if (hasOverdueHw)

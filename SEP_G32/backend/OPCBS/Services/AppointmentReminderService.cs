@@ -33,6 +33,7 @@ public class AppointmentReminderService : BackgroundService
                 await CheckAndSendFollowUpRemindersAsync(stoppingToken);
                 await CheckPendingCompletionConfirmationsAsync(stoppingToken);
                 await CheckGuestBookingConfirmationsAsync(stoppingToken);
+                await MarkOverdueApprovedAppointmentsAbsentAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -427,6 +428,68 @@ public class AppointmentReminderService : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Marks approved appointments as absent when the appointment time has passed
+    /// and the doctor never started the session.
+    /// </summary>
+    private async Task MarkOverdueApprovedAppointmentsAbsentAsync(CancellationToken ct)
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var appointmentRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.Appointment>>();
+        var slotRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentSlot>>();
+        var sessionRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.TreatmentSession>>();
+        var historyRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentHistory>>();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        var now = DateTime.UtcNow;
+        var appointments = (await appointmentRepo.GetAllAsync(ct))
+            .Where(a => !a.IsDeleted && a.Status == AppointmentStatus.Approved)
+            .ToList();
+        if (appointments.Count == 0) return;
+
+        var sessions = await sessionRepo.GetAllAsync(ct);
+        var changed = false;
+        foreach (var appointment in appointments)
+        {
+            var slot = await slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+            if (slot == null || GetSlotEndUtc(slot) > now) continue;
+
+            appointment.Status = AppointmentStatus.NoShow;
+            appointment.UpdatedAt = now;
+            appointmentRepo.Update(appointment);
+
+            slot.Status = AppointmentSlotStatus.Completed;
+            slot.UpdatedAt = now;
+            slotRepo.Update(slot);
+
+            var session = sessions.FirstOrDefault(s =>
+                !s.IsDeleted &&
+                (s.AppointmentId == appointment.Id ||
+                 (appointment.TreatmentSessionId.HasValue && s.Id == appointment.TreatmentSessionId.Value)));
+            if (session != null)
+            {
+                session.Status = TreatmentSessionStatus.NoShow;
+                session.UpdatedAt = now;
+                sessionRepo.Update(session);
+            }
+
+            await historyRepo.AddAsync(new Domain.Entities.AppointmentHistory
+            {
+                AppointmentId = appointment.Id,
+                PreviousStatus = AppointmentStatus.Approved,
+                NewStatus = AppointmentStatus.NoShow,
+                Reason = "Automatically marked absent because the approved appointment ended without being started.",
+                ChangedByRole = "System",
+                Appointment = appointment
+            }, ct);
+
+            changed = true;
+            _logger.LogInformation("Appointment {AppointmentId} marked absent after missing its approved start window.", appointment.Id);
+        }
+
+        if (changed) await uow.SaveChangesAsync(ct);
+    }
+
     private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
 
     private static TimeZoneInfo ResolveVietnamTimeZone()
@@ -442,6 +505,16 @@ public class AppointmentReminderService : BackgroundService
     private static DateTime GetSlotStartUtc(Domain.Entities.AppointmentSlot slot)
     {
         var local = slot.SlotDate.ToDateTime(slot.StartTime, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(local, VietnamTimeZone);
+    }
+
+    private static DateTime GetSlotEndUtc(Domain.Entities.AppointmentSlot slot)
+    {
+        var local = slot.SlotDate.ToDateTime(slot.EndTime, DateTimeKind.Unspecified);
+        if (slot.EndTime <= slot.StartTime)
+        {
+            local = local.AddDays(1);
+        }
         return TimeZoneInfo.ConvertTimeToUtc(local, VietnamTimeZone);
     }
 }

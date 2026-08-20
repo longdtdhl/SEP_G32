@@ -31,11 +31,8 @@
     @if (isPatient)
     {
         <!-- ==================== PATIENT PORTAL ==================== -->
-        <div class="sidebar-header">Main</div>
+        <div class="sidebar-header">Appointments</div>
         <nav class="nav flex-column">
-            <a class="nav-link @(currentPath == "/patient/dashboard" || currentPath == "/patient/dashboard/index" ? "active" : "")" asp-page="/Patient/Dashboard">
-                <i class="bi bi-house"></i> Dashboard
-            </a>
             <a class="nav-link @(currentPath.StartsWith("/notifications") ? "active" : "")" asp-page="/Notifications/Index">
                 <i class="bi bi-bell"></i> Notifications <span class="badge bg-danger rounded-pill ms-auto d-none" id="sidebar-notif-badge"></span>
             </a>
@@ -57,10 +54,10 @@
         <div class="sidebar-header mt-3">Daily Wellness & Tools</div>
         <nav class="nav flex-column">
             <a class="nav-link @(currentPath.StartsWith("/patient/journal") ? "active" : "")" asp-page="/Patient/Journal/Index">
-                <i class="bi bi-journal-heart"></i> Mood & Sleep Journal
+                <i class="bi bi-emoji-smile"></i> Mood Journey
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/psychometrics") ? "active" : "")" asp-page="/Patient/Psychometrics/TakeTest">
-                <i class="bi bi-clipboard2-pulse"></i> Psychometric Tests
+                <i class="bi bi-clipboard2-pulse"></i> Psychological Assessments
             </a>
         </nav>
 
@@ -70,7 +67,7 @@
                 <i class="bi bi-search-heart"></i> Find a Therapist
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/favorites") ? "active" : "")" asp-page="/Patient/Favorites/Index">
-                <i class="bi bi-bookmark-heart"></i> Saved Therapists
+                <i class="bi bi-heart"></i> Favorite Doctors
             </a>
             <a class="nav-link @(currentPath.StartsWith("/patient/treatmentpackages") ? "active" : "")" asp-page="/Patient/TreatmentPackages/Index">
                 <i class="bi bi-box-seam"></i> Treatment Packages

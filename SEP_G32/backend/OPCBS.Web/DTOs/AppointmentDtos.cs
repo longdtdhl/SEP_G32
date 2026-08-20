@@ -30,7 +30,7 @@ public class CalendarEventDto
 }
 
 // AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled,
-// 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow, 9=AwaitingGuestConfirmation,
+// 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow/Absent, 9=AwaitingGuestConfirmation,
 // 10=AwaitingGuestCompletionConfirmation, 11=CompletionDisputed.
 public class AppointmentDto
 {
@@ -81,14 +81,14 @@ public class AppointmentDto
     public string StatusText => Status switch
     {
         0 => "Pending",
-        1 => "Approved",
+        1 => "Accepted",
         2 => "Rejected",
         3 => "In Progress",
         4 => "Completed",
         5 => "Cancelled",
         6 => "Reschedule Requested",
-        7 => "Awaiting Your Confirmation",
-        8 => "No Show",
+        7 => "Awaiting Confirmation",
+        8 => "Absent",
         9 => "Awaiting Email Confirmation",
         10 => "Awaiting Completion Confirmation",
         11 => "Completion Disputed",
@@ -137,14 +137,14 @@ public class AppointmentListItemDto
     public string StatusText => Status switch
     {
         0 => "Pending",
-        1 => "Approved",
+        1 => "Accepted",
         2 => "Rejected",
         3 => "In Progress",
         4 => "Completed",
         5 => "Cancelled",
         6 => "Reschedule Requested",
-        7 => "Awaiting Your Confirmation",
-        8 => "No Show",
+        7 => "Awaiting Confirmation",
+        8 => "Absent",
         9 => "Awaiting Email Confirmation",
         10 => "Awaiting Completion Confirmation",
         11 => "Completion Disputed",

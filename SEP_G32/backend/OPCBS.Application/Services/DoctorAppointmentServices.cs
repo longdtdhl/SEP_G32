@@ -38,7 +38,18 @@ public class DoctorService : IDoctorService
         _slotRepo = slotRepo;
     }
 
-    public async Task<ApiResponse<List<DoctorProfileDto>>> GetDoctorsAsync(string? search, Guid? specializationId, double? minRating = null, decimal? maxFee = null, string? gender = null, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    public async Task<ApiResponse<List<DoctorProfileDto>>> GetDoctorsAsync(
+        string? search, 
+        Guid? specializationId, 
+        double? minRating = null, 
+        decimal? maxFee = null, 
+        string? gender = null, 
+        DateOnly? availableDate = null, 
+        string? timeFrame = null, 
+        bool? availableOnly = null, 
+        int page = 1, 
+        int pageSize = 10, 
+        CancellationToken ct = default)
     {
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var query = allDoctors.Where(d => d.VerificationStatus == VerificationStatus.Approved && d.IsVisible);
@@ -53,6 +64,46 @@ public class DoctorService : IDoctorService
         var allDoctorSpecs = (await _doctorSpecRepo.GetAllAsync(ct)).ToList();
         var allSpecs = (await _specRepo.GetAllAsync(ct)).ToList();
         var specMap = allSpecs.ToDictionary(s => s.Id, s => s.Name);
+
+        // Load slots if available
+        var allSlots = _slotRepo != null ? (await _slotRepo.GetAllAsync(ct)).ToList() : new List<AppointmentSlot>();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        // Date and TimeFrame slot filtering
+        var isSlotFilterActive = availableDate.HasValue || !string.IsNullOrWhiteSpace(timeFrame) || (availableOnly == true);
+        if (isSlotFilterActive)
+        {
+            var matchingSlots = allSlots.Where(s => s.Status == AppointmentSlotStatus.Available && s.CurrentBookings < s.MaxPatients && !s.IsDeleted);
+
+            if (availableDate.HasValue)
+            {
+                matchingSlots = matchingSlots.Where(s => s.SlotDate == availableDate.Value);
+            }
+            else
+            {
+                matchingSlots = matchingSlots.Where(s => s.SlotDate >= today);
+            }
+
+            if (!string.IsNullOrWhiteSpace(timeFrame))
+            {
+                var tf = timeFrame.Trim().ToLowerInvariant();
+                if (tf == "morning" || tf == "sang")
+                {
+                    matchingSlots = matchingSlots.Where(s => s.StartTime >= new TimeOnly(7, 0) && s.StartTime < new TimeOnly(12, 0));
+                }
+                else if (tf == "afternoon" || tf == "chieu")
+                {
+                    matchingSlots = matchingSlots.Where(s => s.StartTime >= new TimeOnly(12, 0) && s.StartTime < new TimeOnly(18, 0));
+                }
+                else if (tf == "evening" || tf == "toi")
+                {
+                    matchingSlots = matchingSlots.Where(s => s.StartTime >= new TimeOnly(18, 0) && s.StartTime <= new TimeOnly(22, 0));
+                }
+            }
+
+            var doctorIdsWithSlots = matchingSlots.Select(s => s.DoctorProfileId).ToHashSet();
+            list = list.Where(d => doctorIdsWithSlots.Contains(d.Id)).ToList();
+        }
 
         // Specialization filter by Id
         if (specializationId.HasValue && specializationId.Value != Guid.Empty)
@@ -107,6 +158,18 @@ public class DoctorService : IDoctorService
                 .Where(n => !string.IsNullOrEmpty(n))
                 .Select(n => n!)
                 .ToList();
+
+            var docAvailableSlots = allSlots
+                .Where(s => s.DoctorProfileId == d.Id && s.Status == AppointmentSlotStatus.Available && s.CurrentBookings < s.MaxPatients && !s.IsDeleted && s.SlotDate >= today)
+                .OrderBy(s => s.SlotDate)
+                .ThenBy(s => s.StartTime)
+                .ToList();
+
+            var nextSlot = docAvailableSlots.FirstOrDefault();
+            var nextSlotFormatted = nextSlot != null
+                ? $"{nextSlot.StartTime:HH\\:mm} ({nextSlot.SlotDate:dd/MM})"
+                : null;
+
             return new DoctorProfileDto
             {
                 Id = d.Id,
@@ -131,7 +194,9 @@ public class DoctorService : IDoctorService
                 ConsultationTypes = d.ConsultationTypes,
                 LicenseNumber = d.LicenseNumber,
                 Email = user?.Email,
-                PhoneNumber = user?.PhoneNumber
+                PhoneNumber = user?.PhoneNumber,
+                AvailableSlotCount = docAvailableSlots.Count,
+                NextAvailableSlot = nextSlotFormatted
             };
         }).ToList();
 
@@ -2080,12 +2145,12 @@ public class AppointmentService : IAppointmentService
             ).ToList();
         }
 
+        var allSlots = await _slotRepo.GetAllAsync(ct);
+        var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
+
         // 3. Date Range Filter (by SlotDate)
         if (fromDate.HasValue || toDate.HasValue)
         {
-            var allSlots = await _slotRepo.GetAllAsync(ct);
-            var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
-
             if (fromDate.HasValue)
             {
                 var fromDateOnly = DateOnly.FromDateTime(fromDate.Value);
@@ -2100,8 +2165,15 @@ public class AppointmentService : IAppointmentService
 
         var total = doctorAppts.Count;
 
-        // Sort by CreatedAt descending to put the latest booked appointments first
-        var items = doctorAppts.OrderByDescending(a => a.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var sortedAppointments = IsHistoryView(view)
+            ? doctorAppts
+                .OrderByDescending(a => GetAppointmentScheduleStart(a, slotDict))
+                .ThenByDescending(a => a.CreatedAt)
+            : doctorAppts
+                .OrderBy(a => GetAppointmentScheduleStart(a, slotDict))
+                .ThenBy(a => a.CreatedAt);
+
+        var items = sortedAppointments.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var dtos = _mapper.Map<List<AppointmentListItemDto>>(items);
         await EnrichAppointmentListDtosAsync(dtos, items, ct);
 
@@ -2111,6 +2183,19 @@ public class AppointmentService : IAppointmentService
             PageSize = pageSize,
             TotalItems = total
         });
+    }
+
+    private static bool IsHistoryView(string? view)
+        => view != null && view.Equals("history", StringComparison.OrdinalIgnoreCase);
+
+    private static DateTime GetAppointmentScheduleStart(
+        Appointment appointment,
+        IReadOnlyDictionary<Guid, AppointmentSlot> slotDict)
+    {
+        if (slotDict.TryGetValue(appointment.AppointmentSlotId, out var slot))
+            return slot.SlotDate.ToDateTime(slot.StartTime);
+
+        return appointment.AppointmentDate ?? appointment.CreatedAt;
     }
 
     public async Task<ApiResponse> ApproveAppointmentAsync(Guid appointmentId, Guid doctorUserId, CancellationToken ct = default)
