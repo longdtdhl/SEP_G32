@@ -24,6 +24,7 @@
     var shortBio = hasLongBio ? bioText.Substring(0, 340) + "..." : bioText;
     var contactPhone = Model.Doctor.PhoneNumber?.Trim();
     var contactEmail = Model.Doctor.Email?.Trim();
+    var showPublicFee = Model.Doctor.IsConsultationFeePublic;
     var zaloPhone = string.IsNullOrWhiteSpace(contactPhone)
         ? string.Empty
         : new string(contactPhone.Where(char.IsDigit).ToArray());
@@ -584,7 +585,7 @@
                         <i class="bi bi-briefcase text-primary"></i>
                         <span><strong>@(Model.Doctor.ExperienceYears)+</strong> Years Experience</span>
                     </div>
-                    @if (Model.Doctor.ConsultationFee > 0)
+                    @if (showPublicFee && Model.Doctor.ConsultationFee > 0)
                     {
                         <div class="dr-hero-stat-pill">
                             <i class="bi bi-tag text-primary"></i>
@@ -871,9 +872,9 @@
                 <div class="dr-fee-banner">
                     <div class="dr-fee-caption">Standard Consultation Fee</div>
                     <div class="dr-fee-price">
-                        @(Model.Doctor.ConsultationFee > 0 ? Model.Doctor.ConsultationFee.ToString("N0") + " VND" : "Contact for fee")
+                        @(showPublicFee && Model.Doctor.ConsultationFee > 0 ? Model.Doctor.ConsultationFee.ToString("N0") + " VND" : "Contact for fee")
                     </div>
-                    <div class="dr-fee-note">per hour (60 minutes)</div>
+                    <div class="dr-fee-note">@(showPublicFee ? "per hour (60 minutes)" : "pricing available during booking or direct consultation")</div>
                 </div>
 
                 <!-- Contact & Clinic Details -->

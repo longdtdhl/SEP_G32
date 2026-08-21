@@ -21,10 +21,10 @@ public class TherapyAssignmentDto
 
     public string StatusText => Status switch
     {
-        0 => "Chưa làm",
-        1 => "Đã nộp bài",
-        2 => "Đã nhận xét",
-        _ => "Không xác định"
+        0 => "Not Started",
+        1 => "Submitted",
+        2 => "Reviewed",
+        _ => "Unknown"
     };
 
     public string StatusBadgeClass => Status switch

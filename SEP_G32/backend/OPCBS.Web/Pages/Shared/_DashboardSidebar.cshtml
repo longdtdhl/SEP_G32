@@ -257,13 +257,6 @@
             <a class="sb-link @(currentPath.StartsWith("/businessmanager/psychometrics") ? "active" : "")" asp-page="/BusinessManager/Psychometrics/Index">
                 <i class="bi bi-clipboard2-pulse"></i><span>Psychometric Tests</span>
             </a>
-            <a class="sb-link @(currentPath.StartsWith("/businessmanager/analytics") ? "active" : "")" asp-page="/BusinessManager/Analytics">
-                <i class="bi bi-graph-up"></i><span>Analytics</span>
-            </a>
-            <a class="sb-link @(currentPath.StartsWith("/businessmanager/reports") ? "active" : "")" asp-page="/BusinessManager/Reports">
-                <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>
-            </a>
-
             <div class="sb-divider"></div>
 
             <form method="post" asp-page="/Account/Logout" class="m-0">
@@ -293,9 +286,6 @@
             </a>
             <a class="sb-link @(currentPath.StartsWith("/admin/auditlogs") ? "active" : "")" asp-page="/Admin/AuditLogs/Index">
                 <i class="bi bi-journal-text"></i><span>Audit Logs</span>
-            </a>
-            <a class="sb-link @(currentPath.StartsWith("/admin/settings") ? "active" : "")" asp-page="/Admin/Settings">
-                <i class="bi bi-gear"></i><span>System Settings</span>
             </a>
             <a class="sb-link @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports">
                 <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>

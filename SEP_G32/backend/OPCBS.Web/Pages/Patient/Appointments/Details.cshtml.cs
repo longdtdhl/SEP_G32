@@ -37,7 +37,7 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var (data, error) = await _service.GetByIdAsync(id);
-        if (data == null) { Error = error ?? "Not found lịch hẹn."; return Page(); }
+        if (data == null) { Error = error ?? "Appointment not found."; return Page(); }
         Appointment = data;
 
         try

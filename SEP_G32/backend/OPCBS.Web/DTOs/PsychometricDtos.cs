@@ -332,61 +332,61 @@ public class SymptomBreakdownItemDto
         string sev = SeverityLevel ?? "Moderate";
         return sev switch
         {
-            "Minimal" => ("Minimal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e"),
-            "Mild" => ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6"),
-            "Moderate" => ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308"),
-            "Moderately Severe" => ("Moderately Severe", "Trung bình nặng", "#fff7ed", "#9a3412", "#fed7aa", "#f97316"),
-            "Severe" or "High" => ("Severe", "Nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444"),
-            _ => ("Moderate", "Vừa", "#f8fafc", "#334155", "#e2e8f0", "#64748b")
+            "Minimal" => ("Minimal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e"),
+            "Mild" => ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6"),
+            "Moderate" => ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308"),
+            "Moderately Severe" => ("Moderately Severe", "Moderately Severe", "#fff7ed", "#9a3412", "#fed7aa", "#f97316"),
+            "Severe" or "High" => ("Severe", "Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444"),
+            _ => ("Moderate", "Moderate", "#f8fafc", "#334155", "#e2e8f0", "#64748b")
         };
     }
 
     public (string En, string Vi, string Bg, string Text, string Border, string Bar) GetGad7Severity()
     {
         var s = TotalScore;
-        if (s <= 4) return ("Minimal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
-        if (s <= 9) return ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
-        if (s <= 14) return ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308");
-        return ("Severe", "Nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
+        if (s <= 4) return ("Minimal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
+        if (s <= 9) return ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
+        if (s <= 14) return ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308");
+        return ("Severe", "Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
     }
 
     public (string En, string Vi, string Bg, string Text, string Border, string Bar) GetDepressionSeverity()
     {
         var s = DepressionScore > 0 ? DepressionScore : TotalScore;
-        if (s <= 9) return ("Normal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
-        if (s <= 13) return ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
-        if (s <= 20) return ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308");
-        if (s <= 27) return ("Severe", "Nặng", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
-        return ("Extremely Severe", "Rất nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
+        if (s <= 9) return ("Normal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
+        if (s <= 13) return ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
+        if (s <= 20) return ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308");
+        if (s <= 27) return ("Severe", "Severe", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
+        return ("Extremely Severe", "Extremely Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
     }
 
     public (string En, string Vi, string Bg, string Text, string Border, string Bar) GetAnxietySeverity()
     {
         var s = AnxietyScore;
-        if (s <= 7) return ("Normal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
-        if (s <= 9) return ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
-        if (s <= 14) return ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308");
-        if (s <= 19) return ("Severe", "Nặng", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
-        return ("Extremely Severe", "Rất nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
+        if (s <= 7) return ("Normal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
+        if (s <= 9) return ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
+        if (s <= 14) return ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308");
+        if (s <= 19) return ("Severe", "Severe", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
+        return ("Extremely Severe", "Extremely Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
     }
 
     public (string En, string Vi, string Bg, string Text, string Border, string Bar) GetStressSeverity()
     {
         var s = StressScore;
-        if (s <= 14) return ("Normal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
-        if (s <= 18) return ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
-        if (s <= 25) return ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308");
-        if (s <= 33) return ("Severe", "Nặng", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
-        return ("Extremely Severe", "Rất nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
+        if (s <= 14) return ("Normal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
+        if (s <= 18) return ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
+        if (s <= 25) return ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308");
+        if (s <= 33) return ("Severe", "Severe", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
+        return ("Extremely Severe", "Extremely Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
     }
 
     public (string En, string Vi, string Bg, string Text, string Border, string Bar) GetPhq9Severity()
     {
         var s = TotalScore;
-        if (s <= 4) return ("Minimal", "Bình thường", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
-        if (s <= 9) return ("Mild", "Nhẹ", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
-        if (s <= 14) return ("Moderate", "Vừa", "#fefce8", "#854d0e", "#fef08a", "#eab308");
-        if (s <= 19) return ("Moderately Severe", "Trung bình nặng", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
-        return ("Severe", "Nặng", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
+        if (s <= 4) return ("Minimal", "Normal", "#f0fdf4", "#166534", "#bbf7d0", "#22c55e");
+        if (s <= 9) return ("Mild", "Mild", "#eff6ff", "#1e40af", "#bfdbfe", "#3b82f6");
+        if (s <= 14) return ("Moderate", "Moderate", "#fefce8", "#854d0e", "#fef08a", "#eab308");
+        if (s <= 19) return ("Moderately Severe", "Moderately Severe", "#fff7ed", "#9a3412", "#fed7aa", "#f97316");
+        return ("Severe", "Severe", "#fef2f2", "#991b1b", "#fecaca", "#ef4444");
     }
 }

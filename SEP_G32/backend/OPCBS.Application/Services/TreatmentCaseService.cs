@@ -533,6 +533,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         var createdSessions = new List<TreatmentSession>();
         var plannedQueue = new Queue<TreatmentSession>(plannedSessions);
         var skippedDates = new List<string>();
+        var generatedSessionTitle = !string.IsNullOrWhiteSpace(treatmentCase.PackageNameSnapshot)
+            ? treatmentCase.PackageNameSnapshot
+            : treatmentCase.CaseName;
 
         // ── Begin transaction for staged persistence ────────────────────
         try
@@ -650,6 +653,11 @@ public class TreatmentCaseService : ITreatmentCaseService
                 if (plannedQueue.Count > 0)
                 {
                     session = plannedQueue.Dequeue();
+                    if (string.IsNullOrWhiteSpace(session.Title) ||
+                        session.Title.StartsWith("Session ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        session.Title = generatedSessionTitle;
+                    }
                     session.PlannedStartTime = slotStartDateTime;
                     session.PlannedEndTime = currentDate.Date.Add(endTime.ToTimeSpan());
                     session.UpdatedAt = DateTime.UtcNow;
@@ -663,7 +671,7 @@ public class TreatmentCaseService : ITreatmentCaseService
                         TreatmentCaseId = treatmentCase.Id,
                         AppointmentId = null,
                         SessionNumber = maxSessionNumber,
-                        Title = $"Session {maxSessionNumber}: {treatmentCase.CaseName}",
+                        Title = generatedSessionTitle,
                         Description = $"Planned session {maxSessionNumber} of {treatmentCase.TotalSessions}",
                         PlannedStartTime = slotStartDateTime,
                         PlannedEndTime = currentDate.Date.Add(endTime.ToTimeSpan()),

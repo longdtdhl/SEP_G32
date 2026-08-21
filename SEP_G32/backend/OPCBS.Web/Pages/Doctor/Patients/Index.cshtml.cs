@@ -86,15 +86,15 @@ public class IndexModel : PageModel
         // Headers
         var headers = new[]
         {
-            "Họ và tên *",
+            "Full Name *",
             "Email *",
-            "Số điện thoại *",
-            "Số Zalo",
-            "Ngày sinh (dd/MM/yyyy)",
-            "Giới tính (Nam/Nữ)",
-            "Tuổi",
-            "Địa chỉ",
-            "Ghi chú ban đầu"
+            "Phone Number *",
+            "Zalo Number",
+            "Date of Birth (dd/MM/yyyy)",
+            "Gender (Male/Female)",
+            "Age",
+            "Address",
+            "Initial Notes"
         };
 
         for (int i = 0; i < headers.Length; i++)
@@ -112,9 +112,9 @@ public class IndexModel : PageModel
         // Sample rows
         var sampleRows = new[]
         {
-            new object[] { "Nguyễn Văn An", "an.nguyen@example.com", "0901234567", "0901234567", "15/05/1992", "Nam", 34, "123 Nguyễn Trãi, Q.5, TP.HCM", "Thường xuyên căng thẳng công việc" },
-            new object[] { "Trần Thị Mai", "mai.tran@example.com", "0912345678", "0912345678", "20/11/1998", "Nữ", 28, "45 Lê Lợi, Q.1, TP.HCM", "Mất ngủ, lo âu kéo dài" },
-            new object[] { "Lê Hoàng Long", "long.le@example.com", "0987654321", "0987654321", "10/08/1984", "Nam", 42, "78 Cầu Giấy, Hà Nội", "Bệnh nhân mới cần tư vấn tâm lý" }
+            new object[] { "Alex Nguyen", "alex.nguyen@example.com", "0901234567", "0901234567", "15/05/1992", "Male", 34, "123 Wellness Street, District 5", "Work-related stress and sleep concerns" },
+            new object[] { "Mia Tran", "mia.tran@example.com", "0912345678", "0912345678", "20/11/1998", "Female", 28, "45 Green Avenue, District 1", "Persistent anxiety and insomnia" },
+            new object[] { "Leo Le", "leo.le@example.com", "0987654321", "0987654321", "10/08/1984", "Male", 42, "78 Balance Road", "New patient seeking psychological counseling" }
         };
 
         for (int r = 0; r < sampleRows.Length; r++)
@@ -394,11 +394,11 @@ public class IndexModel : PageModel
         {
             var g = genderStr.Trim().ToLowerInvariant();
             if (g.StartsWith("nam") || g == "male" || g == "m" || g == "1")
-                gender = "Nam";
+                gender = "Male";
             else if (g.StartsWith("nữ") || g.StartsWith("nu") || g.StartsWith("female") || g == "f" || g == "0" || g == "2")
-                gender = "Nữ";
+                gender = "Female";
             else if (g.StartsWith("khác") || g.StartsWith("khac") || g == "other")
-                gender = "Khác";
+                gender = "Other";
             else
                 gender = genderStr.Trim();
         }
@@ -407,23 +407,23 @@ public class IndexModel : PageModel
         var notesBuilder = new List<string>();
         if (!string.IsNullOrWhiteSpace(zalo))
         {
-            notesBuilder.Add($"Số Zalo: {zalo.Trim()}");
+            notesBuilder.Add($"Zalo Number: {zalo.Trim()}");
         }
         if (dob.HasValue)
         {
-            notesBuilder.Add($"Ngày sinh: {dob.Value:dd/MM/yyyy}");
+            notesBuilder.Add($"Date of Birth: {dob.Value:dd/MM/yyyy}");
         }
         else if (age.HasValue)
         {
-            notesBuilder.Add($"Tuổi: {age.Value}");
+            notesBuilder.Add($"Age: {age.Value}");
         }
         if (!string.IsNullOrWhiteSpace(gender))
         {
-            notesBuilder.Add($"Giới tính: {gender}");
+            notesBuilder.Add($"Gender: {gender}");
         }
         if (!string.IsNullOrWhiteSpace(address))
         {
-            notesBuilder.Add($"Địa chỉ: {address.Trim()}");
+            notesBuilder.Add($"Address: {address.Trim()}");
         }
         if (!string.IsNullOrWhiteSpace(notes))
         {

@@ -231,15 +231,6 @@
             </a>
         </nav>
 
-        <div class="sidebar-header mt-3">Analytics & Reports</div>
-        <nav class="nav flex-column">
-            <a class="nav-link @(currentPath.StartsWith("/businessmanager/analytics") ? "active" : "")" asp-page="/BusinessManager/Analytics">
-                <i class="bi bi-graph-up"></i> Business Analytics
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/businessmanager/reports") ? "active" : "")" asp-page="/BusinessManager/Reports">
-                <i class="bi bi-file-earmark-bar-graph"></i> Financial Reports
-            </a>
-        </nav>
     }
     else if (isAdmin)
     {
@@ -277,9 +268,6 @@
             </a>
             <a class="nav-link @(currentPath.StartsWith("/admin/reports") ? "active" : "")" asp-page="/Admin/Reports">
                 <i class="bi bi-file-earmark-bar-graph"></i> System Reports
-            </a>
-            <a class="nav-link @(currentPath.StartsWith("/admin/settings") ? "active" : "")" asp-page="/Admin/Settings">
-                <i class="bi bi-gear"></i> System Settings
             </a>
         </nav>
     }

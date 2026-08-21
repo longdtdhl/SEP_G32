@@ -60,11 +60,11 @@ public class PatientRecordDto
     public string? ResolvedAddress => Address ?? GuestAddress;
 
     [JsonIgnore]
-    public string DisplayName => string.IsNullOrEmpty(GuestName) ? "Chưa cập nhật" : GuestName;
+    public string DisplayName => string.IsNullOrEmpty(GuestName) ? "Not updated" : GuestName;
     [JsonIgnore]
-    public string DisplayPhone => string.IsNullOrEmpty(GuestPhone) ? "Chưa cập nhật" : GuestPhone;
+    public string DisplayPhone => string.IsNullOrEmpty(GuestPhone) ? "Not updated" : GuestPhone;
     [JsonIgnore]
-    public string DisplayEmail => string.IsNullOrEmpty(GuestEmail) ? "Chưa cập nhật" : GuestEmail;
+    public string DisplayEmail => string.IsNullOrEmpty(GuestEmail) ? "Not updated" : GuestEmail;
     [JsonIgnore]
     public bool IsGuest => !PatientId.HasValue;
 }

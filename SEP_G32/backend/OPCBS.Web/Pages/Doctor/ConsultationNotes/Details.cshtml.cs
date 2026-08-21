@@ -32,6 +32,7 @@ public class DetailsModel : PageModel
     }
 
     public ConsultationNoteDto? Record { get; set; }
+    public AppointmentDto? Appointment { get; set; }
     public string? Error { get; set; }
     public TreatmentPackageDto? TreatmentPackage { get; set; }
     public List<TreatmentPackageDto> PatientPackages { get; set; } = new();
@@ -41,22 +42,26 @@ public class DetailsModel : PageModel
         var (data, error) = await _api.GetByIdAsync(id);
         if (data == null)
         {
-            TempData["ErrorMessage"] = error ?? "Not found ghi chú tư vấn.";
+            TempData["ErrorMessage"] = error ?? "Consultation note not found.";
             return RedirectToPage("/Doctor/Patients/Index");
         }
 
         Record = data;
 
-        // Load the specific package linked to the appointment
+        // Load the specific linked appointment and treatment package
         if (Record.AppointmentId.HasValue)
         {
             var (apt, _) = await _appointmentApi.GetByIdAsync(Record.AppointmentId.Value);
-            if (apt != null && apt.TreatmentPackageId.HasValue)
+            if (apt != null)
             {
-                var (pkg, _) = await _pkgService.GetByIdAsync(apt.TreatmentPackageId.Value);
-                if (pkg != null)
+                Appointment = apt;
+                if (apt.TreatmentPackageId.HasValue)
                 {
-                    TreatmentPackage = pkg;
+                    var (pkg, _) = await _pkgService.GetByIdAsync(apt.TreatmentPackageId.Value);
+                    if (pkg != null)
+                    {
+                        TreatmentPackage = pkg;
+                    }
                 }
             }
         }

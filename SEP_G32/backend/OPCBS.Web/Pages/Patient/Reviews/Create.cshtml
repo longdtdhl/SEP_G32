@@ -52,7 +52,7 @@
     function setRating(value) {
         document.getElementById('ratingInput').value = value;
         const stars = document.querySelectorAll('.star-btn');
-        const texts = ['', 'Rất tệ', 'Tệ', 'Normal', 'Tốt', 'Tuyệt vời'];
+        const texts = ['', 'Very Poor', 'Poor', 'Average', 'Good', 'Excellent'];
         stars.forEach((star, index) => {
             star.style.color = index < value ? '#f5a623' : '#ddd';
         });

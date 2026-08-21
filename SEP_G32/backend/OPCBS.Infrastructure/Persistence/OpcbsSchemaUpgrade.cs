@@ -81,6 +81,9 @@ public static class OpcbsSchemaUpgrade
             IF COL_LENGTH(N'AppointmentSlots', N'CurrentBookings') IS NULL
                 ALTER TABLE [AppointmentSlots] ADD [CurrentBookings] int NOT NULL CONSTRAINT [DF_AppointmentSlots_CurrentBookings] DEFAULT 0;
 
+            IF COL_LENGTH(N'DoctorProfiles', N'IsConsultationFeePublic') IS NULL
+                ALTER TABLE [DoctorProfiles] ADD [IsConsultationFeePublic] bit NOT NULL CONSTRAINT [DF_DoctorProfiles_IsConsultationFeePublic] DEFAULT 1;
+
             IF COL_LENGTH(N'EmotionJournals', N'SleepHours') IS NULL
                 ALTER TABLE [EmotionJournals] ADD [SleepHours] decimal(4,1) NULL;
             IF COL_LENGTH(N'EmotionJournals', N'DepressionScale') IS NULL

@@ -947,27 +947,6 @@ else
                         </div>
                     </div>
 
-                    <!-- Mood Trend Quick Preview -->
-                    @if (Model.RecentMoodEntries.Any())
-                    {
-                        <div class="pd-card">
-                            <div class="pd-card-head">
-                                <h6 class="pd-card-title"><i class="bi bi-emoji-smile me-2" style="color:#d97706;"></i>Recent Mood Trend</h6>
-                            </div>
-                            <div class="pd-card-body">
-                                <div class="d-flex gap-1 align-items-end" style="height:50px;">
-                                    @foreach (var m in Model.RecentMoodEntries.Take(14).Reverse())
-                                    {
-                                        var h = Math.Max(6, m.MoodScore * 5);
-                                        var c = m.MoodScore >= 7 ? "#10b981" : m.MoodScore >= 4 ? "#d97706" : "#dc2626";
-                                        <div title="@m.RecordedAt.ToString("MMM dd") — Mood: @m.MoodScore/10"
-                                             style="flex:1; min-width:6px; max-width:20px; height:@(h)px; background:@c; border-radius:3px 3px 0 0; opacity:0.85;"></div>
-                                    }
-                                </div>
-                                <div class="text-muted text-end mt-1" style="font-size:0.68rem;">Last @Model.RecentMoodEntries.Take(14).Count() entries</div>
-                            </div>
-                        </div>
-                    }
                 </div>
             </div>
         </div>

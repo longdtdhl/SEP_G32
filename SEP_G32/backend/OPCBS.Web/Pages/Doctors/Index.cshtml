@@ -622,7 +622,7 @@
                     <!-- Experience & Fee Meta -->
                     <div class="mt-auto d-flex justify-content-between w-100 border-top pt-2.5" style="font-size:0.78rem; color:#64748b;">
                         <span><i class="bi bi-briefcase me-1 text-primary"></i>@doc.ExperienceYears yrs exp</span>
-                        @if (doc.ConsultationFee > 0)
+                        @if (doc.IsConsultationFeePublic && doc.ConsultationFee > 0)
                         {
                             <span class="fw-bold" style="color:var(--mb-primary);">@doc.ConsultationFee.ToString("N0")₫</span>
                         }

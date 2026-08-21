@@ -693,6 +693,9 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
                     <input type="number" name="maxPatients" id="dSlotMaxPatients" class="form-control" min="1" max="10" style="border-radius:8px;" />
+                    <div class="form-text" style="font-size:0.76rem; color:#64748b;">
+                        Number of booking requests this slot can receive for doctor review. Only one patient will be accepted for the actual consultation; other requests are automatically cancelled once one request is accepted.
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -834,6 +837,9 @@
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
                         <input type="number" name="maxPatients" id="dCreateMaxPatients" class="form-control" value="1" min="1" max="10" style="border-radius:8px;" />
+                        <div class="form-text" style="font-size:0.76rem; color:#64748b;">
+                            Request intake capacity only. The doctor accepts one patient for this slot; remaining requests are cancelled automatically after acceptance.
+                        </div>
                     </div>
                 </div>
 

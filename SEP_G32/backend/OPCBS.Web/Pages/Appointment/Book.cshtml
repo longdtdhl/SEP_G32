@@ -290,7 +290,7 @@
                                 </div>
                             }
 
-                            @if (Model.Doctor.ConsultationFee > 0)
+                            @if (Model.Doctor.IsConsultationFeePublic && Model.Doctor.ConsultationFee > 0)
                             {
                                 <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top" style="border-color: rgba(226, 232, 240, 0.6) !important; font-size:0.825rem;">
                                     <span class="text-muted">Consultation Fee</span>

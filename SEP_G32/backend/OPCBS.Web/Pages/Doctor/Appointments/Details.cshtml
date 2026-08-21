@@ -822,18 +822,20 @@
         top: 0;
         right: 0;
         z-index: 1080;
-        width: min(620px, 94vw);
+        width: min(760px, 96vw);
         height: 100vh;
         background: linear-gradient(180deg, #ffffff 0%, #f8fffd 100%);
         border-left: 1px solid rgba(13, 148, 136, 0.18);
         box-shadow: -24px 0 70px rgba(15, 23, 42, 0.22);
-        transform: translateX(104%);
-        transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+        opacity: 0.72;
+        transform: translateX(calc(100% + 24px)) scale(0.985);
+        transition: transform 0.34s cubic-bezier(.18,.82,.28,1), opacity 0.24s ease;
         display: flex;
         flex-direction: column;
     }
     .dr-note-drawer.show {
-        transform: translateX(0);
+        opacity: 1;
+        transform: translateX(0) scale(1);
     }
     .dr-note-drawer-header {
         padding: 1.15rem 1.25rem;
@@ -857,6 +859,99 @@
         border-radius: 16px;
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
         padding: 1rem;
+    }
+    .dr-note-context-strip,
+    .dr-live-note-nudge {
+        border: 1px solid rgba(13, 148, 136, 0.18);
+        background: linear-gradient(135deg, rgba(236,253,245,0.95), rgba(248,255,253,0.92));
+        border-radius: 16px;
+        box-shadow: 0 14px 34px rgba(15, 118, 110, 0.08);
+    }
+    .dr-note-context-strip {
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.65rem;
+    }
+    .dr-note-context-item {
+        min-width: 0;
+        padding: 0.62rem 0.72rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .dr-note-context-label {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.035em;
+        margin-bottom: 0.18rem;
+    }
+    .dr-note-context-value {
+        color: #123b35;
+        font-size: 0.86rem;
+        font-weight: 760;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .dr-live-note-nudge {
+        position: relative;
+        margin: -0.35rem 0 1.15rem;
+        padding: 0.82rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        overflow: hidden;
+    }
+    .dr-live-note-nudge::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, #0f766e, #2dd4bf);
+        box-shadow: 0 0 18px rgba(13, 148, 136, 0.34);
+    }
+    .dr-live-note-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #10b981;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.34);
+        animation: drLivePulse 1.45s ease-in-out infinite;
+        flex: 0 0 auto;
+    }
+    .dr-live-note-title {
+        color: #123b35;
+        font-size: 0.9rem;
+        font-weight: 800;
+    }
+    .dr-live-note-copy {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 560;
+    }
+    .dr-live-note-btn {
+        position: relative;
+        isolation: isolate;
+    }
+    .dr-live-note-btn::after {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        z-index: -1;
+        border-radius: 14px;
+        background: rgba(20, 184, 166, 0.18);
+        opacity: 0;
+        transform: scale(0.98);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .dr-live-note-btn:hover::after {
+        opacity: 1;
+        transform: scale(1);
     }
     body.dr-drawer-open {
         overflow: hidden;
@@ -948,6 +1043,15 @@
     .dr-status-live .bi-record-circle-fill {
         color: #10b981 !important;
     }
+    .dr-pill-inprogress {
+        background: linear-gradient(135deg, #ecfdf5, #dff7f2) !important;
+        color: #065f46 !important;
+        border-color: rgba(13, 148, 136, 0.42) !important;
+    }
+    .dr-pill-inprogress i {
+        animation: drLivePulse 1.45s ease-in-out infinite;
+        border-radius: 999px;
+    }
     .dr-live-banner {
         color: #064e3b !important;
         background: linear-gradient(135deg, #ecfdf5, #ffffff) !important;
@@ -1019,9 +1123,11 @@
     @@media (prefers-reduced-motion: reduce) {
         .dr-status-live,
         .dr-status-live .bi-record-circle-fill,
+        .dr-pill-inprogress i,
         .dr-live-banner,
         .dr-status-live::after,
-        .dr-live-banner::after {
+        .dr-live-banner::after,
+        .dr-live-note-dot {
             animation: none !important;
         }
     }
@@ -1208,7 +1314,7 @@
             else if (apt.Status == 3)
             {
                 <i class="bi bi-play-circle-fill fs-5 text-indigo"></i>
-                <span><strong>In Progress</strong> — The consultation session is currently active. Record session findings and complete the appointment.</span>
+                <span><strong>In Progress</strong> — Live consultation is active. Keep patient context visible while recording clinical findings.</span>
             }
             else if (apt.Status == 4)
             {
@@ -1237,6 +1343,33 @@
                 <span><strong>Cancelled</strong> — This appointment was cancelled.</span>
             }
         </div>
+
+        @if (apt.Status == 3)
+        {
+            <div class="dr-live-note-nudge">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <span class="dr-live-note-dot" aria-hidden="true"></span>
+                    <div class="min-w-0">
+                        <div class="dr-live-note-title">Clinical note workspace is ready</div>
+                        <div class="dr-live-note-copy">
+                            @(Model.HasConsultationNote ? "Continue updating the note in a right-side workspace without leaving this appointment." : "Write the consultation note in a right-side workspace without losing appointment context.")
+                        </div>
+                    </div>
+                </div>
+                @if (Model.HasConsultationNote && Model.AssociatedRecord != null)
+                {
+                    <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-primary dr-live-note-btn js-note-drawer-link flex-shrink-0">
+                        <i class="bi bi-pencil-square"></i> Update Note
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="dr-btn-primary dr-live-note-btn flex-shrink-0" onclick="openClinicalNoteDrawer()">
+                        <i class="bi bi-journal-medical"></i> Write Note
+                    </button>
+                }
+            </div>
+        }
 
         <!-- ═══════════════════════════════════════════════════
            3. CONTEXT SUMMARY STRIP (4 METRIC CARDS)
@@ -1953,18 +2086,18 @@
                                     </form>
                                     @if (Model.AssociatedRecord != null)
                                     {
-                                        <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-secondary w-100 mt-1 js-note-drawer-link">
-                                            <i class="bi bi-pencil-square text-teal"></i> Edit Recorded Note
+                                        <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-secondary w-100 mt-1 js-note-drawer-link dr-live-note-btn">
+                                            <i class="bi bi-layout-sidebar-inset-reverse text-teal"></i> Update Note in Side Workspace
                                         </a>
                                     }
                                 }
                                 else
                                 {
-                                    <button type="button" class="dr-btn-primary w-100 py-2.5" onclick="openClinicalNoteDrawer()">
-                                        <i class="bi bi-layout-sidebar-inset-reverse fs-5"></i> Open Clinical Note Drawer
+                                    <button type="button" class="dr-btn-primary w-100 py-2.5 dr-live-note-btn" onclick="openClinicalNoteDrawer()">
+                                        <i class="bi bi-journal-medical fs-5"></i> Write Clinical Note
                                     </button>
                                     <div class="text-muted text-center" style="font-size:0.75rem;">
-                                        Keep patient context visible while documenting this session.
+                                        Opens as a right-side workspace so appointment details stay visible.
                                     </div>
                                 }
                             }
@@ -2033,6 +2166,17 @@
                     <div class="small fw-bold text-teal text-uppercase mb-1" style="letter-spacing:.04em;">Clinical documentation</div>
                     <h2 id="clinicalNoteDrawerTitle" class="h5 fw-bold text-dark mb-1">Consultation Note</h2>
                     <p class="text-muted small mb-0">Document findings while keeping the appointment context open.</p>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <span class="badge rounded-pill bg-white text-teal border">
+                            <i class="bi bi-person me-1"></i>@(apt.PatientName ?? "Patient")
+                        </span>
+                        <span class="badge rounded-pill bg-white text-secondary border">
+                            <i class="bi bi-clock me-1"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm") - @apt.EndAt.LocalDateTime.ToString("HH:mm")
+                        </span>
+                        <span class="badge rounded-pill bg-white text-secondary border">
+                            <i class="bi bi-upc-scan me-1"></i>@apt.BookingCode
+                        </span>
+                    </div>
                 </div>
                 <button type="button" class="dr-btn-secondary px-2 py-1" onclick="closeClinicalNoteDrawer()" aria-label="Close note drawer">
                     <i class="bi bi-x-lg"></i>
@@ -2042,6 +2186,20 @@
                 @if (apt.Status == 3 && !Model.HasConsultationNote)
                 {
                     <div id="clinicalNoteCreatePanel" class="dr-drawer-form-shell">
+                        <div class="dr-note-context-strip">
+                            <div class="dr-note-context-item">
+                                <div class="dr-note-context-label">Patient</div>
+                                <div class="dr-note-context-value">@(apt.PatientName ?? "Patient")</div>
+                            </div>
+                            <div class="dr-note-context-item">
+                                <div class="dr-note-context-label">Session Time</div>
+                                <div class="dr-note-context-value">@apt.StartAt.LocalDateTime.ToString("MMM dd, HH:mm") - @apt.EndAt.LocalDateTime.ToString("HH:mm")</div>
+                            </div>
+                            <div class="dr-note-context-item">
+                                <div class="dr-note-context-label">Booking Code</div>
+                                <div class="dr-note-context-value">@apt.BookingCode</div>
+                            </div>
+                        </div>
                         <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
                             <i class="bi bi-file-earmark-medical-fill text-teal fs-5"></i>
                             <div>

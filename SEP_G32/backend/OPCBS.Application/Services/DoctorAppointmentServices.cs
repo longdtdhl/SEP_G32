@@ -189,6 +189,7 @@ public class DoctorService : IDoctorService
                 Education = d.Education,
                 CareerBackground = d.CareerBackground,
                 ConsultationFee = d.ConsultationFee,
+                IsConsultationFeePublic = d.IsConsultationFeePublic,
                 CareApproach = d.CareApproach,
                 Languages = d.Languages,
                 ConsultationTypes = d.ConsultationTypes,
@@ -270,6 +271,7 @@ public class DoctorService : IDoctorService
             Education = d.Education,
             CareerBackground = d.CareerBackground,
             ConsultationFee = d.ConsultationFee,
+            IsConsultationFeePublic = d.IsConsultationFeePublic,
             CareApproach = d.CareApproach,
             Languages = d.Languages,
             ConsultationTypes = d.ConsultationTypes,
@@ -333,6 +335,8 @@ public class DoctorService : IDoctorService
             }
             doctor.ConsultationFee = dto.ConsultationFee.Value;
         }
+        if (dto.IsConsultationFeePublic.HasValue)
+            doctor.IsConsultationFeePublic = dto.IsConsultationFeePublic.Value;
         if (dto.CareApproach != null)
             doctor.CareApproach = dto.CareApproach;
         if (dto.Languages != null)
@@ -2212,24 +2216,92 @@ public class AppointmentService : IAppointmentService
         if (appointment.Status != AppointmentStatus.Pending)
             return ApiResponse.ErrorResponse("Only pending appointments can be approved");
 
-        appointment.Status = AppointmentStatus.Approved;
-        appointment.ApprovedAt = DateTime.UtcNow;
-        appointment.UpdatedAt = DateTime.UtcNow;
-        _apptRepo.Update(appointment);
-        await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Scheduled, ct);
+        var approvedSlot = await _slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+        if (approvedSlot == null)
+            return ApiResponse.ErrorResponse("Appointment slot not found");
 
-        await _historyRepo.AddAsync(new AppointmentHistory
+        var allAppointments = (await _apptRepo.GetAllAsync(ct)).ToList();
+        if (allAppointments.Any(a =>
+                a.Id != appointment.Id &&
+                a.AppointmentSlotId == appointment.AppointmentSlotId &&
+                !a.IsDeleted &&
+                a.Status == AppointmentStatus.Approved))
         {
-            AppointmentId = appointmentId,
-            PreviousStatus = AppointmentStatus.Pending,
-            NewStatus = AppointmentStatus.Approved,
-            Reason = "Approved by doctor",
-            ChangedByUserId = doctorUserId,
-            ChangedByRole = "Doctor",
-            Appointment = appointment
-        }, ct);
+            return ApiResponse.ErrorResponse("This slot already has an accepted appointment.");
+        }
 
-        await _uow.SaveChangesAsync(ct);
+        var competingRequests = allAppointments
+            .Where(a =>
+                a.Id != appointment.Id &&
+                a.AppointmentSlotId == appointment.AppointmentSlotId &&
+                !a.IsDeleted &&
+                IsSlotCompetingRequest(a.Status))
+            .ToList();
+
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            appointment.Status = AppointmentStatus.Approved;
+            appointment.ApprovedAt = DateTime.UtcNow;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            _apptRepo.Update(appointment);
+            await SyncSessionStatusAsync(appointment, TreatmentSessionStatus.Scheduled, ct);
+
+            await _historyRepo.AddAsync(new AppointmentHistory
+            {
+                AppointmentId = appointmentId,
+                PreviousStatus = AppointmentStatus.Pending,
+                NewStatus = AppointmentStatus.Approved,
+                Reason = "Approved by doctor",
+                ChangedByUserId = doctorUserId,
+                ChangedByRole = "Doctor",
+                Appointment = appointment
+            }, ct);
+
+            foreach (var competing in competingRequests)
+            {
+                var previousStatus = competing.Status;
+                if (competing.TreatmentPackageId.HasValue && competing.TreatmentPackageId.Value != Guid.Empty)
+                {
+                    var package = await _packageRepo.GetByIdAsync(competing.TreatmentPackageId.Value, ct);
+                    if (package != null)
+                    {
+                        package.RemainingSessions = Math.Min(package.SessionQuantity, package.RemainingSessions + 1);
+                        _packageRepo.Update(package);
+                    }
+                }
+
+                competing.Status = AppointmentStatus.Cancelled;
+                competing.CancellationReason = "Another request for this time slot was accepted by the doctor.";
+                competing.CancelledAt = DateTime.UtcNow;
+                competing.UpdatedAt = DateTime.UtcNow;
+                _apptRepo.Update(competing);
+                await SyncSessionStatusAsync(competing, TreatmentSessionStatus.Cancelled, ct);
+
+                await _historyRepo.AddAsync(new AppointmentHistory
+                {
+                    AppointmentId = competing.Id,
+                    PreviousStatus = previousStatus,
+                    NewStatus = AppointmentStatus.Cancelled,
+                    Reason = competing.CancellationReason,
+                    ChangedByUserId = doctorUserId,
+                    ChangedByRole = "System",
+                    Appointment = competing
+                }, ct);
+            }
+
+            approvedSlot.CurrentBookings = 1;
+            approvedSlot.Status = AppointmentSlotStatus.Booked;
+            _slotRepo.Update(approvedSlot);
+
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+        }
+        catch
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
+        }
 
         // Notify patient about approval + send email
         try
@@ -2279,6 +2351,13 @@ public class AppointmentService : IAppointmentService
         catch { }
 
         return ApiResponse.SuccessResponse("Appointment approved");
+    }
+
+    private static bool IsSlotCompetingRequest(AppointmentStatus status)
+    {
+        return status is AppointmentStatus.Pending
+            or AppointmentStatus.AwaitingGuestConfirmation
+            or AppointmentStatus.RescheduleRequested;
     }
 
     public async Task<ApiResponse> RejectAppointmentAsync(Guid appointmentId, Guid doctorUserId, RejectAppointmentDto dto, CancellationToken ct = default)

@@ -38,7 +38,7 @@ public class DetailsModel : PageModel
             Error = error;
             return await OnGetAsync(id);
         }
-        TempData["SuccessMessage"] = "Đã hủy / lưu trữ gói điều trị thành công.";
+        TempData["SuccessMessage"] = "Treatment package has been cancelled and archived successfully.";
         return RedirectToPage(new { id });
     }
 }

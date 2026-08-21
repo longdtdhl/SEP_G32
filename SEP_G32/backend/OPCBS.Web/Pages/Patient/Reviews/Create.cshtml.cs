@@ -21,7 +21,7 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.Rating < 1 || Input.Rating > 5) { Error = "Please chọn từ 1 đến 5 sao."; return Page(); }
+        if (Input.Rating < 1 || Input.Rating > 5) { Error = "Please select a rating from 1 to 5 stars."; return Page(); }
         var (success, error) = await _service.CreateAsync(Input);
         if (!success) { Error = error; return Page(); }
         TempData["SuccessMessage"] = "Thank you for your review!";

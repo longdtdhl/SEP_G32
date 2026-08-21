@@ -45,7 +45,7 @@ public class ConsultationNoteDto
     public string? Recommendations => Recommendation;
 
     /// <summary>Display name: system patient name or walk-in name</summary>
-    public string DisplayPatientName => PatientName ?? WalkInPatientName ?? "Không xác định";
+    public string DisplayPatientName => PatientName ?? WalkInPatientName ?? "Unknown";
     public bool IsWalkIn => AppointmentId == null;
     public bool IsFromAppointment => AppointmentId.HasValue;
 

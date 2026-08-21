@@ -74,7 +74,7 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
-            return (null, "Vui lòng nhập đầy đủ Mã đặt lịch và Email.");
+            return (null, "Please enter both booking code and email.");
 
         var url = $"{ApiRoutes.Appointments}/track/{Uri.EscapeDataString(dto.BookingCode.Trim())}?email={Uri.EscapeDataString(dto.Email.Trim())}";
         var (data, _, error) = await GetAsync<AppointmentDto>(url);
@@ -84,11 +84,11 @@ public class AppointmentApiService : ApiServiceBase, IAppointmentApiService
     public async Task<(bool Success, string? Message, string? Error)> ResendConfirmationAsync(ResendConfirmationRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
-            return (false, null, "Mã đặt lịch và Email là bắt buộc.");
+            return (false, null, "Booking code and email are required.");
 
         var (res, error) = await PostAsync<dynamic>($"{ApiRoutes.Appointments}/resend-confirmation", dto);
         if (error != null) return (false, null, error);
-        return (true, "Đã gửi lại email xác nhận lịch hẹn thành công.", null);
+        return (true, "The appointment confirmation email has been resent successfully.", null);
     }
 
     public async Task<(bool Success, string? Error)> ConfirmGuestAppointmentAsync(string token)

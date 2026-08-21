@@ -269,6 +269,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.AverageRating)
                 .HasPrecision(3, 2)
                 .HasDefaultValue(0m);
+            entity.Property(e => e.IsConsultationFeePublic)
+                .HasDefaultValue(true);
         });
 
         // DoctorSpecialization

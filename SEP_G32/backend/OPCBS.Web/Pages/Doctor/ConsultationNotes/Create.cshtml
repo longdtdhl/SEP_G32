@@ -42,7 +42,7 @@
         <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
             <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Create profile consultation
         </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Lập medical record, notes consultation and recommend assignment after buổi therapy</p>
+        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">Create medical records, consultation notes, and recommended assignments after the therapy session.</p>
     </div>
     <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.PatientRecordId" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;">
         <i class="bi bi-arrow-left me-1"></i>Back profile
@@ -163,7 +163,7 @@
                             <i class="bi bi-heart-pulse-fill"></i>Advice / Home Assignments
                         </div>
                         <textarea asp-for="Input.Recommendation" class="form-control" style="border-radius:10px;" rows="4"
-                                  placeholder="e.g.:&#10;- Practice 4-7-8 breathing exercises before sleep.&#10;- Write a gratitude journal every evening.&#10;- Hạn chế device electronic after 22h..."></textarea>
+                                  placeholder="e.g.:&#10;- Practice 4-7-8 breathing exercises before sleep.&#10;- Write a gratitude journal every evening.&#10;- Limit electronic device use after 10 PM..."></textarea>
                     </div>
 
                     <!-- Follow-up Notes -->
