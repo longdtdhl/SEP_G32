@@ -74,7 +74,7 @@
         margin-bottom: 1.15rem;
         box-shadow: 0 6px 20px -4px rgba(15, 118, 110, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
         position: relative;
-        overflow: hidden;
+        overflow: visible;
     }
     .dr-hero-banner::after {
         content: '';
@@ -84,6 +84,13 @@
         width: 4px;
         height: 100%;
         background: linear-gradient(180deg, #0d9488 0%, #14b8a6 100%);
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+    }
+    .dr-hero-banner .dropdown-menu {
+        z-index: 1050;
+        box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.16), 0 6px 12px -4px rgba(15, 23, 42, 0.08) !important;
+        border: 1px solid #e2e8f0 !important;
     }
 
     .dr-hero-topline {

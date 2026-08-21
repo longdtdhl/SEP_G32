@@ -1637,18 +1637,25 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Related Session</label>
                                         <select name="sessionId" class="form-select form-select-sm" style="border-radius:6px;">
-                                            @if (Model.Sessions.Any())
+                                            @{
+                                                var progressEligibleSessions = Model.Sessions
+                                                    .Where(s => s.Status == 0 || s.Status == 2)
+                                                    .OrderBy(s => s.SessionNumber)
+                                                    .ToList();
+                                            }
+                                            @if (progressEligibleSessions.Any())
                                             {
-                                                @foreach (var s in Model.Sessions.OrderBy(x => x.SessionNumber))
+                                                @foreach (var s in progressEligibleSessions)
                                                 {
-                                                    <option value="@s.Id">Session @s.SessionNumber @(!string.IsNullOrEmpty(s.Title) ? $"- {s.Title}" : "") (@(s.PlannedStartTime?.ToString("MMM dd") ?? "Planned"))</option>
+                                                    <option value="@s.Id">Session @s.SessionNumber @(!string.IsNullOrEmpty(s.Title) ? $"- {s.Title}" : "") (@s.StatusText · @(s.PlannedStartTime?.ToString("MMM dd") ?? "No date"))</option>
                                                 }
                                             }
                                             else
                                             {
-                                                <option value="">-- General Progress Update --</option>
+                                                <option value="">-- No accepted or completed sessions available --</option>
                                             }
                                         </select>
+                                        <small class="text-muted" style="font-size:0.72rem;">Only accepted/scheduled and completed sessions can be linked to goal progress.</small>
                                     </div>
 
                                     <div class="mb-3">
