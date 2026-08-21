@@ -855,6 +855,160 @@
         overflow: hidden;
     }
 
+    /* OPCBS calm clinical tone: smaller titles, greener accents, clearer fields */
+    .dr-card-header {
+        padding: 0.72rem 1.05rem !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(240,253,250,0.66)) !important;
+    }
+    .dr-card-title {
+        font-size: 0.86rem !important;
+        line-height: 1.25 !important;
+        font-weight: 720 !important;
+        letter-spacing: 0 !important;
+        color: #123b35 !important;
+    }
+    .dr-card-title i {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ecfdf5, #dff7f2);
+        color: #0f766e !important;
+        font-size: 0.9rem;
+    }
+    .dr-card-body {
+        padding: 1rem !important;
+    }
+    .dr-panel,
+    .dr-panel--neutral,
+    .dr-panel--success,
+    .dr-panel--teal,
+    .dr-panel--amber {
+        border-radius: 12px !important;
+        padding: 0.82rem 0.95rem !important;
+        border-color: rgba(13, 148, 136, 0.16) !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f6fffc 100%) !important;
+        box-shadow: 0 8px 18px rgba(15, 118, 110, 0.045) !important;
+    }
+    .dr-panel--neutral {
+        border-left: 3px solid #94a3b8 !important;
+    }
+    .dr-panel--success {
+        border-left: 3px solid #16a34a !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%) !important;
+    }
+    .dr-panel--teal {
+        border-left: 3px solid #0d9488 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%) !important;
+    }
+    .dr-panel--amber {
+        border-left: 3px solid #d97706 !important;
+        background: linear-gradient(180deg, #ffffff 0%, #fffaf0 100%) !important;
+    }
+    .dr-panel-lbl,
+    .dr-panel-lbl[style] {
+        font-size: 0.68rem !important;
+        line-height: 1.2 !important;
+        font-weight: 760 !important;
+        letter-spacing: 0.045em !important;
+        color: #0f766e !important;
+        margin-bottom: 0.48rem !important;
+    }
+    .dr-panel-lbl i,
+    .dr-panel-lbl i[style] {
+        color: #0f766e !important;
+        font-size: 0.82rem !important;
+    }
+    .dr-panel-text {
+        font-size: 0.84rem !important;
+        line-height: 1.62 !important;
+        color: #0f172a !important;
+        font-weight: 520 !important;
+    }
+    .dr-panel-text:empty::after {
+        content: "Not recorded";
+        color: #94a3b8;
+        font-style: italic;
+        font-weight: 500;
+    }
+    .dr-status-live {
+        background: linear-gradient(135deg, #ecfdf5 0%, #dff7f2 55%, #f0fdf4 100%) !important;
+        color: #065f46 !important;
+        border-color: rgba(13, 148, 136, 0.36) !important;
+    }
+    .dr-status-live .bi-record-circle-fill {
+        color: #10b981 !important;
+    }
+    .dr-live-banner {
+        color: #064e3b !important;
+        background: linear-gradient(135deg, #ecfdf5, #ffffff) !important;
+    }
+    .dr-note-drawer-header {
+        background: linear-gradient(135deg, #ecfdf5, #f8fffd) !important;
+    }
+    .dr-note-drawer-header h2 {
+        color: #123b35 !important;
+        font-size: 1.05rem !important;
+    }
+    .dr-note-drawer-body .form-label {
+        color: #123b35 !important;
+        font-size: 0.78rem !important;
+    }
+    .dr-note-drawer-body textarea,
+    .dr-note-drawer-body input[type="date"] {
+        border-color: rgba(13, 148, 136, 0.22) !important;
+        background: #fbfffd !important;
+    }
+    .dr-note-drawer-body textarea:focus,
+    .dr-note-drawer-body input[type="date"]:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 0.18rem rgba(13, 148, 136, 0.12) !important;
+    }
+    .dr-more-actions-toggle {
+        width: 100%;
+        min-height: 42px;
+        border-radius: 12px;
+        border: 1px dashed rgba(100, 116, 139, 0.28);
+        background: rgba(255, 255, 255, 0.76);
+        color: #475569;
+        font-size: 0.84rem;
+        font-weight: 680;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        transition: all 0.16s ease;
+    }
+    .dr-more-actions-toggle:hover,
+    .dr-more-actions-toggle:focus {
+        background: #ffffff;
+        color: #0f766e;
+        border-color: rgba(13, 148, 136, 0.34);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .dr-more-actions-menu {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 14px;
+        padding: 0.42rem;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+    }
+    .dr-more-actions-menu .dropdown-item {
+        border-radius: 10px;
+        min-height: 40px;
+        font-size: 0.84rem;
+        font-weight: 650;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+    .dr-more-actions-menu .dropdown-item.text-danger:hover {
+        background: #fff1f2;
+        color: #be123c !important;
+    }
+
     @@media (prefers-reduced-motion: reduce) {
         .dr-status-live,
         .dr-status-live .bi-record-circle-fill,
@@ -1842,17 +1996,22 @@
                                 </a>
                             }
 
-                            <!-- Divider for Danger / Low-Priority Actions -->
-                            <div class="mt-2 pt-2 border-top d-flex flex-column gap-2">
-                                @if (apt.Status is 0 or 1)
-                                {
-                                    <button type="button" class="dr-btn-soft-danger w-100" data-bs-toggle="modal" data-bs-target="#doctorCancelModal">
-                                        <i class="bi bi-x-circle"></i> Cancel Appointment
-                                    </button>
-                                }
-                                <a asp-page="/Doctor/Appointments/Report" asp-route-id="@apt.Id" class="dr-btn-secondary w-100 text-muted" style="font-size:0.8rem; border-style:dashed;">
-                                    <i class="bi bi-flag text-danger"></i> Report User or Issue
-                                </a>
+                            <!-- Low-priority actions live under More to keep primary flow clear -->
+                            <div class="mt-2 pt-2 border-top dropdown">
+                                <button type="button" class="dr-more-actions-toggle dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots"></i> More Actions
+                                </button>
+                                <div class="dropdown-menu dr-more-actions-menu">
+                                    @if (apt.Status is 0 or 1)
+                                    {
+                                        <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#doctorCancelModal">
+                                            <i class="bi bi-x-circle"></i> Cancel Appointment
+                                        </button>
+                                    }
+                                    <a asp-page="/Doctor/Appointments/Report" asp-route-id="@apt.Id" class="dropdown-item text-danger">
+                                        <i class="bi bi-flag"></i> Report User or Issue
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

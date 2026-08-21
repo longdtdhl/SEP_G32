@@ -393,4 +393,56 @@ public class TreatmentCaseServiceTests
         _goalProgressRepo.Verify(r => r.AddAsync(It.IsAny<TreatmentGoalProgress>(), It.IsAny<CancellationToken>()), Times.Once);
         _criteriaEvaluationRepo.Verify(r => r.AddAsync(It.Is<SuccessCriteriaEvaluation>(e => e.IsPassed && e.CurrentValue == 100), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task RecordGoalProgressAsync_WithMeasurableReductionGoal_CalculatesProgressOnServer()
+    {
+        var caseId = Guid.NewGuid();
+        var goalId = Guid.NewGuid();
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            CaseName = "Anxiety case",
+            TreatmentPackageId = Guid.NewGuid(),
+            DoctorId = Guid.NewGuid(),
+            PatientId = Guid.NewGuid(),
+            TreatmentPackage = null!,
+            Doctor = null!,
+            Patient = null!,
+            TotalSessions = 4,
+            RemainingSessions = 4
+        };
+        var goal = new TreatmentGoal
+        {
+            Id = goalId,
+            TreatmentCaseId = caseId,
+            Title = "Reduce anxiety score",
+            CurrentValue = 10,
+            TargetValue = 4,
+            Unit = "GAD-7",
+            Status = GoalStatus.InProgress,
+            TreatmentCase = treatmentCase
+        };
+
+        _goalRepo.Setup(r => r.GetByIdAsync(goalId, It.IsAny<CancellationToken>())).ReturnsAsync(goal);
+        _goalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentGoal> { goal });
+        _goalDetailRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<GoalDetail>());
+        _successCriteriaRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<GoalSuccessCriteria>());
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentSession>());
+        _assignmentRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TherapyAssignment>());
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+
+        var result = await _service.RecordGoalProgressAsync(new CreateGoalProgressDto
+        {
+            GoalId = goalId,
+            ProgressPercent = 5,
+            CurrentValue = 7,
+            DoctorComment = "Symptoms improved."
+        });
+
+        Assert.True(result.Success);
+        Assert.Equal(50, goal.ProgressPercent);
+        Assert.Equal(7, goal.CurrentValue);
+        _goalProgressRepo.Verify(r => r.AddAsync(It.Is<TreatmentGoalProgress>(p => p.ProgressPercent == 50 && p.CurrentValue == 7), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

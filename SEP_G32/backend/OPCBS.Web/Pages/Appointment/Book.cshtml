@@ -16,6 +16,79 @@
     var startDay = (int)firstOfMonth.DayOfWeek; // 0=Sun
 }
 
+<style>
+    .mini-calendar {
+        border-radius: 14px;
+        padding: 1.15rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    }
+    .booking-doctor-card {
+        border-radius: 14px;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+        border: 1px solid #ccfbf1;
+        box-shadow: 0 4px 16px rgba(15, 118, 110, 0.04);
+        position: relative;
+    }
+    .booking-doctor-card .doctor-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 2px solid #99f6e4;
+        box-shadow: 0 2px 6px rgba(15, 118, 110, 0.1);
+    }
+    .booking-doctor-card .online-dot {
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    }
+    .week-calendar {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 2px 12px rgba(15, 23, 42, 0.03);
+    }
+    .wc-nav {
+        background: #fafbfc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.85rem 1.25rem;
+    }
+    .wc-slot.available {
+        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%);
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06);
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wc-slot.available:hover {
+        background: #d1fae5;
+        border-color: #34d399;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    .wc-slot.selected {
+        background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+        color: #ffffff !important;
+        border-color: #0f766e !important;
+        box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35) !important;
+    }
+    .wc-slot.selected .slot-label,
+    .wc-slot.selected .slot-time,
+    .wc-slot.selected .slot-mode-text {
+        color: #ffffff !important;
+    }
+</style>
+
 <div style="max-width:1200px;margin:0 auto;" class="py-3">
     @if (Model.Error != null)
     {

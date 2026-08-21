@@ -1541,17 +1541,19 @@ public class TreatmentCaseService : ITreatmentCaseService
                 return ApiResponse<TreatmentGoalProgressDto>.ErrorResponse("Link this goal detail to the treatment session before recording progress.");
         }
 
+        var calculatedProgress = await CalculateMeasuredProgressAsync(goal, dto.CurrentValue, dto.ProgressPercent, ct);
+
         if (detail != null)
         {
-            detail.ProgressPercent = dto.ProgressPercent;
-            detail.Status = dto.ProgressPercent >= 100 ? GoalDetailStatus.Completed :
-                detail.Status == GoalDetailStatus.NotStarted && dto.ProgressPercent > 0 ? GoalDetailStatus.InProgress : detail.Status;
-            detail.CompletedDate = dto.ProgressPercent >= 100 ? DateTime.UtcNow : null;
+            detail.ProgressPercent = calculatedProgress;
+            detail.Status = calculatedProgress >= 100 ? GoalDetailStatus.Completed :
+                detail.Status == GoalDetailStatus.NotStarted && calculatedProgress > 0 ? GoalDetailStatus.InProgress : detail.Status;
+            detail.CompletedDate = calculatedProgress >= 100 ? DateTime.UtcNow : null;
             detail.UpdatedAt = DateTime.UtcNow;
             _goalDetailRepo.Update(detail);
         }
 
-        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, dto.ProgressPercent, ct);
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, calculatedProgress, ct, includeCriteria: false);
         if (dto.CurrentValue.HasValue) goal.CurrentValue = dto.CurrentValue.Value;
 
         goal.UpdatedAt = DateTime.UtcNow;
@@ -1562,7 +1564,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             GoalId = dto.GoalId,
             TreatmentSessionId = dto.TreatmentSessionId,
             GoalDetailId = dto.GoalDetailId,
-            ProgressPercent = dto.ProgressPercent,
+            ProgressPercent = goal.ProgressPercent,
             CurrentValue = dto.CurrentValue,
             DoctorComment = dto.DoctorComment,
             RecordedAt = DateTime.UtcNow,
@@ -2357,15 +2359,101 @@ public class TreatmentCaseService : ITreatmentCaseService
         return null;
     }
 
-    private async Task<int> CalculateGoalProgressAsync(Guid goalId, int fallbackProgress, CancellationToken ct)
+    private async Task<int> CalculateMeasuredProgressAsync(TreatmentGoal goal, decimal? currentValue, int fallbackProgress, CancellationToken ct)
     {
+        if (!currentValue.HasValue || !goal.TargetValue.HasValue)
+            return ClampProgress(fallbackProgress);
+
+        var baselineValue = goal.CurrentValue;
+        if (!baselineValue.HasValue)
+        {
+            baselineValue = (await _goalProgressRepo.GetAllAsync(ct))
+                .Where(p => p.GoalId == goal.Id && p.CurrentValue.HasValue && !p.IsDeleted)
+                .OrderBy(p => p.RecordedAt)
+                .Select(p => p.CurrentValue)
+                .FirstOrDefault();
+        }
+
+        if (!baselineValue.HasValue)
+            return ClampProgress(fallbackProgress);
+
+        var baseline = baselineValue.Value;
+        var target = goal.TargetValue.Value;
+        var current = currentValue.Value;
+
+        if (baseline == target)
+            return current == target ? 100 : ClampProgress(fallbackProgress);
+
+        var rawProgress = target > baseline
+            ? (current - baseline) * 100m / (target - baseline)
+            : (baseline - current) * 100m / (baseline - target);
+
+        return ClampProgress(rawProgress);
+    }
+
+    private async Task<int> CalculateGoalProgressAsync(Guid goalId, int fallbackProgress, CancellationToken ct, bool includeCriteria = true)
+    {
+        if (includeCriteria)
+        {
+            var criteriaProgress = await CalculateCriteriaProgressAsync(goalId, ct);
+            if (criteriaProgress.HasValue)
+                return criteriaProgress.Value;
+        }
+
         var details = (await _goalDetailRepo.GetAllAsync(ct)).Where(d => d.GoalId == goalId && !d.IsDeleted).ToList();
-        return details.Count == 0 ? fallbackProgress : (int)Math.Round(details.Average(d => d.ProgressPercent));
+        return details.Count == 0 ? ClampProgress(fallbackProgress) : ClampProgress((decimal)details.Average(d => d.ProgressPercent));
+    }
+
+    private async Task<int?> CalculateCriteriaProgressAsync(Guid goalId, CancellationToken ct)
+    {
+        var criteria = (await _successCriteriaRepo.GetAllAsync(ct))
+            .Where(c => c.GoalId == goalId && !c.IsDeleted && c.CurrentValue.HasValue && c.TargetValue.HasValue)
+            .ToList();
+        if (criteria.Count == 0)
+            return null;
+
+        var totalWeight = criteria.Sum(c => c.Weight <= 0 ? 1 : c.Weight);
+        if (totalWeight <= 0)
+            return null;
+
+        var weightedProgress = criteria.Sum(c => CalculateCriterionProgress(c) * (c.Weight <= 0 ? 1 : c.Weight)) / totalWeight;
+        return ClampProgress(weightedProgress);
+    }
+
+    private static decimal CalculateCriterionProgress(GoalSuccessCriteria criterion)
+    {
+        if (!criterion.CurrentValue.HasValue || !criterion.TargetValue.HasValue)
+            return 0;
+
+        var current = criterion.CurrentValue.Value;
+        var target = criterion.TargetValue.Value;
+        if (IsCriterionPassed(criterion))
+            return 100;
+
+        return criterion.Operator switch
+        {
+            GoalCriteriaOperator.GreaterThan or GoalCriteriaOperator.GreaterThanOrEqual
+                => target <= 0 ? 0 : current * 100m / target,
+            GoalCriteriaOperator.LessThan or GoalCriteriaOperator.LessThanOrEqual
+                => current <= 0 ? 100 : target * 100m / current,
+            GoalCriteriaOperator.Equal => 0,
+            _ => 0
+        };
+    }
+
+    private static int ClampProgress(int progress)
+    {
+        return Math.Min(100, Math.Max(0, progress));
+    }
+
+    private static int ClampProgress(decimal progress)
+    {
+        return Math.Min(100, Math.Max(0, (int)Math.Round(progress)));
     }
 
     private async Task SynchronizeAndEvaluateGoalAsync(TreatmentGoal goal, TreatmentSession? session, Guid? evaluatedBy, CancellationToken ct, bool synchronizeAutomaticCriteria = true)
     {
-        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, goal.ProgressPercent, ct);
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, goal.ProgressPercent, ct, includeCriteria: false);
         var criteria = (await _successCriteriaRepo.GetAllAsync(ct)).Where(c => c.GoalId == goal.Id && !c.IsDeleted).ToList();
 
         if (synchronizeAutomaticCriteria)
@@ -2393,6 +2481,8 @@ public class TreatmentCaseService : ITreatmentCaseService
                 await AddCriteriaEvaluationAsync(criterion, session?.Id, value, evaluatedBy, ct);
             }
         }
+
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, goal.ProgressPercent, ct);
 
         var requiredCriteria = criteria.Where(c => c.IsRequired).ToList();
         var allRequiredCriteriaPassed = requiredCriteria.Count > 0 && requiredCriteria.All(IsCriterionPassed);

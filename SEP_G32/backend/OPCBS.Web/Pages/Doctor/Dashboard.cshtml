@@ -7,12 +7,12 @@
 
 <style>
     :root {
-        --doc-teal-primary: #0d9488;
-        --doc-teal-dark: #0f766e;
+        --doc-teal: #0f766e;
         --doc-teal-light: #f0fdfa;
         --doc-teal-border: #ccfbf1;
         --doc-card-bg: #ffffff;
         --doc-border: #e2e8f0;
+        --doc-border-subtle: #f1f5f9;
         --doc-text-main: #0f172a;
         --doc-text-muted: #64748b;
         --doc-radius: 12px;
@@ -23,26 +23,26 @@
         background: #ffffff;
         border: 1px solid var(--doc-border);
         border-radius: var(--doc-radius);
-        padding: 0.5rem 1rem;
+        padding: 0.45rem 0.85rem;
         margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .doc-nav-links {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
         flex-wrap: wrap;
     }
     .doc-nav-link {
         color: var(--doc-text-muted);
-        font-size: 0.85rem;
-        font-weight: 600;
-        padding: 0.4rem 0.85rem;
-        border-radius: 8px;
+        font-size: 0.83rem;
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
         text-decoration: none;
         transition: all 0.15s ease;
         display: inline-flex;
@@ -50,101 +50,88 @@
         gap: 6px;
     }
     .doc-nav-link:hover {
-        background: #f1f5f9;
+        background: #f8fafc;
         color: var(--doc-text-main);
     }
     .doc-nav-link.active {
         background: var(--doc-teal-light);
-        color: var(--doc-teal-dark);
+        color: var(--doc-teal);
+        font-weight: 600;
         border: 1px solid var(--doc-teal-border);
     }
 
-    /* ─── Modern Doctor Welcome Header Card ─── */
+    /* ─── Refined Doctor Welcome Header ─── */
     .doc-header-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 55%, #e6fffa 100%);
-        border: 1px solid #ccfbf1;
-        border-radius: 16px;
-        padding: 1.35rem 1.75rem;
-        margin-bottom: 1.35rem;
+        background: linear-gradient(180deg, #f8fffe 0%, #ffffff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.35rem 1.6rem;
+        margin-bottom: 1.25rem;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
         gap: 1.25rem;
-        box-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.08);
-        position: relative;
-        overflow: hidden;
-    }
-    .doc-header-card::before {
-        content: '';
-        position: absolute;
-        right: -30px;
-        top: -30px;
-        width: 160px;
-        height: 160px;
-        background: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, transparent 70%);
-        border-radius: 50%;
-        pointer-events: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .doc-avatar-beacon {
         position: relative;
-        width: 54px;
-        height: 54px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: #0f766e;
         color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
-        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+        font-size: 1.4rem;
         flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(15, 118, 110, 0.2);
     }
     .doc-status-dot {
         position: absolute;
         bottom: -2px;
         right: -2px;
-        width: 13px;
-        height: 13px;
+        width: 12px;
+        height: 12px;
         background: #10b981;
         border-radius: 50%;
-        border: 2.5px solid #ffffff;
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+        border: 2px solid #ffffff;
     }
     .doc-badge-pill {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 2px 9px;
-        background: #ccfbf1;
+        padding: 2px 8px;
+        background: #f0fdfa;
         color: #0f766e;
-        border-radius: 20px;
+        border-radius: 6px;
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 600;
         letter-spacing: 0.02em;
         text-transform: uppercase;
         margin-bottom: 4px;
+        border: 1px solid #ccfbf1;
     }
     .doc-stat-chip {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 10px;
-        background: #ffffff;
+        padding: 3px 9px;
+        background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 0.76rem;
-        font-weight: 600;
+        font-weight: 500;
         color: #475569;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
-    /* ─── KPI Grid (Compact 6-Card Responsive Grid) ─── */
+    /* ─── High-End Clean KPI Grid (Unified Palette, No Rainbows) ─── */
     .doc-kpi-grid {
         display: grid;
         grid-template-columns: repeat(6, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
+        gap: 0.85rem;
+        margin-bottom: 1.35rem;
     }
     @@media (max-width: 1300px) {
         .doc-kpi-grid {
@@ -160,56 +147,72 @@
         background: #ffffff;
         border: 1px solid var(--doc-border);
         border-radius: var(--doc-radius);
-        padding: 0.85rem 0.95rem;
+        padding: 1rem 1.1rem;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        transition: transform 0.15s, box-shadow 0.15s;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
         position: relative;
+        text-decoration: none !important;
     }
     .doc-kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .doc-kpi-card.featured-kpi {
+        background: linear-gradient(180deg, #f8fffe 0%, #ffffff 100%);
+        border-color: #ccfbf1;
+    }
+    .doc-kpi-card.featured-kpi:hover {
+        border-color: #99f6e4;
     }
     .doc-kpi-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 0.45rem;
+        align-items: center;
+        margin-bottom: 0.65rem;
     }
     .doc-kpi-icon {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #f1f5f9;
+    }
+    .doc-kpi-card.featured-kpi .doc-kpi-icon {
+        background: #f0fdfa;
+        color: #0f766e;
+        border-color: #ccfbf1;
     }
     .doc-kpi-val {
-        font-size: 1.35rem;
-        font-weight: 800;
+        font-size: 1.55rem;
+        font-weight: 700;
         color: #0f172a;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        margin-bottom: 0.15rem;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.2rem;
     }
     .doc-kpi-lbl {
         font-size: 0.78rem;
-        font-weight: 600;
+        font-weight: 500;
         color: #64748b;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.35rem;
     }
     .doc-kpi-sub {
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         color: #94a3b8;
         display: flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
         white-space: nowrap;
     }
-    .trend-up { color: #16a34a; font-weight: 700; }
-    .trend-down { color: #dc2626; font-weight: 700; }
+    .trend-up { color: #16a34a; font-weight: 600; }
+    .trend-down { color: #dc2626; font-weight: 600; }
 
     /* ─── Standard Dashboard Cards ─── */
     .doc-card {
@@ -218,128 +221,131 @@
         border-radius: var(--doc-radius);
         margin-bottom: 0;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .doc-card-header {
-        padding: 1.1rem 1.25rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 0.9rem 1.2rem;
+        border-bottom: 1px solid var(--doc-border-subtle);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: #ffffff;
     }
     .doc-card-title {
-        font-size: 0.95rem;
-        font-weight: 700;
+        font-size: 0.88rem;
+        font-weight: 600;
         color: #0f172a;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
+        letter-spacing: -0.01em;
+    }
+    .doc-card-title i {
+        font-size: 0.95rem;
+        color: #0f766e;
     }
     .doc-card-body {
-        padding: 1.25rem;
+        padding: 1.2rem;
     }
     .doc-card-body.p-0 { padding: 0; }
 
-    /* ─── Status Badges (Icon + Label + Color) ─── */
+    /* ─── Status Badges ─── */
     .badge-status {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         font-size: 0.72rem;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 6px;
-        letter-spacing: 0.02em;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 5px;
     }
-    .badge-confirmed { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .badge-pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .badge-completed { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .badge-cancelled { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-    .badge-action { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-confirmed { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+    .badge-pending { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+    .badge-completed { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+    .badge-cancelled { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+    .badge-action { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
     /* ─── Today Sessions List ─── */
     .session-item {
-        padding: 0.85rem 1.25rem;
-        border-bottom: 1px solid #f8fafc;
+        padding: 0.85rem 1.2rem;
+        border-bottom: 1px solid #f1f5f9;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        transition: background 0.12s;
+        transition: background 0.12s ease;
     }
     .session-item:last-child { border-bottom: none; }
-    .session-item:hover { background: #f8fafc; }
+    .session-item:hover {
+        background: #f8fafc;
+    }
     .session-time-box {
-        min-width: 90px;
+        min-width: 80px;
     }
     .session-time {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: 700;
         color: #0f172a;
+        font-variant-numeric: tabular-nums;
     }
     .session-duration {
         font-size: 0.72rem;
         color: #94a3b8;
     }
 
-    /* ─── Action Center Alerts ─── */
+    /* ─── Action Center Tasks ─── */
     .action-task-item {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 0.95rem;
         border-radius: 8px;
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        color: #92400e;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
         font-size: 0.82rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.5rem;
         text-decoration: none;
-        transition: transform 0.1s, box-shadow 0.1s;
+        transition: all 0.15s ease;
     }
     .action-task-item:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(245, 158, 11, 0.15);
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+    .action-task-item.priority-attention {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+    .action-task-item.priority-attention:hover {
+        background: #fef3c7;
         color: #78350f;
     }
     .action-task-item:last-child { margin-bottom: 0; }
-
-    /* ─── Interactive SVG Trend Tooltip ─── */
-    .chart-container {
-        position: relative;
-        width: 100%;
-    }
-    .chart-tooltip {
-        position: absolute;
-        display: none;
-        background: #0f172a;
-        color: #ffffff;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        pointer-events: none;
-        white-space: nowrap;
-        z-index: 10;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
 
     /* ─── Revenue Period Controls ─── */
     .rev-pill {
         border: 1px solid #e2e8f0;
         background: #ffffff;
         color: #64748b;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 4px 12px;
+        font-size: 0.74rem;
+        font-weight: 500;
+        padding: 3px 10px;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.12s;
+        transition: all 0.15s ease;
+    }
+    .rev-pill:hover {
+        background: #f8fafc;
+        color: #0f172a;
     }
     .rev-pill.active {
-        background: #0d9488;
-        border-color: #0d9488;
+        background: #0f766e;
+        border-color: #0f766e;
         color: #ffffff;
+        font-weight: 600;
     }
 </style>
 
@@ -396,7 +402,7 @@
 @if (Model.IsVerified)
 {
     <!-- ══ 1. DASHBOARD HEADER ══ -->
-    <div class="doc-header-card">
+    <div class="doc-header-card dash-animate dash-d1">
         <div class="d-flex align-items-center gap-3">
             <div class="doc-avatar-beacon" style="overflow:hidden; padding:0;">
                 @if (!string.IsNullOrEmpty(Model.AvatarUrl))
@@ -449,11 +455,11 @@
         </div>
 
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border:1.5px solid #99f6e4; color:#0f766e; border-radius:10px; font-size:0.83rem; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+            <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border:1.5px solid #99f6e4; color:#0f766e; border-radius:10px; font-size:0.82rem; transition:all 0.2s ease; box-shadow:0 1px 4px rgba(0,0,0,0.03);" onmouseover="this.style.background='#f0fdfa';this.style.borderColor='#5eead4';this.style.boxShadow='0 4px 12px rgba(13,148,136,0.12)'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#99f6e4';this.style.boxShadow='0 1px 4px rgba(0,0,0,0.03)'">
                 <i class="bi bi-calendar-week" style="color:#0d9488;"></i>
                 <span>View Schedule</span>
             </a>
-            <a asp-page="/Doctor/Patients/Index" class="btn btn-sm text-white px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:none; border-radius:10px; font-size:0.83rem; box-shadow:0 4px 14px rgba(13,148,136,0.35); transition:all 0.15s;">
+            <a asp-page="/Doctor/Patients/Index" class="btn btn-sm text-white px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:none; border-radius:10px; font-size:0.82rem; box-shadow:0 4px 14px rgba(13,148,136,0.30); transition:all 0.2s ease;" onmouseover="this.style.boxShadow='0 6px 20px rgba(13,148,136,0.40)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 4px 14px rgba(13,148,136,0.30)';this.style.transform='translateY(0)'">
                 <i class="bi bi-people-fill"></i>
                 <span>Patient List</span>
             </a>
@@ -465,8 +471,8 @@
         <!-- 1. Today's Sessions -->
         <div class="doc-kpi-card">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#ccfbf1; color:#0d9488;">
-                    <i class="bi bi-camera-video-fill"></i>
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-camera-video"></i>
                 </div>
             </div>
             <div>
@@ -481,8 +487,8 @@
         <!-- 2. New Patients -->
         <div class="doc-kpi-card">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#f0fdf4; color:#16a34a;">
-                    <i class="bi bi-person-plus-fill"></i>
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-person-plus"></i>
                 </div>
             </div>
             <div>
@@ -492,7 +498,7 @@
                     <span class="@(Model.IsNewPatientsGrowthPositive ? "trend-up" : "trend-down")">
                         @(Model.IsNewPatientsGrowthPositive ? "↑" : "↓") @Model.NewPatientsGrowthPercent%
                     </span>
-                    <span class="ms-1">This month</span>
+                    <span>this month</span>
                 </div>
             </div>
         </div>
@@ -500,8 +506,8 @@
         <!-- 3. New Appointments -->
         <div class="doc-kpi-card">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#fef3c7; color:#d97706;">
-                    <i class="bi bi-clipboard2-check-fill"></i>
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-clipboard2-check"></i>
                 </div>
             </div>
             <div>
@@ -511,7 +517,7 @@
                     <span class="@(Model.IsAppointmentsGrowthPositive ? "trend-up" : "trend-down")">
                         @(Model.IsAppointmentsGrowthPositive ? "↑" : "↓") @Model.AppointmentsGrowthPercent%
                     </span>
-                    <span class="ms-1">This month</span>
+                    <span>this month</span>
                 </div>
             </div>
         </div>
@@ -519,8 +525,8 @@
         <!-- 4. Active Patients -->
         <div class="doc-kpi-card">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#fdf4ff; color:#9333ea;">
-                    <i class="bi bi-heart-pulse-fill"></i>
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-heart-pulse"></i>
                 </div>
             </div>
             <div>
@@ -533,10 +539,10 @@
         <!-- 5. Returning Patient Rate -->
         <div class="doc-kpi-card">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#eff6ff; color:#2563eb;">
+                <div class="doc-kpi-icon">
                     <i class="bi bi-arrow-repeat"></i>
                 </div>
-                <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size:0.68rem;">
+                <span class="text-muted" style="font-size:0.72rem; font-weight:500;">
                     @Model.ReturningPatientsCount Retained
                 </span>
             </div>
@@ -547,41 +553,41 @@
                     <span class="@(Model.IsReturningGrowthPositive ? "trend-up" : "trend-down")">
                         @(Model.IsReturningGrowthPositive ? "↑" : "↓") @Model.ReturningGrowthPercent%
                     </span>
-                    <span class="ms-1">Retention rate</span>
+                    <span>retention</span>
                 </div>
             </div>
         </div>
 
         <!-- 6. Net Revenue -->
-        <a asp-page="/Doctor/Revenue/Index" class="doc-kpi-card text-decoration-none" style="cursor:pointer;" title="Click to view detailed revenue analytics and transaction ledger">
+        <a asp-page="/Doctor/Revenue/Index" class="doc-kpi-card featured-kpi" title="View detailed revenue analytics">
             <div class="doc-kpi-header">
-                <div class="doc-kpi-icon" style="background:#ecfdf5; color:#059669;">
+                <div class="doc-kpi-icon">
                     <i class="bi bi-wallet2"></i>
                 </div>
-                <span class="badge bg-success bg-opacity-10 text-success fw-bold" style="font-size:0.68rem;">
-                    90% Net <i class="bi bi-arrow-right ms-0.5"></i>
+                <span class="badge-status badge-completed" style="font-size:0.68rem;">
+                    90% Net
                 </span>
             </div>
             <div>
-                <div class="doc-kpi-val">
-                    @((Model.RevenueThisMonth / 1000000m).ToString("0.0#"))M <span style="font-size:0.75rem; font-weight:600; color:#64748b;">VND</span>
+                <div class="doc-kpi-val" style="color:#0f766e;">
+                    @((Model.RevenueThisMonth / 1000000m).ToString("0.0#"))M <span style="font-size:0.75rem; font-weight:500; color:#64748b;">VND</span>
                 </div>
                 <div class="doc-kpi-lbl d-flex justify-content-between align-items-center">
-                    <span>Net Revenue</span>
-                    <i class="bi bi-chevron-right text-muted" style="font-size:0.7rem;"></i>
+                    <span style="font-weight:600; color:#0f766e;">Net Revenue</span>
+                    <i class="bi bi-chevron-right" style="font-size:0.7rem; color:#0f766e;"></i>
                 </div>
                 <div class="doc-kpi-sub">
                     <span class="@(Model.IsRevenueGrowthPositive ? "trend-up" : "trend-down")">
                         @(Model.IsRevenueGrowthPositive ? "↑" : "↓") @Model.RevenueGrowthPercent%
                     </span>
-                    <span class="ms-1">vs prev period</span>
+                    <span>vs prev</span>
                 </div>
             </div>
         </a>
     </div>
 
     <!-- ══ ROW 3: TODAY'S SESSIONS (COL-8) + ACTION CENTER (COL-4) ══ -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 dash-animate dash-d3">
         <!-- Today's Sessions -->
         <div class="col-lg-8">
             <div class="doc-card h-100">
@@ -751,7 +757,7 @@
     </div>
 
     <!-- ══ ROW 4: PATIENT GROWTH (COL-4) + RETENTION & RE-EXAMINATION (COL-4) + APPOINTMENT ANALYTICS (COL-4) ══ -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 dash-animate dash-d4">
         <!-- 1. Patient Growth -->
         <div class="col-lg-4">
             <div class="doc-card h-100">
@@ -967,7 +973,7 @@
     </div>
 
     <!-- ══ ROW 5: REVENUE OVERVIEW (FULL WIDTH - COL-12) ══ -->
-    <div class="doc-card mb-4">
+    <div class="doc-card mb-4 dash-animate dash-d5">
         <div class="doc-card-header flex-wrap gap-2">
             <div>
                 <h5 class="doc-card-title mb-0">
@@ -981,7 +987,7 @@
                     <button type="button" class="rev-pill" id="revBtnQuarter" onclick="switchRevenuePeriod('quarter')">Quarter</button>
                     <button type="button" class="rev-pill" id="revBtnYear" onclick="switchRevenuePeriod('year')">Year</button>
                 </div>
-                <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm btn-primary rounded-pill px-3 ms-md-2 shadow-sm" style="font-size:0.8rem; font-weight:600;">
+                <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm rounded-pill px-3 ms-md-2 shadow-sm" style="font-size:0.8rem; font-weight:600; background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff; border:none; box-shadow:0 3px 10px rgba(13,148,136,0.25); transition:all 0.2s ease;" onmouseover="this.style.boxShadow='0 5px 16px rgba(13,148,136,0.35)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 3px 10px rgba(13,148,136,0.25)';this.style.transform='translateY(0)'">
                     <i class="bi bi-graph-up-arrow me-1"></i>Open Revenue Studio <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
@@ -1007,7 +1013,7 @@
                         <div class="fw-semibold text-dark fs-6 mt-0.5">@Model.RevenuePreviousMonth.ToString("N0") VND</div>
                     </div>
 
-                    <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm btn-outline-primary w-100 rounded-pill mt-3" style="font-size:0.8rem; font-weight:600;">
+                    <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm w-100 rounded-pill mt-3" style="font-size:0.8rem; font-weight:600; border:1.5px solid #99f6e4; color:#0f766e; background:#fff; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdfa';this.style.borderColor='#5eead4'" onmouseout="this.style.background='#fff';this.style.borderColor='#99f6e4'">
                         <i class="bi bi-receipt me-1"></i>Full Transaction Ledger
                     </a>
                 </div>
@@ -1023,7 +1029,7 @@
     </div>
 
     <!-- ══ ROW 6: PATIENT OUTCOMES (COL-6) + TREATMENT SUMMARY (COL-6) ══ -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 dash-animate dash-d6">
         <!-- Patient Improvement / Clinical Outcomes -->
         <div class="col-lg-6">
             <div class="doc-card h-100">
@@ -1091,27 +1097,27 @@
                 <div class="doc-card-body">
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <div class="text-muted small" style="font-size:0.75rem;">Active Cases</div>
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Active Cases</div>
                                 <div class="fw-bold text-dark fs-4 mt-0.5">@Model.ActiveCasesCount</div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <div class="text-muted small" style="font-size:0.75rem;">Completed Cases</div>
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Completed Cases</div>
                                 <div class="fw-bold text-dark fs-4 mt-0.5">@Model.CompletedCasesCount</div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <div class="text-muted small" style="font-size:0.75rem;">Near Deadline</div>
-                                <div class="fw-bold text-warning fs-4 mt-0.5">@Model.NearDeadlineCasesCount</div>
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Near Deadline</div>
+                                <div class="fw-bold fs-4 mt-0.5" style="color:#b45309;">@Model.NearDeadlineCasesCount</div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <div class="text-muted small" style="font-size:0.75rem;">Awaiting Review</div>
-                                <div class="fw-bold text-primary fs-4 mt-0.5">@Model.AwaitingReviewCasesCount</div>
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Awaiting Review</div>
+                                <div class="fw-bold fs-4 mt-0.5" style="color:#0f766e;">@Model.AwaitingReviewCasesCount</div>
                             </div>
                         </div>
                     </div>
@@ -1135,7 +1141,7 @@
     </div>
 
     <!-- ══ ROW 7: UPCOMING APPOINTMENTS (COL-7) + RECENT & SUBSCRIPTION (COL-5) ══ -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 dash-animate dash-d7">
         <!-- Upcoming Appointments -->
         <div class="col-lg-7">
             <div class="doc-card h-100">
