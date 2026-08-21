@@ -24,6 +24,7 @@ public class IndexModel : PageModel
     public List<MessageWebDto> Messages { get; set; } = new();
     public Guid? ActiveConversationId { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? CurrentUserId => _jwt.GetUserId();
     public string? JwtToken => _jwt.GetToken();
 
     public async Task OnGetAsync(Guid? conversationId, Guid? patientId)

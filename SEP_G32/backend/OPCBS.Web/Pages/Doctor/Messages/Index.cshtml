@@ -1,17 +1,16 @@
 @page
 @model OPCBS.Web.Pages.Doctor.Messages.IndexModel
-@inject OPCBS.Web.Helpers.JwtCookieService JwtService
 @{
     ViewData["Title"] = "Messages";
     Layout = "_DashboardLayout";
-    var currentUserId = JwtService.GetUserId();
+    var currentUserId = Model.CurrentUserId;
 }
 
 <style>
-    /* ════════════════════════════════════════════════════
-       OPCBS — Doctor Secure Messaging
+    /*
+       OPCBS - Doctor Secure Messaging
        Premium clinical conversation space
-       ════════════════════════════════════════════════════ */
+    */
 
     .msg-container {
         display: flex; height: calc(100vh - 100px); max-width: 1280px;
@@ -20,7 +19,7 @@
         box-shadow: 0 8px 32px -4px rgba(15, 118, 110, 0.06), 0 2px 8px rgba(0,0,0,0.03);
     }
 
-    /* ── Sidebar ── */
+    /* Sidebar */
     .msg-sidebar {
         width: 360px; min-width: 360px; border-right: 1px solid #e2e8f0;
         display: flex; flex-direction: column;
@@ -144,7 +143,7 @@
     .msg-status-pill.active-case { background: #dbeafe; color: #2563eb; }
     .msg-status-pill.closed { background: #fef2f2; color: #dc2626; }
 
-    /* ── Chat Area ── */
+    /* Chat Area */
     .msg-chat {
         flex: 1; display: flex; flex-direction: column;
         background: linear-gradient(180deg, #fafffe 0%, #f5fdfb 100%);
@@ -314,7 +313,7 @@
         border: 1px solid rgba(204,251,241,0.6);
     }
 
-    /* ── Composer ── */
+    /* Composer */
     .msg-input-area {
         padding: 14px 24px; border-top: 1px solid #e2e8f0;
         background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
@@ -362,7 +361,7 @@
     }
     .msg-composer-note i { color: #0f766e; }
 
-    /* ── Empty / Closed states ── */
+    /* Empty / Closed states */
     .msg-empty-chat {
         flex: 1; display: flex; flex-direction: column; align-items: center;
         justify-content: center; gap: 12px; padding: 40px;
@@ -406,7 +405,7 @@
         font-size: 1.4rem; color: #0f766e; margin-bottom: 12px;
     }
 
-    /* ── Responsive ── */
+    /* Responsive */
     @@media (max-width: 768px) {
         .msg-container { flex-direction: column; height: calc(100vh - 80px); border-radius: 0; }
         .msg-sidebar { width: 100%; min-width: 100%; max-height: 45vh; border-right: none; border-bottom: 1px solid #e2e8f0; }
@@ -425,7 +424,7 @@
 }
 
 <div class="msg-container">
-    <!-- ═══ Sidebar ═══ -->
+    <!-- Sidebar -->
     <div class="msg-sidebar">
         <div class="msg-sidebar-header">
             <div class="msg-sidebar-title">
@@ -456,16 +455,21 @@
             }
             @foreach (var convo in Model.Conversations)
             {
+                var itemClass = $"msg-convo-item {(convo.Id == Model.ActiveConversationId ? "active" : "")} {(convo.UnreadCount > 0 ? "unread" : "")}";
+                var patientInitial = !string.IsNullOrWhiteSpace(convo.PatientName) ? convo.PatientName[0].ToString() : "P";
+                var patientSearchName = (convo.PatientName ?? string.Empty).ToLowerInvariant();
+                var hasUnread = convo.UnreadCount > 0 ? "true" : "false";
+                var conversationStatus = (convo.Status ?? string.Empty).ToLowerInvariant();
                 <a href="?conversationId=@convo.Id"
-                   class="msg-convo-item @(convo.Id == Model.ActiveConversationId ? "active" : "") @(convo.UnreadCount > 0 ? "unread" : "")"
-                   data-name="@convo.PatientName.ToLower()"
-                   data-unread="@(convo.UnreadCount > 0 ? "true" : "false")"
-                   data-status="@convo.Status.ToLower()">
+                   class="@itemClass"
+                   data-name="@patientSearchName"
+                   data-unread="@hasUnread"
+                   data-status="@conversationStatus">
                     <div class="msg-convo-avatar">
                         @if (!string.IsNullOrEmpty(convo.PatientAvatar))
                         { <img src="@convo.PatientAvatar" alt="" /> }
                         else
-                        { @convo.PatientName[0] }
+                        { @patientInitial }
                     </div>
                     <div class="msg-convo-info">
                         <div class="msg-convo-name">
@@ -504,7 +508,7 @@
         </div>
     </div>
 
-    <!-- ═══ Chat Area ═══ -->
+    <!-- Chat Area -->
     <div class="msg-chat">
         @if (Model.SelectedConversation != null)
         {
@@ -693,12 +697,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script>
-    // ── Scroll to bottom ──
+    // Scroll to bottom
     var msgArea = document.getElementById('messageArea');
     if (msgArea) { msgArea.scrollTop = msgArea.scrollHeight; }
     var activeConversationFilter = 'all';
 
-    // ── Search filter ──
+    // Search filter
     function filterConversations(query) {
         var items = document.querySelectorAll('.msg-convo-item');
         var q = query.toLowerCase().trim();
@@ -722,7 +726,7 @@
         filterConversations(document.getElementById('convoSearch')?.value || '');
     }
 
-    // ── SignalR ──
+    // SignalR
     var currentUserId = '@(currentUserId ?? "")';
     var conversationId = '@(Model.ActiveConversationId?.ToString() ?? "")';
     var jwtToken = '@(Model.JwtToken ?? "")';
