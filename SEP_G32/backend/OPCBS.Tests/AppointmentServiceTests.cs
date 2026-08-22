@@ -464,6 +464,7 @@ public class AppointmentServiceTests
     public async Task ApproveAppointment_Success()
     {
         // Arrange
+        SetupDefaultMocks();
         var appointment = CreateAppointment(AppointmentStatus.Pending);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);

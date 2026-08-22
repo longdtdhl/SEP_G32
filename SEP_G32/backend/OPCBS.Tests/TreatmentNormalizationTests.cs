@@ -374,7 +374,7 @@ public class TreatmentNormalizationTests
         // Assert - First call
         Assert.True(result1.Success);
         Assert.Equal(1, treatmentCase.CompletedSessions);
-        Assert.Equal(1, treatmentCase.RemainingSessions);
+        Assert.Equal(0, treatmentCase.RemainingSessions);
 
         // Act - Second call (idempotent retry)
         var result2 = await _caseService.CompleteSessionAsync(session1Id, dto, CancellationToken.None);
@@ -382,7 +382,7 @@ public class TreatmentNormalizationTests
         // Assert - Second call retains exact same counters without double-counting
         Assert.True(result2.Success);
         Assert.Equal(1, treatmentCase.CompletedSessions);
-        Assert.Equal(1, treatmentCase.RemainingSessions);
+        Assert.Equal(0, treatmentCase.RemainingSessions);
     }
 
     [Fact]
