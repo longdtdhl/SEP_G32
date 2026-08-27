@@ -33,7 +33,9 @@ public class AppointmentReminderService : BackgroundService
                 await CheckAndSendFollowUpRemindersAsync(stoppingToken);
                 await CheckPendingCompletionConfirmationsAsync(stoppingToken);
                 await CheckGuestBookingConfirmationsAsync(stoppingToken);
+                await ExpireUnansweredPendingAppointmentsAsync(stoppingToken);
                 await MarkOverdueApprovedAppointmentsAbsentAsync(stoppingToken);
+                await RemindOverdueConsultationDocumentationAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -429,6 +431,250 @@ public class AppointmentReminderService : BackgroundService
     }
 
     /// <summary>
+    /// Expires bookings that the doctor did not answer within 24 hours, or before
+    /// the appointment starts when that occurs sooner. Expiration releases only
+    /// the booking; a treatment session remains available to schedule again.
+    /// </summary>
+    private async Task ExpireUnansweredPendingAppointmentsAsync(CancellationToken ct)
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var appointmentRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.Appointment>>();
+        var slotRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentSlot>>();
+        var sessionRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.TreatmentSession>>();
+        var packageRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.TreatmentPackage>>();
+        var historyRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentHistory>>();
+        var doctorRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.DoctorProfile>>();
+        var patientRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.PatientProfile>>();
+        var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.User>>();
+        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        var now = DateTime.UtcNow;
+        var pending = (await appointmentRepo.GetAllAsync(ct))
+            .Where(a => !a.IsDeleted && a.Status == AppointmentStatus.Pending)
+            .ToList();
+        if (pending.Count == 0) return;
+
+        var sessions = await sessionRepo.GetAllAsync(ct);
+        var packages = await packageRepo.GetAllAsync(ct);
+        var expired = new List<(Domain.Entities.Appointment Appointment, Domain.Entities.AppointmentSlot Slot)>();
+
+        foreach (var appointment in pending)
+        {
+            var slot = await slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+            if (slot == null || slot.IsDeleted) continue;
+
+            var createdAt = appointment.CreatedAt == default
+                ? now
+                : appointment.CreatedAt.Kind == DateTimeKind.Utc
+                    ? appointment.CreatedAt
+                    : DateTime.SpecifyKind(appointment.CreatedAt, DateTimeKind.Utc);
+            var responseDeadline = createdAt.AddHours(24);
+            var appointmentStart = GetSlotStartUtc(slot);
+            if (appointmentStart < responseDeadline) responseDeadline = appointmentStart;
+            if (now < responseDeadline) continue;
+
+            appointment.Status = AppointmentStatus.Expired;
+            appointment.CancellationReason = "Doctor confirmation deadline expired.";
+            appointment.UpdatedAt = now;
+            appointmentRepo.Update(appointment);
+
+            slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+            slot.Status = slot.CurrentBookings < slot.MaxPatients
+                ? AppointmentSlotStatus.Available
+                : AppointmentSlotStatus.Booked;
+            slot.UpdatedAt = now;
+            slotRepo.Update(slot);
+
+            var session = sessions.FirstOrDefault(s => !s.IsDeleted &&
+                (s.AppointmentId == appointment.Id ||
+                 (appointment.TreatmentSessionId.HasValue && s.Id == appointment.TreatmentSessionId.Value)));
+            if (session != null)
+            {
+                session.AppointmentId = null;
+                session.PlannedStartTime = null;
+                session.PlannedEndTime = null;
+                session.Status = TreatmentSessionStatus.Planned;
+                session.UpdatedAt = now;
+                sessionRepo.Update(session);
+            }
+
+            if (appointment.TreatmentPackageId.HasValue)
+            {
+                var package = packages.FirstOrDefault(p => p.Id == appointment.TreatmentPackageId.Value && !p.IsDeleted);
+                if (package != null)
+                {
+                    package.RemainingSessions = Math.Min(package.SessionQuantity, package.RemainingSessions + 1);
+                    package.UpdatedAt = now;
+                    packageRepo.Update(package);
+                }
+            }
+
+            await historyRepo.AddAsync(new Domain.Entities.AppointmentHistory
+            {
+                AppointmentId = appointment.Id,
+                PreviousStatus = AppointmentStatus.Pending,
+                NewStatus = AppointmentStatus.Expired,
+                Reason = "Automatically expired because the doctor did not respond before the confirmation deadline.",
+                ChangedByRole = "System",
+                Appointment = appointment
+            }, ct);
+
+            expired.Add((appointment, slot));
+        }
+
+        if (expired.Count == 0) return;
+        await uow.SaveChangesAsync(ct);
+
+        var doctors = await doctorRepo.GetAllAsync(ct);
+        var patients = await patientRepo.GetAllAsync(ct);
+        var users = await userRepo.GetAllAsync(ct);
+        foreach (var item in expired)
+        {
+            var appointment = item.Appointment;
+            var slot = item.Slot;
+            var doctor = doctors.FirstOrDefault(d => d.Id == appointment.DoctorId || d.UserId == appointment.DoctorId);
+            var doctorUser = doctor == null ? null : users.FirstOrDefault(u => u.Id == doctor.UserId);
+            var patient = appointment.PatientId.HasValue
+                ? patients.FirstOrDefault(p => p.Id == appointment.PatientId.Value || p.UserId == appointment.PatientId.Value)
+                : null;
+            var patientUser = patient == null ? null : users.FirstOrDefault(u => u.Id == patient.UserId);
+            var schedule = $"{slot.SlotDate:MMM dd, yyyy} at {slot.StartTime:HH:mm}";
+            var message = $"Booking {appointment.BookingCode} for {schedule} expired because it was not confirmed by the doctor in time. The slot has been released.";
+
+            try
+            {
+                if (patientUser != null)
+                {
+                    await notificationService.CreateNotificationAsync(
+                        patientUser.Id, "Appointment request expired", message,
+                        NotificationType.Appointment, appointment.Id, "AppointmentExpired", ct);
+                    if (!string.IsNullOrWhiteSpace(patientUser.Email))
+                        await emailService.SendEmailAsync(patientUser.Email, "OPCBS - Appointment request expired", $"<p>{System.Net.WebUtility.HtmlEncode(message)}</p>", ct);
+                }
+                else if (!string.IsNullOrWhiteSpace(appointment.GuestEmail))
+                {
+                    await emailService.SendEmailAsync(appointment.GuestEmail, "OPCBS - Appointment request expired", $"<p>{System.Net.WebUtility.HtmlEncode(message)}</p>", ct);
+                }
+
+                if (doctorUser != null)
+                {
+                    await notificationService.CreateNotificationAsync(
+                        doctorUser.Id, "Appointment request expired", message,
+                        NotificationType.Appointment, appointment.Id, "AppointmentExpired", ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not send expiration notice for appointment {AppointmentId}", appointment.Id);
+            }
+
+            _logger.LogInformation("Pending appointment {AppointmentId} expired after the doctor response deadline.", appointment.Id);
+        }
+    }
+
+    /// <summary>
+    /// Keeps overdue in-progress appointments open for clinical documentation and
+    /// reminds the treating doctor without falsely completing the consultation.
+    /// </summary>
+    private async Task RemindOverdueConsultationDocumentationAsync(CancellationToken ct)
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var appointmentRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.Appointment>>();
+        var slotRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentSlot>>();
+        var noteRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.ConsultationNote>>();
+        var doctorRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.DoctorProfile>>();
+        var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.User>>();
+        var notificationRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.Notification>>();
+        var historyRepo = scope.ServiceProvider.GetRequiredService<IRepository<Domain.Entities.AppointmentHistory>>();
+        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        var now = DateTime.UtcNow;
+        var appointments = (await appointmentRepo.GetAllAsync(ct))
+            .Where(a => !a.IsDeleted && a.Status == AppointmentStatus.InProgress)
+            .ToList();
+        if (appointments.Count == 0) return;
+
+        var notes = await noteRepo.GetAllAsync(ct);
+        var doctors = await doctorRepo.GetAllAsync(ct);
+        var users = await userRepo.GetAllAsync(ct);
+        var notifications = await notificationRepo.GetAllAsync(ct);
+        var historyChanged = false;
+
+        foreach (var appointment in appointments)
+        {
+            var slot = await slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
+            if (slot == null) continue;
+
+            var documentationDueAt = GetSlotEndUtc(slot).AddMinutes(15);
+            if (now < documentationDueAt || notes.Any(n => n.AppointmentId == appointment.Id && !n.IsDeleted))
+                continue;
+
+            var doctor = doctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+            var doctorUser = doctor == null ? null : users.FirstOrDefault(u => u.Id == doctor.UserId);
+            if (doctorUser == null) continue;
+
+            var isEscalated = now >= documentationDueAt.AddHours(24);
+            var notificationKey = isEscalated
+                ? "AppointmentDocumentationOverdue24h"
+                : "AppointmentDocumentationRequired";
+            var alreadySent = notifications.Any(n => !n.IsDeleted
+                && n.RelatedEntityId == appointment.Id
+                && n.RelatedEntityType == notificationKey);
+            if (alreadySent) continue;
+
+            var title = isEscalated ? "Consultation documentation overdue" : "Consultation note required";
+            var message = isEscalated
+                ? $"Appointment {appointment.BookingCode} has remained in progress for more than 24 hours without a consultation note. Complete the clinical documentation now."
+                : $"Appointment {appointment.BookingCode} has ended. Add the consultation note to complete this appointment.";
+
+            try
+            {
+                await notificationService.CreateNotificationAsync(
+                    doctorUser.Id,
+                    title,
+                    message,
+                    NotificationType.ConsultationNote,
+                    appointment.Id,
+                    notificationKey,
+                    ct);
+
+                if (isEscalated)
+                {
+                    await historyRepo.AddAsync(new Domain.Entities.AppointmentHistory
+                    {
+                        AppointmentId = appointment.Id,
+                        PreviousStatus = AppointmentStatus.InProgress,
+                        NewStatus = AppointmentStatus.InProgress,
+                        Reason = "Clinical documentation remained incomplete for more than 24 hours after the appointment ended.",
+                        ChangedByRole = "System",
+                        Appointment = appointment
+                    }, ct);
+                    historyChanged = true;
+
+                    if (!string.IsNullOrWhiteSpace(doctorUser.Email))
+                    {
+                        await emailService.SendEmailAsync(
+                            doctorUser.Email,
+                            "OPCBS - Consultation documentation overdue",
+                            $"<p>Appointment <strong>{System.Net.WebUtility.HtmlEncode(appointment.BookingCode)}</strong> has remained in progress for more than 24 hours without a consultation note.</p><p>Please complete the clinical documentation in OPCBS. The appointment will not be completed automatically.</p>",
+                            ct);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not send documentation reminder for appointment {AppointmentId}", appointment.Id);
+            }
+        }
+
+        if (historyChanged) await uow.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
     /// Marks approved appointments as absent when the appointment time has passed
     /// and the doctor never started the session.
     /// </summary>
@@ -449,6 +695,7 @@ public class AppointmentReminderService : BackgroundService
 
         var sessions = await sessionRepo.GetAllAsync(ct);
         var changed = false;
+        var markedAppointmentIds = new List<Guid>();
         foreach (var appointment in appointments)
         {
             var slot = await slotRepo.GetByIdAsync(appointment.AppointmentSlotId, ct);
@@ -484,10 +731,29 @@ public class AppointmentReminderService : BackgroundService
             }, ct);
 
             changed = true;
+            markedAppointmentIds.Add(appointment.Id);
             _logger.LogInformation("Appointment {AppointmentId} marked absent after missing its approved start window.", appointment.Id);
         }
 
-        if (changed) await uow.SaveChangesAsync(ct);
+        if (changed)
+        {
+            await uow.SaveChangesAsync(ct);
+            var appointmentService = scope.ServiceProvider.GetService<IAppointmentService>();
+            if (appointmentService != null)
+            {
+                foreach (var apptId in markedAppointmentIds)
+                {
+                    try
+                    {
+                        await appointmentService.ProcessNoShowConsequencesAsync(apptId, null, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to process no-show consequences for appointment {AppointmentId}.", apptId);
+                    }
+                }
+            }
+        }
     }
 
     private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();

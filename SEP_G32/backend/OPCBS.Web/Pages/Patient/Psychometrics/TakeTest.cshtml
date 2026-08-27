@@ -163,6 +163,15 @@
                     <p class="text-muted mb-0" style="font-size:0.85rem;">
                         @(string.IsNullOrWhiteSpace(Model.Test.Description) ? (Model.Test.Purpose ?? "Please answer each question honestly based on how you have felt recently.") : Model.Test.Description)
                     </p>
+                    @if (!string.IsNullOrWhiteSpace(Model.Test.SourceUrl))
+                    {
+                        <div class="mt-2">
+                            <a href="@Model.Test.SourceUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1.5 badge" style="background:#f0fdfa; color:#0d9488; border:1px solid #99f6e4; font-size:0.75rem; font-weight:600; padding:4px 10px; border-radius:6px;">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                <span>Clinical Reference: @(Model.Test.SourceUrl.Contains("psy.unsw.edu.au") ? "psy.unsw.edu.au" : "Official Source")</span>
+                            </a>
+                        </div>
+                    }
                 </div>
                 <div class="badge" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; font-size:0.8rem; font-weight:700; padding:6px 14px; border-radius:8px;">
                     <i class="bi bi-question-circle me-1"></i>@Model.Questions.Count Questions
@@ -516,9 +525,18 @@
                                         @test.TestType
                                     </span>
                                 </div>
-                                <p class="text-muted mb-3" style="font-size:0.82rem; line-height:1.45;">
+                                <p class="text-muted mb-2" style="font-size:0.82rem; line-height:1.45;">
                                     @(string.IsNullOrWhiteSpace(test.Description) ? (test.Purpose ?? "Standard clinical psychometric questionnaire.") : test.Description)
                                 </p>
+                                @if (!string.IsNullOrWhiteSpace(test.SourceUrl))
+                                {
+                                    <div class="mb-3">
+                                        <a href="@test.SourceUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1 text-teal" style="font-size:0.74rem; font-weight:600; color:var(--mb-primary, #0d9488);">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            <span>@(test.SourceUrl.Contains("psy.unsw.edu.au") ? "Source: psy.unsw.edu.au" : "Source Reference")</span>
+                                        </a>
+                                    </div>
+                                }
                             </div>
                             <div class="d-flex justify-content-between align-items-center pt-2.5 border-top gap-2">
                                 <span class="text-muted small" style="font-size:0.76rem;">

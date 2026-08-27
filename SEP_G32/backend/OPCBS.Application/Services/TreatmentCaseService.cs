@@ -39,6 +39,8 @@ public class TreatmentCaseService : ITreatmentCaseService
     private readonly IRepository<Message>? _messageRepo;
     private readonly IRepository<Conversation>? _conversationRepo;
     private readonly IRepository<PsychometricTest>? _psychTestRepo;
+    private readonly ITreatmentLifecycleCoordinator? _lifecycleCoordinator;
+    private readonly IRepository<Notification>? _notificationRepo;
     private readonly IUnitOfWork _uow;
     private readonly ILogger<TreatmentCaseService> _logger;
 
@@ -68,7 +70,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         IRepository<DoctorDayOff>? dayOffRepo = null,
         IRepository<Message>? messageRepo = null,
         IRepository<Conversation>? conversationRepo = null,
-        IRepository<PsychometricTest>? psychTestRepo = null)
+        IRepository<PsychometricTest>? psychTestRepo = null,
+        ITreatmentLifecycleCoordinator? lifecycleCoordinator = null,
+        IRepository<Notification>? notificationRepo = null)
     {
         _caseRepo = caseRepo;
         _sessionRepo = sessionRepo;
@@ -96,6 +100,8 @@ public class TreatmentCaseService : ITreatmentCaseService
         _messageRepo = messageRepo;
         _conversationRepo = conversationRepo;
         _psychTestRepo = psychTestRepo;
+        _lifecycleCoordinator = lifecycleCoordinator;
+        _notificationRepo = notificationRepo;
     }
 
     // ==================== Treatment Case CRUD ====================
@@ -106,19 +112,16 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (package == null || package.IsDeleted)
             return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment package not found.");
 
-        if (package.Status != TreatmentPackageStatus.Active && package.Status != TreatmentPackageStatus.Created && package.Status != TreatmentPackageStatus.Assigned)
-            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment package must be active/assigned to create a case.");
+        if (package.Status != TreatmentPackageStatus.Active)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment package must be active (accepted by patient) to create a treatment case.");
 
         var allCases = await _caseRepo.GetAllAsync(ct);
-        var existingActive = allCases.FirstOrDefault(c =>
-            c.DoctorId == dto.DoctorId &&
-            c.PatientId == dto.PatientId &&
+        var existingCase = allCases.FirstOrDefault(c =>
             c.TreatmentPackageId == dto.TreatmentPackageId &&
-            c.Status == TreatmentCaseStatus.Active &&
             !c.IsDeleted);
 
-        if (existingActive != null)
-            return ApiResponse<TreatmentCaseDto>.ErrorResponse("An active treatment case already exists for this patient with this package.");
+        if (existingCase != null)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("A treatment case already exists for this treatment package.");
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.Id == dto.DoctorId || d.UserId == dto.DoctorId);
@@ -128,11 +131,16 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (doctor == null || patient == null)
             return ApiResponse<TreatmentCaseDto>.ErrorResponse("Doctor or Patient record not found.");
 
+        var startDate = package.ActiveDate ?? DateTime.UtcNow;
+        var expectedEndDate = package.ExpirationDate != DateTime.MaxValue
+            ? package.ExpirationDate
+            : startDate.AddDays(package.ValidityDays > 0 ? package.ValidityDays : 90);
+
         var entity = new TreatmentCase
         {
             TreatmentPackageId = package.Id,
-            DoctorId = doctor.UserId,
-            PatientId = patient.UserId,
+            DoctorId = doctor.Id, // Normalized to DoctorProfile.Id
+            PatientId = patient.Id, // Normalized to PatientProfile.Id
             CaseName = package.Name,
             CaseDescription = package.Description,
             PrimaryConcern = dto.PrimaryConcern ?? package.TargetOutcome,
@@ -150,8 +158,8 @@ public class TreatmentCaseService : ITreatmentCaseService
 
             TotalSessions = package.SessionQuantity,
             RemainingSessions = package.SessionQuantity,
-            StartDate = DateTime.UtcNow,
-            ExpectedEndDate = DateTime.UtcNow.AddDays(package.ValidityDays > 0 ? package.ValidityDays : 90),
+            StartDate = startDate,
+            ExpectedEndDate = expectedEndDate,
             Status = TreatmentCaseStatus.Active,
             TreatmentPackage = package,
             Doctor = doctor,
@@ -173,7 +181,7 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
-        if (doctor != null && (treatmentCase.DoctorId == doctor.Id || treatmentCase.DoctorId == doctor.UserId))
+        if (doctor != null)
             return true;
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
@@ -183,10 +191,34 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         var allUsers = await _userRepo.GetAllAsync(ct);
         var user = allUsers.FirstOrDefault(u => u.Id == userId);
-        if (user != null && user.Role?.Name == "Admin")
+        if (user != null && (user.Role?.Name == "Admin" || user.Role?.Name == "Doctor" || user.Role?.Name == "Staff" || user.Role?.Name == "Manager"))
             return true;
 
         return false;
+    }
+
+    private async Task<(bool CanManage, string? ErrorMessage)> ValidateCaseManageableAsync(TreatmentCase treatmentCase, Guid? doctorUserId = null, CancellationToken ct = default)
+    {
+        if (treatmentCase == null || treatmentCase.IsDeleted)
+            return (false, "Treatment case not found.");
+
+        if (_lifecycleCoordinator != null)
+        {
+            return await _lifecycleCoordinator.ValidateCaseManageableAsync(treatmentCase, doctorUserId, ct);
+        }
+
+        if (treatmentCase.Status != TreatmentCaseStatus.Active)
+            return (false, "This treatment program is no longer active. Historical information remains available in read-only mode.");
+
+        if (doctorUserId.HasValue && doctorUserId.Value != Guid.Empty)
+        {
+            var allDoctors = await _doctorRepo.GetAllAsync(ct);
+            var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId.Value || d.Id == doctorUserId.Value);
+            if (doctor == null || (treatmentCase.DoctorId != doctor.Id && treatmentCase.DoctorId != doctor.UserId))
+                return (false, "You are not authorized to manage this treatment case.");
+        }
+
+        return (true, null);
     }
 
     public async Task<ApiResponse<TreatmentCaseDto>> GetByIdAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default)
@@ -316,7 +348,27 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (entity.Status != TreatmentCaseStatus.Active && entity.Status != TreatmentCaseStatus.OnHold)
             return ApiResponse.ErrorResponse("Only active or on-hold cases can be closed.");
 
-        var newStatus = (TreatmentCaseStatus)dto.CloseStatus;
+        var newStatus = (TreatmentCaseStatus)dto.Status;
+
+        if (_lifecycleCoordinator != null)
+        {
+            if (newStatus == TreatmentCaseStatus.Completed)
+            {
+                await _lifecycleCoordinator.CompleteCaseAndPackageAsync(entity, dto.ClosureNote, ct);
+                return ApiResponse.SuccessResponse("Treatment case marked as completed.");
+            }
+            if (newStatus == TreatmentCaseStatus.Expired)
+            {
+                await _lifecycleCoordinator.ExpireActivePackageAndCaseAsync(null, entity, ct);
+                return ApiResponse.SuccessResponse("Treatment case marked as expired.");
+            }
+            if (newStatus == TreatmentCaseStatus.Cancelled || newStatus == TreatmentCaseStatus.Terminated)
+            {
+                var package = await _packageRepo.GetByIdAsync(entity.TreatmentPackageId, ct);
+                await _lifecycleCoordinator.CancelCaseAndPackageAsync(package, entity, dto.ClosureNote ?? newStatus.ToString(), ct);
+                return ApiResponse.SuccessResponse($"Treatment case marked as {newStatus}.");
+            }
+        }
 
         await _uow.BeginTransactionAsync(ct);
         try
@@ -379,14 +431,402 @@ public class TreatmentCaseService : ITreatmentCaseService
         }
     }
 
+    // ==================== Treatment Hold (Bao luu) ====================
+
+    public async Task<ApiResponse<TreatmentCaseDto>> RequestHoldAsync(Guid caseId, Guid patientUserId, RequestTreatmentHoldDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Reason))
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("A reason for holding the treatment is required.");
+
+        var entity = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (entity == null || entity.IsDeleted)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
+
+        var canonicalPatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct);
+        if (canonicalPatientId != patientUserId && entity.PatientId != patientUserId)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("You are not authorized to request a hold for this treatment case.");
+
+        if (entity.Status != TreatmentCaseStatus.Active)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse($"Cannot request hold for a case that is currently {entity.Status}.");
+
+        if (entity.IsHoldRequested)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("A hold request is already pending doctor review.");
+
+        var startDate = (dto.StartDate.HasValue && dto.StartDate.Value.Date >= DateTime.UtcNow.Date)
+            ? dto.StartDate.Value.Date
+            : DateTime.UtcNow.Date;
+
+        DateTime endDate;
+        int durationDays;
+
+        if (dto.EndDate.HasValue && dto.EndDate.Value.Date > startDate)
+        {
+            endDate = dto.EndDate.Value.Date;
+            durationDays = (int)(endDate - startDate).TotalDays;
+        }
+        else if (dto.DurationDays.HasValue && dto.DurationDays.Value > 0)
+        {
+            durationDays = dto.DurationDays.Value;
+            endDate = startDate.AddDays(durationDays);
+        }
+        else
+        {
+            durationDays = 14;
+            endDate = startDate.AddDays(durationDays);
+        }
+
+        if (durationDays < 1)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Hold duration must be at least 1 day.");
+
+        if (durationDays > 180)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Hold duration cannot exceed 180 days.");
+
+        entity.IsHoldRequested = true;
+        entity.HoldRequestedAt = DateTime.UtcNow;
+        entity.HoldStartDate = startDate;
+        entity.HoldEndDate = endDate;
+        entity.HoldDurationDays = durationDays;
+        entity.HoldReason = dto.Reason.Trim();
+        entity.HoldRejectedAt = null;
+        entity.HoldRejectionReason = null;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _caseRepo.Update(entity);
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify Doctor
+        try
+        {
+            var patientName = await GetUserNameAsync(entity.PatientId, ct) ?? "Patient";
+            var doctorUserId = entity.DoctorId;
+            var doctorProf = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == entity.DoctorId || d.UserId == entity.DoctorId);
+            if (doctorProf != null) doctorUserId = doctorProf.UserId;
+
+            if (_notificationRepo != null)
+            {
+                var notif = new Notification
+                {
+                    UserId = doctorUserId,
+                    Title = "Treatment Hold Request Received",
+                    Message = $"{patientName} requested to put treatment case '{entity.CaseName}' on hold from {startDate:MMM dd, yyyy} to {endDate:MMM dd, yyyy} ({durationDays} days). Reason: {entity.HoldReason}",
+                    Type = NotificationType.System,
+                    RelatedEntityType = "TreatmentCase",
+                    RelatedEntityId = entity.Id,
+                    User = null!,
+                    IsRead = false
+                };
+                await _notificationRepo.AddAsync(notif, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send notification for hold request on case {CaseId}", entity.Id);
+        }
+
+        var dtoResult = await MapToCaseDtoAsync(entity, ct);
+        return ApiResponse<TreatmentCaseDto>.SuccessResponse(dtoResult, "Treatment hold request submitted successfully. Awaiting doctor approval.");
+    }
+
+    public async Task<ApiResponse<TreatmentCaseDto>> CancelHoldRequestAsync(Guid caseId, Guid patientUserId, CancellationToken ct = default)
+    {
+        var entity = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (entity == null || entity.IsDeleted)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
+
+        var canonicalPatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct);
+        if (canonicalPatientId != patientUserId && entity.PatientId != patientUserId)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("You are not authorized to cancel this hold request.");
+
+        if (!entity.IsHoldRequested)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("There is no pending hold request to cancel.");
+
+        entity.IsHoldRequested = false;
+        entity.HoldRequestedAt = null;
+        entity.HoldStartDate = null;
+        entity.HoldEndDate = null;
+        entity.HoldDurationDays = null;
+        entity.HoldReason = null;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _caseRepo.Update(entity);
+        await _uow.SaveChangesAsync(ct);
+
+        var dtoResult = await MapToCaseDtoAsync(entity, ct);
+        return ApiResponse<TreatmentCaseDto>.SuccessResponse(dtoResult, "Hold request cancelled successfully.");
+    }
+
+    public async Task<ApiResponse<TreatmentCaseDto>> ApproveHoldAsync(Guid caseId, Guid doctorUserId, ApproveTreatmentHoldDto dto, CancellationToken ct = default)
+    {
+        var entity = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (entity == null || entity.IsDeleted)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
+
+        var doctorProf = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == entity.DoctorId || d.UserId == entity.DoctorId);
+        if (doctorProf != null && doctorProf.UserId != doctorUserId && entity.DoctorId != doctorUserId)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("You are not authorized to approve hold requests for this treatment case.");
+
+        if (!entity.IsHoldRequested && entity.Status != TreatmentCaseStatus.Active)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("This treatment case cannot be put on hold.");
+
+        var holdDays = entity.HoldDurationDays.HasValue && entity.HoldDurationDays.Value > 0
+            ? entity.HoldDurationDays.Value
+            : entity.HoldStartDate.HasValue && entity.HoldEndDate.HasValue && entity.HoldEndDate.Value > entity.HoldStartDate.Value
+                ? (int)(entity.HoldEndDate.Value - entity.HoldStartDate.Value).TotalDays
+                : 14;
+
+        if (holdDays < 1) holdDays = 1;
+
+        var now = DateTime.UtcNow;
+        var holdStart = entity.HoldStartDate ?? now.Date;
+        var holdEnd = entity.HoldEndDate ?? holdStart.AddDays(holdDays);
+
+        await _uow.BeginTransactionAsync(ct);
+        try
+        {
+            entity.Status = TreatmentCaseStatus.OnHold;
+            entity.IsHoldRequested = false;
+            entity.HoldApprovedAt = now;
+            entity.HoldApprovedByDoctorId = doctorUserId;
+            entity.HoldStartDate = holdStart;
+            entity.HoldEndDate = holdEnd;
+            entity.HoldDurationDays = holdDays;
+            entity.TotalHoldDays += holdDays;
+
+            // 1. Extend validity period of the treatment case
+            if (entity.ExpectedEndDate.HasValue)
+            {
+                entity.ExpectedEndDate = entity.ExpectedEndDate.Value.AddDays(holdDays);
+            }
+            else
+            {
+                entity.ExpectedEndDate = holdEnd.AddDays(entity.DurationDaysSnapshot > 0 ? entity.DurationDaysSnapshot : 30);
+            }
+            entity.UpdatedAt = now;
+
+            // 2. Extend validity of the linked TreatmentPackage if present
+            if (entity.TreatmentPackageId != Guid.Empty)
+            {
+                var package = await _packageRepo.GetByIdAsync(entity.TreatmentPackageId, ct);
+                if (package != null && !package.IsDeleted)
+                {
+                    if (package.ExpirationDate > now)
+                        package.ExpirationDate = package.ExpirationDate.AddDays(holdDays);
+                    else
+                        package.ExpirationDate = now.AddDays(holdDays);
+                    package.UpdatedAt = now;
+                    _packageRepo.Update(package);
+                }
+            }
+
+            // 3. Automatically cancel all upcoming / scheduled appointments and slots during hold
+            var allAppointments = await _appointmentRepo.GetAllAsync(ct);
+            var activeAppts = allAppointments
+                .Where(a => !a.IsDeleted &&
+                            (a.TreatmentCaseId == entity.Id || (entity.TreatmentPackageId != Guid.Empty && a.TreatmentPackageId == entity.TreatmentPackageId)) &&
+                            (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Approved || a.Status == AppointmentStatus.RescheduleRequested))
+                .ToList();
+
+            foreach (var appt in activeAppts)
+            {
+                appt.Status = AppointmentStatus.Cancelled;
+                appt.CancelledAt = now;
+                appt.CancellationReason = $"Automatically cancelled due to treatment case hold until {holdEnd:MMM dd, yyyy}.";
+                appt.UpdatedAt = now;
+                _appointmentRepo.Update(appt);
+
+                // Free slot
+                if (appt.AppointmentSlotId != Guid.Empty)
+                {
+                    var slot = await _slotRepo.GetByIdAsync(appt.AppointmentSlotId, ct);
+                    if (slot != null && !slot.IsDeleted)
+                    {
+                        slot.CurrentBookings = Math.Max(0, slot.CurrentBookings - 1);
+                        if (slot.CurrentBookings < slot.MaxPatients)
+                            slot.Status = AppointmentSlotStatus.Available;
+                        slot.UpdatedAt = now;
+                        _slotRepo.Update(slot);
+                    }
+                }
+            }
+
+            // 4. Update any scheduled sessions linked to those appointments
+            var allSessions = await _sessionRepo.GetAllAsync(ct);
+            var scheduledSessions = allSessions
+                .Where(s => s.TreatmentCaseId == entity.Id && !s.IsDeleted && (s.Status == TreatmentSessionStatus.Scheduled || s.Status == TreatmentSessionStatus.Planned))
+                .ToList();
+
+            foreach (var sess in scheduledSessions)
+            {
+                sess.AppointmentId = null;
+                sess.Status = TreatmentSessionStatus.Planned;
+                sess.PlannedStartTime = null;
+                sess.PlannedEndTime = null;
+                sess.UpdatedAt = now;
+                _sessionRepo.Update(sess);
+            }
+
+            _caseRepo.Update(entity);
+            await _uow.SaveChangesAsync(ct);
+            await _uow.CommitTransactionAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            await _uow.RollbackTransactionAsync(ct);
+            _logger.LogError(ex, "Failed to approve hold for treatment case {CaseId}", caseId);
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Failed to approve treatment hold due to a database error.");
+        }
+
+        // Notify Patient
+        try
+        {
+            var canonicalPatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct);
+            var doctorName = await GetUserNameAsync(entity.DoctorId, ct) ?? "Doctor";
+            if (_notificationRepo != null)
+            {
+                var notif = new Notification
+                {
+                    UserId = canonicalPatientId,
+                    Title = "Treatment Hold Approved",
+                    Message = $"Dr. {doctorName} approved your hold request for '{entity.CaseName}'. Treatment is paused until {holdEnd:MMM dd, yyyy} and your program validity has been extended by {holdDays} days.",
+                    Type = NotificationType.System,
+                    RelatedEntityType = "TreatmentCase",
+                    RelatedEntityId = entity.Id,
+                    User = null!,
+                    IsRead = false
+                };
+                await _notificationRepo.AddAsync(notif, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send patient notification for hold approval on case {CaseId}", entity.Id);
+        }
+
+        var dtoResult = await MapToCaseDtoAsync(entity, ct);
+        return ApiResponse<TreatmentCaseDto>.SuccessResponse(dtoResult, $"Treatment case put on hold until {holdEnd:MMM dd, yyyy}. Validity period extended by {holdDays} days.");
+    }
+
+    public async Task<ApiResponse<TreatmentCaseDto>> RejectHoldAsync(Guid caseId, Guid doctorUserId, RejectTreatmentHoldDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Reason))
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("A rejection reason is required.");
+
+        var entity = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (entity == null || entity.IsDeleted)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
+
+        var doctorProf = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == entity.DoctorId || d.UserId == entity.DoctorId);
+        if (doctorProf != null && doctorProf.UserId != doctorUserId && entity.DoctorId != doctorUserId)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("You are not authorized to decline hold requests for this treatment case.");
+
+        if (!entity.IsHoldRequested)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("There is no pending hold request to decline.");
+
+        var now = DateTime.UtcNow;
+        entity.IsHoldRequested = false;
+        entity.HoldRejectedAt = now;
+        entity.HoldRejectionReason = dto.Reason.Trim();
+        entity.UpdatedAt = now;
+
+        _caseRepo.Update(entity);
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify Patient
+        try
+        {
+            var canonicalPatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct);
+            var doctorName = await GetUserNameAsync(entity.DoctorId, ct) ?? "Doctor";
+            if (_notificationRepo != null)
+            {
+                var notif = new Notification
+                {
+                    UserId = canonicalPatientId,
+                    Title = "Treatment Hold Request Declined",
+                    Message = $"Dr. {doctorName} declined your hold request for '{entity.CaseName}'. Reason: {entity.HoldRejectionReason}",
+                    Type = NotificationType.System,
+                    RelatedEntityType = "TreatmentCase",
+                    RelatedEntityId = entity.Id,
+                    User = null!,
+                    IsRead = false
+                };
+                await _notificationRepo.AddAsync(notif, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send patient notification for hold rejection on case {CaseId}", entity.Id);
+        }
+
+        var dtoResult = await MapToCaseDtoAsync(entity, ct);
+        return ApiResponse<TreatmentCaseDto>.SuccessResponse(dtoResult, "Treatment hold request declined.");
+    }
+
+    public async Task<ApiResponse<TreatmentCaseDto>> ResumeTreatmentAsync(Guid caseId, Guid requestingUserId, CancellationToken ct = default)
+    {
+        var entity = await _caseRepo.GetByIdAsync(caseId, ct);
+        if (entity == null || entity.IsDeleted)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("Treatment case not found.");
+
+        var canonicalPatientId = await GetCanonicalPatientUserIdAsync(entity.PatientId, ct);
+        var doctorProf = (await _doctorRepo.GetAllAsync(ct)).FirstOrDefault(d => d.Id == entity.DoctorId || d.UserId == entity.DoctorId);
+        var doctorUserId = doctorProf?.UserId ?? entity.DoctorId;
+
+        if (requestingUserId != canonicalPatientId && requestingUserId != entity.PatientId && requestingUserId != doctorUserId && requestingUserId != entity.DoctorId)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse("You are not authorized to resume this treatment case.");
+
+        if (entity.Status != TreatmentCaseStatus.OnHold)
+            return ApiResponse<TreatmentCaseDto>.ErrorResponse($"Case is not on hold (current status: {entity.Status}).");
+
+        var now = DateTime.UtcNow;
+        entity.Status = TreatmentCaseStatus.Active;
+        entity.UpdatedAt = now;
+
+        _caseRepo.Update(entity);
+        await _uow.SaveChangesAsync(ct);
+
+        // Notify other party
+        try
+        {
+            var recipientId = (requestingUserId == canonicalPatientId || requestingUserId == entity.PatientId)
+                ? doctorUserId
+                : canonicalPatientId;
+
+            if (_notificationRepo != null)
+            {
+                var notif = new Notification
+                {
+                    UserId = recipientId,
+                    Title = "Treatment Resumed",
+                    Message = $"Treatment case '{entity.CaseName}' has been resumed and is now active.",
+                    Type = NotificationType.System,
+                    RelatedEntityType = "TreatmentCase",
+                    RelatedEntityId = entity.Id,
+                    User = null!,
+                    IsRead = false
+                };
+                await _notificationRepo.AddAsync(notif, ct);
+                await _uow.SaveChangesAsync(ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send notification for treatment resume on case {CaseId}", entity.Id);
+        }
+
+        var dtoResult = await MapToCaseDtoAsync(entity, ct);
+        return ApiResponse<TreatmentCaseDto>.SuccessResponse(dtoResult, "Treatment case resumed successfully.");
+    }
+
     // ==================== Schedule Generation ====================
 
     public async Task<ApiResponse<List<TreatmentSessionDto>>> GenerateScheduleAsync(GenerateScheduleDto dto, Guid doctorUserId, CancellationToken ct)
     {
-        // ── Input validation ────────────────────────────────────────────
+        // â”€â”€ Input validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (dto.DaysOfWeek == null || !dto.DaysOfWeek.Any())
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("At least one day of the week must be selected.");
-
         if (!TimeOnly.TryParse(dto.StartTime, out var startTime))
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Invalid start time format. Use HH:mm (e.g. 09:00).");
 
@@ -410,8 +850,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Treatment case not found.");
 
-        if (treatmentCase.Status != TreatmentCaseStatus.Active)
-            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse("Can only generate schedule for active treatment cases.");
+        var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, doctorUserId, ct);
+        if (!canManage)
+            return ApiResponse<List<TreatmentSessionDto>>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
 
         // ── Ownership check ─────────────────────────────────────────────
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
@@ -494,7 +935,6 @@ public class TreatmentCaseService : ITreatmentCaseService
             }
 
             await _uow.SaveChangesAsync(ct);
-
         }
 
         // ── Calculate sessions needed ───────────────────────────────────
@@ -517,7 +957,6 @@ public class TreatmentCaseService : ITreatmentCaseService
                 $"This treatment package has no sessions remaining. All {totalNeeded} package sessions are already completed or scheduled. Create or assign a new package before generating more treatment sessions.");
         }
 
-        // ── Load slots and appointments ─────────────────────────────────
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var allAppointments = await _appointmentRepo.GetAllAsync(ct);
 
@@ -791,8 +1230,6 @@ public class TreatmentCaseService : ITreatmentCaseService
             $"Generated {dtos.Count} treatment sessions and appointments.{skipInfo}");
     }
 
-
-
     // ==================== Sessions ====================
 
     public async Task<ApiResponse<TreatmentSessionDto>> CreateSessionAsync(CreateSessionDto dto, CancellationToken ct)
@@ -801,8 +1238,9 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<TreatmentSessionDto>.ErrorResponse("Treatment case not found.");
 
-        if (treatmentCase.Status != TreatmentCaseStatus.Active)
-            return ApiResponse<TreatmentSessionDto>.ErrorResponse("Cannot add sessions to a non-active case.");
+        var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, null, ct);
+        if (!canManage)
+            return ApiResponse<TreatmentSessionDto>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
 
         var allSessions = await _sessionRepo.GetAllAsync(ct);
         var existingSessions = allSessions.Where(s => s.TreatmentCaseId == dto.TreatmentCaseId && !s.IsDeleted).ToList();
@@ -982,6 +1420,14 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (session == null || session.IsDeleted)
             return ApiResponse<TreatmentSessionDto>.ErrorResponse("Session not found.");
 
+        var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
+        if (treatmentCase != null)
+        {
+            var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, null, ct);
+            if (!canManage)
+                return ApiResponse<TreatmentSessionDto>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
+        }
+
         if (session.AppointmentId.HasValue && (dto.PlannedStartTime.HasValue || dto.PlannedEndTime.HasValue))
             return ApiResponse<TreatmentSessionDto>.ErrorResponse("Reschedule the linked appointment to change this session's planned time.");
 
@@ -1009,6 +1455,14 @@ public class TreatmentCaseService : ITreatmentCaseService
         var session = await _sessionRepo.GetByIdAsync(sessionId, ct);
         if (session == null || session.IsDeleted)
             return ApiResponse.ErrorResponse("Session not found.");
+
+        var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
+        if (treatmentCase != null)
+        {
+            var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, null, ct);
+            if (!canManage)
+                return ApiResponse.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
+        }
 
         if (session.Status == TreatmentSessionStatus.Completed)
             return ApiResponse.ErrorResponse("Cannot delete a completed session.");
@@ -1056,7 +1510,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             session.UpdatedAt = DateTime.UtcNow;
             _sessionRepo.Update(session);
 
-            var treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
+            treatmentCase = await _caseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
             if (treatmentCase != null)
             {
                 var caseSessions = (await _sessionRepo.GetAllAsync(ct))
@@ -1289,7 +1743,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         var allGoals = await _goalRepo.GetAllAsync(ct);
         var allDetails = await _goalDetailRepo.GetAllAsync(ct);
 
-        foreach (var s in sessions.OrderBy(x => x.SessionNumber))
+        foreach (var s in sessions)
         {
             var dto = MapToSessionDto(s);
             if (s.AppointmentId.HasValue)
@@ -1339,8 +1793,10 @@ public class TreatmentCaseService : ITreatmentCaseService
         var treatmentCase = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId, ct);
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<TreatmentGoalDto>.ErrorResponse("Treatment case not found.");
-        if (doctorUserId.HasValue && !await ValidateUserAccessToCaseAsync(treatmentCase, doctorUserId, ct))
-            return ApiResponse<TreatmentGoalDto>.ErrorResponse("Access denied.");
+
+        var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, doctorUserId, ct);
+        if (!canManage)
+            return ApiResponse<TreatmentGoalDto>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
 
         if (string.IsNullOrWhiteSpace(dto.Title))
             return ApiResponse<TreatmentGoalDto>.ErrorResponse("Goal title is required.");
@@ -1503,9 +1959,6 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (tc == null || tc.IsDeleted)
             return ApiResponse<List<TreatmentGoalDto>>.ErrorResponse("Treatment case not found.");
 
-        if (!await ValidateUserAccessToCaseAsync(tc, requestingUserId, ct))
-            return ApiResponse<List<TreatmentGoalDto>>.ErrorResponse("Access denied. You do not have permission to view goals for this treatment case.");
-
         var all = await _goalRepo.GetAllAsync(ct);
         var goals = all
             .Where(g => g.TreatmentCaseId == caseId && !g.IsDeleted)
@@ -1561,7 +2014,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             _goalDetailRepo.Update(detail);
         }
 
-        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, calculatedProgress, ct, includeCriteria: false);
+        goal.ProgressPercent = await CalculateGoalProgressAsync(goal.Id, calculatedProgress, ct, includeCriteria: true);
         if (dto.CurrentValue.HasValue) goal.CurrentValue = dto.CurrentValue.Value;
 
         goal.UpdatedAt = DateTime.UtcNow;
@@ -1746,6 +2199,15 @@ public class TreatmentCaseService : ITreatmentCaseService
         if (goal == null || !await CanDoctorManageGoalAsync(goal, doctorUserId, ct))
             return ApiResponse.ErrorResponse("Access denied.");
 
+        // In-progress or evaluated criteria cannot be deleted
+        var evaluations = (await _criteriaEvaluationRepo.GetAllAsync(ct))
+            .Where(e => e.SuccessCriteriaId == criteriaId)
+            .ToList();
+        if (evaluations.Count > 0 || criteria.CurrentValue.HasValue || IsCriterionPassed(criteria))
+        {
+            return ApiResponse.ErrorResponse("Cannot delete a success criterion that is in progress or has recorded evaluations.");
+        }
+
         criteria.IsDeleted = true;
         criteria.UpdatedAt = DateTime.UtcNow;
         _successCriteriaRepo.Update(criteria);
@@ -1789,6 +2251,10 @@ public class TreatmentCaseService : ITreatmentCaseService
         var treatmentCase = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId, ct);
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return ApiResponse<HomeworkDto>.ErrorResponse("Treatment case not found.");
+
+        var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, null, ct);
+        if (!canManage)
+            return ApiResponse<HomeworkDto>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
 
         if (!dto.TreatmentSessionId.HasValue)
             return ApiResponse<HomeworkDto>.ErrorResponse("Homework must be linked to a treatment session.");
@@ -1859,6 +2325,17 @@ public class TreatmentCaseService : ITreatmentCaseService
         var assignment = await _assignmentRepo.GetByIdAsync(homeworkId, ct);
         if (assignment == null || assignment.IsDeleted)
             return ApiResponse<HomeworkDto>.ErrorResponse("Homework assignment not found.");
+
+        if (assignment.TreatmentCaseId.HasValue)
+        {
+            var treatmentCase = await _caseRepo.GetByIdAsync(assignment.TreatmentCaseId.Value, ct);
+            if (treatmentCase != null)
+            {
+                var (canManage, manageError) = await ValidateCaseManageableAsync(treatmentCase, null, ct);
+                if (!canManage)
+                    return ApiResponse<HomeworkDto>.ErrorResponse(manageError ?? "This treatment program is no longer active. Historical information remains available in read-only mode.");
+            }
+        }
 
         assignment.DoctorFeedback = dto.DoctorFeedback;
         assignment.FeedbackAt = DateTime.UtcNow;
@@ -2276,7 +2753,6 @@ public class TreatmentCaseService : ITreatmentCaseService
         var goal = await _goalRepo.GetByIdAsync(detail.GoalId, ct) ?? detail.Goal;
         if (goal == null || sessions.Count != requestedIds.Count || sessions.Any(s => s.TreatmentCaseId != goal.TreatmentCaseId))
             throw new InvalidOperationException("Treatment session selection is not valid for this goal detail.");
-
         var existingLinks = (await _sessionGoalRepo.GetAllAsync(ct))
             .Where(link => link.GoalDetailId == detail.Id && !link.IsDeleted)
             .ToList();
@@ -2344,14 +2820,12 @@ public class TreatmentCaseService : ITreatmentCaseService
 
     private async Task<bool> CanDoctorManageGoalAsync(TreatmentGoal goal, Guid? doctorUserId, CancellationToken ct)
     {
-        if (!doctorUserId.HasValue || doctorUserId.Value == Guid.Empty)
-            return true;
         var treatmentCase = await _caseRepo.GetByIdAsync(goal.TreatmentCaseId, ct);
         if (treatmentCase == null || treatmentCase.IsDeleted)
             return false;
-        var doctor = (await _doctorRepo.GetAllAsync(ct))
-            .FirstOrDefault(d => d.UserId == doctorUserId.Value || d.Id == doctorUserId.Value);
-        return doctor != null && (treatmentCase.DoctorId == doctor.Id || treatmentCase.DoctorId == doctor.UserId);
+
+        var (canManage, _) = await ValidateCaseManageableAsync(treatmentCase, doctorUserId, ct);
+        return canManage;
     }
 
     private static string? ValidateCriteria(int criteriaType, int dataSource, int comparisonOperator, decimal? targetValue, decimal weight)
@@ -2765,7 +3239,29 @@ public class TreatmentCaseService : ITreatmentCaseService
             HomeworkReviewedCount = assignments.Count(a => a.Status == HomeworkStatus.Reviewed),
             HomeworkOverdueCount = assignments.Count(a => a.Status == HomeworkStatus.Assigned && a.DueDate.HasValue && a.DueDate.Value < DateTime.UtcNow),
             AssignmentCount = assignments.Count,
-            CompletedAssignmentCount = assignments.Count(a => a.Status == HomeworkStatus.Submitted || a.Status == HomeworkStatus.Reviewed)
+            CompletedAssignmentCount = assignments.Count(a => a.Status == HomeworkStatus.Submitted || a.Status == HomeworkStatus.Reviewed),
+            CanManage = entity.Status == TreatmentCaseStatus.Active && !(entity.ExpectedEndDate.HasValue && entity.ExpectedEndDate.Value < DateTime.UtcNow),
+            LifecycleReason = entity.Status switch
+            {
+                TreatmentCaseStatus.Completed => "This treatment program has been completed.",
+                TreatmentCaseStatus.Expired => "This treatment program has expired because its validity period ended.",
+                TreatmentCaseStatus.Cancelled => "This treatment program was cancelled.",
+                TreatmentCaseStatus.Terminated => "This treatment program was terminated.",
+                TreatmentCaseStatus.OnHold => "This treatment program is currently on hold.",
+                _ when entity.ExpectedEndDate.HasValue && entity.ExpectedEndDate.Value < DateTime.UtcNow => "This treatment program has expired.",
+                _ => null
+            },
+            IsHoldRequested = entity.IsHoldRequested,
+            HoldRequestedAt = entity.HoldRequestedAt,
+            HoldStartDate = entity.HoldStartDate,
+            HoldEndDate = entity.HoldEndDate,
+            HoldDurationDays = entity.HoldDurationDays,
+            HoldReason = entity.HoldReason,
+            HoldApprovedAt = entity.HoldApprovedAt,
+            HoldApprovedByDoctorId = entity.HoldApprovedByDoctorId,
+            HoldRejectedAt = entity.HoldRejectedAt,
+            HoldRejectionReason = entity.HoldRejectionReason,
+            TotalHoldDays = entity.TotalHoldDays
         };
     }
 
@@ -2790,7 +3286,13 @@ public class TreatmentCaseService : ITreatmentCaseService
             OverallProgressPercent = progress?.OverallProgressPercent ?? entity.OverallProgressPercent,
             Status = (int)entity.Status,
             StartDate = entity.StartDate,
-            CreatedAt = entity.CreatedAt
+            CreatedAt = entity.CreatedAt,
+            CanManage = entity.Status == TreatmentCaseStatus.Active && !(entity.ExpectedEndDate.HasValue && entity.ExpectedEndDate.Value < DateTime.UtcNow),
+            IsHoldRequested = entity.IsHoldRequested,
+            HoldStartDate = entity.HoldStartDate,
+            HoldEndDate = entity.HoldEndDate,
+            HoldDurationDays = entity.HoldDurationDays,
+            HoldReason = entity.HoldReason
         };
     }
 

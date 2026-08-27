@@ -6,6 +6,7 @@ using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 using OPCBS.Web.Services;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace OPCBS.Web.Pages.Doctor.Appointments;
@@ -42,16 +43,18 @@ public class DetailsModel : PageModel
     public TreatmentPackageDto? ActiveTreatmentPackage { get; set; }
     public AppointmentClinicalContextDto? ClinicalContext { get; set; }
     public bool HasConsultationNote => AssociatedRecord != null;
+    public bool ShowCompletionCelebration { get; set; }
     public string? Error { get; set; }
     public string? Success { get; set; }
 
     [BindProperty]
-    public CreateConsultationNoteDto NoteInput { get; set; } = new() { ConsultationSummary = "" };
+    public CreateConsultationNoteDto NoteInput { get; set; } = new() { ConsultationSummary = "", Visibility = 1 };
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         Error = TempData["Error"] as string;
         Success = TempData["Success"] as string;
+        ShowCompletionCelebration = TempData["JustCompleted"] is bool b && b;
 
         var (data, error) = await _api.GetByIdAsync(id);
         if (error != null) { Error = error; return Page(); }
@@ -134,9 +137,22 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnPostUpdateConsultationModeAsync(Guid id, ConsultationMode mode)
     {
+        var (appointment, appointmentError) = await _api.GetByIdAsync(id);
+        if (appointment == null)
+        {
+            TempData["Error"] = appointmentError ?? "Appointment not found.";
+            return RedirectToPage(new { id });
+        }
+
+        if (appointment.Status != 1)
+        {
+            TempData["Error"] = "The consultation format can only be changed while the appointment is Approved.";
+            return RedirectToPage(new { id });
+        }
+
         var (success, error) = await _api.UpdateConsultationModeAsync(id, mode);
         if (!success) TempData["Error"] = error ?? "Failed to update consultation mode.";
-        else TempData["Success"] = $"Consultation mode updated to {(mode == ConsultationMode.Online ? "Online Consultation" : "In-Person (Offline)")} successfully!";
+        else TempData["Success"] = $"Consultation format updated to {(mode == ConsultationMode.Online ? "Online Video Call" : "In-Person Visit")}.";
         return RedirectToPage(new { id });
     }
 
@@ -159,14 +175,48 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostCompleteAsync(Guid id)
     {
         var (success, error) = await _api.CompleteAsync(id);
-        if (!success) TempData["Error"] = error ?? "Failed to complete appointment.";
-        else TempData["Success"] = "Appointment completed successfully!";
+        if (!success)
+        {
+            TempData["Error"] = error ?? "Failed to complete appointment.";
+        }
+        else
+        {
+            TempData["Success"] = "Appointment completed successfully!";
+            TempData["JustCompleted"] = true;
+        }
         return RedirectToPage(new { id });
     }
 
     public async Task<IActionResult> OnPostCreateNoteAndCompleteAsync(Guid id)
     {
+        var (appointment, appointmentError) = await _api.GetByIdAsync(id);
+        if (appointment == null)
+        {
+            TempData["Error"] = appointmentError ?? "Appointment not found.";
+            return RedirectToPage(new { id });
+        }
+
+        var hasTreatmentPackage = appointment.TreatmentPackageId.HasValue
+            || appointment.TreatmentCaseId.HasValue;
+
+        if (!hasTreatmentPackage && appointment.PatientId.HasValue)
+        {
+            var (packages, _, _) = await _packageApi.GetAllAsync(1, 100);
+            hasTreatmentPackage = packages?.Any(p =>
+                p.PatientId == appointment.PatientId.Value
+                && (p.Status == "Active" || p.Status == "Accepted")
+                && p.ExpirationDate > DateTime.Now
+                && p.RemainingSessions > 0) == true;
+        }
+
+        if (hasTreatmentPackage)
+        {
+            NoteInput.NextAppointmentRecommendedDate = null;
+            NoteInput.NextAppointmentRecommendedSlotId = null;
+        }
+
         NoteInput.AppointmentId = id;
+        NoteInput.Visibility = 1;
         var (success, error) = await _recordApi.CreateAsync(NoteInput);
         if (!success)
         {
@@ -182,13 +232,29 @@ public class DetailsModel : PageModel
         else
         {
             TempData["Success"] = "Consultation note created and appointment completed successfully!";
+            TempData["JustCompleted"] = true;
         }
 
         return RedirectToPage(new { id });
     }
 
-    public async Task<IActionResult> OnPostCancelAsync(Guid id, string? reason)
+    public async Task<IActionResult> OnPostCancelAsync(Guid id, string? cancelCategory, string? cancelDetails)
     {
+        if (id == Guid.Empty)
+        {
+            TempData["Error"] = "A valid appointment is required.";
+            return RedirectToPage("/Doctor/Appointments/Index");
+        }
+
+        if (string.IsNullOrWhiteSpace(cancelCategory))
+        {
+            TempData["Error"] = "Please select a cancellation reason.";
+            return RedirectToPage(new { id });
+        }
+
+        var reason = string.IsNullOrWhiteSpace(cancelDetails)
+            ? cancelCategory.Trim()
+            : $"{cancelCategory.Trim()}: {cancelDetails.Trim()}";
         var (success, error) = await _api.CancelAsync(id, new CancelAppointmentDto { Reason = reason });
         if (!success) TempData["Error"] = error ?? "Failed to cancel appointment.";
         else TempData["Success"] = "Appointment cancelled successfully.";
@@ -251,7 +317,7 @@ public class DetailsModel : PageModel
                 id = s.Id,
                 startTime = s.StartTime,
                 endTime = s.EndTime,
-                label = $"{s.StartTime} - {s.EndTime} ({s.Price:N0} VND)"
+                label = $"{s.StartTime} - {s.EndTime}"
             })
             .ToList();
 

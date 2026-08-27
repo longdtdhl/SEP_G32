@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
@@ -950,8 +950,13 @@ public class ConsultationNoteService : IConsultationNoteService
         return ApiResponse<ConsultationNoteDto>.SuccessResponse(confirmedDto, "Consultation notes confirmed successfully.");
     }
 
-    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Doctor not found");
+
         var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var allAppts = await _apptRepo.GetAllAsync(ct);
@@ -994,7 +999,7 @@ public class ConsultationNoteService : IConsultationNoteService
 
         var records = await _recordRepo.GetAllAsync(ct);
         var filtered = records
-            .Where(x => validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value)))
+            .Where(x => x.DoctorId == doctor.Id && (validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value))))
             .OrderByDescending(x => x.CreatedAt)
             .ToList();
 
@@ -1012,6 +1017,11 @@ public class ConsultationNoteService : IConsultationNoteService
         };
 
         return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, "Records retrieved successfully", pagination);
+    }
+
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientForDoctorAsync(Guid patientId, Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    {
+        return await GetByPatientRecordAsync(patientId, doctorUserId, page, pageSize, ct);
     }
 
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
@@ -1884,6 +1894,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
+    private readonly ITreatmentLifecycleCoordinator? _lifecycleCoordinator;
 
     public TreatmentPackageService(
         IRepository<TreatmentPackage> packageRepo,
@@ -1895,7 +1906,8 @@ public class TreatmentPackageService : ITreatmentPackageService
         IUnitOfWork uow,
         IMapper mapper,
         IFavoriteDoctorNotificationService? favoriteNotificationService = null,
-        IRepository<CustomClinicalField>? customFieldRepo = null)
+        IRepository<CustomClinicalField>? customFieldRepo = null,
+        ITreatmentLifecycleCoordinator? lifecycleCoordinator = null)
     {
         _packageRepo = packageRepo;
         _doctorRepo = doctorRepo;
@@ -1907,6 +1919,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         _mapper = mapper;
         _favoriteNotificationService = favoriteNotificationService;
         _customFieldRepo = customFieldRepo;
+        _lifecycleCoordinator = lifecycleCoordinator;
     }
 
     public async Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct)

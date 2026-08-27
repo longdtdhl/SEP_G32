@@ -629,6 +629,33 @@
         background-color: #f0fdfa !important;
     }
 
+    /* â”€â”€â”€ Confetti Animation â”€â”€â”€ */
+    .celebration-confetti-wrap {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    .confetti-piece {
+        position: absolute;
+        width: 8px; height: 14px;
+        opacity: 0.85;
+        border-radius: 2px;
+        animation: confettiFall 2.5s infinite ease-in-out;
+    }
+    .cp-1 { top: -10px; left: 10%; background: #fbbf24; animation-delay: 0s; transform: rotate(15deg); }
+    .cp-2 { top: -10px; left: 25%; background: #34d399; animation-delay: 0.4s; transform: rotate(-20deg); }
+    .cp-3 { top: -10px; left: 40%; background: #f472b6; animation-delay: 0.2s; transform: rotate(45deg); }
+    .cp-4 { top: -10px; left: 55%; background: #60a5fa; animation-delay: 0.7s; transform: rotate(30deg); }
+    .cp-5 { top: -10px; left: 70%; background: #fde047; animation-delay: 0.3s; transform: rotate(-35deg); }
+    .cp-6 { top: -10px; left: 85%; background: #a78bfa; animation-delay: 0.6s; transform: rotate(25deg); }
+    .cp-7 { top: -10px; left: 95%; background: #38bdf8; animation-delay: 0.1s; transform: rotate(-15deg); }
+    .cp-8 { top: -10px; left: 5%; background: #fb7185; animation-delay: 0.5s; transform: rotate(50deg); }
+    @@keyframes confettiFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(180px) rotate(360deg); opacity: 0; }
+    }
+
     /* ─── Doctor Trends Filter & Toggle Buttons (Light Green Active) ─── */
     .trend-filter-btn {
         background: #ffffff;
@@ -701,9 +728,108 @@
 
     @if (c.Status == 2 || overallProg >= 100)
     {
-        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#ecfdf5; color:#065f46; border-radius:10px;">
-            <i class="bi bi-trophy-fill fs-4" style="color:#d97706;"></i>
-            <div><strong>Congratulations!</strong> This treatment journey is complete. The case has been marked as done.</div>
+        <div class="alert border-0 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color:#065f46; border: 1px solid #a7f3d0; border-radius:12px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:#10b981; color:#fff; font-size:1.3rem;">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0" style="color:#065f46;">Treatment Program Completed</h6>
+                    <span style="font-size:0.84rem; color:#047857;">All milestones and sessions have completed successfully. Historical records remain fully accessible in read-only mode.</span>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm" onclick="reopenCelebrationModal()" style="background:#0f766e; color:#fff; border-radius:8px; font-size:0.8rem; font-weight:600;">
+                <i class="bi bi-stars me-1"></i>View Celebration Summary
+            </button>
+        </div>
+    }
+    else if (c.Status == 6 || c.IsExpired)
+    {
+        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#fef2f2; color:#991b1b; border: 1px solid #fecaca; border-radius:12px;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:#ef4444; color:#fff; font-size:1.3rem;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0" style="color:#991b1b;">Treatment Program Expired</h6>
+                <span style="font-size:0.84rem; color:#b91c1c;">This treatment program has expired because its validity period ended@(c.ExpectedEndDate.HasValue ? $" on {c.ExpectedEndDate.Value:MMM dd, yyyy}" : ""). All historical notes, goals, sessions, homework, and psychometric records remain available in read-only mode.</span>
+            </div>
+        </div>
+    }
+    else if (c.Status == 5)
+    {
+        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#fff1f2; color:#9f1239; border: 1px solid #fecdd3; border-radius:12px;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:#f43f5e; color:#fff; font-size:1.3rem;">
+                <i class="bi bi-x-octagon-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0" style="color:#9f1239;">Treatment Program Cancelled</h6>
+                <span style="font-size:0.84rem; color:#be123c;">This treatment program was cancelled.@(!string.IsNullOrWhiteSpace(c.ClosureNote) ? $" Reason: \"{c.ClosureNote}\"" : "") Historical records remain available in read-only mode.</span>
+            </div>
+        </div>
+    }
+    else if (c.Status == 3)
+    {
+        <div class="alert border-0 mb-3 d-flex align-items-center gap-3" style="background:#fff7ed; color:#9a3412; border: 1px solid #fed7aa; border-radius:12px;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:#f97316; color:#fff; font-size:1.3rem;">
+                <i class="bi bi-slash-circle-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0" style="color:#9a3412;">Treatment Program Terminated</h6>
+                <span style="font-size:0.84rem; color:#c2410c;">This treatment program was terminated.@(!string.IsNullOrWhiteSpace(c.ClosureNote) ? $" Reason: \"{c.ClosureNote}\"" : "") Historical records remain available in read-only mode.</span>
+            </div>
+        </div>
+    }
+    else if (c.IsHoldRequested)
+    {
+        <div class="alert border-0 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-3 p-3" style="background:#fffbeb; color:#92400e; border: 1px solid #fde68a; border-radius:12px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.15);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px; height:44px; background:#f59e0b; color:#fff; font-size:1.4rem;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color:#92400e;">Patient Requested Treatment Hold (Bảo lưu)</h6>
+                    <div style="font-size:0.84rem; color:#78350f;">
+                        Patient <strong>@(c.PatientName ?? "Patient")</strong> has requested to put this treatment program on hold from <strong>@c.HoldStartDate?.ToString("MMM dd, yyyy")</strong> to <strong>@c.HoldEndDate?.ToString("MMM dd, yyyy")</strong> (@(c.HoldDurationDays ?? 0) days).
+                    </div>
+                    <div class="mt-1" style="font-size:0.82rem; color:#92400e;">
+                        <strong>Patient Reason:</strong> <em>"@c.HoldReason"</em>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-info-circle me-1"></i>Approving will extend the validity expiration by @(c.HoldDurationDays ?? 0) days and automatically cancel upcoming scheduled sessions/appointments.
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-success px-3" style="border-radius:8px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#approveHoldModal">
+                    <i class="bi bi-check-circle me-1"></i>Approve Hold
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger px-3" style="border-radius:8px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#rejectHoldModal">
+                    <i class="bi bi-x-circle me-1"></i>Decline
+                </button>
+            </div>
+        </div>
+    }
+    else if (c.Status == 1)
+    {
+        <div class="alert border-0 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-3 p-3" style="background:#fffbeb; color:#92400e; border: 1px solid #fde68a; border-radius:12px;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px; height:44px; background:#f59e0b; color:#fff; font-size:1.4rem;">
+                    <i class="bi bi-pause-circle-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color:#92400e;">Treatment Program Currently on Hold</h6>
+                    <div style="font-size:0.84rem; color:#78350f;">
+                        On hold from <strong>@c.HoldStartDate?.ToString("MMM dd, yyyy")</strong> until <strong>@c.HoldEndDate?.ToString("MMM dd, yyyy")</strong>. Reason: <em>"@c.HoldReason"</em>.
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-calendar-check text-success me-1"></i>Program validity extended until <strong>@c.ExpectedEndDate?.ToString("MMM dd, yyyy")</strong>. Clinical activities and scheduled appointments are paused.
+                    </div>
+                </div>
+            </div>
+            <form method="post" asp-page-handler="ResumeTreatment" onsubmit="return confirm('Are you sure you want to resume this treatment program?');">
+                <input type="hidden" name="caseId" value="@c.Id" />
+                <button type="submit" class="btn btn-sm text-white px-3" style="border-radius:8px; font-weight:600; background:#0d9488; border-color:#0d9488;"><i class="bi bi-play-circle-fill me-1"></i>Resume Treatment</button>
+            </form>
         </div>
     }
 
@@ -737,7 +863,7 @@
                 </div>
             </div>
             <div class="cd-actions">
-                @if (c.Status == 0)
+                @if (c.CanManage)
                 {
                     <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm" style="background:#0d9488; color:white; border-radius:7px; font-size:0.8rem; font-weight:600;">
                         <i class="bi bi-calendar-range me-1"></i>Schedule Session
@@ -749,7 +875,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li><a class="dropdown-item" style="font-size:0.82rem;" href="?id=@c.Id&tab=timeline"><i class="bi bi-clock-history me-2" style="color:#0d9488;"></i>Timeline</a></li>
-                        @if (c.Status == 0)
+                        @if (c.CanManage)
                         {
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -928,13 +1054,13 @@
                     </div>
 
                     <!-- Next Session -->
-                    <div class="cd-box">
-                        <div class="cd-box-head">
-                            <h6 class="cd-box-title"><i class="bi bi-clock me-2"></i>Next Session</h6>
-                        </div>
-                        <div class="cd-box-body">
-                            @if (nextSession?.PlannedStartTime != null)
-                            {
+                    @if (c.CanManage && !c.IsTerminal && nextSession?.PlannedStartTime != null)
+                    {
+                        <div class="cd-box">
+                            <div class="cd-box-head">
+                                <h6 class="cd-box-title"><i class="bi bi-clock me-2"></i>Next Session</h6>
+                            </div>
+                            <div class="cd-box-body">
                                 <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:7px; padding:0.75rem;">
                                     <div class="fw-bold text-dark" style="font-size:0.88rem;">@(nextSession.Title ?? $"Session {nextSession.SessionNumber}")</div>
                                     <div style="font-size:0.82rem; color:#0d9488; font-weight:600; margin-top:4px;">
@@ -945,16 +1071,23 @@
                                         <div class="text-muted mt-1" style="font-size:0.75rem;">Booking: <strong>@nextSession.BookingCode</strong></div>
                                     }
                                 </div>
-                            }
-                            else
-                            {
+                            </div>
+                        </div>
+                    }
+                    else if (c.CanManage && !c.IsTerminal)
+                    {
+                        <div class="cd-box">
+                            <div class="cd-box-head">
+                                <h6 class="cd-box-title"><i class="bi bi-clock me-2"></i>Next Session</h6>
+                            </div>
+                            <div class="cd-box-body">
                                 <p class="text-muted mb-2" style="font-size:0.82rem;">No upcoming session scheduled.</p>
                                 <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary w-100" style="border-radius:6px; font-size:0.78rem;">
                                     <i class="bi bi-plus-lg me-1"></i>Generate Schedule
                                 </a>
-                            }
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <!-- Homework Pending -->
                     <div class="cd-box">
@@ -1053,7 +1186,7 @@
                             @activeSessions.Count/@(c.TotalSessions > 0 ? c.TotalSessions : activeSessions.Count) Active (@completedCount Completed)
                         </span>
                     </div>
-                    @if (c.Status == 0)
+                    @if (c.CanManage)
                     {
                         if (isSessionsFull)
                         {
@@ -1094,7 +1227,7 @@
                     <div class="cd-empty">
                         <i class="bi bi-calendar-x"></i>
                         <p>No active sessions created yet</p>
-                        @if (!isSessionsFull)
+                        @if (c.CanManage && !isSessionsFull)
                         {
                             <a href="/Doctor/TreatmentCases/Schedule?caseId=@c.Id" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:6px; font-size:0.78rem;">Generate Schedule</a>
                         }
@@ -1201,9 +1334,23 @@
                     <p class="text-muted small mb-3" style="max-width:420px; margin:0 auto;">
                         Set structured therapeutic goals, baseline measurements, and success criteria. The system calculates progress automatically from success criteria and session updates.
                     </p>
-                    <button type="button" class="btn btn-sm text-white px-4 py-2" style="background:#0d9488; border-radius:8px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
-                        <i class="bi bi-plus-lg me-1"></i>Create First Goal
-                    </button>
+                    @if (c.CanManage)
+                    {
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm text-white px-4 py-2" style="background:#0d9488; border-radius:8px; font-weight:600;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                                <i class="bi bi-plus-lg me-1"></i>Create First Goal
+                            </button>
+                            <a asp-page="/Doctor/TreatmentCases/Goals/Create" asp-route-caseId="@c.Id" class="btn btn-sm btn-outline-secondary px-3 py-2" style="border-radius:8px; font-weight:600;">
+                                <i class="bi bi-arrows-fullscreen me-1"></i>Full Form
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="badge bg-light text-secondary border px-3 py-2">
+                            <i class="bi bi-lock me-1"></i>Goals are read-only
+                        </span>
+                    }
                 </div>
             }
             else
@@ -1293,14 +1440,17 @@
                             }
                         }
                     </div>
-                    <div class="d-flex align-items-center gap-2 ms-auto">
-                        <button type="button" class="btn btn-sm text-white shadow-sm" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 14px;" data-bs-toggle="modal" data-bs-target="#recordProgressModal">
-                            <i class="bi bi-plus-circle me-1"></i>Record Session Progress
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 12px;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
-                            <i class="bi bi-plus-lg me-1"></i>Add Goal
-                        </button>
-                    </div>
+                    @if (c.CanManage)
+                    {
+                        <div class="d-flex align-items-center gap-2 ms-auto">
+                            <button type="button" class="btn btn-sm text-white shadow-sm" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 14px;" data-bs-toggle="modal" data-bs-target="#recordProgressModal">
+                                <i class="bi bi-plus-circle me-1"></i>Record Session Progress
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600; font-size:0.82rem; padding:6px 12px;" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                                <i class="bi bi-plus-lg me-1"></i>Add Goal
+                            </button>
+                        </div>
+                    }
                 </div>
 
                 <!-- ══ 1. GOAL HEADER CARD ══ -->
@@ -1325,15 +1475,25 @@
                             <div class="progress" style="height:8px; border-radius:4px; background:#e2e8f0; width:200px;">
                                 <div class="progress-bar" style="width:@(activeGoal.ProgressPercent)%; background:@activeGoalColor; border-radius:4px; transition:width 0.5s;"></div>
                             </div>
-                            <div class="mt-2 d-flex align-items-center gap-2">
-                                <form method="post" asp-page-handler="DeleteGoal" onsubmit="return confirm('Are you sure you want to delete this treatment goal (@activeGoal.Title)? This action will also delete all associated progress history and success criteria.');" class="d-inline">
-                                    <input type="hidden" name="caseId" value="@c.Id" />
-                                    <input type="hidden" name="goalId" value="@activeGoal.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.72rem; padding:2px 8px;" title="Delete Treatment Goal">
-                                        <i class="bi bi-trash me-1"></i>Delete Goal
-                                    </button>
-                                </form>
-                            </div>
+                            @if (c.CanManage)
+                            {
+                                <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                                    <form method="post" asp-page-handler="RecalculateGoalProgress" class="d-inline">
+                                        <input type="hidden" name="caseId" value="@c.Id" />
+                                        <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                        <button type="submit" class="btn btn-sm" style="border-radius:6px; font-size:0.72rem; padding:2px 8px; border:1px solid #0d9488; color:#0d9488; background:#f0fdfa;" title="Recalculate progress from completed success criteria">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Sync & Auto-Calculate
+                                        </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="DeleteGoal" onsubmit="return confirm('Are you sure you want to delete this treatment goal (@activeGoal.Title)? This action will also delete all associated progress history and success criteria.');" class="d-inline">
+                                        <input type="hidden" name="caseId" value="@c.Id" />
+                                        <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.72rem; padding:2px 8px;" title="Delete Treatment Goal">
+                                            <i class="bi bi-trash me-1"></i>Delete Goal
+                                        </button>
+                                    </form>
+                                </div>
+                            }
                         </div>
                     </div>
 
@@ -1408,9 +1568,12 @@
                         <div class="goal-card-panel">
                             <div class="goal-card-header">
                                 <h6 class="goal-card-title"><i class="bi bi-check2-square" style="color:#0d9488;"></i>Success Criteria</h6>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem; padding:2px 8px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#addCriteriaModal">
-                                    <i class="bi bi-plus-lg me-1"></i>Add Criteria
-                                </button>
+                                @if (c.CanManage)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem; padding:2px 8px; border-radius:6px;" data-bs-toggle="modal" data-bs-target="#addCriteriaModal">
+                                        <i class="bi bi-plus-lg me-1"></i>Add Criteria
+                                    </button>
+                                }
                             </div>
                             <div class="goal-card-body p-0 d-flex flex-column justify-content-between">
                                 @if (activeGoal.SuccessCriteria.Any())
@@ -1419,26 +1582,131 @@
                                         @foreach (var sc in activeGoal.SuccessCriteria)
                                         {
                                             var scPassed = sc.IsPassed;
+                                            var isOverdue = activeGoal.TargetDate.HasValue && activeGoal.TargetDate.Value.Date < DateTime.Today && !scPassed;
+                                            var isCaseExpired = c.Status == 5 || (c.ExpectedEndDate.HasValue && c.ExpectedEndDate.Value.Date < DateTime.Today);
+                                            var isExpiredNotPassed = (isOverdue || isCaseExpired) && !scPassed;
+                                            var isInProgress = (sc.CurrentValue.HasValue && !scPassed) || sc.Evaluations.Any();
+
                                             <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
-                                                <div class="d-flex align-items-center gap-2.5">
-                                                    <i class="bi @(scPassed ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
-                                                    <div>
-                                                        <div class="fw-semibold text-dark">@(string.IsNullOrEmpty(sc.Description) ? sc.CriteriaTypeText : sc.Description)</div>
-                                                        <div class="text-muted d-flex align-items-center gap-2 mt-0.5" style="font-size:0.74rem;">
-                                                            <span><strong>Condition:</strong> @(sc.CurrentValue.HasValue ? sc.CurrentValue.Value.ToString("0.#") : "Current") @sc.OperatorText @(sc.TargetValue.HasValue ? sc.TargetValue.Value.ToString("0.#") : "Target")</span>
-                                                            <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Weight: 1.0</span>
+                                                <div class="d-flex align-items-center gap-2.5" style="min-width:0; flex:1;">
+                                                    @if (scPassed)
+                                                    {
+                                                        <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0"></i>
+                                                    }
+                                                    else if (isExpiredNotPassed)
+                                                    {
+                                                        <i class="bi bi-x-circle-fill text-danger fs-6 flex-shrink-0"></i>
+                                                    }
+                                                    else if (isInProgress)
+                                                    {
+                                                        <i class="bi bi-arrow-repeat text-teal fs-6 flex-shrink-0" style="color:#0d9488;"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-circle text-muted fs-6 flex-shrink-0"></i>
+                                                    }
+                                                    <div style="min-width:0;">
+                                                        <div class="fw-semibold text-dark text-truncate">@(string.IsNullOrEmpty(sc.Description) ? sc.CriteriaTypeText : sc.Description)</div>
+                                                        <div class="text-muted d-flex align-items-center gap-2 mt-0.5 flex-wrap" style="font-size:0.74rem;">
+                                                            <span><strong>Target:</strong> @sc.OperatorText @(sc.TargetValue.HasValue ? sc.TargetValue.Value.ToString("0.#") : "N/A")</span>
+                                                            <span><strong>Current:</strong> @(sc.CurrentValue.HasValue ? sc.CurrentValue.Value.ToString("0.#") : "Not evaluated")</span>
+                                                            <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Weight: @(sc.Weight > 0 ? sc.Weight.ToString("0.#") : "1.0")</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="goal-badge @(scPassed ? "goal-badge-achieved" : "goal-badge-inprogress")">
-                                                        @(scPassed ? "Passed" : "Not Passed")
-                                                    </span>
-                                                    <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Remove this criterion?');">
-                                                        <input type="hidden" name="caseId" value="@c.Id" />
-                                                        <input type="hidden" name="criteriaId" value="@sc.Id" />
-                                                        <button type="submit" class="btn btn-link text-danger p-0 ms-1" style="font-size:0.8rem;" title="Delete"><i class="bi bi-trash"></i></button>
-                                                    </form>
+                                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-2">
+                                                    @if (scPassed)
+                                                    {
+                                                        <span class="goal-badge goal-badge-achieved">
+                                                            <i class="bi bi-check-lg me-1"></i>Met / Passed
+                                                        </span>
+                                                    }
+                                                    else if (isExpiredNotPassed)
+                                                    {
+                                                        <span class="goal-badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;">
+                                                            <i class="bi bi-exclamation-circle me-1"></i>Not Passed (Overdue)
+                                                        </span>
+                                                    }
+                                                    else if (isInProgress)
+                                                    {
+                                                        <span class="goal-badge goal-badge-inprogress">
+                                                            <i class="bi bi-arrow-repeat me-1"></i>In Progress
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="goal-badge goal-badge-notstarted">
+                                                            <i class="bi bi-hourglass me-1"></i>Draft
+                                                        </span>
+                                                    }
+                                                    @if (c.CanManage)
+                                                    {
+                                                        <button type="button" class="btn btn-sm" style="border-radius:6px; font-size:0.72rem; padding:2px 7px; border:1px solid #0d9488; color:#0d9488; background:#f0fdfa;" data-bs-toggle="modal" data-bs-target="#evalCriteriaModal_@sc.Id" title="Evaluate / Update Measurement">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        @if (isInProgress || scPassed)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-light text-muted border" style="border-radius:6px; font-size:0.72rem; padding:2px 7px; opacity:0.6; cursor:not-allowed;" title="In-progress / completed criteria cannot be deleted" disabled>
+                                                                <i class="bi bi-lock-fill"></i>
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <form method="post" asp-page-handler="DeleteSuccessCriteria" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this success criterion (@(string.IsNullOrEmpty(sc.Description) ? sc.CriteriaTypeText : sc.Description))?');">
+                                                                <input type="hidden" name="caseId" value="@c.Id" />
+                                                                <input type="hidden" name="criteriaId" value="@sc.Id" />
+                                                                <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px; font-size:0.72rem; padding:2px 7px;" title="Delete Criterion">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Evaluate Criteria Modal for this criterion -->
+                                            <div class="modal fade" id="evalCriteriaModal_@sc.Id" tabindex="-1">
+                                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                                    <div class="modal-content" style="border-radius:12px;">
+                                                        <form method="post" asp-page-handler="EvaluateSuccessCriteria">
+                                                            <input type="hidden" name="caseId" value="@c.Id" />
+                                                            <input type="hidden" name="criteriaId" value="@sc.Id" />
+                                                            <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                                            <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:0.85rem 1rem;">
+                                                                <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.88rem;">
+                                                                    <i class="bi bi-check2-square me-1" style="color:#0d9488;"></i>Evaluate Criterion
+                                                                </h6>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body" style="padding:1rem;">
+                                                                <div class="mb-2 text-muted small">
+                                                                    <strong>Criterion:</strong> @(string.IsNullOrEmpty(sc.Description) ? sc.CriteriaTypeText : sc.Description)
+                                                                </div>
+                                                                <div class="mb-3 text-muted small">
+                                                                    <strong>Target Condition:</strong> @sc.OperatorText @(sc.TargetValue.HasValue ? sc.TargetValue.Value.ToString("0.#") : "N/A")
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.8rem;">Current Measured Value</label>
+                                                                    <input type="number" step="any" name="currentValue" class="form-control form-control-sm" value="@(sc.CurrentValue.HasValue ? sc.CurrentValue.Value.ToString("0.#") : "")" placeholder="e.g. @(sc.TargetValue ?? 5)" required style="border-radius:6px;" />
+                                                                </div>
+                                                                <div class="mb-0">
+                                                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.8rem;">Related Session (Optional)</label>
+                                                                    <select name="sessionId" class="form-select form-select-sm" style="border-radius:6px;">
+                                                                        <option value="">-- No session linked --</option>
+                                                                        @foreach (var s in Model.Sessions.Where(s => s.Status == 0 || s.Status == 2).OrderBy(s => s.SessionNumber))
+                                                                        {
+                                                                            <option value="@s.Id">Session @s.SessionNumber - @s.Title</option>
+                                                                        }
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.6rem 1rem;">
+                                                                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Save & Recalculate</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         }
@@ -1446,53 +1714,25 @@
                                 }
                                 else
                                 {
-                                    <!-- Synthesized Clinical Criteria Rows -->
-                                    <div class="list-group list-group-flush" style="font-size:0.82rem;">
-                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
-                                            <div class="d-flex align-items-center gap-2.5">
-                                                <i class="bi @(activeGoal.ProgressPercent >= 100 ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
-                                                <div>
-                                                    <div class="fw-semibold text-dark">Clinical Target: @activeGoal.Title @(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "")</div>
-                                                    <div class="text-muted d-flex align-items-center gap-2 mt-0.5" style="font-size:0.74rem;">
-                                                        <span><strong>Current:</strong> @(currentVal.HasValue ? $"{currentVal.Value:0.#}/10" : "N/A")</span>
-                                                        <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Weight: 1.0</span>
-                                                    </div>
-                                                </div>
+                                    <div class="text-center py-4 px-3 text-muted">
+                                        <i class="bi bi-check2-square fs-3 d-block text-slate-300 mb-2" style="color:#94a3b8;"></i>
+                                        <div class="fw-semibold text-dark mb-1" style="font-size:0.85rem;">No Criteria Configured</div>
+                                        <p class="small text-muted mb-3" style="font-size:0.75rem;">Set up success criteria to enable automatic progress computation from session evaluations.</p>
+                                        @if (c.CanManage)
+                                        {
+                                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                                <button type="button" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600; font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#addCriteriaModal">
+                                                    <i class="bi bi-plus-lg me-1"></i>Add Custom Criterion
+                                                </button>
+                                                <form method="post" asp-page-handler="SeedDefaultCriteria" class="d-inline">
+                                                    <input type="hidden" name="caseId" value="@c.Id" />
+                                                    <input type="hidden" name="goalId" value="@activeGoal.Id" />
+                                                    <button type="submit" class="btn btn-sm" style="border-radius:6px; font-size:0.75rem; border:1px solid #0d9488; color:#0d9488; background:#f0fdfa;" title="Initialize score, attendance, and homework criteria">
+                                                        <i class="bi bi-magic me-1"></i>Initialize Standard Criteria
+                                                    </button>
+                                                </form>
                                             </div>
-                                            <span class="goal-badge @(activeGoal.ProgressPercent >= 100 ? "goal-badge-achieved" : "goal-badge-inprogress")">
-                                                @(activeGoal.ProgressPercent >= 100 ? "Passed" : "In Progress")
-                                            </span>
-                                        </div>
-                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
-                                            <div class="d-flex align-items-center gap-2.5">
-                                                <i class="bi @(sessionProg >= 80 ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
-                                                <div>
-                                                    <div class="fw-semibold text-dark">Session Attendance Rate ≥ 80%</div>
-                                                    <div class="text-muted d-flex align-items-center gap-2 mt-0.5" style="font-size:0.74rem;">
-                                                        <span>@sessionProg% (@completedSessions/@totalSessions sessions)</span>
-                                                        <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Weight: 1.0</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <span class="goal-badge @(sessionProg >= 80 ? "goal-badge-achieved" : "goal-badge-inprogress")">
-                                                @(sessionProg >= 80 ? "Passed" : "In Progress")
-                                            </span>
-                                        </div>
-                                        <div class="list-group-item d-flex justify-content-between align-items-center py-2.5 px-3">
-                                            <div class="d-flex align-items-center gap-2.5">
-                                                <i class="bi @(totalHomework > 0 && completedHomework >= totalHomework ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-6"></i>
-                                                <div>
-                                                    <div class="fw-semibold text-dark">Homework & Clinical Exercises</div>
-                                                    <div class="text-muted d-flex align-items-center gap-2 mt-0.5" style="font-size:0.74rem;">
-                                                        <span>@completedHomework/@totalHomework completed</span>
-                                                        <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Weight: 1.0</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <span class="goal-badge @(totalHomework > 0 && completedHomework >= totalHomework ? "goal-badge-achieved" : (completedHomework > 0 ? "goal-badge-inprogress" : "goal-badge-notstarted"))">
-                                                @(totalHomework > 0 && completedHomework >= totalHomework ? "Passed" : (completedHomework > 0 ? "In Progress" : "Not Started"))
-                                            </span>
-                                        </div>
+                                        }
                                     </div>
                                 }
                                 <div class="p-2 border-top text-center text-muted" style="background:#f8fafc; font-size:0.72rem;">
@@ -1658,18 +1898,39 @@
                                         <small class="text-muted" style="font-size:0.72rem;">Only accepted/scheduled and completed sessions can be linked to goal progress.</small>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <label class="form-label fw-bold text-dark mb-0" style="font-size:0.82rem;">Current Measurement Value <span class="text-danger">*</span></label>
-                                            <span class="text-muted small" style="font-size:0.74rem;">System Estimated: <strong id="calculatedProgressPreview" style="color:#0d9488;">@(activeGoal.ProgressPercent)%</strong></span>
+                                    @{
+                                        var totalCrit = activeGoal.SuccessCriteria.Count;
+                                        var passedCrit = activeGoal.SuccessCriteria.Count(s => s.IsPassed);
+                                        var autoFromCriteria = totalCrit > 0 ? (passedCrit * 100 / totalCrit) : activeGoal.ProgressPercent;
+                                    }
+                                    <div class="p-2.5 mb-3 rounded-2" style="background:#f0fdfa; border:1px solid #99f6e4; font-size:0.8rem; color:#0f766e;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><i class="bi bi-cpu-fill me-1"></i><strong>Auto-Calculated from Criteria:</strong></span>
+                                            <span class="badge" style="background:#0d9488; color:#fff; font-size:0.8rem;">@autoFromCriteria% Progress</span>
                                         </div>
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" step="any" name="currentValue" id="recordCurrentValue" class="form-control" placeholder="e.g. 5" value="@(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "")" required oninput="calculateProgressFromInput()" style="border-radius:6px 0 0 6px;" />
-                                            <span class="input-group-text bg-light text-muted" style="border-radius:0 6px 6px 0; font-size:0.8rem;">@(!string.IsNullOrEmpty(activeGoal.Unit) ? activeGoal.Unit : "/ 10")</span>
+                                        <div class="mt-1" style="font-size:0.74rem; color:#115e59;">
+                                            @if (totalCrit > 0)
+                                            {
+                                                <span>@passedCrit of @totalCrit success criteria completed (Passed).</span>
+                                            }
+                                            else
+                                            {
+                                                <span>System calculates progress automatically from completed criteria and sessions.</span>
+                                            }
                                         </div>
-                                        <small class="text-muted" style="font-size:0.72rem;">Baseline was @(baselineVal.HasValue ? $"{baselineVal.Value:0.#}" : "N/A"), target is ≤ @(targetVal.HasValue ? $"{targetVal.Value:0.#}" : "N/A").</small>
                                     </div>
 
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label fw-bold text-dark mb-0" style="font-size:0.82rem;">Current Measurement Value <span class="badge bg-light text-muted border ms-1" style="font-weight:normal; font-size:0.68rem;">Optional</span></label>
+                                            <span class="text-muted small" style="font-size:0.74rem;">System Progress: <strong id="calculatedProgressPreview" style="color:#0d9488;">@(autoFromCriteria)%</strong></span>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="any" name="currentValue" id="recordCurrentValue" class="form-control" placeholder="Optional (e.g. @(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "5"))" value="@(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "")" oninput="calculateProgressFromInput()" style="border-radius:6px 0 0 6px;" />
+                                            <span class="input-group-text bg-light text-muted" style="border-radius:0 6px 6px 0; font-size:0.8rem;">@(!string.IsNullOrEmpty(activeGoal.Unit) ? activeGoal.Unit : "/ 10")</span>
+                                        </div>
+                                        <small class="text-muted" style="font-size:0.72rem;">Optional: Leave blank to let the system auto-calculate from criteria, or input a specific measurement metric.</small>
+                                    </div>
                                     <div class="mb-0">
                                         <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Doctor Comment</label>
                                         <textarea name="doctorComment" class="form-control" rows="3" placeholder="Clinical observation, patient coping trajectory, or session reflections..." style="border-radius:6px; font-size:0.84rem;"></textarea>
@@ -1678,81 +1939,6 @@
                                 <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
                                     <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Save & Auto-Calculate</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. Add Goal Modal -->
-                <div class="modal fade" id="addGoalModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:12px;">
-                            <form method="post" asp-page-handler="CreateGoal">
-                                <input type="hidden" name="caseId" value="@c.Id" />
-                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
-                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
-                                        <i class="bi bi-plus-circle text-teal me-1" style="color:#0d9488;"></i>Add Treatment Goal
-                                    </h6>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body" style="padding:1.25rem;">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Goal Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Reduce Anxiety Symptoms" required style="border-radius:6px;" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Description</label>
-                                        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Clinical objective and therapeutic purpose..." style="border-radius:6px;"></textarea>
-                                    </div>
-
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Priority</label>
-                                            <select name="priority" class="form-select form-select-sm" style="border-radius:6px;">
-                                                <option value="0">Low</option>
-                                                <option value="1" selected>Medium</option>
-                                                <option value="2">High</option>
-                                                <option value="3">Critical</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Category</label>
-                                            <select name="category" class="form-select form-select-sm" style="border-radius:6px;">
-                                                <option value="0">Symptom Reduction</option>
-                                                <option value="1">Coping Strategy</option>
-                                                <option value="2">Behavioral</option>
-                                                <option value="3">Cognitive</option>
-                                                <option value="4">Social</option>
-                                                <option value="5">Lifestyle</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-4">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Metric Unit</label>
-                                            <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. /10, GAD-7" value="/ 10" style="border-radius:6px;" />
-                                        </div>
-                                        <div class="col-4">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Baseline</label>
-                                            <input type="number" step="any" name="currentValue" class="form-control form-control-sm" placeholder="e.g. 8" value="8" style="border-radius:6px;" />
-                                        </div>
-                                        <div class="col-4">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target</label>
-                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3" value="3" style="border-radius:6px;" />
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-0">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Date</label>
-                                        <input type="date" name="targetDate" class="form-control form-control-sm" style="border-radius:6px;" />
-                                    </div>
-                                </div>
-                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Create Goal</button>
                                 </div>
                             </form>
                         </div>
@@ -1788,57 +1974,186 @@
                 <!-- 4. Add Success Criteria Modal -->
                 <div class="modal fade" id="addCriteriaModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:12px;">
+                        <div class="modal-content" style="border-radius:14px; border:none; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
                             <form method="post" asp-page-handler="CreateSuccessCriteria">
                                 <input type="hidden" name="caseId" value="@c.Id" />
                                 <input type="hidden" name="goalId" value="@activeGoal.Id" />
-                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1rem 1.25rem;">
-                                    <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">
-                                        <i class="bi bi-check2-square text-teal me-1" style="color:#0d9488;"></i>Add Success Criteria
-                                    </h6>
+                                <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1.1rem 1.3rem;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:34px; height:34px; background:#f0fdfa; color:#0d9488;">
+                                            <i class="bi bi-check2-square fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.92rem;">Add Success Criterion</h6>
+                                            <div class="text-muted" style="font-size:0.75rem;">Define a verifiable condition for automatic goal progress evaluation.</div>
+                                        </div>
+                                    </div>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <div class="modal-body" style="padding:1.25rem;">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Criterion Type</label>
-                                        <select name="criteriaType" class="form-select form-select-sm" style="border-radius:6px;">
-                                            <option value="0">Measurement Score / Value</option>
-                                            <option value="1">Homework Completion</option>
-                                            <option value="2">Attendance Rate (%)</option>
-                                            <option value="3">Doctor Approval</option>
-                                            <option value="4">Assessment Score</option>
-                                            <option value="99">Custom</option>
-                                        </select>
+                                <div class="modal-body" style="padding:1.3rem;">
+                                    <!-- Clinical Guidance Notice -->
+                                    <div class="p-3 mb-3 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.8rem; color:#0f766e;">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <i class="bi bi-info-circle-fill flex-shrink-0 mt-0.5" style="font-size:0.95rem;"></i>
+                                            <div>
+                                                <strong>How Success Criteria Work:</strong> Each criterion represents a quantitative milestone. When met during session evaluations or homework submissions, the system marks it as <em>Met/Passed</em> and updates the goal's overall progress automatically.
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Criterion Type <span class="text-danger">*</span></label>
+                                        <select name="criteriaType" class="form-select form-select-sm" style="border-radius:6px;">
+                                            <option value="0">Measurement Score / Scale Rating (e.g. VAS Score &le; 3/10)</option>
+                                            <option value="1">Homework & Exercise Completion (e.g. &ge; 80% submitted)</option>
+                                            <option value="2">Session Attendance Rate (e.g. &ge; 80% attended)</option>
+                                            <option value="3">Doctor Clinical Sign-off / Verification</option>
+                                            <option value="4">Formal Psychometric Assessment Score</option>
+                                            <option value="99">Custom Quantifiable Metric</option>
+                                        </select>
+                                        <div class="text-muted mt-1" style="font-size:0.72rem;">Select the measurement domain or data source for this criterion.</div>
+                                    </div>
+
                                     <div class="row g-2 mb-3">
                                         <div class="col-6">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Condition</label>
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Comparison Condition <span class="text-danger">*</span></label>
                                             <select name="operatorType" class="form-select form-select-sm" style="border-radius:6px;">
-                                                <option value="3">&lt;= (at most)</option>
-                                                <option value="1">&gt;= (at least)</option>
-                                                <option value="4">= (exact)</option>
-                                                <option value="0">&gt; (greater)</option>
+                                                <option value="3" selected>&le; At most (Symptom reduction, e.g. Score &le; 3)</option>
+                                                <option value="1">&ge; At least (Adherence / attendance, e.g. Rate &ge; 80%)</option>
+                                                <option value="4">= Exact value</option>
+                                                <option value="0">&gt; Strictly greater</option>
+                                                <option value="2">&lt; Strictly less</option>
                                             </select>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Value</label>
-                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3" required style="border-radius:6px;" />
+                                            <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Value Threshold <span class="text-danger">*</span></label>
+                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3 or 80" required style="border-radius:6px;" />
                                         </div>
                                     </div>
+
                                     <div class="mb-0">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Description</label>
-                                        <input type="text" name="description" class="form-control form-control-sm" placeholder="e.g. Anxiety score <= 3/10" style="border-radius:6px;" />
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Criterion Description</label>
+                                        <input type="text" name="description" class="form-control form-control-sm" placeholder="e.g. Anxiety Severity Score &le; 3/10 on VAS" style="border-radius:6px;" />
+                                        <div class="text-muted mt-1" style="font-size:0.72rem;">Human-readable clinical benchmark description displayed on the case dashboard.</div>
                                     </div>
                                 </div>
-                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.85rem 1.3rem;">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Add Criteria</button>
+                                    <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Add Criterion</button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
             }
+
+            <!-- 2. Add Goal Modal (Available in both empty state and populated state) -->
+            <div class="modal fade" id="addGoalModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content" style="border-radius:14px; border:none; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
+                        <form method="post" asp-page-handler="CreateGoal">
+                            <input type="hidden" name="caseId" value="@c.Id" />
+                            <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:1.1rem 1.4rem;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:34px; height:34px; background:#f0fdfa; color:#0d9488;">
+                                        <i class="bi bi-bullseye fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="modal-title fw-bold text-dark mb-0" style="font-size:0.95rem;">Add New Treatment Goal</h6>
+                                        <div class="text-muted" style="font-size:0.75rem;">Define quantifiable therapeutic targets with baseline and outcome thresholds.</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" style="padding:1.4rem;">
+                                <!-- Clinical Guidance Banner -->
+                                <div class="p-3 mb-3 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.8rem; color:#0f766e;">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-info-circle-fill flex-shrink-0 mt-0.5" style="font-size:0.95rem;"></i>
+                                        <div>
+                                            <strong>Doctor Guidelines:</strong> Set quantitative measurement parameters (e.g. VAS rating, GAD-7, PHQ-9, or percentage). The system continuously evaluates recorded session measurements and success criteria against the baseline and target values to automatically compute progress percentage.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Goal Title <span class="text-danger">*</span></label>
+                                    <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Reduce Generalized Anxiety Symptoms, Restore Sleep Architecture" required style="border-radius:6px;" />
+                                    <div class="text-muted mt-1" style="font-size:0.72rem;">Specific clinical objective or symptom area to target throughout therapy sessions.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Clinical Description & Rationale</label>
+                                    <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Document the therapeutic rationale, therapeutic modalities (CBT, ACT), and expected behavioral milestones..." style="border-radius:6px; font-size:0.82rem;"></textarea>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Clinical Priority</label>
+                                        <select name="priority" class="form-select form-select-sm" style="border-radius:6px;">
+                                            <option value="0">Low — Secondary supportive outcome</option>
+                                            <option value="1" selected>Medium — Standard therapeutic target</option>
+                                            <option value="2">High — Primary presenting complaint</option>
+                                            <option value="3">Critical — Immediate safety / crisis intervention</option>
+                                        </select>
+                                        <div class="text-muted mt-1" style="font-size:0.72rem;">Guides treatment sequencing and session planning emphasis.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Goal Category</label>
+                                        <select name="category" class="form-select form-select-sm" style="border-radius:6px;">
+                                            <option value="3" selected>Anxiety (Panic, GAD, Social Anxiety)</option>
+                                            <option value="4">Depression (Mood, Anhedonia)</option>
+                                            <option value="0">Emotion (Affective regulation, Coping)</option>
+                                            <option value="2">Stress (Burnout, Relaxation)</option>
+                                            <option value="1">Sleep (Insomnia, Sleep Hygiene)</option>
+                                            <option value="5">Communication (Assertiveness, Expression)</option>
+                                            <option value="6">Relationship (Interpersonal Boundaries)</option>
+                                            <option value="7">Work (Occupational Functioning)</option>
+                                            <option value="8">Study (Academic Concentration)</option>
+                                            <option value="9">Self-esteem (Confidence, Self-compassion)</option>
+                                            <option value="10">Lifestyle (Routine, Wellness)</option>
+                                            <option value="99">Other Clinical Target</option>
+                                        </select>
+                                        <div class="text-muted mt-1" style="font-size:0.72rem;">Categorization maps to standardized clinical metrics.</div>
+                                    </div>
+                                </div>
+
+                                <!-- Quantitative Metric Row -->
+                                <div class="p-3 mb-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                    <div class="fw-bold text-dark mb-2" style="font-size:0.82rem;"><i class="bi bi-speedometer2 me-1" style="color:#0d9488;"></i>Quantitative Metrics & Clinical Thresholds</div>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold text-muted mb-1" style="font-size:0.78rem;">Metric Scale / Unit</label>
+                                            <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. / 10, GAD-7, PHQ-9, %" value="/ 10" style="border-radius:6px;" />
+                                            <div class="text-muted mt-1" style="font-size:0.7rem;">Instrument scale name (e.g. <code>/ 10</code>, <code>GAD-7</code>, <code>PHQ-9</code>, <code>%</code>).</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold text-muted mb-1" style="font-size:0.78rem;">Baseline Score (Initial)</label>
+                                            <input type="number" step="any" name="currentValue" class="form-control form-control-sm" placeholder="e.g. 8" value="8" style="border-radius:6px;" />
+                                            <div class="text-muted mt-1" style="font-size:0.7rem;">Patient severity score recorded at intake / baseline assessment.</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold text-muted mb-1" style="font-size:0.78rem;">Target Score (Milestone)</label>
+                                            <input type="number" step="any" name="targetValue" class="form-control form-control-sm" placeholder="e.g. 3" value="3" style="border-radius:6px;" />
+                                            <div class="text-muted mt-1" style="font-size:0.7rem;">Desired threshold for remission / goal achievement (e.g. &le; 3).</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold text-dark mb-1" style="font-size:0.82rem;">Target Completion Date (Optional)</label>
+                                    <input type="date" name="targetDate" class="form-control form-control-sm" style="border-radius:6px;" />
+                                    <div class="text-muted mt-1" style="font-size:0.72rem;">Expected milestone date. If overdue and unachieved, the system flags the goal as Overdue.</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.85rem 1.4rem;">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-sm text-white px-3" style="background:#0d9488; border-radius:6px; font-weight:600;">Create Goal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         }
 
         <!-- ── TAB 4: ACTIVITIES ── -->
@@ -1923,9 +2238,12 @@
                                     <option value="status">Sort: Status</option>
                                 </select>
                             </div>
-                            <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm text-white px-3 fw-semibold shadow-sm" style="background:#0d9488; border-radius:8px; font-size:0.8rem; padding:6px 14px;">
-                                <i class="bi bi-plus-lg me-1"></i>Assign Homework
-                            </a>
+                            @if (c.CanManage)
+                            {
+                                <a href="/Doctor/TreatmentCases/Homework/Create?caseId=@c.Id" class="btn btn-sm text-white px-3 fw-semibold shadow-sm" style="background:#0d9488; border-radius:8px; font-size:0.8rem; padding:6px 14px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Assign Homework
+                                </a>
+                            }
                         </div>
 
                         <!-- ══ Homework Table ══ -->
@@ -2635,9 +2953,12 @@
                                 <a href="/Doctor/Psychometrics/Index" class="btn btn-sm btn-outline-secondary px-3 py-1.5 fw-semibold" style="border-radius:8px; font-size:0.78rem;">
                                     <i class="bi bi-collection me-1.5"></i>Psychometrics Hub
                                 </a>
-                                <a href="/Doctor/Psychometrics/Assign?caseId=@c.Id&patientId=@c.PatientId" class="btn btn-sm fw-semibold text-white px-3 py-1.5" style="border-radius:8px; font-size:0.78rem; background:var(--mb-primary, #0d9488);">
-                                    <i class="bi bi-send-fill me-1.5"></i>Assign Assessment
-                                </a>
+                                @if (c.CanManage)
+                                {
+                                    <a href="/Doctor/Psychometrics/Assign?caseId=@c.Id&patientId=@c.PatientId" class="btn btn-sm fw-semibold text-white px-3 py-1.5" style="border-radius:8px; font-size:0.78rem; background:var(--mb-primary, #0d9488);">
+                                        <i class="bi bi-send-fill me-1.5"></i>Assign Assessment
+                                    </a>
+                                }
                             </div>
                         </div>
 
@@ -2949,6 +3270,79 @@
     </div>
 </div>
 
+@if (c.Status == 2 || overallProg >= 100)
+{
+    <!-- Celebration Modal -->
+    <div class="modal fade" id="celebrationModal" tabindex="-1" aria-labelledby="celebrationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden; background: #ffffff;">
+                <!-- Confetti Header Container -->
+                <div class="position-relative text-center p-4" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%); color: #ffffff;">
+                    <div class="celebration-confetti-wrap" aria-hidden="true">
+                        <span class="confetti-piece cp-1"></span>
+                        <span class="confetti-piece cp-2"></span>
+                        <span class="confetti-piece cp-3"></span>
+                        <span class="confetti-piece cp-4"></span>
+                        <span class="confetti-piece cp-5"></span>
+                        <span class="confetti-piece cp-6"></span>
+                        <span class="confetti-piece cp-7"></span>
+                        <span class="confetti-piece cp-8"></span>
+                    </div>
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow" style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 2px solid rgba(255,255,255,0.4); font-size: 2rem;">
+                        ðŸ†
+                    </div>
+                    <h4 class="fw-bold mb-1 text-white">Treatment Program Completed!</h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.88rem;">Congratulations on guiding @(c.PatientName ?? "the patient") through this therapeutic journey.</p>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: #f0fdfa; border: 1px solid #ccfbf1;">
+                                <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Sessions Completed</div>
+                                <div class="fw-bold fs-4" style="color: #0f766e;">@completedSessions / @totalSessions</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">100% Attendance / Target</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: #f0fdfa; border: 1px solid #ccfbf1;">
+                                <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Goals Achieved</div>
+                                <div class="fw-bold fs-4" style="color: #0f766e;">@c.AchievedGoalCount / @(c.GoalCount > 0 ? c.GoalCount : Model.Goals.Count)</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">Milestones Mastered</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Homework Done</div>
+                                <div class="fw-bold fs-4 text-dark">@completedHomework / @totalHomework</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">Assigned Exercises</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Final Progress</div>
+                                <div class="fw-bold fs-4 text-success">@overallProg%</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">Treatment Target Met</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert p-3 rounded-3 mb-0" style="background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.82rem; color: #475569;">
+                        <i class="bi bi-info-circle-fill me-1" style="color: #0d9488;"></i>
+                        All session notes, assessment baselines, journal entries, and progress charts are preserved permanently in read-only mode for historical documentation and clinical reference.
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 p-3 pt-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-sm text-white px-4 py-2" data-bs-dismiss="modal" style="background: #0f766e; border-radius: 8px; font-weight: 600; font-size: 0.85rem;">
+                        Close & View Case Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Close Case Modal -->
 <div class="modal fade" id="closeCaseModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -2983,7 +3377,116 @@
     </div>
 </div>
 
+<!-- Approve Treatment Hold Modal -->
+<div class="modal fade" id="approveHoldModal" tabindex="-1" aria-labelledby="approveHoldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="approveHoldModalLabel" style="color:#1e293b;">
+                    <i class="bi bi-check-circle-fill me-2" style="color:#0d9488;"></i>Approve Treatment Hold (Bảo lưu)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="ApproveHold">
+                <input type="hidden" name="caseId" value="@c.Id" />
+                <div class="modal-body pt-3">
+                    <div class="p-3 mb-3 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.84rem; color:#0f766e;">
+                        <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i>Approval Effects:</div>
+                        <ul class="mb-0 ps-3">
+                            <li><strong>Case Status:</strong> Shifts to <code>On Hold</code>.</li>
+                            <li><strong>Program Validity:</strong> Extended by <strong>@(c.HoldDurationDays ?? 14) days</strong>.</li>
+                            <li><strong>Automatic Cancellation:</strong> Any upcoming scheduled appointments & sessions are cancelled to free your calendar.</li>
+                            <li><strong>Resuming:</strong> Either you or the patient can resume treatment early, or it will resume automatically when the hold period ends.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="p-2 rounded bg-light border text-muted small">
+                            <div><strong>Patient:</strong> @(c.PatientName ?? "Patient")</div>
+                            <div><strong>Hold Timeframe:</strong> @(c.HoldStartDate?.ToString("MMM dd, yyyy") ?? "Today") → @(c.HoldEndDate?.ToString("MMM dd, yyyy") ?? "End") (@(c.HoldDurationDays ?? 14) days)</div>
+                            <div><strong>Patient Reason:</strong> <em>"@c.HoldReason"</em></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Doctor Clinical Note (Optional)</label>
+                        <textarea name="note" class="form-control form-control-sm" rows="2" placeholder="Optional notes regarding treatment resumption or clinical instructions..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm text-white fw-semibold px-3" style="background:#0d9488; border-color:#0d9488; border-radius:8px;">
+                        <i class="bi bi-check-lg me-1"></i>Confirm & Approve Hold
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Treatment Hold Modal -->
+<div class="modal fade" id="rejectHoldModal" tabindex="-1" aria-labelledby="rejectHoldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="rejectHoldModalLabel" style="color:#1e293b;">
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i>Decline Treatment Hold Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="RejectHold">
+                <input type="hidden" name="caseId" value="@c.Id" />
+                <div class="modal-body pt-3">
+                    <div class="mb-3">
+                        <div class="p-2 rounded bg-light border text-muted small">
+                            <div><strong>Patient:</strong> @(c.PatientName ?? "Patient")</div>
+                            <div><strong>Requested Timeframe:</strong> @(c.HoldStartDate?.ToString("MMM dd, yyyy") ?? "Today") â†’ @(c.HoldEndDate?.ToString("MMM dd, yyyy") ?? "End") (@(c.HoldDurationDays ?? 14) days)</div>
+                            <div><strong>Patient Reason:</strong> <em>"@c.HoldReason"</em></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Reason for Declining <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Please provide clinical or scheduling feedback explaining why the hold request cannot be approved..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger fw-semibold px-3">
+                        <i class="bi bi-x-circle me-1"></i>Decline Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @section Scripts {
+<script>
+    function reopenCelebrationModal() {
+        const modalEl = document.getElementById('celebrationModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const isCompleted = @(c.Status == 2 || overallProg >= 100 ? "true" : "false");
+        if (isCompleted) {
+            const caseId = '@c.Id';
+            const endMarker = '@(c.ActualEndDate?.ToString("yyyyMMddHHmmss") ?? c.UpdatedAt?.ToString("yyyyMMddHHmmss") ?? "completed")';
+            const storageKey = 'opcbs_celebration_' + caseId + '_' + endMarker;
+            if (!localStorage.getItem(storageKey)) {
+                const modalEl = document.getElementById('celebrationModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                    localStorage.setItem(storageKey, 'true');
+                }
+            }
+        }
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {

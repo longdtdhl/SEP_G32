@@ -23,7 +23,26 @@ public class TreatmentPackageDto
     public DateTime CreatedAt { get; set; }
     public DateTime? AssignedDate { get; set; }
     public DateTime? AcceptedDate { get; set; }
+    public DateTime? AcceptanceExpiresAt { get; set; }
+    public DateTime? ExpiredAt { get; set; }
     public DateTime? ActiveDate { get; set; }
+    public bool IsAcceptanceExpired => AcceptanceExpiresAt.HasValue && AcceptanceExpiresAt.Value <= DateTime.UtcNow;
+    public TimeSpan? RemainingAcceptanceTime => (AcceptanceExpiresAt.HasValue && AcceptanceExpiresAt.Value > DateTime.UtcNow) ? (AcceptanceExpiresAt.Value - DateTime.UtcNow) : null;
+    public int? RemainingAcceptanceMinutes => RemainingAcceptanceTime.HasValue ? (int)Math.Ceiling(RemainingAcceptanceTime.Value.TotalMinutes) : null;
+    public bool CanPatientRespond => Status == "Assigned" && !IsAcceptanceExpired;
+    public string LifecycleStatus => Status;
+    public string LifecycleStatusText => Status switch
+    {
+        "Created" or "Draft" => "Draft Template",
+        "Assigned" => IsAcceptanceExpired ? "Proposal Expired" : "Awaiting Patient Response",
+        "Accepted" or "Active" => "Active",
+        "CancellationPending" => "Cancellation Pending",
+        "Completed" => "Completed",
+        "Expired" => "Expired",
+        "Cancelled" => "Cancelled",
+        "Rejected" => "Declined",
+        _ => Status
+    };
     public Guid? CancellationRequestedByUserId { get; set; }
     public string? CancellationRequestedByName { get; set; }
     public DateTime? CancellationRequestedAt { get; set; }
@@ -37,7 +56,7 @@ public class TreatmentPackageDto
     public string Title => Name;
     public int TotalSessions => SessionQuantity;
     public int CompletedSessions => SessionQuantity - RemainingSessions;
-    public bool IsExpired => ExpirationDate < DateTime.Now;
+    public bool IsExpired => Status == "Expired" || ((Status == "Active" || Status == "Accepted") && ExpirationDate <= DateTime.UtcNow);
     public string DisplayPatientName => PatientName ?? "Template (Not assigned)";
     public bool IsTemplate => PatientId == null;
     public bool IsCancellationPending => Status == "CancellationPending";

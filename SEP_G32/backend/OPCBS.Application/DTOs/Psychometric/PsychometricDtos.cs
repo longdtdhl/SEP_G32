@@ -11,6 +11,7 @@ public class PsychometricTestDto
     public required string TestType { get; set; }
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public Guid? DoctorId { get; set; }
     public string? DoctorName { get; set; }
     public bool IsSystemTemplate => !DoctorId.HasValue;
@@ -37,6 +38,7 @@ public class CreatePsychometricTestDto
     public required string TestType { get; set; } = "CUSTOM";
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public Guid? DoctorId { get; set; }
     public string? ScoreRangesJson { get; set; }
     public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
@@ -49,6 +51,7 @@ public class UpdatePsychometricTestDto
     public required string TestType { get; set; }
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public string? ScoreRangesJson { get; set; }
     public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
 }
@@ -61,6 +64,7 @@ public class PsychometricTestDetailDto
     public required string TestType { get; set; }
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public Guid? DoctorId { get; set; }
     public string? DoctorName { get; set; }
     public bool IsSystemTemplate => !DoctorId.HasValue;

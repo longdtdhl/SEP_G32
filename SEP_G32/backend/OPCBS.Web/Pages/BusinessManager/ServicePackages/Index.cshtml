@@ -127,7 +127,7 @@
                             </td>
                             <td class="fw-bold text-primary">@pkg.Price.ToString("N0") VND</td>
                             <td class="text-muted">@pkg.DurationDays days</td>
-                            <td class="text-muted">@pkg.MaxAppointments slots / day</td>
+                            <td class="text-muted">@(pkg.MaxDailySlotsCapacity?.ToString() ?? "Unlimited") slots / day</td>
                             <td>
                                 @if (pkg.IsActive)
                                 {

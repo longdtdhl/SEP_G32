@@ -93,6 +93,15 @@
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:0.84rem;">
+                        <i class="bi bi-link-45deg me-1 text-primary"></i>Source URL / Clinical Reference
+                    </label>
+                    <input asp-for="Input.SourceUrl" class="form-control" placeholder="e.g., http://www2.psy.unsw.edu.au/dass/" />
+                    <span asp-validation-for="Input.SourceUrl" class="text-danger small"></span>
+                    <div class="form-text" style="font-size:0.72rem;">Official psychological scale documentation (e.g. <code>psy.unsw.edu.au</code> for DASS scales)</div>
+                </div>
+
                 <div class="mb-2">
                     <label class="form-label fw-semibold" style="font-size:0.84rem;">Clinical Description & Purpose</label>
                     <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Explain what this test screens for, clinical scoring interpretation, and target audience..."></textarea>

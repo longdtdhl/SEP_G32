@@ -18,8 +18,14 @@ public class TreatmentCaseController : ControllerBase
         _caseService = caseService;
     }
 
-    private Guid GetCurrentUserId() =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
+    private Guid GetCurrentUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? User.FindFirst("sub")?.Value
+                    ?? User.FindFirst("id")?.Value
+                    ?? User.FindFirst("uid")?.Value;
+        return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
+    }
 
     // ==================== Treatment Case CRUD ====================
 
@@ -102,6 +108,58 @@ public class TreatmentCaseController : ControllerBase
     public async Task<IActionResult> Close(Guid id, [FromBody] CloseTreatmentCaseDto dto)
     {
         var result = await _caseService.CloseAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    // ==================== Treatment Hold (Bảo lưu) ====================
+
+    /// <summary>POST /api/v1/treatment-cases/{id}/request-hold - Request putting treatment on hold (Patient only)</summary>
+    [Authorize(Roles = "Patient")]
+    [HttpPost("{id:guid}/request-hold")]
+    public async Task<IActionResult> RequestHold(Guid id, [FromBody] RequestTreatmentHoldDto dto)
+    {
+        var patientUserId = GetCurrentUserId();
+        var result = await _caseService.RequestHoldAsync(id, patientUserId, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/{id}/cancel-hold-request - Cancel pending hold request (Patient only)</summary>
+    [Authorize(Roles = "Patient")]
+    [HttpPost("{id:guid}/cancel-hold-request")]
+    public async Task<IActionResult> CancelHoldRequest(Guid id)
+    {
+        var patientUserId = GetCurrentUserId();
+        var result = await _caseService.CancelHoldRequestAsync(id, patientUserId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/{id}/approve-hold - Approve treatment hold request (Doctor only)</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpPost("{id:guid}/approve-hold")]
+    public async Task<IActionResult> ApproveHold(Guid id, [FromBody] ApproveTreatmentHoldDto? dto)
+    {
+        var doctorUserId = GetCurrentUserId();
+        var result = await _caseService.ApproveHoldAsync(id, doctorUserId, dto ?? new ApproveTreatmentHoldDto());
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/{id}/reject-hold - Reject treatment hold request (Doctor only)</summary>
+    [Authorize(Roles = "Doctor")]
+    [HttpPost("{id:guid}/reject-hold")]
+    public async Task<IActionResult> RejectHold(Guid id, [FromBody] RejectTreatmentHoldDto dto)
+    {
+        var doctorUserId = GetCurrentUserId();
+        var result = await _caseService.RejectHoldAsync(id, doctorUserId, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>POST /api/v1/treatment-cases/{id}/resume - Resume treatment from OnHold status (Doctor or Patient)</summary>
+    [Authorize]
+    [HttpPost("{id:guid}/resume")]
+    public async Task<IActionResult> Resume(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _caseService.ResumeTreatmentAsync(id, userId);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

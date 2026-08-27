@@ -44,7 +44,8 @@ public class PatientRecordServiceTests
                 PsychologicalHistory = r.PsychologicalHistory,
                 CurrentSymptoms = r.CurrentSymptoms,
                 StressFactors = r.StressFactors,
-                GeneralNotes = r.GeneralNotes
+                GeneralNotes = r.GeneralNotes,
+                CreatedAt = r.CreatedAt
             });
 
         _mockMapper.Setup(m => m.Map<List<PatientRecordDto>>(It.IsAny<object>()))
@@ -61,7 +62,8 @@ public class PatientRecordServiceTests
                         PsychologicalHistory = r.PsychologicalHistory,
                         CurrentSymptoms = r.CurrentSymptoms,
                         StressFactors = r.StressFactors,
-                        GeneralNotes = r.GeneralNotes
+                        GeneralNotes = r.GeneralNotes,
+                        CreatedAt = r.CreatedAt
                     }).ToList();
                 }
                 return new List<PatientRecordDto>();
@@ -297,6 +299,48 @@ public class PatientRecordServiceTests
 
         Assert.NotEmpty(result);
         Assert.Single(result);
+    }
+
+    [Fact]
+    public async Task GetMyPatientsAsync_LegacyProfileAndUserIds_ReturnsSingleCanonicalPatient()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var originalRecordId = Guid.NewGuid();
+
+        var doctor = new DoctorProfile
+        {
+            Id = doctorProfileId,
+            UserId = doctorUserId,
+            User = new User { Email = "doctor@test.com", PasswordHash = "h", FullName = "Doctor", PhoneNumber = "1", Role = new Role { Name = "Doctor" } }
+        };
+        var patientUser = new User
+        {
+            Id = patientUserId,
+            Email = "patient@test.com",
+            PasswordHash = "h",
+            FullName = "Patient",
+            PhoneNumber = "2",
+            Role = new Role { Name = "Patient" }
+        };
+        var patient = new PatientProfile { Id = patientProfileId, UserId = patientUserId, User = patientUser };
+        var records = new List<PatientRecord>
+        {
+            new() { Id = originalRecordId, DoctorId = doctorProfileId, PatientId = patientProfileId, Doctor = doctor, CreatedAt = DateTime.UtcNow.AddDays(-1) },
+            new() { Id = Guid.NewGuid(), DoctorId = doctorProfileId, PatientId = patientUserId, Doctor = doctor, CreatedAt = DateTime.UtcNow }
+        };
+
+        _mockDoctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        _mockPatientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        _mockRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(records);
+
+        var result = await _service.GetMyPatientsAsync(doctorUserId, CancellationToken.None);
+
+        var canonical = Assert.Single(result);
+        Assert.Equal(patientUserId, canonical.PatientId);
+        Assert.Equal(originalRecordId, canonical.Id);
     }
 
     [Fact]

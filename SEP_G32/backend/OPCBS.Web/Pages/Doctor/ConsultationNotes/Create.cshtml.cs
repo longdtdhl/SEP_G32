@@ -27,7 +27,7 @@ public class CreateModel : PageModel
         _scheduleApi = scheduleApi;
     }
 
-    [BindProperty] public CreateConsultationNoteDto Input { get; set; } = new() { ConsultationSummary = "" };
+    [BindProperty] public CreateConsultationNoteDto Input { get; set; } = new() { ConsultationSummary = "", Visibility = 1 };
 
     [BindProperty(SupportsGet = true)] public Guid PatientRecordId { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? AppointmentId { get; set; }
@@ -61,6 +61,7 @@ public class CreateModel : PageModel
         PatientRecord = patient;
         Input.PatientRecordId = PatientRecordId;
         Input.AppointmentId = AppointmentId.Value;
+        Input.Visibility = 1;
 
         var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
         SelectedAppointment = appt;

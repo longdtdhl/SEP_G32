@@ -57,7 +57,9 @@ public class PsychometricService : IPsychometricService
         var qCounts = questions.Where(q => !q.IsDeleted).GroupBy(q => q.TestId).ToDictionary(g => g.Key, g => g.Count());
         var sCounts = submissions.Where(s => !s.IsDeleted).GroupBy(s => s.TestId).ToDictionary(g => g.Key, g => g.Count());
 
-        var dtos = tests.Where(t => !t.IsDeleted && t.IsActive).Select(t => new PsychometricTestDto
+        // The public library contains system templates only. Doctor-owned assessments
+        // are returned by GetDoctorAssessmentsOverviewAsync for their owner.
+        var dtos = tests.Where(t => !t.IsDeleted && t.IsActive && !t.DoctorId.HasValue).Select(t => new PsychometricTestDto
         {
             Id = t.Id,
             Title = t.Title,
@@ -65,6 +67,7 @@ public class PsychometricService : IPsychometricService
             TestType = t.TestType,
             Category = !string.IsNullOrWhiteSpace(t.Category) ? t.Category : (t.TestType == "PHQ9" ? "Depression" : (t.TestType == "DASS21" ? "Depression & Anxiety" : "General Wellbeing")),
             Purpose = !string.IsNullOrWhiteSpace(t.Purpose) ? t.Purpose : (t.TestType == "PHQ9" ? "Depression Screening" : (t.TestType == "DASS21" ? "Depression, Anxiety & Stress" : "Psychological Assessment")),
+            SourceUrl = !string.IsNullOrWhiteSpace(t.SourceUrl) ? t.SourceUrl : (t.TestType == "DASS21" || t.Title.Contains("DASS") ? "http://www2.psy.unsw.edu.au/dass/" : null),
             DoctorId = t.DoctorId,
             DoctorName = t.DoctorId.HasValue && userDict.TryGetValue(t.DoctorId.Value, out var dName) ? dName : null,
             ScoreRangesJson = t.ScoreRangesJson,
@@ -77,11 +80,18 @@ public class PsychometricService : IPsychometricService
         return ApiResponse<List<PsychometricTestDto>>.SuccessResponse(dtos);
     }
 
-    public async Task<ApiResponse<PsychometricTestDetailDto>> GetTestByIdAsync(Guid testId, CancellationToken ct = default)
+    public async Task<ApiResponse<PsychometricTestDetailDto>> GetTestByIdAsync(
+        Guid testId,
+        Guid? requestingUserId = null,
+        bool canManageSystemTemplates = false,
+        CancellationToken ct = default)
     {
         var test = await _testRepo.GetByIdAsync(testId, ct);
         if (test == null || test.IsDeleted)
             return ApiResponse<PsychometricTestDetailDto>.ErrorResponse("Psychometric test not found.");
+
+        if (!await CanAccessTestAsync(test, requestingUserId, canManageSystemTemplates, ct))
+            return ApiResponse<PsychometricTestDetailDto>.ErrorResponse("You do not have access to this assessment template.");
 
         var questions = (await _questionRepo.GetAllAsync(ct))
             .Where(q => q.TestId == testId && !q.IsDeleted)
@@ -115,6 +125,7 @@ public class PsychometricService : IPsychometricService
             TestType = test.TestType,
             Category = !string.IsNullOrWhiteSpace(test.Category) ? test.Category : (test.TestType == "PHQ9" ? "Depression" : (test.TestType == "DASS21" ? "Depression & Anxiety" : "General Wellbeing")),
             Purpose = !string.IsNullOrWhiteSpace(test.Purpose) ? test.Purpose : (test.TestType == "PHQ9" ? "Depression Screening" : (test.TestType == "DASS21" ? "Depression, Anxiety & Stress" : "Psychological Assessment")),
+            SourceUrl = !string.IsNullOrWhiteSpace(test.SourceUrl) ? test.SourceUrl : (test.TestType == "DASS21" || test.Title.Contains("DASS") ? "http://www2.psy.unsw.edu.au/dass/" : null),
             DoctorId = test.DoctorId,
             DoctorName = doctorName,
             ScoreRangesJson = test.ScoreRangesJson,
@@ -146,6 +157,7 @@ public class PsychometricService : IPsychometricService
             TestType = dto.TestType.Trim().ToUpper(),
             Category = !string.IsNullOrWhiteSpace(dto.Category) ? dto.Category.Trim() : "General Wellbeing",
             Purpose = dto.Purpose?.Trim(),
+            SourceUrl = !string.IsNullOrWhiteSpace(dto.SourceUrl) ? dto.SourceUrl.Trim() : (dto.TestType.Trim().ToUpper() == "DASS21" || dto.Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null),
             DoctorId = dto.DoctorId,
             ScoreRangesJson = dto.ScoreRangesJson ?? "[]"
         };
@@ -192,6 +204,7 @@ public class PsychometricService : IPsychometricService
             TestType = test.TestType,
             Category = test.Category,
             Purpose = test.Purpose,
+            SourceUrl = test.SourceUrl,
             DoctorId = test.DoctorId,
             CreatedAt = test.CreatedAt,
             QuestionCount = dto.Questions.Count(q => !string.IsNullOrWhiteSpace(q.QuestionText)),
@@ -219,11 +232,61 @@ public class PsychometricService : IPsychometricService
         return await CreateTestAsync(dto, ct);
     }
 
-    public async Task<ApiResponse<PsychometricTestDto>> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto, CancellationToken ct = default)
+    public async Task<ApiResponse<PsychometricTestDto>> CloneCustomTestAsync(
+        Guid sourceTestId,
+        UpdatePsychometricTestDto dto,
+        Guid doctorUserId,
+        CancellationToken ct = default)
+    {
+        var source = await _testRepo.GetByIdAsync(sourceTestId, ct);
+        if (source == null || source.IsDeleted || !source.IsActive)
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("Assessment template not found.");
+
+        if (source.DoctorId.HasValue && source.DoctorId.Value != doctorUserId)
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("You cannot customize another doctor's assessment template.");
+
+        var createDto = new CreatePsychometricTestDto
+        {
+            Title = dto.Title,
+            Description = dto.Description,
+            TestType = string.IsNullOrWhiteSpace(dto.TestType) || !dto.TestType.StartsWith("CUSTOM", StringComparison.OrdinalIgnoreCase)
+                ? "CUSTOM_" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()
+                : dto.TestType,
+            Category = dto.Category,
+            Purpose = dto.Purpose,
+            SourceUrl = dto.SourceUrl ?? source.SourceUrl,
+            DoctorId = doctorUserId,
+            ScoreRangesJson = dto.ScoreRangesJson ?? source.ScoreRangesJson ?? "[]",
+            Questions = dto.Questions
+        };
+
+        return await CreateCustomTestAsync(createDto, doctorUserId, ct);
+    }
+
+    public async Task<ApiResponse<PsychometricTestDto>> UpdateTestAsync(
+        Guid id,
+        UpdatePsychometricTestDto dto,
+        Guid requestingUserId,
+        bool canManageSystemTemplates = false,
+        CancellationToken ct = default)
     {
         var test = await _testRepo.GetByIdAsync(id, ct);
         if (test == null || test.IsDeleted)
             return ApiResponse<PsychometricTestDto>.ErrorResponse("Psychometric test not found.");
+
+        if (test.DoctorId.HasValue)
+        {
+            if (test.DoctorId.Value != requestingUserId)
+                return ApiResponse<PsychometricTestDto>.ErrorResponse("You can only edit your own custom assessments.");
+        }
+        else if (!canManageSystemTemplates)
+        {
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("System templates are read-only. Create a private customized copy instead.");
+        }
+
+        var hasSubmissions = (await _submissionRepo.GetAllAsync(ct)).Any(s => s.TestId == id && !s.IsDeleted);
+        if (hasSubmissions)
+            return ApiResponse<PsychometricTestDto>.ErrorResponse("This assessment has patient submissions and is immutable. Create a new private version instead.");
 
         if (string.IsNullOrWhiteSpace(dto.Title))
             return ApiResponse<PsychometricTestDto>.ErrorResponse("Test title is required.");
@@ -233,6 +296,7 @@ public class PsychometricService : IPsychometricService
         test.TestType = dto.TestType.Trim().ToUpper();
         test.Category = dto.Category?.Trim();
         test.Purpose = dto.Purpose?.Trim();
+        test.SourceUrl = !string.IsNullOrWhiteSpace(dto.SourceUrl) ? dto.SourceUrl.Trim() : (dto.TestType.Trim().ToUpper() == "DASS21" || dto.Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null);
         test.ScoreRangesJson = dto.ScoreRangesJson;
 
         await _uow.BeginTransactionAsync(ct);
@@ -292,11 +356,28 @@ public class PsychometricService : IPsychometricService
         return ApiResponse<PsychometricTestDto>.SuccessResponse(resultDto);
     }
 
-    public async Task<ApiResponse<bool>> DeleteTestAsync(Guid id, CancellationToken ct = default)
+    public async Task<ApiResponse<bool>> DeleteTestAsync(
+        Guid id,
+        Guid requestingUserId,
+        bool canManageSystemTemplates = false,
+        CancellationToken ct = default)
     {
         var test = await _testRepo.GetByIdAsync(id, ct);
         if (test == null || test.IsDeleted)
             return ApiResponse<bool>.ErrorResponse("Psychometric test not found.");
+
+        if (test.DoctorId.HasValue)
+        {
+            if (test.DoctorId.Value != requestingUserId)
+                return ApiResponse<bool>.ErrorResponse("You can only delete your own custom assessments.");
+        }
+        else if (!canManageSystemTemplates)
+        {
+            return ApiResponse<bool>.ErrorResponse("System templates cannot be deleted by doctors.");
+        }
+
+        if ((await _submissionRepo.GetAllAsync(ct)).Any(s => s.TestId == id && !s.IsDeleted))
+            return ApiResponse<bool>.ErrorResponse("This assessment has patient submissions and cannot be deleted. Deactivate or create a new version instead.");
 
         test.IsDeleted = true;
         _testRepo.Update(test);
@@ -313,8 +394,17 @@ public class PsychometricService : IPsychometricService
         return ApiResponse<bool>.SuccessResponse(true, "Test deleted successfully.");
     }
 
-    public async Task<ApiResponse<List<PsychometricQuestionDto>>> GetQuestionsAsync(Guid testId, CancellationToken ct = default)
+    public async Task<ApiResponse<List<PsychometricQuestionDto>>> GetQuestionsAsync(
+        Guid testId,
+        Guid? requestingUserId = null,
+        bool canManageSystemTemplates = false,
+        CancellationToken ct = default)
     {
+        var test = await _testRepo.GetByIdAsync(testId, ct);
+        if (test == null || test.IsDeleted ||
+            !await CanAccessTestAsync(test, requestingUserId, canManageSystemTemplates, ct))
+            return ApiResponse<List<PsychometricQuestionDto>>.ErrorResponse("Assessment questions are not available.");
+
         var questions = await _questionRepo.GetAllAsync(ct);
         var filtered = questions
             .Where(q => q.TestId == testId && !q.IsDeleted)
@@ -333,16 +423,64 @@ public class PsychometricService : IPsychometricService
         return ApiResponse<List<PsychometricQuestionDto>>.SuccessResponse(filtered);
     }
 
+    private async Task<bool> CanAccessTestAsync(
+        PsychometricTest test,
+        Guid? requestingUserId,
+        bool canManageSystemTemplates,
+        CancellationToken ct)
+    {
+        // System templates are the shared, read-only assessment library.
+        if (!test.DoctorId.HasValue)
+            return true;
+
+        if (!requestingUserId.HasValue)
+            return false;
+
+        // A private template is visible to its creator only. Manager permissions apply
+        // to system templates and must not expose one doctor's clinical content to another.
+        if (test.DoctorId.Value == requestingUserId.Value)
+            return true;
+
+        var patients = await _patientRepo.GetAllAsync(ct);
+        var patient = patients.FirstOrDefault(p =>
+            !p.IsDeleted && p.UserId == requestingUserId.Value);
+        if (patient == null)
+            return false;
+
+        // Patients may read the exact private assessment that was assigned to them.
+        var submissions = await _submissionRepo.GetAllAsync(ct);
+        return submissions.Any(s =>
+            !s.IsDeleted &&
+            s.TestId == test.Id &&
+            s.PatientId == patient.Id);
+    }
+
     public async Task<ApiResponse<PsychometricSubmissionDto>> AssignAssessmentAsync(AssignAssessmentDto dto, Guid doctorUserId, CancellationToken ct = default)
     {
         var test = await _testRepo.GetByIdAsync(dto.TestId, ct);
         if (test == null || test.IsDeleted)
             return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("Assessment template not found.");
 
+        if (test.DoctorId.HasValue && test.DoctorId.Value != doctorUserId)
+            return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("You can only assign system templates or your own custom assessments.");
+
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.Id == dto.PatientId || p.UserId == dto.PatientId);
         if (patient == null)
             return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("Patient not found.");
+
+        if (dto.TreatmentCaseId.HasValue && _caseRepo != null)
+        {
+            var treatmentCase = await _caseRepo.GetByIdAsync(dto.TreatmentCaseId.Value, ct);
+            if (treatmentCase == null || treatmentCase.IsDeleted)
+                return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("Treatment case not found.");
+
+            if (treatmentCase.Status is not (OPCBS.Domain.Enums.TreatmentCaseStatus.Active or OPCBS.Domain.Enums.TreatmentCaseStatus.OnHold) ||
+                (treatmentCase.ExpectedEndDate.HasValue && treatmentCase.ExpectedEndDate.Value < DateTime.UtcNow))
+            {
+                return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("This treatment program is no longer active. Historical information remains available in read-only mode.");
+            }
+        }
 
         var submission = new PsychometricSubmission
         {
@@ -414,6 +552,32 @@ public class PsychometricService : IPsychometricService
         var test = await _testRepo.GetByIdAsync(dto.TestId, ct);
         if (test == null || test.IsDeleted)
             return ApiResponse<PsychometricSubmissionDto>.ErrorResponse("Không tìm thấy bài trắc nghiệm.");
+
+        PsychometricSubmission? assignedSubmission = null;
+        if (dto.SubmissionId.HasValue)
+        {
+            assignedSubmission = await _submissionRepo.GetByIdAsync(dto.SubmissionId.Value, ct);
+            if (assignedSubmission == null ||
+                assignedSubmission.IsDeleted ||
+                assignedSubmission.PatientId != patient.Id ||
+                assignedSubmission.TestId != dto.TestId)
+            {
+                return ApiResponse<PsychometricSubmissionDto>.ErrorResponse(
+                    "This assessment assignment is invalid or does not belong to the current patient.");
+            }
+
+            if (string.Equals(assignedSubmission.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return ApiResponse<PsychometricSubmissionDto>.ErrorResponse(
+                    "This assigned assessment has already been completed.");
+            }
+        }
+
+        if (test.DoctorId.HasValue && assignedSubmission == null)
+        {
+            return ApiResponse<PsychometricSubmissionDto>.ErrorResponse(
+                "This private assessment can only be completed through a valid doctor assignment.");
+        }
 
         var questions = (await _questionRepo.GetAllAsync(ct)).Where(q => q.TestId == dto.TestId && !q.IsDeleted).ToList();
         if (dto.Answers == null || dto.Answers.Count != questions.Count)
@@ -500,37 +664,16 @@ public class PsychometricService : IPsychometricService
 
         // If patient is completing an existing assigned assessment
         PsychometricSubmission submission;
-        if (dto.SubmissionId.HasValue)
+        if (assignedSubmission != null)
         {
-            var existingSub = await _submissionRepo.GetByIdAsync(dto.SubmissionId.Value, ct);
-            if (existingSub != null && existingSub.PatientId == patient.Id)
-            {
-                existingSub.TotalScore = totalScore;
-                existingSub.ScoreDataJson = scoreDataJson;
-                existingSub.Interpretation = interpretation;
-                existingSub.Status = "Completed";
-                existingSub.AppointmentId = dto.AppointmentId ?? existingSub.AppointmentId;
-                existingSub.TreatmentCaseId = dto.TreatmentCaseId ?? existingSub.TreatmentCaseId;
-                _submissionRepo.Update(existingSub);
-                submission = existingSub;
-            }
-            else
-            {
-                submission = new PsychometricSubmission
-                {
-                    TestId = dto.TestId,
-                    PatientId = patient.Id,
-                    AppointmentId = dto.AppointmentId,
-                    TreatmentCaseId = dto.TreatmentCaseId,
-                    TotalScore = totalScore,
-                    ScoreDataJson = scoreDataJson,
-                    Interpretation = interpretation,
-                    Status = "Completed",
-                    Test = test,
-                    Patient = patient
-                };
-                await _submissionRepo.AddAsync(submission, ct);
-            }
+            assignedSubmission.TotalScore = totalScore;
+            assignedSubmission.ScoreDataJson = scoreDataJson;
+            assignedSubmission.Interpretation = interpretation;
+            assignedSubmission.Status = "Completed";
+            assignedSubmission.AppointmentId = dto.AppointmentId ?? assignedSubmission.AppointmentId;
+            assignedSubmission.TreatmentCaseId = dto.TreatmentCaseId ?? assignedSubmission.TreatmentCaseId;
+            _submissionRepo.Update(assignedSubmission);
+            submission = assignedSubmission;
         }
         else
         {
@@ -629,7 +772,14 @@ public class PsychometricService : IPsychometricService
 
         // Fetch question answers
         var answers = (await _answerRepo.GetAllAsync(ct)).Where(a => a.SubmissionId == submissionId && !a.IsDeleted).ToList();
-        var questions = (await _questionRepo.GetAllAsync(ct)).Where(q => q.TestId == submission.TestId && !q.IsDeleted).ToDictionary(q => q.Id, q => q);
+        // Historical answers can reference questions that were soft-deleted when a test
+        // template was edited. Keep those questions available for immutable reports.
+        var testQuestions = (await _questionRepo.GetAllAsync(ct))
+            .Where(q => q.TestId == submission.TestId)
+            .ToList();
+        var questions = testQuestions
+            .GroupBy(q => q.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var answerDetails = answers.Select(a =>
         {
@@ -652,7 +802,13 @@ public class PsychometricService : IPsychometricService
             if (test.TestType == "PHQ9") { maxScore = 27; severity = GetPhq9Severity(submission.TotalScore); }
             else if (test.TestType == "GAD7") { maxScore = 21; severity = GetGad7Severity(submission.TotalScore); }
             else if (test.TestType == "DASS21") { maxScore = 126; severity = GetDassDepressionInterpretation(submission.TotalScore / 3); }
-            else { maxScore = (questions.Count > 0 ? questions.Count : 5) * 5; severity = GetGenericSeverity(submission.TotalScore, maxScore); }
+            else
+            {
+                var activeQuestionCount = testQuestions.Count(q => !q.IsDeleted);
+                var reportQuestionCount = answerDetails.Count > 0 ? answerDetails.Count : activeQuestionCount;
+                maxScore = (reportQuestionCount > 0 ? reportQuestionCount : 5) * 5;
+                severity = GetGenericSeverity(submission.TotalScore, maxScore);
+            }
         }
 
         var dto = new PsychometricSubmissionDto
@@ -942,7 +1098,9 @@ public class PsychometricService : IPsychometricService
     public async Task<ApiResponse<DoctorAssessmentsOverviewDto>> GetDoctorAssessmentsOverviewAsync(Guid doctorUserId, CancellationToken ct = default)
     {
         var allSubs = await _submissionRepo.GetAllAsync(ct);
-        var activeSubs = allSubs.Where(s => !s.IsDeleted).ToList();
+        var activeSubs = allSubs
+            .Where(s => !s.IsDeleted && s.AssignedByDoctorId == doctorUserId)
+            .ToList();
 
         var tests = await _testRepo.GetAllAsync(ct);
         var activeTests = tests.Where(t => !t.IsDeleted && t.IsActive).ToList();
@@ -1011,6 +1169,7 @@ public class PsychometricService : IPsychometricService
             TestType = t.TestType,
             Category = !string.IsNullOrWhiteSpace(t.Category) ? t.Category : (t.TestType == "PHQ9" ? "Depression" : (t.TestType == "GAD7" ? "Anxiety" : "General Wellbeing")),
             Purpose = !string.IsNullOrWhiteSpace(t.Purpose) ? t.Purpose : (t.TestType == "PHQ9" ? "Depression Screening" : (t.TestType == "GAD7" ? "Anxiety Screening" : "General Assessment")),
+            SourceUrl = !string.IsNullOrWhiteSpace(t.SourceUrl) ? t.SourceUrl : (t.TestType == "DASS21" || t.Title.Contains("DASS") ? "http://www2.psy.unsw.edu.au/dass/" : null),
             DoctorId = null,
             ScoreRangesJson = t.ScoreRangesJson,
             IsActive = t.IsActive,
@@ -1027,6 +1186,7 @@ public class PsychometricService : IPsychometricService
             TestType = t.TestType,
             Category = t.Category ?? "Custom Assessment",
             Purpose = t.Purpose ?? "Doctor Check-in",
+            SourceUrl = !string.IsNullOrWhiteSpace(t.SourceUrl) ? t.SourceUrl : (t.TestType == "DASS21" || t.Title.Contains("DASS") ? "http://www2.psy.unsw.edu.au/dass/" : null),
             DoctorId = t.DoctorId,
             DoctorName = userDict.TryGetValue(doctorUserId, out var docU) ? docU.FullName : "Doctor",
             ScoreRangesJson = t.ScoreRangesJson,

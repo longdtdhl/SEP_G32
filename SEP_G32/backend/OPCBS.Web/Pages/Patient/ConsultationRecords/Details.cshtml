@@ -284,7 +284,7 @@
                     <div class="mt-1">
                         @if (r.AppointmentId.HasValue)
                         {
-                            <a href="/Patient/Appointments/Details/@r.AppointmentId.Value" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.78rem;">
+                            <a asp-page="/Patient/Appointments/Details" asp-route-id="@r.AppointmentId.Value" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.78rem;">
                                 <i class="bi bi-box-arrow-up-right me-1"></i>View Appointment
                             </a>
                         }
@@ -427,7 +427,7 @@
                 </h5>
                 @if (tc != null)
                 {
-                    <a href="/Patient/TreatmentCases/Details/@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:8px; font-size:0.78rem;">
+                    <a asp-page="/Patient/TreatmentCases/Details" asp-route-id="@tc.Id" class="btn btn-sm btn-outline-primary" style="border-radius:8px; font-size:0.78rem;">
                         <i class="bi bi-eye me-1"></i>View Treatment Case
                     </a>
                 }
@@ -539,7 +539,7 @@
                                 @(r.FollowUpAppointmentBookingCode ?? "OPCBS-FOLLOWUP")
                             </div>
                             <p class="text-muted small mb-3">Your follow-up appointment has been scheduled by your doctor. You can view full details or manage the appointment below.</p>
-                            <a href="/Patient/Appointments/Details/@r.FollowUpAppointmentId" class="btn btn-primary fw-bold px-4 py-2.5 w-100 shadow-sm" style="border-radius:10px; background:var(--mb-primary-teal); border-color:var(--mb-primary-teal);">
+                            <a asp-page="/Patient/Appointments/Details" asp-route-id="@r.FollowUpAppointmentId" class="btn btn-primary fw-bold px-4 py-2.5 w-100 shadow-sm" style="border-radius:10px; background:var(--mb-primary-teal); border-color:var(--mb-primary-teal);">
                                 <i class="bi bi-calendar2-check me-1.5"></i>View Follow-up Appointment Details
                             </a>
                         </div>
@@ -604,7 +604,7 @@
                         </div>
                         @if (Model.TreatmentCase != null)
                         {
-                            <a href="/Patient/TreatmentCases/Details/@Model.TreatmentCase.Id" class="btn btn-sm btn-primary flex-shrink-0 px-3 py-2" style="background:var(--mb-primary-teal); border-color:var(--mb-primary-teal); border-radius:8px;">
+                            <a asp-page="/Patient/TreatmentCases/Details" asp-route-id="@Model.TreatmentCase.Id" class="btn btn-sm btn-primary flex-shrink-0 px-3 py-2" style="background:var(--mb-primary-teal); border-color:var(--mb-primary-teal); border-radius:8px;">
                                 <i class="bi bi-journal-medical me-1"></i>View Treatment Plan
                             </a>
                         }

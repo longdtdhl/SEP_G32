@@ -121,12 +121,17 @@ public class AssignModel : PageModel
 
     private async Task LoadFormDataAsync()
     {
-        var testsTask = _psychApi.GetTestsAsync();
+        var testsTask = _psychApi.GetDoctorOverviewAsync();
         var casesTask = _treatmentCaseApi.GetMyDoctorCasesAsync();
 
         await Task.WhenAll(testsTask, casesTask);
 
-        AvailableTests = (testsTask.Result.Data ?? new()).Where(t => t.IsActive).OrderBy(t => t.Title).ToList();
+        var overview = testsTask.Result.Data;
+        AvailableTests = (overview?.SystemTemplates ?? new())
+            .Concat(overview?.MyAssessments ?? new())
+            .Where(t => t.IsActive)
+            .OrderBy(t => t.Title)
+            .ToList();
         DoctorCases = casesTask.Result.Data ?? new();
 
         var patientMap = new Dictionary<Guid, PatientOption>();

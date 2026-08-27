@@ -62,22 +62,15 @@ public class IndexModel : PageModel
         if (error != null || data == null)
         {
             var (tests, _) = await _psychApi.GetTestsAsync();
-            var (subs, _) = await _psychApi.GetAllSubmissionsAsync();
-
             var sys = (tests ?? new()).Where(t => t.IsSystemTemplate).ToList();
-            var my = (tests ?? new()).Where(t => !t.IsSystemTemplate).ToList();
-            var recent = (subs ?? new()).Take(15).ToList();
 
             Overview = new DoctorAssessmentsOverviewDto
             {
-                TotalAssigned = recent.Count(s => s.Status == "Assigned"),
-                TotalCompleted = recent.Count(s => s.Status == "Completed"),
-                TotalPending = recent.Count(s => s.Status == "Assigned" || s.Status == "InProgress"),
-                PatientsAssessedCount = recent.Where(s => s.Status == "Completed").Select(s => s.PatientId).Distinct().Count(),
-                RecentAssessments = recent,
+                RecentAssessments = new(),
                 SystemTemplates = sys,
-                MyAssessments = my
+                MyAssessments = new()
             };
+            ErrorMessage ??= error ?? "Your private assessment library could not be loaded.";
         }
         else
         {
@@ -189,6 +182,7 @@ public class IndexModel : PageModel
             Purpose = payload.Purpose?.Trim(),
             Category = payload.Category?.Trim() ?? "General",
             TestType = string.IsNullOrWhiteSpace(payload.TestType) ? "CUSTOM" : payload.TestType.Trim().ToUpper(),
+            SourceUrl = !string.IsNullOrWhiteSpace(payload.SourceUrl) ? payload.SourceUrl.Trim() : (payload.TestType?.Trim().ToUpper() == "DASS21" || payload.Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null),
             Questions = validQuestions.Select((q, idx) => new CreatePsychometricQuestionDto
             {
                 QuestionNumber = idx + 1,
@@ -198,6 +192,22 @@ public class IndexModel : PageModel
                 OptionsJson = q.OptionsJson
             }).ToList()
         };
+
+        if (payload.CreateCopy)
+        {
+            var (copy, copyError) = await _psychApi.CloneCustomTestAsync(payload.TestId, dto);
+            if (copy == null || copyError != null)
+            {
+                return new JsonResult(new { success = false, message = copyError ?? "Failed to create a private assessment copy." });
+            }
+
+            return new JsonResult(new
+            {
+                success = true,
+                message = "Private assessment copy created successfully.",
+                data = copy
+            });
+        }
 
         var (success, error) = await _psychApi.UpdateTestAsync(payload.TestId, dto);
         if (!success)
@@ -216,6 +226,8 @@ public class IndexModel : PageModel
         public string? Purpose { get; set; }
         public string? Category { get; set; }
         public string? TestType { get; set; }
+        public string? SourceUrl { get; set; }
+        public bool CreateCopy { get; set; }
         public List<UpdateQuestionItem>? Questions { get; set; }
     }
 

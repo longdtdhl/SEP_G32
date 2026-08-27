@@ -219,8 +219,14 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h5 class="fw-bold mb-0 text-dark" style="font-size:1rem;">
-                        <i class="bi bi-pencil-square me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>Record Daily Journal
+                        <i class="bi bi-pencil-square me-2 text-teal" style="color:var(--mb-primary, #0d9488);"></i>@(Model.HasTodayEntry ? "Update Today's Journal" : "Record Daily Journal")
                     </h5>
+                    @if (Model.HasTodayEntry)
+                    {
+                        <span class="badge rounded-pill" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.72rem;">
+                            <i class="bi bi-check-circle me-1"></i>Logged today
+                        </span>
+                    }
                 </div>
                 <form method="post">
                     <!-- Title -->
@@ -322,7 +328,7 @@
                     </div>
 
                     <button type="submit" class="btn text-white w-100 py-2.5 fw-semibold" style="border-radius:10px; background:var(--mb-primary, #0d9488); font-size:0.9rem;">
-                        <i class="bi bi-journal-plus me-1.5"></i>Save Journal Entry
+                        <i class="bi bi-journal-plus me-1.5"></i>@(Model.HasTodayEntry ? "Update Today's Entry" : "Save Today's Entry")
                     </button>
                 </form>
             </div>
@@ -487,5 +493,18 @@
             document.getElementById('depressionLabelText').textContent = text;
             document.getElementById('depressionLabelText').style.color = '#6366f1';
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const mood = Number(document.getElementById('moodInput')?.value || 0);
+            const stress = Number(document.getElementById('stressInput')?.value || 0);
+            const depression = Number(document.getElementById('depressionInput')?.value || 0);
+            const moodLabels = ['', 'Very Bad (1/5)', 'Bad (2/5)', 'Neutral (3/5)', 'Good (4/5)', 'Great (5/5)'];
+            const stressLabels = ['', 'Very Low (1/5)', 'Low (2/5)', 'Moderate (3/5)', 'High (4/5)', 'Extreme (5/5)'];
+            const depressionLabels = ['', 'Very Low (1/5)', 'Low (2/5)', 'Moderate (3/5)', 'High (4/5)', 'Extreme (5/5)'];
+
+            if (mood >= 1 && mood <= 5) selectMood(mood, moodLabels[mood]);
+            if (stress >= 1 && stress <= 5) selectStress(stress, stressLabels[stress]);
+            if (depression >= 1 && depression <= 5) selectDepression(depression, depressionLabels[depression]);
+        });
     </script>
 }

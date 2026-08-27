@@ -25,6 +25,7 @@ public class AppointmentServiceTests
     private readonly Mock<IRepository<DoctorSubscription>> _subscriptionRepo;
     private readonly Mock<IRepository<TreatmentPackage>> _packageRepoMock;
     private readonly Mock<IRepository<ConsultationNote>> _consultationNoteRepoMock;
+    private readonly Mock<IRepository<PatientRecord>> _patientRecordRepoMock;
     private readonly Mock<IRepository<AppointmentCompletionConfirmation>> _completionConfirmationRepo;
     private readonly Mock<IViolationReportService> _violationReportServiceMock;
     private readonly Mock<IUnitOfWork> _uow;
@@ -56,6 +57,7 @@ public class AppointmentServiceTests
         _subscriptionRepo = new Mock<IRepository<DoctorSubscription>>();
         _packageRepoMock = new Mock<IRepository<TreatmentPackage>>();
         _consultationNoteRepoMock = new Mock<IRepository<ConsultationNote>>();
+        _patientRecordRepoMock = new Mock<IRepository<PatientRecord>>();
         _completionConfirmationRepo = new Mock<IRepository<AppointmentCompletionConfirmation>>();
         _completionConfirmationRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentCompletionConfirmation>());
         _violationReportServiceMock = new Mock<IViolationReportService>();
@@ -93,6 +95,7 @@ public class AppointmentServiceTests
             _emailServiceMock.Object,
             _uow.Object,
             _mapperMock.Object,
+            patientRecordRepo: _patientRecordRepoMock.Object,
             completionConfirmationRepo: _completionConfirmationRepo.Object,
             violationReports: _violationReportServiceMock.Object);
     }
@@ -540,7 +543,7 @@ public class AppointmentServiceTests
         // Arrange
         _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PatientProfile> { CreatePatient() });
-        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        var appointment = CreateAppointment(AppointmentStatus.InProgress);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
@@ -581,6 +584,40 @@ public class AppointmentServiceTests
         // Assert
         Assert.True(result.Success);
         Assert.Equal(AppointmentStatus.Completed, appointment.Status);
+    }
+
+    [Fact]
+    public async Task CompleteAppointment_ApprovedWithoutStarting_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.Approved);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(appointment);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { CreateDoctor() });
+
+        var result = await _sut.CompleteAppointmentAsync(_appointmentId, _doctorUserId);
+
+        Assert.False(result.Success);
+        Assert.Equal(AppointmentStatus.Approved, appointment.Status);
+        Assert.Contains("in-progress", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CompleteAppointment_InProgressWithoutConsultationNote_Fails()
+    {
+        var appointment = CreateAppointment(AppointmentStatus.InProgress);
+        _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(appointment);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { CreateDoctor() });
+        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ConsultationNote>());
+
+        var result = await _sut.CompleteAppointmentAsync(_appointmentId, _doctorUserId);
+
+        Assert.False(result.Success);
+        Assert.Equal(AppointmentStatus.InProgress, appointment.Status);
+        Assert.Contains("consultation note", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
   
@@ -1024,11 +1061,13 @@ public class AppointmentServiceTests
         var doc = CreateDoctor();
         var pRec = new PatientRecord { Id = Guid.NewGuid(), DoctorId = _doctorProfileId, PatientId = _patientProfileId, Doctor = doc };
 
-        var currentNote = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = _appointmentId, ConsultationSummary = "Current Note", CreatedAt = DateTime.UtcNow, Doctor = doc, PatientRecord = pRec };
-        var pastNote1 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), ConsultationSummary = "Past Note 1", CreatedAt = DateTime.UtcNow.AddDays(-5), Doctor = doc, PatientRecord = pRec };
-        var pastNote2 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), ConsultationSummary = "Past Note 2", CreatedAt = DateTime.UtcNow.AddDays(-10), Doctor = doc, PatientRecord = pRec };
+        var currentNote = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = _appointmentId, DoctorId = _doctorProfileId, PatientRecordId = pRec.Id, ConsultationSummary = "Current Note", CreatedAt = DateTime.UtcNow, Doctor = doc, PatientRecord = pRec };
+        var pastNote1 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), DoctorId = _doctorProfileId, PatientRecordId = pRec.Id, ConsultationSummary = "Past Note 1", CreatedAt = DateTime.UtcNow.AddDays(-5), Doctor = doc, PatientRecord = pRec };
+        var pastNote2 = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), DoctorId = _doctorProfileId, PatientRecordId = pRec.Id, ConsultationSummary = "Past Note 2", CreatedAt = DateTime.UtcNow.AddDays(-10), Doctor = doc, PatientRecord = pRec };
+        var otherDoctorsNote = new ConsultationNote { Id = Guid.NewGuid(), AppointmentId = Guid.NewGuid(), DoctorId = Guid.NewGuid(), PatientRecordId = pRec.Id, ConsultationSummary = "Other doctor's private note", CreatedAt = DateTime.UtcNow.AddDays(-2), Doctor = doc, PatientRecord = pRec };
 
-        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { currentNote, pastNote1, pastNote2 });
+        _patientRecordRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientRecord> { pRec });
+        _consultationNoteRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { currentNote, pastNote1, pastNote2, otherDoctorsNote });
 
         var result = await _sut.GetClinicalContextAsync(_appointmentId, _doctorUserId);
 
@@ -1036,6 +1075,7 @@ public class AppointmentServiceTests
         Assert.NotNull(result.Data);
         Assert.Equal(2, result.Data.RecentConsultations.Count);
         Assert.DoesNotContain(result.Data.RecentConsultations, n => n.AppointmentId == _appointmentId);
+        Assert.DoesNotContain(result.Data.RecentConsultations, n => n.Id == otherDoctorsNote.Id);
     }
 
     [Fact]

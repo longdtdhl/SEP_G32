@@ -251,6 +251,7 @@ public class TherapyServicesTests
         var patient = new PatientProfile { Id = patientId, UserId = userId, User = pUser };
         _mockPatientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
         _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(pUser);
+        _mockJournalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionJournal>());
 
         var journals = new List<EmotionJournal>
         {
@@ -311,6 +312,7 @@ public class TherapyServicesTests
 
         _mockPatientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
         _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(pUser);
+        _mockJournalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionJournal>());
 
         var dto = new CreateJournalDto
         {
@@ -328,6 +330,34 @@ public class TherapyServicesTests
         Assert.Equal(4, result.Data.MoodScale);
         _mockJournalRepo.Verify(r => r.AddAsync(It.IsAny<EmotionJournal>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockUow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Journal_CreateAsync_ExistingToday_UpdatesInsteadOfCreatingDuplicate()
+    {
+        var userId = Guid.NewGuid();
+        var patientId = Guid.NewGuid();
+        var pUser = new User { Id = userId, Email = "p@test.com", PasswordHash = "h", FullName = "Patient", PhoneNumber = "123", Role = new Role { Name = "Patient" } };
+        var patient = new PatientProfile { Id = patientId, UserId = userId, User = pUser };
+        var existing = new EmotionJournal
+        {
+            Id = Guid.NewGuid(), PatientId = patientId, Patient = patient, Title = "Morning",
+            MoodScale = 2, StressScale = 4, CreatedAt = DateTime.UtcNow.AddHours(-1)
+        };
+
+        _mockPatientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(pUser);
+        _mockJournalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionJournal> { existing });
+
+        var dto = new CreateJournalDto { Title = "Evening", MoodScale = 4, StressScale = 2, IsShared = true };
+        var result = await _journalService.CreateAsync(dto, userId, CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal("Evening", existing.Title);
+        Assert.Equal(4, existing.MoodScale);
+        Assert.Equal("You have updated today's mood.", result.Message);
+        _mockJournalRepo.Verify(r => r.Update(existing), Times.Once);
+        _mockJournalRepo.Verify(r => r.AddAsync(It.IsAny<EmotionJournal>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

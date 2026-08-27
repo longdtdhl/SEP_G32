@@ -150,6 +150,16 @@
                         <span class="text-muted">Type Code:</span>
                         <span class="fw-bold text-primary">@Model.Test.TestType</span>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Test.SourceUrl))
+                    {
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light">
+                            <span class="text-muted">Clinical Source:</span>
+                            <a href="@Model.Test.SourceUrl" target="_blank" rel="noopener noreferrer" class="fw-semibold text-primary d-inline-flex align-items-center gap-1 text-truncate" style="max-width:170px;">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                <span>@(Model.Test.SourceUrl.Contains("psy.unsw.edu.au") ? "psy.unsw.edu.au" : "Source Link")</span>
+                            </a>
+                        </div>
+                    }
                     <div class="d-flex justify-content-between p-2 rounded bg-light">
                         <span class="text-muted">Date Created:</span>
                         <span class="text-dark">@(Model.Test.CreatedAt != default ? Model.Test.CreatedAt.ToString("MMM dd, yyyy") : "Default")</span>

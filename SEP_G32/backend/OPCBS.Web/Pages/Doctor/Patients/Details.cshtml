@@ -650,10 +650,11 @@ else
                         </div>
                     </div>
 
-                    <!-- Clinical Summary -->
+                    <!-- Pre-Appointment Clinical Evaluation (Patient Intake) -->
                     <div class="pd-card">
-                        <div class="pd-card-head">
-                            <h6 class="pd-card-title"><i class="bi bi-heart-pulse-fill me-2" style="color:#dc2626;"></i>Clinical Summary</h6>
+                        <div class="pd-card-head d-flex justify-content-between align-items-center">
+                            <h6 class="pd-card-title mb-0"><i class="bi bi-clipboard2-pulse me-2" style="color:#0d9488;"></i>Pre-Appointment Clinical Evaluation</h6>
+                            <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size:0.7rem; font-weight:500;">Patient Intake</span>
                         </div>
                         <div class="pd-card-body">
                             <div class="pd-info-row">
@@ -669,7 +670,7 @@ else
                                 <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
                             </div>
                             <div class="pd-info-row">
-                                <div class="pd-info-lbl">Doctor General Notes</div>
+                                <div class="pd-info-lbl">General Notes / Observations</div>
                                 <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.GeneralNotes) ? "None" : Model.PatientRecord.GeneralNotes)</div>
                             </div>
                         </div>
@@ -955,9 +956,11 @@ else
         <div class="tab-pane fade @(Model.ActiveTab == "clinical" ? "show active" : "")" id="pane-clinical" role="tabpanel">
             <div class="row g-3">
                 <div class="col-lg-5">
+                    <!-- Pre-Appointment Clinical Evaluation (Patient Intake) -->
                     <div class="pd-card">
-                        <div class="pd-card-head">
-                            <h6 class="pd-card-title"><i class="bi bi-heart-pulse-fill me-2" style="color:#dc2626;"></i>Detailed Clinical Notes</h6>
+                        <div class="pd-card-head d-flex justify-content-between align-items-center">
+                            <h6 class="pd-card-title mb-0"><i class="bi bi-clipboard2-pulse me-2" style="color:#0d9488;"></i>Pre-Appointment Clinical Evaluation</h6>
+                            <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size:0.7rem; font-weight:500;">Patient Intake</span>
                         </div>
                         <div class="pd-card-body">
                             <div class="pd-info-row">
@@ -973,7 +976,7 @@ else
                                 <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.StressFactors) ? "None recorded" : Model.PatientRecord.StressFactors)</div>
                             </div>
                             <div class="pd-info-row">
-                                <div class="pd-info-lbl">General Notes</div>
+                                <div class="pd-info-lbl">General Notes / Observations</div>
                                 <div class="pd-info-val" style="font-size:0.84rem; white-space:pre-line;">@(string.IsNullOrEmpty(Model.PatientRecord?.GeneralNotes) ? "None recorded" : Model.PatientRecord.GeneralNotes)</div>
                             </div>
                         </div>

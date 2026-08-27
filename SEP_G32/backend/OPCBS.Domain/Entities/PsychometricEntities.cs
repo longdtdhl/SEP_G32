@@ -19,6 +19,9 @@ public class PsychometricTest : BaseEntity
     /// <summary>Optional custom score ranges and interpretation JSON</summary>
     public string? ScoreRangesJson { get; set; }
     
+    /// <summary>Optional source URL / clinical reference (e.g. psy.unsw.edu.au)</summary>
+    public string? SourceUrl { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public virtual ICollection<PsychometricQuestion> Questions { get; set; } = new List<PsychometricQuestion>();

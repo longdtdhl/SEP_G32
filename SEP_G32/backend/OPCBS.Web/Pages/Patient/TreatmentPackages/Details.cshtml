@@ -110,12 +110,28 @@
         </div>
     }
 
-    <!-- Pending Banner -->
-    @if (isPending)
+    <!-- Acceptance Expired Banner -->
+    @if (isPending && pkg.IsAcceptanceExpired)
+    {
+        <div class="alert p-3 mb-4 rounded-3 d-flex align-items-start gap-3" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b;">
+            <div style="font-size:1.5rem; line-height:1;"><i class="bi bi-clock-history text-danger"></i></div>
+            <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1" style="color:#991b1b;">Proposal Expired</h6>
+                <p class="mb-0" style="font-size:0.875rem;">This treatment proposal reached its acceptance deadline@(pkg.AcceptanceExpiresAt.HasValue ? $" on {pkg.AcceptanceExpiresAt.Value:MMM dd, yyyy HH:mm}" : ""). Please contact your therapist if you wish to receive a new proposal.</p>
+            </div>
+        </div>
+    }
+    else if (isPending)
     {
         <div class="pd-pending-banner">
             <h5><i class="bi bi-bell-fill me-2"></i>Your Doctor Has Proposed a Treatment Plan</h5>
             <p>Review the details below, then accept to begin your treatment or decline if it doesn't feel right. You can always discuss changes with your doctor.</p>
+            @if (pkg.AcceptanceExpiresAt.HasValue)
+            {
+                <div class="mt-2 text-warning-emphasis fw-semibold" style="font-size:0.82rem;">
+                    <i class="bi bi-hourglass-split me-1"></i>Acceptance Deadline: @pkg.AcceptanceExpiresAt.Value.ToString("MMM dd, yyyy HH:mm")
+                </div>
+            }
         </div>
     }
 
@@ -270,11 +286,20 @@
                 <div class="pd-action-area">
                     @if (isPending)
                     {
-                        <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id" class="mb-2">
-                            <button type="submit" class="pd-accept-btn">
-                                <i class="bi bi-check-circle me-1"></i>Accept & Begin Treatment
+                        @if (!pkg.IsAcceptanceExpired)
+                        {
+                            <form method="post" asp-page-handler="Accept" asp-route-id="@pkg.Id" class="mb-2">
+                                <button type="submit" class="pd-accept-btn">
+                                    <i class="bi bi-check-circle me-1"></i>Accept & Begin Treatment
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="pd-accept-btn disabled mb-2" disabled style="opacity:0.5; cursor:not-allowed;">
+                                <i class="bi bi-clock-history me-1"></i>Proposal Expired
                             </button>
-                        </form>
+                        }
                         <button type="button" class="pd-decline-btn" data-bs-toggle="modal" data-bs-target="#rejectModal">
                             <i class="bi bi-x-circle me-1"></i>Decline Package
                         </button>

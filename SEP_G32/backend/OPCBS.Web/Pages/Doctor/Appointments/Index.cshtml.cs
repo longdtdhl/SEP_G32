@@ -32,6 +32,10 @@ public class IndexModel : PageModel
     public int TotalCount { get; set; }
     public Dictionary<Guid, PatientAttendanceStats> PatientAttendanceStatsMap { get; set; } = new();
 
+    public List<AppointmentListItemDto> UrgentPendingAppointments { get; set; } = new();
+    public string? OldestPendingWaitingTime { get; set; }
+    public DateTime? NearestPendingDeadlineUtc { get; set; }
+
     public async Task OnGetAsync()
     {
         // Build filter for Active appointments
@@ -53,11 +57,38 @@ public class IndexModel : PageModel
 
         // Load all active appointments for status counts
         var (allActive, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { View = "active", Page = 1, PageSize = 9999 });
-        PendingCount = allActive?.Count(a => a.Status == 0) ?? 0;
+        var pendingList = allActive?.Where(a => a.Status == 0).ToList() ?? new();
+        PendingCount = pendingList.Count;
         ApprovedCount = allActive?.Count(a => a.Status == 1) ?? 0;
         InProgressCount = allActive?.Count(a => a.Status == 3) ?? 0;
         RescheduleRequestedCount = allActive?.Count(a => a.Status == 6) ?? 0;
         TotalCount = allActive?.Count ?? 0;
+
+        if (PendingCount > 0)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var oldest = pendingList.OrderBy(a => a.CreatedAt).FirstOrDefault();
+            if (oldest != null && oldest.CreatedAt != default)
+            {
+                var waitingSpan = nowUtc - (oldest.CreatedAt.Kind == DateTimeKind.Utc ? oldest.CreatedAt : oldest.CreatedAt.ToUniversalTime());
+                if (waitingSpan.TotalHours >= 1)
+                {
+                    OldestPendingWaitingTime = $"Waiting for {(int)waitingSpan.TotalHours} hour{((int)waitingSpan.TotalHours > 1 ? "s" : "")}";
+                }
+                else
+                {
+                    OldestPendingWaitingTime = $"Waiting for {Math.Max(1, (int)waitingSpan.TotalMinutes)} minute{(Math.Max(1, (int)waitingSpan.TotalMinutes) > 1 ? "s" : "")}";
+                }
+            }
+
+            var nearest = pendingList.Where(a => a.DoctorResponseDeadlineUtc.HasValue).OrderBy(a => a.DoctorResponseDeadlineUtc).FirstOrDefault();
+            NearestPendingDeadlineUtc = nearest?.DoctorResponseDeadlineUtc;
+
+            UrgentPendingAppointments = pendingList
+                .OrderBy(a => a.DoctorResponseDeadlineUtc ?? DateTime.MaxValue)
+                .Take(3)
+                .ToList();
+        }
 
         var (allDoctorAppointments, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 9999 });
         PatientAttendanceStatsMap = (allDoctorAppointments ?? new())
@@ -74,9 +105,16 @@ public class IndexModel : PageModel
     }
 
     public PatientAttendanceStats? GetAttendanceStats(AppointmentListItemDto appointment)
-        => appointment.PatientId.HasValue && PatientAttendanceStatsMap.TryGetValue(appointment.PatientId.Value, out var stats)
+    {
+        if (appointment.PatientTotalTrackedAppointmentsCount > 0)
+        {
+            return new PatientAttendanceStats(appointment.PatientCompletedAppointmentsCount, appointment.PatientAbsentAppointmentsCount);
+        }
+
+        return appointment.PatientId.HasValue && PatientAttendanceStatsMap.TryGetValue(appointment.PatientId.Value, out var stats)
             ? stats
             : null;
+    }
 
     public async Task<IActionResult> OnPostConfirmAsync(Guid id)
     {

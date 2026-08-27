@@ -329,6 +329,73 @@ public class AppointmentAdvancedTests
     }
 
     [Fact]
+    public async Task StartAppointmentAsync_PreviousInProgressAppointment_BlocksAndIdentifiesPreviousBooking()
+    {
+        var doctorUserId = Guid.NewGuid();
+        var doctorProfileId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var patientUserId = Guid.NewGuid();
+        var currentSlotId = Guid.NewGuid();
+        var previousSlotId = Guid.NewGuid();
+        var nowVn = DateTime.UtcNow.AddHours(7);
+
+        var doctor = new DoctorProfile
+        {
+            Id = doctorProfileId,
+            UserId = doctorUserId,
+            User = new User { Email = "doctor@test.com", PasswordHash = "h", FullName = "Doctor", PhoneNumber = "2", Role = new Role { Name = "Doctor" } }
+        };
+        var patient = new PatientProfile
+        {
+            Id = patientProfileId,
+            UserId = patientUserId,
+            User = new User { Email = "patient@test.com", PasswordHash = "h", FullName = "Patient", PhoneNumber = "1", Role = new Role { Name = "Patient" } }
+        };
+        var currentSlot = new AppointmentSlot
+        {
+            Id = currentSlotId,
+            SlotDate = DateOnly.FromDateTime(nowVn),
+            StartTime = new TimeOnly(0, 0),
+            EndTime = new TimeOnly(23, 59),
+            DoctorProfile = doctor
+        };
+        var previousSlot = new AppointmentSlot
+        {
+            Id = previousSlotId,
+            SlotDate = DateOnly.FromDateTime(nowVn.AddDays(-1)),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            DoctorProfile = doctor
+        };
+        var current = new Appointment
+        {
+            Id = Guid.NewGuid(), BookingCode = "BK-CURRENT", DoctorId = doctorProfileId,
+            PatientId = patientProfileId, AppointmentSlotId = currentSlotId,
+            Status = AppointmentStatus.Approved, Doctor = doctor, AppointmentSlot = currentSlot
+        };
+        var previous = new Appointment
+        {
+            Id = Guid.NewGuid(), BookingCode = "BK-PREVIOUS", DoctorId = doctorProfileId,
+            PatientId = patientProfileId, AppointmentSlotId = previousSlotId,
+            Status = AppointmentStatus.InProgress, Doctor = doctor, AppointmentSlot = previousSlot
+        };
+
+        _apptRepo.Setup(r => r.GetByIdAsync(current.Id, It.IsAny<CancellationToken>())).ReturnsAsync(current);
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment> { current, previous });
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AppointmentSlot> { currentSlot, previousSlot });
+        _consultationNoteRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote>());
+
+        var result = await _service.StartAppointmentAsync(current.Id, doctorUserId, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("BK-PREVIOUS", result.Message);
+        Assert.Equal(AppointmentStatus.Approved, current.Status);
+        _apptRepo.Verify(r => r.Update(current), Times.Never);
+    }
+
+    [Fact]
     public async Task GetAppointmentByIdAsync_ExistingAppointment_ReturnsDto()
     {
         var apptId = Guid.NewGuid();

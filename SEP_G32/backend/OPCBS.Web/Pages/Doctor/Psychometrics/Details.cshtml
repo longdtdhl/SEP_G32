@@ -121,6 +121,14 @@
                         <span class="badge bg-light text-secondary border" style="font-size:0.72rem;">@(sub.Category ?? "Psychological Screening")</span>
                         <span>•</span>
                         <span><i class="bi bi-calendar3 me-1"></i>Completed: @sub.SubmittedAt.ToString("MMM dd, yyyy · HH:mm")</span>
+                        @if (sub.TestType == "DASS21" || sub.TestTitle.Contains("DASS"))
+                        {
+                            <span>•</span>
+                            <a href="http://www2.psy.unsw.edu.au/dass/" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1 text-teal fw-semibold" style="color:var(--mb-primary, #0d9488); font-size:0.78rem;">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                <span>psy.unsw.edu.au</span>
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

@@ -90,7 +90,8 @@ public class ConsultationNotesAdvancedTests
 
         var notes = new List<ConsultationNote>
         {
-            new() { Id = Guid.NewGuid(), PatientRecordId = pRecord.Id, Visibility = NoteVisibility.PatientVisible, ConsultationSummary = "Shared Notes", Doctor = doc, PatientRecord = pRecord }
+            new() { Id = Guid.NewGuid(), PatientRecordId = pRecord.Id, Visibility = NoteVisibility.PatientVisible, ConsultationSummary = "Shared Notes", Doctor = doc, PatientRecord = pRecord },
+            new() { Id = Guid.NewGuid(), PatientRecordId = pRecord.Id, Visibility = NoteVisibility.DoctorOnly, ConsultationSummary = "Internal Notes", Doctor = doc, PatientRecord = pRecord }
         };
 
         _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
@@ -101,12 +102,86 @@ public class ConsultationNotesAdvancedTests
         _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
         _packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
         _mapper.Setup(m => m.Map<List<ConsultationNoteDto>>(It.IsAny<List<ConsultationNote>>()))
-            .Returns(new List<ConsultationNoteDto> { new() { Id = notes[0].Id, ConsultationSummary = "Shared Notes" } });
+            .Returns((List<ConsultationNote> source) => source.Select(note => new ConsultationNoteDto
+            {
+                Id = note.Id,
+                ConsultationSummary = note.ConsultationSummary,
+                Visibility = (int)note.Visibility
+            }).ToList());
 
         var result = await _service.GetByPatientAsync(patientUserId, 1, 10, CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.Single(result.Data!);
+        var returnedNote = Assert.Single(result.Data!);
+        Assert.Equal("Shared Notes", returnedNote.ConsultationSummary);
+        Assert.DoesNotContain(result.Data!, note => note.ConsultationSummary == "Internal Notes");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_PatientCanViewOwnedVisibleNote_WhenAppointmentStoresUserId()
+    {
+        var patientUserId = Guid.NewGuid();
+        var patientProfileId = Guid.NewGuid();
+        var appointmentId = Guid.NewGuid();
+        var noteId = Guid.NewGuid();
+        var patientUser = new User { Id = patientUserId, Email = "patient@test.com", PasswordHash = "h", FullName = "Patient", PhoneNumber = "1", Role = new Role { Name = "Patient" } };
+        var patient = new PatientProfile { Id = patientProfileId, UserId = patientUserId, User = patientUser };
+        var doctor = new DoctorProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), User = new User { Email = "doctor@test.com", PasswordHash = "h", FullName = "Doctor", PhoneNumber = "2", Role = new Role { Name = "Doctor" } } };
+        var patientRecord = new PatientRecord { Id = Guid.NewGuid(), DoctorId = doctor.Id, PatientId = null, Doctor = doctor };
+        var appointmentSlot = new AppointmentSlot
+        {
+            Id = Guid.NewGuid(),
+            DoctorProfileId = doctor.Id,
+            SlotDate = DateOnly.FromDateTime(DateTime.UtcNow.Date),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            DoctorProfile = doctor
+        };
+        var appointment = new Appointment
+        {
+            Id = appointmentId,
+            DoctorId = doctor.Id,
+            PatientId = patientUserId,
+            BookingCode = "TEST-DETAIL",
+            AppointmentSlotId = appointmentSlot.Id,
+            AppointmentSlot = appointmentSlot,
+            Doctor = doctor
+        };
+        var note = new ConsultationNote
+        {
+            Id = noteId,
+            AppointmentId = appointmentId,
+            DoctorId = doctor.Id,
+            PatientRecordId = patientRecord.Id,
+            Visibility = NoteVisibility.PatientVisible,
+            ConsultationSummary = "Patient-visible note",
+            Doctor = doctor,
+            PatientRecord = patientRecord
+        };
+
+        _recordRepo.Setup(r => r.GetByIdAsync(noteId, It.IsAny<CancellationToken>())).ReturnsAsync(note);
+        _recordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { note });
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctor });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile> { patient });
+        _patientRecordRepo.Setup(r => r.GetByIdAsync(patientRecord.Id, It.IsAny<CancellationToken>())).ReturnsAsync(patientRecord);
+        _patientRecordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientRecord> { patientRecord });
+        _apptRepo.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment> { appointment });
+        _userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { patientUser, doctor.User });
+        _packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
+        _mapper.Setup(m => m.Map<ConsultationNoteDto>(note)).Returns(new ConsultationNoteDto
+        {
+            Id = noteId,
+            AppointmentId = appointmentId,
+            PatientRecordId = patientRecord.Id,
+            Visibility = (int)NoteVisibility.PatientVisible,
+            ConsultationSummary = note.ConsultationSummary
+        });
+
+        var result = await _service.GetByIdAsync(noteId, patientUserId, CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(noteId, result.Data?.Id);
     }
 
     [Fact]
@@ -117,6 +192,73 @@ public class ConsultationNotesAdvancedTests
         var result = await _service.GetByPatientAsync(Guid.NewGuid(), 1, 10, CancellationToken.None);
 
         Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task GetByPatientRecordAsync_ReturnsOnlyRequestingDoctorsNotes()
+    {
+        var patientId = Guid.NewGuid();
+        var doctorAUserId = Guid.NewGuid();
+        var doctorA = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = doctorAUserId,
+            User = new User { Id = doctorAUserId, Email = "doctor-a@test.com", PasswordHash = "h", FullName = "Doctor A", PhoneNumber = "1", Role = new Role { Name = "Doctor" } }
+        };
+        var doctorB = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            User = new User { Email = "doctor-b@test.com", PasswordHash = "h", FullName = "Doctor B", PhoneNumber = "2", Role = new Role { Name = "Doctor" } }
+        };
+        var recordA = new PatientRecord { Id = Guid.NewGuid(), DoctorId = doctorA.Id, PatientId = patientId, Doctor = doctorA };
+        var recordB = new PatientRecord { Id = Guid.NewGuid(), DoctorId = doctorB.Id, PatientId = patientId, Doctor = doctorB };
+        var noteA = new ConsultationNote { Id = Guid.NewGuid(), DoctorId = doctorA.Id, PatientRecordId = recordA.Id, ConsultationSummary = "Doctor A note", Doctor = doctorA, PatientRecord = recordA };
+        var noteB = new ConsultationNote { Id = Guid.NewGuid(), DoctorId = doctorB.Id, PatientRecordId = recordB.Id, ConsultationSummary = "Doctor B note", Doctor = doctorB, PatientRecord = recordB };
+
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { doctorA, doctorB });
+        _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientProfile>());
+        _patientRecordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PatientRecord> { recordA, recordB });
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Appointment>());
+        _recordRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<ConsultationNote> { noteA, noteB });
+        _userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User> { doctorA.User, doctorB.User });
+        _packageRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentPackage>());
+        _mapper.Setup(m => m.Map<List<ConsultationNoteDto>>(It.IsAny<List<ConsultationNote>>()))
+            .Returns((List<ConsultationNote> notes) => notes.Select(n => new ConsultationNoteDto { Id = n.Id, ConsultationSummary = n.ConsultationSummary }).ToList());
+
+        var result = await _service.GetByPatientRecordAsync(recordA.Id, doctorAUserId, 1, 10, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var returnedNote = Assert.Single(result.Data!);
+        Assert.Equal(noteA.Id, returnedNote.Id);
+        Assert.DoesNotContain(result.Data!, note => note.Id == noteB.Id);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_OtherDoctorNote_ReturnsAccessDenied()
+    {
+        var owner = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            User = new User { Email = "owner@test.com", PasswordHash = "h", FullName = "Owner", PhoneNumber = "1", Role = new Role { Name = "Doctor" } }
+        };
+        var otherDoctor = new DoctorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            User = new User { Email = "other@test.com", PasswordHash = "h", FullName = "Other", PhoneNumber = "2", Role = new Role { Name = "Doctor" } }
+        };
+        var patientRecord = new PatientRecord { Id = Guid.NewGuid(), DoctorId = owner.Id, Doctor = owner };
+        var note = new ConsultationNote { Id = Guid.NewGuid(), DoctorId = owner.Id, PatientRecordId = patientRecord.Id, ConsultationSummary = "Private note", Doctor = owner, PatientRecord = patientRecord };
+
+        _recordRepo.Setup(r => r.GetByIdAsync(note.Id, It.IsAny<CancellationToken>())).ReturnsAsync(note);
+        _doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<DoctorProfile> { owner, otherDoctor });
+
+        var result = await _service.GetByIdAsync(note.Id, otherDoctor.UserId, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Null(result.Data);
     }
 
     [Fact]

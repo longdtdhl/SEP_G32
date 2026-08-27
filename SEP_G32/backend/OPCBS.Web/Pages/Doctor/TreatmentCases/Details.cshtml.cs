@@ -386,16 +386,16 @@ public class DetailsModel : PageModel
     }
 
     // POST: Delete Success Criteria
-    public async Task<IActionResult> OnPostDeleteSuccessCriteriaAsync(Guid caseId, Guid criteriaId)
+    public async Task<IActionResult> OnPostDeleteSuccessCriteriaAsync(Guid caseId, Guid criteriaId, Guid? goalId = null)
     {
         var (success, error) = await _api.DeleteSuccessCriteriaAsync(criteriaId);
-        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria removed." : (error ?? "Failed to remove criteria.");
-        return RedirectToPage(new { id = caseId, tab = "goals" });
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Success criterion deleted." : (error ?? "Failed to remove criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
     }
 
     // POST: Evaluate Success Criteria
     public async Task<IActionResult> OnPostEvaluateSuccessCriteriaAsync(
-        Guid caseId, Guid criteriaId, decimal? currentValue, Guid? sessionId)
+        Guid caseId, Guid criteriaId, decimal? currentValue, Guid? sessionId, Guid? goalId = null)
     {
         var dto = new CreateSuccessCriteriaEvaluationWebDto
         {
@@ -403,8 +403,61 @@ public class DetailsModel : PageModel
             CurrentValue = currentValue
         };
         var (success, error) = await _api.EvaluateSuccessCriteriaAsync(criteriaId, dto);
-        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria evaluated." : (error ?? "Failed to evaluate criteria.");
-        return RedirectToPage(new { id = caseId, tab = "goals" });
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria evaluated & progress updated." : (error ?? "Failed to evaluate criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
+    }
+
+    // POST: Recalculate Goal Progress from Criteria
+    public async Task<IActionResult> OnPostRecalculateGoalProgressAsync(Guid caseId, Guid goalId)
+    {
+        var (success, error) = await _api.UpdateGoalAsync(goalId, new UpdateGoalWebDto());
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal progress recalculated from success criteria." : (error ?? "Failed to recalculate progress.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
+    }
+
+    // POST: Seed Standard Success Criteria
+    public async Task<IActionResult> OnPostSeedDefaultCriteriaAsync(Guid caseId, Guid goalId)
+    {
+        var (goalsData, _) = await _api.GetGoalsAsync(caseId);
+        var targetGoal = goalsData?.FirstOrDefault(g => g.Id == goalId);
+        var targetVal = targetGoal?.TargetValue ?? 3;
+        var unitLabel = string.IsNullOrWhiteSpace(targetGoal?.Unit) ? "/ 10" : targetGoal.Unit;
+
+        // 1. Clinical score criterion
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 0, // Measurement Score
+            Operator = 3,     // <=
+            TargetValue = targetVal,
+            Weight = 1,
+            Description = $"Clinical Target: Score <= {targetVal:0.#} ({unitLabel})"
+        });
+
+        // 2. Attendance rate >= 80%
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 2, // Attendance
+            Operator = 1,     // >=
+            TargetValue = 80,
+            Weight = 1,
+            Description = "Session Attendance Rate >= 80%"
+        });
+
+        // 3. Homework completion >= 80%
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 1, // Homework
+            Operator = 1,     // >=
+            TargetValue = 80,
+            Weight = 1,
+            Description = "Therapy Exercises & Homework Completion >= 80%"
+        });
+
+        TempData["SuccessMessage"] = $"Standard clinical criteria initialized (Target <= {targetVal:0.#}, Attendance >= 80%, Homework >= 80%).";
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
     }
 
     // POST: Create Goal from Tab Modal
@@ -518,6 +571,59 @@ public class DetailsModel : PageModel
             TempData["SuccessMessage"] = "Homework reviewed successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "activities", subTab = "homework" });
+    }
+
+    // POST: Approve Treatment Hold
+    public async Task<IActionResult> OnPostApproveHoldAsync(Guid caseId, string? note)
+    {
+        var dto = new ApproveTreatmentHoldWebDto { Note = note };
+        var (success, error) = await _api.ApproveHoldAsync(caseId, dto);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to approve treatment hold.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment hold approved successfully. Validity period extended and scheduled sessions cancelled.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    // POST: Reject Treatment Hold
+    public async Task<IActionResult> OnPostRejectHoldAsync(Guid caseId, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            TempData["ErrorMessage"] = "Please provide a reason for declining the hold request.";
+            return RedirectToPage(new { id = caseId, tab = "overview" });
+        }
+
+        var dto = new RejectTreatmentHoldWebDto { Reason = reason.Trim() };
+        var (success, error) = await _api.RejectHoldAsync(caseId, dto);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to decline treatment hold.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment hold request declined.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    // POST: Resume Treatment
+    public async Task<IActionResult> OnPostResumeTreatmentAsync(Guid caseId)
+    {
+        var (success, error) = await _api.ResumeTreatmentAsync(caseId);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to resume treatment.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment program has been resumed and is now active.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
     }
 }
 

@@ -11,6 +11,12 @@ public class PsychometricTestDto
     public string TestType { get; set; } = string.Empty;
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    private string? _sourceUrl;
+    public string? SourceUrl
+    {
+        get => !string.IsNullOrEmpty(_sourceUrl) ? _sourceUrl : (TestType == "DASS21" || Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null);
+        set => _sourceUrl = value;
+    }
     public Guid? DoctorId { get; set; }
     public string? DoctorName { get; set; }
     public bool IsSystemTemplate => !DoctorId.HasValue;
@@ -37,6 +43,7 @@ public class CreatePsychometricTestDto
     public string TestType { get; set; } = "CUSTOM";
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public Guid? DoctorId { get; set; }
     public string? ScoreRangesJson { get; set; }
     public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
@@ -49,6 +56,7 @@ public class UpdatePsychometricTestDto
     public string TestType { get; set; } = string.Empty;
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    public string? SourceUrl { get; set; }
     public string? ScoreRangesJson { get; set; }
     public List<CreatePsychometricQuestionDto> Questions { get; set; } = new();
 }
@@ -61,6 +69,12 @@ public class PsychometricTestDetailDto
     public string TestType { get; set; } = string.Empty;
     public string? Category { get; set; }
     public string? Purpose { get; set; }
+    private string? _sourceUrl;
+    public string? SourceUrl
+    {
+        get => !string.IsNullOrEmpty(_sourceUrl) ? _sourceUrl : (TestType == "DASS21" || Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null);
+        set => _sourceUrl = value;
+    }
     public Guid? DoctorId { get; set; }
     public string? DoctorName { get; set; }
     public bool IsSystemTemplate => !DoctorId.HasValue;
@@ -236,7 +250,7 @@ public class SymptomBreakdownItemDto
         var list = new List<SymptomBreakdownItemDto>();
         if (TestType == "PHQ9" && Answers != null && Answers.Any())
         {
-            var qMap = Answers.ToDictionary(a => a.QuestionNumber, a => a.Score);
+            var qMap = BuildQuestionScoreMap();
             int mood = (qMap.GetValueOrDefault(1) + qMap.GetValueOrDefault(2));
             int sleep = qMap.GetValueOrDefault(3);
             int energy = qMap.GetValueOrDefault(4);
@@ -261,7 +275,7 @@ public class SymptomBreakdownItemDto
 
         if (TestType == "GAD7" && Answers != null && Answers.Any())
         {
-            var qMap = Answers.ToDictionary(a => a.QuestionNumber, a => a.Score);
+            var qMap = BuildQuestionScoreMap();
             int worry = (qMap.GetValueOrDefault(1) + qMap.GetValueOrDefault(2) + qMap.GetValueOrDefault(3));
             int somatic = (qMap.GetValueOrDefault(4) + qMap.GetValueOrDefault(5));
             int fear = (qMap.GetValueOrDefault(6) + qMap.GetValueOrDefault(7));
@@ -285,6 +299,29 @@ public class SymptomBreakdownItemDto
             }
         }
         return list;
+    }
+
+    private Dictionary<int, int> BuildQuestionScoreMap()
+    {
+        var result = new Dictionary<int, int>();
+        var fallbackNumber = 1;
+
+        foreach (var answer in Answers ?? new List<PsychometricAnswerDetailDto>())
+        {
+            var questionNumber = answer.QuestionNumber;
+            if (questionNumber <= 0 || result.ContainsKey(questionNumber))
+            {
+                while (result.ContainsKey(fallbackNumber))
+                    fallbackNumber++;
+
+                questionNumber = fallbackNumber;
+            }
+
+            result[questionNumber] = answer.Score;
+            fallbackNumber = Math.Max(fallbackNumber, questionNumber + 1);
+        }
+
+        return result;
     }
 
     public string GetEnglishInterpretation()

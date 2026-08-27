@@ -1,4 +1,4 @@
-using OPCBS.Web.DTOs;
+﻿using OPCBS.Web.DTOs;
 
 namespace OPCBS.Web.Services;
 
@@ -151,6 +151,7 @@ public interface IPsychometricApiService
     Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId);
     Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto);
     Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto);
+    Task<(PsychometricTestDto? Data, string? Error)> CloneCustomTestAsync(Guid sourceTestId, UpdatePsychometricTestDto dto);
     Task<(PsychometricSubmissionDto? Data, string? Error)> AssignAssessmentAsync(AssignAssessmentDto dto);
     Task<(PsychometricSubmissionDto? Data, string? Error)> SaveDoctorNoteAsync(Guid submissionId, string? doctorNotes);
     Task<(List<AssessmentHistoryItemDto> Data, string? Error)> GetAssessmentHistoryAsync(Guid submissionId);
@@ -216,6 +217,12 @@ public interface ITreatmentCaseApiService
     Task<(bool Success, string? Error)> CreateAsync(object dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, object dto);
     Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto);
+    // Hold (Bao luu)
+    Task<(bool Success, string? Error)> RequestHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> CancelHoldRequestAsync(Guid id);
+    Task<(bool Success, string? Error)> ApproveHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> RejectHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> ResumeTreatmentAsync(Guid id);
     Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto);
     Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateSessionAsync(object dto);

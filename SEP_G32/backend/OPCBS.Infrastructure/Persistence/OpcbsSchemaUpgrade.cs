@@ -22,6 +22,18 @@ public static class OpcbsSchemaUpgrade
                 );
             END
 
+            -- Databases created by the former EnsureCreated flow already contain the
+            -- initial schema but have no EF history. Adopt them without recreating tables.
+            IF OBJECT_ID(N'[Users]', N'U') IS NOT NULL
+               AND OBJECT_ID(N'[TreatmentPackages]', N'U') IS NOT NULL
+               AND NOT EXISTS (
+                    SELECT 1 FROM [__EFMigrationsHistory]
+                    WHERE [MigrationId] = N'20260817140812_InitialCreate')
+            BEGIN
+                INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+                VALUES (N'20260817140812_InitialCreate', N'8.0.11');
+            END
+
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationTokenHash') IS NULL
                 ALTER TABLE [Appointments] ADD [GuestConfirmationTokenHash] nvarchar(64) NULL;
             IF COL_LENGTH(N'Appointments', N'GuestConfirmationLastSentAt') IS NULL
@@ -97,6 +109,8 @@ public static class OpcbsSchemaUpgrade
                 ALTER TABLE [PsychometricTests] ADD [DoctorId] uniqueidentifier NULL;
             IF COL_LENGTH(N'PsychometricTests', N'ScoreRangesJson') IS NULL
                 ALTER TABLE [PsychometricTests] ADD [ScoreRangesJson] nvarchar(max) NULL;
+            IF COL_LENGTH(N'PsychometricTests', N'SourceUrl') IS NULL
+                ALTER TABLE [PsychometricTests] ADD [SourceUrl] nvarchar(500) NULL;
             IF COL_LENGTH(N'PsychometricTests', N'IsActive') IS NULL
                 ALTER TABLE [PsychometricTests] ADD [IsActive] bit NOT NULL CONSTRAINT [DF_PsychometricTests_IsActive] DEFAULT 1;
 
@@ -118,6 +132,19 @@ public static class OpcbsSchemaUpgrade
             BEGIN
                 DROP INDEX [IX_PsychometricTests_TestType] ON [PsychometricTests];
                 CREATE INDEX [IX_PsychometricTests_TestType] ON [PsychometricTests]([TestType]);
+            END
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[PsychometricTests]', N'U') IS NOT NULL
+               AND COL_LENGTH(N'PsychometricTests', N'SourceUrl') IS NOT NULL
+            BEGIN
+                EXEC sp_executesql N'
+                    UPDATE [PsychometricTests]
+                    SET [SourceUrl] = N''http://www2.psy.unsw.edu.au/dass/''
+                    WHERE ([TestType] = N''DASS21'' OR [Title] LIKE N''%DASS%'')
+                      AND ([SourceUrl] IS NULL OR [SourceUrl] = N'''');
+                ';
             END
             """, ct);
 
@@ -462,7 +489,7 @@ public static class OpcbsSchemaUpgrade
             END
             """, ct);
 
-        // This must run as a new SQL batch: SQL Server binds column names before it executes ALTER TABLE.
+        // This must run as dynamic SQL: SQL Server binds column names at compile time.
         await context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[TreatmentSessionGoals]', N'U') IS NOT NULL
                AND COL_LENGTH(N'TreatmentSessionGoals', N'TreatmentGoalId') IS NOT NULL
@@ -470,32 +497,72 @@ public static class OpcbsSchemaUpgrade
                AND COL_LENGTH(N'TreatmentSessionGoals', N'Id') IS NOT NULL
                AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE [name] = N'FK_TreatmentSessionGoals_GoalDetails_GoalDetailId')
             BEGIN
-                INSERT INTO [GoalDetails] ([Id], [GoalId], [Title], [OrderIndex], [ProgressPercent], [Status], [CreatedAt], [IsDeleted])
-                SELECT NEWID(), g.[Id], N'Legacy session linkage', 0, g.[ProgressPercent],
-                    CASE WHEN g.[ProgressPercent] >= 100 THEN 2 WHEN g.[ProgressPercent] > 0 THEN 1 ELSE 0 END,
-                    SYSUTCDATETIME(), 0
-                FROM [TreatmentGoals] g
-                WHERE NOT EXISTS (SELECT 1 FROM [GoalDetails] d WHERE d.[GoalId] = g.[Id] AND d.[Title] = N'Legacy session linkage');
+                EXEC sp_executesql N'
+                    INSERT INTO [GoalDetails] ([Id], [GoalId], [Title], [OrderIndex], [ProgressPercent], [Status], [CreatedAt], [IsDeleted])
+                    SELECT NEWID(), g.[Id], N''Legacy session linkage'', 0, g.[ProgressPercent],
+                        CASE WHEN g.[ProgressPercent] >= 100 THEN 2 WHEN g.[ProgressPercent] > 0 THEN 1 ELSE 0 END,
+                        SYSUTCDATETIME(), 0
+                    FROM [TreatmentGoals] g
+                    WHERE NOT EXISTS (SELECT 1 FROM [GoalDetails] d WHERE d.[GoalId] = g.[Id] AND d.[Title] = N''Legacy session linkage'');
 
-                UPDATE link SET [GoalDetailId] = detail.[Id]
-                FROM [TreatmentSessionGoals] link
-                INNER JOIN [GoalDetails] detail ON detail.[GoalId] = link.[TreatmentGoalId] AND detail.[Title] = N'Legacy session linkage'
-                WHERE link.[GoalDetailId] IS NULL;
-                UPDATE [TreatmentSessionGoals] SET [Id] = NEWID() WHERE [Id] IS NULL;
+                    UPDATE link SET [GoalDetailId] = detail.[Id]
+                    FROM [TreatmentSessionGoals] link
+                    INNER JOIN [GoalDetails] detail ON detail.[GoalId] = link.[TreatmentGoalId] AND detail.[Title] = N''Legacy session linkage''
+                    WHERE link.[GoalDetailId] IS NULL;
+                    UPDATE [TreatmentSessionGoals] SET [Id] = NEWID() WHERE [Id] IS NULL;
 
-                IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE [name] = N'PK_TreatmentSessionGoals')
-                    ALTER TABLE [TreatmentSessionGoals] DROP CONSTRAINT [PK_TreatmentSessionGoals];
-                IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE [name] = N'FK_TreatmentSessionGoals_TreatmentGoals_TreatmentGoalId')
-                    ALTER TABLE [TreatmentSessionGoals] DROP CONSTRAINT [FK_TreatmentSessionGoals_TreatmentGoals_TreatmentGoalId];
-                IF EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_TreatmentSessionGoals_TreatmentGoalId' AND [object_id] = OBJECT_ID(N'[TreatmentSessionGoals]'))
-                    DROP INDEX [IX_TreatmentSessionGoals_TreatmentGoalId] ON [TreatmentSessionGoals];
-                ALTER TABLE [TreatmentSessionGoals] ALTER COLUMN [TreatmentGoalId] uniqueidentifier NULL;
-                ALTER TABLE [TreatmentSessionGoals] ALTER COLUMN [Id] uniqueidentifier NOT NULL;
-                ALTER TABLE [TreatmentSessionGoals] ADD CONSTRAINT [PK_TreatmentSessionGoals] PRIMARY KEY ([Id]);
-                ALTER TABLE [TreatmentSessionGoals] ADD CONSTRAINT [FK_TreatmentSessionGoals_GoalDetails_GoalDetailId]
-                    FOREIGN KEY ([GoalDetailId]) REFERENCES [GoalDetails]([Id]);
-                CREATE UNIQUE INDEX [IX_TreatmentSessionGoals_TreatmentSessionId_GoalDetailId]
-                    ON [TreatmentSessionGoals]([TreatmentSessionId], [GoalDetailId]);
+                    IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE [name] = N''PK_TreatmentSessionGoals'')
+                        ALTER TABLE [TreatmentSessionGoals] DROP CONSTRAINT [PK_TreatmentSessionGoals];
+                    IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE [name] = N''FK_TreatmentSessionGoals_TreatmentGoals_TreatmentGoalId'')
+                        ALTER TABLE [TreatmentSessionGoals] DROP CONSTRAINT [FK_TreatmentSessionGoals_TreatmentGoals_TreatmentGoalId];
+                    IF EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N''IX_TreatmentSessionGoals_TreatmentGoalId'' AND [object_id] = OBJECT_ID(N''[TreatmentSessionGoals]''))
+                        DROP INDEX [IX_TreatmentSessionGoals_TreatmentGoalId] ON [TreatmentSessionGoals];
+                    ALTER TABLE [TreatmentSessionGoals] ALTER COLUMN [TreatmentGoalId] uniqueidentifier NULL;
+                    ALTER TABLE [TreatmentSessionGoals] ALTER COLUMN [Id] uniqueidentifier NOT NULL;
+                    ALTER TABLE [TreatmentSessionGoals] ADD CONSTRAINT [PK_TreatmentSessionGoals] PRIMARY KEY ([Id]);
+                    ALTER TABLE [TreatmentSessionGoals] ADD CONSTRAINT [FK_TreatmentSessionGoals_GoalDetails_GoalDetailId]
+                        FOREIGN KEY ([GoalDetailId]) REFERENCES [GoalDetails]([Id]);
+                    CREATE UNIQUE INDEX [IX_TreatmentSessionGoals_TreatmentSessionId_GoalDetailId]
+                        ON [TreatmentSessionGoals]([TreatmentSessionId], [GoalDetailId]);
+                ';
+            END
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[TreatmentPackages]', N'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH(N'TreatmentPackages', N'AcceptanceExpiresAt') IS NULL
+                    ALTER TABLE [TreatmentPackages] ADD [AcceptanceExpiresAt] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentPackages', N'ExpiredAt') IS NULL
+                    ALTER TABLE [TreatmentPackages] ADD [ExpiredAt] datetime2 NULL;
+            END
+            """, ct);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[TreatmentCases]', N'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH(N'TreatmentCases', N'IsHoldRequested') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [IsHoldRequested] bit NOT NULL CONSTRAINT [DF_TreatmentCases_IsHoldRequested] DEFAULT 0;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldRequestedAt') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldRequestedAt] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldStartDate') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldStartDate] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldEndDate') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldEndDate] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldDurationDays') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldDurationDays] int NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldReason') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldReason] nvarchar(max) NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldApprovedAt') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldApprovedAt] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldApprovedByDoctorId') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldApprovedByDoctorId] uniqueidentifier NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldRejectedAt') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldRejectedAt] datetime2 NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'HoldRejectionReason') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [HoldRejectionReason] nvarchar(max) NULL;
+                IF COL_LENGTH(N'TreatmentCases', N'TotalHoldDays') IS NULL
+                    ALTER TABLE [TreatmentCases] ADD [TotalHoldDays] int NOT NULL CONSTRAINT [DF_TreatmentCases_TotalHoldDays] DEFAULT 0;
             END
             """, ct);
     }

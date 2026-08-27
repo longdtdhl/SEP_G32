@@ -135,8 +135,17 @@ public class DetailsModel : PageModel
                         .OrderByDescending(a => a.StartAt)
                         .ToList();
 
-                    NoShowCount = PatientAppointments.Count(a => a.Status == 8);
-                    CompletedAppointmentCount = PatientAppointments.Count(a => a.Status == 4);
+                    var latestWithStats = PatientAppointments.FirstOrDefault(a => a.PatientTotalTrackedAppointmentsCount > 0);
+                    if (latestWithStats != null)
+                    {
+                        NoShowCount = latestWithStats.PatientAbsentAppointmentsCount;
+                        CompletedAppointmentCount = latestWithStats.PatientCompletedAppointmentsCount;
+                    }
+                    else
+                    {
+                        NoShowCount = PatientAppointments.Count(a => a.Status == 8);
+                        CompletedAppointmentCount = PatientAppointments.Count(a => a.Status == 4);
+                    }
 
                     NextAppointment = PatientAppointments
                         .Where(a => (a.Status == 0 || a.Status == 1 || a.Status == 3) && a.StartAt >= DateTimeOffset.UtcNow)
@@ -349,6 +358,10 @@ public class DetailsModel : PageModel
         }
 
         var (patientRecord, _) = await _patientService.GetByIdAsync(id);
+        if (patientRecord == null)
+        {
+            (patientRecord, _) = await _patientService.GetByUserIdAsync(id);
+        }
         if (patientRecord == null || !patientRecord.PatientId.HasValue)
         {
             TempData["ErrorMessage"] = "Patient not found.";

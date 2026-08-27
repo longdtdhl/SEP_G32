@@ -27,11 +27,12 @@ public class CalendarEventDto
     public bool HasNotes { get; set; }
     public int MaxPatients { get; set; } = 1;
     public int CurrentBookings { get; set; } = 0;
+    public bool HasConsultationNote { get; set; }
 }
 
 // AppointmentStatus enum: 0=Pending, 1=Approved, 2=Rejected, 3=InProgress, 4=Completed, 5=Cancelled,
 // 6=RescheduleRequested, 7=AwaitingPatientConfirmation, 8=NoShow/Absent, 9=AwaitingGuestConfirmation,
-// 10=AwaitingGuestCompletionConfirmation, 11=CompletionDisputed.
+// 10=AwaitingGuestCompletionConfirmation, 11=CompletionDisputed, 12=Expired.
 public class AppointmentDto
 {
     public Guid Id { get; set; }
@@ -77,6 +78,28 @@ public class AppointmentDto
     public string? ProposedSlotEndTime { get; set; }
     public string? RescheduleReason { get; set; }
     public bool CanReschedule { get; set; }
+    public bool HasConsultationNote { get; set; }
+    public bool IsDocumentationRequired { get; set; }
+    public bool IsDocumentationEscalated { get; set; }
+    public DateTime? DocumentationDueAtUtc { get; set; }
+    public Guid? BlockingDocumentationAppointmentId { get; set; }
+    public string? BlockingDocumentationBookingCode { get; set; }
+    public string? BlockingDocumentationAppointmentDate { get; set; }
+    public bool BlockingAppointmentHasConsultationNote { get; set; }
+    public DateTime? DoctorResponseDeadlineUtc { get; set; }
+    public int? RemainingResponseMinutes { get; set; }
+    public bool IsResponseOverdue { get; set; }
+    public bool IsResponseUrgent { get; set; }
+    public bool CanComplete { get; set; }
+    public DateTime? EarliestCompletionAtUtc { get; set; }
+    public int? RemainingMinutesBeforeCompletion { get; set; }
+
+    // Patient system-wide attendance stats across all doctors
+    public int PatientCompletedAppointmentsCount { get; set; }
+    public int PatientAbsentAppointmentsCount { get; set; }
+    public int PatientTotalTrackedAppointmentsCount { get; set; }
+    public int PatientAbsentRatePercent { get; set; }
+    public string PatientAbsentRiskLevel { get; set; } = "Low";
 
     public string StatusText => Status switch
     {
@@ -92,13 +115,15 @@ public class AppointmentDto
         9 => "Awaiting Email Confirmation",
         10 => "Awaiting Completion Confirmation",
         11 => "Completion Disputed",
+        12 => "Expired",
         _ => "Unknown"
     };
 
     // Aliases for views
-    public DateTimeOffset StartAt => ParseDateTime();
+    public DateTimeOffset StartAt => ParseStartTime();
     public DateTimeOffset EndAt => ParseEndTime();
-    private DateTimeOffset ParseDateTime()
+
+    private DateTimeOffset ParseStartTime()
     {
         if (DateTime.TryParse($"{AppointmentDate} {StartTime}", out var dt)) return dt;
         return CreatedAt;
@@ -133,6 +158,21 @@ public class AppointmentListItemDto
     public string? ProposedSlotStartTime { get; set; }
     public string? ProposedSlotEndTime { get; set; }
     public bool CanReschedule { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DoctorResponseDeadlineUtc { get; set; }
+    public int? RemainingResponseMinutes { get; set; }
+    public bool IsResponseOverdue { get; set; }
+    public bool IsResponseUrgent { get; set; }
+    public bool CanComplete { get; set; }
+    public DateTime? EarliestCompletionAtUtc { get; set; }
+    public int? RemainingMinutesBeforeCompletion { get; set; }
+
+    // Patient system-wide attendance stats across all doctors
+    public int PatientCompletedAppointmentsCount { get; set; }
+    public int PatientAbsentAppointmentsCount { get; set; }
+    public int PatientTotalTrackedAppointmentsCount { get; set; }
+    public int PatientAbsentRatePercent { get; set; }
+    public string PatientAbsentRiskLevel { get; set; } = "Low";
 
     public string StatusText => Status switch
     {
@@ -148,6 +188,7 @@ public class AppointmentListItemDto
         9 => "Awaiting Email Confirmation",
         10 => "Awaiting Completion Confirmation",
         11 => "Completion Disputed",
+        12 => "Expired",
         _ => "Unknown"
     };
 

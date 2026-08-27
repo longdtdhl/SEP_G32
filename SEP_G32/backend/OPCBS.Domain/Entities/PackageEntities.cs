@@ -189,6 +189,12 @@ public class TreatmentPackage : BaseEntity
     /// <summary>Date package was accepted by patient</summary>
     public DateTime? AcceptedDate { get; set; }
 
+    /// <summary>Deadline for patient to accept the proposed package (default 7 days after assignment)</summary>
+    public DateTime? AcceptanceExpiresAt { get; set; }
+
+    /// <summary>Timestamp when package reached Expired status</summary>
+    public DateTime? ExpiredAt { get; set; }
+
     /// <summary>Date package became active</summary>
     public DateTime? ActiveDate { get; set; }
 

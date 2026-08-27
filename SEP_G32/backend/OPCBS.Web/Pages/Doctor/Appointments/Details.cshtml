@@ -806,8 +806,8 @@
     .dr-note-drawer-backdrop {
         position: fixed;
         inset: 0;
-        z-index: 1070;
-        background: rgba(15, 23, 42, 0.32);
+        z-index: 9998;
+        background: rgba(15, 23, 42, 0.45);
         backdrop-filter: blur(5px);
         opacity: 0;
         pointer-events: none;
@@ -821,10 +821,12 @@
         position: fixed;
         top: 0;
         right: 0;
-        z-index: 1080;
-        width: min(760px, 96vw);
+        z-index: 9999;
+        width: min(840px, 98vw);
         height: 100vh;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fffd 100%);
+        height: 100dvh;
+        max-height: 100dvh;
+        background: #ffffff;
         border-left: 1px solid rgba(13, 148, 136, 0.18);
         box-shadow: -24px 0 70px rgba(15, 23, 42, 0.22);
         opacity: 0.72;
@@ -838,14 +840,32 @@
         transform: translateX(0) scale(1);
     }
     .dr-note-drawer-header {
-        padding: 1.15rem 1.25rem;
+        padding: 0.85rem 1.25rem;
         border-bottom: 1px solid rgba(148, 163, 184, 0.18);
         background: linear-gradient(135deg, rgba(240,253,250,0.96), rgba(239,246,255,0.78));
+        flex-shrink: 0;
     }
     .dr-note-drawer-body {
-        padding: 1.25rem;
+        padding: 1rem 1.25rem;
         overflow-y: auto;
         flex: 1;
+        min-height: 0;
+        overscroll-behavior: contain;
+    }
+    .dr-note-drawer-footer {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.18);
+        background: #ffffff;
+        flex-shrink: 0;
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04);
+    }
+    body.dr-drawer-open {
+        overflow: hidden;
+    }
+    body.dr-drawer-open #btnBackToTop {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
     }
     .dr-note-drawer-frame {
         width: 100%;
@@ -860,38 +880,62 @@
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
         padding: 1rem;
     }
-    .dr-note-context-strip,
-    .dr-live-note-nudge {
-        border: 1px solid rgba(13, 148, 136, 0.18);
-        background: linear-gradient(135deg, rgba(236,253,245,0.95), rgba(248,255,253,0.92));
-        border-radius: 16px;
-        box-shadow: 0 14px 34px rgba(15, 118, 110, 0.08);
+    .dr-package-followup-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding: 0.9rem 1rem;
+        margin-top: 0.25rem;
+        border: 1px solid #99f6e4;
+        border-radius: 12px;
+        background: #f0fdfa;
+        color: #115e59;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+    .dr-package-followup-notice i {
+        margin-top: 0.05rem;
+        color: #0d9488;
+        font-size: 1rem;
+    }
+    @@media (max-width: 767.98px) {
+        .dr-note-drawer-header,
+        .dr-note-drawer-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .dr-note-context-strip {
+            grid-template-columns: 1fr;
+        }
     }
     .dr-note-context-strip {
-        padding: 0.8rem;
-        margin-bottom: 1rem;
+        padding: 0.35rem 0.5rem;
+        margin-bottom: 0.45rem;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.65rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.45rem;
+        border: 1px solid rgba(13, 148, 136, 0.18);
+        background: linear-gradient(135deg, rgba(236,253,245,0.95), rgba(248,255,253,0.92));
+        border-radius: 10px;
     }
     .dr-note-context-item {
         min-width: 0;
-        padding: 0.62rem 0.72rem;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.74);
+        padding: 0.3rem 0.5rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.85);
         border: 1px solid rgba(148, 163, 184, 0.16);
     }
     .dr-note-context-label {
-        color: #64748b;
-        font-size: 0.68rem;
+        color: #0f766e;
+        font-size: 0.62rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.035em;
-        margin-bottom: 0.18rem;
+        margin-bottom: 0.08rem;
     }
     .dr-note-context-value {
         color: #123b35;
-        font-size: 0.86rem;
+        font-size: 0.82rem;
         font-weight: 760;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -933,6 +977,20 @@
         color: #64748b;
         font-size: 0.78rem;
         font-weight: 560;
+    }
+    .dr-live-note-nudge.dr-documentation-required {
+        background: linear-gradient(135deg, #fffaf0, #fffdf7);
+        border: 1px solid #f6d58b;
+        border-radius: 12px;
+    }
+    .dr-live-note-nudge.dr-documentation-required::before {
+        background: linear-gradient(180deg, #d97706, #f59e0b);
+        box-shadow: 0 0 18px rgba(217, 119, 6, 0.22);
+    }
+    .dr-documentation-required .dr-live-note-dot {
+        background: #f59e0b;
+        box-shadow: none;
+        animation: none;
     }
     .dr-live-note-btn {
         position: relative;
@@ -1131,6 +1189,38 @@
             animation: none !important;
         }
     }
+    /* Confetti Celebration Styles */
+    .confetti-container {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    .confetti {
+        position: absolute;
+        width: 8px;
+        height: 14px;
+        opacity: 0.75;
+        border-radius: 2px;
+        animation: confettiFall 2.5s ease-out infinite;
+    }
+    .confetti.c1 { background: #10b981; left: 15%; animation-delay: 0s; }
+    .confetti.c2 { background: #3b82f6; left: 35%; animation-delay: 0.4s; }
+    .confetti.c3 { background: #f59e0b; left: 55%; animation-delay: 0.2s; }
+    .confetti.c4 { background: #ec4899; left: 75%; animation-delay: 0.6s; }
+    .confetti.c5 { background: #14b8a6; left: 90%; animation-delay: 0.3s; }
+
+    @@keyframes confettiFall {
+        0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(180px) rotate(360deg); opacity: 0; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .confetti {
+            animation: none !important;
+            display: none !important;
+        }
+    }
 </style>
 
 <div class="dr-apt-wrapper">
@@ -1173,6 +1263,16 @@
         var apt = Model.Appointment;
         var hasScheduledDate = DateTime.TryParse(apt.AppointmentDate, out var scheduledDate);
         var canStartConsultation = hasScheduledDate && scheduledDate.Date <= DateTime.Today;
+        var hasTreatmentPackage = apt.TreatmentPackageId.HasValue
+            || apt.TreatmentCaseId.HasValue
+            || Model.ActiveTreatmentPackage != null;
+        var canChangeConsultationMode = apt.Status == 1;
+        var canCancelAppointment = apt.Status is 0 or 1 or 6;
+        var documentationRequired = apt.Status == 3
+            && apt.IsDocumentationRequired
+            && !Model.HasConsultationNote;
+        var documentationEscalated = documentationRequired && apt.IsDocumentationEscalated;
+        var hasBlockingDocumentation = apt.BlockingDocumentationAppointmentId.HasValue;
 
         var patientDetailUrl = Model.PatientRecord != null 
             ? $"/Doctor/Patients/Details?id={Model.PatientRecord.Id}" 
@@ -1182,11 +1282,13 @@
         {
             0 => "Pending Approval",
             1 => "Accepted",
+            3 when documentationRequired => "Documentation Required",
             3 => "In Progress",
             4 => "Completed",
             5 => "Cancelled",
             2 => "Rejected",
             6 => "Reschedule Requested",
+            12 => "Expired",
             _ => apt.StatusText ?? "Unknown"
         };
 
@@ -1194,11 +1296,13 @@
         {
             0 => "dr-pill-pending",
             1 => "dr-pill-accepted",
+            3 when documentationRequired => "dr-pill-pending",
             3 => "dr-pill-inprogress",
             4 => "dr-pill-completed",
             5 => "dr-pill-cancelled",
             2 => "dr-pill-rejected",
             6 => "dr-pill-pending",
+            12 => "dr-pill-rejected",
             _ => "dr-pill-rejected"
         };
 
@@ -1206,11 +1310,13 @@
         {
             0 => "dr-bar-pending",
             1 => "dr-bar-accepted",
+            3 when documentationRequired => "dr-bar-pending",
             3 => "dr-bar-inprogress",
             4 => "dr-bar-completed",
             5 => "dr-bar-cancelled",
             2 => "dr-bar-rejected",
             6 => "dr-bar-pending",
+            12 => "dr-bar-rejected",
             _ => "dr-bar-rejected"
         };
 
@@ -1225,7 +1331,7 @@
                         <span class="dr-booking-chip" title="Booking Reference Code">
                             <i class="bi bi-upc-scan"></i> @apt.BookingCode
                         </span>
-                        <span class="dr-status-pill @statusPillClass @(apt.Status == 3 ? "dr-status-live" : "")">
+                        <span class="dr-status-pill @statusPillClass @(apt.Status == 3 && !documentationRequired ? "dr-status-live" : "")">
                             <i class="bi bi-record-circle-fill" style="font-size:0.55rem;"></i> @statusText
                         </span>
                     </div>
@@ -1261,33 +1367,33 @@
                             <i class="bi bi-clock me-1 text-teal"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm") – @apt.EndAt.LocalDateTime.ToString("HH:mm")
                         </div>
                     </div>
-                    @if (apt.Status != 4 && apt.Status != 5 && apt.Status != 2)
+                    @if (canChangeConsultationMode)
                     {
                         <div class="dropdown">
                             <button class="btn btn-sm btn-white border dropdown-toggle d-flex align-items-center gap-1.5 px-3 py-2 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.84rem; border-radius: 10px; font-weight: 650; background:#fff;">
                                 <i class="bi @(apt.IsOnline ? "bi-camera-video-fill text-primary" : "bi-geo-alt-fill text-success")"></i>
-                                <span>@(apt.IsOnline ? "Online" : "In-Person")</span>
+                                <span>@(apt.IsOnline ? "Online Video Call" : "In-Person Visit")</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm p-1.5 border-0" style="min-width: 220px; border-radius: 12px;">
                                 <li>
-                                    <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="0" onsubmit="return confirm('Switch consultation mode to Online Consultation?');">
+                                    <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="0" onsubmit="return confirm('Switch consultation format to Online Video Call?');">
                                         <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 px-2.5 rounded-2 @(apt.IsOnline ? "active bg-primary text-white" : "text-dark")" style="font-size: 0.82rem;">
                                             <i class="bi bi-camera-video-fill @(apt.IsOnline ? "text-white" : "text-primary")"></i>
                                             <div>
-                                                <div class="fw-bold">Online Consultation</div>
-                                                <small class="@(apt.IsOnline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">Video Call / Telehealth</small>
+                                                <div class="fw-bold">Online Video Call</div>
+                                                <small class="@(apt.IsOnline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">Secure remote consultation</small>
                                             </div>
                                         </button>
                                     </form>
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li>
-                                    <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="1" onsubmit="return confirm('Switch consultation mode to In-Person (Offline)?');">
+                                    <form method="post" asp-page-handler="UpdateConsultationMode" asp-route-id="@apt.Id" asp-route-mode="1" onsubmit="return confirm('Switch consultation format to In-Person Visit?');">
                                         <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 px-2.5 rounded-2 @(apt.IsOffline ? "active bg-success text-white" : "text-dark")" style="font-size: 0.82rem;">
                                             <i class="bi bi-geo-alt-fill @(apt.IsOffline ? "text-white" : "text-success")"></i>
                                             <div>
-                                                <div class="fw-bold">In-Person (Offline)</div>
-                                                <small class="@(apt.IsOffline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">At Clinic / Office</small>
+                                                <div class="fw-bold">In-Person Visit</div>
+                                                <small class="@(apt.IsOffline ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">At the clinic or office</small>
                                             </div>
                                         </button>
                                     </form>
@@ -1295,12 +1401,22 @@
                             </ul>
                         </div>
                     }
+                    else
+                    {
+                        <span class="btn btn-sm btn-white border d-flex align-items-center gap-2 px-3 py-2 shadow-sm disabled"
+                              style="font-size:0.84rem; border-radius:10px; font-weight:650; background:#fff; opacity:1;"
+                              title="The consultation format can only be changed while the appointment is Approved.">
+                            <i class="bi @(apt.IsOnline ? "bi-camera-video-fill text-primary" : "bi-geo-alt-fill text-success")"></i>
+                            <span>@(apt.IsOnline ? "Online Video Call" : "In-Person Visit")</span>
+                            <i class="bi bi-lock-fill text-muted ms-1" aria-label="Consultation format locked"></i>
+                        </span>
+                    }
                 </div>
             </div>
         </header>
 
         <!-- Status Notice Bar -->
-        <div class="dr-status-banner-bar @statusBarClass @(apt.Status == 3 ? "dr-live-banner" : "")">
+        <div class="dr-status-banner-bar @statusBarClass @(apt.Status == 3 && !documentationRequired ? "dr-live-banner" : "")">
             @if (apt.Status == 0)
             {
                 <i class="bi bi-hourglass-split fs-5"></i>
@@ -1313,8 +1429,19 @@
             }
             else if (apt.Status == 3)
             {
-                <i class="bi bi-play-circle-fill fs-5 text-indigo"></i>
-                <span><strong>In Progress</strong> — Live consultation is active. Keep patient context visible while recording clinical findings.</span>
+                @if (documentationRequired)
+                {
+                    <i class="bi bi-file-earmark-medical-fill fs-5 text-warning"></i>
+                    <span>
+                        <strong>@(documentationEscalated ? "Documentation Overdue" : "Documentation Required")</strong>
+                        — The consultation has ended, but this appointment remains open until its clinical note is saved.
+                    </span>
+                }
+                else
+                {
+                    <i class="bi bi-play-circle-fill fs-5 text-indigo"></i>
+                    <span><strong>In Progress</strong> — Live consultation is active. Keep patient context visible while recording clinical findings.</span>
+                }
             }
             else if (apt.Status == 4)
             {
@@ -1346,13 +1473,17 @@
 
         @if (apt.Status == 3)
         {
-            <div class="dr-live-note-nudge">
+            <div class="dr-live-note-nudge @(documentationRequired ? "dr-documentation-required" : "")">
                 <div class="d-flex align-items-center gap-3 min-w-0">
                     <span class="dr-live-note-dot" aria-hidden="true"></span>
                     <div class="min-w-0">
-                        <div class="dr-live-note-title">Clinical note workspace is ready</div>
+                        <div class="dr-live-note-title">@(documentationRequired ? "Complete the clinical documentation" : "Clinical note workspace is ready")</div>
                         <div class="dr-live-note-copy">
-                            @(Model.HasConsultationNote ? "Continue updating the note in a right-side workspace without leaving this appointment." : "Write the consultation note in a right-side workspace without losing appointment context.")
+                            @(documentationRequired
+                                ? "This appointment will not be completed automatically. Save the consultation note to close it correctly."
+                                : Model.HasConsultationNote
+                                    ? "Continue updating the note in a right-side workspace without leaving this appointment."
+                                    : "Write the consultation note in a right-side workspace without losing appointment context.")
                         </div>
                     </div>
                 </div>
@@ -1365,7 +1496,7 @@
                 else
                 {
                     <button type="button" class="dr-btn-primary dr-live-note-btn flex-shrink-0" onclick="openClinicalNoteDrawer()">
-                        <i class="bi bi-journal-medical"></i> Write Note
+                        <i class="bi bi-journal-medical"></i> @(documentationRequired ? "Complete Clinical Note" : "Write Note")
                     </button>
                 }
             </div>
@@ -1971,6 +2102,22 @@
                                 </div>
                             }
 
+                            @if (apt.PatientAbsentRatePercent > 0 || (apt.PatientTotalTrackedAppointmentsCount > 0 && apt.PatientAbsentAppointmentsCount > 0))
+                            {
+                                var absentClass = apt.PatientAbsentRiskLevel switch
+                                {
+                                    "High" => "bg-danger bg-opacity-10 text-danger border-danger",
+                                    "Medium" => "bg-warning bg-opacity-10 text-warning-emphasis border-warning",
+                                    _ => "bg-info bg-opacity-10 text-info-emphasis border-info"
+                                };
+                                <div class="mb-3">
+                                    <span class="badge border @absentClass d-inline-flex align-items-center gap-1.5 py-1.5 px-2.5" style="font-size:0.78rem; border-radius:8px;" title="@apt.PatientAbsentAppointmentsCount absent / @apt.PatientTotalTrackedAppointmentsCount completed or absent across all doctors">
+                                        <i class="bi bi-person-x-fill"></i>
+                                        Absent Rate: @apt.PatientAbsentRatePercent% (@apt.PatientAbsentAppointmentsCount/@apt.PatientTotalTrackedAppointmentsCount)
+                                    </span>
+                                </div>
+                            }
+
                             <!-- Contact Rows -->
                             @{
                                 var pPhone = Model.PatientRecord?.ResolvedDisplayPhone ?? apt.GuestZaloNumber;
@@ -2049,7 +2196,32 @@
                             <!-- Start Consultation (Status 1) -->
                             @if (apt.Status == 1)
                             {
-                                @if (canStartConsultation)
+                                @if (hasBlockingDocumentation)
+                                {
+                                    <div class="p-3 rounded-3 border mb-1" style="background:#fffbeb; border-color:#fcd34d !important;">
+                                        <div class="d-flex gap-2 align-items-start">
+                                            <i class="bi bi-journal-x text-warning fs-5"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold text-dark mb-1">Previous consultation requires completion</div>
+                                                <div class="small text-muted mb-2">
+                                                    Booking <strong>@apt.BlockingDocumentationBookingCode</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(apt.BlockingDocumentationAppointmentDate))
+                                                    {
+                                                        <span> · @apt.BlockingDocumentationAppointmentDate</span>
+                                                    }
+                                                    must be completed before this session can start.
+                                                </div>
+                                                <a asp-page="/Doctor/Appointments/Details"
+                                                   asp-route-id="@apt.BlockingDocumentationAppointmentId"
+                                                   class="dr-btn-secondary w-100 py-2">
+                                                    <i class="bi bi-box-arrow-up-right text-teal"></i>
+                                                    @(apt.BlockingAppointmentHasConsultationNote ? "Open and Complete Appointment" : "Open and Add Consultation Note")
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else if (canStartConsultation)
                                 {
                                     <form method="post" asp-page-handler="Start">
                                         <input type="hidden" name="id" value="@apt.Id" />
@@ -2072,18 +2244,71 @@
                             <!-- In Progress Flow (Status 3) -->
                             @if (apt.Status == 3)
                             {
+                                <!-- 2/3 Minimum Consultation Duration Progress -->
+                                <div class="p-3 rounded-3 border mb-2" style="background: linear-gradient(135deg, #f0fdfa, #f8fafc); border-color: #ccfbf1 !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                        <div class="fw-bold text-dark small d-flex align-items-center gap-1.5">
+                                            <i class="bi bi-stopwatch text-teal"></i> Consultation Duration
+                                        </div>
+                                        @if (apt.CanComplete)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.72rem; font-weight: 700;">
+                                                <i class="bi bi-check2 me-1"></i>2/3 Requirement Met
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.72rem; font-weight: 700;">
+                                                <i class="bi bi-hourglass-split me-1"></i>@(apt.RemainingMinutesBeforeCompletion) min to minimum
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div class="progress mb-2" style="height: 6px; border-radius: 999px; background: #e2e8f0;">
+                                        <div class="progress-bar @(apt.CanComplete ? "bg-success" : "bg-teal")"
+                                             role="progressbar"
+                                             style="width: @(apt.CanComplete ? "100%" : "67%"); transition: width 0.3s ease;">
+                                        </div>
+                                    </div>
+
+                                    <p class="text-secondary mb-0" style="font-size: 0.76rem; line-height: 1.45;">
+                                        @if (apt.EarliestCompletionAtUtc.HasValue)
+                                        {
+                                            <span>This consultation can be completed after <strong>@apt.EarliestCompletionAtUtc.Value.ToLocalTime().ToString("HH:mm")</strong>. At least two-thirds of the scheduled session must be completed.</span>
+                                        }
+                                        else
+                                        {
+                                            <span>At least two-thirds of the scheduled session must be completed before completing.</span>
+                                        }
+                                    </p>
+                                </div>
+
                                 @if (Model.HasConsultationNote)
                                 {
                                     <div class="alert alert-success py-2 px-3 small d-flex align-items-center gap-2 rounded-3 border border-success-subtle mb-2">
                                         <i class="bi bi-check-circle-fill text-success fs-5"></i>
                                         <span class="fw-medium text-dark">Consultation notes recorded.</span>
                                     </div>
-                                    <form method="post" asp-page-handler="Complete">
-                                        <input type="hidden" name="id" value="@apt.Id" />
-                                        <button type="submit" class="dr-btn-primary w-100 py-2.5">
-                                            <i class="bi bi-check-all fs-5"></i> Complete Appointment
+
+                                    @if (apt.CanComplete)
+                                    {
+                                        <form method="post" asp-page-handler="Complete">
+                                            <input type="hidden" name="id" value="@apt.Id" />
+                                            <button type="submit" class="dr-btn-primary w-100 py-2.5">
+                                                <i class="bi bi-check-all fs-5"></i> Complete Consultation
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="dr-btn-secondary w-100 py-2.5 opacity-75" disabled title="At least two-thirds of the scheduled duration must elapse before completion.">
+                                            <i class="bi bi-hourglass-split me-1"></i> Minimum Duration Pending (@(apt.RemainingMinutesBeforeCompletion)m left)
                                         </button>
-                                    </form>
+                                        <div class="text-muted text-center" style="font-size:0.75rem;">
+                                            Completion unlocks at @(apt.EarliestCompletionAtUtc?.ToLocalTime().ToString("HH:mm") ?? "two-thirds duration"). You can continue updating notes in the meantime.
+                                        </div>
+                                    }
+
                                     @if (Model.AssociatedRecord != null)
                                     {
                                         <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-secondary w-100 mt-1 js-note-drawer-link dr-live-note-btn">
@@ -2094,10 +2319,12 @@
                                 else
                                 {
                                     <button type="button" class="dr-btn-primary w-100 py-2.5 dr-live-note-btn" onclick="openClinicalNoteDrawer()">
-                                        <i class="bi bi-journal-medical fs-5"></i> Write Clinical Note
+                                        <i class="bi bi-journal-medical fs-5"></i> @(documentationRequired ? "Complete Clinical Documentation" : "Write Clinical Note")
                                     </button>
                                     <div class="text-muted text-center" style="font-size:0.75rem;">
-                                        Opens as a right-side workspace so appointment details stay visible.
+                                        @(documentationRequired
+                                            ? "The appointment remains in progress until this clinical note is saved."
+                                            : "Opens as a right-side workspace so appointment details stay visible.")
                                     </div>
                                 }
                             }
@@ -2107,8 +2334,8 @@
                             {
                                 @if (Model.AssociatedRecord != null)
                                 {
-                                    <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-secondary w-100 js-note-drawer-link">
-                                        <i class="bi bi-file-earmark-medical text-teal"></i> View / Edit Consultation Note
+                                    <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@Model.AssociatedRecord.Id" class="dr-btn-secondary w-100">
+                                        <i class="bi bi-file-earmark-medical text-teal"></i> View Consultation Note
                                     </a>
                                 }
                                 @if (apt.PatientId.HasValue)
@@ -2142,7 +2369,7 @@
                                     <i class="bi bi-three-dots"></i> More Actions
                                 </button>
                                 <div class="dropdown-menu dr-more-actions-menu">
-                                    @if (apt.Status is 0 or 1)
+                                    @if (canCancelAppointment)
                                     {
                                         <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#doctorCancelModal">
                                             <i class="bi bi-x-circle"></i> Cancel Appointment
@@ -2161,86 +2388,91 @@
 
         <div id="clinicalNoteDrawerBackdrop" class="dr-note-drawer-backdrop" onclick="closeClinicalNoteDrawer()" aria-hidden="true"></div>
         <aside id="clinicalNoteDrawer" class="dr-note-drawer" role="dialog" aria-modal="true" aria-labelledby="clinicalNoteDrawerTitle" aria-hidden="true">
-            <div class="dr-note-drawer-header d-flex justify-content-between align-items-start gap-3">
+            <div class="dr-note-drawer-header d-flex justify-content-between align-items-center gap-2">
                 <div>
-                    <div class="small fw-bold text-teal text-uppercase mb-1" style="letter-spacing:.04em;">Clinical documentation</div>
-                    <h2 id="clinicalNoteDrawerTitle" class="h5 fw-bold text-dark mb-1">Consultation Note</h2>
-                    <p class="text-muted small mb-0">Document findings while keeping the appointment context open.</p>
-                    <div class="d-flex flex-wrap gap-2 mt-2">
-                        <span class="badge rounded-pill bg-white text-teal border">
-                            <i class="bi bi-person me-1"></i>@(apt.PatientName ?? "Patient")
-                        </span>
-                        <span class="badge rounded-pill bg-white text-secondary border">
-                            <i class="bi bi-clock me-1"></i>@apt.StartAt.LocalDateTime.ToString("HH:mm") - @apt.EndAt.LocalDateTime.ToString("HH:mm")
-                        </span>
-                        <span class="badge rounded-pill bg-white text-secondary border">
-                            <i class="bi bi-upc-scan me-1"></i>@apt.BookingCode
-                        </span>
-                    </div>
+                    <h2 id="clinicalNoteDrawerTitle" class="fs-6 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-medical text-teal"></i> Consultation Note
+                    </h2>
+                    <p class="text-muted small mb-0" style="font-size:0.76rem;">Document findings while keeping the appointment context open.</p>
                 </div>
-                <button type="button" class="dr-btn-secondary px-2 py-1" onclick="closeClinicalNoteDrawer()" aria-label="Close note drawer">
+                <button type="button" class="dr-btn-secondary px-2.5 py-1 flex-shrink-0" onclick="closeClinicalNoteDrawer()" aria-label="Close note drawer">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <div class="dr-note-drawer-body">
-                @if (apt.Status == 3 && !Model.HasConsultationNote)
-                {
-                    <div id="clinicalNoteCreatePanel" class="dr-drawer-form-shell">
-                        <div class="dr-note-context-strip">
+
+            @if (apt.Status == 3 && !Model.HasConsultationNote)
+            {
+                <form method="post" asp-page-handler="CreateNoteAndComplete" id="clinicalNoteCreatePanel" class="d-flex flex-column flex-grow-1 min-h-0">
+                    <input type="hidden" name="id" value="@apt.Id" />
+                    <input type="hidden" asp-for="NoteInput.PatientRecordId" />
+                    <input type="hidden" asp-for="NoteInput.Visibility" value="1" />
+
+                    <div class="dr-note-drawer-body">
+                        <!-- Patient Info Cards (3 Column Strip) -->
+                        <div class="dr-note-context-strip mb-3">
                             <div class="dr-note-context-item">
-                                <div class="dr-note-context-label">Patient</div>
+                                <div class="dr-note-context-label"><i class="bi bi-person me-0.5"></i> Patient</div>
                                 <div class="dr-note-context-value">@(apt.PatientName ?? "Patient")</div>
                             </div>
                             <div class="dr-note-context-item">
-                                <div class="dr-note-context-label">Session Time</div>
+                                <div class="dr-note-context-label"><i class="bi bi-clock me-0.5"></i> Session Time</div>
                                 <div class="dr-note-context-value">@apt.StartAt.LocalDateTime.ToString("MMM dd, HH:mm") - @apt.EndAt.LocalDateTime.ToString("HH:mm")</div>
                             </div>
                             <div class="dr-note-context-item">
-                                <div class="dr-note-context-label">Booking Code</div>
+                                <div class="dr-note-context-label"><i class="bi bi-upc-scan me-0.5"></i> Booking Code</div>
                                 <div class="dr-note-context-value">@apt.BookingCode</div>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-                            <i class="bi bi-file-earmark-medical-fill text-teal fs-5"></i>
-                            <div>
-                                <h3 class="mb-0 fw-bold text-dark fs-6">Record Session & Finalize</h3>
-                                <div class="text-muted small">Saving this note will complete the appointment.</div>
+
+                        <!-- Session Notes / Complaints (Full width) -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1">
+                                <i class="bi bi-chat-left-text me-1 text-teal"></i>Session Notes / Complaints <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="NoteInput.ConsultationSummary" class="form-control" rows="3" required placeholder="Session summary, chief complaints, patient observations..." style="border-radius:8px; font-size:0.88rem; min-height:80px;"></textarea>
+                        </div>
+
+                        <!-- 2-Column Clinical Grid -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">
+                                    <i class="bi bi-clipboard-pulse me-1 text-teal"></i>Diagnosis / Assessment Findings
+                                </label>
+                                <textarea asp-for="NoteInput.Diagnosis" class="form-control" rows="2" placeholder="Clinical findings & diagnosis..." style="border-radius:8px; font-size:0.88rem; min-height:65px;"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">
+                                    <i class="bi bi-lightbulb me-1 text-teal"></i>Recommendations
+                                </label>
+                                <textarea asp-for="NoteInput.Recommendation" class="form-control" rows="2" placeholder="Doctor's clinical recommendations..." style="border-radius:8px; font-size:0.88rem; min-height:65px;"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">
+                                    <i class="bi bi-journal-check me-1 text-teal"></i>Therapy Plan
+                                </label>
+                                <textarea asp-for="NoteInput.TherapyPlan" class="form-control" rows="2" placeholder="Therapy plan & exercises..." style="border-radius:8px; font-size:0.88rem; min-height:65px;"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">
+                                    <i class="bi bi-arrow-repeat me-1 text-teal"></i>Follow-up Notes
+                                </label>
+                                <textarea asp-for="NoteInput.FollowUpNotes" class="form-control" rows="2" placeholder="Follow-up instructions..." style="border-radius:8px; font-size:0.88rem; min-height:65px;"></textarea>
                             </div>
                         </div>
 
-                        <form method="post" asp-page-handler="CreateNoteAndComplete">
-                            <input type="hidden" name="id" value="@apt.Id" />
-                            <input type="hidden" asp-for="NoteInput.PatientRecordId" />
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">
-                                    Session Notes / Complaints <span class="text-danger">*</span>
-                                </label>
-                                <textarea asp-for="NoteInput.ConsultationSummary" class="form-control form-control-sm" rows="4" required placeholder="Session summary, chief complaints, observations..." style="border-radius:10px; font-size:0.9rem;"></textarea>
+                        @if (hasTreatmentPackage)
+                        {
+                            <div class="dr-package-followup-notice mb-2" role="status">
+                                <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
+                                <div>
+                                    <strong>Follow-up scheduling unavailable</strong>: Patient has an active treatment package; future sessions are managed through the treatment plan.
+                                </div>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Diagnosis / Assessment Findings</label>
-                                <textarea asp-for="NoteInput.Diagnosis" class="form-control form-control-sm" rows="3" placeholder="Clinical findings..." style="border-radius:10px; font-size:0.9rem;"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Recommendations</label>
-                                <textarea asp-for="NoteInput.Recommendation" class="form-control form-control-sm" rows="3" placeholder="Recommendations..." style="border-radius:10px; font-size:0.9rem;"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Therapy Plan</label>
-                                <textarea asp-for="NoteInput.TherapyPlan" class="form-control form-control-sm" rows="3" placeholder="Therapy intervention plan..." style="border-radius:10px; font-size:0.9rem;"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Follow-up Notes</label>
-                                <textarea asp-for="NoteInput.FollowUpNotes" class="form-control form-control-sm" rows="3" placeholder="Follow-up instructions..." style="border-radius:10px; font-size:0.9rem;"></textarea>
-                            </div>
-
-                            <div class="mb-3 pt-3 border-top">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
+                        }
+                        else
+                        {
+                            <div class="p-2.5 bg-light rounded-3 border mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1.5">
                                     <label class="form-label small fw-bold text-dark mb-0">
                                         <i class="bi bi-calendar-plus me-1 text-teal"></i>Follow-up Date (Optional)
                                     </label>
@@ -2248,36 +2480,50 @@
                                         Reset
                                     </button>
                                 </div>
-                                <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" id="followUpDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm mb-2" style="border-radius:10px; font-size:0.9rem;" onchange="loadFollowUpSlots(this.value)" />
-
-                                <input type="hidden" asp-for="NoteInput.NextAppointmentRecommendedSlotId" id="followUpSlotInput" />
-
-                                <div id="followUpSlotsList" class="d-flex flex-column gap-1.5" style="max-height: 220px; overflow-y: auto;"></div>
-                                <div id="followUpSlotsPlaceholder" class="p-3 rounded bg-light border text-center text-muted" style="font-size:0.82rem;">
-                                    Pick a date to select an available follow-up slot.
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-5">
+                                        <input type="date" asp-for="NoteInput.NextAppointmentRecommendedDate" id="followUpDateInput" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" style="border-radius:8px; font-size:0.85rem;" onchange="loadFollowUpSlots(this.value)" />
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input type="hidden" asp-for="NoteInput.NextAppointmentRecommendedSlotId" id="followUpSlotInput" />
+                                        <div id="followUpSlotsPlaceholder" class="p-1.5 rounded bg-white border text-center text-muted small" style="font-size:0.78rem;">
+                                            Pick a date to select an available slot
+                                        </div>
+                                    </div>
                                 </div>
+                                <div id="followUpSlotsList" class="d-flex flex-column gap-1.5 mt-2" style="max-height: 130px; overflow-y: auto;"></div>
                             </div>
-
-                            <button type="submit" class="dr-btn-primary w-100 py-2.5">
-                                <i class="bi bi-check-all fs-5"></i> Save Note & Complete
-                            </button>
-                        </form>
+                        }
                     </div>
-                }
 
-                <iframe id="clinicalNoteDrawerFrame" class="dr-note-drawer-frame d-none" title="Consultation note editor"></iframe>
-            </div>
+                    <!-- Sticky Action Footer Bar -->
+                    <div class="dr-note-drawer-footer d-flex gap-2">
+                        <button type="button" class="dr-btn-secondary py-2 px-3.5" onclick="closeClinicalNoteDrawer()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="dr-btn-primary flex-grow-1 py-2 shadow-sm" style="border-radius:10px; font-size:0.92rem; font-weight:700;">
+                            <i class="bi bi-check-circle-fill me-1"></i> Save Note & Complete Consultation
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="dr-note-drawer-body p-0">
+                    <iframe id="clinicalNoteDrawerFrame" class="dr-note-drawer-frame d-none" title="Consultation note editor"></iframe>
+                </div>
+            }
         </aside>
 
         <!-- ═══════════════════════════════════════════════════
            MODALS (Cancel & Reject Reschedule)
            ═══════════════════════════════════════════════════ -->
-        @if (apt.Status is 0 or 1)
+        @if (canCancelAppointment)
         {
             <div class="modal fade" id="doctorCancelModal" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
-                        <form method="post" asp-page-handler="Cancel">
+                        <form method="post" asp-page-handler="Cancel" asp-route-id="@apt.Id">
                             <input type="hidden" name="id" value="@apt.Id" />
                             <div class="modal-header border-0 pb-0">
                                 <h3 class="modal-title fs-5 fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Appointment</h3>
@@ -2287,7 +2533,7 @@
                                 <p class="text-secondary small mb-3">Cancel the appointment with <strong>@(apt.PatientName ?? "patient")</strong> on <strong>@apt.AppointmentDate</strong>?</p>
                                 <div class="mb-3">
                                     <label class="form-label small fw-bold text-dark">Cancellation Reason</label>
-                                    <select class="form-select form-select-sm mb-2" name="cancelCategory" style="border-radius:8px;">
+                                    <select class="form-select form-select-sm mb-2" name="cancelCategory" required style="border-radius:8px;">
                                         <option value="" disabled selected>Select a primary reason...</option>
                                         <option value="Schedule Conflict">Schedule Conflict</option>
                                         <option value="Emergency">Emergency</option>
@@ -2295,7 +2541,7 @@
                                         <option value="Unavailable">Unavailable</option>
                                         <option value="Other">Other</option>
                                     </select>
-                                    <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Additional details (optional)" style="border-radius:8px;"></textarea>
+                                    <textarea name="cancelDetails" class="form-control form-control-sm" rows="3" maxlength="900" placeholder="Additional details (optional)" style="border-radius:8px;"></textarea>
                                 </div>
                                 <div class="alert alert-info py-2 px-3 small mb-0 d-flex align-items-center gap-2" style="border-radius:8px;">
                                     <i class="bi bi-info-circle-fill"></i>
@@ -2346,6 +2592,82 @@
     <i class="bi bi-arrow-up-lg"></i>
 </button>
 
+@if (Model.ShowCompletionCelebration && Model.Appointment != null)
+{
+    var celebrationApt = Model.Appointment;
+    <div class="modal fade" id="consultationCompletedModal" tabindex="-1" aria-labelledby="celebrationTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden; background: #ffffff;">
+                <div class="position-relative p-4 text-center" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #f0fdf4 100%);">
+                    <div class="confetti-container" aria-hidden="true">
+                        <div class="confetti c1"></div>
+                        <div class="confetti c2"></div>
+                        <div class="confetti c3"></div>
+                        <div class="confetti c4"></div>
+                        <div class="confetti c5"></div>
+                    </div>
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
+                         style="width: 68px; height: 68px; background: #ffffff; color: #059669;">
+                        <i class="bi bi-check2-circle" style="font-size: 2.4rem;"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1" id="celebrationTitle">Consultation completed</h4>
+                    <p class="text-secondary mb-0" style="font-size: 0.925rem;">
+                        The consultation record has been saved and the session was completed successfully.
+                    </p>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="p-3 rounded-3 bg-light border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Patient Name</span>
+                            <strong class="text-dark">@(celebrationApt.PatientName ?? "Patient")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Completed Time</span>
+                            <strong class="text-dark">@(DateTime.UtcNow.ToLocalTime().ToString("MMM dd, yyyy HH:mm"))</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Consultation Format</span>
+                            <span class="badge bg-white text-dark border">@celebrationApt.ConsultationMode</span>
+                        </div>
+                    </div>
+
+                    @if (celebrationApt.TreatmentPackageId.HasValue || Model.ActiveTreatmentPackage != null)
+                    {
+                        var pkgName = celebrationApt.TreatmentPackageName ?? Model.ActiveTreatmentPackage?.Title ?? "Care Package";
+                        var left = Model.ActiveTreatmentPackage?.RemainingSessions;
+                        <div class="p-2.5 rounded-3 border bg-white d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-box-seam text-teal fs-5"></i>
+                            <div class="small">
+                                <div class="fw-bold text-dark">@pkgName</div>
+                                @if (left.HasValue)
+                                {
+                                    <div class="text-muted">@left sessions remaining in package</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer bg-light border-0 px-4 py-3 d-flex justify-content-end gap-2">
+                    <a asp-page="Index" class="btn btn-outline-secondary px-3.5 py-2" style="border-radius: 8px; font-weight: 600; font-size: 0.875rem;">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Appointments
+                    </a>
+                    @if (Model.AssociatedRecord != null)
+                    {
+                        <a asp-page="/Doctor/ConsultationNotes/Details" asp-route-id="@Model.AssociatedRecord.Id" class="btn btn-teal text-white fw-bold px-3.5 py-2" style="border-radius: 8px; background: #0f766e; font-size: 0.875rem;">
+                            <i class="bi bi-file-earmark-medical me-1"></i>View Consultation Record
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-teal text-white fw-bold px-3.5 py-2" data-bs-dismiss="modal" style="border-radius: 8px; background: #0f766e; font-size: 0.875rem;">
+                            <i class="bi bi-check2 me-1"></i>Done
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
 @section Scripts {
 <script>
     var currentFollowUpSlots = [];
@@ -2357,6 +2679,13 @@
         var createPanel = document.getElementById('clinicalNoteCreatePanel');
 
         if (!drawer || !backdrop) return;
+
+        if (backdrop.parentElement !== document.body) {
+            document.body.appendChild(backdrop);
+        }
+        if (drawer.parentElement !== document.body) {
+            document.body.appendChild(drawer);
+        }
 
         if (url && frame) {
             frame.src = url;
@@ -2395,30 +2724,27 @@
 
     function renderFollowUpSlotCard(slot, isSelected) {
         var bgStyle = isSelected 
-            ? 'background:#f0fdfa; border:1.5px solid #0d9488 !important; box-shadow:0 1px 3px rgba(13,148,136,0.15);' 
+            ? 'background:#f0fdfa; border:1.5px solid #0d9488 !important; box-shadow:0 2px 6px rgba(13,148,136,0.18);'
             : 'background:#ffffff; border:1px solid #e2e8f0;';
         var iconBg = isSelected ? '#0d9488' : '#f1f5f9';
-        var iconColor = isSelected ? '#ffffff' : '#64748b';
+        var iconColor = isSelected ? '#ffffff' : '#0f766e';
         var iconClass = isSelected ? 'bi-check2-circle' : 'bi-clock';
         var textClass = isSelected ? 'fw-bold' : 'fw-semibold';
         var textColor = isSelected ? 'color:#0f766e;' : 'color:#1e293b;';
         var badgeHtml = isSelected
-            ? '<span class="badge" style="background:#0d9488; color:#fff; font-size:0.68rem; font-weight:600;"><i class="bi bi-check me-0.5"></i>Selected</span>'
-            : '<span class="badge bg-light text-muted border" style="font-size:0.68rem; font-weight:500;">Available</span>';
+            ? '<span class="badge" style="background:#0d9488; color:#fff; font-size:0.64rem; font-weight:600;"><i class="bi bi-check me-0.5"></i>Selected</span>'
+            : '<span class="badge bg-light text-muted border" style="font-size:0.64rem; font-weight:500;">Available</span>';
 
-        return '<div class="p-2 rounded-3 d-flex align-items-center justify-content-between cursor-pointer mb-1.5" ' +
-               'style="cursor:pointer; transition:all 0.15s ease; ' + bgStyle + '" ' +
+        return '<div class="p-1.5 px-2 rounded-2 d-flex align-items-center justify-content-between cursor-pointer" ' +
+               'style="cursor:pointer; transition:all 0.15s ease; min-height:36px; ' + bgStyle + '" ' +
                'onclick="selectFollowUpSlot(\'' + slot.id + '\')">' +
-                   '<div class="d-flex align-items-center gap-2">' +
-                       '<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:26px; height:26px; background:' + iconBg + '; color:' + iconColor + '; font-size:0.85rem;">' +
+                   '<div class="d-flex align-items-center gap-1.5 min-w-0">' +
+                       '<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:22px; height:22px; background:' + iconBg + '; color:' + iconColor + '; font-size:0.75rem;">' +
                            '<i class="bi ' + iconClass + '"></i>' +
                        '</div>' +
-                       '<div>' +
-                           '<div class="' + textClass + '" style="font-size:0.84rem; ' + textColor + '">' + slot.startTime + ' - ' + slot.endTime + '</div>' +
-                           (slot.label ? '<div class="text-muted" style="font-size:0.7rem;">' + slot.label + '</div>' : '') +
-                       '</div>' +
+                       '<div class="' + textClass + ' text-truncate" style="font-size:0.8rem; ' + textColor + '">' + slot.startTime + ' - ' + slot.endTime + '</div>' +
                    '</div>' +
-                   '<div>' + badgeHtml + '</div>' +
+                   '<div class="flex-shrink-0 ms-1">' + badgeHtml + '</div>' +
                '</div>';
     }
 
@@ -2500,6 +2826,15 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Bootstrap appends its backdrop to body. Move nested modals and note drawer there as well so
+        // the page wrapper's stacking context cannot place the backdrop or sidebar above them.
+        ['doctorCancelModal', 'rejectRescheduleModal', 'clinicalNoteDrawer', 'clinicalNoteDrawerBackdrop'].forEach(function (modalId) {
+            var modalElement = document.getElementById(modalId);
+            if (modalElement && modalElement.parentElement !== document.body) {
+                document.body.appendChild(modalElement);
+            }
+        });
+
         document.querySelectorAll('.js-note-drawer-link').forEach(function (link) {
             link.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -2525,6 +2860,13 @@
             btn.addEventListener('click', function () {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+        }
+
+        var celebrationModalEl = document.getElementById('consultationCompletedModal');
+        if (celebrationModalEl && typeof bootstrap !== 'undefined') {
+            document.body.appendChild(celebrationModalEl);
+            var celebrationModal = new bootstrap.Modal(celebrationModalEl);
+            celebrationModal.show();
         }
     });
 </script>

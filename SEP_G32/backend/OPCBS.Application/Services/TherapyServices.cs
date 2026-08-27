@@ -200,10 +200,34 @@ public class EmotionJournalService : IEmotionJournalService
             return ApiResponse<EmotionJournalDto>.ErrorResponse("Số giờ ngủ phải từ 0 đến 24 giờ.");
 
         var user = await _userRepo.GetByIdAsync(patient.UserId, ct);
+        var today = DateTime.UtcNow.AddHours(7).Date;
+        var existingToday = (await _journalRepo.GetAllAsync(ct))
+            .Where(j => j.PatientId == patient.Id && !j.IsDeleted)
+            .OrderByDescending(j => j.CreatedAt)
+            .FirstOrDefault(j => j.CreatedAt.AddHours(7).Date == today);
+
+        if (existingToday != null)
+        {
+            existingToday.Title = dto.Title.Trim();
+            existingToday.Content = dto.Content;
+            existingToday.MoodScale = dto.MoodScale;
+            existingToday.StressScale = dto.StressScale;
+            existingToday.SleepHours = dto.SleepHours;
+            existingToday.DepressionScale = dto.DepressionScale;
+            existingToday.IsShared = dto.IsShared;
+            existingToday.UpdatedAt = DateTime.UtcNow;
+
+            _journalRepo.Update(existingToday);
+            await _uow.SaveChangesAsync(ct);
+            return ApiResponse<EmotionJournalDto>.SuccessResponse(
+                MapToDto(existingToday, user?.FullName),
+                "You have updated today's mood.");
+        }
+
         var entity = new EmotionJournal
         {
             PatientId = patient.Id,
-            Title = dto.Title,
+            Title = dto.Title.Trim(),
             Content = dto.Content,
             MoodScale = dto.MoodScale,
             StressScale = dto.StressScale,
@@ -215,7 +239,9 @@ public class EmotionJournalService : IEmotionJournalService
 
         await _journalRepo.AddAsync(entity, ct);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<EmotionJournalDto>.SuccessResponse(MapToDto(entity, user?.FullName), "Đã lưu nhật ký cảm xúc.");
+        return ApiResponse<EmotionJournalDto>.SuccessResponse(
+            MapToDto(entity, user?.FullName),
+            "You have updated today's mood.");
     }
 
     public async Task<ApiResponse> DeleteAsync(Guid id, Guid patientUserId, CancellationToken ct)

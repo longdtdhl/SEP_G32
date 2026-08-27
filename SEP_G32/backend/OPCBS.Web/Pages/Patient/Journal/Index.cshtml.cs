@@ -19,6 +19,7 @@ public class IndexModel : PageModel
     public List<EmotionJournalDto> Journals { get; set; } = new();
     public List<PsychometricSubmissionDto> PsychSubmissions { get; set; } = new();
     public string? Error { get; set; }
+    public bool HasTodayEntry { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public Guid? CaseId { get; set; }
@@ -36,6 +37,20 @@ public class IndexModel : PageModel
         var (data, error) = await _service.GetMyJournalsAsync();
         Journals = data;
         Error = error;
+
+        var today = DateTime.UtcNow.AddHours(7).Date;
+        var todayEntry = Journals.FirstOrDefault(j => j.CreatedAt.AddHours(7).Date == today);
+        HasTodayEntry = todayEntry != null;
+        if (todayEntry != null && string.IsNullOrWhiteSpace(Title) && MoodScale == 0 && StressScale == 0)
+        {
+            Title = todayEntry.Title;
+            Content = todayEntry.Content;
+            MoodScale = todayEntry.MoodScale;
+            StressScale = todayEntry.StressScale;
+            SleepHours = todayEntry.SleepHours;
+            DepressionScale = todayEntry.DepressionScale;
+            IsShared = todayEntry.IsShared;
+        }
 
         // Load psychometric submissions for chart
         try
@@ -74,7 +89,7 @@ public class IndexModel : PageModel
 
         var (result, error) = await _service.CreateJournalAsync(dto);
         if (result == null) { Error = error; await OnGetAsync(); return Page(); }
-        TempData["SuccessMessage"] = "Emotion journal entry saved successfully!";
+        TempData["SuccessMessage"] = "You have updated today's mood.";
         return RedirectToPage();
     }
 

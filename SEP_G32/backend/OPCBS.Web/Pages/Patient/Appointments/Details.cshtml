@@ -312,6 +312,7 @@
     var isApproved = apt.Status == 1;
     var isRejected = apt.Status == 2;
     var isInProgress = apt.Status == 3;
+    var isAwaitingDoctorDocumentation = isInProgress && apt.IsDocumentationRequired;
     var isCompleted = apt.Status == 4;
     var isCancelled = apt.Status == 5;
     var isRescheduleRequested = apt.Status == 6;
@@ -365,10 +366,17 @@
     }
     else if (isInProgress)
     {
-        <div class="apt-banner b-inprogress">
+        <div class="apt-banner @(isAwaitingDoctorDocumentation ? "b-pending" : "b-inprogress")">
             <div class="banner-text">
-                <i class="bi bi-play-circle-fill"></i>
-                <span><strong>In Progress</strong> — Your consultation is currently ongoing.</span>
+                <i class="bi @(isAwaitingDoctorDocumentation ? "bi-file-earmark-medical" : "bi-play-circle-fill")"></i>
+                @if (isAwaitingDoctorDocumentation)
+                {
+                    <span><strong>Awaiting Doctor Documentation</strong> — The consultation has ended and your doctor is completing the clinical record.</span>
+                }
+                else
+                {
+                    <span><strong>In Progress</strong> — Your consultation is currently ongoing.</span>
+                }
             </div>
             <a asp-page="/Patient/Messages/Index" asp-route-doctorId="@apt.DoctorId" class="btn btn-sm btn-primary" style="border-radius:10px;">
                 <i class="bi bi-chat-dots-fill me-1"></i>Chat with Doctor
@@ -865,7 +873,17 @@
                     else if (isApproved) { <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Confirmed</span> }
                     else if (isPending) { <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">Pending</span> }
                     else if (isAwaitingPatientConfirmation) { <span class="badge rounded-pill text-white" style="background:#0f766e;">Action Required</span> }
-                    else if (isInProgress) { <span class="badge rounded-pill" style="background:#ede9fe; color:#4338ca; border:1px solid #c7d2fe;">In Progress</span> }
+                    else if (isInProgress)
+                    {
+                        @if (isAwaitingDoctorDocumentation)
+                        {
+                            <span class="badge rounded-pill" style="background:#fff7ed; color:#9a3412; border:1px solid #fed7aa;">Documentation Pending</span>
+                        }
+                        else
+                        {
+                            <span class="badge rounded-pill" style="background:#ede9fe; color:#4338ca; border:1px solid #c7d2fe;">In Progress</span>
+                        }
+                    }
                     else if (isRescheduleRequested) { <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">Reschedule</span> }
                     else if (isCancelled) { <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Cancelled</span> }
                 </div>
@@ -892,7 +910,7 @@
                             <i class="bi bi-info-circle me-1 text-secondary"></i>
                             @if (isPending) { <span>Awaiting doctor's approval.</span> }
                             else if (isApproved) { <span>Confirmed. Ready for scheduled session.</span> }
-                            else if (isInProgress) { <span>Session in progress with your doctor.</span> }
+                            else if (isInProgress) { <span>@(isAwaitingDoctorDocumentation ? "Your doctor is completing the consultation record." : "Session in progress with your doctor.")</span> }
                             else if (isRescheduleRequested) { <span>Reschedule request pending response.</span> }
                             else if (isCancelled) { <span>This appointment was cancelled.</span> }
                             else { <span>Appointment session has ended.</span> }

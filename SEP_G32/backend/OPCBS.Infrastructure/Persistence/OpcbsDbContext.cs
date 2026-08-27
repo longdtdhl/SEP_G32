@@ -810,6 +810,7 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.TestType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SourceUrl).HasMaxLength(500);
             entity.HasIndex(e => e.TestType);
         });
 
@@ -944,6 +945,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.CaseDescription).HasMaxLength(2000);
             entity.Property(e => e.PrimaryConcern).HasMaxLength(1000);
             entity.Property(e => e.ClosureNote).HasMaxLength(2000);
+            entity.Property(e => e.HoldReason).HasMaxLength(2000);
+            entity.Property(e => e.HoldRejectionReason).HasMaxLength(2000);
 
             entity.HasOne(e => e.TreatmentPackage)
                 .WithMany(tp => tp.TreatmentCases)

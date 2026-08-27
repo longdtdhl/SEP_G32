@@ -17,7 +17,7 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostCreateAsync(
         Guid caseId, string title, string? description,
-        int category, int priority, decimal? targetValue,
+        int category, int priority, decimal? currentValue, decimal? targetValue,
         string? unit, string? targetDate)
     {
         CaseId = caseId;
@@ -30,6 +30,7 @@ public class CreateModel : PageModel
             Description = description,
             Category = category,
             Priority = priority,
+            CurrentValue = currentValue,
             TargetValue = targetValue,
             Unit = unit,
             TargetDate = parsedDate

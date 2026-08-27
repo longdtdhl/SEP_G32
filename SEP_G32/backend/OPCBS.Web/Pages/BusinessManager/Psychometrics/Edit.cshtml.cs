@@ -40,6 +40,7 @@ public class EditModel : PageModel
             Title = test.Title,
             Description = test.Description,
             TestType = test.TestType,
+            SourceUrl = test.SourceUrl,
             Questions = test.Questions.Select(q => new CreatePsychometricQuestionDto
             {
                 QuestionNumber = q.QuestionNumber,

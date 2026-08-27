@@ -181,6 +181,13 @@
                                             @test.Description
                                         </small>
                                     }
+                                    @if (!string.IsNullOrEmpty(test.SourceUrl))
+                                    {
+                                        <a href="@test.SourceUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1 text-primary small mt-0.5" style="font-size:0.72rem; font-weight:600;">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            <span>@(test.SourceUrl.Contains("psy.unsw.edu.au") ? "Source: psy.unsw.edu.au" : "Source Link")</span>
+                                        </a>
+                                    }
                                 </div>
                             </td>
                             <td class="py-3">
@@ -248,76 +255,6 @@
             <a asp-page="Create" class="btn btn-primary btn-sm px-3" style="border-radius:6px;">
                 <i class="bi bi-plus-lg me-1"></i>Create First Test
             </a>
-        </div>
-    }
-</div>
-
-<!-- All Recent Patient Test Results & Submissions Section -->
-<div class="bm-card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div>
-            <h5 class="fw-bold mb-0 text-dark" style="font-size:1.1rem;">
-                <i class="bi bi-journal-medical text-primary me-2"></i>Platform Patient Test Results (@Model.RecentSubmissions.Count)
-            </h5>
-            <p class="text-muted mb-0" style="font-size:0.8rem;">Real-time clinical screening results and psychological assessment records submitted by patients</p>
-        </div>
-    </div>
-
-    @if (Model.RecentSubmissions.Any())
-    {
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
-                <thead class="table-light" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; color:#64748b;">
-                    <tr>
-                        <th class="ps-3 py-3">Patient Name</th>
-                        <th class="py-3">Assessment Test</th>
-                        <th class="py-3">Completed Date</th>
-                        <th class="py-3">Total Score</th>
-                        <th class="py-3">Clinical Interpretation</th>
-                        <th class="pe-3 py-3 text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var sub in Model.RecentSubmissions)
-                    {
-                        <tr>
-                            <td class="ps-3 py-3 fw-semibold text-dark">
-                                <i class="bi bi-person-circle text-muted me-1.5"></i>@sub.PatientName
-                            </td>
-                            <td class="py-3">
-                                <span class="fw-semibold text-dark">@sub.TestTitle</span>
-                                <span class="badge bg-light text-primary border ms-1" style="font-size:0.7rem;">@sub.TestType</span>
-                            </td>
-                            <td class="py-3 text-muted">
-                                @sub.SubmittedAt.ToString("MMM dd, yyyy HH:mm")
-                            </td>
-                            <td class="py-3">
-                                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.85rem; padding:4px 9px;">
-                                    @sub.TotalScore pts
-                                </span>
-                            </td>
-                            <td class="py-3">
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle" style="font-size:0.75rem; white-space:normal; text-align:left; line-height:1.4;">
-                                    @sub.Interpretation
-                                </span>
-                            </td>
-                            <td class="pe-3 py-3 text-end">
-                                <a asp-page="Details" asp-route-id="@sub.TestId" class="btn btn-sm btn-outline-primary px-2.5 py-1" style="border-radius:6px; font-size:0.75rem;">
-                                    <i class="bi bi-eye me-1"></i>View Test
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
-    {
-        <div class="text-center py-4 text-muted">
-            <i class="bi bi-inbox display-6 d-block mb-2" style="color:#cbd5e1;"></i>
-            <p class="mb-1 fw-medium text-dark" style="font-size:0.9rem;">No patient test submissions recorded yet</p>
-            <p class="mb-0 text-muted" style="font-size:0.8rem;">Patient screening responses and calculated diagnostic outcomes will automatically appear here once completed.</p>
         </div>
     }
 </div>

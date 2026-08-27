@@ -7,304 +7,480 @@
 
 <style>
     /* ── Filter Bar ── */
-    .apt-filter-bar {
+    .filter-section {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1.25rem;
-        margin-bottom: 1.75rem;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ── Date Group Header ── */
+    .date-group-header {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #0f766e;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 6px 0;
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 10px;
     }
 
     /* ── Appointment Cards ── */
-    .apt-card {
+    .appt-card {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        margin-bottom: 0.875rem;
-        border-left: 4px solid transparent;
+        border-radius: 8px;
         transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+        margin-bottom: 0.625rem;
         overflow: hidden;
     }
-
-    .apt-card:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    .appt-card:hover {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         transform: translateX(2px);
     }
+    .appt-card.status-completed { border-left-color: #10b981; }
+    .appt-card.status-cancelled { border-left-color: #ef4444; }
+    .appt-card.status-rejected { border-left-color: #6b7280; }
 
-    .apt-card.st-completed {
-        border-left-color: #10b981;
+    .appt-card-body {
+        padding: 0.875rem 1.25rem;
     }
 
-    .apt-card.st-cancelled {
-        border-left-color: #ef4444;
-    }
-
-    .apt-card.st-rejected {
-        border-left-color: #64748b;
-    }
-
-    .apt-card-inner {
-        padding: 1.25rem 1.5rem;
+    .appt-date-box {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        gap: 1.25rem;
-        flex-wrap: wrap;
-    }
-
-    .apt-doctor-avatar {
+        justify-content: center;
+        background: #f8fafc;
+        border-radius: 8px;
         width: 52px;
         height: 52px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #f1f5f9;
         flex-shrink: 0;
+        border: 1px solid #f1f5f9;
+    }
+    .appt-date-day {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.1;
+    }
+    .appt-date-month {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .apt-doctor-avatar-fallback {
-        width: 52px;
-        height: 52px;
+    .doctor-avatar {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: linear-gradient(135deg, #0284c7, #0ea5e9);
-        color: #fff;
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 1.15rem;
+        font-size: 0.85rem;
         flex-shrink: 0;
     }
 
-    .apt-doctor-name {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 1rem;
-        margin-bottom: 2px;
+    /* ── Status Badges ── */
+    .appt-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .appt-status.s-completed { background: #d1fae5; color: #065f46; }
+    .appt-status.s-cancelled { background: #fee2e2; color: #991b1b; }
+    .appt-status.s-rejected { background: #f3f4f6; color: #374151; }
+
+    .appt-meta {
+        font-size: 0.8rem;
+        color: #64748b;
     }
 
     .apt-spec-chip {
         display: inline-block;
         background: #eff6ff;
         color: #2563eb;
-        padding: 2px 10px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.7rem;
+    }
+
+    .appt-pkg-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #f0fdf4;
+        color: #16a34a;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.68rem;
+    }
+
+    .appt-care-context {
+        min-width: 126px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .time-badge {
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ── Action buttons ── */
+    .action-btn {
+        width: 36px;
+        height: 36px;
         border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.72rem;
-    }
-
-    .apt-meta {
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-
-    /* ── Status Badges ── */
-    .apt-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-    }
-
-    .apt-status.s-completed {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .apt-status.s-rejected {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    .apt-status.s-cancelled {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .apt-btn {
-        border-radius: 10px;
-        padding: 6px 14px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.15s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        text-decoration: none;
-    }
-
-    .apt-btn.btn-view {
-        border: 1px solid #bfdbfe;
-        color: #2563eb;
-        background: #fff;
-    }
-
-    .apt-btn.btn-view:hover {
-        background: #eff6ff;
-    }
-
-    /* ── Empty State ── */
-    .apt-empty {
-        text-align: center;
-        padding: 80px 24px;
-        background: #fff;
-        border-radius: 16px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .apt-empty-icon {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: #f8fafc;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        font-size: 0.85rem;
+        padding: 0;
+        background: #fff;
+        border-width: 1px;
+        box-shadow: 0 1px 2px rgba(15, 67, 72, 0.06);
+        transition: all 0.15s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(15, 67, 72, 0.1);
+    }
+    .appointment-actions {
+        min-width: 90px;
+        justify-content: flex-end;
+    }
+
+    /* ── Clear filter button ── */
+    .apt-clear-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .apt-clear-btn:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #dc2626;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        padding: 56px 20px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        color: #cbd5e1;
+    }
+    .empty-state h5 {
+        color: #6c757d;
+        margin-top: 14px;
+    }
+    .empty-state p {
         color: #94a3b8;
-        font-size: 2.5rem;
-        margin-bottom: 1.25rem;
+        font-size: 0.88rem;
+    }
+
+    /* ── Pagination Styling ── */
+    .apt-pagination-link {
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        font-weight: 600;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        background-color: #fff;
+        text-decoration: none;
+    }
+    .apt-pagination-link:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    .apt-pagination-item.active .apt-pagination-link {
+        background-color: #0f766e !important;
+        border-color: #0f766e !important;
+        color: #fff !important;
+    }
+    .apt-pagination-item.disabled .apt-pagination-link {
+        color: #cbd5e1 !important;
+        border-color: #f1f5f9 !important;
+        background-color: #fff !important;
+        pointer-events: none;
     }
 </style>
 
 <!-- Page Header -->
 <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
     <div>
-        <h1><i class="bi bi-clock-history me-2" style="color:var(--mb-primary);"></i>Appointment History</h1>
-        <p class="text-muted mb-0 mt-1" style="font-size:0.875rem;">Past and completed consultation records</p>
+        <h1 class="mb-1"><i class="bi bi-clock-history me-2" style="color:var(--mb-primary);"></i>Appointment History</h1>
+        <p class="text-muted mb-0 small">Past and completed consultation records</p>
     </div>
-    <a asp-page="Index" class="btn btn-outline-primary px-3" style="border-radius:10px; height:42px; display:inline-flex; align-items:center; font-weight:600; font-size:0.85rem;">
+    <a asp-page="Index" class="btn btn-outline-primary btn-sm px-3 py-2" style="border-radius:8px; font-weight:600; font-size:0.85rem;">
         <i class="bi bi-arrow-left me-1"></i>Back to My Appointments
     </a>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert"
-         style="border-radius:12px; border:none; margin-bottom: 1.5rem;">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius:8px;">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>@Model.Error
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<!-- Filter Bar Form -->
+<!-- Filters -->
 <form method="get" id="filterForm">
     <input type="hidden" name="page" value="1" />
 
-    <div class="apt-filter-bar d-flex gap-3 align-items-center flex-wrap">
-        <div style="flex: 1.2; min-width: 180px;">
-            <select name="Status" onchange="this.form.submit()" class="form-select"
-                    style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
-                <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">All History Statuses</option>
-                <option value="Completed" selected="@(Model.Status == "Completed" ? "selected" : null)">Completed</option>
-                <option value="Cancelled" selected="@(Model.Status == "Cancelled" ? "selected" : null)">Cancelled</option>
-                <option value="Rejected" selected="@(Model.Status == "Rejected" ? "selected" : null)">Rejected</option>
+    <div class="filter-section d-flex gap-2 align-items-end flex-wrap">
+        <div style="flex: 1.2; min-width: 160px;">
+            <select asp-for="Status" onchange="this.form.submit()" class="form-select form-select-sm"
+                    style="height: 36px; border-radius: 8px; font-size: 0.85rem;">
+                <option value="">All History Statuses</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Rejected">Rejected</option>
             </select>
         </div>
-        <div style="flex: 1.5; min-width: 200px;">
-            <select name="Doctor" onchange="this.form.submit()" class="form-select"
-                    style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;">
-                <option value="" selected="@(string.IsNullOrEmpty(Model.Doctor) ? "selected" : null)">All Doctors</option>
+        <div style="flex: 1.5; min-width: 180px;">
+            <select asp-for="Doctor" onchange="this.form.submit()" class="form-select form-select-sm"
+                    style="height: 36px; border-radius: 8px; font-size: 0.85rem;">
+                <option value="">All Doctors</option>
                 @foreach (var doc in Model.UniqueDoctors)
                 {
-                    <option value="@doc" selected="@(Model.Doctor == doc ? "selected" : null)">@doc</option>
+                    <option value="@doc">Doctor: @doc</option>
                 }
             </select>
         </div>
-        <div style="flex: 1.2; min-width: 160px;">
-            <input type="date" name="Date" value="@Model.Date" onchange="this.form.submit()" class="form-control"
-                   style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; font-weight: 500; outline: none; box-shadow: none;" />
+        <div style="flex: 0.9; min-width: 130px;">
+            <input asp-for="Date" type="date" onchange="this.form.submit()" class="form-control form-control-sm"
+                   style="height: 36px; border-radius: 8px; font-size: 0.85rem;" />
         </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="height: 36px; border-radius: 8px; padding: 0 14px; font-size: 0.85rem; font-weight: 600;">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
         @if (!string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Doctor) || !string.IsNullOrEmpty(Model.Date))
         {
-            <div>
-                <a asp-page="History" class="btn btn-light"
-                   style="height: 44px; border-radius: 10px; border: 1px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="bi bi-x-circle-fill"></i> Clear Filters
-                </a>
-            </div>
+            <a asp-page="History" class="apt-clear-btn" title="Clear all filters" style="width: 36px; height: 36px;">
+                <i class="bi bi-x-lg"></i>
+            </a>
         }
     </div>
 </form>
 
-<!-- Appointment List -->
+<!-- Appointment List Grouped by Date -->
 @if (Model.Appointments != null && Model.Appointments.Any())
 {
-    @foreach (var apt in Model.Appointments)
+    var grouped = Model.Appointments
+        .OrderByDescending(a => a.StartAt == DateTimeOffset.MinValue ? DateTimeOffset.MinValue : a.StartAt)
+        .ThenByDescending(a => a.StartTime)
+        .GroupBy(a => a.AppointmentDate ?? "Unknown")
+        .OrderByDescending(g => DateTime.TryParse(g.Key, out var groupDate) ? groupDate : DateTime.MinValue);
+
+    @foreach (var group in grouped)
     {
-        var stLower = (apt.StatusText ?? "").ToLower().Replace(" ", "");
-        var cardClass = stLower switch
-        {
-            "completed" => "st-completed",
-            "cancelled" => "st-cancelled",
-            "rejected" => "st-rejected",
-            _ => ""
-        };
-        var statusBadgeClass = stLower switch
-        {
-            "completed" => "s-completed",
-            "cancelled" => "s-cancelled",
-            "rejected" => "s-rejected",
-            _ => "s-completed"
-        };
-        var statusIcon = stLower switch
-        {
-            "completed" => "bi-check-circle-fill",
-            "cancelled" => "bi-x-circle-fill",
-            "rejected" => "bi-dash-circle-fill",
-            _ => "bi-info-circle-fill"
-        };
+        <div class="mb-4">
+            <div class="date-group-header">
+                <i class="bi bi-calendar3 me-1"></i>
+                @{
+                    var displayDate = DateTime.TryParse(group.Key, out var gDate)
+                        ? gDate.ToString("dddd, MMMM dd, yyyy")
+                        : group.Key;
+                }
+                @displayDate
+                <span class="badge bg-secondary bg-opacity-25 text-dark ms-2" style="font-size: 0.7rem;">@group.Count() @(group.Count() == 1 ? "history record" : "history records")</span>
+            </div>
 
-        <div class="apt-card @cardClass">
-            <div class="apt-card-inner">
-                <div class="d-flex align-items-center gap-3" style="min-width: 240px; flex: 1.5;">
-                    <div class="apt-doctor-avatar-fallback">
-                        @(string.IsNullOrEmpty(apt.DoctorName) ? "D" : apt.DoctorName.Substring(0, 1).ToUpper())
-                    </div>
-                    <div>
-                        <div class="apt-doctor-name">
-                            @(apt.DoctorName ?? "Assigned Doctor")
-                        </div>
-                        @if (!string.IsNullOrEmpty(apt.Specialization))
-                        {
-                            <span class="apt-spec-chip">@apt.Specialization</span>
-                        }
-                    </div>
-                </div>
-
-                <div class="apt-meta d-flex flex-column gap-1" style="min-width: 180px; flex: 1.2;">
-                    <div><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Date:</strong> @apt.AppointmentDate</div>
-                    <div><i class="bi bi-clock me-1 text-primary"></i><strong>Time:</strong> @apt.StartTime - @apt.EndTime</div>
-                    @if (!string.IsNullOrEmpty(apt.BookingCode))
+            <div class="d-flex flex-column gap-0">
+                @foreach (var apt in group)
+                {
+                    var statusClass = apt.Status switch
                     {
-                        <div><i class="bi bi-hash me-1 text-muted"></i><strong>Code:</strong> <span class="font-monospace">@apt.BookingCode</span></div>
+                        4 => "status-completed",
+                        5 => "status-cancelled",
+                        2 => "status-rejected",
+                        8 => "status-rejected",
+                        12 => "status-rejected",
+                        _ => "status-completed"
+                    };
+
+                    var badgeStatusClass = apt.Status switch
+                    {
+                        4 => "s-completed",
+                        5 => "s-cancelled",
+                        2 => "s-rejected",
+                        8 => "s-rejected",
+                        12 => "s-rejected",
+                        _ => "s-completed"
+                    };
+
+                    var statusIcon = apt.Status switch
+                    {
+                        4 => "bi-patch-check-fill",
+                        5 => "bi-x-circle-fill",
+                        2 => "bi-slash-circle",
+                        8 => "bi-person-x",
+                        12 => "bi-clock-history",
+                        _ => "bi-check-circle-fill"
+                    };
+
+                    var doctorInitials = string.IsNullOrEmpty(apt.DoctorName) ? "DR" :
+                        string.Join("", apt.DoctorName.Replace("Dr.", "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                            .Take(2).Select(w => w[0])).ToUpper();
+                    if (string.IsNullOrEmpty(doctorInitials)) doctorInitials = "DR";
+
+                    var dayNum = "—";
+                    var monthStr = "";
+                    if (DateTime.TryParse(apt.AppointmentDate, out var parsedDate))
+                    {
+                        dayNum = parsedDate.Day.ToString();
+                        monthStr = parsedDate.ToString("MMM").ToUpper();
                     }
-                </div>
 
-                <div class="d-flex align-items-center gap-3">
-                    <span class="apt-status @statusBadgeClass">
-                        <i class="bi @statusIcon"></i> @apt.StatusText
-                    </span>
+                    <div class="appt-card @statusClass">
+                        <div class="appt-card-body">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <!-- Date Box -->
+                                <div class="appt-date-box d-none d-sm-flex">
+                                    <span class="appt-date-day">@dayNum</span>
+                                    <span class="appt-date-month">@monthStr</span>
+                                </div>
 
-                    <a asp-page="Details" asp-route-id="@apt.Id" class="apt-btn btn-view">
-                        <i class="bi bi-eye"></i> Details
-                    </a>
-                </div>
+                                <!-- Doctor Info + Status Badge + Specialization -->
+                                <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 200px;">
+                                    <div class="doctor-avatar">@doctorInitials</div>
+                                    <div style="min-width: 0;">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="fw-bold text-dark" style="font-size: 0.92rem;">Doctor: @(apt.DoctorName ?? "Specialist")</span>
+                                            <span class="appt-status @badgeStatusClass">
+                                                <i class="bi @statusIcon"></i>
+                                                @apt.StatusText
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(apt.Specialization))
+                                        {
+                                            <div class="mt-1">
+                                                <span class="apt-spec-chip">@apt.Specialization</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Time Badge -->
+                                <div class="text-center" style="min-width: 110px;">
+                                    <div class="time-badge">
+                                        <i class="bi bi-clock"></i>
+                                        @(apt.StartTime ?? "--:--") — @(apt.EndTime ?? "--:--")
+                                    </div>
+                                </div>
+
+                                <!-- Treatment Package Context -->
+                                @if (apt.TreatmentPackageId.HasValue)
+                                {
+                                    <div class="appt-care-context">
+                                        <span class="appt-pkg-chip" title="This appointment belongs to a treatment package">
+                                            <i class="bi bi-box-seam"></i>Treatment Package
+                                        </span>
+                                    </div>
+                                }
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-1 ms-auto align-items-center appointment-actions">
+                                    <a asp-page="Details" asp-route-id="@apt.Id" class="action-btn btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
+    }
+
+    <!-- Pagination Controls -->
+    @if (Model.Pagination != null && Model.Pagination.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center gap-1 border-0">
+                <!-- Previous Button -->
+                <li class="page-item apt-pagination-item @(Model.Pagination.HasPreviousPage ? "" : "disabled")">
+                    <a class="page-link apt-pagination-link"
+                       href="@Url.Page("./History", new { page = Model.Pagination.Page - 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Page Number Buttons -->
+                @for (int i = 1; i <= Model.Pagination.TotalPages; i++)
+                {
+                    <li class="page-item apt-pagination-item @(Model.Pagination.Page == i ? "active" : "")">
+                        <a class="page-link apt-pagination-link"
+                           href="@Url.Page("./History", new { page = i, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <!-- Next Button -->
+                <li class="page-item apt-pagination-item @(Model.Pagination.HasNextPage ? "" : "disabled")">
+                    <a class="page-link apt-pagination-link"
+                       href="@Url.Page("./History", new { page = Model.Pagination.Page + 1, Status = Model.Status, Doctor = Model.Doctor, Date = Model.Date })">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     }
 }
 else
 {
-    <div class="apt-empty">
-        <div class="apt-empty-icon">
-            <i class="bi bi-clock-history"></i>
-        </div>
-        <h4 class="fw-bold text-dark mb-2">No Appointment History Found</h4>
-        <p class="text-muted mb-0 mx-auto" style="max-width: 420px; font-size: 0.9rem;">
-            Completed, cancelled, and rejected appointments will be stored here for your reference.
-        </p>
+    <div class="empty-state">
+        <i class="bi bi-clock-history"></i>
+        <h5>No appointment history found</h5>
+        <p class="mb-0">Completed, cancelled, and rejected appointments will appear here.</p>
     </div>
 }

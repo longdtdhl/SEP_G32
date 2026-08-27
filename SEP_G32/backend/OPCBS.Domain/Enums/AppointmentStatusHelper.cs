@@ -21,7 +21,8 @@ public static class AppointmentStatusHelper
         AppointmentStatus.Completed,
         AppointmentStatus.Cancelled,
         AppointmentStatus.Rejected,
-        AppointmentStatus.NoShow
+        AppointmentStatus.NoShow,
+        AppointmentStatus.Expired
     };
 
     public static bool IsActive(AppointmentStatus status) => ActiveStatuses.Contains(status);

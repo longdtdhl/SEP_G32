@@ -279,6 +279,16 @@
                                 </div>
                             </div>
 
+                            @if (!string.IsNullOrWhiteSpace(test.SourceUrl))
+                            {
+                                <div class="mb-2">
+                                    <a href="@test.SourceUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1" style="font-size:0.74rem; font-weight:600; color:var(--mb-primary, #0d9488);">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                        <span>@(test.SourceUrl.Contains("psy.unsw.edu.au") ? "Source: psy.unsw.edu.au" : "Source Reference")</span>
+                                    </a>
+                                </div>
+                            }
+
                             @if (!isSys && !string.IsNullOrWhiteSpace(test.DoctorName))
                             {
                                 <div class="text-muted small mb-2.5" style="font-size:0.74rem;">
@@ -292,9 +302,16 @@
                             <div class="d-flex gap-1.5">
                                 @if (!isSys)
                                 {
-                                    <a asp-page="/Doctor/Psychometrics/Create" asp-route-editId="@test.Id" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:7px; font-size:0.78rem;">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold btn-edit-test"
+                                            data-testid="@test.Id"
+                                            data-testtitle="@test.Title"
+                                            data-issys="false"
+                                            data-category="@(test.Category ?? "General")"
+                                            data-qcount="@test.QuestionCount"
+                                            data-desc="@(test.Description ?? test.Purpose ?? "")"
+                                            style="border-radius:7px; font-size:0.78rem;">
                                         <i class="bi bi-pencil me-1"></i>Edit
-                                    </a>
+                                    </button>
                                 }
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2.5 py-1 fw-semibold btn-view-details"
                                         data-testid="@test.Id"
@@ -503,6 +520,19 @@
             </div>
         </div>
 
+        <!-- Source URL Reference -->
+        <div class="mb-3 d-none" id="dtSourceContainer">
+            <h6 class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
+                Clinical Reference Source
+            </h6>
+            <div class="p-2.5 rounded-3" style="background:#f0fdfa; border:1px solid #99f6e4;">
+                <a href="#" target="_blank" rel="noopener noreferrer" id="dtSourceLink" class="text-decoration-none d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size:0.82rem; color:var(--mb-primary, #0d9488);">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    <span id="dtSourceText">psy.unsw.edu.au</span>
+                </a>
+            </div>
+        </div>
+
         <!-- Scoring Scale -->
         <div class="mb-3">
             <h6 class="fw-bold text-dark small text-uppercase mb-1" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
@@ -519,8 +549,8 @@
                 <h6 class="fw-bold text-dark small text-uppercase mb-0" style="font-size:0.75rem; letter-spacing:0.04em; color:#64748b;">
                     Questions (<span id="dtQuestionsCount">0</span>)
                 </h6>
-                <button type="button" class="btn btn-outline-primary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:6px; font-size:0.76rem;" onclick="enableDrawerEditMode()">
-                    <i class="bi bi-pencil-square me-1"></i>Edit Questions
+                <button type="button" id="dtHeaderEditBtn" class="btn btn-outline-primary btn-sm px-2.5 py-1 fw-semibold" style="border-radius:6px; font-size:0.76rem;" onclick="enableDrawerEditMode()">
+                    <i class="bi bi-files me-1"></i><span>Customize Copy</span>
                 </button>
             </div>
             <div id="dtQuestionsList" class="list-group list-group-flush border rounded-3 overflow-hidden">
@@ -538,8 +568,8 @@
             Close
         </button>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold" onclick="enableDrawerEditMode()" style="border-radius:8px;">
-                <i class="bi bi-pencil me-1"></i>Edit Questions
+            <button type="button" id="dtFooterEditBtn" class="btn btn-outline-primary btn-sm px-3 py-1.5 fw-semibold" onclick="enableDrawerEditMode()" style="border-radius:8px;">
+                <i class="bi bi-files me-1"></i><span>Customize Copy</span>
             </button>
             <button type="button" class="btn btn-sm px-3.5 py-1.5 fw-semibold text-white" id="dtAssignBtn" onclick="onDrawerAssignClick()" style="border-radius:8px; background:var(--mb-primary, #0d9488);">
                 <i class="bi bi-send me-1.5"></i>Assign Assessment
@@ -574,6 +604,11 @@
                     <label class="form-label fw-bold small text-dark mb-1">Test Type Identifier</label>
                     <input type="text" id="dtEditTestType" class="form-control form-control-sm bg-white" style="border-radius:8px;" placeholder="CUSTOM" readonly />
                 </div>
+            </div>
+
+            <div class="mb-2.5">
+                <label class="form-label fw-bold small text-dark mb-1">Source URL / Reference (Optional)</label>
+                <input type="text" id="dtEditSourceUrl" class="form-control form-control-sm" style="border-radius:8px;" placeholder="e.g. http://www2.psy.unsw.edu.au/dass/" />
             </div>
 
             <div>
@@ -691,6 +726,8 @@
     <script>
         let currentSelectedTestId = null;
         let currentLoadedAssessment = null;
+        let currentSelectedIsSystemTemplate = false;
+        let currentEditCreatesCopy = false;
 
         function setLibraryTab(tab) {
             document.querySelectorAll('.filter-segment-btn').forEach(b => b.classList.remove('active'));
@@ -738,6 +775,9 @@
         async function openDetailsDrawer(testId, title, isSys, category, qCount, desc) {
             currentSelectedTestId = testId;
             currentLoadedAssessment = null;
+            currentSelectedIsSystemTemplate = Boolean(isSys);
+            currentEditCreatesCopy = currentSelectedIsSystemTemplate;
+            updateEditActionLabels(0);
             cancelDrawerEditMode();
 
             document.getElementById('dtTitle').textContent = title || "Assessment Details";
@@ -834,6 +874,8 @@
                 if (!json.success || !json.data) throw new Error(json.message || "Failed to load");
                 const test = json.data;
                 currentLoadedAssessment = test;
+                currentSelectedIsSystemTemplate = Boolean(test.isSystemTemplate);
+                updateEditActionLabels(Number(test.submissionCount || 0));
 
                 // Sync view header
                 document.getElementById('dtTitle').textContent = test.title || title;
@@ -844,6 +886,23 @@
             } catch (err) {
                 qContainer.innerHTML = '<div class="alert alert-danger py-2 m-2">Unable to load test details. Please try again.</div>';
             }
+        }
+
+        function updateEditActionLabels(submissionCount) {
+            const createsVersion = !currentSelectedIsSystemTemplate && submissionCount > 0;
+            const label = currentSelectedIsSystemTemplate
+                ? 'Customize Copy'
+                : (createsVersion ? 'Create New Version' : 'Edit Questions');
+            const icon = currentSelectedIsSystemTemplate || createsVersion ? 'bi-files' : 'bi-pencil-square';
+
+            ['dtHeaderEditBtn', 'dtFooterEditBtn'].forEach(id => {
+                const button = document.getElementById(id);
+                if (!button) return;
+                const iconElement = button.querySelector('i');
+                const labelElement = button.querySelector('span');
+                if (iconElement) iconElement.className = `bi ${icon} me-1`;
+                if (labelElement) labelElement.textContent = label;
+            });
         }
 
         function renderViewQuestions(questions) {
@@ -875,8 +934,16 @@
         function enableDrawerEditMode() {
             if (!currentLoadedAssessment && !currentSelectedTestId) return;
 
-            document.getElementById('dtModeBadge').textContent = 'Edit Mode';
+            const submissionCount = Number(currentLoadedAssessment?.submissionCount || 0);
+            currentEditCreatesCopy = currentSelectedIsSystemTemplate || submissionCount > 0;
+
+            document.getElementById('dtModeBadge').textContent = currentEditCreatesCopy ? 'Private Copy' : 'Edit Mode';
             document.getElementById('dtModeBadge').className = 'badge bg-warning-subtle text-warning-emphasis border border-warning';
+
+            const saveBtn = document.getElementById('dtSaveBtn');
+            saveBtn.innerHTML = currentEditCreatesCopy
+                ? '<i class="bi bi-files me-1.5"></i>Create Private Copy'
+                : '<i class="bi bi-check2-circle me-1.5"></i>Save Changes';
 
             document.getElementById('dtViewSection').classList.add('d-none');
             document.getElementById('dtViewFooter').classList.add('d-none');
@@ -898,6 +965,7 @@
             document.getElementById('dtEditCategory').value = test.category || 'General';
             document.getElementById('dtEditTestType').value = test.testType || 'CUSTOM';
             document.getElementById('dtEditPurpose').value = test.purpose || test.description || '';
+            document.getElementById('dtEditSourceUrl').value = test.sourceUrl || (test.title && test.title.toUpperCase().includes('DASS') ? 'http://www2.psy.unsw.edu.au/dass/' : '');
 
             const editList = document.getElementById('dtEditQuestionsList');
             editList.innerHTML = '';
@@ -986,6 +1054,7 @@
             const category = document.getElementById('dtEditCategory').value.trim();
             const purpose = document.getElementById('dtEditPurpose').value.trim();
             const testType = document.getElementById('dtEditTestType').value.trim() || "CUSTOM";
+            const sourceUrl = document.getElementById('dtEditSourceUrl').value.trim();
 
             if (!title) {
                 alertBox.className = "alert alert-danger py-2 mb-3";
@@ -1028,6 +1097,8 @@
                     purpose: purpose,
                     description: purpose,
                     testType: testType,
+                    sourceUrl: sourceUrl,
+                    createCopy: currentEditCreatesCopy,
                     questions: questions
                 };
 
@@ -1042,26 +1113,55 @@
 
                 const json = await res.json();
                 if (json.success) {
+                    const createdCopy = currentEditCreatesCopy && json.data;
+                    if (createdCopy) {
+                        currentSelectedTestId = createdCopy.id;
+                        currentSelectedIsSystemTemplate = false;
+                        const badge = document.getElementById('dtBadge');
+                        badge.className = 'badge';
+                        badge.style.background = '#ecfdf5';
+                        badge.style.color = '#047857';
+                        badge.style.border = '1px solid #a7f3d0';
+                        badge.innerHTML = '<i class="bi bi-circle-fill text-success" style="font-size:0.5rem;"></i> My Assessment';
+                    }
+
                     // Update cache
                     if (!currentLoadedAssessment) currentLoadedAssessment = {};
-                    currentLoadedAssessment.title = title;
-                    currentLoadedAssessment.category = category;
-                    currentLoadedAssessment.purpose = purpose;
-                    currentLoadedAssessment.description = purpose;
-                    currentLoadedAssessment.questions = questions;
+                    if (createdCopy) currentLoadedAssessment.id = createdCopy.id;
+                    
+                    if (json.success && json.data) {
+                        currentLoadedAssessment = json.data;
+                        document.getElementById('dtPurpose').textContent = json.data.purpose || json.data.description || "Clinical screening assessment.";
+                        document.getElementById('dtSubtitle').textContent = json.data.description || json.data.purpose || "Clinical assessment.";
 
-                    // Update View UI
+                        const safeTitle = title.toUpperCase();
+                        const srcUrl = json.data.sourceUrl || (safeTitle.includes('DASS') ? 'http://www2.psy.unsw.edu.au/dass/' : '');
+                        const srcBox = document.getElementById('dtSourceContainer');
+                        const srcLink = document.getElementById('dtSourceLink');
+                        const srcText = document.getElementById('dtSourceText');
+                        if (srcUrl) {
+                            srcBox.classList.remove('d-none');
+                            srcLink.href = srcUrl;
+                            srcText.textContent = srcUrl.includes('psy.unsw.edu.au') ? 'Official Scale Reference: psy.unsw.edu.au' : srcUrl;
+                        } else {
+                            srcBox.classList.add('d-none');
+                        }
+
+                        renderViewQuestions(json.data.questions);
+                        updateEditActionLabels(Number(json.data.submissionCount || 0));
+                    }
+
                     document.getElementById('dtTitle').textContent = title;
-                    document.getElementById('dtPurpose').textContent = purpose || "Used for diagnostic screening and clinical evaluation.";
                     document.getElementById('dtMetrics').textContent = `${questions.length} Questions · Category: ${category}`;
-                    renderViewQuestions(questions);
 
                     // Switch back to view mode
                     cancelDrawerEditMode();
 
                     // Show success banner in view mode
                     const succAlert = document.getElementById('dtViewSuccessAlert');
-                    succAlert.textContent = "Assessment and questions updated successfully!";
+                    succAlert.textContent = json.message || (createdCopy
+                        ? "Private assessment copy created. It is visible only in My Assessments and ready to assign."
+                        : "Assessment and questions updated successfully!");
                     succAlert.classList.remove('d-none');
                     setTimeout(() => succAlert.classList.add('d-none'), 4000);
                 } else {
@@ -1189,6 +1289,20 @@
                     const qCount = parseInt(this.dataset.qcount) || 0;
                     const desc = this.dataset.desc;
                     openDetailsDrawer(testId, title, isSys, category, qCount, desc);
+                });
+            });
+
+            document.querySelectorAll('.btn-edit-test').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    await openDetailsDrawer(
+                        this.dataset.testid,
+                        this.dataset.testtitle,
+                        false,
+                        this.dataset.category,
+                        parseInt(this.dataset.qcount) || 0,
+                        this.dataset.desc);
+
+                    if (currentLoadedAssessment) enableDrawerEditMode();
                 });
             });
 

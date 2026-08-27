@@ -62,7 +62,16 @@
                                 <span class="text-muted" style="font-size:0.72rem;">—</span>
                             }
                         </td>
-                        <td><span class="tc-badge @badgeCls">@statusLabel</span></td>
+                        <td>
+                            @if (c.IsHoldRequested)
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size:0.68rem;"><i class="bi bi-clock-history me-1"></i>Hold Req</span>
+                            }
+                            else
+                            {
+                                <span class="tc-badge @badgeCls">@statusLabel</span>
+                            }
+                        </td>
                         <td class="text-muted" style="font-size:0.8rem;">@c.StartDate.ToString("MMM dd, yyyy")</td>
                         <td class="text-end" style="padding-right:1.25rem;">
                             <a href="/Doctor/TreatmentCases/Details?id=@c.Id" class="btn btn-sm btn-outline-secondary" style="border-radius:5px; font-size:0.72rem; padding:3px 10px;"

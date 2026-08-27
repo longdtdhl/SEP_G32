@@ -59,6 +59,26 @@ public class TreatmentCaseDto
     public int AssignmentCount { get; set; }
     public int CompletedAssignmentCount { get; set; }
 
+    // Lifecycle indicators
+    public bool CanManage { get; set; } = true;
+    public bool IsTerminal => Status is 2 or 3 or 4 or 5 or 6;
+    public bool IsExpired => Status == 6;
+    public bool IsOnHold => Status == 1;
+    public string? LifecycleReason { get; set; }
+
+    // Hold (Bảo lưu) management
+    public bool IsHoldRequested { get; set; }
+    public DateTime? HoldRequestedAt { get; set; }
+    public DateTime? HoldStartDate { get; set; }
+    public DateTime? HoldEndDate { get; set; }
+    public int? HoldDurationDays { get; set; }
+    public string? HoldReason { get; set; }
+    public DateTime? HoldApprovedAt { get; set; }
+    public Guid? HoldApprovedByDoctorId { get; set; }
+    public DateTime? HoldRejectedAt { get; set; }
+    public string? HoldRejectionReason { get; set; }
+    public int TotalHoldDays { get; set; }
+
     public string StatusText => Status switch
     {
         0 => "Active",
@@ -67,6 +87,7 @@ public class TreatmentCaseDto
         3 => "Terminated",
         4 => "Transferred",
         5 => "Cancelled",
+        6 => "Expired",
         _ => "Unknown"
     };
 }
@@ -91,6 +112,16 @@ public class TreatmentCaseListDto
     public DateTime StartDate { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public bool CanManage { get; set; } = true;
+    public bool IsTerminal => Status is 2 or 3 or 4 or 5 or 6;
+    public bool IsExpired => Status == 6;
+    public bool IsOnHold => Status == 1;
+    public bool IsHoldRequested { get; set; }
+    public DateTime? HoldStartDate { get; set; }
+    public DateTime? HoldEndDate { get; set; }
+    public int? HoldDurationDays { get; set; }
+    public string? HoldReason { get; set; }
+
     public string StatusText => Status switch
     {
         0 => "Active",
@@ -99,6 +130,7 @@ public class TreatmentCaseListDto
         3 => "Terminated",
         4 => "Transferred",
         5 => "Cancelled",
+        6 => "Expired",
         _ => "Unknown"
     };
 }
@@ -126,7 +158,28 @@ public class CloseTreatmentCaseDto
 {
     public string? ClosureNote { get; set; }
     /// <summary>2 = Completed, 3 = Terminated</summary>
-    public int CloseStatus { get; set; } = 2;
+    public int Status { get; set; } = 2;
+}
+
+/// <summary>DTO for Patient to request putting treatment on hold (bảo lưu)</summary>
+public class RequestTreatmentHoldDto
+{
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public int? DurationDays { get; set; }
+    public required string Reason { get; set; }
+}
+
+/// <summary>DTO for Doctor to approve treatment hold</summary>
+public class ApproveTreatmentHoldDto
+{
+    public string? Note { get; set; }
+}
+
+/// <summary>DTO for Doctor to reject treatment hold</summary>
+public class RejectTreatmentHoldDto
+{
+    public required string Reason { get; set; }
 }
 
 // ==================== Schedule Generation DTOs ====================

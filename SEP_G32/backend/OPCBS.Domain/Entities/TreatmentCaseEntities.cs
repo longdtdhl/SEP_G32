@@ -92,6 +92,41 @@ public class TreatmentCase : BaseEntity
     /// <summary>Closure note when the case is completed or terminated</summary>
     public string? ClosureNote { get; set; }
 
+    // === Hold (Bảo lưu) Management ===
+
+    /// <summary>Whether a hold request is currently pending doctor review</summary>
+    public bool IsHoldRequested { get; set; } = false;
+
+    /// <summary>When the patient submitted the hold request</summary>
+    public DateTime? HoldRequestedAt { get; set; }
+
+    /// <summary>Planned start date of the hold period</summary>
+    public DateTime? HoldStartDate { get; set; }
+
+    /// <summary>Planned end date of the hold period</summary>
+    public DateTime? HoldEndDate { get; set; }
+
+    /// <summary>Requested duration in days for the hold</summary>
+    public int? HoldDurationDays { get; set; }
+
+    /// <summary>Reason provided by patient for holding the treatment</summary>
+    public string? HoldReason { get; set; }
+
+    /// <summary>When doctor approved the hold request</summary>
+    public DateTime? HoldApprovedAt { get; set; }
+
+    /// <summary>Doctor UserId who approved the hold</summary>
+    public Guid? HoldApprovedByDoctorId { get; set; }
+
+    /// <summary>When doctor rejected the hold request</summary>
+    public DateTime? HoldRejectedAt { get; set; }
+
+    /// <summary>Rejection explanation from doctor</summary>
+    public string? HoldRejectionReason { get; set; }
+
+    /// <summary>Total cumulative hold days applied to extend this case's validity</summary>
+    public int TotalHoldDays { get; set; } = 0;
+
     // === Progress Tracking ===
 
     /// <summary>Overall treatment progress percentage (0-100)</summary>

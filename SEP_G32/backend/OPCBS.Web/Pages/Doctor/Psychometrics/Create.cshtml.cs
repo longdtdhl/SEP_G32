@@ -34,6 +34,9 @@ public class CreateModel : PageModel
     public string? Description { get; set; }
 
     [BindProperty]
+    public string? SourceUrl { get; set; }
+
+    [BindProperty]
     public List<QuestionInputModel> Questions { get; set; } = new();
 
     public string? ErrorMessage { get; set; }
@@ -81,6 +84,7 @@ public class CreateModel : PageModel
             Purpose = Purpose?.Trim(),
             Category = Category,
             Description = Description?.Trim(),
+            SourceUrl = !string.IsNullOrWhiteSpace(SourceUrl) ? SourceUrl.Trim() : (Title.Contains("DASS", StringComparison.OrdinalIgnoreCase) ? "http://www2.psy.unsw.edu.au/dass/" : null),
             TestType = "CUSTOM",
             Questions = validQuestions.Select((q, idx) => new CreatePsychometricQuestionDto
             {

@@ -143,27 +143,27 @@
             <div class="card border-0 shadow-sm" style="border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="form-section-title">
-                        <i class="bi bi-heart-pulse-fill"></i>Clinical & Psychology Information
+                        <i class="bi bi-clipboard2-pulse"></i>Pre-Appointment Clinical Evaluation & Notes
                     </div>
 
                     <div class="form-section">
                         <label class="form-label fw-bold">Psychological History</label>
-                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3"></textarea>
+                        <textarea asp-for="Input.PsychologicalHistory" class="form-control" rows="3" placeholder="Past psychological conditions, prior treatments..."></textarea>
                     </div>
 
                     <div class="form-section">
                         <label class="form-label fw-bold">Current Symptoms</label>
-                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3"></textarea>
+                        <textarea asp-for="Input.CurrentSymptoms" class="form-control" rows="3" placeholder="Chief complaints, present symptoms..."></textarea>
                     </div>
 
                     <div class="form-section">
                         <label class="form-label fw-bold">Stress Factors</label>
-                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3"></textarea>
+                        <textarea asp-for="Input.StressFactors" class="form-control" rows="3" placeholder="Identified stress triggers, lifestyle stressors..."></textarea>
                     </div>
 
                     <div class="form-section">
-                        <label class="form-label fw-bold">General Notes</label>
-                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2"></textarea>
+                        <label class="form-label fw-bold">General Notes / Observations</label>
+                        <textarea asp-for="Input.GeneralNotes" class="form-control" rows="2" placeholder="Additional doctor notes or intake observations..."></textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-3 pt-3 mt-4" style="border-top:2px solid #f1f5f9;">

@@ -146,6 +146,35 @@ public class PatientRecordService : IPatientRecordService
     private static bool MatchesDoctor(Guid doctorId, DoctorProfile doctorProfile) =>
         doctorId == doctorProfile.Id || doctorId == doctorProfile.UserId;
 
+    private static List<PatientRecordDto> CollapseDuplicatePatients(IEnumerable<PatientRecordDto> records)
+    {
+        static string Normalize(string? value) => value?.Trim().ToUpperInvariant() ?? string.Empty;
+
+        return records
+            .GroupBy(record =>
+            {
+                if (record.PatientId.HasValue)
+                    return $"registered:{record.PatientId.Value:N}";
+
+                var email = Normalize(record.GuestEmail);
+                if (!string.IsNullOrEmpty(email))
+                    return $"guest-email:{email}";
+
+                var phone = Normalize(record.GuestPhone);
+                if (!string.IsNullOrEmpty(phone))
+                    return $"guest-phone:{phone}";
+
+                // Guests without a stable contact identifier must remain separate.
+                return $"record:{record.Id:N}";
+            })
+            .Select(group => group
+                .OrderBy(record => record.CreatedAt)
+                .ThenBy(record => record.Id)
+                .First())
+            .OrderByDescending(record => record.CreatedAt)
+            .ToList();
+    }
+
     private async Task<List<PatientRecord>> EnsureAppointmentPatientsHaveRecordsAsync(
         IEnumerable<Appointment> appointments,
         DoctorProfile doctorProfile,
@@ -237,7 +266,7 @@ public class PatientRecordService : IPatientRecordService
 
         var dtos = _mapper.Map<List<PatientRecordDto>>(myRecords);
         await EnrichPatientRecordDtosAsync(dtos, ct);
-        return dtos;
+        return CollapseDuplicatePatients(dtos);
     }
 
     public async Task<bool> CanDoctorAccessPatientAsync(Guid doctorUserId, Guid patientRecordId, CancellationToken ct = default)
@@ -323,9 +352,15 @@ public class PatientRecordService : IPatientRecordService
         var entities = await _repo.GetAllAsync(ct);
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patientProfile = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
-        var targetPatientProfileId = patientProfile?.Id ?? userId;
+        var patientIdentifiers = patientProfile == null
+            ? new HashSet<Guid> { userId }
+            : new HashSet<Guid> { patientProfile.Id, patientProfile.UserId };
 
-        var entity = entities.FirstOrDefault(x => x.PatientId == targetPatientProfileId);
+        var entity = entities
+            .Where(x => x.PatientId.HasValue && patientIdentifiers.Contains(x.PatientId.Value))
+            .OrderBy(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
+            .FirstOrDefault();
         if (entity == null) return null;
         var dto = _mapper.Map<PatientRecordDto>(entity);
         var list = new List<PatientRecordDto> { dto };

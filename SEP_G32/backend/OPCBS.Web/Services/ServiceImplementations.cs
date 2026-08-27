@@ -455,7 +455,18 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     public async Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id)
     {
         var (data, _, error) = await GetAsync<ServicePackageDto>($"{ApiRoutes.ServicePackages}/{id}");
-        return (data, error);
+        if (data != null)
+        {
+            return (data, null);
+        }
+
+        // Compatibility fallback for API instances that only expose the package collection.
+        // Those versions return 405 for GET /service-packages/{id} even though PUT/DELETE exist.
+        var (packages, listError) = await GetServicePackagesAsync();
+        var package = packages.FirstOrDefault(item => item.Id == id);
+        return package != null
+            ? (package, null)
+            : (null, listError ?? error ?? "Package not found.");
     }
     public async Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto) => await PostAsync(ApiRoutes.ServicePackages, dto);
     public async Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto) => await PutAsync($"{ApiRoutes.ServicePackages}/{id}", dto);
@@ -510,6 +521,14 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
     public async Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto)
     {
         var (data, error) = await PostAsync<PsychometricTestDto>($"{ApiRoutes.Psychometrics}/custom-tests", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricTestDto? Data, string? Error)> CloneCustomTestAsync(Guid sourceTestId, UpdatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>(
+            $"{ApiRoutes.Psychometrics}/tests/{sourceTestId}/custom-copy",
+            dto);
         return (data, error);
     }
 
@@ -789,6 +808,22 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/close", dto);
+
+    // Hold (Bảo lưu)
+    public async Task<(bool Success, string? Error)> RequestHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/request-hold", dto);
+
+    public async Task<(bool Success, string? Error)> CancelHoldRequestAsync(Guid id) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/cancel-hold-request", new { });
+
+    public async Task<(bool Success, string? Error)> ApproveHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/approve-hold", dto);
+
+    public async Task<(bool Success, string? Error)> RejectHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/reject-hold", dto);
+
+    public async Task<(bool Success, string? Error)> ResumeTreatmentAsync(Guid id) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/resume", new { });
 
     // Schedule Generation
     public async Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto) =>

@@ -31,6 +31,11 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(Guid? id, string? tab = "overview", string? activityTab = "homework")
     {
+        if (TempData["SuccessMessage"] != null)
+        {
+            SuccessMessage = TempData["SuccessMessage"]?.ToString();
+        }
+
         if (!id.HasValue || id.Value == Guid.Empty)
             return RedirectToPage("Index");
 
@@ -160,5 +165,62 @@ public class DetailsModel : PageModel
             return Page();
         }
         return RedirectToPage(new { id = caseId, tab = "activities", activityTab = "mood" });
+    }
+
+    public async Task<IActionResult> OnPostRequestHoldAsync(Guid caseId, DateTime? startDate, DateTime? endDate, int? durationDays, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            ErrorMessage = "Please provide a valid reason for putting your treatment on hold.";
+            await ReloadDataAsync(caseId, "overview");
+            return Page();
+        }
+
+        var dto = new RequestTreatmentHoldWebDto
+        {
+            StartDate = startDate,
+            EndDate = endDate,
+            DurationDays = durationDays,
+            Reason = reason.Trim()
+        };
+
+        var (success, error) = await _api.RequestHoldAsync(caseId, dto);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to submit treatment hold request.";
+            await ReloadDataAsync(caseId, "overview");
+            return Page();
+        }
+
+        TempData["SuccessMessage"] = "Treatment hold request submitted successfully. Awaiting your doctor's review.";
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    public async Task<IActionResult> OnPostCancelHoldRequestAsync(Guid caseId)
+    {
+        var (success, error) = await _api.CancelHoldRequestAsync(caseId);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to cancel hold request.";
+            await ReloadDataAsync(caseId, "overview");
+            return Page();
+        }
+
+        TempData["SuccessMessage"] = "Treatment hold request has been cancelled.";
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    public async Task<IActionResult> OnPostResumeTreatmentAsync(Guid caseId)
+    {
+        var (success, error) = await _api.ResumeTreatmentAsync(caseId);
+        if (!success)
+        {
+            ErrorMessage = error ?? "Failed to resume treatment.";
+            await ReloadDataAsync(caseId, "overview");
+            return Page();
+        }
+
+        TempData["SuccessMessage"] = "Treatment program has been resumed successfully.";
+        return RedirectToPage(new { id = caseId, tab = "overview" });
     }
 }

@@ -192,6 +192,15 @@ public class ServicePackagesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>GET /api/v1/service-packages/{id} — Get package details (Business Manager)</summary>
+    [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
+    [HttpGet("{packageId}")]
+    public async Task<IActionResult> GetPackageById(Guid packageId)
+    {
+        var result = await _pkgService.GetByIdAsync(packageId);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
     /// <summary>POST /api/v1/service-packages — Create package (Business Manager)</summary>
     [Authorize(Roles = $"{RoleConstants.BusinessManager},{RoleConstants.SystemAdmin}")]
     [HttpPost]

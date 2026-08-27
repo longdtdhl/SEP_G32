@@ -413,6 +413,12 @@
                                 <i class="bi bi-person-x-fill me-1"></i>No Show
                             </span>
                         }
+                        else if (apt.Status == 12)
+                        {
+                            <span class="track-status-badge track-status-muted">
+                                <i class="bi bi-clock-history me-1"></i>Expired
+                            </span>
+                        }
                         else if (apt.Status == 11)
                         {
                             <span class="track-status-badge track-status-danger">
@@ -496,6 +502,19 @@
                                 <div class="timeline-step abnormal">
                                     <div class="timeline-step-icon"><i class="bi bi-person-x"></i></div>
                                     <div class="timeline-step-label">No Show</div>
+                                </div>
+                            </div>
+                        }
+                        else if (apt.Status == 12)
+                        {
+                            <div class="timeline-steps">
+                                <div class="timeline-step completed">
+                                    <div class="timeline-step-icon"><i class="bi bi-check-lg"></i></div>
+                                    <div class="timeline-step-label">Requested</div>
+                                </div>
+                                <div class="timeline-step abnormal">
+                                    <div class="timeline-step-icon"><i class="bi bi-clock-history"></i></div>
+                                    <div class="timeline-step-label">Expired</div>
                                 </div>
                             </div>
                         }

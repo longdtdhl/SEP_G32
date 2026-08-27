@@ -2,54 +2,360 @@
 @model OPCBS.Web.Pages.BusinessManager.ServicePackages.CreateModel
 @{
     ViewData["Title"] = "Create Service Package";
+    Layout = "_DashboardLayout";
+}
 
-    Layout = "_DashboardLayout";}
+<style>
+    .bm-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: box-shadow 0.2s ease;
+    }
+    .bm-section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--mb-primary);
+        box-shadow: 0 0 0 3px rgba(62, 142, 126, 0.15);
+    }
+    .preset-btn {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .preset-btn:hover {
+        background: var(--mb-primary);
+        border-color: var(--mb-primary);
+        color: #ffffff;
+    }
+    .preview-card {
+        background: #ffffff;
+        border: 2px dashed #cbd5e1;
+        border-radius: 14px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    .preview-featured-badge {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+    }
+    .benefit-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.82rem;
+        color: #334155;
+        margin-bottom: 0.4rem;
+    }
+    .benefit-item i {
+        color: var(--mb-primary);
+        font-size: 0.95rem;
+    }
+</style>
 
-<div class="mb-page-header d-flex align-items-center gap-3">
-    <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
-    <h1 class="mb-0"><i class="bi bi-plus-circle me-2" style="color:var(--mb-primary);"></i>Create Service Package</h1>
-</div>
-
-@if (Model.Error != null) { <div class="alert alert-warning">@Model.Error</div> }
-
-<div class="card border-0 shadow-sm" style="max-width:700px;">
-    <div class="card-body p-4">
-        <form method="post">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Package Name <span class="text-danger">*</span></label>
-                <input asp-for="Input.Name" class="form-control" placeholder="e.g. Basic, Professional, Premium" required />
+<!-- Breadcrumb & Header -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb" style="font-size:0.8rem;">
+            <li class="breadcrumb-item"><a asp-page="/BusinessManager/Dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door me-1"></i>Business</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index" class="text-decoration-none text-muted">Service Packages</a></li>
+            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Create Package</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:8px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;" title="Back to Packages">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 style="font-size:1.35rem; font-weight:700; margin:0;" class="text-dark">
+                    <i class="bi bi-plus-circle-fill me-2" style="color:var(--mb-primary);"></i>Create Service Package
+                </h1>
+                <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">Configure pricing, duration, slot capacity, and availability for doctor subscriptions</p>
             </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Description</label>
-                <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Describe the package benefits..."></textarea>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Price (VND) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
-                        <input asp-for="Input.Price" type="number" class="form-control" min="0" step="1000" required />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Duration (Days) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
-                        <input asp-for="Input.DurationDays" type="number" class="form-control" min="1" required />
-                    </div>
-                </div>
-            </div>
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Max Appointments <span class="text-danger">*</span></label>
-                <div class="input-group" style="max-width:200px;">
-                    <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
-                    <input asp-for="Input.MaxAppointments" type="number" class="form-control" min="1" required />
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Create Package</button>
-                <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
-            </div>
-        </form>
+        </div>
+        <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:8px; font-weight:600;">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </a>
     </div>
 </div>
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius:10px; font-size:0.875rem;">
+        <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+        <div>@Model.Error</div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Form Column -->
+    <div class="col-lg-7 col-xl-8">
+        <div class="bm-card p-4">
+            <form method="post" id="packageForm">
+                <!-- Section 1: Basic Information -->
+                <div class="mb-4">
+                    <div class="bm-section-title">
+                        <i class="bi bi-card-heading text-primary"></i> 1. Package Information
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Package Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-gem"></i></span>
+                            <input asp-for="Input.Name" id="inputName" class="form-control border-start-0 ps-0" placeholder="e.g. Starter Tier, Professional Care, Enterprise Clinic" required />
+                        </div>
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                        <div class="form-text text-muted small">Choose a distinct, marketable name for this subscription tier.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Description</label>
+                        <textarea asp-for="Input.Description" id="inputDesc" class="form-control" rows="3" placeholder="Provide an overview of who this tier is designed for and the key benefits included..."></textarea>
+                        <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Section 2: Pricing & Validity -->
+                <div class="mb-4">
+                    <div class="bm-section-title">
+                        <i class="bi bi-cash-coin text-primary"></i> 2. Pricing & Duration
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small">Price (VND) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-currency-exchange"></i></span>
+                                <input asp-for="Input.Price" id="inputPrice" type="number" class="form-control border-start-0 ps-0" min="0" step="1000" placeholder="500000" required />
+                                <span class="input-group-text bg-light text-muted small">VND</span>
+                            </div>
+                            <span asp-validation-for="Input.Price" class="text-danger small"></span>
+                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                <button type="button" class="preset-btn" onclick="setPrice(0)">Free (0)</button>
+                                <button type="button" class="preset-btn" onclick="setPrice(500000)">500k</button>
+                                <button type="button" class="preset-btn" onclick="setPrice(1000000)">1,000k</button>
+                                <button type="button" class="preset-btn" onclick="setPrice(2500000)">2,500k</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small">Duration (Days) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar-check"></i></span>
+                                <input asp-for="Input.DurationDays" id="inputDuration" type="number" class="form-control border-start-0 ps-0" min="1" placeholder="30" required />
+                                <span class="input-group-text bg-light text-muted small">Days</span>
+                            </div>
+                            <span asp-validation-for="Input.DurationDays" class="text-danger small"></span>
+                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                <button type="button" class="preset-btn" onclick="setDuration(30)">1 Month (30d)</button>
+                                <button type="button" class="preset-btn" onclick="setDuration(90)">3 Months (90d)</button>
+                                <button type="button" class="preset-btn" onclick="setDuration(365)">1 Year (365d)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Capacity & Platform Quotas -->
+                <div class="mb-4">
+                    <div class="bm-section-title">
+                        <i class="bi bi-sliders text-primary"></i> 3. Capacity & Quotas
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small">Daily Slot Capacity</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-clock-history"></i></span>
+                                <input asp-for="Input.MaxDailySlotsCapacity" id="inputSlots" type="number" class="form-control border-start-0 ps-0" min="1" placeholder="Unlimited" />
+                                <span class="input-group-text bg-light text-muted small">slots/day</span>
+                            </div>
+                            <span asp-validation-for="Input.MaxDailySlotsCapacity" class="text-danger small"></span>
+                            <div class="form-text text-muted small">Maximum consultation slots per day. Leave blank for unlimited.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small">Patient Capacity</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-people"></i></span>
+                                <input asp-for="Input.MaxPatientCapacity" id="inputPatients" type="number" class="form-control border-start-0 ps-0" min="1" placeholder="Unlimited" />
+                                <span class="input-group-text bg-light text-muted small">patients</span>
+                            </div>
+                            <span asp-validation-for="Input.MaxPatientCapacity" class="text-danger small"></span>
+                            <div class="form-text text-muted small">Active patient roster limit. Leave blank for unlimited.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Visibility & Promotion -->
+                <div class="mb-4">
+                    <div class="bm-section-title">
+                        <i class="bi bi-megaphone text-primary"></i> 4. Visibility & Marketing
+                    </div>
+                    <div class="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between">
+                        <div class="me-3">
+                            <label class="form-check-label fw-semibold text-dark d-block mb-1" for="Input_IsFeatured">
+                                <i class="bi bi-star-fill text-warning me-1"></i> Highlight as Featured Package
+                            </label>
+                            <p class="text-muted mb-0 small">Featured packages receive prominent badges and priority placement on practitioner subscription portals.</p>
+                        </div>
+                        <div class="form-check form-switch fs-4 mb-0">
+                            <input class="form-check-input" type="checkbox" asp-for="Input.IsFeatured" id="Input_IsFeatured" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                    <a asp-page="Index" class="btn btn-outline-secondary" style="border-radius:8px;">
+                        <i class="bi bi-arrow-left me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4" style="border-radius:8px; font-weight:600;">
+                        <i class="bi bi-check2-circle me-1"></i>Create Package
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Preview & Guidance Column -->
+    <div class="col-lg-5 col-xl-4">
+        <!-- Live Preview Card -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-eye me-1 text-primary"></i>Live Package Preview
+                </span>
+                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.7rem; font-weight:600;">Doctor View</span>
+            </div>
+            
+            <div class="preview-card p-4 shadow-sm" id="previewContainer">
+                <div id="previewBadge" class="preview-featured-badge d-none">
+                    <i class="bi bi-star-fill me-1"></i>FEATURED
+                </div>
+                
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:0.5px;">Tier Plan</div>
+                    <h3 class="fw-bold text-dark mb-1" id="prevName" style="font-size:1.3rem;">Starter Tier</h3>
+                    <p class="text-muted small mb-0" id="prevDesc" style="min-height:38px;">Describe package benefits to attract healthcare practitioners...</p>
+                </div>
+
+                <div class="py-3 border-top border-bottom my-3">
+                    <div class="d-flex align-items-baseline gap-1">
+                        <span class="fw-bold text-primary" id="prevPrice" style="font-size:1.6rem;">0</span>
+                        <span class="text-muted fw-semibold small">VND</span>
+                        <span class="text-muted small" id="prevDuration">/ 30 days</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="benefit-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span id="prevSlots">Unlimited daily slots</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span id="prevPatients">Unlimited patient roster</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Full platform appointment & EMR support</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>VNPay & instant payment integration</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary w-100 py-2 disabled" style="border-radius:8px; font-weight:600;">
+                    Subscribe Now
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Guidelines Card -->
+        <div class="bm-card p-3">
+            <h6 class="fw-bold text-dark small text-uppercase mb-2" style="letter-spacing:0.5px;">
+                <i class="bi bi-lightbulb me-1 text-warning"></i>Package Tips
+            </h6>
+            <ul class="text-muted small ps-3 mb-0" style="line-height:1.6;">
+                <li>Setting <strong>0 VND</strong> creates a free trial tier for new practitioners.</li>
+                <li>Leave quotas blank for unconstrained platform usage.</li>
+                <li>Duration can be adjusted, but existing active subscriptions will keep their original validity.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setPrice(val) {
+            const el = document.getElementById('inputPrice');
+            el.value = val;
+            updatePreview();
+        }
+        function setDuration(val) {
+            const el = document.getElementById('inputDuration');
+            el.value = val;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const name = document.getElementById('inputName').value.trim() || 'New Package';
+            const desc = document.getElementById('inputDesc').value.trim() || 'Provide an overview of who this tier is designed for...';
+            const price = parseFloat(document.getElementById('inputPrice').value) || 0;
+            const duration = parseInt(document.getElementById('inputDuration').value) || 30;
+            const slots = document.getElementById('inputSlots').value;
+            const patients = document.getElementById('inputPatients').value;
+            const isFeatured = document.getElementById('Input_IsFeatured').checked;
+
+            document.getElementById('prevName').innerText = name;
+            document.getElementById('prevDesc').innerText = desc;
+            document.getElementById('prevPrice').innerText = price.toLocaleString('vi-VN');
+            document.getElementById('prevDuration').innerText = `/ ${duration} days`;
+
+            document.getElementById('prevSlots').innerText = slots ? `Up to ${slots} daily consultation slots` : 'Unlimited daily slots';
+            document.getElementById('prevPatients').innerText = patients ? `Max ${patients} active patients` : 'Unlimited patient roster';
+
+            const badge = document.getElementById('previewBadge');
+            if (isFeatured) {
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+
+        document.getElementById('inputName')?.addEventListener('input', updatePreview);
+        document.getElementById('inputDesc')?.addEventListener('input', updatePreview);
+        document.getElementById('inputPrice')?.addEventListener('input', updatePreview);
+        document.getElementById('inputDuration')?.addEventListener('input', updatePreview);
+        document.getElementById('inputSlots')?.addEventListener('input', updatePreview);
+        document.getElementById('inputPatients')?.addEventListener('input', updatePreview);
+        document.getElementById('Input_IsFeatured')?.addEventListener('change', updatePreview);
+
+        // Initial preview render
+        document.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
+}

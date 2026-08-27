@@ -27,6 +27,23 @@ public class IndexModel : PageModel
     public int TemplateCount { get; set; }
     public int HistoryCount { get; set; }
 
+    public static bool IsHistoryPackage(TreatmentPackageDto p)
+    {
+        return p.Status is "Completed" or "Cancelled" or "Rejected" or "Expired"
+            || (p.Status == "Assigned" && p.IsAcceptanceExpired)
+            || (p.Status is "Active" or "Accepted" && p.ExpirationDate <= DateTime.UtcNow);
+    }
+
+    public static bool IsTemplatePackage(TreatmentPackageDto p)
+    {
+        return (p.PatientId == null || p.PatientId == Guid.Empty) && !IsHistoryPackage(p);
+    }
+
+    public static bool IsActiveAssignedPackage(TreatmentPackageDto p)
+    {
+        return p.PatientId != null && p.PatientId != Guid.Empty && !IsHistoryPackage(p);
+    }
+
     public async Task OnGetAsync()
     {
         Error = TempData["Error"] as string;
@@ -37,33 +54,30 @@ public class IndexModel : PageModel
         Pagination = pagination;
         Error ??= error;
 
-        var activeStatuses = new[] { "Draft", "Created", "Assigned", "Accepted", "Active", "CancellationPending" };
-
-        TemplateCount = Packages.Count(p => activeStatuses.Contains(p.Status) && (p.PatientId == null || p.PatientId == Guid.Empty));
-        ActiveCount = Packages.Count(p => activeStatuses.Contains(p.Status) && p.PatientId != null && p.PatientId != Guid.Empty);
-        HistoryCount = Packages.Count(p => !activeStatuses.Contains(p.Status));
+        ActiveCount = Packages.Count(IsActiveAssignedPackage);
+        TemplateCount = Packages.Count(IsTemplatePackage);
+        HistoryCount = Packages.Count(IsHistoryPackage);
 
         IEnumerable<TreatmentPackageDto> query = Packages;
 
         if (ViewMode == "history")
         {
-            query = query.Where(p => !activeStatuses.Contains(p.Status));
+            query = query.Where(IsHistoryPackage);
         }
         else if (ViewMode == "templates")
         {
-            query = query.Where(p => activeStatuses.Contains(p.Status) && (p.PatientId == null || p.PatientId == Guid.Empty));
+            query = query.Where(IsTemplatePackage);
         }
         else // "active"
         {
-            // If default landing (no query param) and active assigned is 0 but templates exist, show templates
             if (ActiveCount == 0 && TemplateCount > 0 && string.IsNullOrEmpty(Request.Query["viewMode"]))
             {
                 ViewMode = "templates";
-                query = query.Where(p => activeStatuses.Contains(p.Status) && (p.PatientId == null || p.PatientId == Guid.Empty));
+                query = query.Where(IsTemplatePackage);
             }
             else
             {
-                query = query.Where(p => activeStatuses.Contains(p.Status) && p.PatientId != null && p.PatientId != Guid.Empty);
+                query = query.Where(IsActiveAssignedPackage);
             }
         }
 

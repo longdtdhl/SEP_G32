@@ -35,7 +35,10 @@ public class PsychometricsController : ControllerBase
     [HttpGet("tests/{testId:guid}")]
     public async Task<IActionResult> GetTestById(Guid testId)
     {
-        var result = await _psychService.GetTestByIdAsync(testId);
+        var result = await _psychService.GetTestByIdAsync(
+            testId,
+            GetUserId(),
+            CanManageSystemTemplates());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -56,6 +59,18 @@ public class PsychometricsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
         var result = await _psychService.CreateCustomTestAsync(dto, userId.Value);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>Create a doctor-owned copy without modifying the source template.</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPost("tests/{testId:guid}/custom-copy")]
+    public async Task<IActionResult> CloneCustomTest(Guid testId, [FromBody] UpdatePsychometricTestDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var result = await _psychService.CloneCustomTestAsync(testId, dto, userId.Value);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -106,7 +121,14 @@ public class PsychometricsController : ControllerBase
     [HttpPut("tests/{testId:guid}")]
     public async Task<IActionResult> UpdateTest(Guid testId, [FromBody] UpdatePsychometricTestDto dto)
     {
-        var result = await _psychService.UpdateTestAsync(testId, dto);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var result = await _psychService.UpdateTestAsync(
+            testId,
+            dto,
+            userId.Value,
+            CanManageSystemTemplates());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -115,7 +137,13 @@ public class PsychometricsController : ControllerBase
     [HttpDelete("tests/{testId:guid}")]
     public async Task<IActionResult> DeleteTest(Guid testId)
     {
-        var result = await _psychService.DeleteTestAsync(testId);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var result = await _psychService.DeleteTestAsync(
+            testId,
+            userId.Value,
+            CanManageSystemTemplates());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -124,7 +152,10 @@ public class PsychometricsController : ControllerBase
     [HttpGet("tests/{testId:guid}/questions")]
     public async Task<IActionResult> GetQuestions(Guid testId)
     {
-        var result = await _psychService.GetQuestionsAsync(testId);
+        var result = await _psychService.GetQuestionsAsync(
+            testId,
+            GetUserId(),
+            CanManageSystemTemplates());
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
@@ -196,5 +227,11 @@ public class PsychometricsController : ControllerBase
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return claim != null && Guid.TryParse(claim, out var id) ? id : null;
+    }
+
+    private bool CanManageSystemTemplates()
+    {
+        return User.IsInRole(RoleConstants.BusinessManager) ||
+               User.IsInRole(RoleConstants.SystemAdmin);
     }
 }
