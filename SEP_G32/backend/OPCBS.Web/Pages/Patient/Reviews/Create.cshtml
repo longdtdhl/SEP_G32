@@ -19,7 +19,7 @@
                     <input type="hidden" asp-for="Input.AppointmentId" />
 
                     <div class="mb-4 text-center">
-                        <label class="form-label d-block fs-5 mb-3">Bạn reviews trải nghiệm thế nào?</label>
+                        <label class="form-label d-block fs-5 mb-3">How would you rate your experience?</label>
                         <div class="star-rating d-inline-flex gap-1" id="starRating">
                             @for (int i = 1; i <= 5; i++)
                             {
@@ -30,13 +30,13 @@
                             }
                         </div>
                         <input type="hidden" asp-for="Input.Rating" id="ratingInput" value="0" />
-                        <div id="ratingText" class="text-muted mt-2">Select số sao</div>
+                        <div id="ratingText" class="text-muted mt-2">Select start</div>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">Feedback (optional)</label>
                         <textarea asp-for="Input.Comment" class="form-control" rows="4"
-                                  placeholder="Chia sẻ trải nghiệm consultation your..."></textarea>
+                                  placeholder="Sharing your consultation experience..."></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 btn-lg">
