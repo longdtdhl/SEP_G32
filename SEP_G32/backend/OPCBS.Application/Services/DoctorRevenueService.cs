@@ -116,10 +116,77 @@ public class DoctorRevenueService : IDoctorRevenueService
         var transactions = new List<DoctorRevenueTransactionDto>();
         var serviceTypeMap = new Dictionary<string, (int count, decimal gross)>();
 
+        // 1. Process Treatment Packages (Price counted once per package, NOT per session)
+        var eligiblePackages = allPackages.Values.Where(p =>
+        {
+            if (p.Status is TreatmentPackageStatus.Cancelled or TreatmentPackageStatus.Rejected)
+                return false;
+
+            var pkgDate = p.ActiveDate ?? p.AcceptedDate ?? p.AssignedDate ?? p.CreatedAt;
+            return pkgDate >= start && pkgDate <= end;
+        }).ToList();
+
+        foreach (var pkg in eligiblePackages.OrderByDescending(p => p.ActiveDate ?? p.CreatedAt))
+        {
+            var pkgDate = pkg.ActiveDate ?? pkg.AcceptedDate ?? pkg.AssignedDate ?? pkg.CreatedAt;
+            var pkgPrice = pkg.Price;
+
+            string patientName = "Patient";
+            string? avatarUrl = null;
+            if (pkg.PatientId.HasValue && allPatients.TryGetValue(pkg.PatientId.Value, out var pat))
+            {
+                if (allUsers.TryGetValue(pat.UserId, out var pu))
+                {
+                    patientName = pu.FullName;
+                    avatarUrl = pu.AvatarUrl;
+                }
+            }
+
+            bool isSettled = pkg.Status is TreatmentPackageStatus.Active or TreatmentPackageStatus.Accepted or TreatmentPackageStatus.Completed;
+            string settlementStatus = isSettled ? "Completed" : "Assigned";
+
+            if (isSettled)
+            {
+                treatmentPackageRevenue += pkgPrice;
+                totalGross += pkgPrice;
+                totalNet += pkgPrice;
+                completedRevenue += pkgPrice;
+
+                var serviceType = $"Treatment Package: {pkg.Name}";
+                if (!serviceTypeMap.ContainsKey(serviceType))
+                    serviceTypeMap[serviceType] = (0, 0);
+                var (cnt, gross) = serviceTypeMap[serviceType];
+                serviceTypeMap[serviceType] = (cnt + 1, gross + pkgPrice);
+            }
+            else
+            {
+                projectedRevenue += pkgPrice;
+            }
+
+            transactions.Add(new DoctorRevenueTransactionDto
+            {
+                Id = pkg.Id,
+                BookingCode = $"PKG-{pkg.Id.ToString()[..8].ToUpperInvariant()}",
+                AppointmentDate = pkgDate,
+                PatientName = patientName,
+                PatientAvatarUrl = avatarUrl,
+                ServiceType = $"Treatment Package: {pkg.Name} ({pkg.SessionQuantity} sessions)",
+                ConsultationMode = "Package",
+                GrossAmount = pkgPrice,
+                PlatformFeePercentage = 0m,
+                PlatformFeeAmount = 0m,
+                NetAmount = pkgPrice,
+                Status = pkg.Status.ToString(),
+                SettlementStatus = settlementStatus
+            });
+        }
+
+        // 2. Process Appointments (Individual appointments generate consultation fees; package sessions are prepaid with 0 VND additional fee)
         foreach (var appt in eligibleAppts.OrderByDescending(a => a.CreatedAt))
         {
             var slot = allSlots.TryGetValue(appt.AppointmentSlotId, out var s) ? s : null;
             var pkg = appt.TreatmentPackageId.HasValue && allPackages.TryGetValue(appt.TreatmentPackageId.Value, out var p) ? p : null;
+            var isPackageAppt = pkg != null || appt.TreatmentPackageId.HasValue;
 
             var apptDate = slot != null ? slot.SlotDate.ToDateTime(slot.StartTime) : appt.CreatedAt;
             
@@ -131,36 +198,33 @@ public class DoctorRevenueService : IDoctorRevenueService
                 if (span > 0) durationHours = span;
             }
 
-            // Price snapshot & immutability rule:
-            // 1. If appointment belongs to a Treatment Package, use snapshotted package session price
-            // 2. If slot has an existing snapshotted Price, preserve it (never overwrite past bookings)
-            // 3. Otherwise, compute Hourly Rate * Duration in Hours
-            decimal slotPrice;
-            if (pkg != null && pkg.Price > 0 && pkg.SessionQuantity > 0)
+            // Price snapshot rule:
+            // 1. If appointment belongs to a Treatment Package, additional fee is 0 VND (prepaid by package).
+            // 2. If standalone appointment has snapshotted slot price, use it.
+            // 3. Otherwise compute hourly rate * duration in hours.
+            decimal slotPrice = 0m;
+            if (!isPackageAppt)
             {
-                slotPrice = Math.Round(pkg.Price / pkg.SessionQuantity, 0);
-            }
-            else if (slot?.Price != null && slot.Price.Value > 0)
-            {
-                slotPrice = slot.Price.Value;
-            }
-            else
-            {
-                decimal hourlyRate = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
-                slotPrice = Math.Round(hourlyRate * (decimal)durationHours, 0);
-                if (slot != null)
+                if (slot?.Price != null && slot.Price.Value > 0)
                 {
-                    slot.Price = slotPrice;
-                    _slotRepo.Update(slot);
+                    slotPrice = slot.Price.Value;
+                }
+                else
+                {
+                    decimal hourlyRate = doctor.ConsultationFee > 0 ? doctor.ConsultationFee : 500000m;
+                    slotPrice = Math.Round(hourlyRate * (decimal)durationHours, 0);
+                    if (slot != null)
+                    {
+                        slot.Price = slotPrice;
+                        _slotRepo.Update(slot);
+                    }
                 }
             }
 
-            var netAmount = slotPrice; // 100% Doctor Receives (Gross == Net)
-
+            var netAmount = slotPrice;
             var mode = slot?.ConsultationMode == ConsultationMode.Offline ? "Offline" : "Online";
-            var isPackage = pkg != null || appt.TreatmentPackageId.HasValue;
-            var serviceType = isPackage
-                ? $"Treatment Package: {(pkg != null ? pkg.Name : "Care Program")}"
+            var serviceType = isPackageAppt
+                ? $"Package Session: {(pkg != null ? pkg.Name : "Treatment Plan")}"
                 : (mode == "Offline" ? "In-Person Consultation" : "Online Video Consultation");
 
             // Patient Name resolution
@@ -180,41 +244,40 @@ public class DoctorRevenueService : IDoctorRevenueService
             }
 
             string statusStr = appt.Status.ToString();
-            string settlementStatus = "Completed";
+            string settlementStatus = isPackageAppt
+                ? "Included in Package"
+                : (appt.Status == AppointmentStatus.Completed ? "Completed" : "Confirmed");
 
             if (appt.Status == AppointmentStatus.Completed)
             {
                 completedSessions++;
                 totalBillableHours += durationHours;
-                totalGross += slotPrice;
-                totalNet += netAmount;
-                completedRevenue += slotPrice;
 
-                if (isPackage)
+                if (isPackageAppt)
                 {
                     packageSessionsCount++;
-                    treatmentPackageRevenue += slotPrice;
                 }
                 else
                 {
                     appointmentSessionsCount++;
                     appointmentRevenue += slotPrice;
+                    completedRevenue += slotPrice;
+                    totalGross += slotPrice;
+                    totalNet += netAmount;
+
+                    if (!serviceTypeMap.ContainsKey(serviceType))
+                        serviceTypeMap[serviceType] = (0, 0);
+                    var (cnt, gross) = serviceTypeMap[serviceType];
+                    serviceTypeMap[serviceType] = (cnt + 1, gross + slotPrice);
                 }
-
-                settlementStatus = "Completed";
-
-                // Add to serviceTypeMap
-                if (!serviceTypeMap.ContainsKey(serviceType))
-                    serviceTypeMap[serviceType] = (0, 0);
-                var (cnt, gross) = serviceTypeMap[serviceType];
-                serviceTypeMap[serviceType] = (cnt + 1, gross + slotPrice);
             }
             else
             {
-                // Approved, In Progress, Confirmed, etc.
                 projectedSessionsCount++;
-                projectedRevenue += slotPrice;
-                settlementStatus = "Confirmed";
+                if (!isPackageAppt)
+                {
+                    projectedRevenue += slotPrice;
+                }
             }
 
             transactions.Add(new DoctorRevenueTransactionDto
@@ -250,8 +313,8 @@ public class DoctorRevenueService : IDoctorRevenueService
 
             if (dayGroups.TryGetValue(curDate, out var dayTxList))
             {
-                var compDay = dayTxList.Where(x => x.Status == AppointmentStatus.Completed.ToString()).Sum(x => x.GrossAmount);
-                var projDay = dayTxList.Where(x => x.Status != AppointmentStatus.Completed.ToString() && x.Status != "Cancelled" && x.Status != "Rejected").Sum(x => x.GrossAmount);
+                var compDay = dayTxList.Where(x => x.Status == AppointmentStatus.Completed.ToString() || x.SettlementStatus == "Completed").Sum(x => x.GrossAmount);
+                var projDay = dayTxList.Where(x => x.Status != AppointmentStatus.Completed.ToString() && x.SettlementStatus != "Completed" && x.Status != "Cancelled" && x.Status != "Rejected").Sum(x => x.GrossAmount);
 
                 timeline.Add(new RevenueTimelinePointDto
                 {
@@ -282,17 +345,17 @@ public class DoctorRevenueService : IDoctorRevenueService
         }
 
         // Source Breakdown
-        var completedTxs = transactions.Where(t => t.Status == AppointmentStatus.Completed.ToString()).ToList();
-        var onlineGross = completedTxs.Where(t => t.ConsultationMode == "Online" && !t.ServiceType.StartsWith("Treatment Package")).Sum(t => t.GrossAmount);
-        var offlineGross = completedTxs.Where(t => t.ConsultationMode == "Offline" && !t.ServiceType.StartsWith("Treatment Package")).Sum(t => t.GrossAmount);
-        var pkgGross = completedTxs.Where(t => t.ServiceType.StartsWith("Treatment Package")).Sum(t => t.GrossAmount);
+        var completedTxs = transactions.Where(t => t.Status == AppointmentStatus.Completed.ToString() || t.SettlementStatus == "Completed").ToList();
+        var onlineGross = completedTxs.Where(t => t.ConsultationMode == "Online").Sum(t => t.GrossAmount);
+        var offlineGross = completedTxs.Where(t => t.ConsultationMode == "Offline").Sum(t => t.GrossAmount);
+        var pkgGross = completedTxs.Where(t => t.ConsultationMode == "Package" || t.ServiceType.StartsWith("Treatment Package")).Sum(t => t.GrossAmount);
 
         var sourceBreakdown = new List<RevenueSourceBreakdownDto>();
         if (totalGross > 0)
         {
             if (onlineGross > 0)
             {
-                var count = completedTxs.Count(t => t.ConsultationMode == "Online" && !t.ServiceType.StartsWith("Treatment Package"));
+                var count = completedTxs.Count(t => t.ConsultationMode == "Online");
                 sourceBreakdown.Add(new RevenueSourceBreakdownDto
                 {
                     SourceName = "Online Video Consultations",
@@ -304,7 +367,7 @@ public class DoctorRevenueService : IDoctorRevenueService
             }
             if (offlineGross > 0)
             {
-                var count = completedTxs.Count(t => t.ConsultationMode == "Offline" && !t.ServiceType.StartsWith("Treatment Package"));
+                var count = completedTxs.Count(t => t.ConsultationMode == "Offline");
                 sourceBreakdown.Add(new RevenueSourceBreakdownDto
                 {
                     SourceName = "In-Person Consultations",
@@ -316,10 +379,10 @@ public class DoctorRevenueService : IDoctorRevenueService
             }
             if (pkgGross > 0)
             {
-                var count = completedTxs.Count(t => t.ServiceType.StartsWith("Treatment Package"));
+                var count = completedTxs.Count(t => t.ConsultationMode == "Package" || t.ServiceType.StartsWith("Treatment Package"));
                 sourceBreakdown.Add(new RevenueSourceBreakdownDto
                 {
-                    SourceName = "Treatment Package Sessions",
+                    SourceName = "Treatment Packages",
                     GrossAmount = pkgGross,
                     NetAmount = pkgGross,
                     SessionCount = count,

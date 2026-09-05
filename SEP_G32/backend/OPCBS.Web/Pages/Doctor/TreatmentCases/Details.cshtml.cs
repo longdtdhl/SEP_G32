@@ -83,6 +83,10 @@ public class DetailsModel : PageModel
 
         Sessions = sessionsTask.Result.Data ?? new();
         Goals = goalsTask.Result.Data ?? new();
+        if (!Goals.Any() && !string.IsNullOrEmpty(goalsTask.Result.Error))
+        {
+            ErrorMessage = string.IsNullOrEmpty(ErrorMessage) ? $"Goals Error: {goalsTask.Result.Error}" : $"{ErrorMessage} | Goals Error: {goalsTask.Result.Error}";
+        }
         HomeworkList = homeworkTask.Result.Data ?? new();
         MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
@@ -465,6 +469,15 @@ public class DetailsModel : PageModel
         Guid caseId, string title, string? description, int category, int priority,
         decimal? currentValue, decimal? targetValue, string? unit, DateTime? targetDate)
     {
+        if (!string.IsNullOrWhiteSpace(unit))
+        {
+            unit = unit.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(unit, @"^\d+\s*/"))
+            {
+                unit = System.Text.RegularExpressions.Regex.Replace(unit, @"^\d+\s*", "");
+            }
+        }
+
         var dto = new CreateGoalWebDto
         {
             TreatmentCaseId = caseId,

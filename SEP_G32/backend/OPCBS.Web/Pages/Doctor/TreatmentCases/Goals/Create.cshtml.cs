@@ -23,6 +23,15 @@ public class CreateModel : PageModel
         CaseId = caseId;
         DateTime? parsedDate = string.IsNullOrEmpty(targetDate) ? null : DateTime.Parse(targetDate);
 
+        if (!string.IsNullOrWhiteSpace(unit))
+        {
+            unit = unit.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(unit, @"^\d+\s*/"))
+            {
+                unit = System.Text.RegularExpressions.Regex.Replace(unit, @"^\d+\s*", "");
+            }
+        }
+
         var dto = new CreateGoalWebDto
         {
             TreatmentCaseId = caseId,

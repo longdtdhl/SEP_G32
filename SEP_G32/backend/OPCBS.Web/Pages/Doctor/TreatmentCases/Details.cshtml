@@ -1361,6 +1361,24 @@
                 decimal? currentVal = activeGoal.CurrentValue ?? historyChronological.LastOrDefault()?.CurrentValue ?? baselineVal;
                 decimal? targetVal = activeGoal.TargetValue ?? 3;
 
+                // Format metric helper
+                Func<decimal?, string?, string> FormatMetric = (val, u) =>
+                {
+                    if (!val.HasValue) return "—";
+                    var valStr = $"{val.Value:0.#}";
+                    if (string.IsNullOrWhiteSpace(u)) return $"{valStr}/10";
+                    var cleanUnit = u.Trim();
+                    if (System.Text.RegularExpressions.Regex.IsMatch(cleanUnit, @"^\d+\s*/"))
+                    {
+                        cleanUnit = System.Text.RegularExpressions.Regex.Replace(cleanUnit, @"^\d+\s*", "");
+                    }
+                    if (cleanUnit.StartsWith("/"))
+                        return $"{valStr}{cleanUnit}";
+                    if (cleanUnit.StartsWith("%"))
+                        return $"{valStr}%";
+                    return $"{valStr} {cleanUnit}";
+                };
+
                 // Build session progress timeline items
                 var sessionMeasurements = new List<(string SessionLabel, string DateFormatted, string MeasurementText, int ProgressVal, string ResultText, string BadgeClass, string IconClass, decimal Val, DateTime Date, string? Comment)>();
                 decimal? lastVal = null;
@@ -1370,7 +1388,7 @@
                     var linkedSess = ph.TreatmentSessionId.HasValue ? Model.Sessions.FirstOrDefault(s => s.Id == ph.TreatmentSessionId) : null;
                     var sLabel = linkedSess != null ? $"Session {linkedSess.SessionNumber}" : $"Session {sIdx}";
                     var val = ph.CurrentValue ?? (decimal)ph.ProgressPercent;
-                    var mText = !string.IsNullOrEmpty(activeGoal.Unit) ? $"{val:0.#} {activeGoal.Unit}" : $"{val:0.#}/10";
+                    var mText = FormatMetric(val, activeGoal.Unit);
 
                     string resText = "Initial";
                     string bClass = "goal-badge goal-badge-initial";
@@ -1405,7 +1423,7 @@
 
                 if (!sessionMeasurements.Any() && currentVal.HasValue)
                 {
-                    sessionMeasurements.Add(("Initial Assessment", activeGoal.CreatedAt.ToString("MMM dd, yyyy"), $"{currentVal.Value:0.#}/10", activeGoal.ProgressPercent, "Baseline", "goal-badge goal-badge-initial", "bi-circle", currentVal.Value, activeGoal.CreatedAt, "Baseline clinical measurement"));
+                    sessionMeasurements.Add(("Initial Assessment", activeGoal.CreatedAt.ToString("MMM dd, yyyy"), FormatMetric(currentVal, activeGoal.Unit), activeGoal.ProgressPercent, "Baseline", "goal-badge goal-badge-initial", "bi-circle", currentVal.Value, activeGoal.CreatedAt, "Baseline clinical measurement"));
                 }
 
                 // Reverse for descending list display
@@ -1510,19 +1528,19 @@
                         <div class="col-4">
                             <div class="goal-metric-box">
                                 <div class="goal-metric-label">Baseline</div>
-                                <div class="goal-metric-val">@(baselineVal.HasValue ? $"{baselineVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                                <div class="goal-metric-val">@FormatMetric(baselineVal, activeGoal.Unit)</div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="goal-metric-box" style="border-color:#99f6e4; background:#f0fdfa;">
                                 <div class="goal-metric-label" style="color:#0f766e;">Current (Latest)</div>
-                                <div class="goal-metric-val" style="color:#0f766e;">@(currentVal.HasValue ? $"{currentVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                                <div class="goal-metric-val" style="color:#0f766e;">@FormatMetric(currentVal, activeGoal.Unit)</div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="goal-metric-box">
                                 <div class="goal-metric-label">Target</div>
-                                <div class="goal-metric-val" style="color:#0d9488;">@(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "—")@(!string.IsNullOrEmpty(activeGoal.Unit) ? $" {activeGoal.Unit}" : " / 10")</div>
+                                <div class="goal-metric-val" style="color:#0d9488;">@(targetVal.HasValue ? $"≤ {FormatMetric(targetVal, activeGoal.Unit)}" : "—")</div>
                             </div>
                         </div>
                     </div>
@@ -1537,7 +1555,7 @@
                             }
                         </div>
                         <div>
-                            <span>Objective Target: <strong>@(string.IsNullOrEmpty(activeGoal.Unit) ? $"{activeGoal.Title} Score" : activeGoal.Unit) @(targetVal.HasValue ? $"≤ {targetVal.Value:0.#}" : "")</strong></span>
+                            <span>Objective Target: <strong>@(targetVal.HasValue ? $"≤ {FormatMetric(targetVal, activeGoal.Unit)}" : "Not Set")</strong></span>
                         </div>
                     </div>
                 </div>
@@ -2124,8 +2142,8 @@
                                     <div class="row g-2">
                                         <div class="col-md-4">
                                             <label class="form-label fw-semibold text-muted mb-1" style="font-size:0.78rem;">Metric Scale / Unit</label>
-                                            <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. / 10, GAD-7, PHQ-9, %" value="/ 10" style="border-radius:6px;" />
-                                            <div class="text-muted mt-1" style="font-size:0.7rem;">Instrument scale name (e.g. <code>/ 10</code>, <code>GAD-7</code>, <code>PHQ-9</code>, <code>%</code>).</div>
+                                            <input type="text" name="unit" class="form-control form-control-sm" placeholder="e.g. /10, GAD-7, PHQ-9, %" value="/10" style="border-radius:6px;" />
+                                            <div class="text-muted mt-1" style="font-size:0.7rem;">Instrument scale name (e.g. <code>/10</code>, <code>GAD-7</code>, <code>PHQ-9</code>, <code>%</code>). Do not enter score values here.</div>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-semibold text-muted mb-1" style="font-size:0.78rem;">Baseline Score (Initial)</label>

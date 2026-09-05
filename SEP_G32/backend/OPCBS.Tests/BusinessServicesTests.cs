@@ -255,6 +255,39 @@ public class BusinessServicesTests
     }
 
     [Fact]
+    public async Task CreateTreatmentPackage_WithZeroOrNegativePrice_ReturnsValidationError()
+    {
+        var packageRepo = new Mock<IRepository<TreatmentPackage>>();
+        var doctorRepo = new Mock<IRepository<DoctorProfile>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var caseRepo = new Mock<IRepository<TreatmentCase>>();
+        var notifService = new Mock<INotificationService>();
+        var uow = new Mock<IUnitOfWork>();
+        var mapper = new Mock<IMapper>();
+
+        var doctorUserId = Guid.NewGuid();
+        doctorRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DoctorProfile> { new() { Id = Guid.NewGuid(), UserId = doctorUserId, User = null! } });
+
+        var service = new TreatmentPackageService(packageRepo.Object, doctorRepo.Object, patientRepo.Object,
+            userRepo.Object, caseRepo.Object, notifService.Object, uow.Object, mapper.Object);
+
+        var dto = new CreateTreatmentPackageDto
+        {
+            Name = "Free Package Test",
+            SessionQuantity = 5,
+            Price = 0m
+        };
+
+        var result = await service.CreateAsync(doctorUserId, dto, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("Package fee is required", result.Message);
+        packageRepo.Verify(r => r.AddAsync(It.IsAny<TreatmentPackage>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CreateAsync_DoctorNotFound_ReturnsError()
     {
         var recordRepo = new Mock<IRepository<ConsultationNote>>();

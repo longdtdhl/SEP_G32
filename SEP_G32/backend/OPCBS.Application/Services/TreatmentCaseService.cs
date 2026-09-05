@@ -182,7 +182,17 @@ public class TreatmentCaseService : ITreatmentCaseService
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
         var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
         if (doctor != null)
-            return true;
+        {
+            if (treatmentCase.DoctorId == doctor.Id || treatmentCase.DoctorId == doctor.UserId || treatmentCase.DoctorId == Guid.Empty)
+                return true;
+
+            var allDocUsers = await _userRepo.GetAllAsync(ct);
+            var docUser = allDocUsers.FirstOrDefault(u => u.Id == userId);
+            if (docUser != null && (docUser.Role?.Name == "Admin" || docUser.Role?.Name == "Staff" || docUser.Role?.Name == "Manager"))
+                return true;
+
+            return false;
+        }
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
         var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
@@ -191,7 +201,7 @@ public class TreatmentCaseService : ITreatmentCaseService
 
         var allUsers = await _userRepo.GetAllAsync(ct);
         var user = allUsers.FirstOrDefault(u => u.Id == userId);
-        if (user != null && (user.Role?.Name == "Admin" || user.Role?.Name == "Doctor" || user.Role?.Name == "Staff" || user.Role?.Name == "Manager"))
+        if (user != null && (user.Role?.Name == "Admin" || user.Role?.Name == "Staff" || user.Role?.Name == "Manager"))
             return true;
 
         return false;
@@ -385,7 +395,7 @@ public class TreatmentCaseService : ITreatmentCaseService
             else if (newStatus == TreatmentCaseStatus.Terminated || newStatus == TreatmentCaseStatus.Cancelled)
             {
                 var allSessions = await _sessionRepo.GetAllAsync(ct);
-                var uncompletedSessions = allSessions.Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted && s.Status != TreatmentSessionStatus.Completed).ToList();
+                var uncompletedSessions = allSessions.Where(s => s.TreatmentCaseId == caseId && !s.IsDeleted && s.Status != TreatmentSessionStatus.Completed && s.Status != TreatmentSessionStatus.NoShow).ToList();
                 foreach (var session in uncompletedSessions)
                 {
                     session.Status = TreatmentSessionStatus.Cancelled;
@@ -938,7 +948,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         }
 
         // ── Calculate sessions needed ───────────────────────────────────
-        var completedCount = existingSessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+        var completedCount = existingSessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow);
         var activeCount = existingSessions.Count(s =>
             s.Status == TreatmentSessionStatus.Scheduled ||
             s.Status == TreatmentSessionStatus.InProgress);
@@ -2547,7 +2557,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         var allSessions = await _sessionRepo.GetAllAsync(ct);
         var caseSessions = allSessions.Where(s => s.TreatmentCaseId == caseId).ToList();
         var sessions = caseSessions.Where(s => !s.IsDeleted).ToList();
-        var completedSessions = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+        var completedSessions = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow);
 
         var allGoals = await _goalRepo.GetAllAsync(ct);
         var goals = allGoals.Where(g => g.TreatmentCaseId == caseId && !g.IsDeleted).ToList();
@@ -3108,7 +3118,7 @@ public class TreatmentCaseService : ITreatmentCaseService
         var caseSessions = allSessions.Where(s => s.TreatmentCaseId == treatmentCase.Id).ToList();
         var sessions = caseSessions.Where(s => !s.IsDeleted).ToList();
         var sessionPercent = treatmentCase.TotalSessions > 0
-            ? (sessions.Count(s => s.Status == TreatmentSessionStatus.Completed) * 100 / treatmentCase.TotalSessions)
+            ? (sessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow) * 100 / treatmentCase.TotalSessions)
             : 0;
 
         var allGoals = await _goalRepo.GetAllAsync(ct);
@@ -3153,7 +3163,7 @@ public class TreatmentCaseService : ITreatmentCaseService
     private static void ApplySessionCounters(TreatmentCase treatmentCase, IEnumerable<TreatmentSession> caseSessions)
     {
         var sessions = caseSessions.ToList();
-        treatmentCase.CompletedSessions = sessions.Count(s => !s.IsDeleted && s.Status == TreatmentSessionStatus.Completed);
+        treatmentCase.CompletedSessions = sessions.Count(s => !s.IsDeleted && (s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow));
         treatmentCase.RemainingSessions = Math.Max(0, treatmentCase.TotalSessions - GetBookedSessionCount(sessions));
     }
 
@@ -3189,7 +3199,7 @@ public class TreatmentCaseService : ITreatmentCaseService
     {
         var allSessions = await _sessionRepo.GetAllAsync(ct);
         var caseSessions = allSessions.Where(s => s.TreatmentCaseId == entity.Id).ToList();
-        var completedSessions = caseSessions.Count(s => !s.IsDeleted && s.Status == TreatmentSessionStatus.Completed);
+        var completedSessions = caseSessions.Count(s => !s.IsDeleted && (s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow));
         var remainingSessions = Math.Max(0, entity.TotalSessions - GetBookedSessionCount(caseSessions));
 
         var allGoals = await _goalRepo.GetAllAsync(ct);

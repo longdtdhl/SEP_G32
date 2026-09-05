@@ -321,7 +321,7 @@ public class TreatmentCaseAdvancedTests
         var tCase = new TreatmentCase { Id = caseId, CaseName = "Case 1", Status = TreatmentCaseStatus.Active };
         _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(tCase);
 
-        var dto = new CloseTreatmentCaseDto { CloseStatus = 3, ClosureNote = "Patient relocated" };
+        var dto = new CloseTreatmentCaseDto { Status = 3, ClosureNote = "Patient relocated" };
         var result = await _service.CloseAsync(caseId, dto, CancellationToken.None);
 
         Assert.True(result.Success);
@@ -338,7 +338,7 @@ public class TreatmentCaseAdvancedTests
         var tCase = new TreatmentCase { Id = caseId, CaseName = "Case 1", Status = TreatmentCaseStatus.Active };
         _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(tCase);
 
-        var dto = new CloseTreatmentCaseDto { CloseStatus = 2, ClosureNote = "All goals reached" };
+        var dto = new CloseTreatmentCaseDto { Status = 2, ClosureNote = "All goals reached" };
         var result = await _service.CloseAsync(caseId, dto, CancellationToken.None);
 
         Assert.True(result.Success);

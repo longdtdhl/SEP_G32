@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace OPCBS.Web.DTOs;
 
 public class TreatmentPackageDto
@@ -70,6 +72,9 @@ public class CreateTreatmentPackageDto
     public string? RecommendedExercises { get; set; }
     public string? Instructions { get; set; }
     public int SessionQuantity { get; set; } = 8;
+
+    [Required(ErrorMessage = "Package fee is required.")]
+    [Range(10000, 1000000000, ErrorMessage = "Package fee must be at least 10,000 VND.")]
     public decimal Price { get; set; }
     public Guid? PatientId { get; set; }
     public int ValidityDays { get; set; } = 90;
@@ -126,6 +131,9 @@ public class UpdateTreatmentPackageDto
     public int SessionQuantity { get; set; }
     public int ValidityDays { get; set; } = 90;
     public int RecommendedSessionsPerWeek { get; set; } = 1;
+
+    [Required(ErrorMessage = "Package fee is required.")]
+    [Range(10000, 1000000000, ErrorMessage = "Package fee must be at least 10,000 VND.")]
     public decimal Price { get; set; }
 
     public List<CreateCustomClinicalFieldDto> BasicInformationFields { get; set; } = new();

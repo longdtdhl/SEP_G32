@@ -300,7 +300,7 @@ public class DoctorRevenueServiceTests
         var user = new User { Id = doctorUserId, FullName = "Dr. Test Doctor", Email = "doc@test.com", PhoneNumber = "0912345678", PasswordHash = "h", RoleId = Guid.NewGuid(), Role = new Role { Name = "Doctor" } };
         var doctor = new DoctorProfile { Id = doctorId, UserId = doctorUserId, User = user, ConsultationFee = 600000m };
 
-        // Package was purchased for 2,500,000 VND (5 sessions -> 500,000 VND/session)
+        // Package was purchased for 2,500,000 VND (5 sessions)
         var pkgId = Guid.NewGuid();
         var package = new TreatmentPackage
         {
@@ -311,7 +311,9 @@ public class DoctorRevenueServiceTests
             Price = 2500000m,
             SessionQuantity = 5,
             RemainingSessions = 4,
-            ExpirationDate = DateTime.UtcNow.AddDays(30)
+            Status = TreatmentPackageStatus.Active,
+            ExpirationDate = DateTime.UtcNow.AddDays(30),
+            CreatedAt = DateTime.UtcNow.AddDays(-5)
         };
 
         var slotId = Guid.NewGuid();
@@ -354,12 +356,21 @@ public class DoctorRevenueServiceTests
         // Act
         var result = await _service.GetRevenueOverviewAsync(doctorUserId, period: "all");
 
-        // Assert: Session price from purchased package = 2,500,000 / 5 = 500,000 VND
+        // Assert: Package revenue = 2,500,000 VND (package price counted once, sessions within package do NOT double-count)
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
-        Assert.Equal(500000m, result.Data.TotalGrossRevenue);
-        Assert.Equal(500000m, result.Data.TreatmentPackageRevenue);
-        Assert.Single(result.Data.RecentTransactions);
-        Assert.Equal(500000m, result.Data.RecentTransactions[0].GrossAmount);
+        Assert.Equal(2500000m, result.Data.TotalGrossRevenue);
+        Assert.Equal(2500000m, result.Data.TreatmentPackageRevenue);
+        Assert.Equal(0m, result.Data.AppointmentRevenue);
+        Assert.Equal(2, result.Data.RecentTransactions.Count);
+        
+        var pkgTx = result.Data.RecentTransactions.FirstOrDefault(t => t.ConsultationMode == "Package");
+        Assert.NotNull(pkgTx);
+        Assert.Equal(2500000m, pkgTx.GrossAmount);
+
+        var sessionTx = result.Data.RecentTransactions.FirstOrDefault(t => t.BookingCode == "BK-PKG-01");
+        Assert.NotNull(sessionTx);
+        Assert.Equal(0m, sessionTx.GrossAmount);
+        Assert.Equal("Included in Package", sessionTx.SettlementStatus);
     }
 }

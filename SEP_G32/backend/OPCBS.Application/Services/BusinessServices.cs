@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using OPCBS.Application.DTOs.Appointments;
 using OPCBS.Application.Interfaces.Repositories;
 using OPCBS.Application.Interfaces.Services;
@@ -465,11 +465,11 @@ public class ConsultationNoteService : IConsultationNoteService
     private async Task EnrichRecordsAsync(List<ConsultationNoteDto>? dtos, CancellationToken ct)
     {
         if (dtos == null || !dtos.Any()) return;
-        var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var allPatients = await _patientRepo.GetAllAsync(ct);
-        var allUsers = await _userRepo.GetAllAsync(ct);
-        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
-        var allNotes = await _recordRepo.GetAllAsync(ct);
+        var allDoctors = (await _doctorRepo.GetAllAsync(ct)) ?? new List<DoctorProfile>();
+        var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+        var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+        var allPatientRecords = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+        var allNotes = (await _recordRepo.GetAllAsync(ct)) ?? new List<ConsultationNote>();
 
         var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
         var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
@@ -514,7 +514,7 @@ public class ConsultationNoteService : IConsultationNoteService
                 }
             }
 
-            if (dto.FollowUpAppointmentId.HasValue)
+            if (dto.FollowUpAppointmentId.HasValue && _apptRepo != null)
             {
                 var allAppts = await _apptRepo.GetAllAsync(ct);
                 var fAppt = allAppts.FirstOrDefault(a => a.Id == dto.FollowUpAppointmentId.Value);
@@ -1066,7 +1066,8 @@ public class ConsultationNoteService : IConsultationNoteService
 
         var records = (await _recordRepo.GetAllAsync(ct)) ?? new List<ConsultationNote>();
         var filtered = records
-            .Where(x => validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value)))
+            .Where(x => (validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value))) &&
+                        x.Visibility != NoteVisibility.DoctorOnly)
             .OrderByDescending(x => x.CreatedAt)
             .ToList();
 
@@ -1090,6 +1091,51 @@ public class ConsultationNoteService : IConsultationNoteService
     {
         var record = await _recordRepo.GetByIdAsync(recordId, ct);
         if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Record not found");
+
+        var allDoctors = (await _doctorRepo.GetAllAsync(ct)) ?? new List<DoctorProfile>();
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
+        if (doctor != null)
+        {
+            if (record.DoctorId != doctor.Id && record.DoctorId != doctor.UserId)
+            {
+                var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+                var user = allUsers.FirstOrDefault(u => u.Id == userId);
+                if (user == null || (user.Role?.Name != "Admin" && user.Role?.Name != "Staff" && user.Role?.Name != "Manager"))
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+        }
+        else
+        {
+            var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+            var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
+            if (patient != null)
+            {
+                var allPRs = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+                var pr = allPRs.FirstOrDefault(r => r.Id == record.PatientRecordId);
+                var isOwnPR = pr != null && pr.PatientId.HasValue && (pr.PatientId.Value == patient.Id || pr.PatientId.Value == patient.UserId);
+
+                var allAppts = _apptRepo != null ? ((await _apptRepo.GetAllAsync(ct)) ?? new List<Appointment>()) : new List<Appointment>();
+                var appt = record.AppointmentId.HasValue ? allAppts.FirstOrDefault(a => a.Id == record.AppointmentId.Value) : null;
+                var isOwnAppt = appt != null && appt.PatientId.HasValue && (appt.PatientId.Value == patient.Id || appt.PatientId.Value == patient.UserId);
+
+                if ((!isOwnPR && !isOwnAppt) || record.Visibility == NoteVisibility.DoctorOnly)
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+            else
+            {
+                var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+                var user = allUsers.FirstOrDefault(u => u.Id == userId);
+                if (user == null || (user.Role?.Name != "Admin" && user.Role?.Name != "Staff" && user.Role?.Name != "Manager"))
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+        }
+
         var dto = _mapper.Map<ConsultationNoteDto>(record);
         await EnrichRecordsAsync(new List<ConsultationNoteDto> { dto }, ct);
         return ApiResponse<ConsultationNoteDto>.SuccessResponse(dto);
@@ -1950,6 +1996,9 @@ public class TreatmentPackageService : ITreatmentPackageService
                 return ApiResponse<TreatmentPackageDto>.ErrorResponse("This patient already has an active treatment package. Please cancel or complete the existing package before creating a new one.");
         }
 
+        if (dto.Price <= 0)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Package fee is required and must be greater than 0 VND.");
+
         var validityDays = dto.ValidityDays > 0 ? dto.ValidityDays : 90;
         var package = new TreatmentPackage
         {
@@ -2057,6 +2106,9 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         if (package.DoctorId != doctor.Id)
             return ApiResponse<TreatmentPackageDto>.ErrorResponse("You are not authorized to edit this treatment package");
+
+        if (dto.Price <= 0)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Package fee is required and must be greater than 0 VND.");
 
         package.Name = dto.Name;
         package.Description = dto.Description;

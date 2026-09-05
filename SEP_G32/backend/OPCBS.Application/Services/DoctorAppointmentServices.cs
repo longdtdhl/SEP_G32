@@ -503,13 +503,13 @@ public class AppointmentService : IAppointmentService
             session.UpdatedAt = DateTime.UtcNow;
             _sessionRepo.Update(session);
 
-            if (newSessionStatus == TreatmentSessionStatus.Completed && _treatmentCaseRepo != null && session.TreatmentCaseId != Guid.Empty)
+            if ((newSessionStatus == TreatmentSessionStatus.Completed || newSessionStatus == TreatmentSessionStatus.NoShow) && _treatmentCaseRepo != null && session.TreatmentCaseId != Guid.Empty)
             {
                 var tc = await _treatmentCaseRepo.GetByIdAsync(session.TreatmentCaseId, ct);
                 if (tc != null)
                 {
                     var caseSessions = allSessions.Where(s => s.TreatmentCaseId == tc.Id && !s.IsDeleted).ToList();
-                    var completedCount = caseSessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Id == session.Id);
+                    var completedCount = caseSessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow || s.Id == session.Id);
                     tc.CompletedSessions = completedCount;
                     if (tc.TotalSessions > 0)
                     {
@@ -565,7 +565,7 @@ public class AppointmentService : IAppointmentService
 
         // Check capacity
         if (slot.CurrentBookings >= slot.MaxPatients)
-            return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã đạt giới hạn số lượng bệnh nhân.");
+            return ApiResponse<AppointmentDto>.ErrorResponse("This time slot has reached its maximum patient capacity.");
 
         // BOOK-03: No past booking
         var slotDateTime = GetSlotTimeUtc(slot);
@@ -599,10 +599,9 @@ public class AppointmentService : IAppointmentService
                 a.PatientId == patientProfileId.Value &&
                 a.AppointmentSlotId == dto.AppointmentSlotId &&
                 !a.IsDeleted &&
-                a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Rejected);
+                AppointmentStatusHelper.IsActive(a.Status));
             if (duplicate != null)
-                return ApiResponse<AppointmentDto>.ErrorResponse("Khung giờ này đã được đặt trước. Bạn đã đặt khung giờ này rồi.");
+                return ApiResponse<AppointmentDto>.ErrorResponse("You have already booked this time slot.");
         }
         else
         {
@@ -612,28 +611,109 @@ public class AppointmentService : IAppointmentService
                 return ApiResponse<AppointmentDto>.ErrorResponse("Guest email is required.");
             if (string.IsNullOrWhiteSpace(dto.GuestPhoneNumber))
                 return ApiResponse<AppointmentDto>.ErrorResponse("Guest phone number is required.");
+
+            var normalizedEmail = dto.GuestEmail.Trim().ToLowerInvariant();
+            var normalizedPhone = dto.GuestPhoneNumber.Trim();
+
+            // Check if guest already booked this slot
+            var existingAppts = await _apptRepo.GetAllAsync(ct);
+            var duplicate = existingAppts.FirstOrDefault(a =>
+                !a.IsDeleted &&
+                a.AppointmentSlotId == dto.AppointmentSlotId &&
+                AppointmentStatusHelper.IsActive(a.Status) &&
+                ((!string.IsNullOrWhiteSpace(a.GuestEmail) && string.Equals(a.GuestEmail.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase)) ||
+                 (!string.IsNullOrWhiteSpace(a.GuestPhoneNumber) && string.Equals(a.GuestPhoneNumber.Trim(), normalizedPhone, StringComparison.OrdinalIgnoreCase))));
+            if (duplicate != null)
+                return ApiResponse<AppointmentDto>.ErrorResponse("You have already booked this time slot.");
+
+            // Check if email or phone number belongs to an existing registered user account
+            var allUsers = await _userRepo.GetAllAsync(ct);
+            if (allUsers.Any(u => !u.IsDeleted && !string.IsNullOrWhiteSpace(u.Email) && u.Email.Trim().ToLowerInvariant() == normalizedEmail))
+                return ApiResponse<AppointmentDto>.ErrorResponse("An account with this email already exists. Please sign in to book your appointment.");
+
+            if (allUsers.Any(u => !u.IsDeleted && !string.IsNullOrWhiteSpace(u.PhoneNumber) && u.PhoneNumber.Trim() == normalizedPhone))
+                return ApiResponse<AppointmentDto>.ErrorResponse("An account with this phone number already exists. Please sign in to book your appointment.");
         }
 
         var allAppts = await _apptRepo.GetAllAsync(ct);
         var allSlots = await _slotRepo.GetAllAsync(ct);
         var slotDict = allSlots.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
 
-        // 1. Ensure the patient hasn't already booked this specific slot
+        var docUser = await _userRepo.GetByIdAsync(doctor.UserId, ct);
+        var doctorName = docUser?.FullName ?? (!string.IsNullOrWhiteSpace(doctor.ProfessionalTitle) ? $"{doctor.ProfessionalTitle}" : "the doctor");
+
+        Func<Appointment, bool> isSamePatient = a =>
+        {
+            if (patientProfileId.HasValue)
+            {
+                return a.PatientId == patientProfileId.Value || (patientUserId.HasValue && a.PatientId == patientUserId.Value);
+            }
+            else
+            {
+                return (!string.IsNullOrWhiteSpace(dto.GuestEmail) && string.Equals(a.GuestEmail, dto.GuestEmail, StringComparison.OrdinalIgnoreCase)) ||
+                       (!string.IsNullOrWhiteSpace(dto.GuestPhoneNumber) && string.Equals(a.GuestPhoneNumber, dto.GuestPhoneNumber, StringComparison.OrdinalIgnoreCase));
+            }
+        };
+
+        Func<Appointment, bool> isSameDoctor = a =>
+            a.DoctorId == doctor.Id || a.DoctorId == doctor.UserId;
+
+        // 1. Rule: Maximum 3 active appointments per week with the same doctor
+        var slotDayOfWeek = (int)slot.SlotDate.DayOfWeek;
+        var diffToMonday = slotDayOfWeek == 0 ? 6 : slotDayOfWeek - 1;
+        var weekStart = slot.SlotDate.AddDays(-diffToMonday);
+        var weekEnd = weekStart.AddDays(6);
+
+        var activeApptsInWeek = allAppts.Where(a =>
+        {
+            if (a.IsDeleted || !isSameDoctor(a) || !isSamePatient(a) || !AppointmentStatusHelper.IsActive(a.Status))
+                return false;
+
+            DateOnly? aDate = null;
+            if (slotDict.TryGetValue(a.AppointmentSlotId, out var existingSlot))
+                aDate = existingSlot.SlotDate;
+            else if (a.AppointmentDate.HasValue)
+                aDate = DateOnly.FromDateTime(a.AppointmentDate.Value);
+
+            return aDate.HasValue && aDate.Value >= weekStart && aDate.Value <= weekEnd;
+        }).ToList();
+
+        if (activeApptsInWeek.Count >= 3)
+        {
+            return ApiResponse<AppointmentDto>.ErrorResponse(
+                $"You already have {activeApptsInWeek.Count} active appointments with Dr. {doctorName} in the week of {weekStart:MMM dd} - {weekEnd:MMM dd, yyyy}. Patients can have a maximum of 3 active appointments per week with the same doctor.");
+        }
+
+        // 2. Rule: Maximum 1 appointment per day with the same doctor (Active appointments only)
+        var hasSameDayAppointmentWithDoctor = allAppts.Any(a =>
+            !a.IsDeleted &&
+            isSameDoctor(a) &&
+            isSamePatient(a) &&
+            AppointmentStatusHelper.IsActive(a.Status) &&
+            ((slotDict.TryGetValue(a.AppointmentSlotId, out var existingSlot) && existingSlot.SlotDate == slot.SlotDate) ||
+             (a.AppointmentDate.HasValue && DateOnly.FromDateTime(a.AppointmentDate.Value) == slot.SlotDate))
+        );
+
+        if (hasSameDayAppointmentWithDoctor)
+        {
+            return ApiResponse<AppointmentDto>.ErrorResponse(
+                $"You already have an appointment scheduled with Dr. {doctorName} on {slot.SlotDate:MMM dd, yyyy}. Patients can only book a maximum of 1 appointment per day with the same doctor.");
+        }
+
+        // 3. Ensure the patient hasn't already booked this specific slot
         var isSlotBookedByPatient = allAppts.Any(a =>
             a.AppointmentSlotId == dto.AppointmentSlotId &&
-            a.Status != AppointmentStatus.Cancelled &&
-            a.Status != AppointmentStatus.Rejected &&
-            (patientProfileId.HasValue ? a.PatientId == patientProfileId : a.GuestEmail == dto.GuestEmail));
+            AppointmentStatusHelper.IsActive(a.Status) &&
+            isSamePatient(a));
         if (isSlotBookedByPatient)
-            return ApiResponse<AppointmentDto>.ErrorResponse("Bạn đã đặt khung giờ này rồi.");
+            return ApiResponse<AppointmentDto>.ErrorResponse("You have already booked this time slot.");
 
-        // 2. Ensure patient does not have another appointment in the same time slot
+        // 4. Ensure patient does not have another appointment in the same time slot across all doctors
         if (patientProfileId.HasValue)
         {
             var hasOverlapTime = allAppts.Any(a =>
                 a.PatientId == patientProfileId.Value &&
-                a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Rejected &&
+                AppointmentStatusHelper.IsActive(a.Status) &&
                 slotDict.TryGetValue(a.AppointmentSlotId, out var s) &&
                 s.SlotDate == slot.SlotDate &&
                 s.StartTime == slot.StartTime);
@@ -704,7 +784,7 @@ public class AppointmentService : IAppointmentService
             if (totalConfiguredSessions >= treatmentPackage.SessionQuantity)
             {
                 return ApiResponse<AppointmentDto>.ErrorResponse(
-                    $"Gói điều trị này đã được lên lịch đủ {totalConfiguredSessions}/{treatmentPackage.SessionQuantity} buổi. Không thể đặt thêm lịch hẹn mới cho gói này.");
+                    $"This treatment package has already reached its full session quota ({totalConfiguredSessions}/{treatmentPackage.SessionQuantity} sessions scheduled). Cannot schedule additional appointments for this package.");
             }
         }
 
@@ -2158,6 +2238,33 @@ public class AppointmentService : IAppointmentService
             GetSlotTimeUtc(bookedSlot) < proposedEnd && GetSlotTimeUtc(bookedSlot, end: true) > proposedStart);
         if (hasOverlap)
             return ApiResponse.ErrorResponse("You already have another active appointment that overlaps this time.");
+
+        var hasSameDayAppointment = activeAppointments.Any(a => a.Id != appointment.Id && !a.IsDeleted &&
+            (a.DoctorId == appointment.DoctorId || (docOfAppt != null && (a.DoctorId == docOfAppt.Id || a.DoctorId == docOfAppt.UserId))) &&
+            a.PatientId == appointment.PatientId &&
+            AppointmentStatusHelper.IsActive(a.Status) &&
+            slotById.TryGetValue(a.AppointmentSlotId, out var bookedSlot) &&
+            bookedSlot.SlotDate == newSlot.SlotDate);
+        if (hasSameDayAppointment)
+            return ApiResponse.ErrorResponse($"You already have an active appointment scheduled with this doctor on {newSlot.SlotDate:MMM dd, yyyy}. Patients can only book a maximum of 1 appointment per day with the same doctor.");
+
+        var newSlotDayOfWeek = (int)newSlot.SlotDate.DayOfWeek;
+        var diffToMondayReschedule = newSlotDayOfWeek == 0 ? 6 : newSlotDayOfWeek - 1;
+        var targetWeekStart = newSlot.SlotDate.AddDays(-diffToMondayReschedule);
+        var targetWeekEnd = targetWeekStart.AddDays(6);
+
+        var activeApptsInTargetWeek = activeAppointments.Where(a =>
+            a.Id != appointment.Id &&
+            !a.IsDeleted &&
+            (a.DoctorId == appointment.DoctorId || (docOfAppt != null && (a.DoctorId == docOfAppt.Id || a.DoctorId == docOfAppt.UserId))) &&
+            a.PatientId == appointment.PatientId &&
+            AppointmentStatusHelper.IsActive(a.Status) &&
+            slotById.TryGetValue(a.AppointmentSlotId, out var bookedSlot) &&
+            bookedSlot.SlotDate >= targetWeekStart && bookedSlot.SlotDate <= targetWeekEnd
+        ).ToList();
+
+        if (activeApptsInTargetWeek.Count >= 3)
+            return ApiResponse.ErrorResponse($"You already have {activeApptsInTargetWeek.Count} active appointments with this doctor in the week of {targetWeekStart:MMM dd} - {targetWeekEnd:MMM dd, yyyy}. Patients can have a maximum of 3 active appointments per week with the same doctor.");
 
         var prevStatus = appointment.Status;
         appointment.Status = AppointmentStatus.RescheduleRequested;
@@ -3737,10 +3844,10 @@ public class AppointmentService : IAppointmentService
                     currentSessionNumber = apptIdx >= 0 ? apptIdx + 1 : (sessions.Count + 1);
                 }
 
-                var completedSessionsCount = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed);
+                var completedSessionsCount = sessions.Count(s => s.Status == TreatmentSessionStatus.Completed || s.Status == TreatmentSessionStatus.NoShow);
                 if (completedSessionsCount == 0)
                 {
-                    completedSessionsCount = caseAppts.Count(a => a.Status == AppointmentStatus.Completed);
+                    completedSessionsCount = caseAppts.Count(a => a.Status == AppointmentStatus.Completed || a.Status == AppointmentStatus.NoShow);
                 }
 
                 var totalSessionsCount = tCase.TotalSessions > 0 ? tCase.TotalSessions : Math.Max(sessions.Count, Math.Max(caseAppts.Count, 1));

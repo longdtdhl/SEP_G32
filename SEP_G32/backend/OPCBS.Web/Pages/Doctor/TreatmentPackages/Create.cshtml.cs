@@ -64,6 +64,22 @@ public class CreateModel : PageModel
             Input.PatientId = null;
         }
 
+        if (Input.Price <= 0)
+        {
+            ModelState.AddModelError("Input.Price", "Package fee is required and must be greater than 0 VND.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await LoadPatientsAsync();
+            if (Input.PatientId.HasValue)
+            {
+                var (record, _) = await _patientApi.GetByUserIdAsync(Input.PatientId.Value);
+                PrefilledPatient = record ?? DoctorPatients.FirstOrDefault(p => p.PatientId == Input.PatientId.Value);
+            }
+            return Page();
+        }
+
         var (success, error) = await _api.CreateAsync(Input);
         if (!success)
         {

@@ -568,9 +568,10 @@
                 {
                     @foreach (var tx in Model.Transactions)
                     {
-                        var isPkg = tx.ServiceType.Contains("Treatment Package", StringComparison.OrdinalIgnoreCase);
+                        var isPkgPurchase = tx.ConsultationMode == "Package" || (tx.BookingCode != null && tx.BookingCode.StartsWith("PKG-"));
+                        var isPkgSession = tx.SettlementStatus == "Included in Package" || tx.ServiceType.StartsWith("Package Session:");
                         var isCompleted = tx.Status == "Completed" || tx.SettlementStatus == "Completed";
-                        var isConfirmed = tx.Status == "Confirmed" || tx.SettlementStatus == "Confirmed" || tx.Status == "Approved" || tx.Status == "1";
+                        var isConfirmed = tx.Status == "Confirmed" || tx.SettlementStatus == "Confirmed" || tx.Status == "Approved" || tx.Status == "1" || tx.Status == "Assigned";
 
                         <tr>
                             <td class="fw-bold text-dark font-monospace" style="font-size:0.8rem;">
@@ -588,9 +589,17 @@
                                 </div>
                             </td>
                             <td>
-                                @if (isPkg)
+                                @if (isPkgPurchase)
                                 {
-                                    <span class="tag-service-package"><i class="bi bi-gift me-1"></i>@tx.ServiceType</span>
+                                    <span class="tag-service-package"><i class="bi bi-gift-fill me-1"></i>@tx.ServiceType</span>
+                                }
+                                else if (isPkgSession)
+                                {
+                                    <span class="tag-service-package" style="background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe;"><i class="bi bi-calendar-check me-1"></i>@tx.ServiceType</span>
+                                }
+                                else if (tx.ConsultationMode == "Offline")
+                                {
+                                    <span class="tag-service-online" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;"><i class="bi bi-geo-alt-fill me-1"></i>@tx.ServiceType</span>
                                 }
                                 else
                                 {
@@ -598,10 +607,14 @@
                                 }
                             </td>
                             <td class="text-muted small">
-                                60 mins
+                                @(isPkgPurchase ? "Package" : "60 mins")
                             </td>
                             <td>
-                                @if (isCompleted)
+                                @if (isPkgSession)
+                                {
+                                    <span class="badge bg-light text-secondary border"><i class="bi bi-check2 me-1"></i>Prepaid in Package</span>
+                                }
+                                else if (isCompleted)
                                 {
                                     <span class="tag-completed"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>
                                 }
@@ -615,15 +628,38 @@
                                 }
                             </td>
                             <td class="text-end fw-bold text-dark">
-                                @tx.GrossAmount.ToString("N0") VND
+                                @if (isPkgSession)
+                                {
+                                    <span class="text-muted small">0 VND (Prepaid)</span>
+                                }
+                                else
+                                {
+                                    <span>@tx.GrossAmount.ToString("N0") VND</span>
+                                }
                             </td>
-                            <td class="text-end fw-bold text-success">
-                                @tx.NetAmount.ToString("N0") VND
+                            <td class="text-end fw-bold @(isPkgSession ? "text-muted" : "text-success")">
+                                @if (isPkgSession)
+                                {
+                                    <span class="small">0 VND</span>
+                                }
+                                else
+                                {
+                                    <span>@tx.NetAmount.ToString("N0") VND</span>
+                                }
                             </td>
                             <td class="text-end no-print">
-                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@tx.Id" class="btn btn-sm btn-link text-muted p-0 text-decoration-none">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
+                                @if (isPkgPurchase)
+                                {
+                                    <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@tx.Id" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" title="View Treatment Package">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-page="/Doctor/Appointments/Details" asp-route-id="@tx.Id" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" title="View Appointment">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                }
                             </td>
                         </tr>
                     }

@@ -367,11 +367,9 @@ public class AppointmentServiceTests
     {
         // Arrange
         SetupDefaultMocks();
-
-        // There's already an existing appointment for this patient on this slot
-        var existingAppt = CreateAppointment(AppointmentStatus.Pending);
+        var existingAppointment = CreateAppointment(AppointmentStatus.Approved);
         _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Appointment> { existingAppt });
+            .ReturnsAsync(new List<Appointment> { existingAppointment });
 
         var dto = new CreateAppointmentDto
         {
@@ -384,7 +382,7 @@ public class AppointmentServiceTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("Khung giờ này đã được đặt trước.", result.Message);
+        Assert.Contains("You have already booked this time slot.", result.Message);
     }
 
     // ──────────────────────────────────────────────
@@ -544,6 +542,8 @@ public class AppointmentServiceTests
         _patientRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PatientProfile> { CreatePatient() });
         var appointment = CreateAppointment(AppointmentStatus.InProgress);
+        appointment.CreatedAt = DateTime.UtcNow.AddMinutes(-50);
+        appointment.UpdatedAt = DateTime.UtcNow.AddMinutes(-50);
         _apptRepo.Setup(r => r.GetByIdAsync(_appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
@@ -749,6 +749,76 @@ public class AppointmentServiceTests
         };
         var result = await _sut.CreateAppointmentAsync(dto, null);
         Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestEmailAlreadyExistsInUsers_ReturnsAccountExistsError()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User",
+            GuestEmail = "doc@test.com", // matches registered user in default mocks
+            GuestPhoneNumber = "0999888777"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+        Assert.Contains("An account with this email already exists", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestPhoneAlreadyExistsInUsers_ReturnsAccountExistsError()
+    {
+        SetupDefaultMocks();
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User",
+            GuestEmail = "newguest@test.com",
+            GuestPhoneNumber = "0123456789" // matches registered user in default mocks
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+        Assert.Contains("An account with this phone number already exists", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_GuestDuplicateBookingOnSameSlot_Fails()
+    {
+        SetupDefaultMocks();
+        var doctor = CreateDoctor();
+        var slot = CreateSlot();
+        var existingGuestAppt = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "BK-GUEST-01",
+            DoctorId = _doctorProfileId,
+            Doctor = doctor,
+            AppointmentSlotId = _slotId,
+            AppointmentSlot = slot,
+            GuestName = "Existing Guest",
+            GuestEmail = "guest@test.com",
+            GuestPhoneNumber = "0901234567",
+            Status = AppointmentStatus.Approved,
+            IsDeleted = false
+        };
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Appointment> { existingGuestAppt });
+
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId,
+            GuestName = "Guest User 2",
+            GuestEmail = "guest@test.com",
+            GuestPhoneNumber = "0901234567"
+        };
+        var result = await _sut.CreateAppointmentAsync(dto, null);
+        Assert.False(result.Success);
+        Assert.Contains("already booked this time slot", result.Message);
     }
 
     [Fact]
@@ -1091,5 +1161,275 @@ public class AppointmentServiceTests
 
         Assert.False(result.Success);
         Assert.Contains("Unauthorized", result.Message);
+    }
+
+    // ──────────────────────────────────────────────
+    // APPOINTMENT BOOKING RESTRICTION TESTS
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAppointment_PatientHas3ActiveAppointmentsInSameWeekWithSameDoctor_FailsWithLimitError()
+    {
+        // Arrange
+        SetupDefaultMocks();
+        var doc = CreateDoctor();
+        
+        // Target slot on Friday of next week
+        var now = DateTime.UtcNow;
+        var diff = ((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1);
+        var monday = DateOnly.FromDateTime(now.AddDays(7 - diff)); // Next Monday
+        var friday = monday.AddDays(4);
+
+        var targetSlot = new AppointmentSlot
+        {
+            Id = _slotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = friday,
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Available,
+            DoctorProfile = doc
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(targetSlot);
+
+        var slot1 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = monday, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+        var slot2 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = monday.AddDays(1), StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+        var slot3 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = monday.AddDays(2), StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AppointmentSlot> { targetSlot, slot1, slot2, slot3 });
+
+        var activeAppts = new List<Appointment>
+        {
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-001",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.Pending,
+                AppointmentSlotId = slot1.Id,
+                AppointmentDate = monday.ToDateTime(slot1.StartTime),
+                Doctor = doc,
+                AppointmentSlot = slot1
+            },
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-002",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.Approved,
+                AppointmentSlotId = slot2.Id,
+                AppointmentDate = monday.AddDays(1).ToDateTime(slot2.StartTime),
+                Doctor = doc,
+                AppointmentSlot = slot2
+            },
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-003",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.InProgress,
+                AppointmentSlotId = slot3.Id,
+                AppointmentDate = monday.AddDays(2).ToDateTime(slot3.StartTime),
+                Doctor = doc,
+                AppointmentSlot = slot3
+            }
+        };
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(activeAppts);
+
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId
+        };
+
+        // Act
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("maximum of 3 active appointments per week", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_PatientHas3ActiveAppointmentsInDifferentWeekWithSameDoctor_Succeeds()
+    {
+        // Arrange
+        SetupDefaultMocks();
+        var doc = CreateDoctor();
+        
+        var now = DateTime.UtcNow;
+        var diff = ((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1);
+        var thisMonday = DateOnly.FromDateTime(now.AddDays(-diff));
+        var nextMonday = thisMonday.AddDays(7);
+
+        // Target slot is next week
+        var targetSlot = new AppointmentSlot
+        {
+            Id = _slotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = nextMonday.AddDays(2),
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Available,
+            DoctorProfile = doc
+        };
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(targetSlot);
+
+        // Existing 3 active appointments are in this week (different week)
+        var slot1 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = thisMonday, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+        var slot2 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = thisMonday.AddDays(1), StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+        var slot3 = new AppointmentSlot { Id = Guid.NewGuid(), DoctorProfileId = _doctorProfileId, SlotDate = thisMonday.AddDays(2), StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0), Status = AppointmentSlotStatus.Booked, DoctorProfile = doc };
+
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AppointmentSlot> { targetSlot, slot1, slot2, slot3 });
+
+        var activeAppts = new List<Appointment>
+        {
+            new Appointment { Id = Guid.NewGuid(), BookingCode = "OPCBS-TEST-001", DoctorId = _doctorProfileId, PatientId = _patientProfileId, Status = AppointmentStatus.Pending, AppointmentSlotId = slot1.Id, AppointmentDate = thisMonday.ToDateTime(slot1.StartTime), Doctor = doc, AppointmentSlot = slot1 },
+            new Appointment { Id = Guid.NewGuid(), BookingCode = "OPCBS-TEST-002", DoctorId = _doctorProfileId, PatientId = _patientProfileId, Status = AppointmentStatus.Approved, AppointmentSlotId = slot2.Id, AppointmentDate = thisMonday.AddDays(1).ToDateTime(slot2.StartTime), Doctor = doc, AppointmentSlot = slot2 },
+            new Appointment { Id = Guid.NewGuid(), BookingCode = "OPCBS-TEST-003", DoctorId = _doctorProfileId, PatientId = _patientProfileId, Status = AppointmentStatus.InProgress, AppointmentSlotId = slot3.Id, AppointmentDate = thisMonday.AddDays(2).ToDateTime(slot3.StartTime), Doctor = doc, AppointmentSlot = slot3 }
+        };
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(activeAppts);
+
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId
+        };
+
+        // Act
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+
+        // Assert
+        Assert.True(result.Success);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_PatientAlreadyHasAppointmentOnSameDayWithSameDoctor_FailsWithDailyLimitError()
+    {
+        // Arrange
+        SetupDefaultMocks();
+        var doc = CreateDoctor();
+        var targetSlot = CreateSlot(AppointmentSlotStatus.Available, daysFromNow: 5);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(targetSlot);
+
+        var existingSlotId = Guid.NewGuid();
+        var existingSlot = new AppointmentSlot
+        {
+            Id = existingSlotId,
+            DoctorProfileId = _doctorProfileId,
+            SlotDate = targetSlot.SlotDate,
+            StartTime = new TimeOnly(14, 0),
+            EndTime = new TimeOnly(15, 0),
+            Status = AppointmentSlotStatus.Booked,
+            DoctorProfile = doc
+        };
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AppointmentSlot> { targetSlot, existingSlot });
+
+        var sameDayAppt = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            BookingCode = "OPCBS-TEST-004",
+            DoctorId = _doctorProfileId,
+            PatientId = _patientProfileId,
+            Status = AppointmentStatus.Approved,
+            AppointmentSlotId = existingSlotId,
+            AppointmentDate = targetSlot.SlotDate.ToDateTime(existingSlot.StartTime),
+            Doctor = doc,
+            AppointmentSlot = existingSlot
+        };
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Appointment> { sameDayAppt });
+
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId
+        };
+
+        // Act
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("maximum of 1 appointment per day", result.Message);
+    }
+
+    [Fact]
+    public async Task CreateAppointment_PatientHas3CompletedOrCancelledAppointments_Succeeds()
+    {
+        // Arrange
+        SetupDefaultMocks();
+        var doc = CreateDoctor();
+        var targetSlot = CreateSlot(AppointmentSlotStatus.Available, 10);
+        _slotRepo.Setup(r => r.GetByIdAsync(_slotId, It.IsAny<CancellationToken>())).ReturnsAsync(targetSlot);
+
+        var slotOld1 = CreateSlot(AppointmentSlotStatus.Booked, -10);
+        slotOld1.Id = Guid.NewGuid();
+        var slotOld2 = CreateSlot(AppointmentSlotStatus.Booked, -5);
+        slotOld2.Id = Guid.NewGuid();
+        var slotOld3 = CreateSlot(AppointmentSlotStatus.Booked, -2);
+        slotOld3.Id = Guid.NewGuid();
+
+        _slotRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AppointmentSlot> { targetSlot, slotOld1, slotOld2, slotOld3 });
+
+        var oldAppts = new List<Appointment>
+        {
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-005",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.Completed,
+                AppointmentSlotId = slotOld1.Id,
+                AppointmentDate = DateTime.UtcNow.AddDays(-10),
+                Doctor = doc,
+                AppointmentSlot = slotOld1
+            },
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-006",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.Cancelled,
+                AppointmentSlotId = slotOld2.Id,
+                AppointmentDate = DateTime.UtcNow.AddDays(-5),
+                Doctor = doc,
+                AppointmentSlot = slotOld2
+            },
+            new Appointment
+            {
+                Id = Guid.NewGuid(),
+                BookingCode = "OPCBS-TEST-007",
+                DoctorId = _doctorProfileId,
+                PatientId = _patientProfileId,
+                Status = AppointmentStatus.Rejected,
+                AppointmentSlotId = slotOld3.Id,
+                AppointmentDate = DateTime.UtcNow.AddDays(-2),
+                Doctor = doc,
+                AppointmentSlot = slotOld3
+            }
+        };
+        _apptRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(oldAppts);
+
+        var dto = new CreateAppointmentDto
+        {
+            DoctorId = _doctorProfileId,
+            AppointmentSlotId = _slotId
+        };
+
+        // Act
+        var result = await _sut.CreateAppointmentAsync(dto, _patientUserId);
+
+        // Assert
+        Assert.True(result.Success);
     }
 }

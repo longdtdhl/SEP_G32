@@ -93,7 +93,7 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> TrackAppointment(string bookingCode, [FromQuery] string? email)
     {
         if (string.IsNullOrWhiteSpace(bookingCode) || string.IsNullOrWhiteSpace(email))
-            return BadRequest(ApiResponse.ErrorResponse("Vui lòng cung cấp cả Mã đặt lịch và Email."));
+            return BadRequest(ApiResponse.ErrorResponse("Please provide both booking code and email address."));
 
         var dto = new TrackAppointmentDto { BookingCode = bookingCode.Trim(), Email = email.Trim() };
         var result = await _apptService.TrackAppointmentAsync(dto);
@@ -105,7 +105,7 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> ResendConfirmation([FromBody] ResendConfirmationDto? dto)
     {
         if (dto == null || string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
-            return BadRequest(ApiResponse.ErrorResponse("Mã đặt lịch và Email là bắt buộc."));
+            return BadRequest(ApiResponse.ErrorResponse("Booking code and email address are required."));
 
         var result = await _apptService.ResendConfirmationEmailAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);

@@ -20,6 +20,7 @@ public class TreatmentLifecycleTests
     private readonly Mock<IRepository<DoctorProfile>> _doctorRepo = new();
     private readonly Mock<IRepository<PatientProfile>> _patientRepo = new();
     private readonly Mock<IRepository<User>> _userRepo = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly Mock<INotificationService> _notificationService = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<ILogger<TreatmentLifecycleCoordinator>> _coordinatorLogger = new();
@@ -37,6 +38,7 @@ public class TreatmentLifecycleTests
             _doctorRepo.Object,
             _patientRepo.Object,
             _userRepo.Object,
+            _notificationRepo.Object,
             _notificationService.Object,
             _uow.Object,
             _coordinatorLogger.Object);

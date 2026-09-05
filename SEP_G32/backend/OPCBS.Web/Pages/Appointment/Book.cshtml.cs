@@ -283,6 +283,7 @@ public class BookModel : PageModel
         {
             if (string.IsNullOrWhiteSpace(Input.GuestName)) { Error = "Please enter your full name."; await OnGetAsync(); return Page(); }
             if (string.IsNullOrWhiteSpace(Input.GuestEmail)) { Error = "Please enter your email."; await OnGetAsync(); return Page(); }
+            if (string.IsNullOrWhiteSpace(Input.GuestPhoneNumber)) { Error = "Please enter your phone number."; await OnGetAsync(); return Page(); }
         }
 
         var (bookedAppointment, error) = await _appointmentService.BookAsync(Input);

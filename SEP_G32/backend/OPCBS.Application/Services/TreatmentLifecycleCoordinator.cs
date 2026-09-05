@@ -429,7 +429,7 @@ public class TreatmentLifecycleCoordinator : ITreatmentLifecycleCoordinator
             return (false, "This treatment case is currently on hold. Clinical activities, session management, and homework submissions are paused until the hold period ends or treatment is resumed.");
         }
 
-        if (treatmentCase.Status == TreatmentCaseStatus.Cancelled || treatmentCase.Status == TreatmentCaseStatus.Terminated || treatmentCase.Status == TreatmentCaseStatus.Expired)
+        if (treatmentCase.Status == TreatmentCaseStatus.Cancelled || treatmentCase.Status == TreatmentCaseStatus.Terminated || treatmentCase.Status == TreatmentCaseStatus.Expired || treatmentCase.Status == TreatmentCaseStatus.Completed)
         {
             return (false, "This treatment program is no longer active. Historical information remains available in read-only mode.");
         }

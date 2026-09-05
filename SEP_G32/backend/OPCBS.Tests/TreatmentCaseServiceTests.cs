@@ -445,4 +445,43 @@ public class TreatmentCaseServiceTests
         Assert.Equal(7, goal.CurrentValue);
         _goalProgressRepo.Verify(r => r.AddAsync(It.Is<TreatmentGoalProgress>(p => p.ProgressPercent == 50 && p.CurrentValue == 7), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task GetProgressAsync_IncludesNoShowSessionsInCompletedCountAndProgressPercent()
+    {
+        var caseId = Guid.NewGuid();
+        var treatmentCase = new TreatmentCase
+        {
+            Id = caseId,
+            CaseName = "NoShow test case",
+            TotalSessions = 4,
+            Status = TreatmentCaseStatus.Active,
+            StartDate = DateTime.UtcNow.AddDays(-10),
+            TreatmentPackage = null!,
+            Doctor = null!,
+            Patient = null!
+        };
+        var sessions = new List<TreatmentSession>
+        {
+            new() { TreatmentCaseId = caseId, SessionNumber = 1, Status = TreatmentSessionStatus.Completed, TreatmentCase = treatmentCase },
+            new() { TreatmentCaseId = caseId, SessionNumber = 2, Status = TreatmentSessionStatus.NoShow, TreatmentCase = treatmentCase },
+            new() { TreatmentCaseId = caseId, SessionNumber = 3, Status = TreatmentSessionStatus.Scheduled, TreatmentCase = treatmentCase },
+            new() { TreatmentCaseId = caseId, SessionNumber = 4, Status = TreatmentSessionStatus.Planned, TreatmentCase = treatmentCase }
+        };
+
+        _caseRepo.Setup(r => r.GetByIdAsync(caseId, It.IsAny<CancellationToken>())).ReturnsAsync(treatmentCase);
+        _sessionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(sessions);
+        _goalRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TreatmentGoal>());
+        _assignmentRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TherapyAssignment>());
+        _moodRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<MoodEntry>());
+
+        var result = await _service.GetProgressAsync(caseId, null, CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        // Completed (1) + NoShow (1) = 2 completed sessions
+        Assert.Equal(2, result.Data.CompletedSessions);
+        Assert.Equal(4, result.Data.TotalSessions);
+        Assert.Equal(50, result.Data.SessionProgressPercent);
+    }
 }
