@@ -143,6 +143,7 @@ public class DoctorProfileDto
     public string? Education { get; set; }
     public string? CareerBackground { get; set; }
     public decimal ConsultationFee { get; set; }
+    public bool IsConsultationFeePublic { get; set; } = true;
     public string? CareApproach { get; set; }
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }
@@ -150,6 +151,8 @@ public class DoctorProfileDto
     public DateTime? LicenseExpiryDate { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
+    public int AvailableSlotCount { get; set; }
+    public string? NextAvailableSlot { get; set; }
 }
 
 /// <summary>
@@ -185,6 +188,7 @@ public class UpdateDoctorProfileDto
     public string? Education { get; set; }
     public string? CareerBackground { get; set; }
     public decimal? ConsultationFee { get; set; }
+    public bool? IsConsultationFeePublic { get; set; }
     public string? CareApproach { get; set; }
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }

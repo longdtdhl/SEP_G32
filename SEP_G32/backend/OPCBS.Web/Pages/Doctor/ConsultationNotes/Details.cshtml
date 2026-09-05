@@ -2,260 +2,407 @@
 @model OPCBS.Web.Pages.Doctor.ConsultationNotes.DetailsModel
 @{
     ViewData["Title"] = "Consultation Note Details";
-
-    Layout = "_DashboardLayout";}
-
-<style>
-    .detail-banner {
-        background: linear-gradient(135deg, #f0fdf8 0%, #ecfdf5 50%, #d1fae5 100%);
-        border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;
-        border: 1px solid rgba(16,185,129,0.12);
-    }
-    .detail-banner .avatar {
-        width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-        font-size: 1.4rem; font-weight: 700; flex-shrink: 0;
-    }
-    .detail-meta { font-size: 0.85rem; color: #64748b; display: flex; gap: 12px; align-items: center; margin-top: 4px; }
-    
-    .form-section-title {
-        font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;
-        padding-bottom: 0.5rem; border-bottom: 2px solid rgba(78,139,112,0.1);
-        display: flex; align-items: center; gap: 8px;
-    }
-    .form-section-title i { color: var(--mb-primary); }
-</style>
-
-<div class="mb-page-header d-flex justify-content-between align-items-center">
-    <div>
-        <h1 style="font-size:1.4rem; font-weight:700; margin:0;">
-            <i class="bi bi-file-earmark-medical-fill me-2" style="color:var(--mb-primary);"></i>Consultation Record Details
-        </h1>
-        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">View diagnosis information and therapy pspread</p>
-    </div>
-    <div>
-        @if (Model.Record != null)
-        {
-            @if (!Model.Record.IsPatientConfirmed)
-            {
-                <a asp-page="./Edit" asp-route-id="@Model.Record.Id" class="btn btn-warning me-2 fw-semibold" style="border-radius:10px;"><i class="bi bi-pencil-square me-1"></i>Edit Note</a>
-            }
-            <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.Record.PatientRecordId" class="btn btn-outline-secondary px-3 py-2 fw-semibold" style="border-radius:10px;">
-                <i class="bi bi-arrow-left me-1"></i>Patient Profile
-            </a>
-        }
-        else
-        {
-            <a asp-page="/Doctor/ConsultationNotes/Index" class="btn btn-outline-secondary px-3 py-2" style="border-radius:10px;"><i class="bi bi-arrow-left me-1"></i>Back</a>
-        }
-    </div>
-</div>
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show mt-3" style="border-radius:12px;">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    Layout = "_DashboardLayout";
 }
 
-@if (Model.Record != null)
-{
-    var displayName = Model.Record.DisplayPatientName ?? "Patient";
-    var initial = displayName.Substring(0, 1).ToUpper();
+<style>
+    :root {
+        --cn-primary: #0f766e;
+        --cn-primary-hover: #0d5f58;
+        --cn-primary-light: #f0fdfa;
+        --cn-primary-border: #ccfbf1;
+        --cn-text-main: #0f172a;
+        --cn-text-muted: #64748b;
+        --cn-card-bg: #ffffff;
+        --cn-border: #e2e8f0;
+    }
 
-    <div class="detail-banner d-flex align-items-center gap-3 shadow-sm">
-        <div class="avatar" style="background:rgba(16,185,129,0.15); color:var(--mb-primary);">@initial</div>
-        <div>
-            <h4 style="margin:0; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                @displayName
-                @if (Model.Record.IsWalkIn)
-                {
-                    <span style="font-size:0.65rem; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px;">Guest</span>
-                }
-                else
-                {
-                    <span style="font-size:0.65rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px;">System User</span>
-                }
-                @if (Model.Record.IsPatientConfirmed)
-                {
-                    <span class="badge rounded-pill px-2.5 py-1 fw-medium ms-2" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.75rem;">
-                        <i class="bi bi-check-circle-fill me-1" style="color:#10b981;"></i>Patient Confirmed (@(Model.Record.PatientConfirmedAt?.ToString("dd/MM/yyyy HH:mm")))
-                    </span>
-                }
-                else
-                {
-                    <span class="badge rounded-pill px-2.5 py-1 fw-medium ms-2" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;">
-                        <i class="bi bi-hourglass-split me-1" style="color:#d97706;"></i>Awaiting Patient Confirmation
-                    </span>
-                }
-            </h4>
-            <div class="detail-meta">
-                <span><i class="bi bi-person-badge"></i> Doctor: @Model.Record.DoctorName</span>
-                <span>•</span>
-                <span><i class="bi bi-calendar3"></i> Consultation Date: @Model.Record.DisplayConsultationDate.ToLocalTime().ToString("MM/dd/yyyy HH:mm")</span>
-                <span>•</span>
-                @if (!string.IsNullOrEmpty(Model.Record.PackageName))
-                {
-                    <span>•</span>
-                    <span class="badge bg-info text-dark" style="font-size:0.7rem;"><i class="bi bi-box-seam me-1"></i>@Model.Record.PackageName</span>
-                }
-            </div>
+    .cn-wrapper {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 0.25rem 0.5rem 3.5rem;
+    }
+
+    /* ════ 1. HERO CLINICAL BANNER ════ */
+    .cn-hero-banner {
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+        border: 1px solid var(--cn-primary-border);
+        border-radius: 16px;
+        padding: 1.35rem 1.65rem;
+        margin-bottom: 1.15rem;
+        box-shadow: 0 4px 20px -4px rgba(15, 118, 110, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+        position: relative;
+    }
+    .cn-hero-banner::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #0d9488 0%, #14b8a6 100%);
+        border-top-left-radius: 16px;
+        border-bottom-left-radius: 16px;
+    }
+
+    .cn-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 13px;
+        background: rgba(13, 148, 136, 0.12);
+        color: #0f766e;
+        border: 1px solid rgba(13, 148, 136, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        font-weight: 750;
+        flex-shrink: 0;
+    }
+
+    .cn-hero-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--cn-text-main);
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        margin: 0;
+    }
+    .cn-hero-title a {
+        color: var(--cn-text-main);
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+    .cn-hero-title a:hover {
+        color: var(--cn-primary);
+    }
+
+    /* ════ 2. CLINICAL CARD BOXES ════ */
+    .cn-card {
+        background: #ffffff;
+        border: 1px solid var(--cn-border);
+        border-radius: 14px;
+        box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.03);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+    .cn-card-header {
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+        background: rgba(255, 255, 255, 0.98);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .cn-card-title {
+        font-size: 0.92rem;
+        font-weight: 750;
+        color: var(--cn-text-main);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cn-card-body {
+        padding: 1.25rem;
+    }
+
+    .cn-section-box {
+        padding: 1rem 1.15rem;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+    }
+    .cn-section-label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cn-section-text {
+        font-size: 0.88rem;
+        color: var(--cn-text-main);
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+</style>
+
+<div class="cn-wrapper">
+    <!-- Top Action Bar -->
+    @if (Model.Record != null && !Model.Record.IsPatientConfirmed)
+    {
+        <div class="d-flex justify-content-end align-items-center mb-3">
+            <a asp-page="./Edit" asp-route-id="@Model.Record.Id" class="btn btn-sm text-white px-3 py-1.5 shadow-sm" style="background:#0d9488; border-radius:8px; font-weight:600; font-size:0.82rem;">
+                <i class="bi bi-pencil-square me-1"></i>Edit Clinical Note
+            </a>
         </div>
-    </div>
+    }
 
-    <div class="row g-4">
-        <!-- Main Note Content -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm" style="border-radius:16px;">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2 border-bottom pb-2" style="font-size:1.05rem;">
-                        <i class="bi bi-file-earmark-medical text-primary"></i>
-                        <span>Clinical Consultation Information</span>
-                    </h5>
-                    
-                    <div class="d-flex flex-column gap-3">
-                        <!-- Diagnosis -->
-                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#475569; font-size:0.78rem;">
-                                <i class="bi bi-journal-medical text-primary"></i>
-                                <span>Preliminary Diagnosis / Findings</span>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3 shadow-sm" style="border-radius:12px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Record != null)
+    {
+        var displayName = Model.Record.DisplayPatientName ?? "Patient";
+        var initial = !string.IsNullOrEmpty(displayName) ? displayName.Substring(0, 1).ToUpper() : "P";
+        var consultDate = Model.Record.DisplayConsultationDate.ToLocalTime();
+
+        <!-- ════ 1. HERO CLINICAL BANNER ════ -->
+        <header class="cn-hero-banner">
+            <div class="d-flex align-items-center gap-3">
+                <div class="cn-avatar">@initial</div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        @if (Model.Record.IsWalkIn)
+                        {
+                            <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:0.72rem; font-weight:700;">Walk-in Guest</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; font-size:0.72rem; font-weight:700;">Registered Patient</span>
+                        }
+
+                        @if (Model.Record.IsPatientConfirmed)
+                        {
+                            <span class="badge" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.72rem; font-weight:700;">
+                                <i class="bi bi-check-circle-fill me-1 text-success"></i>Patient Confirmed (@(Model.Record.PatientConfirmedAt?.ToString("MMM dd, yyyy @ HH:mm")))
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:0.72rem; font-weight:700;">
+                                <i class="bi bi-hourglass-split me-1 text-warning"></i>Awaiting Patient Confirmation
+                            </span>
+                        }
+                    </div>
+
+                    <h1 class="cn-hero-title">
+                        <a asp-page="/Doctor/Patients/Details" asp-route-id="@Model.Record.PatientRecordId" title="View Patient Profile">
+                            Clinical Record for @displayName
+                            <i class="bi bi-arrow-up-right-square ms-1" style="font-size:1.05rem; color:#0f766e; vertical-align:middle;"></i>
+                        </a>
+                    </h1>
+
+                    <div class="text-muted d-flex align-items-center gap-2 flex-wrap mt-1" style="font-size:0.8rem;">
+                        <span>Attending Doctor: <strong class="text-dark">Dr. @(Model.Record.DoctorName ?? "Assigned Doctor")</strong></span>
+                        <span>•</span>
+                        <span>Consultation: <strong class="text-dark">@consultDate.ToString("dddd, MMM dd, yyyy @ HH:mm")</strong></span>
+                        @if (!string.IsNullOrEmpty(Model.Record.PackageName) || Model.TreatmentPackage != null)
+                        {
+                            <span>•</span>
+                            <span>Package: <strong class="text-dark">@(!string.IsNullOrEmpty(Model.Record.PackageName) ? Model.Record.PackageName : Model.TreatmentPackage?.Title)</strong></span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ════ 3. MAIN CLINICAL NOTE CONTENT & SIDEBAR ════ -->
+        <div class="row g-3">
+            <!-- Left: Clinical Findings & Plan -->
+            <div class="col-lg-8">
+                <div class="cn-card">
+                    <div class="cn-card-header">
+                        <h6 class="cn-card-title">
+                            <i class="bi bi-clipboard2-pulse text-teal" style="color:#0f766e;"></i>
+                            Clinical Consultation Information
+                        </h6>
+                        <span class="text-muted small" style="font-size:0.75rem;">Confidential Medical Note</span>
+                    </div>
+                    <div class="cn-card-body">
+                        <!-- Preliminary Diagnosis -->
+                        <div class="cn-section-box" style="background:#f8fafc; border-color:#e2e8f0;">
+                            <div class="cn-section-label" style="color:#0f766e;">
+                                <i class="bi bi-journal-medical"></i>
+                                <span>Preliminary Diagnosis / Clinical Findings</span>
                             </div>
-                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                            <div class="cn-section-text">
                                 @if (!string.IsNullOrWhiteSpace(Model.Record.Diagnosis))
                                 {
                                     @Model.Record.Diagnosis
                                 }
                                 else
                                 {
-                                    <span class="text-muted fst-italic">Not provided</span>
+                                    <span class="text-muted fst-italic">No diagnostic findings documented.</span>
                                 }
                             </div>
                         </div>
 
-                        <!-- Session Notes / Summary -->
-                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                            <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#475569; font-size:0.78rem;">
+                        <!-- Consultation Summary -->
+                        <div class="cn-section-box" style="background:#ffffff; border-color:#e2e8f0;">
+                            <div class="cn-section-label" style="color:#334155;">
                                 <i class="bi bi-chat-left-text text-secondary"></i>
                                 <span>Consultation Summary / Session Notes</span>
                             </div>
-                            <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                            <div class="cn-section-text">
                                 @if (!string.IsNullOrWhiteSpace(Model.Record.ConsultationSummary))
                                 {
                                     @Model.Record.ConsultationSummary
                                 }
                                 else
                                 {
-                                    <span class="text-muted fst-italic">Not provided</span>
+                                    <span class="text-muted fst-italic">No session notes recorded.</span>
                                 }
                             </div>
                         </div>
-                        
-                        <!-- Grid 2 cols desktop / 1 col mobile for Therapy Plan, Recommendations, Follow-up, Next Date -->
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
+
+                        <!-- 2-Column Grid: Therapy Plan & Recommendations -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
                                 <div class="p-3 rounded-3 h-100" style="background:#f0fdfa; border:1px solid #ccfbf1;">
-                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#0f766e; font-size:0.78rem;">
-                                        <i class="bi bi-compass" style="color:#0d9488;"></i>
+                                    <div class="cn-section-label" style="color:#0f766e;">
+                                        <i class="bi bi-compass"></i>
                                         <span>Therapy Plan</span>
                                     </div>
-                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                    <div class="cn-section-text" style="font-size:0.85rem;">
                                         @if (!string.IsNullOrWhiteSpace(Model.Record.TherapyPlan))
                                         {
                                             @Model.Record.TherapyPlan
                                         }
                                         else
                                         {
-                                            <span class="text-muted fst-italic">Not provided</span>
+                                            <span class="text-muted fst-italic">No therapy plan defined.</span>
                                         }
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-12 col-md-6">
+                            <div class="col-md-6">
                                 <div class="p-3 rounded-3 h-100" style="background:#f0fdf4; border:1px solid #dcfce7;">
-                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#166534; font-size:0.78rem;">
-                                        <i class="bi bi-lightbulb text-success"></i>
+                                    <div class="cn-section-label" style="color:#166534;">
+                                        <i class="bi bi-lightbulb"></i>
                                         <span>Recommendations</span>
                                     </div>
-                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
+                                    <div class="cn-section-text" style="font-size:0.85rem;">
                                         @if (!string.IsNullOrWhiteSpace(Model.Record.Recommendations))
                                         {
                                             @Model.Record.Recommendations
                                         }
                                         else
                                         {
-                                            <span class="text-muted fst-italic">Not provided</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="p-3 rounded-3 h-100" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#475569; font-size:0.78rem;">
-                                        <i class="bi bi-clipboard-check text-secondary"></i>
-                                        <span>Follow-up Notes</span>
-                                    </div>
-                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;">
-                                        @if (!string.IsNullOrWhiteSpace(Model.Record.FollowUpNotes))
-                                        {
-                                            @Model.Record.FollowUpNotes
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted fst-italic">Not provided</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="p-3 rounded-3 h-100" style="background:#fffbeb; border:1px solid #fef3c7;">
-                                    <div class="fw-semibold mb-1.5 d-flex align-items-center gap-2" style="color:#92400e; font-size:0.78rem;">
-                                        <i class="bi bi-calendar-event text-warning"></i>
-                                        <span>Next Recommended Appointment</span>
-                                    </div>
-                                    <div class="text-dark" style="font-size:0.88rem; line-height:1.6;">
-                                        @if (Model.Record.NextAppointmentRecommendedDate.HasValue)
-                                        {
-                                            <div class="d-flex flex-column gap-1">
-                                                <div>
-                                                    <span class="fw-semibold">@Model.Record.NextAppointmentRecommendedDate.Value.ToString("dd/MM/yyyy")</span>
-                                                    @if (!string.IsNullOrEmpty(Model.Record.NextAppointmentRecommendedSlotStartTime))
-                                                    {
-                                                        <span class="badge bg-warning text-dark ms-1">@Model.Record.NextAppointmentRecommendedSlotStartTime - @Model.Record.NextAppointmentRecommendedSlotEndTime</span>
-                                                    }
-                                                </div>
-                                                @if (Model.Record.FollowUpAppointmentId.HasValue)
-                                                {
-                                                    <div>
-                                                        <a asp-page="/Doctor/Appointments/Details" asp-route-id="@Model.Record.FollowUpAppointmentId" class="badge rounded-pill px-2.5 py-1 fw-medium text-decoration-none" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:0.75rem;">
-                                                            <i class="bi bi-link-45deg me-1"></i>Follow-up Booked (@(Model.Record.FollowUpAppointmentBookingCode ?? "View"))
-                                                        </a>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted fst-italic">Not provided</span>
+                                            <span class="text-muted fst-italic">No specific recommendations provided.</span>
                                         }
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Follow-up Plan -->
+                        <div class="p-3 rounded-3" style="background:#fffdf5; border:1px solid #fde68a;">
+                            <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+                                <div>
+                                    <div class="cn-section-label mb-1" style="color:#92400e;">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        <span>Follow-up Plan</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:0.78rem;">
+                                        Clinical instructions and the next suggested consultation time, if a follow-up is needed.
+                                    </div>
+                                </div>
+                                @if (Model.Record.FollowUpAppointmentId.HasValue)
+                                {
+                                    <a asp-page="/Doctor/Appointments/Details" asp-route-id="@Model.Record.FollowUpAppointmentId" class="btn btn-sm d-inline-flex align-items-center gap-1" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; border-radius:8px; font-weight:700; font-size:0.78rem;">
+                                        <i class="bi bi-check2-circle"></i>
+                                        Follow-up Booked
+                                    </a>
+                                }
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <div class="h-100 p-3 rounded-3 bg-white" style="border:1px solid #f1f5f9;">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px; height:28px; background:#f0fdfa; color:#0f766e;">
+                                                <i class="bi bi-clipboard2-check"></i>
+                                            </span>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:0.88rem;">Clinical Follow-up Instructions</div>
+                                                <div class="text-muted" style="font-size:0.72rem;">What the patient should monitor or continue after this session.</div>
+                                            </div>
+                                        </div>
+                                        <div class="cn-section-text" style="font-size:0.86rem;">
+                                            @if (!string.IsNullOrWhiteSpace(Model.Record.FollowUpNotes))
+                                            {
+                                                @Model.Record.FollowUpNotes
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fst-italic">No follow-up instructions were documented for this consultation.</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-5">
+                                    <div class="h-100 p-3 rounded-3 bg-white" style="border:1px solid #f1f5f9;">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px; height:28px; background:#fffbeb; color:#b45309;">
+                                                <i class="bi bi-calendar2-week"></i>
+                                            </span>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:0.88rem;">Suggested Next Session</div>
+                                                <div class="text-muted" style="font-size:0.72rem;">Recommendation only unless a booking is linked.</div>
+                                            </div>
+                                        </div>
+
+                                        @if (Model.Record.NextAppointmentRecommendedDate.HasValue)
+                                        {
+                                            <div class="rounded-3 p-3" style="background:#fffbeb; border:1px solid #fde68a;">
+                                                <div class="fw-bold text-dark" style="font-size:0.95rem;">
+                                                    @Model.Record.NextAppointmentRecommendedDate.Value.ToString("ddd, MMM dd, yyyy")
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(Model.Record.NextAppointmentRecommendedSlotStartTime))
+                                                {
+                                                    <div class="mt-2 d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style="background:#ffffff; border:1px solid #fcd34d; color:#92400e; font-size:0.78rem; font-weight:700;">
+                                                        <i class="bi bi-clock"></i>
+                                                        @Model.Record.NextAppointmentRecommendedSlotStartTime - @Model.Record.NextAppointmentRecommendedSlotEndTime
+                                                    </div>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(Model.Record.FollowUpAppointmentBookingCode))
+                                                {
+                                                    <div class="mt-2 text-muted" style="font-size:0.75rem;">
+                                                        Booking code: <strong class="text-dark">@Model.Record.FollowUpAppointmentBookingCode</strong>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-3 p-3 text-muted fst-italic" style="background:#f8fafc; border:1px dashed #cbd5e1; font-size:0.84rem;">
+                                                No next appointment has been recommended.
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Clinical Fields -->
                         @if (Model.Record.CustomFields != null && Model.Record.CustomFields.Any())
                         {
                             <div class="p-3 rounded-3 mt-3" style="background:#f0fdfa; border:1px solid #ccfbf1;">
-                                <div class="fw-semibold mb-2 d-flex align-items-center gap-2" style="color:#0f766e; font-size:0.85rem;">
+                                <div class="cn-section-label" style="color:#0f766e;">
                                     <i class="bi bi-tags-fill"></i>
                                     <span>Custom Clinical Fields</span>
                                 </div>
-                                <div class="row g-2">
+                                <div class="row g-2 mt-1">
                                     @foreach (var cf in Model.Record.CustomFields)
                                     {
                                         <div class="col-md-6">
                                             <div class="p-2.5 rounded-2 bg-white border">
-                                                <div class="text-muted small fw-semibold" style="font-size:0.75rem;">@cf.Title</div>
-                                                <div class="fw-bold text-dark mt-0.5" style="font-size:0.9rem;">@cf.Content</div>
+                                                <div class="text-muted small fw-semibold" style="font-size:0.72rem;">@cf.Title</div>
+                                                <div class="fw-bold text-dark mt-0.5" style="font-size:0.86rem;">@cf.Content</div>
                                             </div>
                                         </div>
                                     }
@@ -265,90 +412,128 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Sidebar Package Content -->
-        <div class="col-lg-4">
-            @{
-                var validMainPkg = (Model.TreatmentPackage != null && !string.Equals(Model.TreatmentPackage.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)) ? Model.TreatmentPackage : null;
-                var validOtherPkgs = Model.PatientPackages.Where(p => !string.Equals(p.Status, "Cancelled", StringComparison.OrdinalIgnoreCase) && (validMainPkg == null || p.Id != validMainPkg.Id)).ToList();
-            }
-
-            @if (validMainPkg != null)
-            {
-                var pkg = validMainPkg;
-                var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
-                var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-
-                <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                            <i class="bi bi-box-seam-fill text-success me-2"></i>Treatment Package for this Session
-                        </h5>
-                        <div class="p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
-                            <h6 class="fw-bold text-dark mb-2" style="font-size:0.88rem; line-height:1.4;">@pkg.Title</h6>
-                            
-                            <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
-                                <span>Progress: @pkg.CompletedSessions/@pkg.TotalSessions sessions</span>
-                                <span style="color:@progressColor; font-weight:700;">@progress%</span>
-                            </div>
-                            <div class="progress mb-3" style="height:6px; border-radius:4px;">
-                                <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
-                            </div>
-
-                            <div class="d-flex flex-column gap-2" style="font-size:0.8rem; color:#475569;">
-                                <div><i class="bi bi-calendar-event me-1"></i>Expires: @pkg.ExpirationDate.ToString("MM/dd/yyyy")</div>
-                                <div><i class="bi bi-hourglass-split me-1"></i>Remaining: @pkg.RemainingSessions sessions</div>
-                            </div>
-                        </div>
-                        <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-primary w-100 fw-bold" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-                            <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
-                        </a>
-                    </div>
-                </div>
-            }
-
-            @if (validOtherPkgs.Any())
-            {
-                <div class="card border-0 shadow-sm" style="border-radius:16px;">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3 border-bottom pb-2" style="color:#1e293b; font-size:1rem;">
-                            <i class="bi bi-boxes text-primary me-2"></i>Patient's Treatment Packages
-                        </h5>
-                        <div class="d-flex flex-column gap-3">
-                            @foreach (var pkg in validOtherPkgs)
+            <!-- Right Sidebar: Linked Appointment Card & Package Details -->
+            <div class="col-lg-4">
+                <!-- Linked Appointment Quick Card -->
+                @if (Model.Appointment != null || Model.Record.AppointmentId.HasValue)
+                {
+                    var aptId = Model.Appointment?.Id ?? Model.Record.AppointmentId;
+                    var apt = Model.Appointment;
+                    <div class="cn-card">
+                        <div class="cn-card-header">
+                            <h6 class="cn-card-title">
+                                <i class="bi bi-calendar2-check-fill text-teal" style="color:#0f766e;"></i>
+                                Linked Appointment
+                            </h6>
+                            @if (apt != null)
                             {
-                                var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
-                                var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
-                                
-                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
-                                    <h6 class="fw-bold text-dark mb-1" style="font-size:0.85rem; line-height:1.4;">@pkg.Title</h6>
-                                    <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:#64748b;">
-                                        <span>Sessions: @pkg.CompletedSessions/@pkg.TotalSessions</span>
-                                        <span style="color:@progressColor; font-weight:700;">@progress%</span>
-                                    </div>
-                                    <div class="progress mb-2" style="height:6px; border-radius:4px;">
-                                        <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:4px;"></div>
-                                    </div>
-                                    <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-success w-100 fw-bold mt-1" style="font-size:0.75rem; border-radius:8px;">
-                                        <i class="bi bi-journal-check me-1"></i>Assignments &amp; Feedback
-                                    </a>
-                                </div>
+                                <span class="badge @(apt.IsOnline ? "bg-primary" : "bg-success")" style="font-size:0.68rem;">
+                                    @(apt.IsOnline ? "Online" : "In-Person")
+                                </span>
                             }
                         </div>
+                        <div class="cn-card-body">
+                            @if (apt != null)
+                            {
+                                <div class="p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.75rem;">Booking Code</span>
+                                        <span class="font-monospace fw-bold text-dark" style="font-size:0.82rem;">@apt.BookingCode</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.75rem;">Date & Time</span>
+                                        <span class="fw-semibold text-dark" style="font-size:0.8rem;">@apt.StartAt.LocalDateTime.ToString("MMM dd, yyyy HH:mm")</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.75rem;">Status</span>
+                                        <span class="badge bg-light text-dark border" style="font-size:0.72rem;">@apt.StatusText</span>
+                                    </div>
+                                </div>
+                            }
+                            <a asp-page="/Doctor/Appointments/Details" asp-route-id="@aptId" class="btn btn-sm w-100 text-white shadow-sm" style="background:#0f766e; border-radius:8px; font-weight:650; font-size:0.82rem; padding:7px 14px;">
+                                <i class="bi bi-calendar-event me-1"></i>Open Full Appointment Details <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
                     </div>
-                </div>
-            }
+                }
 
-            @if (validMainPkg == null && !validOtherPkgs.Any())
-            {
-                <div class="card border-0 shadow-sm" style="border-radius:16px;">
-                    <div class="card-body p-4 text-center text-muted py-4">
-                        <i class="bi bi-box-seam fs-3 text-secondary mb-2 d-block"></i>
-                        <div class="small fw-semibold">No active treatment packages.</div>
+                <!-- Treatment Package Sidebar Card -->
+                @{
+                    var validMainPkg = (Model.TreatmentPackage != null && !string.Equals(Model.TreatmentPackage.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)) ? Model.TreatmentPackage : null;
+                    var validOtherPkgs = Model.PatientPackages.Where(p => !string.Equals(p.Status, "Cancelled", StringComparison.OrdinalIgnoreCase) && (validMainPkg == null || p.Id != validMainPkg.Id)).ToList();
+                }
+
+                @if (validMainPkg != null)
+                {
+                    var pkg = validMainPkg;
+                    var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+                    var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#0d9488" : "#f59e0b";
+
+                    <div class="cn-card">
+                        <div class="cn-card-header">
+                            <h6 class="cn-card-title">
+                                <i class="bi bi-box-seam-fill text-teal" style="color:#0f766e;"></i>
+                                Active Treatment Package
+                            </h6>
+                            <span class="badge rounded-pill" style="font-size:0.68rem; background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1;">
+                                @progress%
+                            </span>
+                        </div>
+                        <div class="cn-card-body">
+                            <div class="p-3 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <h6 class="fw-bold text-dark mb-1.5" style="font-size:0.88rem; line-height:1.4;">@pkg.Title</h6>
+                                <div class="d-flex justify-content-between mb-1 text-muted" style="font-size:0.74rem;">
+                                    <span>Progress: <strong>@pkg.CompletedSessions/@pkg.TotalSessions</strong> sessions</span>
+                                    <span style="color:@progressColor; font-weight:700;">@progress%</span>
+                                </div>
+                                <div class="progress mb-2.5" style="height:6px; border-radius:3px; background:#e2e8f0;">
+                                    <div class="progress-bar" style="width:@(progress)%; background:@progressColor; border-radius:3px;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted" style="font-size:0.74rem;">
+                                    <span><i class="bi bi-hourglass-split me-1"></i>Remaining: <strong>@pkg.RemainingSessions</strong></span>
+                                    <span><i class="bi bi-calendar3 me-1"></i>Exp: <strong>@pkg.ExpirationDate.ToString("MMM dd, yyyy")</strong></span>
+                                </div>
+                            </div>
+                            <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-secondary w-100" style="border-radius:8px; font-weight:600; font-size:0.78rem;">
+                                <i class="bi bi-journal-check me-1"></i>Package Assignments &amp; Feedback
+                            </a>
+                        </div>
                     </div>
-                </div>
-            }
+                }
+
+                @if (validOtherPkgs.Any())
+                {
+                    <div class="cn-card">
+                        <div class="cn-card-header">
+                            <h6 class="cn-card-title">
+                                <i class="bi bi-boxes text-teal" style="color:#0f766e;"></i>
+                                Other Patient Packages
+                            </h6>
+                        </div>
+                        <div class="cn-card-body">
+                            <div class="d-flex flex-column gap-2.5">
+                                @foreach (var pkg in validOtherPkgs)
+                                {
+                                    var progress = pkg.TotalSessions > 0 ? (int)(((double)pkg.CompletedSessions / pkg.TotalSessions) * 100) : 0;
+                                    var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#0d9488" : "#f59e0b";
+                                    
+                                    <div class="p-2.5 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                        <div class="fw-bold text-dark mb-1 text-truncate" style="font-size:0.82rem;">@pkg.Title</div>
+                                        <div class="d-flex justify-content-between mb-1 text-muted" style="font-size:0.72rem;">
+                                            <span>Sessions: @pkg.CompletedSessions/@pkg.TotalSessions</span>
+                                            <span style="color:@progressColor; font-weight:700;">@progress%</span>
+                                        </div>
+                                        <a asp-page="/Doctor/TreatmentPackages/Details" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-secondary w-100 py-0.5 mt-1" style="font-size:0.72rem; border-radius:6px;">
+                                            View Package
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
-    </div>
-}
+    }
+</div>

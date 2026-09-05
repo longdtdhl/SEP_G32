@@ -269,6 +269,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.AverageRating)
                 .HasPrecision(3, 2)
                 .HasDefaultValue(0m);
+            entity.Property(e => e.IsConsultationFeePublic)
+                .HasDefaultValue(true);
         });
 
         // DoctorSpecialization
@@ -361,10 +363,22 @@ public class OpcbsDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+            entity.HasOne(e => e.DoctorProfile)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.AppointmentSlot)
                 .WithMany(s => s.ScheduleNotes)
                 .HasForeignKey(e => e.AppointmentSlotId)
                 .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.TreatmentCase)
+                .WithMany()
+                .HasForeignKey(e => e.TreatmentCaseId)
+                .OnDelete(DeleteBehavior.NoAction);
             entity.HasIndex(e => e.AppointmentSlotId);
             entity.HasIndex(e => new { e.DoctorProfileId, e.NoteDate });
         });
@@ -571,6 +585,33 @@ public class OpcbsDbContext : DbContext
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
+        // ConsultationNote
+        modelBuilder.Entity<ConsultationNote>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ConsultationSummary).IsRequired();
+            entity.HasOne(e => e.Appointment)
+                .WithOne(a => a.ConsultationNote)
+                .HasForeignKey<ConsultationNote>(e => e.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.FollowUpAppointment)
+                .WithMany()
+                .HasForeignKey(e => e.FollowUpAppointmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Doctor)
+                .WithMany(d => d.ConsultationNotes)
+                .HasForeignKey(e => e.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.PatientRecord)
+                .WithMany(pr => pr.ConsultationNotes)
+                .HasForeignKey(e => e.PatientRecordId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.NextAppointmentRecommendedSlot)
+                .WithMany()
+                .HasForeignKey(e => e.NextAppointmentRecommendedSlotId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         // DoctorSubscription
         modelBuilder.Entity<DoctorSubscription>(entity =>
         {
@@ -769,7 +810,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.TestType).IsRequired().HasMaxLength(50);
-            entity.HasIndex(e => e.TestType).IsUnique();
+            entity.Property(e => e.SourceUrl).HasMaxLength(500);
+            entity.HasIndex(e => e.TestType);
         });
 
         // PsychometricQuestion
@@ -903,6 +945,8 @@ public class OpcbsDbContext : DbContext
             entity.Property(e => e.CaseDescription).HasMaxLength(2000);
             entity.Property(e => e.PrimaryConcern).HasMaxLength(1000);
             entity.Property(e => e.ClosureNote).HasMaxLength(2000);
+            entity.Property(e => e.HoldReason).HasMaxLength(2000);
+            entity.Property(e => e.HoldRejectionReason).HasMaxLength(2000);
 
             entity.HasOne(e => e.TreatmentPackage)
                 .WithMany(tp => tp.TreatmentCases)

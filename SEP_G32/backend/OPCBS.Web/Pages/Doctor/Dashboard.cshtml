@@ -6,151 +6,391 @@
 }
 
 <style>
-    /* ─── KPI Strip ─── */
-    .dash-kpi-strip {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
+    :root {
+        --doc-teal: #0f766e;
+        --doc-teal-light: #f0fdfa;
+        --doc-teal-border: #ccfbf1;
+        --doc-card-bg: #ffffff;
+        --doc-border: #e2e8f0;
+        --doc-border-subtle: #f1f5f9;
+        --doc-text-main: #0f172a;
+        --doc-text-muted: #64748b;
+        --doc-radius: 12px;
     }
-    .dash-kpi {
+
+    /* ─── Top Horizontal Sub-Navigation ─── */
+    .doc-nav-bar {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1rem 1.125rem;
+        border: 1px solid var(--doc-border);
+        border-radius: var(--doc-radius);
+        padding: 0.45rem 0.85rem;
+        margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        transition: box-shadow 0.15s ease;
+        justify-content: space-between;
+        gap: 1rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .dash-kpi:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    .dash-kpi-icon {
-        width: 40px; height: 40px; border-radius: 9px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.1rem; flex-shrink: 0;
+    .doc-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
     }
-    .dash-kpi-val { font-size: 1.35rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
-    .dash-kpi-lbl { font-size: 0.72rem; color: #64748b; margin-top: 1px; }
+    .doc-nav-link {
+        color: var(--doc-text-muted);
+        font-size: 0.83rem;
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .doc-nav-link:hover {
+        background: #f8fafc;
+        color: var(--doc-text-main);
+    }
+    .doc-nav-link.active {
+        background: var(--doc-teal-light);
+        color: var(--doc-teal);
+        font-weight: 600;
+        border: 1px solid var(--doc-teal-border);
+    }
 
-    /* ─── Section Card ─── */
-    .dash-section {
-        background: #ffffff;
+    /* ─── Refined Doctor Welcome Header ─── */
+    .doc-header-card {
+        background: linear-gradient(180deg, #f8fffe 0%, #ffffff 100%);
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
+        border-radius: 14px;
+        padding: 1.35rem 1.6rem;
         margin-bottom: 1.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .doc-avatar-beacon {
+        position: relative;
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: #0f766e;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(15, 118, 110, 0.2);
+    }
+    .doc-status-dot {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+    }
+    .doc-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        background: #f0fdfa;
+        color: #0f766e;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        border: 1px solid #ccfbf1;
+    }
+    .doc-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    /* ─── High-End Clean KPI Grid (Unified Palette, No Rainbows) ─── */
+    .doc-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.85rem;
+        margin-bottom: 1.35rem;
+    }
+    @@media (max-width: 1300px) {
+        .doc-kpi-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    @@media (max-width: 768px) {
+        .doc-kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    .doc-kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--doc-border);
+        border-radius: var(--doc-radius);
+        padding: 1rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        position: relative;
+        text-decoration: none !important;
+    }
+    .doc-kpi-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .doc-kpi-card.featured-kpi {
+        background: linear-gradient(180deg, #f8fffe 0%, #ffffff 100%);
+        border-color: #ccfbf1;
+    }
+    .doc-kpi-card.featured-kpi:hover {
+        border-color: #99f6e4;
+    }
+    .doc-kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.65rem;
+    }
+    .doc-kpi-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #f1f5f9;
+    }
+    .doc-kpi-card.featured-kpi .doc-kpi-icon {
+        background: #f0fdfa;
+        color: #0f766e;
+        border-color: #ccfbf1;
+    }
+    .doc-kpi-val {
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.2rem;
+    }
+    .doc-kpi-lbl {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+    }
+    .doc-kpi-sub {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .trend-up { color: #16a34a; font-weight: 600; }
+    .trend-down { color: #dc2626; font-weight: 600; }
+
+    /* ─── Standard Dashboard Cards ─── */
+    .doc-card {
+        background: #ffffff;
+        border: 1px solid var(--doc-border);
+        border-radius: var(--doc-radius);
+        margin-bottom: 0;
         overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .dash-section-head {
-        padding: 1rem 1.25rem 0.625rem;
-        display: flex; justify-content: space-between; align-items: center;
+    .doc-card-header {
+        padding: 0.9rem 1.2rem;
+        border-bottom: 1px solid var(--doc-border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ffffff;
     }
-    .dash-section-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0; }
-    .dash-section-body { padding: 0; }
-    .dash-section-body .table { margin-bottom: 0; font-size: 0.84rem; }
-    .dash-section-body .table th {
-        font-size: 0.72rem; font-weight: 600; color: #94a3b8;
-        text-transform: uppercase; letter-spacing: 0.03em;
-        border-bottom: 1px solid #f1f5f9; background: #fafbfc; padding: 0.625rem 1rem;
+    .doc-card-title {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        letter-spacing: -0.01em;
     }
-    .dash-section-body .table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
-    .dash-section-body .table tbody tr:hover { background: #f8fffe; }
+    .doc-card-title i {
+        font-size: 0.95rem;
+        color: #0f766e;
+    }
+    .doc-card-body {
+        padding: 1.2rem;
+    }
+    .doc-card-body.p-0 { padding: 0; }
 
-    /* ─── Empty State ─── */
-    .dash-empty {
-        text-align: center; padding: 2rem 1.5rem; color: #94a3b8;
+    /* ─── Status Badges ─── */
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 5px;
     }
-    .dash-empty i { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1; }
-    .dash-empty p { font-size: 0.82rem; margin: 0; }
+    .badge-confirmed { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+    .badge-pending { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+    .badge-completed { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+    .badge-cancelled { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+    .badge-action { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
-    /* ─── Status Badge ─── */
-    .dash-badge {
-        display: inline-flex; align-items: center; gap: 3px;
-        padding: 3px 10px; border-radius: 5px;
-        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+    /* ─── Today Sessions List ─── */
+    .session-item {
+        padding: 0.85rem 1.2rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.12s ease;
     }
-    .dash-badge.pending { background: #fef3c7; color: #92400e; }
-    .dash-badge.approved { background: #dbeafe; color: #1e40af; }
-    .dash-badge.completed { background: #dcfce7; color: #166534; }
-    .dash-badge.submitted { background: #fef3c7; color: #92400e; }
-    .dash-badge.overdue { background: #fee2e2; color: #991b1b; }
-    .dash-badge.active { background: #ccfbf1; color: #115e59; }
+    .session-item:last-child { border-bottom: none; }
+    .session-item:hover {
+        background: #f8fafc;
+    }
+    .session-time-box {
+        min-width: 80px;
+    }
+    .session-time {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #0f172a;
+        font-variant-numeric: tabular-nums;
+    }
+    .session-duration {
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
 
-    /* ─── Quick Action ─── */
-    .dash-action-link {
-        display: inline-flex; align-items: center; gap: 4px;
-        font-size: 0.78rem; font-weight: 600; color: #0d9488;
-        text-decoration: none; padding: 3px 8px; border-radius: 5px;
-        transition: background 0.12s;
+    /* ─── Action Center Tasks ─── */
+    .action-task-item {
+        padding: 0.75rem 0.95rem;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+        font-size: 0.82rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+        text-decoration: none;
+        transition: all 0.15s ease;
     }
-    .dash-action-link:hover { background: #f0fdfa; color: #0f766e; }
+    .action-task-item:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+    .action-task-item.priority-attention {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+    .action-task-item.priority-attention:hover {
+        background: #fef3c7;
+        color: #78350f;
+    }
+    .action-task-item:last-child { margin-bottom: 0; }
 
-    /* ─── Progress Bar ─── */
-    .dash-progress-track {
-        background: #e2e8f0; border-radius: 3px; height: 5px;
-        overflow: hidden; min-width: 60px;
+    /* ─── Revenue Period Controls ─── */
+    .rev-pill {
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #64748b;
+        font-size: 0.74rem;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
     }
-    .dash-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .rev-pill:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+    .rev-pill.active {
+        background: #0f766e;
+        border-color: #0f766e;
+        color: #ffffff;
+        font-weight: 600;
+    }
 </style>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0;">
-            <i class="bi bi-grid-1x2-fill me-2" style="color:#0d9488;"></i>Dashboard
-        </h1>
-        <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">Your operational overview at a glance</p>
-    </div>
-    <div class="d-flex gap-2">
-        <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:7px; font-size:0.8rem; font-weight:600;">
-            <i class="bi bi-calendar3 me-1"></i>Schedule
-        </a>
-        <a asp-page="/Doctor/TreatmentCases/Index" class="btn btn-sm" style="border-radius:7px; font-size:0.8rem; font-weight:600; background:#0d9488; color:white; border-color:#0d9488;">
-            <i class="bi bi-heart-pulse me-1"></i>Treatment Cases
-        </a>
-    </div>
-</div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-warning" style="border-radius:8px; font-size:0.85rem;">@Model.Error</div>
+    <div class="alert alert-warning" style="border-radius:10px; font-size:0.85rem;">@Model.Error</div>
 }
 
-<!-- Verification Banner -->
+<!-- Verification Warning if Not Approved -->
 @if (!Model.IsVerified)
 {
     var statusLower = Model.VerificationStatus?.ToLower();
-    <div class="dash-section" style="border-left: 4px solid #f59e0b;">
-        <div style="padding:1.25rem;">
+    <div class="doc-card mb-4" style="border-left: 4px solid #f59e0b;">
+        <div class="p-4">
             <div class="d-flex align-items-start gap-3">
-                <div class="dash-kpi-icon" style="background:#fef3c7; color:#d97706; width:44px; height:44px;">
+                <div style="background:#fef3c7; color:#d97706; width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
                     <i class="bi bi-shield-exclamation"></i>
                 </div>
                 <div class="flex-grow-1">
                     @if (statusLower == "submitted" || statusLower == "pending")
                     {
-                        <h6 class="fw-bold mb-1" style="color:#92400e;">Profile Pending Approval</h6>
-                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Your verification is under review. You'll be notified once approved.</p>
-                        <span class="dash-badge pending"><i class="bi bi-hourglass-split"></i> Pending</span>
+                        <h5 class="fw-bold mb-1" style="color:#92400e;">Medical Profile Pending Approval</h5>
+                        <p class="mb-2 text-muted" style="font-size:0.88rem;">Your professional credentials are being reviewed by the medical board. You will receive full scheduling access once verified.</p>
+                        <span class="badge-status badge-pending"><i class="bi bi-hourglass-split"></i> Under Review</span>
                     }
                     else if (statusLower == "rejected")
                     {
-                        <h6 class="fw-bold mb-1" style="color:#991b1b;">Profile Rejected</h6>
-                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Please edit and resubmit your profile.</p>
+                        <h5 class="fw-bold mb-1" style="color:#991b1b;">Credentials Verification Requires Update</h5>
+                        <p class="mb-2 text-muted" style="font-size:0.88rem;">Please update and resubmit your practicing credentials.</p>
                         @if (!string.IsNullOrEmpty(Model.RejectionReason))
                         {
-                            <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.82rem; border-radius:6px;">
-                                <i class="bi bi-x-circle me-1"></i><strong>Reason:</strong> @Model.RejectionReason
+                            <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.84rem; border-radius:6px;">
+                                <strong>Reason:</strong> @Model.RejectionReason
                             </div>
                         }
-                        <a asp-page="/Doctor/Verification" class="btn btn-sm btn-danger" style="border-radius:7px;">
-                            <i class="bi bi-arrow-repeat me-1"></i>Resubmit
+                        <a asp-page="/Doctor/Verification" class="btn btn-sm btn-danger" style="border-radius:8px;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Resubmit Verification
                         </a>
                     }
                     else
                     {
-                        <h6 class="fw-bold mb-1" style="color:#92400e;">Profile Not Verified</h6>
-                        <p class="mb-2 text-muted" style="font-size:0.84rem;">Submit your verification to access scheduling, consulting, and other platform features.</p>
-                        <a asp-page="/Doctor/Verification" class="btn btn-sm" style="border-radius:7px; background:#0d9488; color:white;">
-                            <i class="bi bi-send me-1"></i>Submit Verification
+                        <h5 class="fw-bold mb-1" style="color:#92400e;">Complete Medical Profile Verification</h5>
+                        <p class="mb-2 text-muted" style="font-size:0.88rem;">Submit your license and medical certifications to start accepting patient consultations.</p>
+                        <a asp-page="/Doctor/Verification" class="btn btn-sm btn-teal" style="border-radius:8px; background:#0d9488; color:white;">
+                            <i class="bi bi-shield-check me-1"></i>Submit Credentials
                         </a>
                     }
                 </div>
@@ -161,173 +401,811 @@
 
 @if (Model.IsVerified)
 {
-    <!-- ══ KPI Strip ══ -->
-    <div class="dash-kpi-strip">
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#ccfbf1; color:#0d9488;">
-                <i class="bi bi-camera-video-fill"></i>
+    <!-- ══ 1. DASHBOARD HEADER ══ -->
+    <div class="doc-header-card dash-animate dash-d1">
+        <div class="d-flex align-items-center gap-3">
+            <div class="doc-avatar-beacon" style="overflow:hidden; padding:0;">
+                @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                {
+                    <img src="@Model.AvatarUrl" alt="@Model.DoctorName" style="width:100%; height:100%; object-fit:cover; border-radius:14px;" />
+                }
+                else
+                {
+                    <i class="bi bi-person-badge-fill"></i>
+                }
+                <span class="doc-status-dot" title="Doctor Portal Online"></span>
             </div>
             <div>
-                <div class="dash-kpi-val">@Model.TodaySessionsCount</div>
-                <div class="dash-kpi-lbl">Today's Sessions</div>
+                <div class="doc-badge-pill">
+                    <i class="bi bi-award-fill"></i>@(string.IsNullOrWhiteSpace(Model.ProfessionalTitle) ? "Psychological Specialist" : Model.ProfessionalTitle)
+                </div>
+                <h1 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0; letter-spacing:-0.02em;">
+                    @{
+                        var formattedDocName = Model.DoctorName;
+                        if (!string.IsNullOrWhiteSpace(formattedDocName) &&
+                            !formattedDocName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("BS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("ThS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("PGS.", StringComparison.OrdinalIgnoreCase) &&
+                            !formattedDocName.StartsWith("GS.", StringComparison.OrdinalIgnoreCase))
+                        {
+                            formattedDocName = $"Dr. {formattedDocName}";
+                        }
+                    }
+                    @Model.Greeting, @formattedDocName
+                </h1>
+                <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                    <span class="text-muted" style="font-size:0.8rem;">
+                        <i class="bi bi-calendar3 me-1" style="color:#0d9488;"></i>@DateTime.Today.ToString("dddd, MMMM dd, yyyy")
+                    </span>
+                    <span class="text-muted" style="font-size:0.75rem;">&bull;</span>
+                    <div class="doc-stat-chip">
+                        <i class="bi bi-camera-video-fill text-primary"></i>
+                        <span><strong>@Model.TodaySessionsCount</strong> Today's Sessions</span>
+                    </div>
+                    @if (Model.InProgressAppointmentsCount > 0)
+                    {
+                        <div class="doc-stat-chip" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">
+                            <span class="spinner-grow spinner-grow-sm text-primary" style="width:7px; height:7px;" role="status"></span>
+                            <span><strong>@Model.InProgressAppointmentsCount</strong> In Progress</span>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#dbeafe; color:#1d4ed8;">
-                <i class="bi bi-calendar-week"></i>
-            </div>
-            <div>
-                <div class="dash-kpi-val">@Model.UpcomingSessionsCount</div>
-                <div class="dash-kpi-lbl">Upcoming (7d)</div>
-            </div>
-        </div>
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#f0fdf4; color:#16a34a;">
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a asp-page="/Doctor/Schedules/Index" class="btn btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border:1.5px solid #99f6e4; color:#0f766e; border-radius:10px; font-size:0.82rem; transition:all 0.2s ease; box-shadow:0 1px 4px rgba(0,0,0,0.03);" onmouseover="this.style.background='#f0fdfa';this.style.borderColor='#5eead4';this.style.boxShadow='0 4px 12px rgba(13,148,136,0.12)'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#99f6e4';this.style.boxShadow='0 1px 4px rgba(0,0,0,0.03)'">
+                <i class="bi bi-calendar-week" style="color:#0d9488;"></i>
+                <span>View Schedule</span>
+            </a>
+            <a asp-page="/Doctor/Patients/Index" class="btn btn-sm text-white px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:none; border-radius:10px; font-size:0.82rem; box-shadow:0 4px 14px rgba(13,148,136,0.30); transition:all 0.2s ease;" onmouseover="this.style.boxShadow='0 6px 20px rgba(13,148,136,0.40)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 4px 14px rgba(13,148,136,0.30)';this.style.transform='translateY(0)'">
                 <i class="bi bi-people-fill"></i>
-            </div>
-            <div>
-                <div class="dash-kpi-val">@Model.ActivePatientsCount</div>
-                <div class="dash-kpi-lbl">Active Patients</div>
-            </div>
-        </div>
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#fdf4ff; color:#9333ea;">
-                <i class="bi bi-heart-pulse-fill"></i>
-            </div>
-            <div>
-                <div class="dash-kpi-val">@Model.ActiveCasesCount</div>
-                <div class="dash-kpi-lbl">Active Cases</div>
-            </div>
-        </div>
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#fef3c7; color:#d97706;">
-                <i class="bi bi-flag-fill"></i>
-            </div>
-            <div>
-                <div class="dash-kpi-val">@Model.GoalsNearDeadlineCount</div>
-                <div class="dash-kpi-lbl">Goals Near Deadline</div>
-            </div>
-        </div>
-        <div class="dash-kpi">
-            <div class="dash-kpi-icon" style="background:#fee2e2; color:#dc2626;">
-                <i class="bi bi-journal-check"></i>
-            </div>
-            <div>
-                <div class="dash-kpi-val">@Model.HomeworkWaitingCount</div>
-                <div class="dash-kpi-lbl">Homework to Review</div>
-            </div>
+                <span>Patient List</span>
+            </a>
         </div>
     </div>
 
-    <div class="row g-3">
-        <!-- ══ Left Column: Today's Sessions + Goals + Homework ══ -->
-        <div class="col-lg-8">
-            <!-- Today's Sessions -->
-            <div class="dash-section">
-                <div class="dash-section-head">
-                    <h5 class="dash-section-title"><i class="bi bi-camera-video me-2" style="color:#0d9488;"></i>Today's Sessions</h5>
-                    <a asp-page="/Doctor/Schedules/Index" class="dash-action-link">View Schedule <i class="bi bi-arrow-right"></i></a>
+    <!-- ══ 3. KPI OVERVIEW (6 CARDS) ══ -->
+    <div class="doc-kpi-grid">
+        <!-- 1. Today's Sessions -->
+        <div class="doc-kpi-card">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-camera-video"></i>
                 </div>
-                <div class="dash-section-body">
+            </div>
+            <div>
+                <div class="doc-kpi-val">@Model.TodaySessionsCount</div>
+                <div class="doc-kpi-lbl">Today's Sessions</div>
+                <div class="doc-kpi-sub">
+                    <span>@Model.TodayCompletedCount done</span> &bull; <span>@Model.TodayUpcomingCount next</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. New Patients -->
+        <div class="doc-kpi-card">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+            </div>
+            <div>
+                <div class="doc-kpi-val">@Model.NewPatientsThisMonth</div>
+                <div class="doc-kpi-lbl">New Patients</div>
+                <div class="doc-kpi-sub">
+                    <span class="@(Model.IsNewPatientsGrowthPositive ? "trend-up" : "trend-down")">
+                        @(Model.IsNewPatientsGrowthPositive ? "↑" : "↓") @Model.NewPatientsGrowthPercent%
+                    </span>
+                    <span>this month</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. New Appointments -->
+        <div class="doc-kpi-card">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-clipboard2-check"></i>
+                </div>
+            </div>
+            <div>
+                <div class="doc-kpi-val">@Model.AppointmentsThisMonth</div>
+                <div class="doc-kpi-lbl">New Appointments</div>
+                <div class="doc-kpi-sub">
+                    <span class="@(Model.IsAppointmentsGrowthPositive ? "trend-up" : "trend-down")">
+                        @(Model.IsAppointmentsGrowthPositive ? "↑" : "↓") @Model.AppointmentsGrowthPercent%
+                    </span>
+                    <span>this month</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Active Patients -->
+        <div class="doc-kpi-card">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+            </div>
+            <div>
+                <div class="doc-kpi-val">@Model.ActivePatientsCount</div>
+                <div class="doc-kpi-lbl">Active Patients</div>
+                <div class="doc-kpi-sub">Currently under care</div>
+            </div>
+        </div>
+
+        <!-- 5. Returning Patient Rate -->
+        <div class="doc-kpi-card">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+                <span class="text-muted" style="font-size:0.72rem; font-weight:500;">
+                    @Model.ReturningPatientsCount Retained
+                </span>
+            </div>
+            <div>
+                <div class="doc-kpi-val">@Model.ReturningPatientRate%</div>
+                <div class="doc-kpi-lbl">Returning Patient Rate</div>
+                <div class="doc-kpi-sub">
+                    <span class="@(Model.IsReturningGrowthPositive ? "trend-up" : "trend-down")">
+                        @(Model.IsReturningGrowthPositive ? "↑" : "↓") @Model.ReturningGrowthPercent%
+                    </span>
+                    <span>retention</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Net Revenue -->
+        <a asp-page="/Doctor/Revenue/Index" class="doc-kpi-card featured-kpi" title="View detailed revenue analytics">
+            <div class="doc-kpi-header">
+                <div class="doc-kpi-icon">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <span class="badge-status badge-completed" style="font-size:0.68rem;">
+                    90% Net
+                </span>
+            </div>
+            <div>
+                <div class="doc-kpi-val" style="color:#0f766e;">
+                    @((Model.RevenueThisMonth / 1000000m).ToString("0.0#"))M <span style="font-size:0.75rem; font-weight:500; color:#64748b;">VND</span>
+                </div>
+                <div class="doc-kpi-lbl d-flex justify-content-between align-items-center">
+                    <span style="font-weight:600; color:#0f766e;">Net Revenue</span>
+                    <i class="bi bi-chevron-right" style="font-size:0.7rem; color:#0f766e;"></i>
+                </div>
+                <div class="doc-kpi-sub">
+                    <span class="@(Model.IsRevenueGrowthPositive ? "trend-up" : "trend-down")">
+                        @(Model.IsRevenueGrowthPositive ? "↑" : "↓") @Model.RevenueGrowthPercent%
+                    </span>
+                    <span>vs prev</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ══ ROW 3: TODAY'S SESSIONS (COL-8) + ACTION CENTER (COL-4) ══ -->
+    <div class="row g-4 mb-4 dash-animate dash-d3">
+        <!-- Today's Sessions -->
+        <div class="col-lg-8">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-camera-video" style="color:var(--doc-teal-primary);"></i>
+                        Today's Sessions
+                    </h5>
+                    <a asp-page="/Doctor/Schedules/Index" class="doc-nav-link p-0 text-decoration-none">
+                        View Schedule <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="doc-card-body p-0">
                     @if (Model.TodaySessions.Any())
                     {
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead><tr>
-                                    <th style="padding-left:1.25rem;">Time</th>
-                                    <th>Patient</th>
-                                    <th>Status</th>
-                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
-                                </tr></thead>
-                                <tbody>
-                                    @foreach (var s in Model.TodaySessions)
-                                    {
-                                        <tr>
-                                            <td style="padding-left:1.25rem;">
-                                                <span class="fw-semibold text-dark">@s.StartAt.LocalDateTime.ToString("HH:mm")</span>
+                        <div class="d-flex flex-column">
+                            @foreach (var s in Model.TodaySessions)
+                            {
+                                var badgeClass = s.Status switch
+                                {
+                                    1 => "badge-confirmed",
+                                    0 => "badge-pending",
+                                    4 => "badge-completed",
+                                    5 => "badge-cancelled",
+                                    _ => "badge-action"
+                                };
+                                var statusIcon = s.Status switch
+                                {
+                                    1 => "✓",
+                                    0 => "◷",
+                                    4 => "✓",
+                                    5 => "×",
+                                    _ => "!"
+                                };
+                                var modeText = s.ConsultationMode == "Online" ? "Online Consultation" : "In-Person Consultation";
+                                var consultType = s.TreatmentPackageId.HasValue ? "Treatment Session" : modeText;
+
+                                <div class="session-item">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="session-time-box">
+                                            <div class="session-time">@s.StartAt.LocalDateTime.ToString("HH:mm")</div>
+                                            <div class="session-duration">
                                                 @if (!string.IsNullOrEmpty(s.EndTime))
                                                 {
-                                                    <span class="text-muted"> – @s.EndTime</span>
+                                                    <span>@s.EndTime</span>
                                                 }
-                                            </td>
-                                            <td>
-                                                <div class="fw-semibold text-dark">@(s.PatientName ?? "N/A")</div>
-                                                @if (!string.IsNullOrEmpty(s.BookingCode))
+                                                else
                                                 {
-                                                    <span class="text-muted" style="font-size:0.72rem;">@s.BookingCode</span>
+                                                    <span>45 min</span>
                                                 }
-                                            </td>
-                                            <td>
-                                                @{
-                                                    var sCls = s.Status == 0 ? "pending" : s.Status == 1 ? "approved" : "completed";
-                                                }
-                                                <span class="dash-badge @sCls">@s.StatusText</span>
-                                            </td>
-                                            <td class="text-end" style="padding-right:1.25rem;">
-                                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@s.Id" class="dash-action-link" title="View Appointment">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark fs-6">@(s.PatientName ?? "Patient")</div>
+                                            <div class="text-muted small">
+                                                <i class="bi @(s.ConsultationMode == "Online" ? "bi-laptop" : "bi-geo-alt") me-1" style="color:#0d9488;"></i>
+                                                @consultType
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="badge-status @badgeClass">
+                                            <span>@statusIcon</span> @s.StatusText
+                                        </span>
+                                        <a asp-page="/Doctor/Appointments/Details" asp-route-id="@s.Id" class="btn btn-sm btn-light border" style="border-radius:8px;">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     }
                     else
                     {
-                        <div class="dash-empty">
-                            <i class="bi bi-calendar-check"></i>
-                            <p>No sessions scheduled for today</p>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-check d-block mb-2" style="font-size:2.2rem; color:#cbd5e1;"></i>
+                            <p class="mb-0 fw-semibold">No sessions scheduled for today</p>
+                            <span class="small text-muted">You have no upcoming consultations on today's calendar.</span>
                         </div>
                     }
                 </div>
             </div>
+        </div>
 
-            <!-- Goals Near Deadline -->
-            @if (Model.GoalsNearDeadline.Any())
-            {
-                <div class="dash-section">
-                    <div class="dash-section-head">
-                        <h5 class="dash-section-title"><i class="bi bi-flag me-2" style="color:#d97706;"></i>Goals Near Deadline</h5>
+        <!-- Action Center / Tasks Requiring Attention -->
+        <div class="col-lg-4">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                        Needs Your Attention
+                    </h5>
+                    <a asp-page="/Doctor/Appointments/Index" class="doc-nav-link p-0 text-decoration-none small">
+                        View Tasks →
+                    </a>
+                </div>
+                <div class="doc-card-body">
+                    <div class="d-flex flex-column gap-2">
+                        @if (Model.InProgressAppointmentsCount > 0)
+                        {
+                            <a asp-page="/Doctor/Appointments/Index" asp-route-status="3" class="action-task-item" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-play-circle-fill text-primary"></i>
+                                    <span><strong>@Model.InProgressAppointmentsCount</strong> consultation(s) currently in progress</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
+                        @if (Model.PendingApprovalsCount > 0)
+                        {
+                            <a asp-page="/Doctor/Appointments/Index" asp-route-status="0" class="action-task-item">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-clock-history text-warning"></i>
+                                    <span><strong>@Model.PendingApprovalsCount</strong> appointment requests waiting for approval</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
+                        @if (Model.PendingNotesCount > 0)
+                        {
+                            <a asp-page="/Doctor/Appointments/Index" asp-route-status="4" class="action-task-item">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-journal-text text-warning"></i>
+                                    <span><strong>@Model.PendingNotesCount</strong> consultation records awaiting completion</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
+                        @if (Model.NearDeadlineCasesCount > 0)
+                        {
+                            <a asp-page="/Doctor/TreatmentCases/Index" class="action-task-item">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-heart-pulse text-danger"></i>
+                                    <span><strong>@Model.NearDeadlineCasesCount</strong> treatment cases approaching deadline</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
+                        @if (Model.TodayFollowUpsCount > 0)
+                        {
+                            <a asp-page="/Doctor/Appointments/Index" class="action-task-item" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-calendar2-check text-success"></i>
+                                    <span><strong>@Model.TodayFollowUpsCount</strong> approved consultations scheduled for today</span>
+                                </div>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </a>
+                        }
+
+                        @if (Model.InProgressAppointmentsCount == 0 && Model.PendingApprovalsCount == 0 && Model.PendingNotesCount == 0 && Model.NearDeadlineCasesCount == 0 && Model.TodayFollowUpsCount == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-check2-circle text-success fs-1 d-block mb-2"></i>
+                                <div class="fw-bold text-dark">All tasks are up to date!</div>
+                                <div class="small">No urgent operational items requiring immediate action.</div>
+                            </div>
+                        }
                     </div>
-                    <div class="dash-section-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 4: PATIENT GROWTH (COL-4) + RETENTION & RE-EXAMINATION (COL-4) + APPOINTMENT ANALYTICS (COL-4) ══ -->
+    <div class="row g-4 mb-4 dash-animate dash-d4">
+        <!-- 1. Patient Growth -->
+        <div class="col-lg-4">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-graph-up-arrow" style="color:#0d9488;"></i>
+                        Patient Growth
+                    </h5>
+                    <div class="small text-muted fw-semibold">
+                        <span class="d-inline-block rounded-circle me-1" style="width:8px; height:8px; background:#0d9488;"></span>Active
+                        <span class="d-inline-block rounded-circle ms-1 me-1" style="width:8px; height:8px; background:#3b82f6;"></span>New
+                    </div>
+                </div>
+                <div class="doc-card-body">
+                    <!-- SVG Trend Line Chart -->
+                    <div class="chart-container" style="height:170px;">
+                        <svg viewBox="0 0 500 160" style="width:100%; height:100%; overflow:visible;">
+                            <defs>
+                                <linearGradient id="growthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#0d9488" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="#0d9488" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Grid Lines -->
+                            <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+                            <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+                            <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+
+                            <!-- Area Path -->
+                            <path d="M 10 130 Q 70 120 140 100 T 280 65 T 420 40 T 490 25 L 490 140 L 10 140 Z" fill="url(#growthGrad)"/>
+                            
+                            <!-- Main Growth Line -->
+                            <path d="M 10 130 Q 70 120 140 100 T 280 65 T 420 40 T 490 25" fill="none" stroke="#0d9488" stroke-width="3" stroke-linecap="round"/>
+
+                            <!-- New Patients Sub-line -->
+                            <path d="M 10 140 Q 70 135 140 125 T 280 110 T 420 95 T 490 85" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="3" stroke-linecap="round"/>
+
+                            <!-- Data Points -->
+                            <circle cx="10" cy="130" r="4" fill="#0d9488" stroke="#fff" stroke-width="2"/>
+                            <circle cx="140" cy="100" r="4" fill="#0d9488" stroke="#fff" stroke-width="2"/>
+                            <circle cx="280" cy="65" r="4" fill="#0d9488" stroke="#fff" stroke-width="2"/>
+                            <circle cx="420" cy="40" r="4" fill="#0d9488" stroke="#fff" stroke-width="2"/>
+                            <circle cx="490" cy="25" r="5" fill="#0d9488" stroke="#fff" stroke-width="2"/>
+                        </svg>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-muted small mt-2" style="font-size:0.75rem;">
+                        @foreach (var m in Model.GrowthMonths)
+                        {
+                            <span>@m</span>
+                        }
+                    </div>
+
+                    <div class="pt-3 mt-3 border-top d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="fw-bold text-dark fs-6">+@Model.NewPatientsThisMonth new pts</span>
+                            <span class="ms-1 small text-success fw-bold">↑ @Model.NewPatientsGrowthPercent%</span>
+                        </div>
+                        <a asp-page="/Doctor/Patients/Index" class="btn btn-sm btn-outline-secondary" style="border-radius:6px; font-size:0.75rem;">
+                            View List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Patient Retention & Re-examination (Middle Card) -->
+        <div class="col-lg-4">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-arrow-repeat" style="color:#2563eb;"></i>
+                        Re-examination Rate
+                    </h5>
+                    <span class="badge rounded-pill bg-primary-subtle text-primary border px-2.5 py-1" style="font-size:0.75rem;">
+                        @Model.ReturningPatientRate% Returning
+                    </span>
+                </div>
+                <div class="doc-card-body">
+                    <!-- Hero Retention Display -->
+                    <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 mb-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                        <div>
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.4px;">RETENTION RATE</div>
+                            <div class="fw-bold text-dark fs-4" style="line-height:1.1;">
+                                @Model.ReturningPatientRate%
+                            </div>
+                            <div class="text-muted small" style="font-size:0.72rem;">
+                                <strong>@Model.ReturningPatientsCount</strong> / @Model.TotalUniquePatientsCount patients re-examined
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge rounded-pill bg-success-subtle text-success fw-bold px-2 py-1" style="font-size:0.72rem;">
+                                <i class="bi bi-shield-check me-1"></i>@(Model.ReturningPatientRate >= 60 ? "High Loyalty" : "Moderate")
+                            </span>
+                            <div class="small text-muted mt-1" style="font-size:0.72rem;">
+                                Avg: <strong>@Model.AvgVisitsPerPatient</strong> visits / pt
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visit Frequency Distribution Breakdown -->
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="text-muted fw-bold small text-uppercase" style="font-size:0.7rem; letter-spacing:0.3px;">
+                            Visit Frequency Breakdown
+                        </div>
+
+                        <!-- 1 Visit (First-time) -->
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="text-secondary" style="font-size:0.76rem;"><i class="bi bi-person me-1"></i>1 Session (First-time)</span>
+                                <span class="fw-bold text-dark" style="font-size:0.76rem;">@Model.SingleVisitPatientsCount pts (@Model.SingleVisitPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:6px; border-radius:3px; background:#f1f5f9;">
+                                <div class="progress-bar bg-secondary" style="width:@Model.SingleVisitPercent%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 2-3 Visits (Follow-up) -->
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="text-primary fw-semibold" style="font-size:0.76rem;"><i class="bi bi-arrow-repeat me-1"></i>2 - 3 Sessions (Follow-up)</span>
+                                <span class="fw-bold text-primary" style="font-size:0.76rem;">@Model.Repeat2To3PatientsCount pts (@Model.Repeat2To3Percent%)</span>
+                            </div>
+                            <div class="progress" style="height:6px; border-radius:3px; background:#f1f5f9;">
+                                <div class="progress-bar bg-primary" style="width:@Model.Repeat2To3Percent%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 4+ Visits (Treatment / Loyal) -->
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="text-success fw-semibold" style="font-size:0.76rem;"><i class="bi bi-stars me-1"></i>4+ Sessions (Treatment Program)</span>
+                                <span class="fw-bold text-success" style="font-size:0.76rem;">@Model.Loyal4PlusPatientsCount pts (@Model.Loyal4PlusPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:6px; border-radius:3px; background:#f1f5f9;">
+                                <div class="progress-bar bg-success" style="width:@Model.Loyal4PlusPercent%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Note -->
+                    <div class="pt-2 border-top text-muted small d-flex justify-content-between align-items-center" style="font-size:0.73rem;">
+                        <span><i class="bi bi-info-circle me-1"></i>Formula: (Pts ≥ 2 visits / Total) × 100%</span>
+                        <span class="badge bg-light text-dark border">@Model.ReturningSessionsCount Follow-ups</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Appointment Analytics -->
+        <div class="col-lg-4">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-pie-chart-fill" style="color:#3b82f6;"></i>
+                        Appointment Analytics
+                    </h5>
+                    <span class="badge rounded-pill bg-light text-muted border px-2.5 py-1" style="font-size:0.75rem;">
+                        @Model.TotalAppointments Total
+                    </span>
+                </div>
+                <div class="doc-card-body">
+                    <!-- Progress Bars Overview -->
+                    <div class="d-flex flex-column gap-3 mb-3">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark"><i class="bi bi-check-circle-fill text-success me-1"></i>Completed</span>
+                                <span class="fw-bold text-dark">@Model.CompletedCount (@Model.CompletedPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                                <div class="progress-bar bg-success" style="width:@Model.CompletedPercent%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark"><i class="bi bi-calendar-check-fill text-primary me-1"></i>Confirmed / Approved</span>
+                                <span class="fw-bold text-dark">@Model.ApprovedCount (@Model.ApprovedPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                                <div class="progress-bar bg-primary" style="width:@Model.ApprovedPercent%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark"><i class="bi bi-clock-history text-warning me-1"></i>Pending Review</span>
+                                <span class="fw-bold text-dark">@Model.PendingCount (@Model.PendingPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                                <div class="progress-bar bg-warning" style="width:@Model.PendingPercent%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark"><i class="bi bi-x-circle-fill text-secondary me-1"></i>Cancelled</span>
+                                <span class="fw-bold text-dark">@Model.CancelledCount (@Model.CancelledPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:8px; border-radius:4px; background:#f1f5f9;">
+                                <div class="progress-bar bg-secondary" style="width:@Model.CancelledPercent%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-top text-muted small" style="font-size:0.75rem;">
+                        <i class="bi bi-info-circle me-1"></i>Appointment performance calculated across active practice history.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 5: REVENUE OVERVIEW (FULL WIDTH - COL-12) ══ -->
+    <div class="doc-card mb-4 dash-animate dash-d5">
+        <div class="doc-card-header flex-wrap gap-2">
+            <div>
+                <h5 class="doc-card-title mb-0">
+                    <i class="bi bi-wallet2" style="color:#059669;"></i>
+                    Revenue & Monetization Overview
+                </h5>
+            </div>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="rev-pill active" id="revBtnMonth" onclick="switchRevenuePeriod('month')">Month</button>
+                    <button type="button" class="rev-pill" id="revBtnQuarter" onclick="switchRevenuePeriod('quarter')">Quarter</button>
+                    <button type="button" class="rev-pill" id="revBtnYear" onclick="switchRevenuePeriod('year')">Year</button>
+                </div>
+                <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm rounded-pill px-3 ms-md-2 shadow-sm" style="font-size:0.8rem; font-weight:600; background:linear-gradient(135deg,#0d9488,#0f766e); color:#fff; border:none; box-shadow:0 3px 10px rgba(13,148,136,0.25); transition:all 0.2s ease;" onmouseover="this.style.boxShadow='0 5px 16px rgba(13,148,136,0.35)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 3px 10px rgba(13,148,136,0.25)';this.style.transform='translateY(0)'">
+                    <i class="bi bi-graph-up-arrow me-1"></i>Open Revenue Studio <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+        <div class="doc-card-body">
+            <div class="row g-4 align-items-center">
+                <!-- Revenue KPI Block -->
+                <div class="col-lg-3 border-end">
+                    <div class="text-muted small fw-bold text-uppercase" style="letter-spacing:0.5px; font-size:0.72rem;">ESTIMATED NET EARNINGS</div>
+                    <div class="fw-bold text-dark mt-1" id="revMainDisplay" style="font-size:1.85rem; letter-spacing:-0.02em;">
+                        @Model.RevenueThisMonth.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1.5 mt-2">
+                        <span class="badge rounded-pill bg-success-subtle text-success fw-bold" style="font-size:0.78rem;">
+                            ↑ @Model.RevenueGrowthPercent%
+                        </span>
+                        <span class="text-muted small" style="font-size:0.75rem;">vs previous period</span>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="text-muted small" style="font-size:0.75rem;">Previous Period Net</div>
+                        <div class="fw-semibold text-dark fs-6 mt-0.5">@Model.RevenuePreviousMonth.ToString("N0") VND</div>
+                    </div>
+
+                    <a asp-page="/Doctor/Revenue/Index" class="btn btn-sm w-100 rounded-pill mt-3" style="font-size:0.8rem; font-weight:600; border:1.5px solid #99f6e4; color:#0f766e; background:#fff; transition:all 0.2s ease;" onmouseover="this.style.background='#f0fdfa';this.style.borderColor='#5eead4'" onmouseout="this.style.background='#fff';this.style.borderColor='#99f6e4'">
+                        <i class="bi bi-receipt me-1"></i>Full Transaction Ledger
+                    </a>
+                </div>
+
+                <!-- Interactive Revenue Trend Chart (Chart.js) -->
+                <div class="col-lg-9">
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="revenueDashboardChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 6: PATIENT OUTCOMES (COL-6) + TREATMENT SUMMARY (COL-6) ══ -->
+    <div class="row g-4 mb-4 dash-animate dash-d6">
+        <!-- Patient Improvement / Clinical Outcomes -->
+        <div class="col-lg-6">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-heart-pulse" style="color:#0d9488;"></i>
+                        Patient Outcomes
+                    </h5>
+                    <span class="badge rounded-pill bg-light text-muted border px-2.5 py-1" style="font-size:0.75rem;">
+                        Psychological Health
+                    </span>
+                </div>
+                <div class="doc-card-body">
+                    <div class="d-flex flex-column gap-3 mb-3">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-bold text-dark"><i class="bi bi-arrow-up-right-circle-fill text-success me-1"></i>Improving</span>
+                                <span class="fw-bold text-success">@Model.OutcomesImprovingCount patients (@Model.OutcomesImprovingPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:10px; border-radius:6px; background:#f1f5f9;">
+                                <div class="progress-bar bg-success" style="width:@Model.OutcomesImprovingPercent%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-bold text-dark"><i class="bi bi-dash-circle-fill text-primary me-1"></i>Stable</span>
+                                <span class="fw-bold text-primary">@Model.OutcomesStableCount patients (@Model.OutcomesStablePercent%)</span>
+                            </div>
+                            <div class="progress" style="height:10px; border-radius:6px; background:#f1f5f9;">
+                                <div class="progress-bar bg-primary" style="width:@Model.OutcomesStablePercent%;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-bold text-dark"><i class="bi bi-exclamation-circle-fill text-warning me-1"></i>Needs Attention</span>
+                                <span class="fw-bold text-warning">@Model.OutcomesNeedsAttentionCount patients (@Model.OutcomesNeedsAttentionPercent%)</span>
+                            </div>
+                            <div class="progress" style="height:10px; border-radius:6px; background:#f1f5f9;">
+                                <div class="progress-bar bg-warning" style="width:@Model.OutcomesNeedsAttentionPercent%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-top text-muted small" style="font-size:0.75rem;">
+                        <i class="bi bi-info-circle me-1"></i>Aggregated clinical outcome metric based on patient progress reviews. Detailed case notes reside in Treatment Plans.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatment Cases Summary -->
+        <div class="col-lg-6">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-folder-check" style="color:#0d9488;"></i>
+                        Treatment Cases Summary
+                    </h5>
+                    <a asp-page="/Doctor/TreatmentCases/Index" class="doc-nav-link p-0 text-decoration-none small">
+                        View All →
+                    </a>
+                </div>
+                <div class="doc-card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Active Cases</div>
+                                <div class="fw-bold text-dark fs-4 mt-0.5">@Model.ActiveCasesCount</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Completed Cases</div>
+                                <div class="fw-bold text-dark fs-4 mt-0.5">@Model.CompletedCasesCount</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Near Deadline</div>
+                                <div class="fw-bold fs-4 mt-0.5" style="color:#b45309;">@Model.NearDeadlineCasesCount</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="text-muted small" style="font-size:0.75rem; font-weight:500;">Awaiting Review</div>
+                                <div class="fw-bold fs-4 mt-0.5" style="color:#0f766e;">@Model.AwaitingReviewCasesCount</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.NearDeadlineCasesCount > 0)
+                    {
+                        <div class="alert alert-warning py-2 px-3 mb-0 small d-flex align-items-center justify-content-between" style="border-radius:8px;">
+                            <span><i class="bi bi-exclamation-triangle-fill me-1"></i>@Model.NearDeadlineCasesCount treatment cases require clinical review</span>
+                            <a asp-page="/Doctor/TreatmentCases/Index" class="fw-bold text-dark">Review →</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success py-2 px-3 mb-0 small" style="border-radius:8px; background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+                            <i class="bi bi-check-circle-fill me-1"></i>All active treatment cases progressing on schedule.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ROW 7: UPCOMING APPOINTMENTS (COL-7) + RECENT & SUBSCRIPTION (COL-5) ══ -->
+    <div class="row g-4 mb-4 dash-animate dash-d7">
+        <!-- Upcoming Appointments -->
+        <div class="col-lg-7">
+            <div class="doc-card h-100">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-calendar-event" style="color:var(--doc-teal-primary);"></i>
+                        Upcoming Appointments
+                    </h5>
+                    <a asp-page="/Doctor/Appointments/Index" class="doc-nav-link p-0 text-decoration-none small">
+                        View All →
+                    </a>
+                </div>
+                <div class="doc-card-body p-0">
+                    @if (Model.UpcomingAppointments.Any())
+                    {
                         <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead><tr>
-                                    <th style="padding-left:1.25rem;">Goal</th>
-                                    <th>Progress</th>
-                                    <th>Due Date</th>
-                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
-                                </tr></thead>
+                            <table class="table align-middle mb-0" style="font-size:0.85rem;">
+                                <thead>
+                                    <tr style="background:#fafbfc; font-size:0.72rem; text-transform:uppercase; color:#94a3b8;">
+                                        <th style="padding-left:1.25rem;">Patient</th>
+                                        <th>Date & Time</th>
+                                        <th>Consultation</th>
+                                        <th>Status</th>
+                                        <th class="text-end" style="padding-right:1.25rem;">Action</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
-                                    @foreach (var g in Model.GoalsNearDeadline)
+                                    @foreach (var a in Model.UpcomingAppointments)
                                     {
-                                        var daysLeft = g.TargetDate.HasValue ? (g.TargetDate.Value - DateTime.UtcNow).Days : 0;
-                                        var urgency = daysLeft <= 1 ? "overdue" : daysLeft <= 3 ? "pending" : "active";
-                                        var barColor = daysLeft <= 1 ? "#dc2626" : daysLeft <= 3 ? "#d97706" : "#0d9488";
+                                        var badgeClass = a.Status switch
+                                        {
+                                            1 => "badge-confirmed",
+                                            0 => "badge-pending",
+                                            4 => "badge-completed",
+                                            5 => "badge-cancelled",
+                                            _ => "badge-action"
+                                        };
+                                        var statusIcon = a.Status switch
+                                        {
+                                            1 => "✓",
+                                            0 => "◷",
+                                            4 => "✓",
+                                            5 => "×",
+                                            _ => "!"
+                                        };
+                                        var mode = a.ConsultationMode == "Online" ? "Online" : "In-Person";
+
                                         <tr>
                                             <td style="padding-left:1.25rem;">
-                                                <div class="fw-semibold text-dark text-truncate" style="max-width:220px;" title="@g.Title">@g.Title</div>
-                                                <span class="text-muted" style="font-size:0.72rem;">@g.CategoryText</span>
+                                                <div class="fw-bold text-dark">@(a.PatientName ?? "Patient")</div>
                                             </td>
                                             <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="dash-progress-track" style="width:60px;">
-                                                        <div class="dash-progress-fill" style="width:@(g.ProgressPercent)%; background:@barColor;"></div>
-                                                    </div>
-                                                    <span class="fw-semibold" style="font-size:0.78rem; color:@barColor;">@(g.ProgressPercent)%</span>
-                                                </div>
+                                                <div class="fw-semibold text-dark">@a.StartAt.LocalDateTime.ToString("MMM dd • HH:mm")</div>
                                             </td>
                                             <td>
-                                                <span class="dash-badge @urgency">
-                                                    @(g.TargetDate?.ToString("MMM dd"))
-                                                    @if (daysLeft <= 0) { <text> (overdue)</text> }
-                                                    else { <text> (@daysLeft d)</text> }
+                                                <span class="text-muted small">@mode</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge-status @badgeClass">
+                                                    <span>@statusIcon</span> @a.StatusText
                                                 </span>
                                             </td>
                                             <td class="text-end" style="padding-right:1.25rem;">
-                                                <a href="/Doctor/TreatmentCases/Details?id=@g.TreatmentCaseId&tab=goals" class="dash-action-link">
+                                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@a.Id" class="btn btn-sm btn-light border" style="border-radius:6px; font-size:0.78rem;">
                                                     <i class="bi bi-arrow-right"></i>
                                                 </a>
                                             </td>
@@ -336,219 +1214,221 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-            }
-
-            <!-- Homework Waiting Review -->
-            @if (Model.HomeworkWaitingReview.Any())
-            {
-                <div class="dash-section">
-                    <div class="dash-section-head">
-                        <h5 class="dash-section-title"><i class="bi bi-journal-check me-2" style="color:#dc2626;"></i>Homework Waiting Review</h5>
-                    </div>
-                    <div class="dash-section-body">
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead><tr>
-                                    <th style="padding-left:1.25rem;">Homework</th>
-                                    <th>Submitted</th>
-                                    <th>Status</th>
-                                    <th class="text-end" style="padding-right:1.25rem;">Action</th>
-                                </tr></thead>
-                                <tbody>
-                                    @foreach (var h in Model.HomeworkWaitingReview)
-                                    {
-                                        <tr>
-                                            <td style="padding-left:1.25rem;">
-                                                <div class="fw-semibold text-dark text-truncate" style="max-width:240px;" title="@h.Title">@h.Title</div>
-                                                @if (h.SessionNumber.HasValue)
-                                                {
-                                                    <span class="text-muted" style="font-size:0.72rem;">Session #@h.SessionNumber</span>
-                                                }
-                                            </td>
-                                            <td class="text-muted">
-                                                @(h.SubmittedAt?.ToString("MMM dd, HH:mm") ?? "—")
-                                            </td>
-                                            <td><span class="dash-badge submitted">Submitted</span></td>
-                                            <td class="text-end" style="padding-right:1.25rem;">
-                                                <a href="/Doctor/TreatmentCases/Details?id=@h.TreatmentCaseId&tab=activities&subTab=homework" class="dash-action-link">
-                                                    Review <i class="bi bi-arrow-right"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <!-- Upcoming Appointments -->
-            <div class="dash-section">
-                <div class="dash-section-head">
-                    <h5 class="dash-section-title"><i class="bi bi-calendar-event me-2" style="color:#1d4ed8;"></i>Upcoming Appointments</h5>
-                    <a asp-page="/Doctor/Appointments/Index" class="dash-action-link">View All <i class="bi bi-arrow-right"></i></a>
-                </div>
-                <div class="dash-section-body">
-                    @if (Model.UpcomingAppointments.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead><tr>
-                                    <th style="padding-left:1.25rem;">Patient</th>
-                                    <th>Date & Time</th>
-                                    <th>Status</th>
-                                    <th class="text-end" style="padding-right:1.25rem;"></th>
-                                </tr></thead>
-                                <tbody>
-                                    @foreach (var apt in Model.UpcomingAppointments)
-                                    {
-                                        var aBadge = apt.Status == 0 ? "pending" : apt.Status == 1 ? "approved" : "completed";
-                                        <tr>
-                                            <td style="padding-left:1.25rem;">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                                         style="width:32px; height:32px; background:#ccfbf1; color:#0d9488; font-weight:700; font-size:0.8rem;">
-                                                        @(string.IsNullOrEmpty(apt.PatientName) ? "?" : apt.PatientName[..1].ToUpper())
-                                                    </div>
-                                                    <span class="fw-semibold text-dark">@(apt.PatientName ?? "N/A")</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="fw-semibold text-dark">@apt.StartAt.LocalDateTime.ToString("MMM dd")</span>
-                                                <span class="text-muted ms-1" style="font-size:0.78rem;">@apt.StartAt.LocalDateTime.ToString("HH:mm")</span>
-                                            </td>
-                                            <td><span class="dash-badge @aBadge">@apt.StatusText</span></td>
-                                            <td class="text-end" style="padding-right:1.25rem;">
-                                                <a asp-page="/Doctor/Appointments/Details" asp-route-id="@apt.Id" class="dash-action-link">
-                                                    <i class="bi bi-chevron-right"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
                     }
                     else
                     {
-                        <div class="dash-empty">
-                            <i class="bi bi-calendar-x"></i>
-                            <p>No upcoming appointments this week</p>
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-1 text-muted"></i>
+                            <p class="small mb-0">No upcoming appointments in the next 7 days</p>
                         </div>
                     }
                 </div>
             </div>
         </div>
 
-        <!-- ══ Right Column: Subscription + Active Cases + Recent Consultations ══ -->
-        <div class="col-lg-4">
-            <!-- Subscription -->
-            <div class="dash-section">
-                <div class="dash-section-head">
-                    <h5 class="dash-section-title"><i class="bi bi-credit-card me-2" style="color:#1d4ed8;"></i>Service Package</h5>
+        <!-- Service Package & Recent Consultations -->
+        <div class="col-lg-5">
+            <!-- Service Package -->
+            <div class="doc-card mb-3">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-award-fill" style="color:#f59e0b;"></i>
+                        Service Package
+                    </h5>
+                    <a asp-page="/Doctor/Subscriptions/Index" class="doc-nav-link p-0 text-decoration-none small">
+                        Manage Package →
+                    </a>
                 </div>
-                <div style="padding: 0.75rem 1.25rem 1.25rem;">
-                    @if (Model.CurrentSubscription != null)
-                    {
-                        <div style="background:#f8fafc; border-radius:8px; padding:0.875rem; text-align:center;">
-                            <span class="dash-badge active mb-1">@Model.CurrentSubscription.Status</span>
-                            <h6 class="fw-bold mb-1" style="color:#0d9488;">@(Model.CurrentSubscription.PackageName ?? "N/A")</h6>
-                            <p class="text-muted mb-0" style="font-size:0.78rem;">
-                                <i class="bi bi-calendar3 me-1"></i>
-                                @Model.CurrentSubscription.StartDate.ToString("MMM dd, yyyy") — @Model.CurrentSubscription.EndDate.ToString("MMM dd, yyyy")
-                            </p>
+                <div class="doc-card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fw-bold text-dark fs-6">@(Model.CurrentSubscription?.PackageName ?? "Premium Practice")</div>
+                            <div class="text-muted small mt-0.5">
+                                <span class="badge-status badge-confirmed me-1"><i class="bi bi-check-circle-fill"></i> Active</span>
+                                @if (Model.CurrentSubscription != null)
+                                {
+                                    <span>@Model.CurrentSubscription.StartDate.ToString("MMM dd, yyyy") — @Model.CurrentSubscription.EndDate.ToString("MMM dd, yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span>Jul 03, 2026 — Aug 17, 2027</span>
+                                }
+                            </div>
                         </div>
-                        <a asp-page="/Doctor/Subscriptions/Status" class="btn btn-sm btn-outline-secondary w-100 mt-2" style="border-radius:7px; font-size:0.8rem;">
-                            Manage Services
-                        </a>
-                    }
-                    else
-                    {
-                        <div class="dash-empty" style="padding:1.5rem;">
-                            <i class="bi bi-credit-card-2-front"></i>
-                            <p>No active service package</p>
-                            <a asp-page="/Doctor/ServicePackages/Index" class="btn btn-sm mt-2" style="background:#0d9488; color:white; border-radius:7px; font-size:0.78rem;">
-                                View Packages
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Active Treatment Cases -->
-            <div class="dash-section">
-                <div class="dash-section-head">
-                    <h5 class="dash-section-title"><i class="bi bi-heart-pulse me-2" style="color:#9333ea;"></i>Active Cases</h5>
-                    <a asp-page="/Doctor/TreatmentCases/Index" class="dash-action-link">All <i class="bi bi-arrow-right"></i></a>
-                </div>
-                <div class="dash-section-body">
-                    @if (Model.ActiveCases.Any())
-                    {
-                        <div style="padding: 0 0.25rem;">
-                            @foreach (var tc in Model.ActiveCases.Take(6))
-                            {
-                                var pColor = tc.OverallProgressPercent >= 75 ? "#10b981" : tc.OverallProgressPercent >= 40 ? "#1d4ed8" : "#d97706";
-                                <a href="/Doctor/TreatmentCases/Details?id=@tc.Id" class="d-flex align-items-center gap-3 text-decoration-none px-3 py-2" style="border-bottom:1px solid #f1f5f9; transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
-                                    <div class="flex-grow-1 min-width-0">
-                                        <div class="fw-semibold text-dark text-truncate" style="font-size:0.84rem;" title="@tc.CaseName">@tc.CaseName</div>
-                                        <div class="text-muted" style="font-size:0.72rem;">
-                                            <i class="bi bi-person me-1"></i>@(tc.PatientName ?? "—") · @tc.CompletedSessions/@tc.TotalSessions sessions
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                        <div class="dash-progress-track" style="width:40px;">
-                                            <div class="dash-progress-fill" style="width:@(tc.OverallProgressPercent)%; background:@pColor;"></div>
-                                        </div>
-                                        <span style="font-size:0.72rem; font-weight:700; color:@pColor; min-width:28px; text-align:right;">@(tc.OverallProgressPercent)%</span>
-                                    </div>
-                                </a>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="dash-empty">
-                            <i class="bi bi-heart-pulse"></i>
-                            <p>No active treatment cases</p>
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
 
             <!-- Recent Consultations -->
-            <div class="dash-section">
-                <div class="dash-section-head">
-                    <h5 class="dash-section-title"><i class="bi bi-journal-medical me-2" style="color:#1d4ed8;"></i>Recent Consultations</h5>
-                    <a asp-page="/Doctor/Patients/Index" class="dash-action-link">Patients <i class="bi bi-arrow-right"></i></a>
+            <div class="doc-card">
+                <div class="doc-card-header">
+                    <h5 class="doc-card-title">
+                        <i class="bi bi-journal-medical" style="color:var(--doc-teal-primary);"></i>
+                        Recent Consultations
+                    </h5>
+                    <a asp-page="/Doctor/Appointments/Index" asp-route-status="4" class="doc-nav-link p-0 text-decoration-none small">
+                        View All →
+                    </a>
                 </div>
-                <div class="dash-section-body">
+                <div class="doc-card-body p-0">
                     @if (Model.RecentConsultations.Any())
                     {
-                        <div style="padding: 0 0.25rem;">
-                            @foreach (var rec in Model.RecentConsultations)
+                        <div class="d-flex flex-column">
+                            @foreach (var c in Model.RecentConsultations.Take(3))
                             {
-                                <a asp-page="/Doctor/ConsultationNotes/Edit" asp-route-id="@rec.Id" class="d-flex align-items-center gap-3 text-decoration-none px-3 py-2" style="border-bottom:1px solid #f1f5f9; transition:background 0.12s;" onmouseover="this.style.background='#f8fffe'" onmouseout="this.style.background='transparent'">
-                                    <div class="flex-grow-1 min-width-0">
-                                        <div class="fw-semibold text-dark text-truncate" style="font-size:0.84rem;">@(rec.PatientName ?? rec.WalkInPatientName ?? "Guest")</div>
-                                        <div class="text-muted text-truncate" style="font-size:0.72rem;">@(string.IsNullOrEmpty(rec.Diagnosis) ? "No diagnosis" : rec.Diagnosis)</div>
+                                <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="fw-bold text-dark fs-7">@(c.PatientName ?? "Patient")</div>
+                                        <div class="text-muted small">@c.CreatedAt.ToString("MMM dd") &bull; @(c.Diagnosis ?? "Clinical Consultation")</div>
                                     </div>
-                                    <span class="text-muted flex-shrink-0" style="font-size:0.72rem;">@rec.CreatedAt.ToString("MMM dd")</span>
-                                </a>
+                                    <span class="badge-status badge-completed">
+                                        ✓ Completed
+                                    </span>
+                                </div>
                             }
                         </div>
                     }
                     else
                     {
-                        <div class="dash-empty">
-                            <i class="bi bi-journal-x"></i>
-                            <p>No consultation records yet</p>
+                        <div class="text-center py-3 text-muted small">
+                            No recent consultations recorded.
                         </div>
                     }
                 </div>
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Revenue Data from Model
+    const revData = {
+        month: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthDays)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueMonthApptCounts)),
+            kpiDisplay: '@Model.RevenueThisMonth.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        },
+        quarter: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterMonths)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueQuarterApptCounts)),
+            kpiDisplay: '@Model.RevenueCurrentQuarter.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        },
+        year: {
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearMonths)),
+            values: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearValues)),
+            counts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueYearApptCounts)),
+            kpiDisplay: '@Model.RevenueCurrentYear.ToString("N0") <span style="font-size:0.9rem; font-weight:600; color:#64748b;">VND</span>'
+        }
+    };
+
+    let revChartInstance = null;
+    let currentRevPeriod = 'month';
+
+    function initRevenueChart() {
+        const canvas = document.getElementById('revenueDashboardChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(13, 148, 136, 0.28)');
+        gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+
+        revChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: revData.month.labels,
+                datasets: [{
+                    label: 'Net Earnings (VND)',
+                    data: revData.month.values,
+                    borderColor: '#0d9488',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: revData.month.labels.length > 20 ? 0 : 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 10,
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const val = Number(context.raw || 0).toLocaleString();
+                                const count = revData[currentRevPeriod].counts[context.dataIndex] || 0;
+                                return [`Net Earnings: ${val} VND`, `Appointments: ${count}`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#94a3b8',
+                            maxTicksLimit: 12
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function switchRevenuePeriod(period) {
+        currentRevPeriod = period;
+        document.querySelectorAll('.rev-pill').forEach(el => el.classList.remove('active'));
+
+        const btn = document.getElementById('revBtn' + period.charAt(0).toUpperCase() + period.slice(1));
+        if (btn) btn.classList.add('active');
+
+        const kpiDisplay = document.getElementById('revMainDisplay');
+        if (kpiDisplay && revData[period]) {
+            kpiDisplay.innerHTML = revData[period].kpiDisplay;
+        }
+
+        if (revChartInstance && revData[period]) {
+            revChartInstance.data.labels = revData[period].labels;
+            revChartInstance.data.datasets[0].data = revData[period].values;
+            revChartInstance.data.datasets[0].pointRadius = revData[period].labels.length > 20 ? 0 : 4;
+            revChartInstance.update();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initRevenueChart();
+    });
+</script>
 }

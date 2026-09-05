@@ -33,6 +33,23 @@ public interface ITreatmentCaseService
     /// <summary>Close a Treatment Case (complete or terminate)</summary>
     Task<ApiResponse> CloseAsync(Guid caseId, CloseTreatmentCaseDto dto, CancellationToken ct = default);
 
+    // === Treatment Hold (Bảo lưu) ===
+
+    /// <summary>Patient requests putting the treatment case on hold</summary>
+    Task<ApiResponse<TreatmentCaseDto>> RequestHoldAsync(Guid caseId, Guid patientUserId, RequestTreatmentHoldDto dto, CancellationToken ct = default);
+
+    /// <summary>Patient cancels their pending hold request</summary>
+    Task<ApiResponse<TreatmentCaseDto>> CancelHoldRequestAsync(Guid caseId, Guid patientUserId, CancellationToken ct = default);
+
+    /// <summary>Doctor approves the treatment hold request, extending validity and cancelling scheduled sessions</summary>
+    Task<ApiResponse<TreatmentCaseDto>> ApproveHoldAsync(Guid caseId, Guid doctorUserId, ApproveTreatmentHoldDto dto, CancellationToken ct = default);
+
+    /// <summary>Doctor rejects the treatment hold request</summary>
+    Task<ApiResponse<TreatmentCaseDto>> RejectHoldAsync(Guid caseId, Guid doctorUserId, RejectTreatmentHoldDto dto, CancellationToken ct = default);
+
+    /// <summary>Resume treatment from OnHold status back to Active</summary>
+    Task<ApiResponse<TreatmentCaseDto>> ResumeTreatmentAsync(Guid caseId, Guid requestingUserId, CancellationToken ct = default);
+
     // === Schedule Generation ===
 
     /// <summary>Generate treatment schedule (sessions + approved appointments)</summary>
@@ -65,6 +82,9 @@ public interface ITreatmentCaseService
 
     /// <summary>Update goal info, status, or overall progress</summary>
     Task<ApiResponse<TreatmentGoalDto>> UpdateGoalAsync(Guid goalId, UpdateGoalDto dto, Guid? doctorUserId = null, CancellationToken ct = default);
+
+    /// <summary>Delete a treatment goal</summary>
+    Task<ApiResponse> DeleteGoalAsync(Guid goalId, Guid? doctorUserId = null, CancellationToken ct = default);
 
     /// <summary>Get all goals for a Treatment Case</summary>
     Task<ApiResponse<List<TreatmentGoalDto>>> GetGoalsByCaseAsync(Guid caseId, Guid? requestingUserId = null, CancellationToken ct = default);

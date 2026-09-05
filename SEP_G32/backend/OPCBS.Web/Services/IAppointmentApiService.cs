@@ -1,3 +1,4 @@
+using OPCBS.Domain.Enums;
 using OPCBS.Web.DTOs;
 
 namespace OPCBS.Web.Services;
@@ -17,6 +18,7 @@ public interface IAppointmentApiService
     Task<(bool Success, string? Error)> ConfirmCompletionAsync(Guid id);
     Task<(bool Success, string? Error)> StartAsync(Guid id);
     Task<(bool Success, string? Error)> CompleteAsync(Guid id);
+    Task<(bool Success, string? Error)> UpdateConsultationModeAsync(Guid id, ConsultationMode mode);
     Task<(AppointmentDto? Data, string? Error)> TrackAsync(TrackAppointmentRequestDto dto);
     Task<(bool Success, string? Message, string? Error)> ResendConfirmationAsync(ResendConfirmationRequestDto dto);
     Task<(bool Success, string? Error)> ConfirmGuestAppointmentAsync(string token);

@@ -21,7 +21,7 @@ public class ConsultationNoteDto
     public Guid? FollowUpAppointmentId { get; set; }
     public string? FollowUpAppointmentBookingCode { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1;
     public string? PackageName { get; set; }
 
     // Patient confirmation & audit fields
@@ -45,7 +45,7 @@ public class ConsultationNoteDto
     public string? Recommendations => Recommendation;
 
     /// <summary>Display name: system patient name or walk-in name</summary>
-    public string DisplayPatientName => PatientName ?? WalkInPatientName ?? "Không xác định";
+    public string DisplayPatientName => PatientName ?? WalkInPatientName ?? "Unknown";
     public bool IsWalkIn => AppointmentId == null;
     public bool IsFromAppointment => AppointmentId.HasValue;
 
@@ -88,7 +88,7 @@ public class CreateConsultationNoteDto
     public string? FollowUpNotes { get; set; }
     public string? TherapyPlan { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1;
     public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 
     // Walk-in patient fields
@@ -111,7 +111,7 @@ public class UpdateConsultationNoteDto
     public DateTime? NextAppointmentRecommendedDate { get; set; }
     public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1;
     public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 
     // Read-write aliases for Razor form binding

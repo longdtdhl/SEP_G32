@@ -22,3 +22,27 @@ public class PaginationDto
     public bool HasNextPage { get; set; }
     public bool HasPreviousPage { get; set; }
 }
+
+/// <summary>
+/// Reusable ViewModel for stunning Empty State cards and banners.
+/// </summary>
+public class EmptyStateViewModel
+{
+    /// <summary>
+    /// Type of built-in vector illustration: "calendar", "patient", "treatment", "document", "message", "search", "package", "journal", "clock", "check", "default"
+    /// </summary>
+    public string Illustration { get; set; } = "default";
+    public string? CustomImageUrl { get; set; }
+    public string? Icon { get; set; }
+    public string Title { get; set; } = "No items found";
+    public string? Message { get; set; }
+    public string? ActionText { get; set; }
+    public string? ActionUrl { get; set; }
+    public string? ActionIcon { get; set; } = "bi-plus-lg";
+    public string? SecondaryActionText { get; set; }
+    public string? SecondaryActionUrl { get; set; }
+    public string? SecondaryActionIcon { get; set; }
+    public string Theme { get; set; } = "teal"; // teal, blue, amber, green, purple
+    public bool CardStyle { get; set; } = true;
+    public string? MinHeight { get; set; } = "340px";
+}

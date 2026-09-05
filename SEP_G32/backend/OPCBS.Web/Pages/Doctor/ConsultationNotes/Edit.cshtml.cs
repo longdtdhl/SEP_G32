@@ -75,6 +75,7 @@ public class EditModel : PageModel
             return Page();
         }
 
+        Input.Visibility = 1;
         var (success, error) = await _api.UpdateAsync(id, Input);
         if (!success)
         {

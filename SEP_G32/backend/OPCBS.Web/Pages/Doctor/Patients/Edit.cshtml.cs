@@ -20,25 +20,29 @@ public class EditModel : PageModel
     [BindProperty] public UpdatePatientRecordDto Input { get; set; } = new() { GuestName = "" };
     [BindProperty(SupportsGet = true)] public Guid Id { get; set; }
 
+    public PatientRecordDto PatientRecord { get; set; } = default!;
+
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         Id = id;
         var (data, error) = await _apiService.GetByIdAsync(id);
         if (data == null)
         {
-            TempData["ErrorMessage"] = "Not found hồ sơ.";
+            TempData["ErrorMessage"] = "Patient record not found.";
             return RedirectToPage("./Index");
         }
+
+        PatientRecord = data;
 
         Input = new UpdatePatientRecordDto
         {
             PatientId = data.PatientId,
-            GuestName = data.GuestName,
-            GuestPhone = data.GuestPhone,
-            GuestEmail = data.GuestEmail,
-            GuestDateOfBirth = data.GuestDateOfBirth,
-            GuestGender = data.GuestGender,
-            GuestAddress = data.GuestAddress,
+            GuestName = data.IsGuest ? data.GuestName : data.ResolvedDisplayName,
+            GuestPhone = data.IsGuest ? data.GuestPhone : data.ResolvedDisplayPhone,
+            GuestEmail = data.IsGuest ? data.GuestEmail : data.ResolvedDisplayEmail,
+            GuestDateOfBirth = data.ResolvedDateOfBirth,
+            GuestGender = data.ResolvedGender,
+            GuestAddress = data.ResolvedAddress,
             PsychologicalHistory = data.PsychologicalHistory,
             CurrentSymptoms = data.CurrentSymptoms,
             StressFactors = data.StressFactors,
@@ -50,9 +54,17 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        // Re-fetch original record to preserve Personal Information fields (Doctor cannot edit Personal Info)
         var (data, _) = await _apiService.GetByIdAsync(Id);
-        if (data != null)
+        if (data == null)
+        {
+            TempData["ErrorMessage"] = "Patient record not found.";
+            return RedirectToPage("./Index");
+        }
+
+        PatientRecord = data;
+
+        // If registered patient, keep personal info immutable by doctor
+        if (!data.IsGuest && data.PatientId.HasValue)
         {
             Input.GuestName = data.GuestName;
             Input.GuestPhone = data.GuestPhone;
@@ -65,7 +77,7 @@ public class EditModel : PageModel
         var (success, error) = await _apiService.UpdateAsync(Id, Input);
         if (success)
         {
-            TempData["Success"] = "Patient record updated successfully!";
+            TempData["SuccessMessage"] = "Patient record updated successfully!";
             return RedirectToPage("./Details", new { id = Id });
         }
 

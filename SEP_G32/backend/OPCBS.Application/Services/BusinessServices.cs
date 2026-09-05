@@ -427,6 +427,8 @@ public class ConsultationNoteService : IConsultationNoteService
     private readonly IRepository<TreatmentPackage> _packageRepo;
     private readonly INotificationService _notificationService;
     private readonly IRepository<CustomClinicalField>? _customFieldRepo;
+    private readonly IRepository<AppointmentSlot>? _slotRepo;
+    private readonly IRepository<AppointmentHistory>? _historyRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
@@ -441,7 +443,9 @@ public class ConsultationNoteService : IConsultationNoteService
         INotificationService notificationService,
         IUnitOfWork uow,
         IMapper mapper,
-        IRepository<CustomClinicalField>? customFieldRepo = null)
+        IRepository<CustomClinicalField>? customFieldRepo = null,
+        IRepository<AppointmentSlot>? slotRepo = null,
+        IRepository<AppointmentHistory>? historyRepo = null)
     {
         _recordRepo = recordRepo;
         _apptRepo = apptRepo;
@@ -454,16 +458,18 @@ public class ConsultationNoteService : IConsultationNoteService
         _uow = uow;
         _mapper = mapper;
         _customFieldRepo = customFieldRepo;
+        _slotRepo = slotRepo;
+        _historyRepo = historyRepo;
     }
 
-    private async Task EnrichRecordsAsync(List<ConsultationNoteDto> dtos, CancellationToken ct)
+    private async Task EnrichRecordsAsync(List<ConsultationNoteDto>? dtos, CancellationToken ct)
     {
-        if (!dtos.Any()) return;
-        var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var allPatients = await _patientRepo.GetAllAsync(ct);
-        var allUsers = await _userRepo.GetAllAsync(ct);
-        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
-        var allNotes = await _recordRepo.GetAllAsync(ct);
+        if (dtos == null || !dtos.Any()) return;
+        var allDoctors = (await _doctorRepo.GetAllAsync(ct)) ?? new List<DoctorProfile>();
+        var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+        var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+        var allPatientRecords = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+        var allNotes = (await _recordRepo.GetAllAsync(ct)) ?? new List<ConsultationNote>();
 
         var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
         var doctorUserMap = allDoctors.ToDictionary(d => d.Id, d => d.UserId);
@@ -498,6 +504,9 @@ public class ConsultationNoteService : IConsultationNoteService
                 dto.PatientConfirmedById = entity.PatientConfirmedById;
                 dto.LastEditedAt = entity.LastEditedAt;
                 dto.LastEditedByDoctorId = entity.LastEditedByDoctorId;
+                dto.FollowUpAppointmentId = entity.FollowUpAppointmentId;
+                dto.NextAppointmentRecommendedSlotId = entity.NextAppointmentRecommendedSlotId;
+                dto.NextAppointmentRecommendedDate = entity.NextAppointmentRecommendedDate;
 
                 if (entity.PatientConfirmedById.HasValue && userDict.TryGetValue(entity.PatientConfirmedById.Value, out var confName))
                 {
@@ -505,9 +514,29 @@ public class ConsultationNoteService : IConsultationNoteService
                 }
             }
 
+            if (dto.FollowUpAppointmentId.HasValue && _apptRepo != null)
+            {
+                var allAppts = await _apptRepo.GetAllAsync(ct);
+                var fAppt = allAppts.FirstOrDefault(a => a.Id == dto.FollowUpAppointmentId.Value);
+                if (fAppt != null)
+                {
+                    dto.FollowUpAppointmentBookingCode = fAppt.BookingCode;
+                }
+            }
+
+            if (dto.NextAppointmentRecommendedSlotId.HasValue && _slotRepo != null)
+            {
+                var slot = await _slotRepo.GetByIdAsync(dto.NextAppointmentRecommendedSlotId.Value, ct);
+                if (slot != null)
+                {
+                    dto.NextAppointmentRecommendedSlotStartTime = slot.StartTime.ToString(@"hh\:mm");
+                    dto.NextAppointmentRecommendedSlotEndTime = slot.EndTime.ToString(@"hh\:mm");
+                }
+            }
+
             if (string.IsNullOrEmpty(dto.DoctorName) && doctorUserMap.TryGetValue(dto.DoctorId, out var docUserId) && userDict.TryGetValue(docUserId, out var docName))
                 dto.DoctorName = docName;
-                
+
             if (patientRecordMap.TryGetValue(dto.PatientRecordId, out var pr))
             {
                 if (pr.PatientId.HasValue && patientUserMap.TryGetValue(pr.PatientId.Value, out var patUserId) && userDict.TryGetValue(patUserId, out var patName))
@@ -576,40 +605,42 @@ public class ConsultationNoteService : IConsultationNoteService
             patientRecord = await _patientRecordRepo.GetByIdAsync(dto.PatientRecordId, ct);
         }
 
-        // Auto-create PatientRecord if missing (e.g., guest booking)
-        if (patientRecord == null && dto.AppointmentId.HasValue)
+        Appointment? appointment = null;
+        if (dto.AppointmentId.HasValue)
         {
-            var appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
-            if (appointment != null)
+            appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
+        }
+
+        // Auto-create PatientRecord if missing (e.g., guest booking)
+        if (patientRecord == null && appointment != null)
+        {
+            if (appointment.PatientId.HasValue)
             {
+                // Check if patient already has a record with this doctor
+                var allRecords = await _patientRecordRepo.GetAllAsync(ct);
+                patientRecord = allRecords.FirstOrDefault(r => r.PatientId == appointment.PatientId && r.DoctorId == doctor.Id);
+            }
+
+            if (patientRecord == null)
+            {
+                patientRecord = new PatientRecord
+                {
+                    DoctorId = doctor.Id,
+                    PatientId = appointment.PatientId,
+                    Doctor = doctor,
+                    GuestName = appointment.GuestName,
+                    GuestEmail = appointment.GuestEmail,
+                    GuestPhone = appointment.GuestPhoneNumber,
+                    GeneralNotes = $"Auto-created from appointment {appointment.BookingCode}"
+                };
                 if (appointment.PatientId.HasValue)
                 {
-                    // Check if patient already has a record with this doctor
-                    var allRecords = await _patientRecordRepo.GetAllAsync(ct);
-                    patientRecord = allRecords.FirstOrDefault(r => r.PatientId == appointment.PatientId && r.DoctorId == doctor.Id);
+                    var allPatients = await _patientRepo.GetAllAsync(ct);
+                    var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                    if (pat != null) patientRecord.Patient = pat;
                 }
-
-                if (patientRecord == null)
-                {
-                    patientRecord = new PatientRecord
-                    {
-                        DoctorId = doctor.Id,
-                        PatientId = appointment.PatientId,
-                        Doctor = doctor,
-                        GuestName = appointment.GuestName,
-                        GuestEmail = appointment.GuestEmail,
-                        GuestPhone = appointment.GuestPhoneNumber,
-                        GeneralNotes = $"Auto-created from appointment {appointment.BookingCode}"
-                    };
-                    if (appointment.PatientId.HasValue)
-                    {
-                        var allPatients = await _patientRepo.GetAllAsync(ct);
-                        var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
-                        if (pat != null) patientRecord.Patient = pat;
-                    }
-                    await _patientRecordRepo.AddAsync(patientRecord, ct);
-                    await _uow.SaveChangesAsync(ct);
-                }
+                await _patientRecordRepo.AddAsync(patientRecord, ct);
+                await _uow.SaveChangesAsync(ct);
             }
         }
 
@@ -636,32 +667,84 @@ public class ConsultationNoteService : IConsultationNoteService
             LastEditedAt = DateTime.UtcNow,
             LastEditedByDoctorId = doctor.Id
         };
-        if (dto.AppointmentId.HasValue)
+
+        if (appointment != null)
         {
-            var appointment = await _apptRepo.GetByIdAsync(dto.AppointmentId.Value, ct);
-            if (appointment != null)
+            record.Appointment = appointment;
+            if (!record.ConsultationDate.HasValue)
+                record.ConsultationDate = appointment.AppointmentDate;
+        }
+
+        // Auto-create follow-up appointment if slot was selected
+        if (dto.NextAppointmentRecommendedSlotId.HasValue && _slotRepo != null)
+        {
+            var recSlot = await _slotRepo.GetByIdAsync(dto.NextAppointmentRecommendedSlotId.Value, ct);
+            if (recSlot != null)
             {
-                record.Appointment = appointment;
-                // Auto-fill ConsultationDate from appointment date if not set
-                if (!record.ConsultationDate.HasValue)
-                    record.ConsultationDate = appointment.AppointmentDate;
-                if (appointment.PatientId.HasValue)
+                var slotDateTime = recSlot.SlotDate.ToDateTime(recSlot.StartTime);
+                var bookingCode = $"OPCBS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+
+                var followUpAppt = new Appointment
+                {
+                    BookingCode = bookingCode,
+                    AppointmentSlotId = recSlot.Id,
+                    DoctorId = doctor.Id,
+                    PatientId = appointment?.PatientId ?? patientRecord.PatientId,
+                    GuestName = appointment?.GuestName ?? patientRecord.GuestName,
+                    GuestEmail = appointment?.GuestEmail ?? patientRecord.GuestEmail,
+                    GuestPhoneNumber = appointment?.GuestPhoneNumber ?? patientRecord.GuestPhone,
+                    Notes = string.IsNullOrWhiteSpace(dto.FollowUpNotes)
+                        ? $"Follow-up appointment recommended from session {appointment?.BookingCode ?? ""}".Trim()
+                        : dto.FollowUpNotes.Trim(),
+                    AppointmentDate = slotDateTime,
+                    TreatmentPackageId = appointment?.TreatmentPackageId,
+                    TreatmentCaseId = appointment?.TreatmentCaseId,
+                    ConsultationMode = recSlot.ConsultationMode,
+                    Status = AppointmentStatus.Pending,
+                    AppointmentSlot = recSlot,
+                    Doctor = doctor
+                };
+
+                await _apptRepo.AddAsync(followUpAppt, ct);
+
+                recSlot.CurrentBookings++;
+                if (recSlot.CurrentBookings >= recSlot.MaxPatients)
+                    recSlot.Status = AppointmentSlotStatus.Booked;
+                _slotRepo.Update(recSlot);
+
+                record.FollowUpAppointmentId = followUpAppt.Id;
+                record.FollowUpAppointment = followUpAppt;
+
+                if (_historyRepo != null)
+                {
+                    await _historyRepo.AddAsync(new AppointmentHistory
+                    {
+                        AppointmentId = followUpAppt.Id,
+                        NewStatus = AppointmentStatus.Pending,
+                        Reason = $"Follow-up appointment auto-created from consultation record {appointment?.BookingCode ?? ""}",
+                        ChangedByUserId = doctorUserId,
+                        ChangedByRole = "Doctor",
+                        Appointment = followUpAppt
+                    }, ct);
+                }
+
+                if (followUpAppt.PatientId.HasValue)
                 {
                     try
                     {
                         var allPatients = await _patientRepo.GetAllAsync(ct);
-                        var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
-                        var allUsers = await _userRepo.GetAllAsync(ct);
-                        var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                        var pat = allPatients.FirstOrDefault(p => p.Id == followUpAppt.PatientId.Value);
                         if (pat != null)
                         {
+                            var allUsers = await _userRepo.GetAllAsync(ct);
+                            var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
                             await _notificationService.CreateNotificationAsync(
                                 pat.UserId,
-                                "📋 New Consultation Record",
-                                $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a consultation record for your appointment. Please review it.",
-                                Domain.Enums.NotificationType.ConsultationNote,
-                                record.Id, // this might be empty guid since not saved yet
-                                "ConsultationNote",
+                                "📅 Follow-up Appointment Scheduled",
+                                $"Dr. {doctorUser?.FullName ?? "your doctor"} has scheduled a follow-up appointment for you on {recSlot.SlotDate:MMM dd, yyyy} at {recSlot.StartTime:hh\\:mm}. Please review your appointment details.",
+                                Domain.Enums.NotificationType.Appointment,
+                                followUpAppt.Id,
+                                "Appointment",
                                 ct);
                         }
                     }
@@ -669,8 +752,32 @@ public class ConsultationNoteService : IConsultationNoteService
                 }
             }
         }
+
         await _recordRepo.AddAsync(record, ct);
         await _uow.SaveChangesAsync(ct);
+
+        if (appointment != null && appointment.PatientId.HasValue)
+        {
+            try
+            {
+                var allPatients = await _patientRepo.GetAllAsync(ct);
+                var pat = allPatients.FirstOrDefault(p => p.Id == appointment.PatientId.Value);
+                var allUsers = await _userRepo.GetAllAsync(ct);
+                var doctorUser = allUsers.FirstOrDefault(u => u.Id == doctorUserId);
+                if (pat != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        pat.UserId,
+                        "📋 New Consultation Record",
+                        $"Dr. {doctorUser?.FullName ?? "your doctor"} has created a consultation record for your appointment. Please review it.",
+                        Domain.Enums.NotificationType.ConsultationNote,
+                        record.Id,
+                        "ConsultationNote",
+                        ct);
+                }
+            }
+            catch { }
+        }
 
         if (_customFieldRepo != null && dto.CustomFields != null && dto.CustomFields.Any())
         {
@@ -843,12 +950,60 @@ public class ConsultationNoteService : IConsultationNoteService
         return ApiResponse<ConsultationNoteDto>.SuccessResponse(confirmedDto, "Consultation notes confirmed successfully.");
     }
 
-    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientRecordAsync(Guid patientRecordId, Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
-        var records = await _recordRepo.GetAllAsync(ct);
-        var filtered = records.Where(x => x.PatientRecordId == patientRecordId).OrderByDescending(x => x.CreatedAt);
+        var allDoctors = await _doctorRepo.GetAllAsync(ct);
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == doctorUserId || d.Id == doctorUserId);
+        if (doctor == null)
+            return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Doctor not found");
 
-        var total = filtered.Count();
+        var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
+        var allPatients = await _patientRepo.GetAllAsync(ct);
+        var allAppts = await _apptRepo.GetAllAsync(ct);
+
+        var validIds = new HashSet<Guid> { patientRecordId };
+        var matchingPr = allPatientRecords.FirstOrDefault(pr => pr.Id == patientRecordId || (pr.PatientId.HasValue && pr.PatientId.Value == patientRecordId));
+        if (matchingPr != null)
+        {
+            validIds.Add(matchingPr.Id);
+            if (matchingPr.PatientId.HasValue)
+            {
+                validIds.Add(matchingPr.PatientId.Value);
+                var pat = allPatients.FirstOrDefault(p => p.Id == matchingPr.PatientId.Value || p.UserId == matchingPr.PatientId.Value);
+                if (pat != null)
+                {
+                    validIds.Add(pat.Id);
+                    validIds.Add(pat.UserId);
+                }
+            }
+        }
+        else
+        {
+            var pat = allPatients.FirstOrDefault(p => p.Id == patientRecordId || p.UserId == patientRecordId);
+            if (pat != null)
+            {
+                validIds.Add(pat.Id);
+                validIds.Add(pat.UserId);
+                var prs = allPatientRecords.Where(pr => pr.PatientId.HasValue && (pr.PatientId.Value == pat.Id || pr.PatientId.Value == pat.UserId)).ToList();
+                foreach (var pr in prs)
+                {
+                    validIds.Add(pr.Id);
+                }
+            }
+        }
+
+        var patientApptIds = allAppts
+            .Where(a => a.PatientId.HasValue && validIds.Contains(a.PatientId.Value))
+            .Select(a => a.Id)
+            .ToHashSet();
+
+        var records = await _recordRepo.GetAllAsync(ct);
+        var filtered = records
+            .Where(x => x.DoctorId == doctor.Id && (validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value))))
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+
+        var total = filtered.Count;
         var paged = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         var dtos = _mapper.Map<List<ConsultationNoteDto>>(paged);
@@ -864,35 +1019,123 @@ public class ConsultationNoteService : IConsultationNoteService
         return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, "Records retrieved successfully", pagination);
     }
 
+    public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientForDoctorAsync(Guid patientId, Guid doctorUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    {
+        return await GetByPatientRecordAsync(patientId, doctorUserId, page, pageSize, ct);
+    }
+
     public async Task<ApiResponse<List<ConsultationNoteDto>>> GetByPatientAsync(Guid patientUserId, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
-        var patientRecord = await _patientRecordRepo.GetByIdAsync(patientUserId, ct);
-        if (patientRecord == null)
+        var allPatientRecords = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+        var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+        var allAppts = (await _apptRepo.GetAllAsync(ct)) ?? new List<Appointment>();
+
+        var validIds = new HashSet<Guid> { patientUserId };
+        var pat = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
+        PatientRecord? pr = null;
+        if (pat != null)
         {
-            // Try to find by patient UserId
-            var allPatients = await _patientRepo.GetAllAsync(ct);
-            var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
-            if (patient != null)
+            validIds.Add(pat.Id);
+            validIds.Add(pat.UserId);
+            var prs = allPatientRecords.Where(r => r.PatientId.HasValue && (r.PatientId.Value == pat.Id || r.PatientId.Value == pat.UserId)).ToList();
+            foreach (var r in prs)
             {
-                var allPatientRecords = await _patientRecordRepo.GetAllAsync(ct);
-                patientRecord = allPatientRecords.FirstOrDefault(pr => pr.PatientId == patient.Id);
+                validIds.Add(r.Id);
             }
         }
-        
-        if (patientRecord == null) return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Patient record not found");
-        var all = await _recordRepo.GetAllAsync(ct);
-        var records = all.Where(r => r.PatientRecordId == patientRecord.Id).ToList();
-        var total = records.Count;
-        var items = records.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var dtos = _mapper.Map<List<ConsultationNoteDto>>(items);
+        else
+        {
+            pr = allPatientRecords.FirstOrDefault(p => p.Id == patientUserId || (p.PatientId.HasValue && p.PatientId.Value == patientUserId));
+            if (pr != null)
+            {
+                validIds.Add(pr.Id);
+                if (pr.PatientId.HasValue)
+                {
+                    validIds.Add(pr.PatientId.Value);
+                }
+            }
+        }
+
+        if (pat == null && pr == null)
+            return ApiResponse<List<ConsultationNoteDto>>.ErrorResponse("Patient record not found");
+
+        var patientApptIds = allAppts
+            .Where(a => a.PatientId.HasValue && validIds.Contains(a.PatientId.Value))
+            .Select(a => a.Id)
+            .ToHashSet();
+
+        var records = (await _recordRepo.GetAllAsync(ct)) ?? new List<ConsultationNote>();
+        var filtered = records
+            .Where(x => (validIds.Contains(x.PatientRecordId) || (x.AppointmentId.HasValue && patientApptIds.Contains(x.AppointmentId.Value))) &&
+                        x.Visibility != NoteVisibility.DoctorOnly)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+
+        var total = filtered.Count;
+        var paged = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var dtos = _mapper.Map<List<ConsultationNoteDto>>(paged);
         await EnrichRecordsAsync(dtos, ct);
-        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+
+        var pagination = new PaginationMetadata
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
+
+        return ApiResponse<List<ConsultationNoteDto>>.SuccessResponse(dtos, "Records retrieved successfully", pagination);
     }
 
     public async Task<ApiResponse<ConsultationNoteDto>> GetByIdAsync(Guid recordId, Guid userId, CancellationToken ct)
     {
         var record = await _recordRepo.GetByIdAsync(recordId, ct);
         if (record == null) return ApiResponse<ConsultationNoteDto>.ErrorResponse("Record not found");
+
+        var allDoctors = (await _doctorRepo.GetAllAsync(ct)) ?? new List<DoctorProfile>();
+        var doctor = allDoctors.FirstOrDefault(d => d.UserId == userId || d.Id == userId);
+        if (doctor != null)
+        {
+            if (record.DoctorId != doctor.Id && record.DoctorId != doctor.UserId)
+            {
+                var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+                var user = allUsers.FirstOrDefault(u => u.Id == userId);
+                if (user == null || (user.Role?.Name != "Admin" && user.Role?.Name != "Staff" && user.Role?.Name != "Manager"))
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+        }
+        else
+        {
+            var allPatients = (await _patientRepo.GetAllAsync(ct)) ?? new List<PatientProfile>();
+            var patient = allPatients.FirstOrDefault(p => p.UserId == userId || p.Id == userId);
+            if (patient != null)
+            {
+                var allPRs = (await _patientRecordRepo.GetAllAsync(ct)) ?? new List<PatientRecord>();
+                var pr = allPRs.FirstOrDefault(r => r.Id == record.PatientRecordId);
+                var isOwnPR = pr != null && pr.PatientId.HasValue && (pr.PatientId.Value == patient.Id || pr.PatientId.Value == patient.UserId);
+
+                var allAppts = _apptRepo != null ? ((await _apptRepo.GetAllAsync(ct)) ?? new List<Appointment>()) : new List<Appointment>();
+                var appt = record.AppointmentId.HasValue ? allAppts.FirstOrDefault(a => a.Id == record.AppointmentId.Value) : null;
+                var isOwnAppt = appt != null && appt.PatientId.HasValue && (appt.PatientId.Value == patient.Id || appt.PatientId.Value == patient.UserId);
+
+                if ((!isOwnPR && !isOwnAppt) || record.Visibility == NoteVisibility.DoctorOnly)
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+            else
+            {
+                var allUsers = (await _userRepo.GetAllAsync(ct)) ?? new List<User>();
+                var user = allUsers.FirstOrDefault(u => u.Id == userId);
+                if (user == null || (user.Role?.Name != "Admin" && user.Role?.Name != "Staff" && user.Role?.Name != "Manager"))
+                {
+                    return ApiResponse<ConsultationNoteDto>.ErrorResponse("Access denied. You are not authorized to view this consultation note.");
+                }
+            }
+        }
+
         var dto = _mapper.Map<ConsultationNoteDto>(record);
         await EnrichRecordsAsync(new List<ConsultationNoteDto> { dto }, ct);
         return ApiResponse<ConsultationNoteDto>.SuccessResponse(dto);
@@ -1353,14 +1596,27 @@ public class ServicePackageService : IServicePackageService
         return ApiResponse<ServicePackageDto>.SuccessResponse(_mapper.Map<ServicePackageDto>(pkg), "Package updated");
     }
 
-    public async Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct)
+    public async Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct = default)
     {
         var pkg = await _pkgRepo.GetByIdAsync(packageId, ct);
         if (pkg == null) return ApiResponse.ErrorResponse("Package not found");
         pkg.IsActive = !pkg.IsActive;
+        pkg.UpdatedAt = DateTime.UtcNow;
         _pkgRepo.Update(pkg);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse(pkg.IsActive ? "Package activated" : "Package deactivated");
+    }
+
+    public async Task<ApiResponse> DeleteAsync(Guid packageId, CancellationToken ct = default)
+    {
+        var pkg = await _pkgRepo.GetByIdAsync(packageId, ct);
+        if (pkg == null) return ApiResponse.ErrorResponse("Package not found");
+        pkg.IsDeleted = true;
+        pkg.IsActive = false;
+        pkg.UpdatedAt = DateTime.UtcNow;
+        _pkgRepo.Update(pkg);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse.SuccessResponse("Package deleted successfully");
     }
 }
 
@@ -1373,14 +1629,15 @@ public class AdminService : IAdminService
     private readonly IRepository<Appointment> _apptRepo;
     private readonly IRepository<AuditLog> _auditRepo;
     private readonly IRepository<Specialization> _specRepo;
+    private readonly IRepository<DoctorSpecialization>? _docSpecRepo;
     private readonly IRepository<VerificationRequest> _verRepo;
     private readonly IRepository<BlogPost> _blogRepo;
     private readonly IRepository<SystemConfig> _configRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
 
-    public AdminService(IRepository<User> userRepo, IRepository<Role> roleRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper)
-    { _userRepo = userRepo; _roleRepo = roleRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; }
+    public AdminService(IRepository<User> userRepo, IRepository<Role> roleRepo, IRepository<DoctorProfile> doctorRepo, IRepository<PatientProfile> patientRepo, IRepository<Appointment> apptRepo, IRepository<AuditLog> auditRepo, IRepository<Specialization> specRepo, IRepository<VerificationRequest> verRepo, IRepository<BlogPost> blogRepo, IRepository<SystemConfig> configRepo, IUnitOfWork uow, IMapper mapper, IRepository<DoctorSpecialization>? docSpecRepo = null)
+    { _userRepo = userRepo; _roleRepo = roleRepo; _doctorRepo = doctorRepo; _patientRepo = patientRepo; _apptRepo = apptRepo; _auditRepo = auditRepo; _specRepo = specRepo; _verRepo = verRepo; _blogRepo = blogRepo; _configRepo = configRepo; _uow = uow; _mapper = mapper; _docSpecRepo = docSpecRepo; }
 
     public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync(CancellationToken ct)
     {
@@ -1465,6 +1722,15 @@ public class AdminService : IAdminService
 
         user.Status = UserStatus.Locked;
         _userRepo.Update(user);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "User",
+            EntityId = user.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Locked user account '{user.Email}'",
+            NewValue = "Locked"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("User account locked successfully");
     }
@@ -1475,6 +1741,15 @@ public class AdminService : IAdminService
         if (user == null || user.IsDeleted) return ApiResponse.ErrorResponse("User not found");
         user.Status = UserStatus.Active;
         _userRepo.Update(user);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "User",
+            EntityId = user.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Unlocked user account '{user.Email}'",
+            NewValue = "Active"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("User account unlocked successfully");
     }
@@ -1503,19 +1778,77 @@ public class AdminService : IAdminService
             logs = logs.Where(l => l.EntityName.Contains(entityName, StringComparison.OrdinalIgnoreCase)).ToList();
         var total = logs.Count;
         var items = logs.OrderByDescending(l => l.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ApiResponse<List<AuditLogDto>>.SuccessResponse(_mapper.Map<List<AuditLogDto>>(items), pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
+
+        var users = (await _userRepo.GetAllAsync(ct)).ToDictionary(u => u.Id, u => u);
+        var dtos = items.Select(l =>
+        {
+            var dto = _mapper.Map<AuditLogDto>(l);
+            if (l.UserId.HasValue && users.TryGetValue(l.UserId.Value, out var u))
+            {
+                dto.UserEmail = u.Email;
+            }
+            return dto;
+        }).ToList();
+
+        return ApiResponse<List<AuditLogDto>>.SuccessResponse(dtos, pagination: new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = total });
     }
 
     public async Task<ApiResponse<List<SpecializationDto>>> GetSpecializationsAsync(CancellationToken ct = default)
     {
         var all = await _specRepo.GetAllAsync(ct);
-        return ApiResponse<List<SpecializationDto>>.SuccessResponse(_mapper.Map<List<SpecializationDto>>(all.Where(s => !s.IsDeleted).ToList()));
+        var activeSpecs = all.Where(s => !s.IsDeleted).OrderBy(s => s.Name).ToList();
+
+        var allDocSpecs = _docSpecRepo != null ? (await _docSpecRepo.GetAllAsync(ct)).Where(ds => !ds.IsDeleted).ToList() : new List<DoctorSpecialization>();
+
+        var allDoctorProfiles = (await _doctorRepo.GetAllAsync(ct)).Where(d => !d.IsDeleted).ToDictionary(d => d.Id, d => d);
+        var allUsers = (await _userRepo.GetAllAsync(ct)).ToDictionary(u => u.Id, u => u);
+
+        var dtos = new List<SpecializationDto>();
+        foreach (var spec in activeSpecs)
+        {
+            var doctorNames = new List<string>();
+            var specDocEntries = allDocSpecs.Where(ds => ds.SpecializationId == spec.Id).ToList();
+
+            foreach (var ds in specDocEntries)
+            {
+                if (allDoctorProfiles.TryGetValue(ds.DoctorProfileId, out var dp))
+                {
+                    if (allUsers.TryGetValue(dp.UserId, out var user) && !string.IsNullOrEmpty(user.FullName))
+                    {
+                        if (!doctorNames.Contains(user.FullName))
+                        {
+                            doctorNames.Add(user.FullName);
+                        }
+                    }
+                }
+            }
+
+            dtos.Add(new SpecializationDto
+            {
+                Id = spec.Id,
+                Name = spec.Name,
+                Description = spec.Description,
+                IconUrl = spec.IconUrl,
+                DoctorCount = doctorNames.Count,
+                Doctors = doctorNames
+            });
+        }
+
+        return ApiResponse<List<SpecializationDto>>.SuccessResponse(dtos);
     }
 
     public async Task<ApiResponse<SpecializationDto>> CreateSpecializationAsync(string name, string? description, Guid? requestingAdminId = null, CancellationToken ct = default)
     {
         var spec = new Specialization { Name = name, Description = description };
         await _specRepo.AddAsync(spec, ct);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Create,
+            ActionDescription = $"Created clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization created");
     }
@@ -1528,6 +1861,14 @@ public class AdminService : IAdminService
         spec.Description = description;
         spec.UpdatedAt = DateTime.UtcNow;
         _specRepo.Update(spec);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Update,
+            ActionDescription = $"Updated clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<SpecializationDto>.SuccessResponse(_mapper.Map<SpecializationDto>(spec), "Specialization updated");
     }
@@ -1538,6 +1879,14 @@ public class AdminService : IAdminService
         if (spec == null) return ApiResponse.ErrorResponse("Specialization not found");
         spec.IsDeleted = true;
         _specRepo.Update(spec);
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "Specialization",
+            EntityId = spec.Id,
+            Action = AuditAction.Delete,
+            ActionDescription = $"Deleted clinical specialization '{spec.Name}'"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Specialization deleted successfully");
     }
@@ -1566,6 +1915,14 @@ public class AdminService : IAdminService
                 await _configRepo.AddAsync(new SystemConfig { Key = key, Value = value ?? string.Empty }, ct);
             }
         }
+        await _auditRepo.AddAsync(new AuditLog
+        {
+            UserId = requestingAdminId,
+            EntityName = "SystemConfig",
+            EntityId = Guid.NewGuid(),
+            Action = AuditAction.Update,
+            ActionDescription = "Updated application-wide system configurations"
+        }, ct);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.SuccessResponse("Settings updated successfully");
     }
@@ -1583,6 +1940,7 @@ public class TreatmentPackageService : ITreatmentPackageService
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IFavoriteDoctorNotificationService? _favoriteNotificationService;
+    private readonly ITreatmentLifecycleCoordinator? _lifecycleCoordinator;
 
     public TreatmentPackageService(
         IRepository<TreatmentPackage> packageRepo,
@@ -1594,7 +1952,8 @@ public class TreatmentPackageService : ITreatmentPackageService
         IUnitOfWork uow,
         IMapper mapper,
         IFavoriteDoctorNotificationService? favoriteNotificationService = null,
-        IRepository<CustomClinicalField>? customFieldRepo = null)
+        IRepository<CustomClinicalField>? customFieldRepo = null,
+        ITreatmentLifecycleCoordinator? lifecycleCoordinator = null)
     {
         _packageRepo = packageRepo;
         _doctorRepo = doctorRepo;
@@ -1606,6 +1965,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         _mapper = mapper;
         _favoriteNotificationService = favoriteNotificationService;
         _customFieldRepo = customFieldRepo;
+        _lifecycleCoordinator = lifecycleCoordinator;
     }
 
     public async Task<ApiResponse<TreatmentPackageDto>> CreateAsync(Guid doctorUserId, CreateTreatmentPackageDto dto, CancellationToken ct)
@@ -1633,8 +1993,11 @@ public class TreatmentPackageService : ITreatmentPackageService
                     or TreatmentPackageStatus.Active
                     or TreatmentPackageStatus.CancellationPending);
             if (existingActive != null)
-                return ApiResponse<TreatmentPackageDto>.ErrorResponse("Bệnh nhân này đã có gói điều trị đang hoạt động. Vui lòng hủy gói cũ trước khi tạo gói mới.");
+                return ApiResponse<TreatmentPackageDto>.ErrorResponse("This patient already has an active treatment package. Please cancel or complete the existing package before creating a new one.");
         }
+
+        if (dto.Price <= 0)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Package fee is required and must be greater than 0 VND.");
 
         var validityDays = dto.ValidityDays > 0 ? dto.ValidityDays : 90;
         var package = new TreatmentPackage
@@ -1743,6 +2106,9 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         if (package.DoctorId != doctor.Id)
             return ApiResponse<TreatmentPackageDto>.ErrorResponse("You are not authorized to edit this treatment package");
+
+        if (dto.Price <= 0)
+            return ApiResponse<TreatmentPackageDto>.ErrorResponse("Package fee is required and must be greater than 0 VND.");
 
         package.Name = dto.Name;
         package.Description = dto.Description;
@@ -1944,26 +2310,35 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
         if (patient == null)
             return ApiResponse.ErrorResponse("Patient profile not found");
 
-        if (package.PatientId != patient.Id)
+        if (package.PatientId.HasValue &&
+            package.PatientId != patient.Id &&
+            package.PatientId != patient.UserId &&
+            package.PatientId != patientUserId)
+        {
             return ApiResponse.ErrorResponse("Not authorized to accept this package");
+        }
 
-        if (package.Status != TreatmentPackageStatus.Assigned && package.Status != TreatmentPackageStatus.Active)
+        if (package.Status != TreatmentPackageStatus.Assigned && package.Status != TreatmentPackageStatus.Active && package.Status != TreatmentPackageStatus.Created)
             return ApiResponse.ErrorResponse("Only assigned packages can be accepted");
 
         var allDoctors = await _doctorRepo.GetAllAsync(ct);
-        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId);
-        if (doctor == null)
-            return ApiResponse.ErrorResponse("Doctor profile not found");
+        var doctor = allDoctors.FirstOrDefault(d => d.Id == package.DoctorId || d.UserId == package.DoctorId);
+        var doctorIdToUse = doctor?.Id ?? package.DoctorId;
+        var patientIdToUse = patient.Id;
+
+        // Auto assign patient id if not set yet
+        if (!package.PatientId.HasValue)
+        {
+            package.PatientId = patientIdToUse;
+        }
 
         var allCases = await _caseRepo.GetAllAsync(ct);
         var existingCase = allCases.FirstOrDefault(c =>
             c.TreatmentPackageId == package.Id &&
-            c.DoctorId == doctor.Id &&
-            c.PatientId == patient.Id &&
             !c.IsDeleted);
 
         if (package.Status == TreatmentPackageStatus.Active && existingCase != null)
@@ -1984,8 +2359,8 @@ public class TreatmentPackageService : ITreatmentPackageService
                 var treatmentCase = new TreatmentCase
                 {
                     TreatmentPackageId = package.Id,
-                    DoctorId = doctor.Id,
-                    PatientId = patient.Id,
+                    DoctorId = doctorIdToUse,
+                    PatientId = patientIdToUse,
                     CaseName = package.Name,
                     CaseDescription = package.Description,
                     PrimaryConcern = !string.IsNullOrWhiteSpace(package.TargetOutcome) ? package.TargetOutcome : package.Name,
@@ -2036,18 +2411,20 @@ public class TreatmentPackageService : ITreatmentPackageService
             return ApiResponse.ErrorResponse("Treatment package not found");
 
         var allPatients = await _patientRepo.GetAllAsync(ct);
-        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId);
+        var patient = allPatients.FirstOrDefault(p => p.UserId == patientUserId || p.Id == patientUserId);
         if (patient == null)
             return ApiResponse.ErrorResponse("Patient profile not found");
 
-        if (package.PatientId != patient.Id)
+        if (package.PatientId.HasValue &&
+            package.PatientId != patient.Id &&
+            package.PatientId != patient.UserId &&
+            package.PatientId != patientUserId)
+        {
             return ApiResponse.ErrorResponse("Not authorized to reject this package");
+        }
 
         if (package.Status == TreatmentPackageStatus.Rejected)
             return ApiResponse.SuccessResponse("Treatment package was already rejected.");
-
-        if (package.Status != TreatmentPackageStatus.Assigned)
-            return ApiResponse.ErrorResponse("Only assigned packages can be rejected");
 
         package.Status = TreatmentPackageStatus.Rejected;
         package.RejectionReason = reason;
@@ -2114,7 +2491,7 @@ public class TreatmentPackageService : ITreatmentPackageService
 
         package.Status = TreatmentPackageStatus.Cancelled;
         package.CancellationReason ??= "Cancelled after confirmation by both parties.";
-        package.RejectionReason = reason ?? "Đã hủy bởi " + (isDoctor ? "bác sĩ" : "bệnh nhân");
+        package.RejectionReason = reason ?? "Cancelled by " + (isDoctor ? "doctor" : "patient");
         package.UpdatedAt = DateTime.UtcNow;
         _packageRepo.Update(package);
 
@@ -2131,7 +2508,7 @@ public class TreatmentPackageService : ITreatmentPackageService
         foreach (var linkedCase in linkedActiveCases)
         {
             linkedCase.Status = TreatmentCaseStatus.Cancelled;
-            linkedCase.ClosureNote = $"Tự động hủy do gói điều trị bị hủy. Lý do: {package.RejectionReason}";
+            linkedCase.ClosureNote = $"Automatically cancelled due to treatment package cancellation. Reason: {package.RejectionReason}";
             linkedCase.ActualEndDate = DateTime.UtcNow;
             linkedCase.UpdatedAt = DateTime.UtcNow;
             _caseRepo.Update(linkedCase);

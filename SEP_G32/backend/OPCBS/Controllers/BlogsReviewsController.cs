@@ -272,8 +272,10 @@ public class ConsultationNotesController : ControllerBase
     [HttpGet("patient/{patientId}")]
     public async Task<IActionResult> GetByPatient(Guid patientId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _service.GetByPatientAsync(patientId, page, pageSize);
-        return Ok(result);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.GetByPatientForDoctorAsync(patientId, userId.Value, page, pageSize);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     /// <summary>GET /api/v1/consultation-notes/patient-record/{patientRecordId} — Get records for a specific patient record</summary>
@@ -281,8 +283,10 @@ public class ConsultationNotesController : ControllerBase
     [HttpGet("patient-record/{patientRecordId}")]
     public async Task<IActionResult> GetByPatientRecord(Guid patientRecordId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _service.GetByPatientRecordAsync(patientRecordId, page, pageSize);
-        return Ok(result);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _service.GetByPatientRecordAsync(patientRecordId, userId.Value, page, pageSize);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     /// <summary>GET /api/v1/consultation-notes/appointment/{appointmentId} — Get record by appointment (Doctor)</summary>

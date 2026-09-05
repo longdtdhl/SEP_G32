@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using OPCBS.Domain.Common;
 using OPCBS.Domain.Enums;
 
@@ -23,6 +24,18 @@ public class PatientRecord : BaseEntity
 
     /// <summary>Guest patient email</summary>
     public string? GuestEmail { get; set; }
+
+    /// <summary>Guest patient date of birth (stored in GeneralNotes)</summary>
+    [NotMapped]
+    public DateTime? GuestDateOfBirth { get; set; }
+
+    /// <summary>Guest patient gender (stored in GeneralNotes)</summary>
+    [NotMapped]
+    public string? GuestGender { get; set; }
+
+    /// <summary>Guest patient address (stored in GeneralNotes)</summary>
+    [NotMapped]
+    public string? GuestAddress { get; set; }
 
     // --- Psychological Health Info ---
     /// <summary>Patient psychological history</summary>
@@ -121,6 +134,7 @@ public class ConsultationNote : BaseEntity
     /// <summary>Navigation property to PatientRecord</summary>
     public virtual required PatientRecord PatientRecord { get; set; }
 }
+
 /// <summary>
 /// Treatment package entity - custom package created by doctor for specific patient
 /// NOT paid through VNPay, only Service Packages are paid
@@ -174,6 +188,12 @@ public class TreatmentPackage : BaseEntity
 
     /// <summary>Date package was accepted by patient</summary>
     public DateTime? AcceptedDate { get; set; }
+
+    /// <summary>Deadline for patient to accept the proposed package (default 7 days after assignment)</summary>
+    public DateTime? AcceptanceExpiresAt { get; set; }
+
+    /// <summary>Timestamp when package reached Expired status</summary>
+    public DateTime? ExpiredAt { get; set; }
 
     /// <summary>Date package became active</summary>
     public DateTime? ActiveDate { get; set; }

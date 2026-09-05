@@ -266,6 +266,9 @@ public class DoctorProfile : BaseEntity
     /// <summary>Consultation Fee</summary>
     public decimal ConsultationFee { get; set; } = 0;
 
+    /// <summary>Whether the consultation fee is shown on public doctor discovery/profile pages</summary>
+    public bool IsConsultationFeePublic { get; set; } = true;
+
     /// <summary>Care Approach / Strengths</summary>
     public string? CareApproach { get; set; }
 

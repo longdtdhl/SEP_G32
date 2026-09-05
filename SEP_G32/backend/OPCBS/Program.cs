@@ -11,6 +11,11 @@ using OPCBS.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Console applications should not require permission to write to Windows Event Log.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -126,6 +131,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Background Services
 builder.Services.AddHostedService<OPCBS.Services.AppointmentReminderService>();
+builder.Services.AddHostedService<OPCBS.Services.TreatmentLifecycleBackgroundService>();
 
 var app = builder.Build();
 
@@ -149,21 +155,50 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<OpcbsDbContext>();
     try
     {
-        Console.WriteLine("Applying Database Migrations...");
-        await context.Database.MigrateAsync();
         Console.WriteLine("Applying Schema Upgrades...");
         await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CRITICAL ERROR] Schema upgrades failed: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+    }
+
+    try
+    {
+        Console.WriteLine("Applying Database Migrations...");
+        await context.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[WARN] Database migrations step encountered: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+    }
+
+    // A clean database is created by migrations after the first legacy-upgrade pass.
+    // Run the additive, idempotent upgrades again so newly introduced columns are
+    // present before seeding or serving requests.
+    try
+    {
+        Console.WriteLine("Verifying Post-Migration Schema Upgrades...");
+        await OpcbsSchemaUpgrade.ApplyAdditiveUpgradesAsync(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[WARN] Post-migration schema upgrades could not be verified: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
+    }
+
+    try
+    {
         Console.WriteLine("Seeding Database...");
         await SeedData.SeedAsync(context);
         Console.WriteLine("Database initialization and seed complete!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[CRITICAL ERROR] Database initialization failed: {ex.Message}");
-        if (ex.InnerException != null)
-        {
-            Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
-        }
+        Console.WriteLine($"[CRITICAL ERROR] Database seeding failed: {ex.Message}");
+        if (ex.InnerException != null) Console.WriteLine($"[INNER EXCEPTION]: {ex.InnerException.Message}");
     }
 }
 

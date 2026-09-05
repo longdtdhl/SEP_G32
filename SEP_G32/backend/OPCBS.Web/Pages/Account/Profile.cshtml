@@ -3,53 +3,218 @@
 @{
     ViewData["Title"] = "My Profile";
     Layout = "_DashboardLayout";
+
+    var displayName = !string.IsNullOrWhiteSpace(Model.Input.FullName) ? Model.Input.FullName : (Model.UserProfile?.FullName ?? "User");
+    var initials = !string.IsNullOrWhiteSpace(displayName)
+        ? string.Join("", displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => s[0])).ToUpper()
+        : "U";
+    var roleName = Model.UserProfile?.Role ?? "Patient";
+    var email = Model.UserProfile?.Email ?? "";
 }
 
-<div style="max-width:640px;margin:0 auto;">
-    <div class="card border-0 shadow-sm" style="border-radius:16px;">
-        <div class="card-body p-4">
-            <h2 class="mb-4" style="font-size:1.4rem; font-weight:700; color:#1e293b;">
-                <i class="bi bi-person-gear me-2" style="color:var(--mb-primary);"></i>My Profile
-            </h2>
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
-            <form method="post">
-                <div class="text-center mb-4">
-                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:96px;height:96px;background-color:var(--mb-secondary-light); border:1px solid var(--mb-secondary);">
-                        <i class="bi bi-person-fill" style="font-size:2.5rem;color:var(--mb-primary);"></i>
-                    </div>
-                    <p class="text-muted mb-0 fw-semibold" style="font-size:0.875rem;">@Model.Email</p>
+<style>
+    .prof-header-card {
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        border-radius: 16px;
+        color: #ffffff;
+        padding: 1.5rem 1.75rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(13, 148, 136, 0.2);
+    }
+    .prof-header-card::after {
+        content: '';
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        width: 130px;
+        height: 130px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .prof-avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #0d9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        flex-shrink: 0;
+    }
+    .prof-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .prof-card-head {
+        padding: 0.9rem 1.25rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .prof-card-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .prof-card-body {
+        padding: 1.25rem 1.5rem;
+    }
+    .prof-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.35rem;
+    }
+    .prof-input {
+        border-radius: 10px;
+        border: 1.5px solid #cbd5e1;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+    }
+    .prof-input:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+    .prof-btn-save {
+        background: #0d9488;
+        border: 1px solid #0d9488;
+        color: #ffffff;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.65rem 1.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .prof-btn-save:hover {
+        background: #0f766e;
+        border-color: #0f766e;
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+</style>
+
+<div style="max-width:780px; margin:0 auto;">
+    <!-- ══ Header Banner ══ -->
+    <div class="prof-header-card d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="prof-avatar">@initials</div>
+            <div>
+                <h1 style="font-size:1.3rem; font-weight:800; margin:0; line-height:1.2;">@displayName</h1>
+                <div class="d-flex align-items-center gap-2 mt-1" style="font-size:0.82rem; opacity:0.9;">
+                    <span><i class="bi bi-envelope me-1"></i>@email</span>
+                    <span>&middot;</span>
+                    <span class="badge bg-white text-teal fw-bold" style="color:#0d9488; font-size:0.72rem; padding:3px 8px; border-radius:6px;">
+                        @roleName
+                    </span>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Full Name</label>
-                    <input asp-for="Input.FullName" class="form-control" style="border-radius:10px;" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Phone Number</label>
-                    <input asp-for="Input.PhoneNumber" class="form-control" style="border-radius:10px;" />
-                </div>
-                <div class="row g-3 mb-3">
+            </div>
+        </div>
+        <div>
+            <a asp-page="./ChangePassword" class="btn btn-sm btn-light fw-semibold text-dark px-3 py-2" style="border-radius:10px; font-size:0.82rem;">
+                <i class="bi bi-key-fill me-1 text-teal" style="color:#0d9488;"></i>Change Password
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" style="border-radius:12px; border:none; font-size:0.88rem;">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="border-radius:12px; font-size:0.88rem; display:@(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+    <form method="post">
+        <!-- ══ Personal Demographics Card ══ -->
+        <div class="prof-card">
+            <div class="prof-card-head">
+                <h6 class="prof-card-title"><i class="bi bi-person-lines-fill" style="color:#0d9488;"></i>Personal Information</h6>
+                <span class="text-muted small" style="font-size:0.75rem;"><i class="bi bi-pencil me-1"></i>Editable</span>
+            </div>
+            <div class="prof-card-body">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Gender</label>
-                        <select asp-for="Input.Gender" class="form-select" style="border-radius:10px;">
-                            <option value="">Select</option>
+                        <label class="prof-label">Full Name <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FullName" class="form-control prof-input" placeholder="Your full name" required />
+                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="prof-label">Phone Number</label>
+                        <input asp-for="Input.PhoneNumber" class="form-control prof-input" placeholder="e.g. 0901234567" />
+                        <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="prof-label">Gender</label>
+                        <select asp-for="Input.Gender" class="form-select prof-input">
+                            <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Date of Birth</label>
-                        <input asp-for="Input.DateOfBirth" type="date" class="form-control" style="border-radius:10px;" />
+                        <label class="prof-label">Date of Birth</label>
+                        <input asp-for="Input.DateOfBirth" type="date" class="form-control prof-input" />
+                    </div>
+                    <div class="col-12">
+                        <label class="prof-label">Residential Address</label>
+                        <input asp-for="Input.Address" class="form-control prof-input" placeholder="Street, Ward, District, City" />
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Address</label>
-                    <input asp-for="Input.Address" class="form-control" style="border-radius:10px;" />
-                </div>
-                <button type="submit" class="btn btn-primary w-100 btn-lg mt-3" style="border-radius:10px; background:var(--mb-primary); border-color:var(--mb-primary); font-weight:600;">
-                    Save Changes
-                </button>
-            </form>
+            </div>
         </div>
-    </div>
+
+        <!-- ══ Emergency Contact Card ══ -->
+        <div class="prof-card">
+            <div class="prof-card-head">
+                <h6 class="prof-card-title"><i class="bi bi-shield-heart-fill" style="color:#dc2626;"></i>Emergency Contact Information</h6>
+                <span class="text-muted small" style="font-size:0.75rem;">Used for urgent clinical assistance</span>
+            </div>
+            <div class="prof-card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="prof-label">Contact Person Name</label>
+                        <input asp-for="Input.EmergencyContactName" class="form-control prof-input" placeholder="e.g. Parent, Guardian or Spouse" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="prof-label">Emergency Phone Number</label>
+                        <input asp-for="Input.EmergencyContactPhone" class="form-control prof-input" placeholder="e.g. 0912345678" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Actions Bar ══ -->
+        <div class="d-flex justify-content-end align-items-center gap-2 mb-4">
+            <button type="submit" class="prof-btn-save">
+                <i class="bi bi-check2-circle"></i>
+                <span>Save Changes</span>
+            </button>
+        </div>
+    </form>
 </div>

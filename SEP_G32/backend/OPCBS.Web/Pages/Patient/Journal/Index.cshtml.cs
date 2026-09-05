@@ -19,6 +19,7 @@ public class IndexModel : PageModel
     public List<EmotionJournalDto> Journals { get; set; } = new();
     public List<PsychometricSubmissionDto> PsychSubmissions { get; set; } = new();
     public string? Error { get; set; }
+    public bool HasTodayEntry { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public Guid? CaseId { get; set; }
@@ -27,6 +28,8 @@ public class IndexModel : PageModel
     [BindProperty] public new string? Content { get; set; }
     [BindProperty] public int MoodScale { get; set; }
     [BindProperty] public int StressScale { get; set; }
+    [BindProperty] public decimal? SleepHours { get; set; } = 7.5m;
+    [BindProperty] public int? DepressionScale { get; set; } = 1;
     [BindProperty] public bool IsShared { get; set; }
 
     public async Task OnGetAsync()
@@ -34,6 +37,20 @@ public class IndexModel : PageModel
         var (data, error) = await _service.GetMyJournalsAsync();
         Journals = data;
         Error = error;
+
+        var today = DateTime.UtcNow.AddHours(7).Date;
+        var todayEntry = Journals.FirstOrDefault(j => j.CreatedAt.AddHours(7).Date == today);
+        HasTodayEntry = todayEntry != null;
+        if (todayEntry != null && string.IsNullOrWhiteSpace(Title) && MoodScale == 0 && StressScale == 0)
+        {
+            Title = todayEntry.Title;
+            Content = todayEntry.Content;
+            MoodScale = todayEntry.MoodScale;
+            StressScale = todayEntry.StressScale;
+            SleepHours = todayEntry.SleepHours;
+            DepressionScale = todayEntry.DepressionScale;
+            IsShared = todayEntry.IsShared;
+        }
 
         // Load psychometric submissions for chart
         try
@@ -48,13 +65,13 @@ public class IndexModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(Title))
         {
-            Error = "Please nhập tiêu đề nhật ký.";
+            Error = "Please enter a journal title.";
             await OnGetAsync();
             return Page();
         }
         if (MoodScale < 1 || MoodScale > 5 || StressScale < 1 || StressScale > 5)
         {
-            Error = "Please chọn thang điểm từ 1 đến 5.";
+            Error = "Please select your mood and stress levels (1 to 5).";
             await OnGetAsync();
             return Page();
         }
@@ -65,12 +82,14 @@ public class IndexModel : PageModel
             Content = Content,
             MoodScale = MoodScale,
             StressScale = StressScale,
+            SleepHours = SleepHours,
+            DepressionScale = DepressionScale,
             IsShared = IsShared
         };
 
         var (result, error) = await _service.CreateJournalAsync(dto);
         if (result == null) { Error = error; await OnGetAsync(); return Page(); }
-        TempData["SuccessMessage"] = "Đã lưu nhật ký cảm xúc!";
+        TempData["SuccessMessage"] = "You have updated today's mood.";
         return RedirectToPage();
     }
 
@@ -78,7 +97,7 @@ public class IndexModel : PageModel
     {
         var (success, error) = await _service.DeleteJournalAsync(journalId);
         if (!success) { Error = error; }
-        else TempData["SuccessMessage"] = "Deleted nhật ký.";
+        else TempData["SuccessMessage"] = "Journal entry deleted successfully.";
         return RedirectToPage();
     }
 }

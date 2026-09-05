@@ -8,6 +8,7 @@
     var prevWeek = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd");
     var nextWeek = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd");
     var weekNumber = System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(Model.WeekStart, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+    const double calendarHourHeight = 64d;
 
     // Month calendar data
     var calMonth = Model.WeekStart;
@@ -15,6 +16,79 @@
     var daysInMonth = DateTime.DaysInMonth(calMonth.Year, calMonth.Month);
     var startDay = (int)firstOfMonth.DayOfWeek; // 0=Sun
 }
+
+<style>
+    .mini-calendar {
+        border-radius: 14px;
+        padding: 1.15rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    }
+    .booking-doctor-card {
+        border-radius: 14px;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+        border: 1px solid #ccfbf1;
+        box-shadow: 0 4px 16px rgba(15, 118, 110, 0.04);
+        position: relative;
+    }
+    .booking-doctor-card .doctor-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 2px solid #99f6e4;
+        box-shadow: 0 2px 6px rgba(15, 118, 110, 0.1);
+    }
+    .booking-doctor-card .online-dot {
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    }
+    .week-calendar {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 2px 12px rgba(15, 23, 42, 0.03);
+    }
+    .wc-nav {
+        background: #fafbfc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.85rem 1.25rem;
+    }
+    .wc-slot.available {
+        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%);
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06);
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wc-slot.available:hover {
+        background: #d1fae5;
+        border-color: #34d399;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    .wc-slot.selected {
+        background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+        color: #ffffff !important;
+        border-color: #0f766e !important;
+        box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35) !important;
+    }
+    .wc-slot.selected .slot-label,
+    .wc-slot.selected .slot-time,
+    .wc-slot.selected .slot-mode-text {
+        color: #ffffff !important;
+    }
+</style>
 
 <div style="max-width:1200px;margin:0 auto;" class="py-3">
     @if (Model.Error != null)
@@ -153,24 +227,81 @@
                                 }
                                 else
                                 {
+                                    var initial = !string.IsNullOrEmpty(Model.Doctor.FullName) ? Model.Doctor.FullName.Substring(0, 1).ToUpper() : "D";
                                     <div class="doctor-avatar d-flex align-items-center justify-content-center" style="background:var(--mb-primary-light);color:var(--mb-primary);font-weight:700;font-size:1.2rem;">
-                                        @Model.Doctor.FullName?.Substring(0, 1)
+                                        @initial
                                     </div>
                                 }
-                                <div class="online-dot"></div>
+                                <div class="online-dot" title="Active Specialist"></div>
                             </div>
-                            <div>
-                                <h6 class="mb-0">@Model.Doctor.FullName</h6>
-                                <small class="text-muted">@(Model.Doctor.Specialization ?? "Therapist")</small>
-                                @if (Model.Doctor.Specializations?.Any() == true)
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center gap-1">
+                                    <h6 class="mb-0 text-truncate" style="font-weight:750; color:#0f172a;">@Model.Doctor.FullName</h6>
+                                    <i class="bi bi-patch-check-fill text-primary" style="font-size:0.9rem;" title="Verified Specialist"></i>
+                                </div>
+                                <small class="text-muted d-block text-truncate">@(Model.Doctor.Specialization ?? "Clinical Specialist")</small>
+                                @if (Model.Doctor.Rating > 0)
                                 {
-                                    <div class="mt-1"><small style="color:var(--mb-primary);">Specialization: @string.Join(", ", Model.Doctor.Specializations)</small></div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <i class="bi bi-star-fill text-warning" style="font-size:0.75rem;"></i>
+                                        <span class="small fw-bold text-dark" style="font-size:0.8rem;">@Model.Doctor.Rating.ToString("F1")</span>
+                                        <span class="text-muted" style="font-size:0.75rem;">(@Model.Doctor.ReviewCount reviews)</span>
+                                    </div>
                                 }
                             </div>
                         </div>
 
+                        <!-- Doctor Contact Information -->
+                        <div class="border-top pt-2.5 mt-2" style="border-color: rgba(226, 232, 240, 0.8) !important;">
+                            <div class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.68rem; letter-spacing:0.05em;">Contact Information</div>
+                            
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.PhoneNumber))
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-telephone-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <a href="tel:@Model.Doctor.PhoneNumber" class="text-decoration-none fw-medium text-dark text-truncate" title="Call Specialist">
+                                        @Model.Doctor.PhoneNumber
+                                    </a>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.Email))
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-envelope-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <a href="mailto:@Model.Doctor.Email" class="text-decoration-none fw-medium text-dark text-truncate" title="Email Specialist">
+                                        @Model.Doctor.Email
+                                    </a>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Doctor.Address))
+                            {
+                                <div class="d-flex align-items-start gap-2 mb-1.5" style="font-size:0.825rem;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width:24px; height:24px; background:rgba(13, 148, 136, 0.1); color:#0d9488;">
+                                        <i class="bi bi-geo-alt-fill" style="font-size:0.75rem;"></i>
+                                    </div>
+                                    <span class="text-muted" style="line-height:1.35;" title="Clinic Address">
+                                        @Model.Doctor.Address
+                                    </span>
+                                </div>
+                            }
+
+                            @if (Model.Doctor.IsConsultationFeePublic && Model.Doctor.ConsultationFee > 0)
+                            {
+                                <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top" style="border-color: rgba(226, 232, 240, 0.6) !important; font-size:0.825rem;">
+                                    <span class="text-muted">Consultation Fee</span>
+                                    <span class="fw-bold" style="color:#0d9488;">@Model.Doctor.ConsultationFee.ToString("N0") VND</span>
+                                </div>
+                            }
+                        </div>
+
                         <!-- Selected slot info (updated by JS) -->
-                        <div id="selectedSlotInfo" class="border-top pt-3 mt-2" style="display:none;">
+                        <div id="selectedSlotInfo" class="border-top pt-3 mt-2" style="display:none; border-color: rgba(226, 232, 240, 0.8) !important;">
                             <div class="d-flex align-items-center gap-2 mb-2 text-muted">
                                 <i class="bi bi-calendar-event" style="color:var(--mb-primary);"></i>
                                 <span id="selectedDate" class="small fw-medium">—</span>
@@ -179,7 +310,13 @@
                                 <i class="bi bi-clock" style="color:var(--mb-primary);"></i>
                                 <span id="selectedTime" class="small fw-medium">—</span>
                             </div>
-                            <span class="badge bg-success">Slot Selected</span>
+                            <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Slot Selected</span>
+                        </div>
+
+                        <div class="mt-3 pt-2 text-center border-top" style="border-color: rgba(226, 232, 240, 0.6) !important;">
+                            <a asp-page="/Doctors/Details" asp-route-id="@Model.Doctor.Id" target="_blank" class="small text-decoration-none fw-semibold" style="color:#0d9488; font-size:0.8rem;">
+                                View Full Profile <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.75rem;"></i>
+                            </a>
                         </div>
                     </div>
                 }
@@ -247,8 +384,20 @@
                                                 var isBooked = slot.Status == 1;    // 1 = Booked
                                                 var cssClass = isAvailable ? "available" : "full";
                                                 var dateDisplay = day.ToString("MM/dd/yyyy");
+                                                var slotTopPx = 2;
+                                                var slotHeightPx = 56;
+                                                if (TimeOnly.TryParse(slot.StartTime, out var slotStart) &&
+                                                    TimeOnly.TryParse(slot.EndTime, out var slotEnd))
+                                                {
+                                                    var duration = slotEnd.ToTimeSpan() - slotStart.ToTimeSpan();
+                                                    if (duration > TimeSpan.Zero)
+                                                    {
+                                                        slotTopPx = 2 + (int)Math.Round(slotStart.Minute / 60d * calendarHourHeight);
+                                                        slotHeightPx = Math.Max(24, (int)Math.Round(duration.TotalMinutes / 60d * calendarHourHeight) - 4);
+                                                    }
+                                                }
                                                 <div class="wc-slot @cssClass"
-                                                     style="top:2px;height:56px;@(isBooked ? "opacity:0.6;cursor:not-allowed;" : "")"
+                                                     style="top:@(slotTopPx)px;height:@(slotHeightPx)px;@(isBooked ? "opacity:0.6;cursor:not-allowed;" : "")"
                                                      @Html.Raw(isAvailable ? "data-bs-toggle=\"modal\" data-bs-target=\"#bookingModal\"" : "")
                                                      data-slot-id="@slot.Id"
                                                      data-slot-date="@dateDisplay"
@@ -326,6 +475,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="padding:24px 28px;">
+                @if (!string.IsNullOrEmpty(Model.Error))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.Error
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
                 <!-- Appointment Summary -->
                 <div class="p-3 rounded-3 mb-4" style="background:#f0f7f3;border:1px solid #d0e5d8;">
                     <div class="row g-3">
@@ -365,8 +522,8 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER</label>
-                            <input asp-for="Input.GuestPhoneNumber" id="guestPhoneInput" type="tel" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
+                            <label class="form-label small text-uppercase fw-semibold text-muted" style="letter-spacing:0.03em;">PHONE NUMBER <span class="text-danger">*</span></label>
+                            <input asp-for="Input.GuestPhoneNumber" id="guestPhoneInput" type="tel" class="form-control @(Model.IsReturningPatient ? "bg-light" : "")" placeholder="+84 xxx xxx xxx" style="border-radius:12px;padding:10px 14px;" required readonly="@(Model.IsReturningPatient ? "readonly" : null)" />
                             @if (Model.IsReturningPatient)
                             {
                                 <div class="form-text text-muted small mt-1"><i class="bi bi-lock-fill text-secondary me-1"></i>Contact information is locked for follow-up visits with this doctor.</div>
@@ -601,6 +758,17 @@
             }
 
             syncZaloWithPhone();
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <text>
+                const modalEl = document.getElementById('bookingModal');
+                if (modalEl) {
+                    const bsModal = new bootstrap.Modal(modalEl);
+                    bsModal.show();
+                }
+                </text>
+            }
         });
     </script>
 }

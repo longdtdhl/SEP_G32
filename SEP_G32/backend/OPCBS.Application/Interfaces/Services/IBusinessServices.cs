@@ -142,6 +142,8 @@ public class ServicePackageDto
     public int? MaxDailySlotsCapacity { get; set; }
     public bool IsActive { get; set; }
     public bool IsFeatured { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class CreateServicePackageDto
@@ -178,7 +180,26 @@ public class TreatmentPackageDto
     public DateTime CreatedAt { get; set; }
     public DateTime? AssignedDate { get; set; }
     public DateTime? AcceptedDate { get; set; }
+    public DateTime? AcceptanceExpiresAt { get; set; }
+    public DateTime? ExpiredAt { get; set; }
     public DateTime? ActiveDate { get; set; }
+    public bool IsAcceptanceExpired => AcceptanceExpiresAt.HasValue && AcceptanceExpiresAt.Value <= DateTime.UtcNow;
+    public TimeSpan? RemainingAcceptanceTime => (AcceptanceExpiresAt.HasValue && AcceptanceExpiresAt.Value > DateTime.UtcNow) ? (AcceptanceExpiresAt.Value - DateTime.UtcNow) : null;
+    public int? RemainingAcceptanceMinutes => RemainingAcceptanceTime.HasValue ? (int)Math.Ceiling(RemainingAcceptanceTime.Value.TotalMinutes) : null;
+    public bool CanPatientRespond => Status == "Assigned" && !IsAcceptanceExpired;
+    public string LifecycleStatus => Status;
+    public string LifecycleStatusText => Status switch
+    {
+        "Created" or "Draft" => "Draft Template",
+        "Assigned" => IsAcceptanceExpired ? "Proposal Expired" : "Awaiting Patient Response",
+        "Accepted" or "Active" => "Active",
+        "CancellationPending" => "Cancellation Pending",
+        "Completed" => "Completed",
+        "Expired" => "Expired",
+        "Cancelled" => "Cancelled",
+        "Rejected" => "Declined",
+        _ => Status
+    };
     public Guid? CancellationRequestedByUserId { get; set; }
     public string? CancellationRequestedByName { get; set; }
     public DateTime? CancellationRequestedAt { get; set; }
@@ -243,6 +264,8 @@ public class SpecializationDto
     public required string Name { get; set; }
     public string? Description { get; set; }
     public string? IconUrl { get; set; }
+    public int DoctorCount { get; set; }
+    public List<string> Doctors { get; set; } = new();
 }
 
 public class AuditLogDto
@@ -362,6 +385,7 @@ public interface IServicePackageService
     Task<ApiResponse<ServicePackageDto>> CreateAsync(CreateServicePackageDto dto, CancellationToken ct = default);
     Task<ApiResponse<ServicePackageDto>> UpdateAsync(Guid packageId, CreateServicePackageDto dto, CancellationToken ct = default);
     Task<ApiResponse> ToggleActiveAsync(Guid packageId, CancellationToken ct = default);
+    Task<ApiResponse> DeleteAsync(Guid packageId, CancellationToken ct = default);
 }
 
 /// <summary>

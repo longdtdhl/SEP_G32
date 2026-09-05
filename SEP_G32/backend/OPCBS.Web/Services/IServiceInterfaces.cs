@@ -1,4 +1,4 @@
-using OPCBS.Web.DTOs;
+﻿using OPCBS.Web.DTOs;
 
 namespace OPCBS.Web.Services;
 
@@ -39,7 +39,9 @@ public interface IPatientRecordApiService
     Task<(PatientRecordDto? Data, string? Error)> GetByIdAsync(Guid id);
     Task<(PatientRecordDto? Data, string? Error)> GetByUserIdAsync(Guid userId);
     Task<(bool Success, string? Error)> CreateAsync(CreatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> CreateBatchAsync(List<CreatePatientRecordDto> dtos);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto);
+    Task<(bool Success, string? Error)> DeleteAsync(Guid id);
     Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id);
     Task<(bool Success, string? Error)> ResendGuestAccountInvitationAsync(Guid id);
 }
@@ -148,6 +150,12 @@ public interface IPsychometricApiService
     Task<(List<PsychometricTestDto> Data, string? Error)> GetTestsAsync();
     Task<(PsychometricTestDetailDto? Data, string? Error)> GetTestByIdAsync(Guid testId);
     Task<(PsychometricTestDto? Data, string? Error)> CreateTestAsync(CreatePsychometricTestDto dto);
+    Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto);
+    Task<(PsychometricTestDto? Data, string? Error)> CloneCustomTestAsync(Guid sourceTestId, UpdatePsychometricTestDto dto);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> AssignAssessmentAsync(AssignAssessmentDto dto);
+    Task<(PsychometricSubmissionDto? Data, string? Error)> SaveDoctorNoteAsync(Guid submissionId, string? doctorNotes);
+    Task<(List<AssessmentHistoryItemDto> Data, string? Error)> GetAssessmentHistoryAsync(Guid submissionId);
+    Task<(DoctorAssessmentsOverviewDto? Data, string? Error)> GetDoctorOverviewAsync();
     Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto);
     Task<(bool Success, string? Error)> DeleteTestAsync(Guid id);
     Task<(List<PsychometricQuestionDto> Data, string? Error)> GetQuestionsAsync(Guid testId);
@@ -156,6 +164,7 @@ public interface IPsychometricApiService
     Task<(PsychometricSubmissionDto? Data, string? Error)> GetSubmissionByIdAsync(Guid submissionId);
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetMySubmissionsAsync();
     Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId);
+    Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetAllSubmissionsAsync(Guid? testId = null);
 }
 
 public interface INotificationApiService
@@ -208,6 +217,12 @@ public interface ITreatmentCaseApiService
     Task<(bool Success, string? Error)> CreateAsync(object dto);
     Task<(bool Success, string? Error)> UpdateAsync(Guid id, object dto);
     Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto);
+    // Hold (Bao luu)
+    Task<(bool Success, string? Error)> RequestHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> CancelHoldRequestAsync(Guid id);
+    Task<(bool Success, string? Error)> ApproveHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> RejectHoldAsync(Guid id, object dto);
+    Task<(bool Success, string? Error)> ResumeTreatmentAsync(Guid id);
     Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto);
     Task<(List<TreatmentSessionWebDto> Data, string? Error)> GetSessionsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateSessionAsync(object dto);
@@ -218,6 +233,7 @@ public interface ITreatmentCaseApiService
     Task<(List<TreatmentGoalWebDto> Data, string? Error)> GetGoalsAsync(Guid caseId);
     Task<(bool Success, string? Error)> CreateGoalAsync(object dto);
     Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto);
+    Task<(bool Success, string? Error)> DeleteGoalAsync(Guid goalId);
     Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto);
     Task<(List<TreatmentGoalProgressWebDto> Data, string? Error)> GetGoalProgressHistoryAsync(Guid goalId);
     // Goal Details (Milestones)
@@ -244,4 +260,18 @@ public interface ITreatmentCaseApiService
     // Dashboard & Risk
     Task<(DoctorTreatmentDashboardWebDto? Data, string? Error)> GetDoctorDashboardAsync();
     Task<(TreatmentCaseRiskWebDto? Data, string? Error)> GetCaseRiskAsync(Guid caseId);
+}
+
+public interface IDoctorRevenueApiService
+{
+    Task<(DoctorRevenueOverviewDto? Data, string? Error)> GetRevenueOverviewAsync(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? period = null);
+
+    Task<(List<DoctorRevenueTransactionDto> Data, PaginationDto? Pagination, string? Error)> GetTransactionsAsync(
+        string? search = null,
+        string? settlementStatus = null,
+        int page = 1,
+        int pageSize = 20);
 }

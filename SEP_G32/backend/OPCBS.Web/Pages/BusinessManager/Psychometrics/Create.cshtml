@@ -93,6 +93,15 @@
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:0.84rem;">
+                        <i class="bi bi-link-45deg me-1 text-primary"></i>Source URL / Clinical Reference
+                    </label>
+                    <input asp-for="Input.SourceUrl" class="form-control" placeholder="e.g., http://www2.psy.unsw.edu.au/dass/" />
+                    <span asp-validation-for="Input.SourceUrl" class="text-danger small"></span>
+                    <div class="form-text" style="font-size:0.72rem;">Official psychological scale documentation (e.g. <code>psy.unsw.edu.au</code> for DASS scales)</div>
+                </div>
+
                 <div class="mb-2">
                     <label class="form-label fw-semibold" style="font-size:0.84rem;">Clinical Description & Purpose</label>
                     <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Explain what this test screens for, clinical scoring interpretation, and target audience..."></textarea>
@@ -119,6 +128,7 @@
                             <i class="bi bi-magic me-1"></i>Load Standard Template
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:0.82rem;">
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('DASS21')"><i class="bi bi-shield-plus text-info me-2"></i>DASS-21 (Depression, Anxiety, Stress - 21 Items)</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('GAD7')"><i class="bi bi-activity text-success me-2"></i>GAD-7 (Anxiety - 7 Questions)</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('PHQ9')"><i class="bi bi-heart-pulse text-primary me-2"></i>PHQ-9 (Depression - 9 Questions)</a></li>
                             <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadTemplate('CLEAR')"><i class="bi bi-trash text-danger me-2"></i>Clear Questions</a></li>
@@ -306,9 +316,43 @@
             const container = document.getElementById('questionsContainer');
             container.innerHTML = '';
 
-            if (type === 'GAD7') {
+            const sourceInput = document.querySelector('input[name="Input.SourceUrl"]');
+
+            if (type === 'DASS21') {
+                document.querySelector('input[name="Input.Title"]').value = 'Depression, Anxiety and Stress Scale (DASS-21)';
+                document.querySelector('input[name="Input.TestType"]').value = 'DASS21';
+                if (sourceInput) sourceInput.value = 'http://www2.psy.unsw.edu.au/dass/';
+                document.querySelector('textarea[name="Input.Description"]').value = 'The DASS-21 is a 21-item clinical assessment designed to measure the emotional states of depression, anxiety, and stress.';
+
+                const dass21Questions = [
+                    { text: "I found it hard to wind down.", cat: "Stress" },
+                    { text: "I was aware of dryness of my mouth.", cat: "Anxiety" },
+                    { text: "I couldn't seem to experience any positive feeling at all.", cat: "Depression" },
+                    { text: "I experienced breathing difficulty (e.g., excessively rapid breathing, breathlessness in the absence of physical exertion).", cat: "Anxiety" },
+                    { text: "I found it difficult to work up the initiative to do things.", cat: "Depression" },
+                    { text: "I tended to over-react to situations.", cat: "Stress" },
+                    { text: "I experienced trembling (e.g., in the hands).", cat: "Anxiety" },
+                    { text: "I felt that I was using a lot of nervous energy.", cat: "Stress" },
+                    { text: "I was worried about situations in which I might panic and make a fool of myself.", cat: "Anxiety" },
+                    { text: "I felt that I had nothing to look forward to.", cat: "Depression" },
+                    { text: "I found myself getting agitated.", cat: "Stress" },
+                    { text: "I found it difficult to relax.", cat: "Stress" },
+                    { text: "I felt down-hearted and blue.", cat: "Depression" },
+                    { text: "I was intolerant of anything that kept me from getting on with what I was doing.", cat: "Stress" },
+                    { text: "I felt I was close to panic.", cat: "Anxiety" },
+                    { text: "I was unable to become enthusiastic about anything.", cat: "Depression" },
+                    { text: "I felt I wasn't worth much as a person.", cat: "Depression" },
+                    { text: "I felt that I was rather touchy.", cat: "Stress" },
+                    { text: "I was aware of the action of my heart in the absence of physical exertion (e.g., sense of heart rate increase, heart missing a beat).", cat: "Anxiety" },
+                    { text: "I felt scared without any good reason.", cat: "Anxiety" },
+                    { text: "I felt that life was meaningless.", cat: "Depression" }
+                ];
+
+                dass21Questions.forEach(q => addQuestion(q.text, q.cat));
+            } else if (type === 'GAD7') {
                 document.querySelector('input[name="Input.Title"]').value = 'GAD-7 Generalized Anxiety Disorder Scale';
                 document.querySelector('input[name="Input.TestType"]').value = 'GAD7';
+                if (sourceInput) sourceInput.value = '';
                 document.querySelector('textarea[name="Input.Description"]').value = 'The GAD-7 is a standard 7-item instrument for screening and measuring the severity of generalized anxiety disorder in outpatient and primary care settings.';
 
                 const gad7Questions = [
@@ -325,6 +369,7 @@
             } else if (type === 'PHQ9') {
                 document.querySelector('input[name="Input.Title"]').value = 'PHQ-9 Patient Health Questionnaire';
                 document.querySelector('input[name="Input.TestType"]').value = 'PHQ9';
+                if (sourceInput) sourceInput.value = '';
                 document.querySelector('textarea[name="Input.Description"]').value = 'The PHQ-9 is a 9-item self-report questionnaire used to screen, diagnose, and measure the severity of depression.';
 
                 const phq9Questions = [
@@ -341,6 +386,7 @@
 
                 phq9Questions.forEach(q => addQuestion(q, 'Depression'));
             } else {
+                if (sourceInput) sourceInput.value = '';
                 addQuestion('', 'General');
             }
             updateQuestionNumbers();

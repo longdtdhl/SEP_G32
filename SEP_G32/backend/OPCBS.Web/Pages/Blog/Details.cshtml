@@ -5,541 +5,16 @@
     ViewData["UseDashboardLayout"] = false;
 }
 
-<style>
-    .blog-detail-container {
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 1.5rem 1.25rem 4rem;
-    }
-
-    /* Article Breadcrumb & Back Link */
-    .blog-breadcrumb {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .blog-breadcrumb a {
-        color: #475569;
-        text-decoration: none;
-    }
-    .blog-breadcrumb a:hover {
-        color: var(--mb-primary);
-    }
-
-    /* Article Header */
-    .blog-article-header {
-        max-width: 960px;
-        margin: 0 auto 1.75rem;
-    }
-    .blog-detail-category {
-        display: inline-block;
-        background: #e6fffa;
-        color: #0f766e;
-        border: 1px solid #ccfbf1;
-        padding: 0.25rem 0.75rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        margin-bottom: 1rem;
-    }
-    .blog-article-title {
-        font-size: clamp(2rem, 4vw, 3rem);
-        font-weight: 750;
-        color: #0f172a;
-        line-height: 1.18;
-        margin-bottom: 1.25rem;
-        letter-spacing: 0;
-    }
-    .blog-article-meta {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        color: #64748b;
-        font-size: 0.875rem;
-        flex-wrap: wrap;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    .blog-article-meta .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .blog-author-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: #e2e8f0;
-        color: #334155;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.8rem;
-    }
-    .blog-author-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-
-    /* Hero Cover Image */
-    .blog-cover-img {
-        width: 100%;
-        max-width: 960px;
-        aspect-ratio: 16 / 7;
-        object-fit: cover;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        margin: 0 auto 2.5rem;
-        display: block;
-    }
-
-    /* Main Layout Grid */
-    .blog-detail-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 760px) 300px;
-        justify-content: center;
-        align-items: start;
-        gap: 2.5rem;
-        max-width: 1100px;
-        margin: 0 auto 4rem;
-    }
-    @@media (max-width: 991px) {
-        .blog-detail-layout {
-            grid-template-columns: 1fr;
-            gap: 2.5rem;
-        }
-    }
-
-    /* Summary Callout */
-    .blog-summary-callout {
-        font-size: 1.05rem;
-        line-height: 1.6;
-        color: #334155;
-        background: #f0fdfa;
-        border-left: 4px solid var(--mb-primary);
-        padding: 1.25rem 1.5rem;
-        border-radius: 0 6px 6px 0;
-        margin-bottom: 2rem;
-        font-weight: 500;
-    }
-
-    /* Article Body Typography */
-    .blog-article-body {
-        font-size: 1.025rem;
-        line-height: 1.85;
-        color: #334155;
-        overflow-wrap: anywhere;
-    }
-    .blog-article-body p {
-        margin-bottom: 1.5rem;
-    }
-    .blog-article-body h2 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 2.25rem 0 1rem;
-    }
-    .blog-article-body h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 1.75rem 0 0.85rem;
-    }
-    .blog-article-body ul, .blog-article-body ol {
-        margin-bottom: 1.5rem;
-        padding-left: 1.5rem;
-    }
-    .blog-article-body li {
-        margin-bottom: 0.5rem;
-    }
-    .blog-article-body blockquote {
-        font-style: italic;
-        font-size: 1.1rem;
-        color: #0f766e;
-        border-left: 3px solid var(--mb-primary);
-        padding: 0.85rem 1.25rem;
-        background: #f0fdfa;
-        border-radius: 0 6px 6px 0;
-        margin: 1.75rem 0;
-    }
-    .blog-article-body img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 6px;
-        margin: 1.5rem 0;
-        border: 1px solid #e5e7eb;
-    }
-
-    /* Sidebar Cards */
-    .blog-sidebar-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-    .blog-sidebar-title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #0f172a;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1rem;
-    }
-    .blog-author-card {
-        position: sticky;
-        top: 88px;
-    }
-    .blog-author-card .author-img-lg {
-        width: 56px;
-        height: 56px;
-        border-radius: 8px;
-        margin: 0;
-        background: #f0fdfa;
-        color: #0f766e;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-    }
-    .blog-author-card .author-img-lg img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 8px;
-    }
-    .blog-author-head {
-        display: grid;
-        grid-template-columns: 56px minmax(0, 1fr);
-        gap: 0.85rem;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    .blog-author-name {
-        color: #0f172a;
-        font-size: 0.95rem;
-        font-weight: 700;
-        line-height: 1.3;
-        margin: 0;
-    }
-    .blog-author-role {
-        color: #64748b;
-        font-size: 0.78rem;
-        line-height: 1.35;
-        margin-top: 0.2rem;
-    }
-    .blog-author-facts {
-        border-top: 1px solid #e5e7eb;
-        color: #475569;
-        display: grid;
-        font-size: 0.8rem;
-        gap: 0.55rem;
-        margin-bottom: 1rem;
-        padding-top: 0.85rem;
-    }
-    .blog-author-facts div {
-        align-items: center;
-        display: flex;
-        gap: 0.5rem;
-    }
-    .blog-author-facts i {
-        color: var(--mb-primary);
-        width: 16px;
-    }
-    .blog-tag-pill {
-        display: inline-block;
-        background: #f1f5f9;
-        color: #475569;
-        padding: 0.25rem 0.75rem;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-decoration: none;
-        margin: 0.2rem;
-        transition: background-color 0.15s;
-    }
-    .blog-tag-pill:hover {
-        background: var(--mb-primary);
-        color: #ffffff;
-    }
-
-    /* Share Bar */
-    .blog-share-bar {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin: 2.5rem 0;
-        padding: 1rem 1.25rem;
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-    }
-    .blog-share-bar span {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #64748b;
-    }
-    .blog-share-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 4px;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-        color: #475569;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .blog-share-btn:hover {
-        background: #f1f5f9;
-        color: var(--mb-primary);
-        border-color: var(--mb-primary);
-    }
-
-    /* Comments Section */
-    .blog-comments-area {
-        max-width: 760px;
-        margin: 0 auto 4rem;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 3rem;
-    }
-    .blog-comments-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 2rem;
-    }
-    .blog-comments-header h3 {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-    }
-    .blog-comment-card {
-        display: flex;
-        gap: 1rem;
-        padding: 1.25rem;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        margin-bottom: 1rem;
-    }
-    .blog-comment-form {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .blog-related-section {
-        border-top: 1px solid #e2e8f0;
-        margin: 0 auto;
-        max-width: 1100px;
-        padding-top: 2rem;
-    }
-    .blog-related-grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    .blog-related-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        color: inherit;
-        display: grid;
-        grid-template-rows: auto 1fr;
-        min-width: 0;
-        overflow: hidden;
-        text-decoration: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-    }
-    .blog-related-card:hover {
-        border-color: #99d5ce;
-        box-shadow: 0 8px 22px rgba(15, 118, 110, 0.1);
-        color: inherit;
-        transform: translateY(-2px);
-    }
-    .blog-related-thumb {
-        aspect-ratio: 16 / 9;
-        background: #f0fdfa;
-        overflow: hidden;
-        position: relative;
-        width: 100%;
-    }
-    .blog-related-thumb img {
-        display: block;
-        height: 100%;
-        object-fit: cover;
-        position: relative;
-        width: 100%;
-        z-index: 1;
-    }
-    .blog-related-fallback {
-        align-items: center;
-        color: #0f766e;
-        display: flex;
-        font-size: 1.65rem;
-        inset: 0;
-        justify-content: center;
-        position: absolute;
-    }
-    .blog-related-body {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        padding: 1rem;
-    }
-    .blog-related-title {
-        color: #0f172a;
-        display: -webkit-box;
-        font-size: 0.95rem;
-        font-weight: 700;
-        line-height: 1.4;
-        margin: 0 0 0.75rem;
-        overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-    }
-    .blog-related-meta {
-        align-items: center;
-        color: #64748b;
-        display: flex;
-        font-size: 0.76rem;
-        gap: 0.75rem;
-        justify-content: space-between;
-        margin-top: auto;
-        min-width: 0;
-    }
-    .blog-related-author {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    @@media (max-width: 767.98px) {
-        .blog-detail-container { padding-inline: 1rem; }
-        .blog-article-title { font-size: 2rem; }
-        .blog-cover-img { aspect-ratio: 16 / 9; margin-bottom: 2rem; }
-        .blog-article-meta { gap: 0.85rem 1.25rem; }
-        .blog-share-bar { align-items: flex-start; flex-wrap: wrap; }
-        .blog-related-grid { grid-template-columns: 1fr; }
-        .blog-related-card { grid-template-columns: 120px minmax(0, 1fr); grid-template-rows: 1fr; }
-        .blog-related-thumb { aspect-ratio: auto; min-height: 112px; }
-    }
-
-    /* OPCBS article polish */
-    .blog-detail-container {
-        max-width: 1220px;
-    }
-
-    .blog-article-header {
-        background: #ffffff;
-        border: 1px solid #dbe7e2;
-        border-radius: 8px;
-        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
-        max-width: 1040px;
-        padding: 2rem;
-    }
-
-    .blog-article-title {
-        font-size: clamp(2rem, 3vw, 2.65rem);
-        max-width: 880px;
-    }
-
-    .blog-article-meta {
-        border-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .blog-author-avatar {
-        background: #e8f8f3;
-        border: 1px solid #bfe6d8;
-        color: #0f766e;
-    }
-
-    .blog-cover-img {
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-        max-width: 1040px;
-    }
-
-    .blog-detail-layout {
-        grid-template-columns: minmax(0, 780px) 320px;
-        max-width: 1160px;
-    }
-
-    .blog-summary-callout {
-        background: #eefaf6;
-        border: 1px solid #cde9dc;
-        border-left: 4px solid var(--mb-primary);
-        border-radius: 8px;
-    }
-
-    .blog-article-body {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-        color: #243447;
-        padding: 2rem;
-    }
-
-    .blog-sidebar-card {
-        border-color: #dbe7e2;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-    }
-
-    .blog-author-card {
-        border-color: #cde9dc;
-    }
-
-    .blog-related-card {
-        border-color: #dbe7e2;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
-    }
-
-    .blog-related-thumb {
-        min-height: 128px;
-    }
-
-    .blog-related-thumb img {
-        display: block;
-        height: 100%;
-        object-fit: cover;
-        width: 100%;
-    }
-
-    @@media (max-width: 767.98px) {
-        .blog-article-header,
-        .blog-article-body {
-            padding: 1.25rem;
-        }
-    }
-</style>
-
 @if (Model.Blog == null)
 {
-    <div class="blog-detail-container text-center py-5">
-        <div style="width:80px; height:80px; background:#fef2f2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
-            <i class="bi bi-exclamation-triangle" style="font-size:2rem; color:#ef4444;"></i>
+    <div class="container py-5 text-center my-5">
+        <div style="width:88px; height:88px; background:#fef2f2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; border:1px solid #fee2e2;">
+            <i class="bi bi-journal-x text-danger" style="font-size:2.5rem;"></i>
         </div>
         <h1 class="h3 fw-bold text-dark mb-2">Article Not Found</h1>
-        <p class="text-muted mb-4">This article does not exist, was removed, or is no longer available.</p>
-        <a asp-page="Index" class="btn btn-primary px-4" style="border-radius: 4px; font-weight: 600;">
-            <i class="bi bi-arrow-left me-1"></i>Back to Articles
+        <p class="text-muted mb-4" style="max-width:480px; margin:0 auto;">This article may have been removed or is currently under moderation review.</p>
+        <a asp-page="Index" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold shadow-sm">
+            <i class="bi bi-arrow-left me-1.5"></i>Back to Articles Library
         </a>
     </div>
     return;
@@ -549,271 +24,937 @@
     var blog = Model.Blog;
     var authorName = string.IsNullOrWhiteSpace(blog.AuthorName) ? "OPCBS Specialist" : blog.AuthorName;
     var authorInitials = string.Join("", authorName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0])).ToUpperInvariant();
+    if (string.IsNullOrEmpty(authorInitials)) authorInitials = "DR";
     var plainContent = System.Text.RegularExpressions.Regex.Replace(blog.Content ?? string.Empty, "<[^>]+>", " ");
     var wordCount = plainContent.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
     var readingMinutes = Math.Max(1, (int)Math.Ceiling(wordCount / 200d));
 }
 
-<div class="blog-detail-container">
-    <!-- Breadcrumb -->
-    <div class="blog-breadcrumb">
-        <a asp-page="Index"><i class="bi bi-house-door me-1"></i>Home</a>
-        <span>/</span>
-        <a asp-page="Index">Articles</a>
-        <span>/</span>
-        <span class="text-truncate" style="max-width:300px;">@blog.Title</span>
-    </div>
+<!-- Reading Progress Bar (Fixed Top) -->
+<div id="readingProgressBar" style="position:fixed; top:0; left:0; height:3.5px; width:0%; background:linear-gradient(90deg, #0d9488, #2563eb); z-index:9999; transition:width 0.1s ease-out;"></div>
 
-    <!-- Article Header -->
-    <header class="blog-article-header">
+<style>
+    .blog-details-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0.5rem 0.75rem 4rem;
+    }
+
+    /* ─── Breadcrumb Navigation ─── */
+    .blog-nav-crumb {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 1.5rem;
+    }
+    .blog-nav-crumb a {
+        color: #475569;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: color 0.15s ease;
+        font-weight: 550;
+    }
+    .blog-nav-crumb a:hover {
+        color: var(--mb-primary);
+    }
+    .blog-nav-crumb .sep {
+        color: #cbd5e1;
+        font-size: 0.75rem;
+    }
+    .blog-nav-crumb .current-crumb {
+        color: #0f172a;
+        font-weight: 650;
+        max-width: 380px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ─── Article Header Hero Card ─── */
+    .article-header-panel {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 2.25rem;
+        margin-bottom: 1.75rem;
+        box-shadow: 0 8px 32px rgba(15, 118, 110, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .article-cat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(13, 148, 136, 0.08);
+        color: #0f766e;
+        border: 1px solid rgba(13, 148, 136, 0.2);
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 0.76rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        text-decoration: none;
+        transition: all 0.18s ease;
+    }
+    .article-cat-pill:hover {
+        background: var(--mb-primary);
+        color: #ffffff;
+        border-color: var(--mb-primary);
+    }
+
+    .article-headline {
+        font-size: clamp(1.85rem, 3.2vw, 2.6rem);
+        font-weight: 850;
+        color: #0f172a;
+        line-height: 1.25;
+        letter-spacing: -0.025em;
+        margin-bottom: 1.35rem;
+    }
+
+    /* Author & Meta Row */
+    .article-author-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .author-lockup {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+    .author-avatar-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1fae5 100%);
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 750;
+        font-size: 1rem;
+        flex-shrink: 0;
+        border: 2.5px solid #ffffff;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+    }
+    .author-avatar-badge img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .author-meta-name {
+        font-size: 0.96rem;
+        font-weight: 750;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .author-meta-title {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 550;
+    }
+
+    .article-stats-pills {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .meta-stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: #475569;
+    }
+    .meta-stat-pill strong {
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    /* ─── Hero Cover Media (16:9 / 21:9 Stable Frame) ─── */
+    .article-cover-frame {
+        width: 100%;
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+        background: #f1f5f9;
+        aspect-ratio: 16 / 8;
+        max-height: 440px;
+    }
+    .article-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* ─── 2-Column Grid Layout ─── */
+    .article-layout-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* ─── Clinical Takeaway Callout ─── */
+    .article-takeaway-box {
+        background: linear-gradient(135deg, #f0fdf9 0%, #ecfdf5 100%);
+        border: 1px solid #ccfbf1;
+        border-left: 4px solid var(--mb-primary);
+        border-radius: 0 14px 14px 0;
+        padding: 1.35rem 1.6rem;
+        margin-bottom: 2rem;
+    }
+    .takeaway-tag {
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #0f766e;
+        margin-bottom: 0.45rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .takeaway-text {
+        font-size: 1rem;
+        line-height: 1.65;
+        color: #134e48;
+        font-weight: 550;
+        margin: 0;
+    }
+
+    /* ─── Rich Article Content Card ─── */
+    .article-sheet-card {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 30px rgba(15, 118, 110, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        margin-bottom: 2rem;
+    }
+
+    .article-body-text {
+        font-size: 1.05rem;
+        line-height: 1.85;
+        color: #334155;
+        word-break: break-word;
+    }
+    .article-body-text p {
+        margin-bottom: 1.5rem;
+    }
+    .article-body-text h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 2.25rem;
+        margin-bottom: 0.9rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 1px solid #f1f5f9;
+        scroll-margin-top: 90px;
+    }
+    .article-body-text h3 {
+        font-size: 1.22rem;
+        font-weight: 750;
+        color: #0f172a;
+        margin-top: 1.75rem;
+        margin-bottom: 0.75rem;
+        scroll-margin-top: 90px;
+    }
+    .article-body-text ul, .article-body-text ol {
+        margin-bottom: 1.5rem;
+        padding-left: 1.6rem;
+    }
+    .article-body-text li {
+        margin-bottom: 0.45rem;
+    }
+    .article-body-text blockquote {
+        background: #f0fdf9;
+        border-left: 4px solid var(--mb-primary);
+        border-radius: 0 12px 12px 0;
+        padding: 1.15rem 1.5rem;
+        margin: 1.75rem 0;
+        font-style: italic;
+        font-size: 1.05rem;
+        color: #0f766e;
+    }
+    .article-body-text img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 14px;
+        margin: 1.75rem 0;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+
+    /* ─── Social Share Bar ─── */
+    .article-share-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-top: 2rem;
+    }
+    .share-tagline {
+        font-weight: 700;
+        font-size: 0.86rem;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .share-btn-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-share-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        font-size: 0.95rem;
+    }
+    .btn-share-icon:hover {
+        background: var(--mb-primary);
+        color: #ffffff;
+        border-color: var(--mb-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+    .btn-share-fb:hover { background: #1877f2 !important; border-color: #1877f2 !important; }
+    .btn-share-x:hover { background: #0f172a !important; border-color: #0f172a !important; }
+    .btn-share-linkedin:hover { background: #0a66c2 !important; border-color: #0a66c2 !important; }
+
+    /* ─── Reader Discussions & Comments ─── */
+    .comments-section-sheet {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 2.25rem;
+        box-shadow: 0 8px 30px rgba(15, 118, 110, 0.04);
+        margin-bottom: 2.5rem;
+    }
+    .comment-item-card {
+        display: flex;
+        gap: 1rem;
+        padding: 1.1rem 1.25rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        margin-bottom: 0.85rem;
+    }
+    .comment-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 750;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* ─── Sticky Sidebar ─── */
+    .sidebar-sticky-wrap {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.35rem;
+    }
+    .sidebar-card-box {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 24px rgba(15, 118, 110, 0.04);
+    }
+    .sidebar-card-heading {
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #0f766e;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Author Sidebar Box */
+    .sidebar-author-row {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+        margin-bottom: 1.15rem;
+    }
+    .sidebar-author-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1fae5 100%);
+        color: var(--mb-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 800;
+        flex-shrink: 0;
+        border: 2px solid #ffffff;
+        box-shadow: 0 3px 10px rgba(13, 148, 136, 0.15);
+    }
+    .sidebar-author-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 14px;
+        object-fit: cover;
+    }
+
+    /* Support Callout */
+    .support-cta-card {
+        background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+        border-radius: 18px;
+        padding: 1.5rem;
+        color: #ffffff;
+        box-shadow: 0 8px 24px rgba(13, 148, 136, 0.25);
+    }
+
+    /* ─── Equal-Height Related Articles Grid ─── */
+    .related-section-area {
+        margin-top: 3.5rem;
+        padding-top: 2.5rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .related-posts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    .related-article-card {
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 16px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    border-color 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 4px 18px rgba(15, 118, 110, 0.04);
+    }
+    .related-article-card:hover {
+        background: rgba(255, 255, 255, 0.96);
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px -4px rgba(13, 148, 136, 0.13);
+        border-color: rgba(62, 142, 126, 0.38);
+        color: inherit;
+    }
+    .related-thumb-box {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        background: #f1f5f9;
+        overflow: hidden;
+        position: relative;
+    }
+    .related-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .related-article-card:hover .related-thumb-img {
+        transform: scale(1.05);
+    }
+    .related-body-box {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    .related-card-title {
+        font-size: 0.96rem;
+        font-weight: 750;
+        color: #0f172a;
+        line-height: 1.4;
+        margin-bottom: 0.65rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .related-card-footer {
+        margin-top: auto;
+        padding-top: 0.65rem;
+        border-top: 1px solid #f1f5f9;
+        font-size: 0.78rem;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    @@media (max-width: 1024px) {
+        .article-layout-grid { grid-template-columns: 1fr; }
+        .sidebar-sticky-wrap { position: static; }
+        .related-posts-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @@media (max-width: 768px) {
+        .article-header-panel { padding: 1.5rem 1.25rem; }
+        .article-sheet-card { padding: 1.5rem 1.25rem; }
+        .related-posts-grid { grid-template-columns: 1fr; }
+        .article-author-row { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
+<div class="blog-details-wrapper">
+    <!-- ══ 1. BREADCRUMB NAVIGATION ══ -->
+    <nav class="blog-nav-crumb" aria-label="Breadcrumb">
+        <a asp-page="/Index"><i class="bi bi-house-door"></i> Home</a>
+        <span class="sep"><i class="bi bi-chevron-right"></i></span>
+        <a asp-page="Index"><i class="bi bi-journal-text"></i> Resources</a>
         @if (!string.IsNullOrEmpty(blog.Category))
         {
-            <span class="blog-detail-category">@blog.Category</span>
+            <span class="sep"><i class="bi bi-chevron-right"></i></span>
+            <a asp-page="Index" asp-route-category="@blog.Category">@blog.Category</a>
         }
-        <h1 class="blog-article-title">@blog.Title</h1>
-        <div class="blog-article-meta">
-            <div class="meta-item">
-                <div class="blog-author-avatar">
+        <span class="sep"><i class="bi bi-chevron-right"></i></span>
+        <span class="current-crumb">@blog.Title</span>
+    </nav>
+
+    <!-- ══ 2. ARTICLE HERO & METADATA PANEL ══ -->
+    <header class="article-header-panel mb-fade-up">
+        @if (!string.IsNullOrEmpty(blog.Category))
+        {
+            <a asp-page="Index" asp-route-category="@blog.Category" class="article-cat-pill">
+                <i class="bi bi-tag-fill"></i>@blog.Category
+            </a>
+        }
+
+        <h1 class="article-headline">@blog.Title</h1>
+
+        <div class="article-author-row">
+            <!-- Author Info -->
+            <div class="author-lockup">
+                <div class="author-avatar-badge">
                     @if (!string.IsNullOrEmpty(blog.AuthorAvatarUrl))
                     {
-                        <img src="@blog.AuthorAvatarUrl" alt="" />
+                        <img src="@blog.AuthorAvatarUrl" alt="@authorName" />
                     }
                     else
                     {
-                        @authorInitials
+                        <span>@authorInitials</span>
                     }
                 </div>
-                <span>
-                    <strong class="d-block text-dark">@authorName</strong>
-                    @if (!string.IsNullOrWhiteSpace(blog.AuthorProfessionalTitle))
-                    {
-                        <small>@blog.AuthorProfessionalTitle</small>
-                    }
+                <div>
+                    <div class="author-meta-name">
+                        @authorName
+                        @if (blog.AuthorIsVerified)
+                        {
+                            <i class="bi bi-patch-check-fill text-success ms-0.5" title="Verified Specialist"></i>
+                        }
+                    </div>
+                    <div class="author-meta-title">@(blog.AuthorProfessionalTitle ?? "Clinical Specialist")</div>
+                </div>
+            </div>
+
+            <!-- Reading Stats -->
+            <div class="article-stats-pills">
+                <span class="meta-stat-pill" title="Publication Date">
+                    <i class="bi bi-calendar3 text-primary"></i>
+                    @(blog.PublishedAt?.ToString("MMM dd, yyyy") ?? blog.CreatedAt.ToString("MMM dd, yyyy"))
                 </span>
-            </div>
-            <div class="meta-item">
-                <i class="bi bi-calendar3 me-1"></i>
-                <span>@(blog.PublishedAt?.ToString("MMMM dd, yyyy") ?? blog.CreatedAt.ToString("MMMM dd, yyyy"))</span>
-            </div>
-            <div class="meta-item">
-                <i class="bi bi-eye me-1"></i>
-                <span>@blog.ViewCount views</span>
-            </div>
-            <div class="meta-item">
-                <i class="bi bi-clock me-1"></i>
-                <span>@readingMinutes min read</span>
+                <span class="meta-stat-pill" title="Estimated Reading Time">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    @readingMinutes min read
+                </span>
+                <span class="meta-stat-pill" title="Total Views">
+                    <i class="bi bi-eye text-primary"></i>
+                    <strong>@blog.ViewCount.ToString("N0")</strong> views
+                </span>
             </div>
         </div>
     </header>
 
-    <!-- Cover Image -->
+    <!-- ══ 3. HERO COVER IMAGE ══ -->
     @if (!string.IsNullOrEmpty(blog.DisplayImage))
     {
-        <img src="@blog.DisplayImage" alt="@blog.Title" class="blog-cover-img" />
+        <div class="article-cover-frame mb-fade-up">
+            <img src="@blog.DisplayImage" alt="@blog.Title" class="article-cover-img" loading="eager" onerror="this.parentElement.style.display='none'" />
+        </div>
     }
 
-    <!-- Main Content & Sidebar -->
-    <div class="blog-detail-layout">
+    <!-- ══ 4. MAIN ARTICLE GRID (BODY + STICKY SIDEBAR) ══ -->
+    <div class="article-layout-grid">
+        
+        <!-- Left Column: Content Body -->
         <main>
+            <!-- Key Clinical Takeaway Callout -->
             @if (!string.IsNullOrEmpty(blog.DisplaySummary))
             {
-                <div class="blog-summary-callout">
-                    @blog.DisplaySummary
+                <div class="article-takeaway-box mb-fade-up">
+                    <div class="takeaway-tag">
+                        <i class="bi bi-lightning-charge-fill"></i> Key Clinical Takeaway
+                    </div>
+                    <p class="takeaway-text">@blog.DisplaySummary</p>
                 </div>
             }
 
-            <div class="blog-article-body">
-                @Html.Raw(blog.Content)
-            </div>
+            <!-- Rich Article Content Card -->
+            <article class="article-sheet-card mb-fade-up">
+                <div class="article-body-text" id="articleBodyContent">
+                    @Html.Raw(blog.Content)
+                </div>
 
-            <!-- Share Links -->
-            <div class="blog-share-bar">
-                <span><i class="bi bi-share me-1"></i>Share this article:</span>
-                <button class="blog-share-btn" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href),'_blank','width=600,height=400')" title="Share on Facebook">
-                    <i class="bi bi-facebook"></i>
-                </button>
-                <button class="blog-share-btn" onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href)+'&text='+encodeURIComponent('@blog.Title'),'_blank','width=600,height=400')" title="Share on Twitter / X">
-                    <i class="bi bi-twitter-x"></i>
-                </button>
-                <button class="blog-share-btn" onclick="navigator.clipboard.writeText(window.location.href);this.innerHTML='<i class=\'bi bi-check-lg text-success\'></i>';setTimeout(()=>this.innerHTML='<i class=\'bi bi-link-45deg\'></i>',2000)" title="Copy Link">
-                    <i class="bi bi-link-45deg"></i>
-                </button>
-            </div>
+                <!-- Interactive Social Share Strip -->
+                <div class="article-share-strip">
+                    <div class="share-tagline">
+                        <i class="bi bi-share-fill text-primary"></i> Share this clinical guide:
+                    </div>
+                    <div class="share-btn-group">
+                        <button class="btn-share-icon btn-share-fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href),'_blank','width=600,height=450')" title="Share on Facebook" aria-label="Share on Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </button>
+                        <button class="btn-share-icon btn-share-x" onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href)+'&text='+encodeURIComponent('@blog.Title'),'_blank','width=600,height=450')" title="Share on X" aria-label="Share on X">
+                            <i class="bi bi-twitter-x"></i>
+                        </button>
+                        <button class="btn-share-icon btn-share-linkedin" onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(window.location.href),'_blank','width=600,height=450')" title="Share on LinkedIn" aria-label="Share on LinkedIn">
+                            <i class="bi bi-linkedin"></i>
+                        </button>
+                        <button class="btn-share-icon" id="btnCopyLink" onclick="copyArticleLink()" title="Copy link to clipboard" aria-label="Copy link">
+                            <i class="bi bi-link-45deg" id="copyIcon"></i>
+                        </button>
+                    </div>
+                </div>
+            </article>
+
+            <!-- ══ 5. READER COMMENTS SECTION ══ -->
+            <section class="comments-section-sheet mb-fade-up" id="commentsSection">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <h3 class="h5 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-chat-square-text text-primary"></i> Reader Discussions
+                        @if (Model.Comments.Any())
+                        {
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5">@Model.Comments.Count</span>
+                        }
+                    </h3>
+                </div>
+
+                @if (TempData["CommentSuccess"] is string cSuc)
+                {
+                    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3 small d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill fs-6"></i>
+                        <div>@cSuc</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (Model.CommentError != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-3 small d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+                        <div>@Model.CommentError</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <!-- Post Comment Form -->
+                @if (Model.IsLoggedIn)
+                {
+                    <div class="p-3.5 bg-light rounded-3 border mb-4">
+                        <form method="post" asp-page-handler="Comment" asp-route-id="@blog.Id">
+                            <label class="form-label small fw-bold text-dark mb-2">Join the conversation</label>
+                            <textarea name="NewComment" class="form-control mb-3" rows="3" placeholder="Share your clinical reflections or questions..." required style="border-radius: 10px; font-size: 0.92rem;"></textarea>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm" style="font-size:0.88rem;">
+                                    <i class="bi bi-send-fill me-1.5"></i>Post Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center p-4 mb-4 rounded-3 border bg-light">
+                        <i class="bi bi-lock-fill text-muted fs-3 mb-2 d-block"></i>
+                        <p class="text-muted small mb-3">Please sign in to participate in the clinical discussion.</p>
+                        <a asp-page="/Account/Login" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Sign In to Comment
+                        </a>
+                    </div>
+                }
+
+                <!-- Comments Stream -->
+                @if (Model.Comments.Any())
+                {
+                    <div class="d-flex flex-column">
+                        @foreach (var comment in Model.Comments)
+                        {
+                            <div class="comment-item-card">
+                                <div class="comment-avatar">
+                                    @(string.IsNullOrEmpty(comment.UserName) ? "U" : comment.UserName[..1].ToUpper())
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold text-dark" style="font-size:0.9rem;">@comment.UserName</span>
+                                        <span class="text-muted small">@comment.CreatedAt.ToString("MMM dd, yyyy • HH:mm")</span>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="font-size:0.92rem; line-height: 1.55;">@comment.Content</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted small">
+                        <i class="bi bi-chat-dots fs-3 d-block text-muted opacity-50 mb-1"></i>
+                        No comments yet. Be the first to share your thoughts!
+                    </div>
+                }
+            </section>
         </main>
 
-        <!-- Sidebar -->
-        <aside>
-            <!-- Author Card -->
-            <div class="blog-sidebar-card blog-author-card">
-                <div class="blog-sidebar-title">Written By</div>
-                <div class="blog-author-head">
-                    <div class="author-img-lg">
+        <!-- ══ Right Column: Sticky Sidebar ══ -->
+        <aside class="sidebar-sticky-wrap">
+            
+            <!-- 1. Specialist / Author Profile Card -->
+            <div class="sidebar-card-box mb-fade-up">
+                <div class="sidebar-card-heading"><i class="bi bi-person-badge"></i> About the Author</div>
+                <div class="sidebar-author-row">
+                    <div class="sidebar-author-avatar">
                         @if (!string.IsNullOrEmpty(blog.AuthorAvatarUrl))
                         {
                             <img src="@blog.AuthorAvatarUrl" alt="@authorName" />
                         }
                         else
                         {
-                            @authorInitials
+                            <span>@authorInitials</span>
                         }
                     </div>
                     <div>
-                        <h2 class="blog-author-name">
+                        <h2 class="h6 fw-bold text-dark mb-0.5">
                             @authorName
                             @if (blog.AuthorIsVerified)
                             {
-                                <i class="bi bi-patch-check-fill ms-1" style="color:var(--mb-primary);" title="Verified specialist"></i>
+                                <i class="bi bi-patch-check-fill text-success ms-1" style="font-size:0.85rem;" title="Verified Specialist"></i>
                             }
                         </h2>
-                        <div class="blog-author-role">@(blog.AuthorProfessionalTitle ?? "Psychology specialist")</div>
+                        <div class="small text-muted">@(blog.AuthorProfessionalTitle ?? "Clinical Specialist")</div>
                     </div>
                 </div>
-                <div class="blog-author-facts">
+
+                <div class="d-flex flex-column gap-2 py-2.5 border-top border-bottom my-2.5 small text-muted">
                     @if (blog.AuthorExperienceYears > 0)
                     {
-                        <div><i class="bi bi-briefcase"></i><span>@blog.AuthorExperienceYears years of professional experience</span></div>
+                        <div class="d-flex align-items-center gap-2"><i class="bi bi-award text-primary"></i><span><strong>@blog.AuthorExperienceYears+ years</strong> practice</span></div>
                     }
                     @if (blog.AuthorIsVerified)
                     {
-                        <div><i class="bi bi-shield-check"></i><span>Credentials verified by OPCBS</span></div>
+                        <div class="d-flex align-items-center gap-2"><i class="bi bi-shield-check text-primary"></i><span>Verified medical credentials</span></div>
                     }
+                    <div class="d-flex align-items-center gap-2"><i class="bi bi-camera-video text-primary"></i><span>Online & In-person consultations</span></div>
                 </div>
+
                 @if (blog.AuthorId.HasValue && blog.AuthorId.Value != Guid.Empty)
                 {
-                    <a asp-page="/Doctors/Details" asp-route-id="@blog.AuthorId" class="btn btn-sm btn-outline-primary w-100" style="border-radius:6px; font-weight:600;">
-                        View Doctor Profile <i class="bi bi-arrow-right ms-1"></i>
+                    <a asp-page="/Doctors/Details" asp-route-id="@blog.AuthorId" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm mb-2">
+                        <i class="bi bi-calendar-plus me-1.5"></i>Book Consultation
+                    </a>
+                    <a asp-page="/Doctors/Details" asp-route-id="@blog.AuthorId" class="btn btn-sm btn-outline-secondary w-100 rounded-pill fw-semibold py-1.5" style="font-size:0.8rem;">
+                        View Specialist Profile
                     </a>
                 }
             </div>
 
-            <!-- Tags Card -->
+            <!-- 2. Interactive Table of Contents Card (Auto-Generated) -->
+            <div class="sidebar-card-box mb-fade-up" id="tocCard" style="display:none; max-height:360px; overflow-y:auto;">
+                <div class="sidebar-card-heading"><i class="bi bi-list-nested"></i> Table of Contents</div>
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-1" id="tocList"></ul>
+            </div>
+
+            <!-- 3. Clinical Topic Tags Card -->
             @if (blog.Tags.Any())
             {
-                <div class="blog-sidebar-card">
-                    <div class="blog-sidebar-title">Article Tags</div>
-                    <div>
+                <div class="sidebar-card-box mb-fade-up">
+                    <div class="sidebar-card-heading"><i class="bi bi-tags"></i> Related Topics</div>
+                    <div class="d-flex flex-wrap gap-1.5">
                         @foreach (var tag in blog.Tags)
                         {
-                            <a asp-page="Index" asp-route-search="@tag" class="blog-tag-pill">#@tag</a>
+                            <a asp-page="Index" asp-route-search="@tag" class="btn btn-sm btn-light border text-muted py-1 px-2.5 rounded-pill" style="font-size:0.78rem;">#@tag</a>
                         }
                     </div>
                 </div>
             }
+
+            <!-- 4. Need Professional Support Banner -->
+            <div class="support-cta-card mb-fade-up">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-heart-pulse-fill fs-5 text-warning"></i>
+                    <span class="fw-bold">Need Professional Support?</span>
+                </div>
+                <p class="small text-white-50 mb-3" style="line-height:1.55;">
+                    Connect with licensed psychologists and healthcare specialists tailored to your schedule.
+                </p>
+                <a asp-page="/Doctors/Index" class="btn btn-sm btn-light text-teal-800 fw-bold w-100 rounded-pill py-2 shadow-sm" style="color:#0f766e;">
+                    Find a Specialist <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
         </aside>
     </div>
 
-    <!-- Comments Section -->
-    <div class="blog-comments-area">
-        <div class="blog-comments-header">
-            <i class="bi bi-chat-left-text text-primary fs-4"></i>
-            <h3>Reader Comments</h3>
-            @if (Model.Comments.Any())
-            {
-                <span class="badge bg-secondary rounded-pill font-mono">@Model.Comments.Count</span>
-            }
-        </div>
-
-        @if (TempData["CommentSuccess"] is string cSuc)
-        {
-            <div class="alert alert-success alert-dismissible fade show mb-3" style="border-radius: 4px;">
-                <i class="bi bi-check-circle me-1"></i>@cSuc
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        @if (Model.CommentError != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show mb-3" style="border-radius: 4px;">
-                <i class="bi bi-exclamation-triangle me-1"></i>@Model.CommentError
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        @if (Model.IsLoggedIn)
-        {
-            <div class="blog-comment-form">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <i class="bi bi-pencil-square text-muted"></i>
-                    <span class="fw-semibold small text-dark">Leave a Comment</span>
-                </div>
-                <form method="post" asp-page-handler="Comment" asp-route-id="@blog.Id">
-                    <textarea name="NewComment" class="form-control mb-3" rows="3" placeholder="Share your perspective or query about this article..." required style="border-radius: 6px; font-size: 0.9rem;">@Model.NewComment</textarea>
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary px-4" style="border-radius: 4px; font-weight: 600; font-size: 0.875rem;">
-                            <i class="bi bi-send me-1"></i>Post Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
-        }
-        else
-        {
-            <div class="text-center p-4 mb-4" style="background:#f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px;">
-                <p class="text-muted small mb-3">Log in to your OPCBS account to participate in the article discussions.</p>
-                <a asp-page="/Account/Login" class="btn btn-sm btn-primary px-4" style="border-radius: 4px; font-weight: 600;">
-                    Log In to Comment
-                </a>
-            </div>
-        }
-
-        <!-- Comments Listing -->
-        @if (Model.Comments.Any())
-        {
-            <div>
-                @foreach (var comment in Model.Comments)
-                {
-                    <div class="blog-comment-card">
-                        <div class="blog-author-avatar flex-shrink-0" style="width:36px; height:36px;">
-                            @(string.IsNullOrEmpty(comment.UserName) ? "U" : comment.UserName[..1].ToUpper())
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="fw-semibold text-dark small">@comment.UserName</span>
-                                <span class="text-muted text-xs">• @comment.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
-                            </div>
-                            <p class="text-secondary small mb-0" style="line-height: 1.5;">@comment.Content</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="text-center py-4 text-muted small">
-                No comments yet. Be the first to share your thoughts!
-            </div>
-        }
-    </div>
-
-    <!-- Related Articles -->
+    <!-- ══ 6. RELATED ARTICLES SECTION ══ -->
     @if (Model.RelatedPosts.Any())
     {
-        <section class="blog-related-section" aria-labelledby="relatedArticlesTitle">
-            <h2 id="relatedArticlesTitle" class="h5 fw-bold text-dark mb-3">Related Healthcare Articles</h2>
-            <div class="blog-related-grid">
+        <section class="related-section-area mb-fade-up">
+            <div class="d-flex align-items-center justify-content-between mb-3.5">
+                <div>
+                    <h2 class="h5 fw-bold text-dark mb-0.5">Recommended Reading</h2>
+                    <small class="text-muted">Evidence-based insights for your mental wellbeing</small>
+                </div>
+                <a asp-page="Index" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                    View All <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="related-posts-grid">
                 @foreach (var rp in Model.RelatedPosts)
                 {
-                        <a asp-page="Details" asp-route-id="@rp.Id" class="blog-related-card">
-                            <div class="blog-related-thumb">
-                                @if (!string.IsNullOrEmpty(rp.DisplayImage))
-                                {
-                                    <span class="blog-related-fallback" aria-hidden="true"><i class="bi bi-image"></i></span>
-                                    <img src="@rp.DisplayImage" alt="@rp.Title" loading="lazy" onerror="this.style.display='none'" />
-                                }
-                                else
-                                {
-                                    <span class="blog-related-fallback" aria-hidden="true"><i class="bi bi-image"></i></span>
-                                }
-                            </div>
-                            <div class="blog-related-body">
-                                <h3 class="blog-related-title">@rp.Title</h3>
-                                <div class="blog-related-meta">
-                                    <span class="blog-related-author">@(rp.AuthorName ?? "OPCBS Specialist")</span>
-                                    <span>@(rp.PublishedAt?.ToString("MMM dd") ?? rp.CreatedAt.ToString("MMM dd"))</span>
+                    <a asp-page="Details" asp-route-id="@rp.Id" class="related-article-card">
+                        <div class="related-thumb-box">
+                            @if (!string.IsNullOrEmpty(rp.DisplayImage))
+                            {
+                                <img src="@rp.DisplayImage" alt="@rp.Title" class="related-thumb-img" loading="lazy" onerror="this.style.display='none'" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center h-100" style="background:#f0fdfa; color:#0d9488;">
+                                    <i class="bi bi-journal-medical fs-1"></i>
                                 </div>
+                            }
+                        </div>
+                        <div class="related-body-box">
+                            <h3 class="related-card-title">@rp.Title</h3>
+                            <div class="related-card-footer">
+                                <span><i class="bi bi-person-fill me-1 text-primary"></i>@(rp.AuthorName ?? "Specialist")</span>
+                                <span>@(rp.PublishedAt?.ToString("MMM dd, yyyy") ?? rp.CreatedAt.ToString("MMM dd, yyyy"))</span>
                             </div>
-                        </a>
+                        </div>
+                    </a>
                 }
             </div>
         </section>
     }
 </div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. Reading Progress Bar Indicator
+        window.addEventListener("scroll", function () {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            const bar = document.getElementById("readingProgressBar");
+            if (bar) {
+                bar.style.width = scrolled + "%";
+            }
+        });
+
+        // 2. Dynamic Table of Contents (TOC) Generator
+        const articleBody = document.getElementById("articleBodyContent");
+        const tocCard = document.getElementById("tocCard");
+        const tocList = document.getElementById("tocList");
+
+        if (articleBody && tocCard && tocList) {
+            const headings = articleBody.querySelectorAll("h2, h3");
+            if (headings.length >= 2) {
+                headings.forEach((heading, index) => {
+                    const id = "heading-" + index;
+                    heading.id = id;
+
+                    const li = document.createElement("li");
+                    const a = document.createElement("a");
+                    a.href = "#" + id;
+                    a.innerText = heading.innerText;
+                    a.className = "d-block text-muted text-decoration-none py-1 px-2 rounded small";
+                    a.style.transition = "all 0.15s ease";
+                    if (heading.tagName.toLowerCase() === "h3") {
+                        a.style.paddingLeft = "1.25rem";
+                        a.style.fontSize = "0.78rem";
+                    }
+
+                    a.addEventListener("mouseenter", () => { a.style.color = "var(--mb-primary)"; a.style.background = "#f0fdfa"; });
+                    a.addEventListener("mouseleave", () => { a.style.color = "#64748b"; a.style.background = "transparent"; });
+
+                    li.appendChild(a);
+                    tocList.appendChild(li);
+                });
+                tocCard.style.display = "block";
+            }
+        }
+    });
+
+    // 3. Copy Link with feedback animation
+    function copyArticleLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const icon = document.getElementById("copyIcon");
+            if (icon) {
+                icon.className = "bi bi-check-lg text-success";
+                setTimeout(() => {
+                    icon.className = "bi bi-link-45deg";
+                }, 2000);
+            }
+        });
+    }
+</script>
+}

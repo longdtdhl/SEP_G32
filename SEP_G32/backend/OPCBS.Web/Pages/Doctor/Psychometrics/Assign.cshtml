@@ -1,0 +1,129 @@
+@page
+@model OPCBS.Web.Pages.Doctor.Psychometrics.AssignModel
+@{
+    ViewData["Title"] = "Assign Assessment";
+    Layout = "_DashboardLayout";
+}
+
+<div class="container-fluid px-0 py-2" style="max-width: 760px;">
+    <!-- Back Header -->
+    <div class="mb-4">
+        <a asp-page="/Doctor/Psychometrics/Index" class="btn btn-link text-decoration-none p-0 text-muted mb-2" style="font-size:0.84rem; font-weight:600;">
+            <i class="bi bi-arrow-left me-1"></i>Back to Psychometric Assessments
+        </a>
+        <h1 class="h4 fw-bold text-dark mb-1">Assign Assessment</h1>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Send a psychometric questionnaire to a patient to monitor their therapeutic progress.</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius:10px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm" style="border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+        <div class="card-body p-4">
+            <form method="post">
+                <!-- Patient Selector -->
+                <div class="mb-3.5">
+                    <label class="form-label fw-semibold text-dark" style="font-size:0.84rem;">
+                        Patient <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="SelectedPatientId" class="form-select" id="patientSelect" onchange="onPatientSelected()" style="border-radius:10px; font-size:0.88rem;" required>
+                        <option value="">-- Select Patient --</option>
+                        @foreach (var p in Model.PatientOptions)
+                        {
+                            <option value="@p.PatientId" data-caseid="@p.CaseId" selected="@(p.PatientId == Model.SelectedPatientId)">
+                                @p.PatientName @(!string.IsNullOrWhiteSpace(p.Email) ? $"({p.Email})" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Assessment Selector -->
+                <div class="mb-3.5">
+                    <label class="form-label fw-semibold text-dark" style="font-size:0.84rem;">
+                        Assessment Questionnaire <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="SelectedTestId" class="form-select" style="border-radius:10px; font-size:0.88rem;" required>
+                        <option value="">-- Select Assessment Template --</option>
+                        <optgroup label="System Standard Templates">
+                            @foreach (var t in Model.AvailableTests.Where(x => x.IsSystemTemplate))
+                            {
+                                <option value="@t.Id" selected="@(t.Id == Model.SelectedTestId)">
+                                    @t.Title — @(t.Category ?? t.Purpose ?? "Screening") (@t.QuestionCount questions)
+                                </option>
+                            }
+                        </optgroup>
+                        @if (Model.AvailableTests.Any(x => !x.IsSystemTemplate))
+                        {
+                            <optgroup label="My Custom Assessments">
+                                @foreach (var t in Model.AvailableTests.Where(x => !x.IsSystemTemplate))
+                                {
+                                    <option value="@t.Id" selected="@(t.Id == Model.SelectedTestId)">
+                                        @t.Title — @(t.Category ?? "Custom") (@t.QuestionCount questions)
+                                    </option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                </div>
+
+                <!-- Related Treatment Case (Optional) -->
+                <div class="mb-3.5">
+                    <label class="form-label fw-semibold text-dark" style="font-size:0.84rem;">
+                        Related Treatment Case <span class="text-muted fw-normal">(Optional)</span>
+                    </label>
+                    <select asp-for="SelectedCaseId" class="form-select" id="caseSelect" style="border-radius:10px; font-size:0.88rem;">
+                        <option value="">-- No specific treatment case --</option>
+                        @foreach (var c in Model.DoctorCases)
+                        {
+                            <option value="@c.Id" data-patientid="@c.PatientId" selected="@(c.Id == Model.SelectedCaseId)">
+                                @c.CaseName (@(c.PatientName ?? "Patient")) — Status: @c.StatusText
+                            </option>
+                        }
+                    </select>
+                    <div class="form-text text-muted" style="font-size:0.75rem;">
+                        Linking to a treatment case associates the assessment score directly with the patient's case activities and progress tracking.
+                    </div>
+                </div>
+
+                <!-- Due Date -->
+                <div class="mb-3.5">
+                    <label class="form-label fw-semibold text-dark" style="font-size:0.84rem;">Due Date</label>
+                    <input asp-for="DueDate" type="date" class="form-control" style="border-radius:10px; font-size:0.88rem; max-width:240px;" />
+                </div>
+
+                <!-- Doctor Note / Instructions -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark" style="font-size:0.84rem;">Doctor's Note / Clinical Instructions <span class="text-muted fw-normal">(Optional)</span></label>
+                    <textarea asp-for="DoctorNote" class="form-control" rows="3" placeholder="Add specific guidance or context for the patient (e.g., 'Please complete this before our session on Friday')..." style="border-radius:10px; font-size:0.85rem;"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a asp-page="/Doctor/Psychometrics/Index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" style="border-radius:8px;">Cancel</a>
+                    <button type="submit" class="btn btn-sm px-4 py-2 fw-semibold text-white" style="border-radius:8px; background:var(--mb-primary, #0d9488);">
+                        <i class="bi bi-send-fill me-1.5"></i>Assign Assessment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function onPatientSelected() {
+            const patientSelect = document.getElementById('patientSelect');
+            const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+            const caseId = selectedOption.getAttribute('data-caseid');
+            const caseSelect = document.getElementById('caseSelect');
+
+            if (caseId && caseSelect) {
+                caseSelect.value = caseId;
+            }
+        }
+    </script>
+}

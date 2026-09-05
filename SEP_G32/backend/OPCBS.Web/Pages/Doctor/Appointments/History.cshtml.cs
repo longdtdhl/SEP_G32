@@ -10,6 +10,7 @@ namespace OPCBS.Web.Pages.Doctor.Appointments;
 [Authorize(Roles = RoleConstants.Doctor)]
 public class HistoryModel : PageModel
 {
+    private const int PageSize = 10;
     private readonly IAppointmentApiService _api;
     public HistoryModel(IAppointmentApiService api) => _api = api;
 
@@ -36,7 +37,7 @@ public class HistoryModel : PageModel
             Status = Status,
             Search = Search,
             Page = CurrentPage,
-            PageSize = 10
+            PageSize = PageSize
         };
         if (DateTime.TryParse(DateFrom, out var from)) filter.FromDate = from;
         if (DateTime.TryParse(DateTo, out var to)) filter.ToDate = to;

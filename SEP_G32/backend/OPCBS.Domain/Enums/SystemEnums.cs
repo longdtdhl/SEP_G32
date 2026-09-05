@@ -54,7 +54,10 @@ public enum AppointmentStatus
     AwaitingGuestCompletionConfirmation = 10,
 
     /// <summary>The patient or guest disputed the requested completion and Support review is required.</summary>
-    CompletionDisputed = 11
+    CompletionDisputed = 11,
+
+    /// <summary>The doctor did not respond before the booking confirmation deadline.</summary>
+    Expired = 12
 }
 
 /// <summary>Patient response to a doctor's appointment-completion request.</summary>
@@ -401,7 +404,10 @@ public enum TreatmentCaseStatus
     Transferred = 4,
 
     /// <summary>Case was cancelled</summary>
-    Cancelled = 5
+    Cancelled = 5,
+
+    /// <summary>Case validity period expired</summary>
+    Expired = 6
 }
 
 /// <summary>

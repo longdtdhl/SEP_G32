@@ -1,3 +1,5 @@
+using OPCBS.Domain.Enums;
+
 namespace OPCBS.Web.DTOs;
 
 // ==================== Treatment Case Web DTOs ====================
@@ -46,6 +48,26 @@ public class TreatmentCaseWebDto
     public int AssignmentCount { get; set; }
     public int CompletedAssignmentCount { get; set; }
 
+    // Lifecycle indicators
+    public bool CanManage { get; set; } = true;
+    public bool IsTerminal => Status is 2 or 3 or 4 or 5 or 6;
+    public bool IsExpired => Status == 6;
+    public bool IsOnHold => Status == 1;
+    public string? LifecycleReason { get; set; }
+
+    // Hold (Bảo lưu) management
+    public bool IsHoldRequested { get; set; }
+    public DateTime? HoldRequestedAt { get; set; }
+    public DateTime? HoldStartDate { get; set; }
+    public DateTime? HoldEndDate { get; set; }
+    public int? HoldDurationDays { get; set; }
+    public string? HoldReason { get; set; }
+    public DateTime? HoldApprovedAt { get; set; }
+    public Guid? HoldApprovedByDoctorId { get; set; }
+    public DateTime? HoldRejectedAt { get; set; }
+    public string? HoldRejectionReason { get; set; }
+    public int TotalHoldDays { get; set; }
+
     public string StatusText => Status switch
     {
         0 => "Active",
@@ -54,6 +76,7 @@ public class TreatmentCaseWebDto
         3 => "Terminated",
         4 => "Transferred",
         5 => "Cancelled",
+        6 => "Expired",
         _ => "Unknown"
     };
 
@@ -65,6 +88,7 @@ public class TreatmentCaseWebDto
         3 => "badge bg-danger",
         4 => "badge bg-info",
         5 => "badge bg-secondary",
+        6 => "badge bg-dark",
         _ => "badge bg-secondary"
     };
 }
@@ -86,6 +110,16 @@ public class TreatmentCaseListWebDto
     public DateTime StartDate { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public bool CanManage { get; set; } = true;
+    public bool IsTerminal => Status is 2 or 3 or 4 or 5 or 6;
+    public bool IsExpired => Status == 6;
+    public bool IsOnHold => Status == 1;
+    public bool IsHoldRequested { get; set; }
+    public DateTime? HoldStartDate { get; set; }
+    public DateTime? HoldEndDate { get; set; }
+    public int? HoldDurationDays { get; set; }
+    public string? HoldReason { get; set; }
+
     public string StatusText => Status switch
     {
         0 => "Active",
@@ -94,6 +128,7 @@ public class TreatmentCaseListWebDto
         3 => "Terminated",
         4 => "Transferred",
         5 => "Cancelled",
+        6 => "Expired",
         _ => "Unknown"
     };
 
@@ -105,6 +140,7 @@ public class TreatmentCaseListWebDto
         3 => "badge bg-danger",
         4 => "badge bg-info",
         5 => "badge bg-secondary",
+        6 => "badge bg-dark",
         _ => "badge bg-secondary"
     };
 }
@@ -117,6 +153,24 @@ public class CreateTreatmentCaseWebDto
     public string? PrimaryConcern { get; set; }
 }
 
+public class RequestTreatmentHoldWebDto
+{
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public int? DurationDays { get; set; }
+    public required string Reason { get; set; }
+}
+
+public class ApproveTreatmentHoldWebDto
+{
+    public string? Note { get; set; }
+}
+
+public class RejectTreatmentHoldWebDto
+{
+    public required string Reason { get; set; }
+}
+
 public class GenerateScheduleWebDto
 {
     public Guid TreatmentCaseId { get; set; }
@@ -126,6 +180,7 @@ public class GenerateScheduleWebDto
     public DateTime? StartDate { get; set; }
     public int? TotalWeeks { get; set; }
     public int SessionsPerWeek { get; set; } = 1;
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
     public bool ClearExistingFutureSessions { get; set; } = false;
 }
 
@@ -139,6 +194,9 @@ public class TreatmentSessionWebDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public string? ConsultationMode { get; set; }
+    public bool IsOnline => string.Equals(ConsultationMode, "Online", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(ConsultationMode);
+    public bool IsOffline => string.Equals(ConsultationMode, "Offline", StringComparison.OrdinalIgnoreCase) || string.Equals(ConsultationMode, "In-Person", StringComparison.OrdinalIgnoreCase);
     public string? SessionSummary { get; set; }
     public string? DoctorClinicalAssessment { get; set; }
     public string? PatientFriendlySummary { get; set; }
@@ -190,6 +248,7 @@ public class CreateSessionWebDto
     public string? Description { get; set; }
     public DateTime? PlannedStartTime { get; set; }
     public DateTime? PlannedEndTime { get; set; }
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
 }
 
 public class UpdateSessionWebDto

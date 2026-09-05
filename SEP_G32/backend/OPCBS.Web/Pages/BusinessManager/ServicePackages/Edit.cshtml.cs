@@ -29,7 +29,9 @@ public class EditModel : PageModel
             Description = data.Description,
             Price = data.Price,
             DurationDays = data.DurationDays,
-            MaxAppointments = data.MaxAppointments,
+            MaxDailySlotsCapacity = data.MaxDailySlotsCapacity,
+            MaxPatientCapacity = data.MaxPatientCapacity,
+            IsFeatured = data.IsFeatured,
             IsActive = data.IsActive
         };
         return Page();

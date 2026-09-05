@@ -30,7 +30,7 @@ public class CreateModel : PageModel
             if (appt != null)
             {
                 Input.PatientId = appt.PatientId;
-                Input.GuestName = appt.PatientName ?? "Khách";
+                Input.GuestName = appt.PatientName ?? "Guest";
                 Input.GuestPhone = "-";
                 Input.GuestEmail = "-";
                 if (!appt.PatientId.HasValue)

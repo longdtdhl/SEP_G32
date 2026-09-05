@@ -166,9 +166,19 @@ public class PatientRecordApiService : ApiServiceBase, IPatientRecordApiService
         return await PostAsync(ApiRoutes.PatientRecords, dto);
     }
 
+    public async Task<(bool Success, string? Error)> CreateBatchAsync(List<CreatePatientRecordDto> dtos)
+    {
+        return await PostAsync($"{ApiRoutes.PatientRecords}/batch", dtos);
+    }
+
     public async Task<(bool Success, string? Error)> UpdateAsync(Guid id, UpdatePatientRecordDto dto)
     {
         return await PutAsync($"{ApiRoutes.PatientRecords}/{id}", dto);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteAsync(Guid id)
+    {
+        return await base.DeleteAsync($"{ApiRoutes.PatientRecords}/{id}");
     }
 
     public async Task<(bool Success, string? Error)> CreateAccountForGuestAsync(Guid id)
@@ -445,7 +455,18 @@ public class BusinessManagerApiService : ApiServiceBase, IBusinessManagerApiServ
     public async Task<(ServicePackageDto? Data, string? Error)> GetServicePackageByIdAsync(Guid id)
     {
         var (data, _, error) = await GetAsync<ServicePackageDto>($"{ApiRoutes.ServicePackages}/{id}");
-        return (data, error);
+        if (data != null)
+        {
+            return (data, null);
+        }
+
+        // Compatibility fallback for API instances that only expose the package collection.
+        // Those versions return 405 for GET /service-packages/{id} even though PUT/DELETE exist.
+        var (packages, listError) = await GetServicePackagesAsync();
+        var package = packages.FirstOrDefault(item => item.Id == id);
+        return package != null
+            ? (package, null)
+            : (null, listError ?? error ?? "Package not found.");
     }
     public async Task<(bool Success, string? Error)> CreateServicePackageAsync(CreateServicePackageDto dto) => await PostAsync(ApiRoutes.ServicePackages, dto);
     public async Task<(bool Success, string? Error)> UpdateServicePackageAsync(Guid id, UpdateServicePackageDto dto) => await PutAsync($"{ApiRoutes.ServicePackages}/{id}", dto);
@@ -497,6 +518,44 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
         return (data, error);
     }
 
+    public async Task<(PsychometricTestDto? Data, string? Error)> CreateCustomTestAsync(CreatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>($"{ApiRoutes.Psychometrics}/custom-tests", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricTestDto? Data, string? Error)> CloneCustomTestAsync(Guid sourceTestId, UpdatePsychometricTestDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricTestDto>(
+            $"{ApiRoutes.Psychometrics}/tests/{sourceTestId}/custom-copy",
+            dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> AssignAssessmentAsync(AssignAssessmentDto dto)
+    {
+        var (data, error) = await PostAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/assign", dto);
+        return (data, error);
+    }
+
+    public async Task<(PsychometricSubmissionDto? Data, string? Error)> SaveDoctorNoteAsync(Guid submissionId, string? doctorNotes)
+    {
+        var (data, error) = await PutAsync<PsychometricSubmissionDto>($"{ApiRoutes.Psychometrics}/submissions/{submissionId}/doctor-notes", new SaveDoctorNoteDto { SubmissionId = submissionId, DoctorNotes = doctorNotes });
+        return (data, error);
+    }
+
+    public async Task<(List<AssessmentHistoryItemDto> Data, string? Error)> GetAssessmentHistoryAsync(Guid submissionId)
+    {
+        var (data, _, error) = await GetAsync<List<AssessmentHistoryItemDto>>($"{ApiRoutes.Psychometrics}/submissions/{submissionId}/history");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(DoctorAssessmentsOverviewDto? Data, string? Error)> GetDoctorOverviewAsync()
+    {
+        var (data, _, error) = await GetAsync<DoctorAssessmentsOverviewDto>($"{ApiRoutes.Psychometrics}/doctor-overview");
+        return (data, error);
+    }
+
     public async Task<(bool Success, string? Error)> UpdateTestAsync(Guid id, UpdatePsychometricTestDto dto)
     {
         return await PutAsync($"{ApiRoutes.Psychometrics}/tests/{id}", dto);
@@ -540,6 +599,17 @@ public class PsychometricApiService : ApiServiceBase, IPsychometricApiService
     public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetSubmissionsByCaseAsync(Guid caseId)
     {
         var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>($"{ApiRoutes.Psychometrics}/submissions/case/{caseId}");
+        return (data ?? new(), error);
+    }
+
+    public async Task<(List<PsychometricSubmissionDto> Data, string? Error)> GetAllSubmissionsAsync(Guid? testId = null)
+    {
+        var url = $"{ApiRoutes.Psychometrics}/submissions";
+        if (testId.HasValue && testId.Value != Guid.Empty)
+        {
+            url += $"?testId={testId.Value}";
+        }
+        var (data, _, error) = await GetAsync<List<PsychometricSubmissionDto>>(url);
         return (data ?? new(), error);
     }
 }
@@ -739,6 +809,22 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
     public async Task<(bool Success, string? Error)> CloseAsync(Guid id, object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/close", dto);
 
+    // Hold (Bảo lưu)
+    public async Task<(bool Success, string? Error)> RequestHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/request-hold", dto);
+
+    public async Task<(bool Success, string? Error)> CancelHoldRequestAsync(Guid id) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/cancel-hold-request", new { });
+
+    public async Task<(bool Success, string? Error)> ApproveHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/approve-hold", dto);
+
+    public async Task<(bool Success, string? Error)> RejectHoldAsync(Guid id, object dto) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/reject-hold", dto);
+
+    public async Task<(bool Success, string? Error)> ResumeTreatmentAsync(Guid id) =>
+        await PostAsync($"{ApiRoutes.TreatmentCases}/{id}/resume", new { });
+
     // Schedule Generation
     public async Task<(bool Success, string? Error)> GenerateScheduleAsync(object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/generate-schedule", dto);
@@ -777,6 +863,9 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
 
     public async Task<(bool Success, string? Error)> UpdateGoalAsync(Guid goalId, object dto) =>
         await PutAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}", dto);
+
+    public async Task<(bool Success, string? Error)> DeleteGoalAsync(Guid goalId) =>
+        await DeleteAsync($"{ApiRoutes.TreatmentCases}/goals/{goalId}");
 
     public async Task<(bool Success, string? Error)> RecordGoalProgressAsync(object dto) =>
         await PostAsync($"{ApiRoutes.TreatmentCases}/goals/progress", dto);
@@ -868,3 +957,39 @@ public class TreatmentCaseApiService : ApiServiceBase, ITreatmentCaseApiService
         return (data, error);
     }
 }
+
+public class DoctorRevenueApiService : ApiServiceBase, IDoctorRevenueApiService
+{
+    public DoctorRevenueApiService(HttpClient client, JwtCookieService jwt) : base(client, jwt) { }
+
+    public async Task<(DoctorRevenueOverviewDto? Data, string? Error)> GetRevenueOverviewAsync(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? period = null)
+    {
+        var queryParams = new List<string>();
+        if (startDate.HasValue) queryParams.Add($"startDate={startDate.Value:O}");
+        if (endDate.HasValue) queryParams.Add($"endDate={endDate.Value:O}");
+        if (!string.IsNullOrEmpty(period)) queryParams.Add($"period={Uri.EscapeDataString(period)}");
+
+        var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+        var (data, _, error) = await GetAsync<DoctorRevenueOverviewDto>($"api/v1/doctor/revenue/overview{queryString}");
+        return (data, error);
+    }
+
+    public async Task<(List<DoctorRevenueTransactionDto> Data, PaginationDto? Pagination, string? Error)> GetTransactionsAsync(
+        string? search = null,
+        string? settlementStatus = null,
+        int page = 1,
+        int pageSize = 20)
+    {
+        var queryParams = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrEmpty(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrEmpty(settlementStatus)) queryParams.Add($"settlementStatus={Uri.EscapeDataString(settlementStatus)}");
+
+        var queryString = "?" + string.Join("&", queryParams);
+        var (data, pagination, error) = await GetAsync<List<DoctorRevenueTransactionDto>>($"api/v1/doctor/revenue/transactions{queryString}");
+        return (data ?? new(), pagination, error);
+    }
+}
+

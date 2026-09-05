@@ -25,6 +25,7 @@ public class DoctorDto
     public int ReviewCount { get; set; }
     public int ExperienceYears { get; set; }
     public decimal ConsultationFee { get; set; }
+    public bool IsConsultationFeePublic { get; set; } = true;
 
     // Backend returns verificationStatus as int enum (0=Draft, 1=Submitted, 2=Approved, 3=Rejected)
     [JsonPropertyName("verificationStatus")]
@@ -69,6 +70,7 @@ public class DoctorListItemDto
     public int ReviewCount { get; set; }
     public int ExperienceYears { get; set; }
     public decimal ConsultationFee { get; set; }
+    public bool IsConsultationFeePublic { get; set; } = true;
 
     // Backend returns verificationStatus as int enum (0=Draft, 1=Submitted, 2=Approved, 3=Rejected)
     [JsonPropertyName("verificationStatus")]
@@ -88,6 +90,8 @@ public class DoctorListItemDto
     public string? Languages { get; set; }
     public string? ConsultationTypes { get; set; }
     public string? LicenseNumber { get; set; }
+    public int AvailableSlotCount { get; set; }
+    public string? NextAvailableSlot { get; set; }
 }
 
 public class DoctorFilterDto
@@ -97,8 +101,11 @@ public class DoctorFilterDto
     public double? MinRating { get; set; }
     public decimal? MaxFee { get; set; }
     public string? Gender { get; set; }
+    public DateOnly? AvailableDate { get; set; }
+    public string? TimeFrame { get; set; }
+    public bool? AvailableOnly { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 12;
+    public int PageSize { get; set; } = 8;
 }
 
 public class UpdateDoctorProfileDto
@@ -135,6 +142,9 @@ public class UpdateDoctorProfileDto
 
     [JsonPropertyName("consultationFee")]
     public decimal? ConsultationFee { get; set; }
+
+    [JsonPropertyName("isConsultationFeePublic")]
+    public bool IsConsultationFeePublic { get; set; } = true;
 
     [JsonPropertyName("careApproach")]
     public string? CareApproach { get; set; }

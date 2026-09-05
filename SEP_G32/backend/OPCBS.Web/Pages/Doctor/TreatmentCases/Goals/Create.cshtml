@@ -9,7 +9,7 @@
     .tc-create-page { max-width: 1120px; margin: 0 auto; }
     .tc-create-page .form-label { font-size: .9rem; margin-bottom: .45rem; }
     .tc-create-page .form-control, .tc-create-page .form-select { min-height: 46px; font-size: .95rem; }
-    .tc-create-page textarea.form-control { min-height: 140px; }
+    .tc-create-page textarea.form-control { min-height: 120px; }
 </style>
 <div class="container-fluid py-3 tc-create-page">
     <a href="/Doctor/TreatmentCases/Details?id=@Model.CaseId&tab=goals" class="text-decoration-none text-muted fs-7 d-inline-block mb-2">
@@ -18,7 +18,7 @@
     <h1 class="fs-3 fw-bold text-dark mb-1">
         <i class="bi bi-bullseye text-teal me-2" style="color:#0d9488;"></i> Add Therapeutic Goal
     </h1>
-    <p class="text-muted mb-4">Define a measurable outcome that can be reviewed with the patient over several sessions.</p>
+    <p class="text-muted mb-4">Define a quantifiable therapeutic outcome with baseline and target clinical thresholds.</p>
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
@@ -29,55 +29,78 @@
     }
 
     <div class="bg-white border rounded-3 p-4 p-lg-5 shadow-sm">
+        <!-- Clinical Guidance Notice -->
+        <div class="p-3 mb-4 rounded-3" style="background:#f0fdfa; border:1px solid #ccfbf1; font-size:0.85rem; color:#0f766e;">
+            <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle-fill flex-shrink-0 mt-0.5" style="font-size:1.1rem;"></i>
+                <div>
+                    <strong>Doctor Clinical Guidelines:</strong> Define a quantitative goal baseline and target score using standardized psychiatric rating scales (e.g., VAS, GAD-7, PHQ-9, or percentage). The system automatically tracks subsequent session evaluations and success criteria against these thresholds.
+                </div>
+            </div>
+        </div>
+
         <form method="post" asp-page-handler="Create">
             <input type="hidden" name="caseId" value="@Model.CaseId" />
 
             <div class="mb-3">
                 <label class="form-label fs-7 fw-bold text-dark">Goal Title <span class="text-danger">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="e.g. Reduce GAD-7 anxiety score by 50%" required />
+                <input type="text" name="title" class="form-control" placeholder="e.g. Reduce Generalized Anxiety Symptoms, Restore Sleep Architecture" required />
+                <div class="text-muted mt-1" style="font-size:0.75rem;">Primary clinical focus or symptom reduction objective.</div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fs-7 fw-bold text-dark">Description & Clinical Rationale</label>
-                <textarea name="description" class="form-control" rows="3" placeholder="Describe the therapeutic objectives and methodology..."></textarea>
+                <textarea name="description" class="form-control" rows="3" placeholder="Describe the therapeutic objectives, intervention modalities (CBT, ACT), and expected milestones..."></textarea>
             </div>
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label fs-7 fw-bold text-dark">Category</label>
                     <select name="category" class="form-select">
-                        <option value="0">Other / General</option>
-                        <option value="1">Anxiety Reduction</option>
-                        <option value="2">Depression Management</option>
-                        <option value="3">Behavioral Change</option>
-                        <option value="4">Coping Skills</option>
-                        <option value="5">Relationship Improvement</option>
-                        <option value="6">Sleep Quality</option>
+                        <option value="0">Symptom Reduction (Anxiety, Depression, Panic)</option>
+                        <option value="1">Coping Strategy (Grounding, Emotion Regulation)</option>
+                        <option value="2">Behavioral (Exposure, Sleep Hygiene, Activity)</option>
+                        <option value="3">Cognitive (Restructuring, Core Beliefs)</option>
+                        <option value="4">Social & Interpersonal (Communication, Boundaries)</option>
+                        <option value="5">Lifestyle & Wellness (Routine, Exercise, Nutrition)</option>
+                        <option value="99">Other Clinical Target</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fs-7 fw-bold text-dark">Priority</label>
+                    <label class="form-label fs-7 fw-bold text-dark">Clinical Priority</label>
                     <select name="priority" class="form-select">
-                        <option value="0">Low</option>
-                        <option value="1" selected>Medium</option>
-                        <option value="2">High</option>
-                        <option value="3">Critical</option>
+                        <option value="0">Low — Secondary supportive outcome</option>
+                        <option value="1" selected>Medium — Standard therapeutic target</option>
+                        <option value="2">High — Primary presenting complaint</option>
+                        <option value="3">Critical — Immediate safety / crisis intervention</option>
                     </select>
                 </div>
             </div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <label class="form-label fs-7 fw-bold text-dark">Target Measured Value</label>
-                    <input type="number" step="0.1" name="targetValue" class="form-control" placeholder="e.g. 5" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fs-7 fw-bold text-dark">Unit of Measurement</label>
-                    <input type="text" name="unit" class="form-control" placeholder="e.g. GAD-7 score, points" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fs-7 fw-bold text-dark">Target Completion Date</label>
-                    <input type="date" name="targetDate" class="form-control" />
+            <!-- Quantitative Metrics Row -->
+            <div class="p-3 mb-4 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                <div class="fw-bold text-dark mb-2" style="font-size:0.85rem;"><i class="bi bi-speedometer2 me-1" style="color:#0d9488;"></i>Quantitative Metrics & Clinical Thresholds</div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fs-7 fw-bold text-dark">Metric Scale / Unit</label>
+                        <input type="text" name="unit" class="form-control" placeholder="e.g. /10, GAD-7, PHQ-9, %" value="/10" />
+                        <div class="text-muted mt-1" style="font-size:0.72rem;">Assessment scale (e.g. <code>/10</code>, <code>GAD-7</code>, <code>PHQ-9</code>, <code>%</code>). Do not type score values here.</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fs-7 fw-bold text-dark">Baseline Score (Initial)</label>
+                        <input type="number" step="0.1" name="currentValue" class="form-control" placeholder="e.g. 8" value="8" />
+                        <div class="text-muted mt-1" style="font-size:0.72rem;">Pre-treatment score at intake assessment.</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fs-7 fw-bold text-dark">Target Score (Milestone)</label>
+                        <input type="number" step="0.1" name="targetValue" class="form-control" placeholder="e.g. 3" value="3" />
+                        <div class="text-muted mt-1" style="font-size:0.72rem;">Desired threshold for remission (e.g. &le; 3).</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fs-7 fw-bold text-dark">Target Completion Date</label>
+                        <input type="date" name="targetDate" class="form-control" />
+                        <div class="text-muted mt-1" style="font-size:0.72rem;">Target completion milestone date.</div>
+                    </div>
                 </div>
             </div>
 

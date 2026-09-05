@@ -9,16 +9,16 @@
 <style>
     .mb-hero {
         position: relative;
-        height: calc(100vh - 76px); /* Full height minus header */
-        min-height: 500px;
+        height: calc(100vh - 70px); /* Full viewport height */
+        min-height: 760px;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
         padding: 0;
-        /* Soft fade into the background */
-        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 65%, rgba(0,0,0,0) 100%);
-        mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 65%, rgba(0,0,0,0) 100%);
+        /* Soft, graceful fade at bottom edge */
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
     }
     .hero-video-bg {
         position: absolute;
@@ -38,7 +38,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.4); /* Light overlay for dark text readability */
+        background: rgba(255, 255, 255, 0.35); /* Soft overlay for crisp dark green text */
         z-index: 1;
     }
     .hero-content {
@@ -48,23 +48,25 @@
         color: #1E3A31;
         padding: 0 20px;
         width: 100%;
-        margin-top: -50px; /* Slight lift to compensate for the bottom mask */
+        margin-top: 0;
     }
     .mb-hero h1, .hero-title {
         color: #1E3A31;
-        font-size: 3.5rem;
-        text-shadow: 0 4px 15px rgba(255,255,255,0.9);
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-size: clamp(2.5rem, 4.8vw, 4rem);
+        text-shadow: 0 4px 20px rgba(255,255,255,0.95);
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        font-weight: 850;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
     }
     .mb-hero p {
         color: #2D6A51;
-        font-size: 1.25rem;
-        max-width: 700px;
-        margin: 0 auto 2rem;
-        text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+        font-size: clamp(1.1rem, 1.85vw, 1.3rem);
+        max-width: 750px;
+        margin: 1.5rem auto 2.5rem;
+        text-shadow: 0 2px 10px rgba(255,255,255,0.85);
         font-weight: 500;
+        line-height: 1.65;
     }
     .mb-hero .btn-outline-dark {
         color: #1E3A31;
@@ -74,322 +76,611 @@
         background: #1E3A31;
         color: white;
     }
-    
-    /* Background for sections below hero */
-    .home-content-bg {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-    }
-    /* Add glassmorphism to cards so text is readable on the new background */
-    .home-content-bg .glass-stat, .home-content-bg .mb-blog-card {
-        background: rgba(255, 255, 255, 0.5);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 24px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .home-content-bg .glass-stat:hover, .home-content-bg .mb-blog-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(30, 58, 49, 0.1);
-        background: rgba(255, 255, 255, 0.7);
-    }
-    /* Category container wrapper */
-    .specialization-container {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
 
-    /* Title "Specialization Categories" */
-    .specialization-container h2 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1E3A31; /* Dark green high contrast */
-      margin-bottom: 20px;
-    }
-
-    /* Tag container using Flexbox for smooth wrapping */
-    .tags-wrapper {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px; /* Gap between tags */
-    }
-
-    /* Individual specialty tag styling */
-    .spec-tag {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      color: #2D6A51; /* Brand green text color */
-      background-color: rgba(226, 240, 233, 0.6); /* Very light mint green transparent background */
-      padding: 8px 18px;
-      border: 1px solid rgba(45, 106, 81, 0.15); /* Subtle thin border */
-      border-radius: 50px; /* Fully rounded capsule shape */
-      cursor: pointer;
-      transition: all 0.25s ease; /* Smooth transition effect */
-      text-decoration: none;
-    }
-
-    /* Tag hover effect */
-    .spec-tag:hover {
-      background-color: #2D6A51;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(45, 106, 81, 0.15);
-      transform: translateY(-2px); /* Lift tag slightly */
-    }
-
-    /* Doctor list container */
-    .doctors-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 24px;
-      margin-bottom: 50px;
-    }
-
-    /* Individual doctor profile card */
-    .doctor-card {
-      background: rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 32px 24px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 10px 40px rgba(30, 58, 49, 0.08);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-      position: relative;
-      overflow: hidden;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .doctor-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 120px;
-      background: linear-gradient(135deg, rgba(78,139,112,0.15) 0%, rgba(255,255,255,0) 100%);
-      z-index: 0;
-    }
-
-    .doctor-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(30, 58, 49, 0.12);
-      background: rgba(255, 255, 255, 0.8);
-    }
-
-    /* Doctor avatar section */
-    .doctor-avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      background-color: #e2f0e9;
-      margin: 0 auto 20px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 4px solid #ffffff;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      overflow: hidden;
-      position: relative;
-      z-index: 1;
-      transition: transform 0.4s ease;
-      flex-shrink: 0;
-    }
-    
-    .doctor-card:hover .doctor-avatar {
-        transform: scale(1.05);
-    }
-
-    .doctor-avatar img {
+    /* ============================================================
+       LANDING PAGE LOWER SECTIONS STYLES
+       ============================================================ */
+    .landing-wrapper {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
+        padding-bottom: 4rem;
+        position: relative;
+        z-index: 2;
+    }
+    .landing-container {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 24px;
     }
 
-    /* Doctor name */
-    .doctor-name {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #1E3A31;
-      margin-bottom: 6px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      position: relative;
-      z-index: 1;
+    /* Section Headers */
+    .landing-section {
+        margin: 80px auto;
     }
-
-    /* Title/Degree */
-    .doctor-title {
-      font-size: 0.9rem;
-      color: #4A5D54;
-      margin-bottom: 16px;
-      font-weight: 500;
-      position: relative;
-      z-index: 1;
-      flex-grow: 1;
+    .landing-section-header {
+        margin-bottom: 36px;
     }
-
-    /* Star rating section */
-    .doctor-rating {
-      color: #FFB800;
-      font-size: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      position: relative;
-      z-index: 1;
-      background: rgba(255,255,255,0.7);
-      padding: 6px 12px;
-      border-radius: 20px;
-      display: inline-flex;
-      margin: 0 auto;
+    .landing-section-header.text-center {
+        margin-bottom: 48px;
     }
-
-    .doctor-rating span {
-      color: #4A5D54;
-      font-size: 13px;
-      margin-left: 6px;
-      font-weight: 600;
-    }
-    
-    .mb-page-header h2 {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #1E3A31;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      letter-spacing: -0.02em;
-    }
-
-    /* Stats Strip */
-    .stats-strip {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border-top: 1px solid rgba(255,255,255,0.6);
-        border-bottom: 1px solid rgba(255,255,255,0.6);
-        padding: 40px 0;
-        margin-bottom: 50px;
-    }
-    .stat-item {
-        text-align: center;
-        border-right: 1px solid rgba(30, 58, 49, 0.1);
-    }
-    .stat-item:last-child {
-        border-right: none;
-    }
-    .stat-item h3 {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #1E3A31;
-        font-size: 2.5rem;
+    .landing-section-title {
+        font-size: clamp(1.75rem, 2.6vw, 2.25rem);
         font-weight: 800;
-        margin-bottom: 5px;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        margin-bottom: 8px;
     }
-    .stat-item p {
-        color: #4A5D54;
-        font-weight: 600;
-        font-size: 1rem;
-        margin: 0;
+    .landing-section-subtitle {
+        font-size: 1.05rem;
+        color: #475569;
+        font-weight: 450;
+        line-height: 1.55;
+        margin-bottom: 0;
+    }
+    .landing-section-link {
+        font-size: 0.95rem;
+        font-weight: 650;
+        color: #0d9488;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .landing-section-link:hover {
+        color: #0f766e;
+        transform: translateX(3px);
     }
 
-    /* Testimonials */
-    .testimonial-card {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+    /* Enhanced Frosted Glass Cards (More translucent & blurred) */
+    .landing-glass-card {
+        background: rgba(255, 255, 255, 0.64);
+        backdrop-filter: blur(24px) saturate(190%);
+        -webkit-backdrop-filter: blur(24px) saturate(190%);
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05);
         border-radius: 20px;
-        padding: 30px;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 10px 30px rgba(30, 58, 49, 0.05);
-        position: relative;
-        height: 100%;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
     }
-    .testimonial-card:hover {
+    .landing-glass-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 22px 48px rgba(13, 148, 136, 0.12);
+        background: rgba(255, 255, 255, 0.78);
     }
-    .testimonial-quote {
-        font-size: 1.05rem;
-        color: #1E3A31;
-        font-style: italic;
-        margin-bottom: 20px;
-        line-height: 1.6;
+
+    /* 1. Trust Stats Strip */
+    .stats-strip-container {
+        margin: 20px auto 60px;
         position: relative;
-        z-index: 1;
+        z-index: 10;
     }
-    .testimonial-author {
+    .stats-strip-card {
+        background: rgba(255, 255, 255, 0.68);
+        backdrop-filter: blur(26px) saturate(190%);
+        -webkit-backdrop-filter: blur(26px) saturate(190%);
+        border: 1px solid rgba(255, 255, 255, 0.88);
+        border-radius: 24px;
+        padding: 32px 40px;
+        box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+    }
+    .stat-item-box {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 18px;
     }
-    .testimonial-author .avatar-placeholder {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--mb-primary-light);
-        color: var(--mb-primary);
+    .stat-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(230, 244, 241, 0.85) 0%, rgba(209, 237, 232, 0.85) 100%);
+        color: #0d9488;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        font-size: 1.2rem;
+        font-size: 1.6rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
     }
-    .testimonial-author h6 {
-        margin: 0;
-        font-weight: 700;
-        color: #1E3A31;
+    .stat-number {
         font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 2.15rem;
+        font-weight: 850;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 2px;
     }
-    .testimonial-author span {
-        font-size: 0.85rem;
-        color: #667A70;
+    .stat-label {
+        font-size: 0.925rem;
+        font-weight: 600;
+        color: #64748b;
+        margin: 0;
     }
-    .quote-icon {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 4rem;
-        color: rgba(78, 139, 112, 0.1);
-        z-index: 0;
-        line-height: 1;
-        font-family: serif;
+    .stat-divider {
+        border-right: 1px solid rgba(226, 232, 240, 0.8);
     }
 
-    /* CTA Banner */
-    .cta-section {
-        background: linear-gradient(135deg, #1E3A31 0%, #2D6A51 100%);
-        border-radius: 24px;
-        padding: 60px 40px;
+    /* 2. Featured Therapists Section */
+    .doctor-grid-landing {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+    .doctor-landing-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 28px 22px 22px;
+        border-radius: 20px;
         text-align: center;
-        color: white;
-        margin: 80px auto;
         position: relative;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(30, 58, 49, 0.2);
+        text-decoration: none !important;
+        color: inherit;
     }
-    .cta-section::before {
-        content: "";
+    .doctor-avatar-box {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 16px;
+    }
+    .doctor-avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3.5px solid #ffffff;
+        box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+    }
+    .doctor-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.85rem;
+        font-weight: 750;
+        border: 3.5px solid #ffffff;
+        box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+    }
+    .doctor-verified-badge {
         position: absolute;
-        top: -50%; left: -50%; width: 200%; height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
-        z-index: 0;
+        bottom: 2px;
+        right: 2px;
+        background: #ffffff;
+        color: #0d9488;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
-    .cta-content {
+    .doctor-landing-name {
+        font-size: 1.125rem;
+        font-weight: 750;
+        color: #0f172a;
+        margin-bottom: 4px;
+        line-height: 1.35;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .doctor-landing-specialty {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0d9488;
+        margin-bottom: 12px;
+        min-height: 22px;
+    }
+    .doctor-landing-rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(254, 243, 199, 0.5);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: #b45309;
+        margin-bottom: 14px;
+        backdrop-filter: blur(8px);
+    }
+    .doctor-landing-meta {
+        font-size: 0.825rem;
+        color: #64748b;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .doctor-meta-tag {
+        background: rgba(241, 245, 249, 0.75);
+        backdrop-filter: blur(8px);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    .doctor-card-btn {
+        margin-top: auto;
+        width: 100%;
+        padding: 9px 16px;
+        font-size: 0.875rem;
+        font-weight: 650;
+        border-radius: 12px;
+        background: rgba(13, 148, 136, 0.08);
+        color: #0d9488;
+        border: 1px solid rgba(13, 148, 136, 0.2);
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .doctor-landing-card:hover .doctor-card-btn {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0d9488;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+    }
+
+    /* 3. Browse by Specialization */
+    .specialization-card-container {
+        padding: 40px;
+        border-radius: 24px;
+    }
+    .specialization-chips-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+    }
+    .spec-pill-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 22px;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.70);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        color: #1e3a31;
+        border: 1.5px solid rgba(13, 148, 136, 0.2);
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .spec-pill-chip i {
+        font-size: 1.1rem;
+        color: #0d9488;
+        transition: color 0.25s ease;
+    }
+    .spec-pill-chip:hover {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0d9488;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(13, 148, 136, 0.25);
+    }
+    .spec-pill-chip:hover i {
+        color: #ffffff;
+    }
+
+    /* 4. How MindBridge Works */
+    .how-it-works-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        position: relative;
+    }
+    .how-step-card {
+        padding: 38px 30px;
+        border-radius: 22px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        height: 100%;
+    }
+    .how-step-badge {
+        position: absolute;
+        top: 20px;
+        left: 24px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 850;
+        color: rgba(13, 148, 136, 0.35);
+        letter-spacing: -0.02em;
+    }
+    .how-step-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.1rem;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 24px rgba(13, 148, 136, 0.3);
+        transition: transform 0.3s ease;
+    }
+    .how-step-card:hover .how-step-icon {
+        transform: scale(1.08) rotate(3deg);
+    }
+    .how-step-title {
+        font-size: 1.25rem;
+        font-weight: 750;
+        color: #0f172a;
+        margin-bottom: 12px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .how-step-desc {
+        font-size: 0.95rem;
+        color: #475569;
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
+
+    /* 5. Stories of Healing (Testimonials) */
+    .testimonial-card-landing {
+        padding: 34px 28px;
+        border-radius: 22px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+    .testimonial-stars {
+        color: #f59e0b;
+        font-size: 1.05rem;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 4px;
+    }
+    .testimonial-text {
+        font-size: 1.025rem;
+        color: #1e293b;
+        line-height: 1.65;
+        font-weight: 450;
+        margin-bottom: 24px;
+        flex-grow: 1;
         position: relative;
         z-index: 1;
     }
-    .cta-content h2 {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-weight: 800;
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        color: white;
+    .testimonial-author-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+        padding-top: 18px;
     }
-    .cta-content p {
+    .testimonial-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1ede8 100%);
+        color: #0d9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 750;
         font-size: 1.15rem;
-        opacity: 0.9;
-        max-width: 600px;
-        margin: 0 auto 30px;
+        flex-shrink: 0;
+    }
+    .testimonial-author-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 2px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .testimonial-author-tag {
+        font-size: 0.8125rem;
+        color: #0d9488;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* 6. Latest Resources */
+    .blog-card-landing {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 22px;
+        text-decoration: none !important;
+        color: inherit;
+    }
+    .blog-thumb-frame {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(135deg, #e6f4f1 0%, #d1ede8 100%);
+    }
+    .blog-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .blog-card-landing:hover .blog-thumb-img {
+        transform: scale(1.05);
+    }
+    .blog-thumb-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d9488;
+        font-size: 2.5rem;
+    }
+    .blog-content-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    .blog-cat-chip {
+        display: inline-block;
+        font-size: 0.775rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #0d9488;
+        background: rgba(13, 148, 136, 0.08);
+        padding: 3px 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        width: fit-content;
+    }
+    .blog-title-landing {
+        font-size: 1.15rem;
+        font-weight: 750;
+        color: #0f172a;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .blog-summary-landing {
+        font-size: 0.925rem;
+        color: #64748b;
+        line-height: 1.55;
+        margin-bottom: 18px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    .blog-meta-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8125rem;
+        color: #94a3b8;
+        padding-top: 14px;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    /* 7. Final CTA Banner */
+    .cta-banner-landing {
+        background: linear-gradient(135deg, #09332a 0%, #0d5c52 50%, #0f766e 100%);
+        border-radius: 26px;
+        padding: 64px 48px;
+        text-align: center;
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 48px rgba(11, 59, 50, 0.25);
+    }
+    .cta-banner-landing::before {
+        content: "";
+        position: absolute;
+        top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 65%);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .cta-banner-content {
+        position: relative;
+        z-index: 1;
+    }
+    .cta-banner-title {
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        font-weight: 850;
+        font-size: clamp(2rem, 3.5vw, 2.75rem);
+        margin-bottom: 16px;
+        color: #ffffff;
+        letter-spacing: -0.025em;
+    }
+    .cta-banner-desc {
+        font-size: 1.15rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 660px;
+        margin: 0 auto 36px;
+        line-height: 1.6;
+    }
+    .btn-cta-primary {
+        background-color: #ffffff !important;
+        color: #0f766e !important;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 14px 34px;
+        border-radius: 9999px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        transition: all 0.25s ease;
+    }
+    .btn-cta-primary:hover {
+        background-color: #f8fafc !important;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    .btn-cta-secondary {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+        font-weight: 650;
+        font-size: 1rem;
+        padding: 14px 34px;
+        border-radius: 9999px;
+        backdrop-filter: blur(8px);
+        transition: all 0.25s ease;
+    }
+    .btn-cta-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        border-color: #ffffff !important;
+        transform: translateY(-2px);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 1100px) {
+        .doctor-grid-landing {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @@media (max-width: 991px) {
+        .stat-divider {
+            border-right: none;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        .how-it-works-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .cta-banner-landing {
+            padding: 48px 28px;
+        }
+    }
+    @@media (max-width: 600px) {
+        .doctor-grid-landing {
+            grid-template-columns: 1fr;
+        }
+        .stats-strip-card {
+            padding: 24px 20px;
+        }
+        .specialization-card-container {
+            padding: 24px 20px;
+        }
     }
 </style>
 
@@ -424,242 +715,383 @@
     </div>
 </section>
 
-<div class="home-content-bg">
+<div class="landing-wrapper">
 
-<!-- Trust Stats Strip -->
-<div class="stats-strip">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3 stat-item">
-                <h3>500+</h3>
-                <p>Verified Specialists</p>
-            </div>
-            <div class="col-md-3 stat-item">
-                <h3>10k+</h3>
-                <p>Happy Patients</p>
-            </div>
-            <div class="col-md-3 stat-item">
-                <h3>4.9/5</h3>
-                <p>Average Rating</p>
-            </div>
-            <div class="col-md-3 stat-item">
-                <h3>24/7</h3>
-                <p>Confidential Support</p>
+    <!-- 1. Trust Stats Strip -->
+    <div class="landing-container stats-strip-container">
+        <div class="stats-strip-card">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-3 col-6 stat-divider">
+                    <div class="stat-item-box">
+                        <div class="stat-icon-wrapper">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">500+</div>
+                            <div class="stat-label">Verified Specialists</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6 stat-divider">
+                    <div class="stat-item-box">
+                        <div class="stat-icon-wrapper">
+                            <i class="bi bi-emoji-smile"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">10k+</div>
+                            <div class="stat-label">Happy Patients</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6 stat-divider">
+                    <div class="stat-item-box">
+                        <div class="stat-icon-wrapper">
+                            <i class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">4.9/5</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="stat-item-box">
+                        <div class="stat-icon-wrapper">
+                            <i class="bi bi-lock-fill"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">100%</div>
+                            <div class="stat-label">Confidential Support</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Featured Doctors -->
-<section class="mb-section container mt-5">
-    <div class="mb-page-header">
-        <h2>Featured Specialists</h2>
-        <a asp-page="/Doctors/Index" class="text-decoration-none" style="font-weight:500;font-size:0.9375rem;">
-            View all <i class="bi bi-arrow-right"></i>
-        </a>
-    </div>
-    @if (Model.FeaturedDoctors.Any())
-    {
-        <div class="doctors-grid">
-            @foreach (var doc in Model.FeaturedDoctors)
-            {
-                <a asp-page="/Doctors/Details" asp-route-id="@doc.Id" class="text-decoration-none">
-                    <div class="doctor-card">
-                        <div class="doctor-avatar">
+    <!-- 2. Featured Therapists Section -->
+    <section class="landing-container landing-section">
+        <div class="d-flex justify-content-between align-items-end landing-section-header flex-wrap gap-2">
+            <div>
+                <h2 class="landing-section-title">Featured Therapists</h2>
+                <p class="landing-section-subtitle">Verified specialists ready to support your mental health journey.</p>
+            </div>
+            <a asp-page="/Doctors/Index" class="landing-section-link">
+                View all therapists <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        @if (Model.FeaturedDoctors.Any())
+        {
+            <div class="doctor-grid-landing">
+                @foreach (var doc in Model.FeaturedDoctors)
+                {
+                    <a asp-page="/Doctors/Details" asp-route-id="@doc.Id" class="doctor-landing-card landing-glass-card">
+                        <div class="doctor-avatar-box">
                             @if (!string.IsNullOrEmpty(doc.AvatarUrl))
                             {
-                                <img src="@doc.AvatarUrl" alt="@doc.FullName" />
+                                <img src="@doc.AvatarUrl" alt="@doc.FullName" class="doctor-avatar-img" />
                             }
                             else
                             {
-                                <i class="bi bi-person-fill" style="font-size:2rem;color:var(--mb-primary);"></i>
+                                var initials = string.Join("", (doc.FullName ?? "Dr").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => s[0])).ToUpper();
+                                <div class="doctor-avatar-placeholder">@initials</div>
                             }
+                            <span class="doctor-verified-badge" title="Verified Specialist">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </span>
                         </div>
-                        <h5 class="doctor-name">@doc.FullName</h5>
-                        <p class="doctor-title">@doc.Specialization</p>
+
+                        <h3 class="doctor-landing-name">@doc.FullName</h3>
+                        <div class="doctor-landing-specialty">@(string.IsNullOrEmpty(doc.Specialization) ? "Clinical Psychologist" : doc.Specialization)</div>
+
                         @if (doc.Rating > 0)
                         {
-                            <div class="doctor-rating">
-                                <partial name="_RatingStars" view-data='@(new ViewDataDictionary(ViewData) { { "Rating", doc.Rating }, { "ReviewCount", doc.ReviewCount } })' />
+                            <div class="doctor-landing-rating">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <span>@doc.Rating.ToString("F1")</span>
+                                <span class="text-muted fw-normal">(@doc.ReviewCount)</span>
                             </div>
                         }
-                    </div>
-                </a>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="text-center py-4 text-muted">
-            <i class="bi bi-people d-block mb-2" style="font-size:2rem;"></i>
-            <p>Specialists coming soon.</p>
-        </div>
-    }
-</section>
+                        else
+                        {
+                            <div class="doctor-landing-rating" style="background:rgba(241, 245, 249, 0.8); border-color:transparent; color:#64748b;">
+                                <i class="bi bi-star text-muted"></i>
+                                <span>New Specialist</span>
+                            </div>
+                        }
 
-<!-- Specialization Categories -->
-<section class="specialization-container">
-    <h2>Specialization Categories</h2>
-    <div class="tags-wrapper">
-        @if (Model.Specializations.Any())
-        {
-            @foreach (var cat in Model.Specializations)
-            {
-                <a asp-page="/Doctors/Index" asp-route-specialization="@cat" class="spec-tag">@cat</a>
-            }
+                        <div class="doctor-landing-meta">
+                            @if (doc.ExperienceYears > 0)
+                            {
+                                <span class="doctor-meta-tag"><i class="bi bi-award me-1 text-teal"></i>@doc.ExperienceYears+ yrs exp</span>
+                            }
+                            else
+                            {
+                                <span class="doctor-meta-tag"><i class="bi bi-shield-check me-1 text-teal"></i>Licensed</span>
+                            }
+                            @if (doc.AvailableSlotCount > 0)
+                            {
+                                <span class="doctor-meta-tag" style="background:rgba(209, 250, 229, 0.8); color:#047857;">Open Slots</span>
+                            }
+                        </div>
+
+                        <div class="doctor-card-btn">
+                            View Profile <i class="bi bi-arrow-right-short"></i>
+                        </div>
+                    </a>
+                }
+            </div>
         }
         else
         {
-            <p class="text-muted">Loading categories...</p>
+            <div class="landing-glass-card text-center py-5">
+                <i class="bi bi-people text-muted d-block mb-3" style="font-size:2.5rem;"></i>
+                <h5 class="fw-bold text-dark">Specialists Available Soon</h5>
+                <p class="text-muted mb-0">Our clinical team is currently reviewing and verifying new practitioner profiles.</p>
+            </div>
         }
-    </div>
-</section>
+    </section>
 
-<!-- How It Works -->
-<section class="mb-section container" style="padding:3rem 15px;">
-    <h2 class="text-center mb-2" style="font-weight:700;">How MindBridge Works</h2>
-    <p class="text-center text-muted mb-5" style="max-width:500px;margin:0 auto;">Simple steps to begin your wellness journey</p>
-    <div class="row g-4 text-center">
-        <div class="col-md-4">
-            <div class="glass-stat h-100 text-center p-5">
-                <div class="rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center"
-                     style="width:80px;height:80px;background:#4E8B70;box-shadow:0 8px 20px rgba(78,139,112,0.3);">
-                    <i class="bi bi-search" style="font-size:2rem;color:#fff;"></i>
-                </div>
-                <h5 style="font-family:'Plus Jakarta Sans'; font-weight:700; color:#1E3A31; margin-bottom:1rem;">Find Your Therapist</h5>
-                <p class="text-muted mb-0" style="font-size:0.95rem;">Browse verified mental health professionals by specialization, rating, and availability.</p>
+    <!-- 3. Specialization Categories -->
+    <section class="landing-container landing-section">
+        <div class="specialization-card-container landing-glass-card">
+            <div class="landing-section-header mb-4">
+                <h2 class="landing-section-title">Browse by Specialization</h2>
+                <p class="landing-section-subtitle">Find dedicated specialists tailored to your specific mental health needs.</p>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="glass-stat h-100 text-center p-5">
-                <div class="rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center"
-                     style="width:80px;height:80px;background:#4E8B70;box-shadow:0 8px 20px rgba(78,139,112,0.3);">
-                    <i class="bi bi-calendar-check" style="font-size:2rem;color:#fff;"></i>
-                </div>
-                <h5 style="font-family:'Plus Jakarta Sans'; font-weight:700; color:#1E3A31; margin-bottom:1rem;">Book a Session</h5>
-                <p class="text-muted mb-0" style="font-size:0.95rem;">Choose a convenient time slot and book your appointment online in just a few clicks.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="glass-stat h-100 text-center p-5">
-                <div class="rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center"
-                     style="width:80px;height:80px;background:#4E8B70;box-shadow:0 8px 20px rgba(78,139,112,0.3);">
-                    <i class="bi bi-heart-pulse" style="font-size:2rem;color:#fff;"></i>
-                </div>
-                <h5 style="font-family:'Plus Jakarta Sans'; font-weight:700; color:#1E3A31; margin-bottom:1rem;">Start Your Journey</h5>
-                <p class="text-muted mb-0" style="font-size:0.95rem;">Begin your path to wellness with personalized care and professional support.</p>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Patient Testimonials -->
-<section class="mb-section container mb-5">
-    <div class="mb-page-header text-center d-block mb-5">
-        <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-weight:800; color:#1E3A31;">Stories of Healing</h2>
-        <p class="text-muted" style="font-size:1.1rem;">Hear from individuals who found their path to wellness with us.</p>
-    </div>
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <span class="quote-icon">"</span>
-                <p class="testimonial-quote">MindBridge completely changed my perspective on therapy. It was so easy to find a specialist who truly understands my anxiety. The booking process is seamless.</p>
-                <div class="testimonial-author">
-                    <div class="avatar-placeholder">S</div>
-                    <div>
-                        <h6>Sarah Jenkins</h6>
-                        <span>Verified Patient</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <span class="quote-icon">"</span>
-                <p class="testimonial-quote">After years of struggling to find the right therapist, I was matched with an incredible psyforlogist here. The video sessions are secure and very convenient for my schedule.</p>
-                <div class="testimonial-author">
-                    <div class="avatar-placeholder">M</div>
-                    <div>
-                        <h6>Michael T.</h6>
-                        <span>Verified Patient</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <span class="quote-icon">"</span>
-                <p class="testimonial-quote">The platform is incredibly user-friendly and private. I love being able to read verified reviews before booking. Highly recommend to anyone seeking mental health support.</p>
-                <div class="testimonial-author">
-                    <div class="avatar-placeholder">E</div>
-                    <div>
-                        <h6>Emily R.</h6>
-                        <span>Verified Patient</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+            <div class="specialization-chips-wrap">
+                @if (Model.Specializations.Any())
+                {
+                    @foreach (var spec in Model.Specializations)
+                    {
+                        var iconClass = "bi-heart-pulse";
+                        var specLower = spec.ToLowerInvariant();
+                        if (specLower.Contains("anxiety")) { iconClass = "bi-wind"; }
+                        else if (specLower.Contains("depress")) { iconClass = "bi-brightness-high"; }
+                        else if (specLower.Contains("trauma") || specLower.Contains("ptsd")) { iconClass = "bi-bandaid"; }
+                        else if (specLower.Contains("relation") || specLower.Contains("couple") || specLower.Contains("family")) { iconClass = "bi-people"; }
+                        else if (specLower.Contains("child") || specLower.Contains("adolescent") || specLower.Contains("teen")) { iconClass = "bi-emoji-smile"; }
+                        else if (specLower.Contains("sleep") || specLower.Contains("insomnia")) { iconClass = "bi-moon-stars"; }
+                        else if (specLower.Contains("stress") || specLower.Contains("burnout")) { iconClass = "bi-shield-heart"; }
+                        else if (specLower.Contains("addict") || specLower.Contains("substance")) { iconClass = "bi-shield-exclamation"; }
 
-<!-- Latest Articles -->
-<section class="mb-section container mb-5">
-    <div class="mb-page-header">
-        <h2>Latest Resources</h2>
-        <a asp-page="/Blog/Index" class="text-decoration-none" style="font-weight:500;font-size:0.9375rem;">
-            View all <i class="bi bi-arrow-right"></i>
-        </a>
-    </div>
-    @if (Model.LatestBlogs.Any())
-    {
+                        <a asp-page="/Doctors/Index" asp-route-specialization="@spec" class="spec-pill-chip">
+                            <i class="bi @iconClass"></i>
+                            <span>@spec</span>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Anxiety & Stress" class="spec-pill-chip"><i class="bi bi-wind"></i><span>Anxiety & Stress</span></a>
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Depression" class="spec-pill-chip"><i class="bi bi-brightness-high"></i><span>Depression</span></a>
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Trauma & PTSD" class="spec-pill-chip"><i class="bi bi-bandaid"></i><span>Trauma & PTSD</span></a>
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Couples Therapy" class="spec-pill-chip"><i class="bi bi-people"></i><span>Couples Therapy</span></a>
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Sleep & Insomnia" class="spec-pill-chip"><i class="bi bi-moon-stars"></i><span>Sleep & Insomnia</span></a>
+                    <a asp-page="/Doctors/Index" asp-route-specialization="Adolescent Health" class="spec-pill-chip"><i class="bi bi-emoji-smile"></i><span>Adolescent Health</span></a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. How MindBridge Works -->
+    <section class="landing-container landing-section">
+        <div class="landing-section-header text-center">
+            <h2 class="landing-section-title">How MindBridge Works</h2>
+            <p class="landing-section-subtitle mx-auto" style="max-width: 580px;">Simple, confidential steps to begin your personal wellness journey.</p>
+        </div>
+
+        <div class="how-it-works-grid">
+            <div class="how-step-card landing-glass-card">
+                <span class="how-step-badge">01</span>
+                <div class="how-step-icon">
+                    <i class="bi bi-search-heart"></i>
+                </div>
+                <h3 class="how-step-title">Find Your Therapist</h3>
+                <p class="how-step-desc">
+                    Browse verified psychologists and psychiatrists by specialization, care approach, and language to find the perfect fit.
+                </p>
+            </div>
+
+            <div class="how-step-card landing-glass-card">
+                <span class="how-step-badge">02</span>
+                <div class="how-step-icon">
+                    <i class="bi bi-calendar2-check"></i>
+                </div>
+                <h3 class="how-step-title">Book a Session</h3>
+                <p class="how-step-desc">
+                    Pick a convenient date and consultation time with transparent fees and immediate confirmation—no waiting lists.
+                </p>
+            </div>
+
+            <div class="how-step-card landing-glass-card">
+                <span class="how-step-badge">03</span>
+                <div class="how-step-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <h3 class="how-step-title">Start Your Journey</h3>
+                <p class="how-step-desc">
+                    Attend secure, private consultations online or in-person with continuous care and actionable personalized guidance.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Stories of Healing (Testimonials) -->
+    <section class="landing-container landing-section">
+        <div class="landing-section-header text-center">
+            <h2 class="landing-section-title">Stories of Healing</h2>
+            <p class="landing-section-subtitle mx-auto" style="max-width: 600px;">Hear from individuals who found clarity, balance, and resilience with OPCBS.</p>
+        </div>
+
         <div class="row g-4">
-            @foreach (var blog in Model.LatestBlogs)
-            {
-                <div class="col-md-4">
-                    <a asp-page="/Blog/Details" asp-route-id="@blog.Id" class="text-decoration-none">
-                        <div class="mb-blog-card h-100">
-                            <div class="blog-image d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg, var(--mb-secondary) 0%, var(--mb-primary-light) 100%);">
-                                @if (!string.IsNullOrEmpty(blog.ImageUrl))
+            <div class="col-lg-4 col-md-6 col-12">
+                <div class="testimonial-card-landing landing-glass-card">
+                    <div class="testimonial-stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "MindBridge completely reshaped how I approach mental wellness. Finding a clinical specialist who genuinely listened to my anxiety concerns made all the difference in my recovery."
+                    </p>
+                    <div class="testimonial-author-row">
+                        <div class="testimonial-avatar">SJ</div>
+                        <div>
+                            <div class="testimonial-author-name">Sarah Jenkins</div>
+                            <div class="testimonial-author-tag">
+                                <i class="bi bi-shield-check"></i> Verified Patient
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 col-12">
+                <div class="testimonial-card-landing landing-glass-card">
+                    <div class="testimonial-stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "After struggling with burnout for months, booking a consultation was frictionless. The video sessions are secure, private, and seamlessly fit around my work schedule."
+                    </p>
+                    <div class="testimonial-author-row">
+                        <div class="testimonial-avatar">MT</div>
+                        <div>
+                            <div class="testimonial-author-name">Michael T.</div>
+                            <div class="testimonial-author-tag">
+                                <i class="bi bi-shield-check"></i> Verified Patient
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 col-12">
+                <div class="testimonial-card-landing landing-glass-card">
+                    <div class="testimonial-stars">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "The transparency of therapist credentials, fees, and real reviews gave me total confidence. I felt supported and safe from our very first consultation session."
+                    </p>
+                    <div class="testimonial-author-row">
+                        <div class="testimonial-avatar">ER</div>
+                        <div>
+                            <div class="testimonial-author-name">Emily Rodriguez</div>
+                            <div class="testimonial-author-tag">
+                                <i class="bi bi-shield-check"></i> Verified Patient
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Latest Mental Health Resources -->
+    <section class="landing-container landing-section">
+        <div class="d-flex justify-content-between align-items-end landing-section-header flex-wrap gap-2">
+            <div>
+                <h2 class="landing-section-title">Latest Mental Health Resources</h2>
+                <p class="landing-section-subtitle">Evidence-based guides, self-care practices, and insights from OPCBS specialists.</p>
+            </div>
+            <a asp-page="/Blog/Index" class="landing-section-link">
+                View all resources <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        @if (Model.LatestBlogs.Any())
+        {
+            <div class="row g-4">
+                @foreach (var blog in Model.LatestBlogs)
+                {
+                    var displayImg = blog.DisplayImage;
+                    <div class="col-lg-4 col-md-6 col-12">
+                        <a asp-page="/Blog/Details" asp-route-id="@blog.Id" class="blog-card-landing landing-glass-card">
+                            <div class="blog-thumb-frame">
+                                @if (!string.IsNullOrEmpty(displayImg))
                                 {
-                                    <img src="@blog.ImageUrl" alt="@blog.Title" class="w-100 h-100" style="object-fit:cover;" />
+                                    <img src="@displayImg" alt="@blog.Title" class="blog-thumb-img" loading="lazy" />
                                 }
                                 else
                                 {
-                                    <i class="bi bi-journal-text" style="font-size:2.5rem;color:var(--mb-primary);"></i>
+                                    <div class="blog-thumb-fallback">
+                                        <i class="bi bi-journal-medical"></i>
+                                    </div>
                                 }
                             </div>
-                            <div class="blog-body">
+                            <div class="blog-content-body">
                                 @if (!string.IsNullOrEmpty(blog.Category))
                                 {
-                                    <span class="blog-category">@blog.Category</span>
+                                    <span class="blog-cat-chip">@blog.Category</span>
                                 }
-                                <h5 class="blog-title">@blog.Title</h5>
-                                <p class="blog-excerpt">@blog.Summary</p>
-                                <div class="blog-meta d-flex justify-content-between">
-                                    <span>@blog.AuthorName</span>
-                                    <span>@blog.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                <h3 class="blog-title-landing">@blog.Title</h3>
+                                <p class="blog-summary-landing">@(blog.DisplaySummary ?? "Clinical perspectives and self-care strategies from OPCBS healthcare specialists.")</p>
+                                
+                                <div class="blog-meta-footer">
+                                    <span><i class="bi bi-person-circle me-1"></i>@(string.IsNullOrEmpty(blog.AuthorName) ? "OPCBS Clinical Team" : blog.AuthorName)</span>
+                                    <span>@(blog.PublishedAt?.ToString("MMM dd, yyyy") ?? blog.CreatedAt.ToString("MMM dd, yyyy"))</span>
                                 </div>
                             </div>
-                        </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <!-- 7. Final Call to Action -->
+    <section class="landing-container landing-section">
+        <div class="cta-banner-landing">
+            <div class="cta-banner-content">
+                <h2 class="cta-banner-title">Ready to take the next step?</h2>
+                <p class="cta-banner-desc">
+                    Connect with a verified mental health professional and start your care journey with confidence.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a asp-page="/Account/Register" class="btn btn-cta-primary">
+                        <i class="bi bi-check2-circle me-1"></i>Get Started
+                    </a>
+                    <a asp-page="/Doctors/Index" class="btn btn-cta-secondary">
+                        <i class="bi bi-search me-1"></i>Browse Therapists
                     </a>
                 </div>
-            }
-        </div>
-    }
-</section>
-
-<!-- Call To Action -->
-<section class="container">
-    <div class="cta-section">
-        <div class="cta-content">
-            <h2>Ready to Transform Your Life?</h2>
-            <p>Take the first step towards better mental health today. Join thousands of users who have found their perfect therapist on MindBridge.</p>
-            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                <a asp-page="/Account/Register" class="btn btn-light btn-lg px-5" style="border-radius: 50px; font-weight: 700; color: #1E3A31;">Get Started Now</a>
-                <a asp-page="/Doctors/Index" class="btn btn-outline-light btn-lg px-5" style="border-radius: 50px; font-weight: 600;">Browse Therapists</a>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
 </div>
+

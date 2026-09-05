@@ -73,6 +73,28 @@ public class AppointmentDto
     public string? ProposedSlotEndTime { get; set; }
     public string? RescheduleReason { get; set; }
     public bool CanReschedule { get; set; }
+    public bool HasConsultationNote { get; set; }
+    public bool IsDocumentationRequired { get; set; }
+    public bool IsDocumentationEscalated { get; set; }
+    public DateTime? DocumentationDueAtUtc { get; set; }
+    public Guid? BlockingDocumentationAppointmentId { get; set; }
+    public string? BlockingDocumentationBookingCode { get; set; }
+    public string? BlockingDocumentationAppointmentDate { get; set; }
+    public bool BlockingAppointmentHasConsultationNote { get; set; }
+    public DateTime? DoctorResponseDeadlineUtc { get; set; }
+    public int? RemainingResponseMinutes { get; set; }
+    public bool IsResponseOverdue { get; set; }
+    public bool IsResponseUrgent { get; set; }
+    public bool CanComplete { get; set; }
+    public DateTime? EarliestCompletionAtUtc { get; set; }
+    public int? RemainingMinutesBeforeCompletion { get; set; }
+
+    // Patient system-wide attendance stats across all doctors
+    public int PatientCompletedAppointmentsCount { get; set; }
+    public int PatientAbsentAppointmentsCount { get; set; }
+    public int PatientTotalTrackedAppointmentsCount { get; set; }
+    public int PatientAbsentRatePercent { get; set; }
+    public string PatientAbsentRiskLevel { get; set; } = "Low";
 }
 
 /// <summary>
@@ -101,6 +123,21 @@ public class AppointmentListItemDto
     public string? ProposedSlotStartTime { get; set; }
     public string? ProposedSlotEndTime { get; set; }
     public bool CanReschedule { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DoctorResponseDeadlineUtc { get; set; }
+    public int? RemainingResponseMinutes { get; set; }
+    public bool IsResponseOverdue { get; set; }
+    public bool IsResponseUrgent { get; set; }
+    public bool CanComplete { get; set; }
+    public DateTime? EarliestCompletionAtUtc { get; set; }
+    public int? RemainingMinutesBeforeCompletion { get; set; }
+
+    // Patient system-wide attendance stats across all doctors
+    public int PatientCompletedAppointmentsCount { get; set; }
+    public int PatientAbsentAppointmentsCount { get; set; }
+    public int PatientTotalTrackedAppointmentsCount { get; set; }
+    public int PatientAbsentRatePercent { get; set; }
+    public string PatientAbsentRiskLevel { get; set; } = "Low";
 }
 
 /// <summary>
@@ -238,7 +275,7 @@ public class ConsultationNoteDto
     public Guid? FollowUpAppointmentId { get; set; }
     public string? FollowUpAppointmentBookingCode { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1; // Visible to the owning patient.
     public string? PackageName { get; set; }
 
     // Patient confirmation & audit fields
@@ -280,7 +317,12 @@ public class PatientRecordDto
     public string? DisplayEmail { get; set; }
     public bool IsGuest => PatientId == null;
 
-    // Enriched from PatientProfile for registered patients. Guest records intentionally remain null.
+    // Guest demographic fields
+    public DateTime? GuestDateOfBirth { get; set; }
+    public string? GuestGender { get; set; }
+    public string? GuestAddress { get; set; }
+
+    // Enriched from PatientProfile for registered patients.
     public DateTime? DateOfBirth { get; set; }
     public string? Gender { get; set; }
     public string? Address { get; set; }
@@ -296,6 +338,9 @@ public class CreatePatientRecordDto
     public string? GuestName { get; set; }
     public string? GuestPhone { get; set; }
     public string? GuestEmail { get; set; }
+    public DateTime? GuestDateOfBirth { get; set; }
+    public string? GuestGender { get; set; }
+    public string? GuestAddress { get; set; }
     public string? PsychologicalHistory { get; set; }
     public string? CurrentSymptoms { get; set; }
     public string? StressFactors { get; set; }
@@ -321,7 +366,7 @@ public class CreateConsultationNoteDto
     public DateTime? NextAppointmentRecommendedDate { get; set; }
     public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1; // Visible to the owning patient.
     public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
@@ -338,7 +383,7 @@ public class UpdateConsultationNoteDto
     public DateTime? NextAppointmentRecommendedDate { get; set; }
     public Guid? NextAppointmentRecommendedSlotId { get; set; }
     public DateTime? ConsultationDate { get; set; }
-    public int Visibility { get; set; } // 0=DoctorOnly, 1=PatientVisible
+    public int Visibility { get; set; } = 1; // Visible to the owning patient.
     public List<CreateCustomClinicalFieldDto>? CustomFields { get; set; }
 }
 
@@ -419,4 +464,9 @@ public class AppointmentClinicalContextDto
     public RecentAssessmentResultDto? CurrentAssessment { get; set; }
     public List<RecentAssessmentResultDto> RecentAssessments { get; set; } = new();
     public AppointmentTreatmentCaseContextDto? TreatmentCaseContext { get; set; }
+}
+
+public class UpdateConsultationModeDto
+{
+    public ConsultationMode ConsultationMode { get; set; } = ConsultationMode.Online;
 }

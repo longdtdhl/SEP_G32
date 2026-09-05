@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model OPCBS.Web.Pages.Patient.Reviews.CreateModel
 @{
     ViewData["Title"] = "Rate Doctor";
@@ -9,10 +9,7 @@
     <h1><i class="bi bi-star me-2" style="color:var(--mb-primary);"></i>Rate Doctor</h1>
 </div>
 
-@if (Model.Error != null)
-{
-    <div class="alert alert-danger">@Model.Error</div>
-}
+@if (Model.Error != null) { <div class="alert alert-danger">@Model.Error</div> }
 
 <div class="row justify-content-center">
     <div class="col-lg-6">
@@ -55,7 +52,7 @@
     function setRating(value) {
         document.getElementById('ratingInput').value = value;
         const stars = document.querySelectorAll('.star-btn');
-        const texts = ['', 'Rất tệ', 'Tệ', 'Normal', 'Tốt', 'Tuyệt vời'];
+        const texts = ['', 'Very Poor', 'Poor', 'Average', 'Good', 'Excellent'];
         stars.forEach((star, index) => {
             star.style.color = index < value ? '#f5a623' : '#ddd';
         });

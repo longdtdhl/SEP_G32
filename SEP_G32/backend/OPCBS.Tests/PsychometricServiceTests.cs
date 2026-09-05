@@ -490,18 +490,88 @@ public class PsychometricServiceTests
 
         testRepo.Setup(r => r.GetByIdAsync(testId, It.IsAny<CancellationToken>())).ReturnsAsync(test);
         questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(questions);
+        submissionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PsychometricSubmission>());
 
         var service = new PsychometricService(
             testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
             patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object
         );
 
-        var response = await service.DeleteTestAsync(testId);
+        var response = await service.DeleteTestAsync(testId, Guid.NewGuid(), canManageSystemTemplates: true);
 
         Assert.True(response.Success);
         Assert.True(test.IsDeleted);
         Assert.True(questions[0].IsDeleted);
         testRepo.Verify(r => r.Update(test), Times.Once);
         uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetTestsAsync_PublicLibrary_ReturnsSystemTemplatesOnly()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+
+        var doctorId = Guid.NewGuid();
+        testRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PsychometricTest>
+        {
+            new() { Id = Guid.NewGuid(), Title = "PHQ-9", TestType = "PHQ9", IsActive = true },
+            new() { Id = Guid.NewGuid(), Title = "Private Check-in", TestType = "CUSTOM", DoctorId = doctorId, IsActive = true }
+        });
+        questionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PsychometricQuestion>());
+        submissionRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<PsychometricSubmission>());
+        userRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<User>());
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object);
+
+        var response = await service.GetTestsAsync();
+
+        Assert.True(response.Success);
+        Assert.Single(response.Data!);
+        Assert.Equal("PHQ-9", response.Data![0].Title);
+        Assert.True(response.Data[0].IsSystemTemplate);
+    }
+
+    [Fact]
+    public async Task UpdateTestAsync_DoctorCannotModifySystemOrAnotherDoctorsTemplate()
+    {
+        var testRepo = new Mock<IRepository<PsychometricTest>>();
+        var questionRepo = new Mock<IRepository<PsychometricQuestion>>();
+        var submissionRepo = new Mock<IRepository<PsychometricSubmission>>();
+        var answerRepo = new Mock<IRepository<PsychometricAnswer>>();
+        var patientRepo = new Mock<IRepository<PatientProfile>>();
+        var apptRepo = new Mock<IRepository<Appointment>>();
+        var userRepo = new Mock<IRepository<User>>();
+        var uow = new Mock<IUnitOfWork>();
+        var doctorId = Guid.NewGuid();
+        var otherDoctorId = Guid.NewGuid();
+        var systemTest = new PsychometricTest { Id = Guid.NewGuid(), Title = "PHQ-9", TestType = "PHQ9" };
+        var privateTest = new PsychometricTest { Id = Guid.NewGuid(), Title = "Private", TestType = "CUSTOM", DoctorId = otherDoctorId };
+        var dto = new UpdatePsychometricTestDto { Title = "Changed", TestType = "CUSTOM" };
+
+        testRepo.Setup(r => r.GetByIdAsync(systemTest.Id, It.IsAny<CancellationToken>())).ReturnsAsync(systemTest);
+        testRepo.Setup(r => r.GetByIdAsync(privateTest.Id, It.IsAny<CancellationToken>())).ReturnsAsync(privateTest);
+
+        var service = new PsychometricService(
+            testRepo.Object, questionRepo.Object, submissionRepo.Object, answerRepo.Object,
+            patientRepo.Object, apptRepo.Object, userRepo.Object, uow.Object);
+
+        var systemResult = await service.UpdateTestAsync(systemTest.Id, dto, doctorId);
+        var privateResult = await service.UpdateTestAsync(privateTest.Id, dto, doctorId);
+
+        Assert.False(systemResult.Success);
+        Assert.False(privateResult.Success);
+        Assert.Equal("PHQ-9", systemTest.Title);
+        Assert.Equal("Private", privateTest.Title);
+        testRepo.Verify(r => r.Update(It.IsAny<PsychometricTest>()), Times.Never);
     }
 }

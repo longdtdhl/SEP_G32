@@ -10,9 +10,8 @@ public class ServicePackageDto
     public int? MaxDailySlotsCapacity { get; set; }
     public int? MaxPatientCapacity { get; set; }
     public bool IsFeatured { get; set; }
-    // Retained for older manager pages. New service-package API uses the two capacity fields above.
-    public int MaxAppointments { get; set; }
     public bool IsActive { get; set; } = true;
+    // Compatibility for existing subscription views; the current API may return an empty list.
     public List<string> Features { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 }
@@ -23,8 +22,9 @@ public class CreateServicePackageDto
     public string? Description { get; set; }
     public decimal Price { get; set; }
     public int DurationDays { get; set; }
-    public int MaxAppointments { get; set; }
-    public List<string> Features { get; set; } = new();
+    public int? MaxDailySlotsCapacity { get; set; }
+    public int? MaxPatientCapacity { get; set; }
+    public bool IsFeatured { get; set; }
 }
 
 public class UpdateServicePackageDto
@@ -33,7 +33,8 @@ public class UpdateServicePackageDto
     public string? Description { get; set; }
     public decimal Price { get; set; }
     public int DurationDays { get; set; }
-    public int MaxAppointments { get; set; }
+    public int? MaxDailySlotsCapacity { get; set; }
+    public int? MaxPatientCapacity { get; set; }
+    public bool IsFeatured { get; set; }
     public bool IsActive { get; set; } = true;
-    public List<string> Features { get; set; } = new();
 }

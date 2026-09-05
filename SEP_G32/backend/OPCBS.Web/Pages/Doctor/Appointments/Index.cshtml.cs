@@ -11,6 +11,7 @@ namespace OPCBS.Web.Pages.Doctor.Appointments;
 [Authorize(Roles = RoleConstants.Doctor)]
 public class IndexModel : PageModel
 {
+    private const int PageSize = 10;
     private readonly IAppointmentApiService _api;
     public IndexModel(IAppointmentApiService api) => _api = api;
 
@@ -29,6 +30,11 @@ public class IndexModel : PageModel
     public int InProgressCount { get; set; }
     public int RescheduleRequestedCount { get; set; }
     public int TotalCount { get; set; }
+    public Dictionary<Guid, PatientAttendanceStats> PatientAttendanceStatsMap { get; set; } = new();
+
+    public List<AppointmentListItemDto> UrgentPendingAppointments { get; set; } = new();
+    public string? OldestPendingWaitingTime { get; set; }
+    public DateTime? NearestPendingDeadlineUtc { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -39,7 +45,7 @@ public class IndexModel : PageModel
             Status = Status,
             Search = Search,
             Page = CurrentPage,
-            PageSize = 10
+            PageSize = PageSize
         };
         if (DateTime.TryParse(DateFrom, out var from)) filter.FromDate = from;
         if (DateTime.TryParse(DateTo, out var to)) filter.ToDate = to;
@@ -51,11 +57,63 @@ public class IndexModel : PageModel
 
         // Load all active appointments for status counts
         var (allActive, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { View = "active", Page = 1, PageSize = 9999 });
-        PendingCount = allActive?.Count(a => a.Status == 0) ?? 0;
+        var pendingList = allActive?.Where(a => a.Status == 0).ToList() ?? new();
+        PendingCount = pendingList.Count;
         ApprovedCount = allActive?.Count(a => a.Status == 1) ?? 0;
         InProgressCount = allActive?.Count(a => a.Status == 3) ?? 0;
         RescheduleRequestedCount = allActive?.Count(a => a.Status == 6) ?? 0;
         TotalCount = allActive?.Count ?? 0;
+
+        if (PendingCount > 0)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var oldest = pendingList.OrderBy(a => a.CreatedAt).FirstOrDefault();
+            if (oldest != null && oldest.CreatedAt != default)
+            {
+                var waitingSpan = nowUtc - (oldest.CreatedAt.Kind == DateTimeKind.Utc ? oldest.CreatedAt : oldest.CreatedAt.ToUniversalTime());
+                if (waitingSpan.TotalHours >= 1)
+                {
+                    OldestPendingWaitingTime = $"Waiting for {(int)waitingSpan.TotalHours} hour{((int)waitingSpan.TotalHours > 1 ? "s" : "")}";
+                }
+                else
+                {
+                    OldestPendingWaitingTime = $"Waiting for {Math.Max(1, (int)waitingSpan.TotalMinutes)} minute{(Math.Max(1, (int)waitingSpan.TotalMinutes) > 1 ? "s" : "")}";
+                }
+            }
+
+            var nearest = pendingList.Where(a => a.DoctorResponseDeadlineUtc.HasValue).OrderBy(a => a.DoctorResponseDeadlineUtc).FirstOrDefault();
+            NearestPendingDeadlineUtc = nearest?.DoctorResponseDeadlineUtc;
+
+            UrgentPendingAppointments = pendingList
+                .OrderBy(a => a.DoctorResponseDeadlineUtc ?? DateTime.MaxValue)
+                .Take(3)
+                .ToList();
+        }
+
+        var (allDoctorAppointments, _, _) = await _api.GetDoctorAppointmentsAsync(new AppointmentFilterDto { Page = 1, PageSize = 9999 });
+        PatientAttendanceStatsMap = (allDoctorAppointments ?? new())
+            .Where(a => a.PatientId.HasValue && (a.Status == (int)AppointmentStatus.Completed || a.Status == (int)AppointmentStatus.NoShow))
+            .GroupBy(a => a.PatientId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var completed = g.Count(a => a.Status == (int)AppointmentStatus.Completed);
+                    var absent = g.Count(a => a.Status == (int)AppointmentStatus.NoShow);
+                    return new PatientAttendanceStats(completed, absent);
+                });
+    }
+
+    public PatientAttendanceStats? GetAttendanceStats(AppointmentListItemDto appointment)
+    {
+        if (appointment.PatientTotalTrackedAppointmentsCount > 0)
+        {
+            return new PatientAttendanceStats(appointment.PatientCompletedAppointmentsCount, appointment.PatientAbsentAppointmentsCount);
+        }
+
+        return appointment.PatientId.HasValue && PatientAttendanceStatsMap.TryGetValue(appointment.PatientId.Value, out var stats)
+            ? stats
+            : null;
     }
 
     public async Task<IActionResult> OnPostConfirmAsync(Guid id)
@@ -101,4 +159,11 @@ public class IndexModel : PageModel
         else TempData["Success"] = "Reschedule request declined.";
         return RedirectToPage();
     }
+}
+
+public sealed record PatientAttendanceStats(int CompletedCount, int AbsentCount)
+{
+    public int TotalTracked => CompletedCount + AbsentCount;
+    public int AbsentRate => TotalTracked == 0 ? 0 : (int)Math.Round((double)AbsentCount / TotalTracked * 100);
+    public string RiskClass => AbsentRate >= 30 ? "high" : AbsentRate >= 15 ? "medium" : "low";
 }

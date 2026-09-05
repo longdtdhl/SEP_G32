@@ -87,6 +87,7 @@ public class ProfileModel : PageModel
                 Education = DoctorProfile.Education,
                 CareerBackground = DoctorProfile.CareerBackground,
                 ConsultationFee = DoctorProfile.ConsultationFee,
+                IsConsultationFeePublic = DoctorProfile.IsConsultationFeePublic,
                 CareApproach = DoctorProfile.CareApproach,
                 Languages = DoctorProfile.Languages,
                 ConsultationTypes = DoctorProfile.ConsultationTypes,

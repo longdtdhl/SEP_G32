@@ -16,7 +16,7 @@
     }
     .pp-seg a.active { background: #fff; color: #0f766e; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
     .pp-seg a:hover:not(.active) { color: #0f766e; background: #e2e8f0; }
-    .pp-seg .seg-badge { background: #ef4444; color: #fff; font-size: 0.65rem; border-radius: 10px; padding: 1px 6px; margin-left: 4px; font-weight: 700; }
+    .pp-seg .seg-badge { background: #f59e0b; color: #fff; font-size: 0.65rem; border-radius: 10px; padding: 1px 6px; margin-left: 4px; font-weight: 700; }
 
     /* ── Search ── */
     .pp-search { position: relative; max-width: 280px; }
@@ -48,10 +48,9 @@
     .pp-status.expired  { background: #fee2e2; color: #991b1b; }
     .pp-status.rejected { background: #fce7f3; color: #9d174d; }
     .pp-status.cancelled{ background: #f1f5f9; color: #64748b; }
-    .pp-status.finished { background: #f0e7ff; color: #6d28d9; }
 
     /* ── Meta ── */
-    .pp-meta { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #64748b; margin-bottom: 5px; }
+    .pp-meta { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #64748b; margin-bottom: 6px; }
     .pp-meta i { color: #0d9488; width: 16px; text-align: center; font-size: .82rem; }
     .pp-meta strong { color: #1e293b; }
 
@@ -61,10 +60,6 @@
         border-radius: 8px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
         color: #166534; font-size: .78rem; font-weight: 600;
     }
-
-    /* ── Progress ── */
-    .pp-progress-track { background: #e2e8f0; border-radius: 6px; height: 6px; overflow: hidden; }
-    .pp-progress-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
 
     /* ── Empty state ── */
     .pp-empty {
@@ -79,7 +74,7 @@
         <h1 style="font-size:1.35rem; font-weight:800; margin:0; color:#1e293b;">
             <i class="bi bi-box-seam-fill me-2" style="color:#0d9488;"></i>My Treatment Packages
         </h1>
-        <p style="margin:4px 0 0; font-size:.82rem; color:#94a3b8;">Review packages from your therapist and track active treatments</p>
+        <p style="margin:4px 0 0; font-size:.82rem; color:#94a3b8;">Review personalized treatment proposals and active treatment programs</p>
     </div>
     <div class="pp-search">
         <i class="bi bi-search"></i>
@@ -127,19 +122,45 @@
         @foreach (var pkg in displayList)
         {
             var isPending = IndexModel.IsPending(pkg);
-            var isFinished = pkg.RemainingSessions == 0 && pkg.TotalSessions > 0 && (pkg.Status == "Active" || pkg.Status == "Accepted");
-            var progress = pkg.TotalSessions > 0 ? (int)((double)pkg.CompletedSessions / pkg.TotalSessions * 100) : 0;
-            var progressColor = progress >= 100 ? "#10b981" : progress >= 50 ? "#3b82f6" : "#f59e0b";
+            var isExpired = pkg.IsExpired || (pkg.Status == "Assigned" && pkg.IsAcceptanceExpired);
 
-            // Status resolve
-            string statusClass, statusLabel;
-            if (isFinished) { statusClass = "finished"; statusLabel = "All Sessions Done"; }
-            else if (pkg.IsExpired) { statusClass = "expired"; statusLabel = "Expired"; }
-            else if (isPending) { statusClass = "pending"; statusLabel = "Awaiting Your Response"; }
+            string statusClass;
+            string statusLabel;
+
+            if (pkg.IsCancellationPending)
+            {
+                statusClass = "pending";
+                statusLabel = "Cancellation Pending";
+            }
+            else if (isExpired)
+            {
+                statusClass = "expired";
+                statusLabel = "Expired";
+            }
+            else if (isPending)
+            {
+                statusClass = "pending";
+                statusLabel = "Awaiting Your Response";
+            }
+            else if (pkg.Status is "Active" or "Accepted")
+            {
+                statusClass = "active";
+                statusLabel = "Active";
+            }
+            else if (pkg.Status == "Completed")
+            {
+                statusClass = "completed";
+                statusLabel = "Completed";
+            }
+            else if (pkg.Status == "Rejected")
+            {
+                statusClass = "rejected";
+                statusLabel = "Declined";
+            }
             else
             {
-                statusClass = pkg.Status switch { "Active" or "Accepted" => "active", "Completed" => "completed", "Cancelled" => "cancelled", "Rejected" => "rejected", _ => "pending" };
-                statusLabel = pkg.Status switch { "Active" or "Accepted" => "Active", "Completed" => "Completed", "Cancelled" => "Cancelled", "Rejected" => "Declined", _ => pkg.Status };
+                statusClass = "cancelled";
+                statusLabel = pkg.Status;
             }
 
             <div class="col-md-6 col-xl-4">
@@ -156,29 +177,35 @@
                             <i class="bi bi-person-badge"></i>Dr. @(pkg.DoctorName ?? "N/A")
                         </div>
 
-                        <!-- Description -->
+                        <!-- Description / Target Outcome -->
                         @if (!string.IsNullOrEmpty(pkg.Description))
                         {
                             <p style="font-size:.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.Description</p>
                         }
-
-                        <!-- Meta -->
-                        <div class="pp-meta"><i class="bi bi-camera-video"></i><span>Sessions: <strong>@pkg.CompletedSessions / @pkg.TotalSessions</strong></span></div>
-                        <div class="pp-meta"><i class="bi bi-hourglass-split"></i><span>Remaining: <strong>@pkg.RemainingSessions</strong></span></div>
-                        <div class="pp-meta"><i class="bi bi-calendar-x"></i><span>Expires: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b")">@pkg.ExpirationDate.ToString("MMM dd, yyyy")</strong></span></div>
-                        <div class="pp-meta"><i class="bi bi-cash-stack"></i><span>Fee: <strong style="color:#0d9488;">@pkg.Price.ToString("N0") ₫</strong></span></div>
-
-                        <!-- Progress bar (for non-pending) -->
-                        @if (!isPending && pkg.TotalSessions > 0)
+                        else if (!string.IsNullOrEmpty(pkg.TargetOutcome))
                         {
-                            <div style="margin-top:10px;">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span style="font-size:.7rem; color:#94a3b8; font-weight:500;">Progress</span>
-                                    <span style="font-size:.7rem; color:@progressColor; font-weight:700;">@progress%</span>
-                                </div>
-                                <div class="pp-progress-track"><div class="pp-progress-fill" style="width:@progress%; background:@progressColor;"></div></div>
-                            </div>
+                            <p style="font-size:.8rem; color:#64748b; margin-bottom:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@pkg.TargetOutcome</p>
                         }
+
+                        <!-- Package Parameters -->
+                        <div class="pp-meta"><i class="bi bi-calendar-check"></i><span>Frequency: <strong>@pkg.RecommendedSessionsPerWeek session(s)/week</strong></span></div>
+                        <div class="pp-meta"><i class="bi bi-hourglass-split"></i><span>Validity: <strong>@pkg.ValidityDays days (@pkg.SessionQuantity total sessions)</strong></span></div>
+                        
+                        @if (pkg.AssignedDate.HasValue)
+                        {
+                            <div class="pp-meta"><i class="bi bi-calendar-plus"></i><span>Assigned: <strong>@pkg.AssignedDate.Value.ToString("MMM dd, yyyy")</strong></span></div>
+                        }
+
+                        @if (isPending && pkg.AcceptanceExpiresAt.HasValue)
+                        {
+                            <div class="pp-meta"><i class="bi bi-clock-history text-warning"></i><span style="color:#b45309;">Acceptance deadline: <strong>@pkg.AcceptanceExpiresAt.Value.ToString("MMM dd, yyyy")</strong></span></div>
+                        }
+                        else if (pkg.Status is "Active" or "Accepted")
+                        {
+                            <div class="pp-meta"><i class="bi bi-calendar-x"></i><span>Expires: <strong style="color:@(pkg.IsExpired ? "#ef4444" : "#1e293b")">@pkg.ExpirationDate.ToString("MMM dd, yyyy")</strong></span></div>
+                        }
+
+                        <div class="pp-meta mt-2"><i class="bi bi-cash-stack"></i><span>Program Fee: <strong style="color:#0d9488;">@pkg.Price.ToString("N0") VND</strong></span></div>
                     </div>
 
                     <!-- Footer Actions -->
@@ -198,19 +225,13 @@
                                style="border-radius:8px; font-size:.78rem; font-weight:600;">
                                 <i class="bi bi-eye"></i>Details
                             </a>
-                            @if (isFinished)
+
+                            @if (pkg.Status is "Active" or "Accepted" && !pkg.IsExpired)
                             {
-                                <span class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
-                                   style="border-radius:8px; font-size:.78rem; font-weight:600; background:#f0e7ff; color:#6d28d9; border:1px solid #c4b5fd;">
-                                    <i class="bi bi-trophy-fill"></i>Completed!
-                                </span>
-                            }
-                            else if ((pkg.Status == "Active" || pkg.Status == "Accepted") && !pkg.IsExpired && pkg.RemainingSessions > 0)
-                            {
-                                <a asp-page="/Appointment/Book" asp-route-doctorId="@pkg.DoctorId" asp-route-treatmentPackageId="@pkg.Id"
+                                <a asp-page="/Patient/TreatmentCases/Index"
                                    class="btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
                                    style="border-radius:8px; font-size:.78rem; font-weight:600; background:#0d9488; color:#fff; border:none;">
-                                    <i class="bi bi-calendar-plus"></i>Book Session
+                                    <i class="bi bi-graph-up"></i>View Progress
                                 </a>
                             }
                         }
@@ -226,12 +247,12 @@ else
         <i class="bi bi-box-seam d-block mb-3" style="font-size:3rem; color:#cbd5e1;"></i>
         @if (mode == "history")
         {
-            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No history yet</h5>
-            <p style="font-size:.85rem; color:#94a3b8;">Completed, declined, or expired packages will appear here.</p>
+            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No Treatment Package History</h5>
+            <p style="font-size:.85rem; color:#94a3b8;">Completed, declined, or expired packages will appear here in read-only mode.</p>
         }
         else
         {
-            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No active packages</h5>
+            <h5 style="font-weight:700; color:#475569; margin-bottom:6px;">No Active Treatment Packages</h5>
             <p style="font-size:.85rem; color:#94a3b8; margin-bottom:1.5rem;">Your doctor will create a personalized treatment package for you after consultation.</p>
             <a asp-page="/Doctors/Index" class="btn px-4 py-2" style="border-radius:10px; background:#0d9488; color:#fff; font-weight:600;">
                 <i class="bi bi-search me-1"></i>Find a Doctor

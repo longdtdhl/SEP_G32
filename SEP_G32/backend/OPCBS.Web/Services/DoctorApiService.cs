@@ -24,6 +24,9 @@ public class DoctorApiService : ApiServiceBase, IDoctorApiService
             if (filter.MinRating.HasValue) parts.Add($"minRating={filter.MinRating}");
             if (filter.MaxFee.HasValue) parts.Add($"maxFee={filter.MaxFee}");
             if (!string.IsNullOrEmpty(filter.Gender)) parts.Add($"gender={filter.Gender}");
+            if (filter.AvailableDate.HasValue) parts.Add($"availableDate={filter.AvailableDate.Value:yyyy-MM-dd}");
+            if (!string.IsNullOrEmpty(filter.TimeFrame)) parts.Add($"timeFrame={Uri.EscapeDataString(filter.TimeFrame)}");
+            if (filter.AvailableOnly.HasValue) parts.Add($"availableOnly={filter.AvailableOnly.Value}");
             parts.Add($"page={filter.Page}");
             parts.Add($"pageSize={filter.PageSize}");
             if (parts.Count > 0) query += "?" + string.Join("&", parts);

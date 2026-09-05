@@ -17,11 +17,20 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnPostCreateAsync(
         Guid caseId, string title, string? description,
-        int category, int priority, decimal? targetValue,
+        int category, int priority, decimal? currentValue, decimal? targetValue,
         string? unit, string? targetDate)
     {
         CaseId = caseId;
         DateTime? parsedDate = string.IsNullOrEmpty(targetDate) ? null : DateTime.Parse(targetDate);
+
+        if (!string.IsNullOrWhiteSpace(unit))
+        {
+            unit = unit.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(unit, @"^\d+\s*/"))
+            {
+                unit = System.Text.RegularExpressions.Regex.Replace(unit, @"^\d+\s*", "");
+            }
+        }
 
         var dto = new CreateGoalWebDto
         {
@@ -30,6 +39,7 @@ public class CreateModel : PageModel
             Description = description,
             Category = category,
             Priority = priority,
+            CurrentValue = currentValue,
             TargetValue = targetValue,
             Unit = unit,
             TargetDate = parsedDate

@@ -58,22 +58,41 @@
 
     /* Filter Dropdown Menu */
     .filter-menu-dropdown {
-        min-width: 230px;
-        padding: 0.75rem 1rem;
+        min-width: 300px;
+        padding: 0.8rem;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
+    .filter-section-title {
+        margin: 0.35rem 0 0.45rem;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.4rem;
+    }
     .filter-check-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 0;
-        font-size: 0.84rem;
-        font-weight: 500;
+        gap: 7px;
+        min-height: 34px;
+        padding: 0.35rem 0.45rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        background: #f8fafc;
+        font-size: 0.78rem;
+        font-weight: 700;
         color: #334155;
         cursor: pointer;
     }
+    .filter-check-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .filter-check-item .form-check-input { width: 0.9rem; height: 0.9rem; margin: 0; }
     .filter-color-dot {
         width: 10px;
         height: 10px;
@@ -162,6 +181,12 @@
         color: #7f1d1d !important;
         --fc-event-text-color: #7f1d1d !important;
         border-left: 4px solid #dc2626 !important;
+    }
+    .fc-event-absent {
+        background-color: #fff1f2 !important;
+        color: #9f1239 !important;
+        --fc-event-text-color: #9f1239 !important;
+        border-left: 4px solid #e11d48 !important;
     }
     .fc-event-expired {
         background-color: #f1f5f9 !important;
@@ -342,6 +367,32 @@
         white-space: pre-wrap;
     }
 
+    .drawer-appointment-group-summary {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1rem;
+    }
+    .drawer-appointment-group-list {
+        display: grid;
+        gap: 0.65rem;
+        max-height: calc(100vh - 285px);
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+    .drawer-appointment-group-item {
+        border: 1px solid #dbe7e4;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.8rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .drawer-appointment-group-item:hover {
+        border-color: #5eead4;
+        box-shadow: 0 4px 14px rgba(15, 118, 110, 0.08);
+    }
+
     /* Modal Styling for Weekly Config */
     .modal-content.schedule-modal { border: 1px solid #dbe7e4 !important; border-radius: 8px !important; }
     .schedule-modal .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb !important; }
@@ -399,6 +450,47 @@
         </div>
     }
 
+    <!-- Service Package Subscription Entitlement Info -->
+    @if (!Model.IsSubscriptionActive)
+    {
+        <div class="alert border-0 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3" style="background:#fff1f2; border-left:4px solid #e11d48 !important; border-radius:8px; padding:0.85rem 1.25rem;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-5"></i>
+                <div>
+                    <strong class="text-dark" style="font-size:0.9rem;">Subscription Inactive or Expired:</strong>
+                    <span class="text-secondary small ms-1">You need an active Service Package to create availability slots and configure weekly schedules.</span>
+                </div>
+            </div>
+            <a href="/Doctor/ServicePackages" class="btn btn-danger btn-sm fw-bold px-3" style="border-radius:6px;">
+                <i class="bi bi-box-seam me-1"></i>Subscribe / Upgrade Plan
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 bg-white rounded-3 border mb-3 shadow-sm" style="font-size:0.83rem;">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div>
+                    <span class="text-muted">Active Plan:</span>
+                    <strong class="ms-1" style="color:#0f766e;"><i class="bi bi-award me-1"></i>@Model.CurrentSubscription!.PackageName</strong>
+                </div>
+                <div class="border-start ps-3">
+                    <span class="text-muted">Daily Limit:</span>
+                    <strong class="text-dark ms-1">
+                        @(Model.MaxDailySlotsCapacity.HasValue ? $"{Model.MaxDailySlotsCapacity.Value} slots / day" : "Unlimited")
+                    </strong>
+                </div>
+                <div class="border-start ps-3">
+                    <span class="text-muted">Valid Through:</span>
+                    <span class="text-secondary ms-1">@Model.CurrentSubscription.ExpirationDate.ToString("MMM dd, yyyy")</span>
+                </div>
+            </div>
+            <a href="/Doctor/ServicePackages" class="text-decoration-none small fw-semibold" style="color:#0f766e;">
+                <i class="bi bi-arrow-up-right-circle me-1"></i>Manage Packages
+            </a>
+        </div>
+    }
+
     <!-- Toolbar with Professional Control Group -->
     <div class="doctor-schedule-toolbar">
         <!-- View Switcher -->
@@ -429,22 +521,53 @@
                 <i class="bi bi-funnel me-1"></i>Filter Events <span id="filterActiveBadge" class="badge rounded-pill bg-teal text-white ms-1" style="background:#0f766e; font-size:0.72rem;">All</span>
             </button>
             <div class="dropdown-menu dropdown-menu-end filter-menu-dropdown" aria-labelledby="eventFilterDropdownBtn">
-                <div class="fw-bold text-dark small mb-2 border-bottom pb-1">Show Event Types</div>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAppts" value="Appointment" checked>
-                    <div class="filter-color-dot" style="background:#2563eb;"></div>
-                    <span>Appointments</span>
-                </label>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAvailable" value="Availability" checked>
-                    <div class="filter-color-dot" style="background:#0d9488;"></div>
-                    <span>Available Slots</span>
-                </label>
-                <label class="filter-check-item">
-                    <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterBlocked" value="Blocked" checked>
-                    <div class="filter-color-dot" style="background:#dc2626;"></div>
-                    <span>Blocked Slots</span>
-                </label>
+                <div class="fw-bold text-dark small mb-2 border-bottom pb-2">Filter Schedule</div>
+                <div class="filter-section-title">Appointments</div>
+                <div class="filter-grid">
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAccepted" value="Accepted" checked>
+                        <div class="filter-color-dot" style="background:#2563eb;"></div>
+                        <span>Accepted</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterPending" value="Pending" checked>
+                        <div class="filter-color-dot" style="background:#d97706;"></div>
+                        <span>Pending</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterInProgress" value="InProgress" checked>
+                        <div class="filter-color-dot" style="background:#6366f1;"></div>
+                        <span>In Progress</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterCompleted" value="Completed" checked>
+                        <div class="filter-color-dot" style="background:#64748b;"></div>
+                        <span>Completed</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAbsent" value="Absent" checked>
+                        <div class="filter-color-dot" style="background:#e11d48;"></div>
+                        <span>Absent</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterExpired" value="Expired" checked>
+                        <div class="filter-color-dot" style="background:#94a3b8;"></div>
+                        <span>Expired</span>
+                    </label>
+                </div>
+                <div class="filter-section-title">Slots</div>
+                <div class="filter-grid">
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterAvailable" value="Availability" checked>
+                        <div class="filter-color-dot" style="background:#0d9488;"></div>
+                        <span>Available</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input class="form-check-input filter-checkbox" type="checkbox" id="chkFilterBlocked" value="Blocked" checked>
+                        <div class="filter-color-dot" style="background:#dc2626;"></div>
+                        <span>Blocked</span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -455,8 +578,8 @@
             <!-- Empty State Message (hidden by default) -->
             <div id="calendarEmptyState" class="calendar-empty-state d-none">
                 <i class="bi bi-calendar-x display-6 text-muted mb-2"></i>
-                <h6 class="fw-bold text-dark">No events scheduled</h6>
-                <p class="text-muted small mb-3">There are no appointments, available slots, or blocked slots in this view.</p>
+                <h6 class="fw-bold text-dark">No schedule items match this view</h6>
+                <p class="text-muted small mb-3">Try changing the date range or enabling more status filters.</p>
                 <button type="button" class="btn btn-sm btn-primary" onclick="openCreateDrawer('slot')" style="background:#0f766e; border-color:#0f766e; border-radius:8px;">
                     <i class="bi bi-plus-lg me-1"></i>Add Availability
                 </button>
@@ -475,11 +598,13 @@
         <div class="legend-dots">
             <span class="fw-semibold text-dark small"><i class="bi bi-palette me-1"></i>Legend:</span>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ccfbf1; border:1px solid #0d9488;"></div>Available Slot</div>
-            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>Confirmed Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#dbeafe; border:1px solid #2563eb;"></div>Accepted Appt</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fef3c7; border:1px solid #d97706;"></div>Pending Appt</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#ede9fe; border:1px solid #6366f1;"></div>In Progress</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fee2e2; border:1px solid #dc2626;"></div>Blocked Slot</div>
             <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #64748b;"></div>Completed Appt</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#fff1f2; border:1px solid #e11d48;"></div>Absent / Cancelled</div>
+            <div class="legend-dot-item"><div class="legend-dot-box" style="background:#f1f5f9; border:1px solid #94a3b8;"></div>Expired Slot</div>
         </div>
         <div class="text-muted small"><i class="bi bi-cursor-fill me-1"></i>Click any event or empty future time slot to view details, notes, or schedule.</div>
     </div>
@@ -493,9 +618,37 @@
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
+
+        <!-- ── PANEL: MULTIPLE APPOINTMENTS IN ONE SLOT ── -->
+        <div id="drawerAppointmentGroupPanel" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span id="drawerGroupCountBadge" class="badge rounded-pill px-3 py-2" style="background:#0f766e;">Appointments</span>
+                <span id="drawerGroupDate" class="text-muted small fw-medium"></span>
+            </div>
+            <div class="drawer-appointment-group-summary">
+                <div class="d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="small text-uppercase fw-semibold text-muted mb-1">Schedule time</div>
+                        <div id="drawerGroupTime" class="fw-bold" style="color:#0f766e;">--:-- - --:--</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-uppercase fw-semibold text-muted mb-1">Requests / capacity</div>
+                        <div id="drawerGroupCapacity" class="fw-bold text-dark">0 / 1</div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0 fw-bold text-dark">Appointment requests</h6>
+                <span class="small text-muted">Select an appointment to review</span>
+            </div>
+            <div id="drawerAppointmentGroupList" class="drawer-appointment-group-list"></div>
+        </div>
         
         <!-- ── PANEL A: APPOINTMENT DETAILS ── -->
         <div id="drawerAppointmentPanel" class="d-none">
+            <button type="button" id="drawerBackToGroup" class="btn btn-sm btn-link text-decoration-none px-0 mb-2 d-none" onclick="returnToAppointmentGroup()" style="color:#0f766e;">
+                <i class="bi bi-arrow-left me-1"></i>Back to appointments in this slot
+            </button>
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span id="drawerApptBadge" class="badge px-3 py-1.5 rounded-pill fs-7 fw-semibold">Status</span>
                 <span id="drawerApptDate" class="text-muted small fw-medium"></span>
@@ -635,6 +788,9 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
                     <input type="number" name="maxPatients" id="dSlotMaxPatients" class="form-control" min="1" max="10" style="border-radius:8px;" />
+                    <div class="form-text" style="font-size:0.76rem; color:#64748b;">
+                        Number of booking requests this slot can receive for doctor review. Only one patient will be accepted for the actual consultation; other requests are automatically cancelled once one request is accepted.
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -724,7 +880,8 @@
                 <!-- Date -->
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-secondary">Date</label>
-                    <input type="date" name="date" id="dCreateDate" class="form-control" value="@schedulableDateStr" min="@todayStr" required style="border-radius:8px;" />
+                    <input type="date" name="date" id="dCreateDate" class="form-control" value="@schedulableDateStr" min="@todayStr" required style="border-radius:8px;" onchange="validateSlotCreationQuota(this.value, document.querySelector('input[name=\'drawerCreateMode\']:checked')?.value || 'slot')" />
+                    <div id="dCreateQuotaInfo" class="form-text mt-1 text-teal d-none" style="font-size:0.78rem; color:#0f766e;"></div>
                 </div>
 
                 <!-- Time Range -->
@@ -776,6 +933,9 @@
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-secondary">Max Patients Capacity</label>
                         <input type="number" name="maxPatients" id="dCreateMaxPatients" class="form-control" value="1" min="1" max="10" style="border-radius:8px;" />
+                        <div class="form-text" style="font-size:0.76rem; color:#64748b;">
+                            Request intake capacity only. The doctor accepts one patient for this slot; remaining requests are cancelled automatically after acceptance.
+                        </div>
                     </div>
                 </div>
 
@@ -827,6 +987,27 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Subscription Status Warning/Notice -->
+                    @if (!Model.IsSubscriptionActive)
+                    {
+                        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 rounded-3 py-2 small">
+                            <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+                            <div>
+                                <strong>Subscription Required:</strong>
+                                <div>You need an active Service Package to generate recurring weekly schedules. <a href="/Doctor/ServicePackages" class="alert-link text-decoration-underline">Subscribe now</a>.</div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.MaxDailySlotsCapacity.HasValue)
+                    {
+                        <div class="alert d-flex align-items-center gap-2 mb-3 rounded-3 py-2 small" style="background:#f0fdfa; border:1px solid #99f6e4; color:#0f766e;">
+                            <i class="bi bi-info-circle-fill fs-6"></i>
+                            <div>
+                                <strong>Plan Daily Limit:</strong> Your active package (<strong>@Model.CurrentSubscription!.PackageName</strong>) permits up to <strong>@Model.MaxDailySlotsCapacity.Value slots/day</strong>. Generated slots exceeding this daily quota will be capped.
+                            </div>
+                        </div>
+                    }
+
                     <!-- Working Days Checkboxes -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-secondary">Working Days</label>
@@ -924,7 +1105,14 @@
                 </div>
                 <div class="modal-footer border-top-0 pt-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600;">Generate Slots</button>
+                    @if (!Model.IsSubscriptionActive)
+                    {
+                        <a href="/Doctor/ServicePackages" class="btn btn-danger" style="border-radius:8px; font-weight:600;"><i class="bi bi-box-seam me-1"></i>Subscribe to Package</a>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e; border-radius:8px; font-weight:600;">Generate Slots</button>
+                    }
                 </div>
             </form>
         </div>
@@ -940,6 +1128,14 @@
         var currentView = '@Model.View';
         var selectedDateStr = '@selectedDateStr';
 
+        var subscriptionInfo = {
+            isActive: @(Model.IsSubscriptionActive ? "true" : "false"),
+            packageName: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentSubscription?.PackageName ?? "")),
+            maxDailySlots: @(Model.MaxDailySlotsCapacity.HasValue ? Model.MaxDailySlotsCapacity.Value.ToString() : "null"),
+            expirationDate: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentSubscription?.ExpirationDate.ToString("MMM dd, yyyy") ?? "")),
+            dailySlotCounts: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailySlotCounts))
+        };
+
         function escapeHtml(str) {
             if (!str) return '';
             return String(str)
@@ -948,6 +1144,54 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        function validateSlotCreationQuota(dateVal, mode) {
+            var alertEl = document.getElementById('drawerCreateAlert');
+            var submitBtn = document.getElementById('dCreateSubmitBtn');
+            var quotaInfoEl = document.getElementById('dCreateQuotaInfo');
+
+            if (!subscriptionInfo.isActive) {
+                if (alertEl) {
+                    alertEl.innerHTML = '<i class="bi bi-exclamation-octagon-fill me-1"></i><strong>Subscription Inactive or Expired:</strong> You must have an active Service Package to create availability slots. <a href="/Doctor/ServicePackages" class="alert-link text-decoration-underline">Subscribe now</a>.';
+                    alertEl.classList.remove('d-none');
+                }
+                if (submitBtn) submitBtn.disabled = true;
+                if (quotaInfoEl) quotaInfoEl.classList.add('d-none');
+                return false;
+            }
+
+            if (mode === 'treatment') {
+                if (alertEl) alertEl.classList.add('d-none');
+                if (submitBtn) submitBtn.disabled = false;
+                if (quotaInfoEl) quotaInfoEl.classList.add('d-none');
+                return true;
+            }
+
+            // Mode is 'slot'
+            var targetDate = dateVal || (document.getElementById('dCreateDate') ? document.getElementById('dCreateDate').value : '');
+            var existingSlots = (subscriptionInfo.dailySlotCounts && subscriptionInfo.dailySlotCounts[targetDate]) ? subscriptionInfo.dailySlotCounts[targetDate] : 0;
+            var maxCapacity = subscriptionInfo.maxDailySlots;
+
+            if (quotaInfoEl && maxCapacity) {
+                quotaInfoEl.innerHTML = '<i class="bi bi-info-circle me-1"></i>Daily Quota: <strong>' + existingSlots + ' / ' + maxCapacity + '</strong> slots on ' + targetDate;
+                quotaInfoEl.classList.remove('d-none');
+            } else if (quotaInfoEl) {
+                quotaInfoEl.classList.add('d-none');
+            }
+
+            if (maxCapacity && existingSlots >= maxCapacity) {
+                if (alertEl) {
+                    alertEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Daily Slot Limit Reached:</strong> You have reached your limit of <strong>' + maxCapacity + ' slots/day</strong> on <strong>' + targetDate + '</strong> under the <strong>' + escapeHtml(subscriptionInfo.packageName) + '</strong> package. <a href="/Doctor/ServicePackages" class="alert-link text-decoration-underline">Upgrade plan</a> to create more slots.';
+                    alertEl.classList.remove('d-none');
+                }
+                if (submitBtn) submitBtn.disabled = true;
+                return false;
+            } else {
+                if (alertEl) alertEl.classList.add('d-none');
+                if (submitBtn) submitBtn.disabled = false;
+                return true;
+            }
         }
 
         function isPastSlot(dateStr, timeStr) {
@@ -999,6 +1243,11 @@
             });
 
             var type = String(mergedProps.eventType || mergedProps.EventType || '').toLowerCase();
+            var isAppointmentGroup = type === 'appointmentgroup' || Boolean(mergedProps.appointmentGroup || mergedProps.AppointmentGroup);
+            if (isAppointmentGroup) {
+                openAppointmentGroupDrawer(mergedProps);
+                return;
+            }
             var apptId = mergedProps.appointmentId || mergedProps.AppointmentId;
             var isAppointment = type === 'appointment' || type === 'booked' ||
                 Boolean(apptId && type !== 'availability' && type !== 'available' && type !== 'blocked');
@@ -1009,11 +1258,13 @@
 
         function hideAllDrawerPanels() {
             var apptPanel = document.getElementById('drawerAppointmentPanel');
+            var apptGroupPanel = document.getElementById('drawerAppointmentGroupPanel');
             var slotPanel = document.getElementById('drawerSlotPanel');
             var createPanel = document.getElementById('drawerCreatePanel');
             var noteFormCont = document.getElementById('drawerApptNoteFormContainer');
 
             if (apptPanel) apptPanel.classList.add('d-none');
+            if (apptGroupPanel) apptGroupPanel.classList.add('d-none');
             if (slotPanel) slotPanel.classList.add('d-none');
             if (createPanel) createPanel.classList.add('d-none');
             if (noteFormCont) noteFormCont.classList.add('d-none');
@@ -1186,26 +1437,106 @@
         }
 
         // ── Drawer Opener Functions ──
-        function openAppointmentDrawer(props) {
+        var activeAppointmentGroupSummary = null;
+
+        function getAppointmentStatusBadgeClass(status) {
+            if (status === 'pending') return 'bg-warning text-dark';
+            if (status === 'in progress') return 'bg-primary text-white';
+            if (status === 'completed') return 'bg-secondary text-white';
+            if (status === 'absent' || status === 'expired') return 'bg-danger text-white';
+            return 'bg-info text-white';
+        }
+
+        function openAppointmentGroupDrawer(props) {
+            props = props || {};
+            hideAllDrawerPanels();
+            activeAppointmentGroupSummary = props;
+
+            var appointments = props.appointments || props.Appointments || [];
+            var drawerTitle = document.getElementById('drawerTitle');
+            if (drawerTitle) drawerTitle.textContent = 'Appointments in This Slot';
+
+            var timeInfo = parseDateAndTime(props.start || props.Start, props.end || props.End);
+            var dateEl = document.getElementById('drawerGroupDate');
+            var timeEl = document.getElementById('drawerGroupTime');
+            var countEl = document.getElementById('drawerGroupCountBadge');
+            var capacityEl = document.getElementById('drawerGroupCapacity');
+            var listEl = document.getElementById('drawerAppointmentGroupList');
+            var maxPatients = Number(props.maxPatients || props.MaxPatients || appointments.length || 1);
+            var currentBookings = Number(props.currentBookings || props.CurrentBookings || appointments.length);
+
+            if (dateEl) dateEl.textContent = timeInfo.dateStr;
+            if (timeEl) timeEl.textContent = timeInfo.displayTime;
+            if (countEl) countEl.textContent = appointments.length + (appointments.length === 1 ? ' appointment' : ' appointments');
+            if (capacityEl) capacityEl.textContent = currentBookings + ' / ' + maxPatients;
+
+            if (listEl) {
+                listEl.innerHTML = '';
+                appointments.forEach(function(item, index) {
+                    var patientName = String(item.patientName || item.PatientName || 'Patient');
+                    var status = getEffectiveScheduleStatus(item);
+                    var displayStatus = getDisplayScheduleStatus(item.status || item.Status, item);
+                    var packageName = item.treatmentCaseName || item.TreatmentCaseName;
+                    var hasNote = Boolean(item.hasNote || item.HasNote || item.hasNotes || item.HasNotes || item.description || item.Description);
+                    var row = document.createElement('div');
+                    row.className = 'drawer-appointment-group-item';
+                    row.innerHTML =
+                        '<div class="d-flex justify-content-between align-items-start gap-2">' +
+                            '<div class="min-w-0">' +
+                                '<div class="fw-bold text-dark text-truncate">' + escapeHtml(patientName) + '</div>' +
+                                '<div class="small text-muted mt-1">' +
+                                    (packageName ? '<i class="bi bi-box-seam me-1"></i>' + escapeHtml(packageName) : 'General consultation') +
+                                    (hasNote ? ' <span class="ms-1" title="Note available"><i class="bi bi-journal-text"></i></span>' : '') +
+                                '</div>' +
+                            '</div>' +
+                            '<span class="badge rounded-pill ' + getAppointmentStatusBadgeClass(status) + '">' + escapeHtml(displayStatus) + '</span>' +
+                        '</div>' +
+                        '<button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-3" style="border-radius:7px;">' +
+                            '<i class="bi bi-eye me-1"></i>Quick view' +
+                        '</button>';
+                    var quickViewButton = row.querySelector('button');
+                    if (quickViewButton) {
+                        quickViewButton.addEventListener('click', function() {
+                            openAppointmentDrawer(item, true);
+                        });
+                    }
+                    listEl.appendChild(row);
+                });
+            }
+
+            var panel = document.getElementById('drawerAppointmentGroupPanel');
+            if (panel) panel.classList.remove('d-none');
+            var drawer = getDrawer();
+            if (drawer) drawer.show();
+        }
+
+        function returnToAppointmentGroup() {
+            if (activeAppointmentGroupSummary) openAppointmentGroupDrawer(activeAppointmentGroupSummary);
+        }
+
+        function openAppointmentDrawer(props, fromGroup) {
             props = props || {};
             hideAllDrawerPanels();
             var drawerTitle = document.getElementById('drawerTitle');
             if (drawerTitle) drawerTitle.textContent = 'Appointment Details';
 
+            var backButton = document.getElementById('drawerBackToGroup');
+            if (backButton) backButton.classList.toggle('d-none', !fromGroup);
+
             var badge = document.getElementById('drawerApptBadge');
             var rawStatus = props.status || props.Status || 'Approved';
-            var statusStr = String(rawStatus).replace('InProgress', 'In Progress');
+            var statusStr = getDisplayScheduleStatus(rawStatus, props);
+            var normalizedStatus = getEffectiveScheduleStatus(props);
             if (badge) {
                 badge.textContent = statusStr;
 
-                var sLow = statusStr.toLowerCase();
-                if (sLow.includes('pending')) {
+                if (normalizedStatus === 'pending') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-warning text-dark';
-                } else if (sLow.includes('inprogress') || sLow.includes('in progress')) {
+                } else if (normalizedStatus === 'in progress') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary text-white';
-                } else if (sLow.includes('completed')) {
-                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success text-white';
-                } else if (sLow.includes('cancelled')) {
+                } else if (normalizedStatus === 'completed') {
+                    badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary text-white';
+                } else if (normalizedStatus === 'absent') {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger text-white';
                 } else {
                     badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-info text-white';
@@ -1292,10 +1623,9 @@
                 }
             }
 
-            var sLow = statusStr.toLowerCase();
             var btnChat = document.getElementById('drawerBtnChat');
             if (btnChat) {
-                if (patientId && (sLow.includes('approved') || sLow.includes('inprogress') || sLow.includes('in progress') || sLow.includes('completed'))) {
+                if (patientId && (normalizedStatus === 'accepted' || normalizedStatus === 'in progress' || normalizedStatus === 'completed')) {
                     btnChat.href = '/Doctor/Messages/Index?patientId=' + encodeURIComponent(patientId);
                     btnChat.classList.remove('d-none');
                 } else {
@@ -1306,7 +1636,7 @@
             var cancelContainer = document.getElementById('drawerCancelApptContainer');
             var cancelApptIdEl = document.getElementById('drawerCancelApptId');
             if (cancelContainer && cancelApptIdEl) {
-                if (apptId && (sLow.includes('pending') || sLow.includes('approved') || sLow.includes('confirmed'))) {
+                if (apptId && (normalizedStatus === 'pending' || normalizedStatus === 'accepted')) {
                     cancelApptIdEl.value = apptId;
                     cancelContainer.classList.remove('d-none');
                 } else {
@@ -1345,14 +1675,16 @@
             var dateEl = document.getElementById('drawerSlotDate');
             if (dateEl) dateEl.textContent = timeInfo.dateStr;
 
-            var statusStr = props.status || props.Status || 'Available';
-            var sLow = statusStr.toLowerCase();
+            var rawSlotStatus = props.status || props.Status || 'Available';
+            var statusStr = getDisplayScheduleStatus(rawSlotStatus, props);
+            var sLow = getEffectiveScheduleStatus(props);
             var badge = document.getElementById('drawerSlotStatusBadge');
             if (badge) {
                 badge.textContent = statusStr;
-                if (sLow.includes('available')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success bg-opacity-10 text-success border border-success-subtle';
-                else if (sLow.includes('blocked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger bg-opacity-10 text-danger border border-danger-subtle';
-                else if (sLow.includes('booked')) badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary bg-opacity-10 text-primary border border-primary-subtle';
+                if (sLow === 'available') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-success bg-opacity-10 text-success border border-success-subtle';
+                else if (sLow === 'blocked') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-danger bg-opacity-10 text-danger border border-danger-subtle';
+                else if (sLow === 'accepted') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-primary bg-opacity-10 text-primary border border-primary-subtle';
+                else if (sLow === 'expired') badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle';
                 else badge.className = 'badge px-3 py-1.5 rounded-pill fs-7 fw-semibold bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle';
             }
 
@@ -1464,6 +1796,8 @@
                 updateDurationText(startInput.value, endInput.value, 'dCreateDurationPreview');
             }
 
+            validateSlotCreationQuota(dateInput ? dateInput.value : dateStr, mode);
+
             var panel = document.getElementById('drawerCreatePanel');
             if (panel) panel.classList.remove('d-none');
 
@@ -1499,6 +1833,9 @@
                 if (slotFields) slotFields.classList.remove('d-none');
                 if (submitBtn) submitBtn.textContent = 'Save Available Slot';
             }
+
+            var dateInput = document.getElementById('dCreateDate');
+            validateSlotCreationQuota(dateInput ? dateInput.value : '', mode);
         }
 
         function onDrawerPatientSelected(selectEl) {
@@ -1578,38 +1915,103 @@
             if (infoCard) infoCard.classList.remove('d-none');
         }
 
+        function normalizeScheduleStatus(rawStatus) {
+            var status = String(rawStatus || '').replace(/([a-z])([A-Z])/g, '$1 $2').trim().toLowerCase();
+            if (!status) return '';
+            if (status === 'approved' || status === 'confirmed' || status === 'booked') return 'accepted';
+            if (status === 'no show' || status === 'noshow') return 'absent';
+            if (status === 'inprogress') return 'in progress';
+            if (status.includes('awaiting') || status.includes('reschedule') || status === 'pending') return 'pending';
+            if (status.includes('cancelled') || status.includes('canceled') || status === 'rejected') return 'absent';
+            return status;
+        }
+
+        function isCalendarEventEnded(eventData) {
+            var endVal = eventData && (eventData.end || eventData.End);
+            if (!endVal) return false;
+            var endDate = new Date(endVal);
+            return !isNaN(endDate.getTime()) && endDate <= new Date();
+        }
+
+        function getEffectiveScheduleStatus(eventData) {
+            var status = normalizeScheduleStatus(eventData && (eventData.status || eventData.Status));
+            if (status === 'pending' && isCalendarEventEnded(eventData)) return 'expired';
+            return status;
+        }
+
+        function getDisplayScheduleStatus(rawStatus, eventData) {
+            if (eventData && getEffectiveScheduleStatus(eventData) === 'expired') return 'Expired';
+            var normalized = normalizeScheduleStatus(rawStatus);
+            switch (normalized) {
+                case 'accepted': return 'Accepted';
+                case 'pending': return 'Pending';
+                case 'in progress': return 'In Progress';
+                case 'completed': return 'Completed';
+                case 'absent': return 'Absent';
+                case 'blocked': return 'Blocked';
+                case 'expired': return 'Expired';
+                case 'available': return 'Available';
+                default:
+                    return String(rawStatus || '').replace('InProgress', 'In Progress') || 'Scheduled';
+            }
+        }
+
+        function getScheduleFilterGroup(eventData) {
+            var type = String(eventData.eventType || eventData.EventType || '').toLowerCase();
+            var status = getEffectiveScheduleStatus(eventData);
+            var hasAppointment = Boolean(eventData.appointmentId || eventData.AppointmentId);
+
+            if (type === 'blocked' || status === 'blocked') return 'blocked';
+            if (type === 'availability' || type === 'available') {
+                if (status === 'expired') return 'expired';
+                return 'available';
+            }
+            if (hasAppointment || type === 'appointment' || type === 'booked' || type === 'appointmentgroup') {
+                if (status === 'completed') return 'completed';
+                if (status === 'absent') return 'absent';
+                if (status === 'in progress') return 'inprogress';
+                if (status === 'pending') return 'pending';
+                return 'accepted';
+            }
+            if (status === 'expired') return 'expired';
+            return 'available';
+        }
+
         // ── FullCalendar Events Formatting with Multi-Filter ──
         function getFilteredCalendarEvents() {
-            var chkAppts = document.getElementById('chkFilterAppts');
+            var chkAccepted = document.getElementById('chkFilterAccepted');
+            var chkPending = document.getElementById('chkFilterPending');
+            var chkInProgress = document.getElementById('chkFilterInProgress');
+            var chkCompleted = document.getElementById('chkFilterCompleted');
+            var chkAbsent = document.getElementById('chkFilterAbsent');
             var chkAvailable = document.getElementById('chkFilterAvailable');
             var chkBlocked = document.getElementById('chkFilterBlocked');
+            var chkExpired = document.getElementById('chkFilterExpired');
 
-            var showAppts = chkAppts ? chkAppts.checked : true;
-            var showAvailable = chkAvailable ? chkAvailable.checked : true;
-            var showBlocked = chkBlocked ? chkBlocked.checked : true;
+            var filterState = {
+                accepted: chkAccepted ? chkAccepted.checked : true,
+                pending: chkPending ? chkPending.checked : true,
+                inprogress: chkInProgress ? chkInProgress.checked : true,
+                completed: chkCompleted ? chkCompleted.checked : true,
+                absent: chkAbsent ? chkAbsent.checked : true,
+                available: chkAvailable ? chkAvailable.checked : true,
+                blocked: chkBlocked ? chkBlocked.checked : true,
+                expired: chkExpired ? chkExpired.checked : true
+            };
 
-            var activeCount = (showAppts?1:0) + (showAvailable?1:0) + (showBlocked?1:0);
+            var filterKeys = Object.keys(filterState);
+            var activeCount = filterKeys.filter(function(key) { return filterState[key]; }).length;
             var badgeEl = document.getElementById('filterActiveBadge');
             if (badgeEl) {
-                badgeEl.textContent = activeCount === 3 ? 'All' : activeCount + ' active';
+                badgeEl.textContent = activeCount === filterKeys.length ? 'All' : activeCount + ' active';
             }
 
             var eventsList = [];
 
-            // Process appointments and availability/blocked slots case-insensitively
+            // Process appointments and availability/blocked slots by normalized business status.
             rawEvents.forEach(function(e) {
-                var type = (e.eventType || e.EventType || '').toLowerCase();
-                var status = (e.status || e.Status || '').toLowerCase();
-
-                if (type === 'appointment' || (e.appointmentId && type !== 'availability' && type !== 'available' && type !== 'blocked')) {
-                    if (showAppts) eventsList.push(e);
-                } else if (type === 'blocked' || status === 'blocked') {
-                    if (showBlocked) eventsList.push(e);
-                } else if (type === 'availability' || type === 'available' || status === 'available') {
-                    if (showAvailable) eventsList.push(e);
-                } else {
-                    if (showAvailable) eventsList.push(e);
-                }
+                var group = getScheduleFilterGroup(e);
+                if (filterState[group]) eventsList.push(e);
             });
 
             // Deduplicate appointments referencing same slots
@@ -1638,7 +2040,65 @@
                 }
             });
 
-            return deduplicated.map(function(e) {
+            var groupedEvents = [];
+            var appointmentGroups = new Map();
+
+            deduplicated.forEach(function(e) {
+                var type = String(e.eventType || e.EventType || '').toLowerCase();
+                var isAppointment = type === 'appointment' || type === 'booked' || Boolean(e.appointmentId || e.AppointmentId);
+                if (!isAppointment) {
+                    groupedEvents.push(e);
+                    return;
+                }
+
+                var slotId = e.slotId || e.SlotId;
+                var start = e.start || e.Start || '';
+                var end = e.end || e.End || '';
+                var key = slotId ? 'slot:' + slotId : 'time:' + start + '|' + end;
+                if (!appointmentGroups.has(key)) appointmentGroups.set(key, []);
+                appointmentGroups.get(key).push(e);
+            });
+
+            appointmentGroups.forEach(function(items, key) {
+                if (items.length === 1) {
+                    groupedEvents.push(items[0]);
+                    return;
+                }
+
+                var statusPriority = ['in progress', 'pending', 'accepted', 'completed', 'absent', 'expired'];
+                var effectiveStatuses = items.map(function(item) { return getEffectiveScheduleStatus(item); });
+                var dominantStatus = statusPriority.find(function(status) { return effectiveStatuses.includes(status); }) || effectiveStatuses[0] || 'accepted';
+                var representative = Object.assign({}, items[0]);
+                var reportedCapacity = Math.max.apply(null, items.map(function(item) {
+                    return Number(item.maxPatients || item.MaxPatients || 1);
+                }));
+                var reportedBookings = Math.max.apply(null, items.map(function(item) {
+                    return Number(item.currentBookings || item.CurrentBookings || 0);
+                }));
+                var maxPatients = Math.max(items.length, reportedCapacity || 1);
+                var currentBookings = Math.max(items.length, reportedBookings || 0);
+
+                representative.id = 'appointment-group-' + String(key).replace(/[^a-zA-Z0-9_-]/g, '-');
+                representative.Id = representative.id;
+                representative.eventType = 'AppointmentGroup';
+                representative.EventType = 'AppointmentGroup';
+                representative.title = items.length + ' appointments';
+                representative.Title = representative.title;
+                representative.patientName = null;
+                representative.PatientName = null;
+                representative.appointmentId = null;
+                representative.AppointmentId = null;
+                representative.status = dominantStatus;
+                representative.Status = dominantStatus;
+                representative.appointmentGroup = true;
+                representative.appointments = items;
+                representative.appointmentCount = items.length;
+                representative.maxPatients = maxPatients;
+                representative.currentBookings = currentBookings;
+                groupedEvents.push(representative);
+            });
+
+            return groupedEvents.map(function(e) {
                 return {
                     id: String(e.id || e.Id || ''),
                     title: e.title || e.Title || '',
@@ -1796,18 +2256,15 @@
                     nowIndicator: true,
                     eventClassNames: function(arg) {
                         var props = arg.event.extendedProps || {};
-                        var type = (props.eventType || props.EventType || '').toLowerCase();
-                        var status = (props.status || props.Status || '').toLowerCase();
+                        var group = getScheduleFilterGroup(props);
 
-                        if (status.includes('cancelled')) return ['fc-event-cancelled'];
-                        if (status.includes('expired')) return ['fc-event-expired'];
-                        if (status.includes('completed')) return ['fc-event-completed'];
-                        if (status.includes('inprogress') || status.includes('in progress')) return ['fc-event-inprogress'];
-                        if (status.includes('pending') || status.includes('reschedule')) return ['fc-event-pending'];
-                        if (type === 'blocked' || status.includes('blocked')) return ['fc-event-blocked'];
-                        if (type === 'appointment' || type === 'booked' || status.includes('booked') || status.includes('approved') || status.includes('confirmed') || props.appointmentId) {
-                            return ['fc-event-approved'];
-                        }
+                        if (group === 'absent') return ['fc-event-absent'];
+                        if (group === 'expired') return ['fc-event-expired'];
+                        if (group === 'completed') return ['fc-event-completed'];
+                        if (group === 'inprogress') return ['fc-event-inprogress'];
+                        if (group === 'pending') return ['fc-event-pending'];
+                        if (group === 'blocked') return ['fc-event-blocked'];
+                        if (group === 'accepted') return ['fc-event-approved'];
                         return ['fc-event-available'];
                     },
                     eventContent: function(arg) {
@@ -1815,10 +2272,10 @@
                         var props = event.extendedProps || {};
                         var viewType = arg.view.type;
                         
-                        // Status mapping
                         var rawStatus = props.status || props.Status || '';
-                        var displayStatus = String(rawStatus).replace('InProgress', 'In Progress');
-                        if (displayStatus.toLowerCase() === 'approved') displayStatus = 'Confirmed';
+                        var displayStatus = getDisplayScheduleStatus(rawStatus, props);
+                        var isAppointmentGroup = Boolean(props.appointmentGroup || props.AppointmentGroup) ||
+                            String(props.eventType || props.EventType || '').toLowerCase() === 'appointmentgroup';
 
                         var desc = String(props.description || props.Description || '').trim();
                         var hasNote = Boolean(props.hasNote || props.HasNote || props.hasNotes || props.HasNotes || desc.length > 0);
@@ -1846,7 +2303,9 @@
                         if (viewType === 'dayGridMonth') {
                             var monthTitle = document.createElement('div');
                             monthTitle.className = 'fc-custom-event-title';
-                            var titleText = pName || event.title;
+                            var titleText = isAppointmentGroup
+                                ? ((props.appointmentCount || (props.appointments || []).length || 0) + ' appointments')
+                                : (pName || event.title);
                             monthTitle.textContent = titleText + (displayStatus ? ' (' + displayStatus + ')' : '');
                             container.appendChild(monthTitle);
                         } else {
@@ -1863,10 +2322,17 @@
                             var curBookings = props.currentBookings !== undefined ? props.currentBookings : (props.CurrentBookings || 0);
                             var maxPat = props.maxPatients !== undefined ? props.maxPatients : (props.MaxPatients || 1);
 
-                            if (pName) {
+                            if (isAppointmentGroup) {
+                                var groupCount = props.appointmentCount || (props.appointments || []).length || 0;
+                                titleEl.textContent = groupCount + (groupCount === 1 ? ' appointment' : ' appointments');
+                            } else if (pName) {
                                 titleEl.textContent = pName;
                             } else if (type === 'availability' || type === 'available') {
-                                titleEl.textContent = 'Available (' + curBookings + '/' + maxPat + ')';
+                                if (getEffectiveScheduleStatus(props) === 'expired') {
+                                    titleEl.textContent = 'Expired slot';
+                                } else {
+                                    titleEl.textContent = 'Available';
+                                }
                             } else if (type === 'blocked' || displayStatus.toLowerCase() === 'blocked') {
                                 titleEl.textContent = 'Blocked Slot';
                             } else {
@@ -1879,18 +2345,24 @@
                             subEl.className = 'fc-custom-event-sub';
 
                             var subHtml = '';
-                            if (hasNote) {
+                            if (isAppointmentGroup) {
+                                subHtml = '<i class="bi bi-people-fill me-1"></i><span>' + curBookings + ' / ' + maxPat + ' capacity · ' + displayStatus + '</span>';
+                            } else if (hasNote) {
                                 subHtml += '<i class="bi bi-journal-text me-1" title="Note available" data-bs-toggle="tooltip"></i>';
                             }
-                            if (hasPackage) {
+                            if (!isAppointmentGroup && hasPackage) {
                                 subHtml += '<i class="bi bi-box-seam me-1" title="Treatment Package" data-bs-toggle="tooltip"></i>';
                             }
 
                             var sessNum = props.sessionNumber !== undefined ? props.sessionNumber : props.SessionNumber;
-                            if (cName) {
+                            if (isAppointmentGroup) {
+                                // Group summary is complete above.
+                            } else if (cName) {
                                 subHtml += '<span>Package' + (sessNum ? ' · Session #' + sessNum : '') + ' · ' + displayStatus + '</span>';
                             } else if (hasNote || hasPackage) {
                                 subHtml += '<span>· ' + displayStatus + '</span>';
+                            } else if (type === 'availability' || type === 'available') {
+                                subHtml += '<span>' + curBookings + ' of ' + maxPat + ' booked · ' + displayStatus + '</span>';
                             } else {
                                 subHtml += '<span>' + displayStatus + '</span>';
                             }

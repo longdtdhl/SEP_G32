@@ -11,17 +11,20 @@ public class DetailsModel : PageModel
     private readonly ITreatmentCaseApiService _api;
     private readonly IPsychometricApiService _psychApi;
     private readonly IPatientRecordApiService _patientRecordApi;
+    private readonly ITherapyApiService _therapyApi;
     private readonly JwtCookieService _jwt;
 
     public DetailsModel(
         ITreatmentCaseApiService api,
         IPsychometricApiService psychApi,
         IPatientRecordApiService patientRecordApi,
+        ITherapyApiService therapyApi,
         JwtCookieService jwt)
     {
         _api = api;
         _psychApi = psychApi;
         _patientRecordApi = patientRecordApi;
+        _therapyApi = therapyApi;
         _jwt = jwt;
     }
 
@@ -31,6 +34,7 @@ public class DetailsModel : PageModel
     public List<TreatmentGoalWebDto> Goals { get; set; } = new();
     public List<HomeworkWebDto> HomeworkList { get; set; } = new();
     public List<MoodEntryWebDto> MoodEntries { get; set; } = new();
+    public List<EmotionJournalDto> SharedJournals { get; set; } = new();
     public TreatmentProgressWebDto? Progress { get; set; }
     public List<TreatmentTimelineWebDto> Timeline { get; set; } = new();
     public List<PsychometricSubmissionDto> RecentAssessments { get; set; } = new();
@@ -79,10 +83,64 @@ public class DetailsModel : PageModel
 
         Sessions = sessionsTask.Result.Data ?? new();
         Goals = goalsTask.Result.Data ?? new();
+        if (!Goals.Any() && !string.IsNullOrEmpty(goalsTask.Result.Error))
+        {
+            ErrorMessage = string.IsNullOrEmpty(ErrorMessage) ? $"Goals Error: {goalsTask.Result.Error}" : $"{ErrorMessage} | Goals Error: {goalsTask.Result.Error}";
+        }
         HomeworkList = homeworkTask.Result.Data ?? new();
         MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
+
+        // Load shared journals from patient
+        var combinedList = new List<EmotionJournalDto>();
+        try
+        {
+            var (journals, _) = await _therapyApi.GetPatientSharedJournalsAsync(caseData.PatientId);
+            if (journals != null)
+            {
+                combinedList.AddRange(journals);
+            }
+        }
+        catch { }
+
+        // Also incorporate/backfill from MoodEntries
+        if (MoodEntries.Any())
+        {
+            foreach (var m in MoodEntries)
+            {
+                var existing = combinedList.FirstOrDefault(j => j.Id == m.Id);
+                if (existing != null)
+                {
+                    if (!existing.SleepHours.HasValue && m.SleepQualityScore.HasValue)
+                    {
+                        existing.SleepHours = (decimal)m.SleepQualityScore.Value;
+                    }
+                    if (!existing.DepressionScale.HasValue && m.DepressionScore.HasValue)
+                    {
+                        existing.DepressionScale = Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5);
+                    }
+                }
+                else
+                {
+                    combinedList.Add(new EmotionJournalDto
+                    {
+                        Id = m.Id,
+                        PatientId = m.PatientId,
+                        Title = string.IsNullOrWhiteSpace(m.Note) ? "Mood Check-in" : (m.Note.Length > 40 ? m.Note.Substring(0, 40) + "..." : m.Note),
+                        Content = m.Note,
+                        MoodScale = Math.Clamp((int)Math.Round((double)m.MoodScore / 2.0), 1, 5),
+                        StressScale = m.StressScore.HasValue ? Math.Clamp((int)Math.Round((double)m.StressScore.Value / 2.0), 1, 5) : 1,
+                        SleepHours = m.SleepQualityScore.HasValue ? (decimal)m.SleepQualityScore.Value : null,
+                        DepressionScale = m.DepressionScore.HasValue ? Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5) : null,
+                        IsShared = true,
+                        CreatedAt = m.RecordedAt
+                    });
+                }
+            }
+        }
+
+        SharedJournals = combinedList.OrderByDescending(j => j.CreatedAt).ToList();
 
         // Load psychometric assessments associated with this treatment case
         try
@@ -133,6 +191,76 @@ public class DetailsModel : PageModel
         MoodEntries = moodTask.Result.Data ?? new();
         Progress = progressTask.Result.Data;
         Timeline = timelineTask.Result.Data ?? new();
+
+        var combinedReloadList = new List<EmotionJournalDto>();
+        try
+        {
+            var (journals, _) = await _therapyApi.GetPatientSharedJournalsAsync(caseData.PatientId);
+            if (journals != null)
+            {
+                combinedReloadList.AddRange(journals);
+            }
+        }
+        catch { }
+
+        if (MoodEntries.Any())
+        {
+            foreach (var m in MoodEntries)
+            {
+                var existing = combinedReloadList.FirstOrDefault(j => j.Id == m.Id);
+                if (existing != null)
+                {
+                    if (!existing.SleepHours.HasValue && m.SleepQualityScore.HasValue)
+                    {
+                        existing.SleepHours = (decimal)m.SleepQualityScore.Value;
+                    }
+                    if (!existing.DepressionScale.HasValue && m.DepressionScore.HasValue)
+                    {
+                        existing.DepressionScale = Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5);
+                    }
+                }
+                else
+                {
+                    combinedReloadList.Add(new EmotionJournalDto
+                    {
+                        Id = m.Id,
+                        PatientId = m.PatientId,
+                        Title = string.IsNullOrWhiteSpace(m.Note) ? "Mood Check-in" : (m.Note.Length > 40 ? m.Note.Substring(0, 40) + "..." : m.Note),
+                        Content = m.Note,
+                        MoodScale = Math.Clamp((int)Math.Round((double)m.MoodScore / 2.0), 1, 5),
+                        StressScale = m.StressScore.HasValue ? Math.Clamp((int)Math.Round((double)m.StressScore.Value / 2.0), 1, 5) : 1,
+                        SleepHours = m.SleepQualityScore.HasValue ? (decimal)m.SleepQualityScore.Value : null,
+                        DepressionScale = m.DepressionScore.HasValue ? Math.Clamp((int)Math.Round((double)m.DepressionScore.Value / 2.0), 1, 5) : null,
+                        IsShared = true,
+                        CreatedAt = m.RecordedAt
+                    });
+                }
+            }
+        }
+
+        SharedJournals = combinedReloadList.OrderByDescending(j => j.CreatedAt).ToList();
+
+        // Load psychometric assessments
+        try
+        {
+            var (caseSubs, _) = await _psychApi.GetSubmissionsByCaseAsync(caseId);
+            if (caseSubs != null && caseSubs.Any())
+            {
+                RecentAssessments = caseSubs.Take(10).ToList();
+            }
+            else
+            {
+                var apptIds = Sessions.Where(s => s.AppointmentId.HasValue).Select(s => s.AppointmentId!.Value).ToList();
+                var assessments = new List<PsychometricSubmissionDto>();
+                foreach (var apptId in apptIds.Take(10))
+                {
+                    var (sub, _) = await _psychApi.GetSubmissionByAppointmentAsync(apptId);
+                    if (sub != null) assessments.Add(sub);
+                }
+                RecentAssessments = assessments;
+            }
+        }
+        catch { }
     }
 
     private async Task ResolvePatientRecordIdAsync(Guid patientUserId)
@@ -262,16 +390,16 @@ public class DetailsModel : PageModel
     }
 
     // POST: Delete Success Criteria
-    public async Task<IActionResult> OnPostDeleteSuccessCriteriaAsync(Guid caseId, Guid criteriaId)
+    public async Task<IActionResult> OnPostDeleteSuccessCriteriaAsync(Guid caseId, Guid criteriaId, Guid? goalId = null)
     {
         var (success, error) = await _api.DeleteSuccessCriteriaAsync(criteriaId);
-        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria removed." : (error ?? "Failed to remove criteria.");
-        return RedirectToPage(new { id = caseId, tab = "goals" });
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Success criterion deleted." : (error ?? "Failed to remove criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
     }
 
     // POST: Evaluate Success Criteria
     public async Task<IActionResult> OnPostEvaluateSuccessCriteriaAsync(
-        Guid caseId, Guid criteriaId, decimal? currentValue, Guid? sessionId)
+        Guid caseId, Guid criteriaId, decimal? currentValue, Guid? sessionId, Guid? goalId = null)
     {
         var dto = new CreateSuccessCriteriaEvaluationWebDto
         {
@@ -279,7 +407,117 @@ public class DetailsModel : PageModel
             CurrentValue = currentValue
         };
         var (success, error) = await _api.EvaluateSuccessCriteriaAsync(criteriaId, dto);
-        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria evaluated." : (error ?? "Failed to evaluate criteria.");
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Criteria evaluated & progress updated." : (error ?? "Failed to evaluate criteria.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
+    }
+
+    // POST: Recalculate Goal Progress from Criteria
+    public async Task<IActionResult> OnPostRecalculateGoalProgressAsync(Guid caseId, Guid goalId)
+    {
+        var (success, error) = await _api.UpdateGoalAsync(goalId, new UpdateGoalWebDto());
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal progress recalculated from success criteria." : (error ?? "Failed to recalculate progress.");
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
+    }
+
+    // POST: Seed Standard Success Criteria
+    public async Task<IActionResult> OnPostSeedDefaultCriteriaAsync(Guid caseId, Guid goalId)
+    {
+        var (goalsData, _) = await _api.GetGoalsAsync(caseId);
+        var targetGoal = goalsData?.FirstOrDefault(g => g.Id == goalId);
+        var targetVal = targetGoal?.TargetValue ?? 3;
+        var unitLabel = string.IsNullOrWhiteSpace(targetGoal?.Unit) ? "/ 10" : targetGoal.Unit;
+
+        // 1. Clinical score criterion
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 0, // Measurement Score
+            Operator = 3,     // <=
+            TargetValue = targetVal,
+            Weight = 1,
+            Description = $"Clinical Target: Score <= {targetVal:0.#} ({unitLabel})"
+        });
+
+        // 2. Attendance rate >= 80%
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 2, // Attendance
+            Operator = 1,     // >=
+            TargetValue = 80,
+            Weight = 1,
+            Description = "Session Attendance Rate >= 80%"
+        });
+
+        // 3. Homework completion >= 80%
+        await _api.CreateSuccessCriteriaAsync(goalId, new CreateGoalSuccessCriteriaWebDto
+        {
+            GoalId = goalId,
+            CriteriaType = 1, // Homework
+            Operator = 1,     // >=
+            TargetValue = 80,
+            Weight = 1,
+            Description = "Therapy Exercises & Homework Completion >= 80%"
+        });
+
+        TempData["SuccessMessage"] = $"Standard clinical criteria initialized (Target <= {targetVal:0.#}, Attendance >= 80%, Homework >= 80%).";
+        return RedirectToPage(new { id = caseId, tab = "goals", goalId = goalId });
+    }
+
+    // POST: Create Goal from Tab Modal
+    public async Task<IActionResult> OnPostCreateGoalAsync(
+        Guid caseId, string title, string? description, int category, int priority,
+        decimal? currentValue, decimal? targetValue, string? unit, DateTime? targetDate)
+    {
+        if (!string.IsNullOrWhiteSpace(unit))
+        {
+            unit = unit.Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(unit, @"^\d+\s*/"))
+            {
+                unit = System.Text.RegularExpressions.Regex.Replace(unit, @"^\d+\s*", "");
+            }
+        }
+
+        var dto = new CreateGoalWebDto
+        {
+            TreatmentCaseId = caseId,
+            Title = title,
+            Description = description,
+            Category = category,
+            Priority = priority,
+            CurrentValue = currentValue,
+            TargetValue = targetValue,
+            Unit = unit,
+            TargetDate = targetDate
+        };
+        var (success, error) = await _api.CreateGoalAsync(dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal created successfully." : (error ?? "Failed to create goal.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Update Goal Notes
+    public async Task<IActionResult> OnPostUpdateGoalNotesAsync(Guid caseId, Guid goalId, string? doctorNotes)
+    {
+        var dto = new UpdateGoalWebDto { DoctorNotes = doctorNotes };
+        var (success, error) = await _api.UpdateGoalAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Clinical notes updated." : (error ?? "Failed to update notes.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Update Goal Status
+    public async Task<IActionResult> OnPostUpdateGoalStatusAsync(Guid caseId, Guid goalId, int status)
+    {
+        var dto = new UpdateGoalWebDto { Status = status };
+        var (success, error) = await _api.UpdateGoalAsync(goalId, dto);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal status updated." : (error ?? "Failed to update status.");
+        return RedirectToPage(new { id = caseId, tab = "goals" });
+    }
+
+    // POST: Delete Goal
+    public async Task<IActionResult> OnPostDeleteGoalAsync(Guid caseId, Guid goalId)
+    {
+        var (success, error) = await _api.DeleteGoalAsync(goalId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Goal deleted successfully." : (error ?? "Failed to delete goal.");
         return RedirectToPage(new { id = caseId, tab = "goals" });
     }
 
@@ -346,6 +584,59 @@ public class DetailsModel : PageModel
             TempData["SuccessMessage"] = "Homework reviewed successfully.";
         }
         return RedirectToPage(new { id = caseId, tab = "activities", subTab = "homework" });
+    }
+
+    // POST: Approve Treatment Hold
+    public async Task<IActionResult> OnPostApproveHoldAsync(Guid caseId, string? note)
+    {
+        var dto = new ApproveTreatmentHoldWebDto { Note = note };
+        var (success, error) = await _api.ApproveHoldAsync(caseId, dto);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to approve treatment hold.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment hold approved successfully. Validity period extended and scheduled sessions cancelled.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    // POST: Reject Treatment Hold
+    public async Task<IActionResult> OnPostRejectHoldAsync(Guid caseId, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            TempData["ErrorMessage"] = "Please provide a reason for declining the hold request.";
+            return RedirectToPage(new { id = caseId, tab = "overview" });
+        }
+
+        var dto = new RejectTreatmentHoldWebDto { Reason = reason.Trim() };
+        var (success, error) = await _api.RejectHoldAsync(caseId, dto);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to decline treatment hold.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment hold request declined.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
+    }
+
+    // POST: Resume Treatment
+    public async Task<IActionResult> OnPostResumeTreatmentAsync(Guid caseId)
+    {
+        var (success, error) = await _api.ResumeTreatmentAsync(caseId);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to resume treatment.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Treatment program has been resumed and is now active.";
+        }
+        return RedirectToPage(new { id = caseId, tab = "overview" });
     }
 }
 

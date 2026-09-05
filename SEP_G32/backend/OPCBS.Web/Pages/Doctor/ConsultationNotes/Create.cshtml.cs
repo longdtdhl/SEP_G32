@@ -14,7 +14,7 @@ public class CreateModel : PageModel
     private readonly IScheduleApiService _scheduleApi;
 
     public CreateModel(
-        IConsultationNoteApiService api, 
+        IConsultationNoteApiService api,
         IAppointmentApiService appointmentApi,
         IPatientRecordApiService patientApi,
         IPsychometricApiService psychService,
@@ -27,11 +27,11 @@ public class CreateModel : PageModel
         _scheduleApi = scheduleApi;
     }
 
-    [BindProperty] public CreateConsultationNoteDto Input { get; set; } = new() { ConsultationSummary = "" };
-    
+    [BindProperty] public CreateConsultationNoteDto Input { get; set; } = new() { ConsultationSummary = "", Visibility = 1 };
+
     [BindProperty(SupportsGet = true)] public Guid PatientRecordId { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? AppointmentId { get; set; }
-    
+
     public PatientRecordDto? PatientRecord { get; set; }
     public AppointmentDto? SelectedAppointment { get; set; }
     public PsychometricSubmissionDto? PsychometricSubmission { get; set; }
@@ -57,10 +57,11 @@ public class CreateModel : PageModel
             TempData["ErrorMessage"] = "Patient record not found.";
             return RedirectToPage("/Doctor/Appointments/Index");
         }
-        
+
         PatientRecord = patient;
         Input.PatientRecordId = PatientRecordId;
         Input.AppointmentId = AppointmentId.Value;
+        Input.Visibility = 1;
 
         var (appt, _) = await _appointmentApi.GetByIdAsync(AppointmentId.Value);
         SelectedAppointment = appt;
@@ -92,7 +93,7 @@ public class CreateModel : PageModel
             SelectedAppointment = appt;
             return Page();
         }
-        
+
         TempData["Success"] = "Consultation record created successfully!";
         return RedirectToPage("/Doctor/Appointments/Details", new { id = AppointmentId.Value });
     }

@@ -10,11 +10,16 @@ public class IndexModel : PageModel
 {
     private readonly IScheduleApiService _api;
     private readonly IAppointmentApiService _appointmentApi;
+    private readonly ISubscriptionApiService _subscriptionApi;
 
-    public IndexModel(IScheduleApiService api, IAppointmentApiService appointmentApi)
+    public IndexModel(
+        IScheduleApiService api, 
+        IAppointmentApiService appointmentApi,
+        ISubscriptionApiService subscriptionApi)
     {
         _api = api;
         _appointmentApi = appointmentApi;
+        _subscriptionApi = subscriptionApi;
     }
 
     [BindProperty(SupportsGet = true)] public string View { get; set; } = "week";
@@ -25,6 +30,14 @@ public class IndexModel : PageModel
     public List<CalendarEventDto> CalendarEvents { get; set; } = new();
     public List<EligibleTreatmentPatientDto> EligiblePatients { get; set; } = new();
     public List<ScheduleNoteWebDto> AllNotes { get; set; } = new();
+
+    // Subscription & Quota Entitlements
+    public SubscriptionDto? CurrentSubscription { get; set; }
+    public int? MaxDailySlotsCapacity => CurrentSubscription?.MaxDailySlotsCapacity;
+    public bool IsSubscriptionActive => CurrentSubscription != null 
+        && string.Equals(CurrentSubscription.Status, "Active", StringComparison.OrdinalIgnoreCase) 
+        && CurrentSubscription.ExpirationDate > DateTime.UtcNow;
+    public Dictionary<string, int> DailySlotCounts { get; set; } = new();
 
     public string? Error { get; set; }
     public string? Success { get; set; }
@@ -44,6 +57,10 @@ public class IndexModel : PageModel
     {
         Success = TempData["Success"] as string;
         Error = TempData["Error"] as string;
+
+        // Fetch current subscription
+        var (subData, _) = await _subscriptionApi.GetCurrentAsync();
+        CurrentSubscription = subData;
 
         // Parse selected date
         if (!string.IsNullOrEmpty(Date) && DateTime.TryParse(Date, out var parsedDate))
@@ -94,6 +111,12 @@ public class IndexModel : PageModel
         AllNotes = notesData ?? new();
         Error = Error ?? err1 ?? err2 ?? err3 ?? err4;
 
+        // Group slots by date string yyyy-MM-dd
+        DailySlotCounts = ActualSlots
+            .Where(s => !string.IsNullOrEmpty(s.Date))
+            .GroupBy(s => s.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
         // Summary statistics for current period
         var pStart = DateOnly.FromDateTime(PeriodStart);
         var pEnd = DateOnly.FromDateTime(PeriodEnd);
@@ -114,6 +137,25 @@ public class IndexModel : PageModel
         string? preAppointmentNoteTitle = null,
         bool isPreAppointmentNoteRequired = false)
     {
+        var (sub, _) = await _subscriptionApi.GetCurrentAsync();
+        bool active = sub != null && string.Equals(sub.Status, "Active", StringComparison.OrdinalIgnoreCase) && sub.ExpirationDate > DateTime.UtcNow;
+        if (!active)
+        {
+            TempData["Error"] = "Your service package subscription is inactive or expired. Please subscribe to a package before creating availability slots.";
+            return RedirectToPage(new { view = View, date = date });
+        }
+
+        if (sub.MaxDailySlotsCapacity.HasValue)
+        {
+            var (slotsData, _) = await _api.GetMySlotsAsync();
+            var existingCount = slotsData?.Slots?.Count(s => s.Date == date) ?? 0;
+            if (existingCount >= sub.MaxDailySlotsCapacity.Value)
+            {
+                TempData["Error"] = $"Daily slot limit reached: Your current plan ({sub.PackageName}) allows a maximum of {sub.MaxDailySlotsCapacity.Value} slots per day.";
+                return RedirectToPage(new { view = View, date = date });
+            }
+        }
+
         var dto = new CreateSlotDto
         {
             Date = date,
@@ -353,6 +395,14 @@ public class IndexModel : PageModel
             DefaultNotes = defaultNotes,
             ConsultationMode = consultationMode
         };
+
+        var (sub, _) = await _subscriptionApi.GetCurrentAsync();
+        bool active = sub != null && string.Equals(sub.Status, "Active", StringComparison.OrdinalIgnoreCase) && sub.ExpirationDate > DateTime.UtcNow;
+        if (!active)
+        {
+            TempData["Error"] = "Your service package subscription is inactive or expired. Please subscribe to a package before generating schedules.";
+            return RedirectToPage(new { view = View, date = startDate });
+        }
 
         var (count, error) = await _api.GenerateWeeklyScheduleAsync(dto);
         if (error != null) TempData["Error"] = error;

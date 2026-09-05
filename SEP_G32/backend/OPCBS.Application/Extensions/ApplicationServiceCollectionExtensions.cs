@@ -42,7 +42,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IFavoriteDoctorNotificationService, FavoriteDoctorNotificationService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<ITreatmentCaseService, TreatmentCaseService>();
+        services.AddScoped<ITreatmentLifecycleCoordinator, TreatmentLifecycleCoordinator>();
         services.AddScoped<IViolationReportService, ViolationReportService>();
+        services.AddScoped<IDoctorRevenueService, DoctorRevenueService>();
 
         return services;
     }

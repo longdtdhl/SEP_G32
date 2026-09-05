@@ -25,10 +25,11 @@ public class DetailsModel : PageModel
         var (doc, error) = await _doctorService.GetByIdAsync(id);
         if (doc == null) return NotFound();
         Doctor = doc;
+        var doctorProfileId = Doctor.Id;
 
         try
         {
-            var (reviews, _, _) = await _doctorService.GetReviewsAsync(id);
+            var (reviews, _, _) = await _doctorService.GetReviewsAsync(doctorProfileId);
             Reviews = reviews ?? new();
         }
         catch
@@ -44,7 +45,7 @@ public class DetailsModel : PageModel
                 if (packages != null)
                 {
                     TreatmentPackages = packages
-                        .Where(p => p.DoctorId == id || p.DoctorProfileId == id)
+                        .Where(p => p.DoctorId == doctorProfileId || p.DoctorProfileId == doctorProfileId || p.DoctorId == id || p.DoctorProfileId == id)
                         .Where(p => p.Status != "Cancelled" && p.Status != "Rejected" && !p.IsExpired)
                         .Take(4)
                         .ToList();

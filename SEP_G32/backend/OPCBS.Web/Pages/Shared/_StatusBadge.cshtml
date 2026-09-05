@@ -9,11 +9,17 @@
         statusText = statusInt switch
         {
             0 => "Pending",
-            1 => "Approved",
+            1 => "Accepted",
             2 => "Rejected",
-            3 => "Cancelled",
+            3 => "In Progress",
             4 => "Completed",
-            5 => "No Show",
+            5 => "Cancelled",
+            6 => "Reschedule Requested",
+            7 => "Awaiting Confirmation",
+            8 => "Absent",
+            9 => "Awaiting Email Confirmation",
+            10 => "Awaiting Completion",
+            11 => "Completion Disputed",
             _ => "Unknown"
         };
         cssClass = statusInt switch
@@ -21,9 +27,15 @@
             0 => "badge-pending",
             1 => "badge-approved",
             2 => "badge-rejected",
-            3 => "badge-cancelled",
+            3 => "badge-progress",
             4 => "badge-completed",
             5 => "badge-cancelled",
+            6 => "badge-pending",
+            7 => "badge-pending",
+            8 => "badge-cancelled",
+            9 => "badge-pending",
+            10 => "badge-pending",
+            11 => "badge-cancelled",
             _ => "badge-draft"
         };
     }
@@ -37,6 +49,16 @@
             "completed" => "badge-completed",
             "cancelled" => "badge-cancelled",
             "approved" => "badge-approved",
+            "accepted" => "badge-approved",
+            "in progress" => "badge-progress",
+            "inprogress" => "badge-progress",
+            "reschedule requested" => "badge-pending",
+            "awaiting confirmation" => "badge-pending",
+            "awaiting email confirmation" => "badge-pending",
+            "awaiting completion" => "badge-pending",
+            "completion disputed" => "badge-cancelled",
+            "no show" => "badge-cancelled",
+            "absent" => "badge-cancelled",
             "rejected" => "badge-rejected",
             "draft" => "badge-draft",
             "active" => "badge-active",

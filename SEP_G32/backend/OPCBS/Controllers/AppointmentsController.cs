@@ -93,7 +93,7 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> TrackAppointment(string bookingCode, [FromQuery] string? email)
     {
         if (string.IsNullOrWhiteSpace(bookingCode) || string.IsNullOrWhiteSpace(email))
-            return BadRequest(ApiResponse.ErrorResponse("Vui lòng cung cấp cả Mã đặt lịch và Email."));
+            return BadRequest(ApiResponse.ErrorResponse("Please provide both booking code and email address."));
 
         var dto = new TrackAppointmentDto { BookingCode = bookingCode.Trim(), Email = email.Trim() };
         var result = await _apptService.TrackAppointmentAsync(dto);
@@ -105,7 +105,7 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> ResendConfirmation([FromBody] ResendConfirmationDto? dto)
     {
         if (dto == null || string.IsNullOrWhiteSpace(dto.BookingCode) || string.IsNullOrWhiteSpace(dto.Email))
-            return BadRequest(ApiResponse.ErrorResponse("Mã đặt lịch và Email là bắt buộc."));
+            return BadRequest(ApiResponse.ErrorResponse("Booking code and email address are required."));
 
         var result = await _apptService.ResendConfirmationEmailAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
@@ -159,32 +159,46 @@ public class AppointmentsController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>PUT /api/v1/appointments/reschedule/{id} - Reschedule appointment (Patient)</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
+    /// <summary>PUT /api/v1/appointments/reschedule/{id} - Reschedule appointment (Patient or Doctor)</summary>
+    [Authorize(Roles = $"{RoleConstants.Patient},{RoleConstants.Doctor}")]
     [HttpPut("reschedule/{appointmentId:guid}")]
     public async Task<IActionResult> RescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
     {
         if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var docResult = await _apptService.RescheduleAppointmentAsync(appointmentId, userId.Value, dto);
+            return docResult.Success ? Ok(docResult) : BadRequest(docResult);
+        }
+
         var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>POST /api/v1/appointments/{id}/request-reschedule - Request appointment reschedule (Patient)</summary>
-    [Authorize(Roles = RoleConstants.Patient)]
+    [Authorize(Roles = $"{RoleConstants.Patient},{RoleConstants.Doctor}")]
     [HttpPost("{appointmentId:guid}/request-reschedule")]
     public async Task<IActionResult> RequestReschedule(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
     {
         if (dto == null) return BadRequest(ApiResponse.ErrorResponse("Reschedule details are required."));
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+
+        if (User.IsInRole(RoleConstants.Doctor))
+        {
+            var docResult = await _apptService.RescheduleAppointmentAsync(appointmentId, userId.Value, dto);
+            return docResult.Success ? Ok(docResult) : BadRequest(docResult);
+        }
+
         var result = await _apptService.RequestRescheduleAsync(appointmentId, userId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>PUT /api/v1/appointments/{id}/doctor-reschedule - Doctor moves an appointment directly to a new available slot</summary>
-    [Authorize(Roles = RoleConstants.Doctor)]
+    [Authorize(Roles = $"{RoleConstants.Doctor},{RoleConstants.SystemAdmin},{RoleConstants.CustomerSupport}")]
     [HttpPut("{appointmentId:guid}/doctor-reschedule")]
     public async Task<IActionResult> DoctorRescheduleAppointment(Guid appointmentId, [FromBody] RescheduleAppointmentDto? dto)
     {
@@ -233,6 +247,17 @@ public class AppointmentsController : ControllerBase
         if (userId == null) return Unauthorized();
         var result = await _apptService.GetDoctorAppointmentsAsync(userId.Value, page, pageSize, status, search, fromDate, toDate, view);
         return Ok(result);
+    }
+
+    /// <summary>PUT /api/v1/appointments/{id}/consultation-mode - Doctor updates consultation mode</summary>
+    [Authorize(Roles = RoleConstants.Doctor)]
+    [HttpPut("{appointmentId:guid}/consultation-mode")]
+    public async Task<IActionResult> UpdateConsultationMode(Guid appointmentId, [FromBody] UpdateConsultationModeDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        var result = await _apptService.UpdateConsultationModeAsync(appointmentId, userId.Value, dto.ConsultationMode);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>PUT /api/v1/appointments/approve/{id} - Doctor approves appointment</summary>

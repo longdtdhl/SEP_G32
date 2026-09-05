@@ -18,6 +18,7 @@ public class IndexModel : PageModel
     }
 
     public List<PsychometricTestDto> Tests { get; set; } = new();
+    public List<PsychometricSubmissionDto> RecentSubmissions { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
@@ -56,6 +57,10 @@ public class IndexModel : PageModel
         }
 
         Tests = query.ToList();
+
+        var (subs, _) = await _psychService.GetAllSubmissionsAsync();
+        RecentSubmissions = subs;
+
         return Page();
     }
 

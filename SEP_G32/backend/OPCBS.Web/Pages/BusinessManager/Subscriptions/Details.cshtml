@@ -6,95 +6,473 @@
 }
 
 <style>
-    .bm-card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .bm-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: box-shadow 0.2s ease;
+    }
+    .bm-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+    .bm-stat-box {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 1.1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .detail-item {
+        padding: 0.85rem 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+    }
+    .detail-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .detail-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 0.55rem;
+        top: 1.25rem;
+        bottom: 0;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    .timeline-dot {
+        position: absolute;
+        left: 0;
+        top: 0.15rem;
+        width: 1.3rem;
+        height: 1.3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+    }
+    .status-pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .status-pulse.active {
+        background: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    }
+    .status-pulse.pending {
+        background: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    }
+    .status-pulse.expired {
+        background: #64748b;
+    }
+    .status-pulse.cancelled {
+        background: #ef4444;
+    }
 </style>
 
 @if (Model.Error != null || Model.Subscription == null)
 {
-    <div class="mb-3">
-        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">Subscription Not Found</h1>
+    <div class="mb-4">
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb" style="font-size:0.8rem;">
+                <li class="breadcrumb-item"><a asp-page="/BusinessManager/Dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door me-1"></i>Business</a></li>
+                <li class="breadcrumb-item"><a asp-page="Index" class="text-decoration-none text-muted">Subscriptions</a></li>
+                <li class="breadcrumb-item active text-danger" aria-current="page">Error</li>
+            </ol>
+        </nav>
     </div>
-    <div class="text-center py-5 text-muted">
-        <i class="bi bi-credit-card-2-front d-block mb-2" style="font-size:2.5rem; color:#cbd5e1;"></i>
-        <p style="font-size:0.85rem;">@(Model.Error ?? "The requested subscription record could not be found.")</p>
-        <a asp-page="Index" class="btn btn-primary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Subscriptions</a>
+
+    <div class="bm-card p-5 text-center my-4" style="max-width:600px; margin:0 auto;">
+        <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;font-size:1.8rem;">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Subscription Record Not Found</h4>
+        <p class="text-muted small mb-4">@(Model.Error ?? "The requested subscription record could not be retrieved from the system.")</p>
+        <a asp-page="Index" class="btn btn-primary" style="border-radius:8px; font-weight:600;">
+            <i class="bi bi-arrow-left me-1"></i>Back to Subscriptions
+        </a>
     </div>
     return;
 }
 
-@{ var sub = Model.Subscription; }
+@{ 
+    var sub = Model.Subscription;
+    var statusNorm = sub.Status?.ToLower() ?? "";
+    var isSubActive = statusNorm == "active";
+    var isSubPending = statusNorm == "pendingpayment";
+    var isSubExpired = statusNorm == "expired";
+    var isSubCancelled = statusNorm == "cancelled";
 
-<div class="mb-3">
-    <a asp-page="Index" class="btn btn-sm btn-outline-secondary mb-2" style="border-radius:6px; font-size:0.8rem;">
-        <i class="bi bi-arrow-left me-1"></i>Back to Subscriptions Oversight
-    </a>
+    var daysRemaining = (sub.ExpirationDate - DateTime.Now).TotalDays;
+    var statusBadgeClass = isSubActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" :
+                          isSubPending ? "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" :
+                          isSubCancelled ? "bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" :
+                          "bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25";
+}
+
+<!-- Breadcrumb & Header -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb" style="font-size:0.8rem;">
+            <li class="breadcrumb-item"><a asp-page="/BusinessManager/Dashboard" class="text-decoration-none text-muted"><i class="bi bi-house-door me-1"></i>Business</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index" class="text-decoration-none text-muted">Doctor Subscriptions</a></li>
+            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Details</li>
+        </ol>
+    </nav>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h1 style="font-size:1.3rem; font-weight:700; margin:0;">
-            <i class="bi bi-credit-card me-2" style="color:var(--mb-primary);"></i>Subscription Detail: @sub.PackageName
-        </h1>
+        <div class="d-flex align-items-center gap-3">
+            <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:8px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;" title="Back to Subscriptions Oversight">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h1 style="font-size:1.35rem; font-weight:700; margin:0;" class="text-dark">
+                        <i class="bi bi-credit-card-2-front me-2" style="color:var(--mb-primary);"></i>Subscription: @(sub.PackageName ?? "Package Tier")
+                    </h1>
+                    <span class="badge @statusBadgeClass" style="font-size:0.75rem; font-weight:700;">
+                        <span class="status-pulse @(isSubActive ? "active" : isSubPending ? "pending" : isSubCancelled ? "cancelled" : "expired")"></span>
+                        @(sub.Status ?? "Unknown")
+                    </span>
+                </div>
+                <p style="margin:2px 0 0; font-size:0.82rem; color:#64748b;">
+                    Subscription ID: <code class="bg-light px-2 py-0.5 rounded text-dark" style="font-size:0.75rem;" id="subIdText">@sub.Id</code>
+                    <button class="btn btn-link btn-sm p-0 text-muted ms-1 text-decoration-none" onclick="copySubId()" title="Copy ID">
+                        <i class="bi bi-clipboard" id="copyIcon"></i>
+                    </button>
+                </p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Index" class="btn btn-outline-secondary btn-sm" style="border-radius:8px; font-weight:600;">
+                <i class="bi bi-arrow-left me-1"></i>Back to Oversight
+            </a>
+        </div>
     </div>
 </div>
 
-<div class="row g-3">
-    <!-- Doctor Summary -->
-    <div class="col-lg-4">
-        <div class="bm-card p-4 text-center">
-            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-white mb-3" style="width:72px;height:72px;background:var(--mb-primary);font-size:1.4rem;">
-                <i class="bi bi-person-badge"></i>
+<!-- KPI Metric Strip -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(16,185,129,0.1); width:48px; height:48px;">
+                <i class="bi bi-cash-stack fs-4 text-success"></i>
             </div>
-            <h4 class="fw-bold mb-1 text-dark" style="font-size:1.1rem;">@(sub.DoctorName ?? "Practitioner Account")</h4>
-            <div class="text-muted mb-2 small">Subscription ID: <code style="font-size:0.75rem;">@sub.Id</code></div>
-            
-            @{
-                var statusBadge = sub.Status?.ToLower() switch
-                {
-                    "active" => "bg-success bg-opacity-10 text-success",
-                    "pendingpayment" => "bg-warning bg-opacity-10 text-warning",
-                    "expired" => "bg-secondary bg-opacity-10 text-secondary",
-                    "cancelled" => "bg-danger bg-opacity-10 text-danger",
-                    _ => "bg-secondary bg-opacity-10 text-secondary"
-                };
-            }
-            <span class="badge @statusBadge" style="font-size:0.78rem; font-weight:700;">@(sub.Status ?? "Unknown")</span>
+            <div>
+                <span class="text-muted d-block small">Amount Paid</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.25rem;">@sub.AmountPaid.ToString("N0") <small class="text-muted fs-6">VND</small></h3>
+            </div>
         </div>
     </div>
 
-    <!-- Package & Payment Details -->
-    <div class="col-lg-8">
-        <div class="bm-card">
-            <div class="p-3 border-bottom bg-light">
-                <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
-                    <i class="bi bi-info-circle me-1 text-primary"></i>Subscription Terms & Transaction Details
-                </h6>
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(78,139,112,0.1); width:48px; height:48px;">
+                <i class="bi bi-calendar2-week fs-4" style="color:var(--mb-primary);"></i>
             </div>
-            <div class="p-3">
-                <div class="row g-3" style="font-size:0.85rem;">
+            <div>
+                <span class="text-muted d-block small">Validity Status</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.05rem;">
+                    @if (isSubActive && daysRemaining > 0)
+                    {
+                        <span class="text-success"><i class="bi bi-clock-history me-1"></i>@Math.Ceiling(daysRemaining) days left</span>
+                    }
+                    else if (isSubPending)
+                    {
+                        <span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Awaiting Pay</span>
+                    }
+                    else if (isSubCancelled)
+                    {
+                        <span class="text-danger"><i class="bi bi-x-circle me-1"></i>Terminated</span>
+                    }
+                    else
+                    {
+                        <span class="text-secondary"><i class="bi bi-calendar-x me-1"></i>Expired</span>
+                    }
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(99,102,241,0.1); width:48px; height:48px;">
+                <i class="bi bi-clock-history fs-4" style="color:#6366f1;"></i>
+            </div>
+            <div>
+                <span class="text-muted d-block small">Daily Slot Quota</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.15rem;">
+                    @(sub.MaxDailySlotsCapacity.HasValue ? $"{sub.MaxDailySlotsCapacity} slots/day" : "Unlimited")
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="bm-stat-box d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 d-flex align-items-center justify-content-center" style="background:rgba(59,130,246,0.1); width:48px; height:48px;">
+                <i class="bi bi-people fs-4 text-primary"></i>
+            </div>
+            <div>
+                <span class="text-muted d-block small">Patient Capacity</span>
+                <h3 class="mb-0 fw-bold text-dark" style="font-size:1.15rem;">
+                    @(sub.MaxPatientCapacity.HasValue ? $"{sub.MaxPatientCapacity} patients" : "Unlimited")
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Subscription Terms & Lifecycle -->
+    <div class="col-lg-8">
+        <!-- Terms & Transaction Details Card -->
+        <div class="bm-card mb-4">
+            <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">
+                    <i class="bi bi-file-earmark-text me-1 text-primary"></i>Transaction & Terms Agreement
+                </h6>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-shield-check text-success me-1"></i>Verified Record
+                </span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Service Package Name</div>
-                        <div class="fw-bold text-dark">@sub.PackageName</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-gem"></i> Service Package</div>
+                            <div class="detail-value text-primary">@sub.PackageName</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Amount Paid</div>
-                        <div class="fw-bold text-primary" style="font-size:1.1rem;">@sub.AmountPaid.ToString("N0") VND</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-currency-dollar"></i> Total Fee Paid</div>
+                            <div class="detail-value text-success">@sub.AmountPaid.ToString("N0") VND</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Start Date</div>
-                        <div class="fw-semibold text-dark">@sub.StartDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-calendar-event"></i> Start Date & Time</div>
+                            <div class="detail-value">@sub.StartDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Expiration / End Date</div>
-                        <div class="fw-semibold text-dark">@sub.ExpirationDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-calendar-x"></i> Expiration Date & Time</div>
+                            <div class="detail-value">@sub.ExpirationDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Subscription Created</div>
-                        <div class="fw-semibold text-dark">@sub.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-clock"></i> Record Created At</div>
+                            <div class="detail-value text-muted">@sub.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small mb-1">Payment Method / Gateway</div>
-                        <div class="fw-semibold text-dark">VNPay / Direct Activation</div>
+                        <div class="detail-item">
+                            <div class="detail-label"><i class="bi bi-credit-card"></i> Payment Channel / Gateway</div>
+                            <div class="detail-value">VNPay Secure Gateway / Direct</div>
+                        </div>
                     </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(sub.PaymentUrl))
+                {
+                    <div class="mt-3 p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold text-dark small d-block">Online Payment Gateway URL</span>
+                            <span class="text-muted small text-truncate d-inline-block" style="max-width:400px;">@sub.PaymentUrl</span>
+                        </div>
+                        <a href="@sub.PaymentUrl" target="_blank" class="btn btn-sm btn-outline-primary" style="border-radius:6px; font-size:0.8rem;">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Open Gateway
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Subscription Lifecycle Timeline -->
+        <div class="bm-card p-4">
+            <h6 class="fw-bold text-dark small text-uppercase mb-3" style="letter-spacing:0.5px;">
+                <i class="bi bi-clock-history me-1 text-primary"></i>Subscription Lifecycle & Milestones
+            </h6>
+            <div class="ps-2">
+                <!-- Milestone 1 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot bg-success text-white">
+                        <i class="bi bi-check"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-dark small">Subscription Requested</span>
+                        <span class="text-muted small">@sub.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <p class="text-muted mb-0 small">Practitioner initiated order for @sub.PackageName tier.</p>
+                </div>
+
+                <!-- Milestone 2 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot @(isSubPending ? "bg-warning text-dark" : "bg-success text-white")">
+                        <i class="bi @(isSubPending ? "bi-hourglass-split" : "bi-check")"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-dark small">Activation & Start Date</span>
+                        <span class="text-muted small">@sub.StartDate.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        @(isSubPending ? "Awaiting payment settlement from practitioner." : "Subscription activated and privileges unlocked.")
+                    </p>
+                </div>
+
+                <!-- Milestone 3 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot @(isSubActive ? "bg-primary text-white" : isSubExpired ? "bg-secondary text-white" : isSubCancelled ? "bg-danger text-white" : "bg-light text-muted")">
+                        <i class="bi @(isSubActive ? "bi-play-fill" : isSubExpired ? "bi-check2-all" : isSubCancelled ? "bi-x" : "bi-dot")"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-dark small">Expiration Milestone</span>
+                        <span class="text-muted small">@sub.ExpirationDate.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <p class="text-muted mb-0 small">
+                        @if (isSubActive)
+                        {
+                            <span>Current active validity period. Renewal available prior to expiration.</span>
+                        }
+                        else if (isSubExpired)
+                        {
+                            <span>This subscription term has concluded.</span>
+                        }
+                        else if (isSubCancelled)
+                        {
+                            <span>Subscription was discontinued or cancelled.</span>
+                        }
+                        else
+                        {
+                            <span>Scheduled expiration date upon payment clearance.</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Practitioner Profile & Package Overview -->
+    <div class="col-lg-4">
+        <!-- Practitioner Profile Card -->
+        <div class="bm-card p-4 text-center mb-4">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto fw-bold text-white mb-3 shadow-sm" style="width:72px;height:72px;background:var(--mb-primary);font-size:1.5rem;">
+                <i class="bi bi-person-badge"></i>
+            </div>
+            <h4 class="fw-bold mb-1 text-dark" style="font-size:1.15rem;">@(sub.DoctorName ?? "Practitioner Account")</h4>
+            <div class="text-muted mb-2 small">
+                Doctor ID: <code style="font-size:0.75rem;" class="bg-light px-1 rounded">@sub.DoctorId</code>
+            </div>
+            
+            <div class="d-flex justify-content-center gap-1 mb-3">
+                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.75rem;">
+                    <i class="bi bi-heart-pulse me-1"></i>Healthcare Practitioner
+                </span>
+            </div>
+
+            <div class="p-3 bg-light rounded-3 text-start border small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Assigned Tier:</span>
+                    <span class="fw-semibold text-dark">@sub.PackageName</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Account Status:</span>
+                    <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Service Package ID:</span>
+                    <code style="font-size:0.7rem;">@sub.ServicePackageId.ToString().Substring(0, 8)...</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Package Entitlements Card -->
+        <div class="bm-card p-4">
+            <h6 class="fw-bold text-dark small text-uppercase mb-3" style="letter-spacing:0.5px;">
+                <i class="bi bi-gem me-1 text-primary"></i>Package Entitlements
+            </h6>
+            
+            <div class="d-flex align-items-center gap-3 mb-3 p-2 bg-light rounded border">
+                <div class="rounded-3 p-2 bg-white text-primary shadow-sm">
+                    <i class="bi bi-calendar-check fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted d-block small" style="font-size:0.75rem;">Daily Schedule Slots</span>
+                    <span class="fw-bold text-dark" style="font-size:0.9rem;">
+                        @(sub.MaxDailySlotsCapacity.HasValue ? $"{sub.MaxDailySlotsCapacity} slots per day" : "Unlimited Slots")
+                    </span>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 mb-3 p-2 bg-light rounded border">
+                <div class="rounded-3 p-2 bg-white text-primary shadow-sm">
+                    <i class="bi bi-person-check fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted d-block small" style="font-size:0.75rem;">Patient Capacity Quota</span>
+                    <span class="fw-bold text-dark" style="font-size:0.9rem;">
+                        @(sub.MaxPatientCapacity.HasValue ? $"{sub.MaxPatientCapacity} active patients" : "Unlimited Patients")
+                    </span>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 p-2 bg-light rounded border">
+                <div class="rounded-3 p-2 bg-white text-success shadow-sm">
+                    <i class="bi bi-shield-check fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted d-block small" style="font-size:0.75rem;">Platform Integration</span>
+                    <span class="fw-bold text-dark" style="font-size:0.9rem;">Full Clinical Suite</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function copySubId() {
+            const id = '@sub.Id';
+            navigator.clipboard.writeText(id).then(() => {
+                const icon = document.getElementById('copyIcon');
+                icon.className = 'bi bi-check text-success';
+                setTimeout(() => {
+                    icon.className = 'bi bi-clipboard';
+                }, 2000);
+            });
+        }
+    </script>
+}
+
