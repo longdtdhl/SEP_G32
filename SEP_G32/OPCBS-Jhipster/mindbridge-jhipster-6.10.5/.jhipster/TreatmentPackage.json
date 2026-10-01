@@ -1,0 +1,112 @@
+{
+  "name": "TreatmentPackage",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "required",
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "160"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "targetOutcome",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "recommendedExercises",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "instructions",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "sessionQuantity",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "required",
+        "min"
+      ],
+      "fieldValidateRulesMin": "1"
+    },
+    {
+      "fieldName": "remainingSessions",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "min"
+      ],
+      "fieldValidateRulesMin": "0"
+    },
+    {
+      "fieldName": "validityDays",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "min"
+      ],
+      "fieldValidateRulesMin": "1"
+    },
+    {
+      "fieldName": "price",
+      "fieldType": "BigDecimal",
+      "fieldValidateRules": [
+        "min"
+      ],
+      "fieldValidateRulesMin": "0"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "30"
+    },
+    {
+      "fieldName": "assignedDate",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "acceptedDate",
+      "fieldType": "Instant"
+    }
+  ],
+  "relationships": [
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "doctorProfile",
+      "otherEntityRelationshipName": "treatmentPackages",
+      "relationshipName": "doctor",
+      "otherEntityField": "fullName"
+    },
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "patientProfile",
+      "otherEntityRelationshipName": "treatmentPackages",
+      "relationshipName": "patient",
+      "otherEntityField": "fullName"
+    }
+  ],
+  "changelogDate": "20261001084924",
+  "entityTableName": "treatment_package",
+  "dto": "mapstruct",
+  "pagination": "no",
+  "service": "serviceClass",
+  "jpaMetamodelFiltering": false,
+  "fluentMethods": true,
+  "readOnly": false,
+  "embedded": false,
+  "clientRootFolder": "",
+  "applications": [
+    "opcbs"
+  ]
+}

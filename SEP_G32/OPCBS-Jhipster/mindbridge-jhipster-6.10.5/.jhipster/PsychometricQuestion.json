@@ -1,0 +1,56 @@
+{
+  "name": "PsychometricQuestion",
+  "fields": [
+    {
+      "fieldName": "questionNumber",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "required",
+        "min"
+      ],
+      "fieldValidateRulesMin": "1"
+    },
+    {
+      "fieldName": "questionText",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "category",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "50"
+    },
+    {
+      "fieldName": "weight",
+      "fieldType": "Double"
+    }
+  ],
+  "relationships": [
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "psychometricTest",
+      "otherEntityRelationshipName": "questions",
+      "relationshipName": "test",
+      "otherEntityField": "name"
+    }
+  ],
+  "changelogDate": "20261001085224",
+  "entityTableName": "psychometric_question",
+  "dto": "mapstruct",
+  "pagination": "no",
+  "service": "serviceClass",
+  "jpaMetamodelFiltering": false,
+  "fluentMethods": true,
+  "readOnly": false,
+  "embedded": false,
+  "clientRootFolder": "",
+  "applications": [
+    "opcbs"
+  ]
+}

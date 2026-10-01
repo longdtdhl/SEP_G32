@@ -1,0 +1,105 @@
+{
+  "name": "Appointment",
+  "fields": [
+    {
+      "fieldName": "bookingCode",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "required",
+        "unique",
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "30"
+    },
+    {
+      "fieldName": "scheduledStart",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "scheduledEnd",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "consultationMode",
+      "fieldType": "ConsultationMode",
+      "fieldValues": "ONLINE,IN_PERSON,BOTH",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "AppointmentStatus",
+      "fieldValues": "PENDING,ACCEPTED,REJECTED,IN_PROGRESS,COMPLETED,CANCELLED",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "reason",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "cancellationReason",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "relationships": [
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "availabilitySlot",
+      "otherEntityRelationshipName": "appointment",
+      "relationshipName": "slot",
+      "otherEntityField": "id"
+    },
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "doctorProfile",
+      "otherEntityRelationshipName": "appointments",
+      "relationshipName": "doctor",
+      "otherEntityField": "fullName"
+    },
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "patientProfile",
+      "otherEntityRelationshipName": "appointments",
+      "relationshipName": "patient",
+      "otherEntityField": "fullName"
+    }
+  ],
+  "changelogDate": "20261001084824",
+  "entityTableName": "appointment",
+  "dto": "mapstruct",
+  "pagination": "pagination",
+  "service": "serviceClass",
+  "jpaMetamodelFiltering": false,
+  "fluentMethods": true,
+  "readOnly": false,
+  "embedded": false,
+  "clientRootFolder": "",
+  "applications": [
+    "opcbs"
+  ]
+}

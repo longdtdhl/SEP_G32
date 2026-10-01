@@ -1,0 +1,99 @@
+{
+  "name": "EmotionJournal",
+  "fields": [
+    {
+      "fieldName": "title",
+      "fieldType": "String",
+      "fieldValidateRules": [
+        "required",
+        "maxlength"
+      ],
+      "fieldValidateRulesMaxlength": "160"
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "moodScale",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "required",
+        "min",
+        "max"
+      ],
+      "fieldValidateRulesMin": "1",
+      "fieldValidateRulesMax": "5"
+    },
+    {
+      "fieldName": "stressScale",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "min",
+        "max"
+      ],
+      "fieldValidateRulesMin": "1",
+      "fieldValidateRulesMax": "5"
+    },
+    {
+      "fieldName": "sleepHours",
+      "fieldType": "Double",
+      "fieldValidateRules": [
+        "min",
+        "max"
+      ],
+      "fieldValidateRulesMin": "0",
+      "fieldValidateRulesMax": "24"
+    },
+    {
+      "fieldName": "depressionScale",
+      "fieldType": "Integer",
+      "fieldValidateRules": [
+        "min",
+        "max"
+      ],
+      "fieldValidateRulesMin": "1",
+      "fieldValidateRulesMax": "5"
+    },
+    {
+      "fieldName": "isShared",
+      "fieldType": "Boolean",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "relationshipType": "many-to-one",
+      "otherEntityName": "patientProfile",
+      "otherEntityRelationshipName": "journals",
+      "relationshipName": "patient",
+      "otherEntityField": "fullName"
+    }
+  ],
+  "changelogDate": "20261001085024",
+  "entityTableName": "emotion_journal",
+  "dto": "mapstruct",
+  "pagination": "no",
+  "service": "serviceClass",
+  "jpaMetamodelFiltering": false,
+  "fluentMethods": true,
+  "readOnly": false,
+  "embedded": false,
+  "clientRootFolder": "",
+  "applications": [
+    "opcbs"
+  ]
+}
